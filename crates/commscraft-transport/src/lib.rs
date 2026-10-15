@@ -43,7 +43,14 @@ fn dns_name(raw: &str) -> Option<String> {
         && label.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-')) {
         return None;
     }
-    Some(name.to_ascii_lowercase())
+    // RFC 5890 / RFC 9549 §2.3: validate xn-- A-labels before treating
+    // them as DNS targets or verified TLS reference identities. Do not
+    // silently transform untrusted hostnames through compatibility mapping.
+    let canonical = idna::domain_to_ascii_strict(name).ok()?;
+    if !canonical.eq_ignore_ascii_case(name) {
+        return None;
+    }
+    Some(canonical)
 }
 impl TlsEndpoint {
     pub fn from_domain_and_host(domain: &str, host: &str, port: u16) -> Result<Self, TransportError> {
@@ -152,6 +159,31 @@ mod tests {
                 Err(TransportError::InvalidEndpoint));
         }
     }
+    #[test]
+    fn idna_a_label_validation_is_required_for_tls_sni_and_srv_target() {
+        let valid = TlsEndpoint::from_domain_and_host(
+            "XN--BCHER-KVA.EXAMPLE", "edge.XN--BCHER-KVA.example", 5061
+        ).expect("valid canonical punycode A-label");
+        assert_eq!(valid.tls_reference_identity(), "xn--bcher-kva.example");
+        assert_eq!(valid.host(), "edge.xn--bcher-kva.example");
+        for invalid in ["xn--a.example", "xn--ab.example", "xn--p.example"] {
+            assert_eq!(
+                TlsEndpoint::from_domain_and_host(invalid, invalid, 5061),
+                Err(TransportError::InvalidEndpoint), "{invalid}"
+            );
+            assert_eq!(
+                TlsEndpoint::from_domain_and_host(
+                    "example.com", &format!("edge.{invalid}"), 5061
+                ),
+                Err(TransportError::InvalidEndpoint), "bad SRV target {invalid}"
+            );
+        }
+        // Deliberate fail-closed subset: no U-label ingress conversion.
+        assert_eq!(TlsEndpoint::from_domain_and_host(
+            "bücher.example", "edge.xn--bcher-kva.example", 5061
+        ), Err(TransportError::InvalidEndpoint));
+    }
+
     #[test]
     fn tls_certificate_identity_is_original_sip_domain_not_srv_hostname() {
         let endpoint = TlsEndpoint::from_domain_and_host(
