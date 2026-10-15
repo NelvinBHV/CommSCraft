@@ -19,3 +19,9 @@ The public crate API exposes `parse_register_presence_response` and `BindingErro
 RFC 3261 [§8.1.1.5](https://www.rfc-editor.org/rfc/rfc3261#section-8.1.1.5) requires UAC request CSeq values to be less than `2^31`; [§20.16](https://www.rfc-editor.org/rfc/rfc3261#section-20.16) requires an unsigned 32-bit decimal representation and a case-sensitive method. The new offline response binding applies the stricter **corresponding request** rule: `2147483647 REGISTER` is accepted, `2147483648 REGISTER` is rejected. No claim is made that these checks authenticate a SIP transaction.
 
 The strict Clippy failure on a nested duplicate-CSeq guard was corrected without weakening duplicate detection. Run `cargo clippy --workspace --all-targets -- -D warnings` in Linux/Windows CI.
+
+## Defense against CSeq control-byte injection
+
+A caller can construct `SipMessage` directly without passing through the framed wire parser. Consequently the binding explicitly rejects CR, LF, NUL, DEL and other non-HTAB ASCII control characters in CSeq before tokenization. The malformed-CSeq test includes embedded CRLF, newline and control-byte cases. This is a **local defensive rule** consistent with RFC 3261's header-field framing, not a separate Microsoft extension.
+
+A `PresenceHint` is still **not** a signed or transaction-correlated registration result, even when all these syntax checks pass.
