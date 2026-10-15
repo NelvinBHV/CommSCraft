@@ -1,0 +1,21 @@
+name: Strict 1.0 parity release gate
+on:
+  push:
+    tags:
+      - 'v1.*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require imported Rust source and Windows feature manifest
+        shell: bash
+        run: |
+          test -f Cargo.toml || { echo '::error::Rust source missing; v1 blocked'; exit 1; }
+          test -f FEATURE_PARITY.json || { echo '::error::Feature inventory missing'; exit 1; }
+          test -f WINDOWS_REFERENCE_CASES.json || { echo '::error::Windows reference cases missing'; exit 1; }
+          test -f scripts/check_release.py || { echo '::error::Release checker missing'; exit 1; }
+          python3 scripts/check_release.py --release

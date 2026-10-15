@@ -1,0 +1,22 @@
+name: Windows Full Client parity feature
+description: Track a missing feature with precise acceptance criteria
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Windows reference behavior and exact build
+    validations:
+      required: true
+  - type: textarea
+    id: specs
+    attributes:
+      label: Normative RFC/MS documentation and revision
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Bidirectional, policy and failure-case acceptance tests
+    validations:
+      required: true

@@ -1,0 +1,35 @@
+name: Bug report
+description: Report a reproducible CommSCraft bug (sanitized)
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: 'Remove credentials, Kerberos tokens, private contact data, server identities and unredacted packet captures.'
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce (synthetic inputs preferred)
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS, build and CommSCraft commit
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: Applicable RFC and Microsoft Open Specification sections

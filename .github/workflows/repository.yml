@@ -1,0 +1,54 @@
+name: CommSCraft repository and Rust checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 scripts/check_repository.py
+  rust:
+    name: Rust workspace (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Detect whether historical Rust source was imported
+        id: code
+        shell: bash
+        run: |
+          if test -f Cargo.toml; then
+            echo 'present=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'present=false' >> "$GITHUB_OUTPUT"
+            echo 'Historical source import pending; no Rust test claimed'
+          fi
+      - name: Install native Linux dependencies
+        if: runner.os == 'Linux' && steps.code.outputs.present == 'true'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libxkbcommon-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libgl1-mesa-dev libssl-dev pkg-config
+      - name: Rust formatting
+        if: steps.code.outputs.present == 'true'
+        run: cargo fmt --all -- --check
+      - name: Rust tests
+        if: steps.code.outputs.present == 'true'
+        run: cargo test --workspace --all-targets
+      - name: Clippy
+        if: steps.code.outputs.present == 'true'
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Python RFC/MS source evidence checks
+        if: steps.code.outputs.present == 'true'
+        shell: bash
+        run: python3 -m unittest discover -s scripts -p 'test*.py'
