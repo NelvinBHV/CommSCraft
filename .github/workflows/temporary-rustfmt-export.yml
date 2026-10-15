@@ -1,0 +1,24 @@
+name: Temporary canonical rustfmt export
+on:
+  push:
+    branches: [feat/workspace-bootstrap]
+permissions:
+  contents: read
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Export canonical formatting for the two Rust source files
+        shell: bash
+        run: |
+          cargo fmt --all
+          for p in crates/commscraft-register-events/src/lib.rs crates/commscraft-register-events/tests/conformance.rs; do
+            echo "COMM_SNAPSHOT_BEGIN:$p"
+            base64 -w0 "$p"
+            echo
+            echo "COMM_SNAPSHOT_END:$p"
+          done
