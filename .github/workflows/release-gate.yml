@@ -19,3 +19,5 @@ jobs:
           test -f WINDOWS_REFERENCE_CASES.json || { echo '::error::Windows reference cases missing'; exit 1; }
           test -f scripts/check_release.py || { echo '::error::Release checker missing'; exit 1; }
           python3 scripts/check_release.py --release
+      - name: Require rustfmt-clean source for v1.0
+        run: cargo fmt --all -- --check

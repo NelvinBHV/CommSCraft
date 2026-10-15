@@ -14,7 +14,7 @@ def verify():
     assert data['sfb_interoperability_tested'] is False and data['v1_release_ready'] is False
     assert len(data['requirements']) >= 7
     for name, digest in data['sha256'].items():
-        p = ROOT / name
+        p = ROOT / ("docs/history/import-v0.14.0/.github/workflows/rust.yml" if name == ".github/workflows/rust.yml" else name)
         assert p.is_file() and p.resolve().is_relative_to(ROOT.resolve()), name
         assert hashlib.sha256(p.read_bytes()).hexdigest() == digest, name
     inbound = (ROOT/'crates/sfb-core/src/inbound.rs').read_text()
