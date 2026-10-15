@@ -1,6 +1,6 @@
 # CommSCraft REGISTER Presence-State SIP binding: offline evidence
 
-**Scope:** `crates/commscraft-register-events/tests/sip_binding.rs` is a strict **untrusted response parser**, not live registration or user authentication.
+**Scope:** `crates/commscraft-register-events/src/sip_binding.rs` is a strict **untrusted response parser**, not live registration or user authentication.
 
 | Requirement | Source | Rust check | Authored test |
 | --- | --- | --- | --- |
@@ -9,5 +9,7 @@
 | Microsoft `Presence-State` only interpreted for successful REGISTER | [MS-SIPREGE §2.2.1.4](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/affa7b0a-c039-4699-9889-1da2e585ef39) | Delegate to bounded parser on REGISTER 200 | `duplicate_presence_state_is_rejected` |
 
 **Security boundary:** The SIP response is still untrusted. CSeq does not prove an outstanding transaction; the caller must separately verify RFC 3261 transaction matching and the trusted TLS channel, and use [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) MIC/replay checks before any authenticated state transition. The Microsoft Presence-State fields are not certified by these tests.
+
+The public crate API exposes `parse_register_presence_response` and `BindingError`; the security boundary remains untrusted.
 
 **Test command:** `cargo test -p commscraft-register-events --all-targets` on Linux and Windows. CI execution evidence is obtained only after GitHub checks complete. This patch does not alter the historical SHA-256 source evidence or the v1.0 release gate.
