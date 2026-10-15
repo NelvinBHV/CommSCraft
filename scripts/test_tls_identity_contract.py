@@ -41,7 +41,7 @@ class TlsSipIdentityContract(unittest.TestCase):
         manifest = (ROOT / "crates/commscraft-transport/Cargo.toml").read_text()
         self.assertIn("idna::domain_to_ascii_strict(name)", parser)
         self.assertIn("valid_idna_a_labels_match_exact_domain_but_fake_punycode_cannot", parser)
-        self.assertIn("idna = \\"1.1.0\\"", manifest)
+        self.assertIn('idna = "1.1.0"', manifest)
 
     def test_inbound_only_and_no_trust_bypass(self):
         source = (ROOT / "crates/commscraft-transport/src/lib.rs").read_text()
