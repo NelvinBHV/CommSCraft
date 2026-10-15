@@ -174,8 +174,8 @@ fn parse_kv(s: &str) -> Result<BTreeMap<String, String>, SecurityError> {
     Ok(result)
 }
 fn decode_hex(s: &str) -> Result<Vec<u8>, SecurityError> {
-    if s.len() % 2 != 0 || s.len() > 1024 { return Err(SecurityError::InvalidAuthenticationInfo); }
-    s.as_bytes().chunks_exact(2).map(|p| {
+    if !s.len().is_multiple_of(2) || s.len() > 1024 { return Err(SecurityError::InvalidAuthenticationInfo); }
+    s.as_bytes().as_chunks::<2>().0.iter().map(|p| {
         let a = (p[0] as char).to_digit(16).ok_or(SecurityError::InvalidAuthenticationInfo)?;
         let b = (p[1] as char).to_digit(16).ok_or(SecurityError::InvalidAuthenticationInfo)?;
         Ok(((a << 4) | b) as u8)

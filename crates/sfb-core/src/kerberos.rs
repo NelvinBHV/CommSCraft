@@ -220,10 +220,10 @@ fn branch(via: &str) -> Result<&str, KerberosError> {
     let mut found = None;
     for param in via.split(';').skip(1) {
         let Some((name, val)) = param.trim().split_once('=') else { continue; };
-        if name.trim().eq_ignore_ascii_case("branch") {
-            if found.replace(val.trim()).is_some() || !val.starts_with("z9hG4bK") {
-                return Err(KerberosError::ResponseMismatch);
-            }
+        if name.trim().eq_ignore_ascii_case("branch")
+            && (found.replace(val.trim()).is_some() || !val.starts_with("z9hG4bK"))
+        {
+            return Err(KerberosError::ResponseMismatch);
         }
     }
     found.ok_or(KerberosError::ResponseMismatch)

@@ -464,10 +464,10 @@ fn matching_binding(msg: &SipMessage, endpoint: &Endpoint)
                         if expires.replace(parse_seconds(value).ok_or(RegistrationError::InvalidResponse)?).is_some() {
                             return Err(RegistrationError::AmbiguousContact);
                         }
-                    } else if k.trim().eq_ignore_ascii_case("gruu") {
-                        if !value.starts_with("sip:") || !safe_ascii(value, 2048) || gruu.replace(value.to_owned()).is_some() {
-                            return Err(RegistrationError::InvalidResponse);
-                        }
+                    } else if k.trim().eq_ignore_ascii_case("gruu")
+                        && (!value.starts_with("sip:") || !safe_ascii(value, 2048) || gruu.replace(value.to_owned()).is_some())
+                    {
+                        return Err(RegistrationError::InvalidResponse);
                     }
                 }
             }
