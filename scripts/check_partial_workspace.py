@@ -8,7 +8,7 @@ root = Path(__file__).resolve().parent.parent
 data = tomllib.loads((root / "Cargo.toml").read_text(encoding="utf-8"))
 expected = {
     "crates/sfb-core", "crates/sfb-transport", "crates/sfb-router",
-    "crates/commscraft-register-events", "apps/sfb-desktop",
+    "crates/commscraft-register-events", "apps/commscraft",
     "apps/sfb-inspect", "apps/sfb-probe", "xtask",
 }
 actual = data["workspace"]["members"]
@@ -16,6 +16,9 @@ assert len(actual) == len(set(actual)) == 8, actual
 assert set(actual) == expected, (set(actual) ^ expected)
 for member in actual:
     assert (root / member / "Cargo.toml").is_file(), member
+desktop = tomllib.loads((root / "apps/commscraft/Cargo.toml").read_text())
+assert desktop["package"]["name"] == "commscraft"
+assert desktop["bin"][0]["name"] == "CommSCraft"
 for path in (
     "crates/commscraft-register-events/tests/conformance.rs",
     "docs/register-events-conformance.md",
