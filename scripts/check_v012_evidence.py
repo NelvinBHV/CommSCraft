@@ -15,8 +15,9 @@ def verify():
     assert len(data['requirements']) >= 7
     for name, digest in data['sha256'].items():
         p = ROOT / ("docs/history/import-v0.14.0/.github/workflows/rust.yml" if name == ".github/workflows/rust.yml" else "docs/history/import-v0.14.0/scripts/check_v012_evidence.py" if name == "scripts/check_v012_evidence.py" else name)
-        if not p.is_file():
-            p = ROOT / 'docs/history/import-v0.14.0' / name
+        historic = ROOT / 'docs/history/import-v0.14.0' / name
+        if historic.is_file():
+            p = historic
         assert p.is_file() and p.resolve().is_relative_to(ROOT.resolve()), name
         assert hashlib.sha256(p.read_bytes()).hexdigest() == digest, name
     inbound = (ROOT/'crates/commscraft-core/src/inbound.rs').read_text()

@@ -24,7 +24,7 @@ def verify() -> dict:
     for name, digest in ledger['sha256'].items():
         # Original immutable v0.11 files remain archived when v0.12 edits live documentation/CI.
         archive = {'README.md': 'docs/history/v0.11.0/README.md',
-                   'crates/sfb-core/src/registration.rs': 'docs/history/import-v0.14.0/crates/commscraft-core/src/registration.rs',
+                   'crates/sfb-core/src/registration.rs': 'docs/history/import-v0.14.0/crates/sfb-core/src/registration.rs',
                    '.github/workflows/rust.yml': 'docs/history/v0.11.0/rust.yml'}
         archived = ROOT / 'docs/history/import-v0.14.0' / name
         file = ROOT / archive.get(name, str(archived.relative_to(ROOT)) if archived.is_file() else name)

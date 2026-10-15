@@ -20,8 +20,8 @@ def verify():
     for name, expected in ledger['sha256'].items():
         original = {'Cargo.toml': 'docs/history/v0.13.0/Cargo.toml',
                     'scripts/check_v013_evidence.py': 'docs/history/v0.13.0/check_v013_evidence.py',
-                    'crates/sfb-router/src/lib.rs': 'docs/history/import-v0.14.0/crates/commscraft-router/src/lib.rs',
-                    'crates/sfb-core/src/transaction.rs': 'docs/history/import-v0.14.0/crates/commscraft-core/src/transaction.rs'}
+                    'crates/sfb-router/src/lib.rs': 'docs/history/import-v0.14.0/crates/sfb-router/src/lib.rs',
+                    'crates/sfb-core/src/transaction.rs': 'docs/history/import-v0.14.0/crates/sfb-core/src/transaction.rs'}
         archived = ROOT / 'docs/history/import-v0.14.0' / name
         file = (ROOT/original.get(name, str(archived.relative_to(ROOT)) if archived.is_file() else name)).resolve()
         assert file.is_relative_to(ROOT.resolve()) and file.is_file(), name
