@@ -72,12 +72,11 @@ fn match_sip_sans(names: &[GeneralName<'_>], expected_domain: &str) -> bool {
                     }
                 }
             }
-            GeneralName::DNSName(dns) => {
+            GeneralName::DNSName(dns)
                 if ascii_sip_domain(dns)
-                    .is_some_and(|name| name.eq_ignore_ascii_case(reference))
-                {
-                    dns_matches = true;
-                }
+                    .is_some_and(|name| name.eq_ignore_ascii_case(reference)) =>
+            {
+                dns_matches = true;
             }
             _ => {} // IP addresses, RFC822 and other names aren't SIP domains
         }
