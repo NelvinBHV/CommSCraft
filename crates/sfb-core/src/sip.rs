@@ -37,7 +37,7 @@ impl fmt::Debug for SipMessage {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SipError {
     BadUtf8,
     MalformedStartLine,
