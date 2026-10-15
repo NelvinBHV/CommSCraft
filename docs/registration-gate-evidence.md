@@ -7,7 +7,7 @@ Reviewed against RFC 3261 and Microsoft Open Specifications on 2026-10-15.
 
 | ID | Normative source | Implementation constraint | Code | Authored test / status |
 |---|---|---|---|---|
-| GATE-01 | [RFC 3261 §17.1.2](https://www.rfc-editor.org/rfc/rfc3261.html#section-17.1.2) | Non-INVITE provisional responses must not complete a registration; final 401/407/423 needs a new transaction | `crates/sfb-core/src/session.rs::RegisterVerificationGate::observe` | `challenge_is_final_and_does_not_authenticate`, `challenged_final_response_must_not_be_followed_by_200` — Rust NOT RUN |
+| GATE-01 | [RFC 3261 §17.1.2](https://www.rfc-editor.org/rfc/rfc3261.html#section-17.1.2) | Non-INVITE provisional responses must not complete a registration; final 401/407/423 needs a new transaction | `crates/commscraft-core/src/session.rs::RegisterVerificationGate::observe` | `challenge_is_final_and_does_not_authenticate`, `challenged_final_response_must_not_be_followed_by_200` — Rust NOT RUN |
 | GATE-02 | [RFC 3261 §17.1.3](https://www.rfc-editor.org/rfc/rfc3261.html#section-17.1.3) | Unrelated replies must not alter the pending transaction | `registration.rs::observe_mic_checked_200`, `session.rs::observe` | `unrelated_200_does_not_consume_gate` — Rust NOT RUN |
 | GATE-03 | [MS-SIPAE §3.2.5.2 steps 1–4](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) | For a correlated 200, match SA by scheme/realm/target, create exact signed buffer and **verify server MIC** prior to any state advancement | `registration.rs::observe_mic_checked_200`, `security.rs::verify_server_message`, `session.rs::observe` | `synthetic_mic_checked_200_is_not_signed_in`, `untrusted_200_poisoned_without_consuming_synthetic_sa` — Rust NOT RUN |
 | GATE-04 | [MS-SIPAE §3.2.5.2 steps 5–6](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) | Record an `snum` only after MIC and replay-window checks | `security.rs::SecurityAssociation::verify_server_message` | `bad_mic_in_synthetic_success_fails_closed` — Rust NOT RUN |
@@ -33,7 +33,7 @@ python3 scripts/check_v011_evidence.py
 python3 scripts/check_v012_evidence.py
 python3 scripts/check_v013_evidence.py
 python3 scripts/check_v014_evidence.py
-cargo test -p sfb-core session --lib    # requires Rust; not executed here
+cargo test -p commscraft-core session --lib    # requires Rust; not executed here
 python3 scripts/check_release.py --release # MUST FAIL until parity is verified
 ```
 

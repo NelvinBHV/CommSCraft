@@ -2,9 +2,9 @@
 
 ```mermaid
 flowchart TD
-    UI[CommSCraft offline desktop] --> CORE[sfb-core]
-    INSPECT[sfb-inspect offline fixtures] --> CORE
-    PROBE[sfb-probe opt-in diagnostics] --> CORE
+    UI[CommSCraft offline desktop] --> CORE[commscraft-core]
+    INSPECT[commscraft-inspect offline fixtures] --> CORE
+    PROBE[commscraft-probe opt-in diagnostics] --> CORE
     CORE --> SIP[bounded SIP parser / encoder]
     CORE --> TX[reliable non-INVITE transactions]
     CORE --> PLAN[Microsoft discovery plan + RFC2782 ordering]
@@ -16,19 +16,19 @@ flowchart TD
 ```
 
 **Trust boundary:** The desktop UI remains offline. Only the separate CLI
-`sfb-probe`, invoked with explicit `--dns` or `--tls-probe` flags, performs any
+`commscraft-probe`, invoked with explicit `--dns` or `--tls-probe` flags, performs any
 network I/O. No component performs authenticated SIP registration, presence
 publication, IM delivery, calls, conferencing, or any media capture.
 
 ## Separation of concerns
 
-- `sfb-core`: pure Rust, no network or cryptography dependencies. Discovery
+- `commscraft-core`: Rust SIP/registration protocol primitives with offline MIC helpers; no network I/O. Discovery
   plan, RFC 2782 random-order resolver logic via injected RNG, parser and
   transactions are deterministically testable.
-- `sfb-probe`: Hickory for system-configured DNS-SRV (parallel requests),
+- `commscraft-probe`: Hickory for system-configured DNS-SRV (parallel requests),
   `native-tls` for a TLS handshake with chain/hostname checking, OS socket
   resolver for TCP connection attempts. It does not send SIP bytes.
-- `sfb-inspect`: privacy-preserving inspection of local sample SIP packets.
+- `commscraft-inspect`: privacy-preserving inspection of local sample SIP packets.
 - `commscraft`: **CommSCraft** native application (offline prototype) with sample contacts and read-only diagnostics.
 
 ## Future production data flow (not implemented)
@@ -60,7 +60,7 @@ flowchart TD
 
 ## v0.4 offline REGISTER layer
 
-`registration.rs` produces an offline REGISTER plan with an externally provisioned identity, owns one reliable non-INVITE transaction, and classifies 1xx/401/407/423/200/other-final and timeouts. It never creates a security association or performs sign-in. A matching Contact `+sip.instance` and Microsoft `gruu` value lead only to `UnverifiedAcceptance`; signed server authentication under MS-SIPAE is a separate, missing requirement. `sfb-inspect --register-demo` exercises a synthetic scenario without network access. See `registration-protocol.md`.
+`registration.rs` produces an offline REGISTER plan with an externally provisioned identity, owns one reliable non-INVITE transaction, and classifies 1xx/401/407/423/200/other-final and timeouts. It never creates a security association or performs sign-in. A matching Contact `+sip.instance` and Microsoft `gruu` value lead only to `UnverifiedAcceptance`; signed server authentication under MS-SIPAE is a separate, missing requirement. `commscraft-inspect --register-demo` exercises a synthetic scenario without network access. See `registration-protocol.md`.
 
 
 ### v0.5 incoming authentication verification (offline only)

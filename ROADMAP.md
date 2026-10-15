@@ -28,7 +28,7 @@ interoperability have **not** been verified in this environment.
 - [x] Bounded, strict SIP stream framing and Content-Length validation
 - [x] RFC 3261 reliable non-INVITE client transaction matching and Timer F
 - [x] Synthetic SIP fixtures and fragmentation tests
-- [x] Sanitized offline inspector `sfb-inspect`
+- [x] Sanitized offline inspector `commscraft-inspect`
 - [ ] Complete SIP grammar, INVITE/dialog states, full transaction timers and fuzzing
 
 ## M2 — Microsoft discovery and authentication (in progress)

@@ -3,7 +3,7 @@
 **Status: EXPERIMENTAL, LOCAL CREDENTIAL/TOKEN HANDOFF ONLY. NOT a working login.**
 
 This module adds a native Windows `Secur32.dll` adapter in
-`crates/sfb-core/src/windows_sspi.rs`. It has **no network access** and
+`crates/commscraft-core/src/windows_sspi.rs`. It has **no network access** and
 is compiled only on Windows (`#[cfg(windows)]`). There are no hardcoded
 passwords, password prompts, delegation requests or Negotiate/NTLM fallback.
 It uses the current Windows logon session's default Kerberos credential.
@@ -32,7 +32,7 @@ References:
 ## Offline-local self-check
 
 ```powershell
-cargo run -p sfb-inspect -- --sspi-check
+cargo run -p commscraft-inspect -- --sspi-check
 ```
 
 On Windows this **only acquires and releases a Kerberos credential handle**.
