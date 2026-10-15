@@ -74,6 +74,20 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
             index += 1;
         }
     }
+    // RFC 3261 §19.1.1: a SIP URI parameter name MUST NOT occur
+    // more than once. Apply case-insensitive matching at the identity
+    // boundary; ignore the separate '?' header portion here.
+    let authority_and_parameters = remainder.split('?').next()?;
+    if let Some((_, parameters)) = authority_and_parameters.split_once(';') {
+        let mut seen: Vec<&str> = Vec::new();
+        for parameter in parameters.split(';') {
+            let name = parameter.split('=').next()?;
+            if !name.is_empty() && seen.iter().any(|old| old.eq_ignore_ascii_case(name)) {
+                return None;
+            }
+            seen.push(name);
+        }
+    }
     let host_and_port = remainder.split([';', '?']).next()?;
     let (host, port) = match host_and_port.split_once(':') {
         Some((host, port)) => (host, Some(port)),
@@ -314,6 +328,26 @@ mod tests {
             "sip:example.com;transport=tls?subject=hello%20world",
             "sip:example.com?subject=foo%2Fbar",
             "sip:example.com;opaque=%3a",
+        ] {
+            assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
+        }
+    }
+
+    #[test]
+    fn duplicate_sip_uri_parameter_names_cannot_authorize_certificate_identity() {
+        for uri in [
+            "sip:example.com;transport=tcp;transport=tls",
+            "sip:example.com;Transport=tcp;transport=tls",
+            "sip:example.com;lr;LR",
+            "sip:example.com;foo=1;foo=2?subject=ok",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri:?}");
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
+        }
+        for uri in [
+            "sip:example.com;transport=tls;lr",
+            "sip:example.com;foo=1;bar=2?subject=ok",
+            "sip:example.com?subject=ok&subject=again",
         ] {
             assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
         }
