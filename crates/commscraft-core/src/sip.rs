@@ -124,7 +124,11 @@ pub fn parse_frame(input: &[u8]) -> Result<Option<(SipMessage, usize)>, SipError
             return Err(SipError::MalformedStartLine);
         }
         let code = code.parse::<u16>().map_err(|_| SipError::MalformedStartLine)?;
-        if !(100..=699).contains(&code) { return Err(SipError::MalformedStartLine); }
+        if !(100..=699).contains(&code)
+            || reason.bytes().any(|b| b < 0x20 || b == 0x7f)
+        {
+            return Err(SipError::MalformedStartLine);
+        }
         StartLine::Response { code, reason: reason.to_owned() }
     } else {
         let mut fields = line.split(' ');
@@ -235,6 +239,22 @@ mod tests {
         assert_eq!(parse_frame(b"MESS\tAGE sip:bob@example.com SIP/2.0\r\nContent-Length: 0\r\n\r\n"),
             Err(SipError::MalformedStartLine));
     }
+    #[test]
+    fn response_reason_phrase_rejects_control_bytes_but_allows_utf8() {
+        // RFC 3261 §§7.2, 25.1: descriptive UTF-8 is allowed, controls are not.
+        for bad in [b'\\0', b'\\t', b'\\x1b', b'\\x7f'] {
+            let mut wire = b"SIP/2.0 200 O".to_vec();
+            wire.push(bad);
+            wire.extend_from_slice(b"K\\r\\nContent-Length: 0\\r\\n\\r\\n");
+            assert_eq!(parse_frame(&wire), Err(SipError::MalformedStartLine));
+        }
+        let wire = "SIP/2.0 200 Erfolgreich ✓\\r\\nContent-Length: 0\\r\\n\\r\\n";
+        let (response, _) = parse_frame(wire.as_bytes()).unwrap().unwrap();
+        assert_eq!(response.start_line, StartLine::Response {
+            code: 200, reason: "Erfolgreich ✓".into(),
+        });
+    }
+
     #[test]
     fn outbound_serialization_rejects_header_injection() {
         let mut msg = illustrative_register("sip:alice@example.com").unwrap();
