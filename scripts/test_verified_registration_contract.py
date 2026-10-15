@@ -10,7 +10,7 @@ class ContractChecks(unittest.TestCase):
         self.assertGreaterEqual(verify()['verified_files'], 4)
 
     def test_public_rust_tests_present(self):
-        p = Path(__file__).resolve().parent.parent / 'crates/sfb-core/tests/verified_registration.rs'
+        p = Path(__file__).resolve().parent.parent / 'crates/commscraft-core/tests/verified_registration.rs'
         src = p.read_text()
         self.assertEqual(src.count('#[test]'), 9)
         for test in (
@@ -22,7 +22,7 @@ class ContractChecks(unittest.TestCase):
             self.assertIn(f'fn {test}', src)
 
     def test_legacy_unsigned_path_distinct(self):
-        src = (Path(__file__).resolve().parent.parent / 'crates/sfb-core/src/registration.rs').read_text()
+        src = (Path(__file__).resolve().parent.parent / 'crates/commscraft-core/src/registration.rs').read_text()
         self.assertIn('RegisterState::UnverifiedAcceptance', src)
         self.assertIn('RegisterState::MicCheckedAcceptance', src)
 
