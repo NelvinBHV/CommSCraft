@@ -12,6 +12,10 @@ const MAX_CERT_DER: usize = 64 * 1024;
 const MAX_SAN_NAMES: usize = 128;
 
 fn ascii_sip_domain(name: &str) -> Option<&str> {
+    // RFC 5922 DNS-based certificate identities are not IP literals.
+    // This is a conservative local restriction, not a ban on RFC 3261
+    // SIP URIs with numeric hosts in other protocol contexts.
+    if name.parse::<std::net::Ipv4Addr>().is_ok() { return None; }
     if name.len() > 253 || name.is_empty() || !name.is_ascii()
         || !name.contains('.') || name.contains('*')
         || name.split('.').any(|label| label.is_empty() || label.len() > 63
@@ -213,6 +217,20 @@ mod tests {
                         "example..com", "example.com:5061", "example.com\r\n"] {
             assert!(!matches_sip_identity(&original, invalid));
         }
+    }
+
+    #[test]
+    fn numeric_ipv4_sans_cannot_authorize_dns_sip_domains() {
+        for ip in ["127.0.0.1", "192.0.2.5", "255.255.255.255"] {
+            assert_eq!(ascii_sip_domain(ip), None);
+            assert_eq!(sip_uri_host(&format!("sip:{ip}")), None);
+            assert!(!match_sip_sans(&[GeneralName::DNSName(ip)], ip));
+            assert!(!match_sip_sans(&[GeneralName::URI(&format!("sip:{ip}"))], ip));
+        }
+        assert_eq!(
+            ascii_sip_domain("192.0.2.5.example.com"),
+            Some("192.0.2.5.example.com")
+        );
     }
 
     #[test]

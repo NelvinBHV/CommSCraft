@@ -36,6 +36,10 @@ pub struct TlsEndpoint {
 fn dns_name(raw: &str) -> Option<String> {
     // Exactly one optional terminal DNS root dot; reject repeated dots.
     let name = raw.strip_suffix('.').unwrap_or(raw);
+    // Local fail-closed policy: a numeric IP endpoint is not a DNS-based
+    // SIP domain identity. RFC 3261 permits IP hosts in general SIP URIs;
+    // this DNS-SRV/TLS identity boundary intentionally does not.
+    if name.parse::<std::net::Ipv4Addr>().is_ok() { return None; }
     if name.len() > 253 || name.is_empty() || !name.is_ascii() || !name.contains('.') {
         return None;
     }
@@ -155,6 +159,25 @@ mod tests {
         assert_eq!(TlsEndpoint::from_domain_and_host("example.com", "sip.example.com", 0),
             Err(TransportError::InvalidEndpoint));
     }
+    #[test]
+    fn numeric_ipv4_hosts_are_not_dns_sip_tls_identities() {
+        for ip in ["127.0.0.1", "192.0.2.5", "255.255.255.255"] {
+            assert_eq!(
+                TlsEndpoint::from_domain_and_host(ip, ip, 5061),
+                Err(TransportError::InvalidEndpoint),
+                "numeric SIP identity {ip}"
+            );
+            assert_eq!(
+                TlsEndpoint::from_domain_and_host("example.com", ip, 5061),
+                Err(TransportError::InvalidEndpoint),
+                "numeric SRV destination {ip}"
+            );
+        }
+        assert!(TlsEndpoint::from_domain_and_host(
+            "example.com", "192.0.2.5.example.com", 5061
+        ).is_ok()); // DNS name, not an IP literal
+    }
+
     #[test]
     fn rejects_host_injection_and_invalid_domains() {
         for invalid in ["bad\r\n.example.com", "example.com ", "foo_.example.com", "-foo.example.com", "singlelabel"] {
