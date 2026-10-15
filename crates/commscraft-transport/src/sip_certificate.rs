@@ -34,6 +34,16 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
     {
         return None;
     }
+    // SIP URIs do not admit URI fragments. Reject controls or whitespace
+    // in the *whole* SAN URI, including params/headers that we do not match.
+    // Otherwise a malformed certificate identity could be accepted simply
+    // because its host prefix looks valid.
+    if remainder.bytes().any(|b| b <= 0x20 || b == 0x7f)
+        || remainder.contains('#')
+        || remainder.contains('\\')
+    {
+        return None;
+    }
     let host_and_port = remainder.split([';', '?']).next()?;
     let (host, port) = match host_and_port.split_once(':') {
         Some((host, port)) => (host, Some(port)),
@@ -188,6 +198,25 @@ mod tests {
             GeneralName::DNSName("example.com")];
         assert!(!match_sip_sans(&preempt, "example.com"));
         assert!(match_sip_sans(&preempt, "other.example"));
+    }
+
+    #[test]
+    fn malformed_sip_uri_suffix_cannot_authorize_a_domain() {
+        for uri in [
+            "sip:example.com#fragment", "sip:example.com;transport=tls#fragment",
+            "sip:example.com;transport=tls\\r\\nX:1",
+            "sip:example.com?subject=foo\\nbar",
+            "sip:example.com\\t;transport=tls",
+            "sip:example.com\\\\attacker.test",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri:?}");
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
+        }
+        // Legitimate URI parameters and headers remain supported.
+        assert!(match_sip_sans(
+            &[GeneralName::URI("sip:example.com:5061;transport=tls?subject=test")],
+            "example.com"
+        ));
     }
 
     #[test]
