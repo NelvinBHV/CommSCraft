@@ -4,7 +4,7 @@
 
 Inspired by the modular project structure, agent-friendly development approach, and open-source workflows of [storytold/wordcraft](https://github.com/storytold/wordcraft). CommSCraft is not a fork of WordCraft and is not affiliated with Microsoft.
 
-> **Experimental v0.14.0 prototype.** The existing Rust workspace is prepared for import and has NOT yet been fully published in this GitHub repository. No live authenticated sign-in, media calling, interoperable messaging or Windows-client parity has been demonstrated.
+> **Experimental v0.14.0 prototype.** The standalone Presence-State parser has a root Cargo workspace and CI. The historical v0.14.0 SIP/TLS/SSPI source has NOT yet been fully imported. No live authenticated sign-in, media calling, interoperable messaging or Windows-client parity has been demonstrated.
 
 ## Tour
 
@@ -19,7 +19,7 @@ Inspired by the modular project structure, agent-friendly development approach, 
 
 | Area | Reality |
 | --- | --- |
-| SIP parsing, routing, REGISTER and SSPI-adapter source | Local v0.14.0 prototype; GitHub import pending |
+| SIP parsing, routing, REGISTER and SSPI-adapter source | Historical v0.14.0 prototype; full GitHub import pending |
 | REGISTER Presence-State ABNF parsing | Standalone Rust crate, tested on Linux and Windows, not integrated into live sign-in |
 | Real Skype for Business sign-in and presence | Not interoperably implemented |
 | Real chat, calling, media, conferencing and sharing | Not interoperably implemented |
@@ -41,7 +41,7 @@ cargo test --manifest-path crates/commscraft-register-events/Cargo.toml --all-ta
     cargo run -p sfb-desktop
     python3 scripts/check_release.py --release
 
-These commands are not yet runnable from GitHub until the complete Rust workspace is imported. A v1 release must fail unless the final release check succeeds with real-server and Windows-reference evidence.
+The root workspace currently builds only the standalone Presence-State crate. Use `cargo test --workspace --all-targets` for that limited scope. `cargo run -p sfb-desktop` and `scripts/check_release.py --release` are not available until the historical source is imported. Version 1.0 must remain blocked.
 
 ## Specification basis
 
@@ -52,3 +52,6 @@ These commands are not yet runnable from GitHub until the complete Rust workspac
 - [MS-SIPREGE](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/)
 
 See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+## Import / build status
+
+The first root Cargo workspace is intentionally limited to `crates/commscraft-register-events`. Its integration tests can run on Linux and Windows. **This does not establish that the prepared v0.14.0 workspace compiles or authenticates.** See [staged source import record](docs/source-import-status.md) and [Normative test evidence](docs/register-events-conformance.md).

@@ -48,7 +48,15 @@ jobs:
       - name: Clippy
         if: steps.code.outputs.present == 'true'
         run: cargo clippy --workspace --all-targets -- -D warnings
-      - name: Python RFC/MS source evidence checks
+      - name: Verify partial workspace and import status
+        if: steps.code.outputs.present == 'true'
+        run: python3 scripts/check_partial_workspace.py
+      - name: Historical RFC/MS source evidence suite (only after import)
         if: steps.code.outputs.present == 'true'
         shell: bash
-        run: python3 -m unittest discover -s scripts -p 'test*.py'
+        run: |
+          if test -f scripts/check_release.py; then
+            python3 -m unittest discover -s scripts -p 'test*.py'
+          else
+            echo "Historical source/evidence suite NOT imported and NOT executed"
+          fi
