@@ -14,9 +14,9 @@ cargo clippy --workspace --all-targets -- -D warnings
 
 ## Central CI driver
 
-`cargo run -p xtask -- ci` runs Python specification/evidence tests, cargo formatting, unit tests and clippy, stopping at the first failure. Workflows check Linux and Windows separately. `cargo run -p xtask -- release-check` runs the hard v1.0 release gate, which must currently fail.
+`cargo run -p commscraft-xtask -- ci` runs Python specification/evidence tests, cargo formatting, unit tests and clippy, stopping at the first failure. Workflows check Linux and Windows separately. `cargo run -p commscraft-xtask -- release-check` runs the hard v1.0 release gate, which must currently fail.
 
-`cargo run -p xtask -- help` lists commands. Network test cases must be explicitly enabled in a controlled environment. Do not submit enterprise captures, secrets or session recordings. See `AGENTS.md` and `SECURITY.md`.
+`cargo run -p commscraft-xtask -- help` lists commands. Network test cases must be explicitly enabled in a controlled environment. Do not submit enterprise captures, secrets or session recordings. See `AGENTS.md` and `SECURITY.md`.
 
 ## Conformance versus interoperability
 

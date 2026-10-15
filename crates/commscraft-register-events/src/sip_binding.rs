@@ -3,7 +3,7 @@
 //! These are **untrusted message hints**; transaction matching, TLS peer
 //! validation and MS-SIPAE MIC verification remain external prerequisites.
 use crate::{parse_presence_state, ParseError, PresenceHint};
-use sfb_core::sip::{SipMessage, StartLine};
+use commscraft_core::sip::{SipMessage, StartLine};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BindingError {

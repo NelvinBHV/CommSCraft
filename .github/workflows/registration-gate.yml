@@ -16,9 +16,9 @@ jobs:
       - name: Historic evidence and current source check
         run: python scripts/check_v014_evidence.py
       - name: Run Rust offline registration gate tests
-        run: cargo test -p sfb-core session --lib
+        run: cargo test -p commscraft-core session --lib
       - name: Run complete Rust core suite
-        run: cargo test -p sfb-core --all-targets
+        run: cargo test -p commscraft-core --all-targets
       - name: v1.0 parity gate remains denied
         shell: bash
         run: |

@@ -1,6 +1,6 @@
 # Offline REGISTER planner — RFC/MS comparison (v0.4)
 
-This document describes **only** the offline behaviour of `crates/sfb-core/src/registration.rs`.
+This document describes **only** the offline behaviour of `crates/commscraft-core/src/registration.rs`.
 No network REGISTER, real sign-in, GSSAPI credential exchange, SA, MIC verification, provisioning, presence or telephone support is implemented. This is intentionally *not* a conformance statement.
 
 ## Source pins and rationale

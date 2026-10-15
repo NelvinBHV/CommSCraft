@@ -50,8 +50,8 @@ As of October 2026, consult the [published MS-SIPAE version 11.0](https://learn.
 ## How to reproduce
 
 ```sh
-cargo test -p sfb-core
-cargo run -p sfb-inspect -- --signing-demo
+cargo test -p commscraft-core
+cargo run -p commscraft-inspect -- --signing-demo
 python3 -m unittest discover -s scripts -p 'test_*.py'
 python3 scripts/check_release.py --release  # EXPECTED to fail
 ```

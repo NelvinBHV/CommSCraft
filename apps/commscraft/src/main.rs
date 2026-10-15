@@ -1,11 +1,11 @@
 //! Native demo. No packets are sent; contacts and conversations are examples.
 use eframe::egui::{self, Color32, RichText};
-use sfb_core::challenge::parse_challenges;
-use sfb_core::discovery::DiscoveryPlan;
-use sfb_core::session::{SessionEvent, SessionMachine};
-use sfb_core::sip::{illustrative_register, parse_frame, SipMessage, StartLine};
-use sfb_core::stream::SipStreamDecoder;
-use sfb_core::transaction::{NonInviteClientTransaction, TransactionState};
+use commscraft_core::challenge::parse_challenges;
+use commscraft_core::discovery::DiscoveryPlan;
+use commscraft_core::session::{SessionEvent, SessionMachine};
+use commscraft_core::sip::{illustrative_register, parse_frame, SipMessage, StartLine};
+use commscraft_core::stream::SipStreamDecoder;
+use commscraft_core::transaction::{NonInviteClientTransaction, TransactionState};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Presence { Available, Busy, Away, Offline }
@@ -247,7 +247,7 @@ impl SfbApp {
                     }
                     ui.label("TLS-Fallback-Hosts (Port 443):");
                     for host in plan.fallback_hosts { ui.monospace(format!("{host}:443")); }
-                    ui.label("Live DNS/TLS ausschließlich im separaten sfb-probe CLI mit Opt-in.");
+                    ui.label("Live DNS/TLS ausschließlich im separaten commscraft-probe CLI mit Opt-in.");
                 }
                 Err(error) => { ui.colored_label(Color32::RED, format!("Ungültige SIP-Identität: {error:?}")); }
             }

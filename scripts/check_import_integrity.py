@@ -40,7 +40,10 @@ def verify(root: Path = ROOT) -> int:
     for row in files:
         path = row["path"]
         assert not path.startswith("/") and ".." not in Path(path).parts
-        src = (root / MOVED.get(path, path)).resolve()
+        # Always compare original import bytes, not renamed/current sources.
+        archived = root / "docs/history/import-v0.14.0" / path
+        historical_path = MOVED.get(path, str(archived.relative_to(root)) if archived.is_file() else path)
+        src = (root / historical_path).resolve()
         assert src.is_relative_to(root.resolve()) and src.is_file(), path
         actual = hashlib.sha256(src.read_bytes()).hexdigest()
         assert actual == row["sha256"], f"source hash mismatch: {path}"

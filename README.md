@@ -17,23 +17,27 @@ The complete historical v0.14.0 Rust workspace, fixtures, feature-parity invento
 
 The source-import manifest is at [docs/source-import-manifest.json](docs/source-import-manifest.json). Original file digests are checked against immutable snapshots by `python3 scripts/check_import_integrity.py`. A passing offline test is **not** proof of real mutual Kerberos authentication, SIP registration, live IM, calling or Windows Full Client parity.
 
+## CommSCraft package names
+
+All active Cargo packages, diagnostic tools and the desktop program use **CommSCraft** names: `commscraft`, `commscraft-core`, `commscraft-router`, `commscraft-transport`, `commscraft-register-events`, `commscraft-inspect`, `commscraft-probe` and `commscraft-xtask`. Legacy package identifiers appear only in the immutable historical source archive and frozen SHA-256 evidence documents. This rename does not establish live Skype for Business interoperability.
+
 ## Quick start
 
 ```shell
 git clone https://github.com/NelvinBHV/CommSCraft.git
 cd CommSCraft
 cargo run -p commscraft                    # CommSCraft offline desktop prototype
-cargo run -p sfb-inspect -- --register-demo # offline REGISTER protocol demonstration
-cargo run -p xtask -- ci                    # offline tests / source evidence / lints
+cargo run -p commscraft-inspect -- --register-demo # offline REGISTER protocol demonstration
+cargo run -p commscraft-xtask -- ci                    # offline tests / source evidence / lints
 ```
 
-**The offline Rust workspace has compiled and passed source/offline tests on Linux and Windows in GitHub Actions for the source-import PR. Native Windows SSPI authentication against a real Skype for Business server remains untested.** The example commands require a working Rust toolchain. `cargo run -p xtask -- release-check` is expected to fail until Windows Full Client parity is genuinely verified.
+**The offline Rust workspace has compiled and passed source/offline tests on Linux and Windows in GitHub Actions for the source-import PR. Native Windows SSPI authentication against a real Skype for Business server remains untested.** The example commands require a working Rust toolchain. `cargo run -p commscraft-xtask -- release-check` is expected to fail until Windows Full Client parity is genuinely verified.
 
 See [Development](docs/development.md), [Architecture](docs/architecture.md), [Security](SECURITY.md), [Release policy](docs/release-policy.md), [Roadmap](ROADMAP.md), [Contribution guidelines](CONTRIBUTING.md) and [Attribution](ATTRIBUTION.md).
 
 ## New in v0.14.0: secure REGISTER response gate (offline)
 
-`RegisterVerificationGate` in `sfb-core::session` joins the existing
+`RegisterVerificationGate` in `commscraft-core::session` joins the existing
 REGISTER transaction observer and Microsoft security association in a
 single *offline* acceptance boundary. A correlated 200 OK needs a valid
 MS-SIPAE MIC and replay validation before the gate can report
@@ -48,7 +52,7 @@ The desktop demonstration no longer exposes `Registered` for a simulated
 demo sequence.
 
 ```sh
-cargo test -p sfb-core session --lib
+cargo test -p commscraft-core session --lib
 python3 scripts/check_v014_evidence.py
 python3 -m unittest discover -s scripts -p 'test*.py'
 python3 scripts/check_release.py --release  # intentionally fails
@@ -60,15 +64,15 @@ no confirmed Windows/SfB Server interoperability or signed-off 1.0 parity.
 
 ## Previously in v0.13.0: reliable transport response routing (offline)
 
-New `sfb-router` crate tracks up to 64 simultaneous non-INVITE SIP client
+New `commscraft-router` crate tracks up to 64 simultaneous non-INVITE SIP client
 transactions and correlates provisional/final replies by Via branch, sent-by,
 transport, Call-ID, CSeq number and method. Duplicate/late finals, Timer F
 timeouts, malformed and unrelated replies cannot promote a registration state.
 A synthetic end-to-end framed-message scenario is available using:
 
 ```sh
-cargo test -p sfb-router --all-targets
-cargo run -p sfb-inspect -- --router-demo
+cargo test -p commscraft-router --all-targets
+cargo run -p commscraft-inspect -- --router-demo
 python3 scripts/check_v013_evidence.py
 ```
 
@@ -118,7 +122,7 @@ gate remains closed.
 `InitializeSecurityContextW` with explicitly pinned Kerberos (no NTLM/Negotiate
 fallback), RAII native-handle cleanup and bounded GSS tokens. The **initial
 GSS context may legitimately return CONTINUE_NEEDED**; SIP token planning no
-longer confuses that with a valid login. On Windows, `sfb-inspect --sspi-check`
+longer confuses that with a valid login. On Windows, `commscraft-inspect --sspi-check`
 tries a **local credential-handle acquisition only** (no service ticket or
 network I/O). See [SSPI design, API references and limitations](docs/windows-sspi-kerberos.md).
 
@@ -148,12 +152,12 @@ See also [Windows parity and release validation](docs/windows-release-validation
 
 - Native egui desktop **demo** with local contacts, conversations, presence UI,
   SIP/REGISTER diagnostic controls and MS-SIPAE challenge scheme display.
-- `sfb-core` with an offline Microsoft-specific REGISTER planner/observer, bounded SIP parser, validated encoding, fragment-aware stream
+- `commscraft-core` with an offline Microsoft-specific REGISTER planner/observer, bounded SIP parser, validated encoding, fragment-aware stream
   decoder, reliable non-INVITE client transaction subset and Timer F model.
 - Microsoft-specific DNS SRV planning per **[MS-CONMGMT §3.1.5](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-conmgmt/40d79c10-2275-4e52-bb4b-67c703d092c3)**:
   four SIP SRV names, internal/external precedence and TLS fallbacks.
 - RFC 2782 priority/weighted SRV ordering, bounded and deterministically testable.
-- `sfb-probe`, a *separate opt-in CLI*, can resolve the four SRV names in parallel
+- `commscraft-probe`, a *separate opt-in CLI*, can resolve the four SRV names in parallel
   using system DNS and perform a **TLS-only certificate/hostname validated
   handshake** to an authorized host. **It never sends a SIP request.**
 - Offline transaction-preflight + MS-SIPAE MIC-checked REGISTER response acceptance (no trusted Contact/GRUU or live connection).
@@ -182,7 +186,7 @@ See also [Windows parity and release validation](docs/windows-release-validation
   transaction, route-set, session authentication or remote delivery.
 - Read-only, bounded SDP structural inspection (not codec negotiation, ICE,
   RTP/SRTP or media playback).
-- `sfb-inspect` to inspect synthetic local SIP fixtures without printing
+- `commscraft-inspect` to inspect synthetic local SIP fixtures without printing
   sensitive headers or authentication fields.
 
 ## Run locally
@@ -191,22 +195,22 @@ Install stable [Rust](https://rustup.rs) and development packages needed for
 `eframe` on your OS. Linux may need X11/GTK and OpenSSL development libraries.
 
 ```bash
-cargo test -p sfb-core
+cargo test -p commscraft-core
 cargo run -p commscraft                 # CommSCraft offline mock UI
-cargo run -p sfb-inspect -- --demo       # offline SIP inspector
-cargo run -p sfb-inspect -- --register-demo  # synthetic 423 and 401 flow
-cargo run -p sfb-inspect -- --sa-demo        # synthetic HMAC verification + replay
-cargo run -p sfb-inspect -- --signing-demo   # synthetic client-side MIC, no packets
-cargo run -p sfb-inspect -- --kerberos-plan-demo # fails closed; uses NoKerberosProvider
-cargo run -p sfb-inspect -- --sspi-check       # Windows-only local credential check, no network
-cargo run -p sfb-inspect -- --protocol-demo  # offline presence/IM/SDP sequence
+cargo run -p commscraft-inspect -- --demo       # offline SIP inspector
+cargo run -p commscraft-inspect -- --register-demo  # synthetic 423 and 401 flow
+cargo run -p commscraft-inspect -- --sa-demo        # synthetic HMAC verification + replay
+cargo run -p commscraft-inspect -- --signing-demo   # synthetic client-side MIC, no packets
+cargo run -p commscraft-inspect -- --kerberos-plan-demo # fails closed; uses NoKerberosProvider
+cargo run -p commscraft-inspect -- --sspi-check       # Windows-only local credential check, no network
+cargo run -p commscraft-inspect -- --protocol-demo  # offline presence/IM/SDP sequence
 python3 scripts/check_release.py          # validate 122 requirements and 93 Windows cases
-cargo run -p sfb-inspect -- tests/fixtures/sip/challenge.sip
+cargo run -p commscraft-inspect -- tests/fixtures/sip/challenge.sip
 
 # These default to OFFLINE. Only the second and third commands access the network:
-cargo run -p sfb-probe -- --domain example.com
-cargo run -p sfb-probe -- --domain example.com --dns
-cargo run -p sfb-probe -- --domain example.com --tls-probe
+cargo run -p commscraft-probe -- --domain example.com
+cargo run -p commscraft-probe -- --domain example.com --dns
+cargo run -p commscraft-probe -- --domain example.com --tls-probe
 ```
 
 **Important:** Only run live DNS/TLS probes against systems where you have
@@ -229,11 +233,11 @@ Skype for Business interoperability.
 
 ```text
 apps/commscraft/          native offline UI
-apps/sfb-inspect/          local SIP fixture analyzer, no networking
-apps/sfb-probe/            explicit opt-in DNS-SRV and TLS handshake diagnostics
-crates/sfb-core/src/       REGISTER planner/observer, parser, stream, SIP transactions, discovery,
+apps/commscraft-inspect/          local SIP fixture analyzer, no networking
+apps/commscraft-probe/            explicit opt-in DNS-SRV and TLS handshake diagnostics
+crates/commscraft-core/src/       REGISTER planner/observer, parser, stream, SIP transactions, discovery,
                            challenge parser, offline Kerberos token handoff, Windows-only native SSPI token source, SA/MIC/replay, PIDF presence, IM, SDP
-crates/sfb-core/tests/     offline fixtures and integration tests
+crates/commscraft-core/tests/     offline fixtures and integration tests
 tests/fixtures/sip/       credential-free synthetic SIP samples
 tests/vectors/            independent public-key outgoing MIC test vector
 docs/protocol-matrix.md   implementation-to-RFC/MS-spec coverage
@@ -318,16 +322,16 @@ See `docs/windows-release-validation.md` and run
 
 ## v0.12.0: read-only TLS SIP receive transport
 
-The `sfb-transport` crate implements strict target restriction, OS-trusted
+The `commscraft-transport` crate implements strict target restriction, OS-trusted
 TLS hostname/certificate checking and a **receive-only** `TlsSipReceiver`.
-The `sfb-probe --tls-probe` handshake now uses this same transport. The
-`SipInbound` reader from `sfb-core` can be tested without opening sockets;
+The `commscraft-probe --tls-probe` handshake now uses this same transport. The
+`SipInbound` reader from `commscraft-core` can be tested without opening sockets;
 it handles fragmented/coalesced SIP frames, timeouts, EOF and malformed data.
 No public SIP write method is available: verified TLS **does not** satisfy
 Microsoft SIPAE server/client Security Association requirements. The client
 cannot register or sign in with this version.
 
 Evidence: `docs/tls-inbound-evidence.md` and `docs/evidence-v0.12.0.json`.
-Commands: `cargo test -p sfb-core inbound`, `cargo test -p sfb-transport`,
+Commands: `cargo test -p commscraft-core inbound`, `cargo test -p commscraft-transport`,
 `cargo test --workspace --all-targets`, and
 `python3 scripts/check_v012_evidence.py`.

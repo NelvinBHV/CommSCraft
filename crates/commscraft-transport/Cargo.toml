@@ -1,0 +1,10 @@
+[package]
+name = "commscraft-transport"
+version = "0.13.0"
+edition.workspace = true
+license.workspace = true
+description = "Read-only validated TLS SIP transport; no registration or credentials"
+
+[dependencies]
+commscraft-core = { path = "../commscraft-core" }
+native-tls = "0.2"

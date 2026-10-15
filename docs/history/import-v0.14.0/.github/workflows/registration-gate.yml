@@ -1,0 +1,28 @@
+name: Offline SIPAE registration response gate
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  registration-gate:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Historic evidence and current source check
+        run: python scripts/check_v014_evidence.py
+      - name: Run Rust offline registration gate tests
+        run: cargo test -p sfb-core session --lib
+      - name: Run complete Rust core suite
+        run: cargo test -p sfb-core --all-targets
+      - name: v1.0 parity gate remains denied
+        shell: bash
+        run: |
+          if python scripts/check_release.py --release; then
+            echo 'Unexpected v1.0 approval without Windows reference parity'
+            exit 1
+          fi

@@ -25,10 +25,11 @@ def verify():
                     'apps/sfb-desktop/Cargo.toml': 'docs/history/import-v0.14.0/apps/sfb-desktop/Cargo.toml',
                     'crates/sfb-core/src/session.rs': 'docs/history/import-v0.14.0/crates/sfb-core/src/session.rs',
                     'scripts/check_v014_evidence.py': 'docs/history/v0.14.0/check_v014_evidence.py'}
-        src = (ROOT / original.get(path, path)).resolve()
+        archived = ROOT / 'docs/history/import-v0.14.0' / path
+        src = (ROOT / original.get(path, str(archived.relative_to(ROOT)) if archived.is_file() else path)).resolve()
         assert src.is_relative_to(ROOT.resolve()) and src.is_file(), path
         assert hashlib.sha256(src.read_bytes()).hexdigest() == digest, path
-    source = (ROOT/'crates/sfb-core/src/session.rs').read_text(encoding='utf8')
+    source = (ROOT/'crates/commscraft-core/src/session.rs').read_text(encoding='utf8')
     assert 'SessionState::Registered' not in source
     assert '(S::Registering, E::RegistrationAccepted) => S::AcceptanceUnverified' in source
     assert 'GateState::MicCheckedNotSignedIn' in source
@@ -38,7 +39,7 @@ def verify():
     assert 'self.state = GateState::Rejected;' in source
     assert 'pub fn disconnect(&mut self)' in source
     assert source.count('#[test]') >= 11
-    core = tomllib.loads((ROOT/'crates/sfb-core/Cargo.toml').read_text())
+    core = tomllib.loads((ROOT/'crates/commscraft-core/Cargo.toml').read_text())
     assert core['package']['version'] == '0.14.0'
     assert (ROOT/'.github/workflows/registration-gate.yml').is_file()
     # Immutable historical source ledgers MUST remain verifiable.

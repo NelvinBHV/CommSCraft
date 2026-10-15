@@ -26,7 +26,7 @@
 ## Local verification commands and current evidence level
 
 ```sh
-cargo test -p sfb-core --test verified_registration
+cargo test -p commscraft-core --test verified_registration
 cargo test --workspace --all-targets
 python3 -m unittest discover -s scripts -p 'test_*.py'
 python3 scripts/check_release.py

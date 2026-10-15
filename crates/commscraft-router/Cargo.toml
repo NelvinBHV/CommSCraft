@@ -1,0 +1,9 @@
+[package]
+name = "commscraft-router"
+version = "0.13.0"
+edition.workspace = true
+license.workspace = true
+description = "Offline, bounded RFC 3261 SIP response dispatcher"
+
+[dependencies]
+commscraft-core = { path = "../commscraft-core" }

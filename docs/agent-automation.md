@@ -22,4 +22,4 @@ Every command must use the same core state machine as the desktop app; no separa
 
 Command IDs; input validation; tests for missing consent and malformed data; explicit negative permissions; behavior parity with the Windows Full Client where applicable; Microsoft/RFC references for all protocol effects.
 
-Status: design proposal only. The previous local sfb-inspect tool is a limited offline diagnostic CLI and is not a general command bus.
+Status: design proposal only. The previous local commscraft-inspect tool is a limited offline diagnostic CLI and is not a general command bus.

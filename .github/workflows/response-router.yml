@@ -16,9 +16,9 @@ jobs:
       - name: Source and specification integrity
         run: python scripts/check_v013_evidence.py
       - name: Run offline routing unit and framed-wire tests
-        run: cargo test -p sfb-router --all-targets
+        run: cargo test -p commscraft-router --all-targets
       - name: Run offline router demo
-        run: cargo run -p sfb-inspect -- --router-demo
+        run: cargo run -p commscraft-inspect -- --router-demo
       - name: Full Windows-client parity release gate must remain blocked
         shell: bash
         run: |

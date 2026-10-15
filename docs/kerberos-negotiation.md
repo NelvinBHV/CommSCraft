@@ -50,7 +50,7 @@ References:
   to REGISTER contact and GRUU validation; implement refresh, error states and provisioning.
 - Perform fully authorized server/Windows client interoperability tests across SfB releases.
 
-**No live SIP feature is enabled by this change.** `cargo run -p sfb-inspect -- --kerberos-plan-demo`
+**No live SIP feature is enabled by this change.** `cargo run -p commscraft-inspect -- --kerberos-plan-demo`
 shows the intentional refusal when no provider exists.
 
 ## v0.9.0 status

@@ -36,4 +36,4 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Guard 1.0 release tags
         if: startsWith(github.ref, 'refs/tags/v1.')
-        run: cargo run -p xtask -- release-check
+        run: cargo run -p commscraft-xtask -- release-check

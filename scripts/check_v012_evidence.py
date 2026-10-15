@@ -15,18 +15,21 @@ def verify():
     assert len(data['requirements']) >= 7
     for name, digest in data['sha256'].items():
         p = ROOT / ("docs/history/import-v0.14.0/.github/workflows/rust.yml" if name == ".github/workflows/rust.yml" else "docs/history/import-v0.14.0/scripts/check_v012_evidence.py" if name == "scripts/check_v012_evidence.py" else name)
+        historic = ROOT / 'docs/history/import-v0.14.0' / name
+        if historic.is_file():
+            p = historic
         assert p.is_file() and p.resolve().is_relative_to(ROOT.resolve()), name
         assert hashlib.sha256(p.read_bytes()).hexdigest() == digest, name
-    inbound = (ROOT/'crates/sfb-core/src/inbound.rs').read_text()
-    tls = (ROOT/'crates/sfb-transport/src/lib.rs').read_text()
-    cli = (ROOT/'apps/sfb-probe/src/main.rs').read_text()
+    inbound = (ROOT/'crates/commscraft-core/src/inbound.rs').read_text()
+    tls = (ROOT/'crates/commscraft-transport/src/lib.rs').read_text()
+    cli = (ROOT/'apps/commscraft-probe/src/main.rs').read_text()
     assert 'SipStreamDecoder' in inbound and 'self.decoder.push' in inbound
     assert 'ReceiveError::Truncated' in inbound and 'ReceiveError::Malformed' in inbound
     assert 'TlsConnector::new()' in tls and 'tls.connect(peer.host(), tcp)' in tls
     assert 'native_tls' in tls and 'TlsSipReceiver::connect' in cli
     assert 'pub fn send(' not in tls and 'pub fn register(' not in tls
-    assert 'pub mod inbound;' in (ROOT/'crates/sfb-core/src/lib.rs').read_text()
-    assert '"crates/sfb-transport"' in (ROOT/'Cargo.toml').read_text()
+    assert 'pub mod inbound;' in (ROOT/'crates/commscraft-core/src/lib.rs').read_text()
+    assert '"crates/commscraft-transport"' in (ROOT/'Cargo.toml').read_text()
     return {'hashed_files':len(data['sha256']), 'spec_requirements':len(data['requirements'])}
 
 if __name__ == '__main__':

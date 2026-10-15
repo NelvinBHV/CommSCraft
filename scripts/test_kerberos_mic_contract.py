@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def source(name):
-    return (ROOT / 'crates/sfb-core/src' / name).read_text(encoding='utf-8')
+    return (ROOT / 'crates/commscraft-core/src' / name).read_text(encoding='utf-8')
 
 
 class KerberosMicSourceContract(unittest.TestCase):

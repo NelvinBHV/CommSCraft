@@ -9,7 +9,7 @@ description = "Standalone MS-SIPREGE untrusted Presence-State header parser"
 path = "src/lib.rs"
 
 [dependencies]
-sfb-core = { path = "../sfb-core" }
+commscraft-core = { path = "../commscraft-core" }
 
 [dev-dependencies]
 hmac = "0.12"

@@ -30,23 +30,23 @@ jobs:
         run: cargo test --workspace --all-targets
       - name: RFC 3261 framed TLS receive tests
         run: |
-          cargo test -p sfb-core inbound
-          cargo test -p sfb-transport
+          cargo test -p commscraft-core inbound
+          cargo test -p commscraft-transport
           python3 scripts/check_v012_evidence.py
       - name: RFC 3261 + MS-SIPAE REGISTER integration regression
-        run: cargo test -p sfb-core --test verified_registration
+        run: cargo test -p commscraft-core --test verified_registration
       - name: Offline inspector smoke test
         run: |
-          cargo run --quiet -p sfb-inspect -- --demo
-          cargo run --quiet -p sfb-inspect -- --register-demo
-          cargo run --quiet -p sfb-inspect -- --sa-demo
-          cargo run --quiet -p sfb-inspect -- --signing-demo
-          cargo run --quiet -p sfb-inspect -- --kerberos-plan-demo
-          cargo run --quiet -p sfb-inspect -- --sspi-check
-          cargo run --quiet -p sfb-inspect -- --protocol-demo
-          cargo run --quiet -p sfb-inspect -- tests/fixtures/sip/register.sip
-          cargo run --quiet -p sfb-inspect -- tests/fixtures/sip/challenge.sip
-          cargo run --quiet -p sfb-probe -- --domain example.com
+          cargo run --quiet -p commscraft-inspect -- --demo
+          cargo run --quiet -p commscraft-inspect -- --register-demo
+          cargo run --quiet -p commscraft-inspect -- --sa-demo
+          cargo run --quiet -p commscraft-inspect -- --signing-demo
+          cargo run --quiet -p commscraft-inspect -- --kerberos-plan-demo
+          cargo run --quiet -p commscraft-inspect -- --sspi-check
+          cargo run --quiet -p commscraft-inspect -- --protocol-demo
+          cargo run --quiet -p commscraft-inspect -- tests/fixtures/sip/register.sip
+          cargo run --quiet -p commscraft-inspect -- tests/fixtures/sip/challenge.sip
+          cargo run --quiet -p commscraft-probe -- --domain example.com
       - name: Lint
         run: cargo clippy --workspace --all-targets -- -D warnings
 
@@ -66,10 +66,10 @@ jobs:
         shell: pwsh
         run: |
           cargo test --workspace --all-targets
-          cargo test -p sfb-core kerberos_mic
-          cargo test -p sfb-core --test verified_registration
-          cargo check -p sfb-desktop
-          cargo run -p sfb-inspect -- --sspi-check
+          cargo test -p commscraft-core kerberos_mic
+          cargo test -p commscraft-core --test verified_registration
+          cargo check -p commscraft
+          cargo run -p commscraft-inspect -- --sspi-check
       - name: Block unjustified 1.0 tag on Windows
         if: startsWith(github.ref, 'refs/tags/v1.')
         shell: pwsh

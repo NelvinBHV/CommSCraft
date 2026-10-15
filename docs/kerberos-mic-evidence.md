@@ -29,7 +29,7 @@ we do not claim it is universally accepted by all servers.
 ## Evidence classes
 
 - **Source inspection:** `python3 -m unittest discover -s scripts -p 'test_*.py'` validates the declared API, bounds, SA linkage, and fail-closed logic. This does **not** execute Rust.
-- **Rust tests (authored; not executed here):** `cargo test -p sfb-core kerberos_mic`; `cargo test --workspace`.
+- **Rust tests (authored; not executed here):** `cargo test -p commscraft-core kerberos_mic`; `cargo test --workspace`.
 - **Native Windows build/test (not executed here):** GitHub Actions `windows-build` job and a domain-joined Windows integration environment.
 - **Protocol interoperability (not executed):** compare real Kerberos signed REGISTER/authenticated 200, invalid MIC, replay, 401/407, time skew, failed KDC, proxy route, SA expiry/refresh with an authorized SfB Server SE lab and pinned Windows Full client. Capture sanitized traces with verified checksums and service identity.
 

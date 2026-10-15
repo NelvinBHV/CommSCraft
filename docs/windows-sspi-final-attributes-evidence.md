@@ -16,7 +16,7 @@
 - The required `IDENTIFY` flag is a pre-existing conservative CommSCraft policy. The change requires it only at successful completion, together with the other requested protections. A server/context that cannot provide all these services fails closed.
 - `REPLAY_DETECT` / `SEQUENCE_DETECT` are SSPI per-message services; they **do not replace** the MS-SIPAE signed-`snum` replay window.
 - Native SSPI, Windows credential acquisition, SIP REGISTER token exchange and TLS identity binding have **not** been tested against a real server. All new tests are offline flag checks.
-- The pre-change source is preserved at `docs/history/import-v0.14.0/crates/sfb-core/src/windows_sspi.rs`; its original SHA-256 remains in the existing `docs/source-import-manifest.json` and is checked without modifying historical ledgers.
+- The pre-change source is preserved at `docs/history/import-v0.14.0/crates/commscraft-core/src/windows_sspi.rs`; its original SHA-256 remains in the existing `docs/source-import-manifest.json` and is checked without modifying historical ledgers.
 - **CI required:** `cargo test --workspace --all-targets`, `cargo clippy --workspace --all-targets -- -D warnings`, historical SHA-256 checks, on standard GitHub-hosted `ubuntu-latest` and `windows-latest` only. Test names above are authored source, not a passed-test claim until GitHub Actions confirms.
 
 The CommSCraft v1.0 full Windows Full Client parity release gate stays **blocked**.

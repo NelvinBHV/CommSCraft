@@ -1,0 +1,12 @@
+[package]
+name = "commscraft-probe"
+version = "0.13.0"
+edition.workspace = true
+license.workspace = true
+description = "Explicit opt-in Microsoft SIP DNS-SRV discovery and TLS-only handshake diagnostics"
+
+[dependencies]
+commscraft-core = { path = "../../crates/commscraft-core" }
+commscraft-transport = { path = "../../crates/commscraft-transport" }
+hickory-resolver = "=0.24.4"
+rand = "0.8"
