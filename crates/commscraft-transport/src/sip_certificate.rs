@@ -50,7 +50,9 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
     // in the *whole* SAN URI, including params/headers that we do not match.
     // Otherwise a malformed certificate identity could be accepted simply
     // because its host prefix looks valid.
-    if remainder.bytes().any(|b| b <= 0x20 || b == 0x7f)
+    // RFC 5280 §4.2.1.6: uniformResourceIdentifier SAN is IA5String.
+    // Do not accept raw non-ASCII even in ignored SIP URI suffixes.
+    if !uri.is_ascii() || remainder.bytes().any(|b| b <= 0x20 || b == 0x7f)
         || remainder.contains('#')
         || remainder.contains('\\')
     {
@@ -317,6 +319,24 @@ mod tests {
         ] {
             assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
         }
+    }
+
+    #[test]
+    fn non_ascii_uri_san_suffix_cannot_authorize_sip_identity() {
+        for uri in [
+            "sip:example.com;opaque=bücher",
+            "sip:example.com?subject=grüße",
+            "sip:example.com;note=☃",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri:?}");
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
+        }
+        // ASCII-safe percent-escaping remains possible under the parser's
+        // separate escape validation; this is NOT a full URI grammar claim.
+        assert_eq!(
+            sip_uri_host("sip:example.com?subject=gr%C3%BC%C3%9Fe"),
+            Some("example.com")
+        );
     }
 
     #[test]
