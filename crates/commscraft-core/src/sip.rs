@@ -242,13 +242,13 @@ mod tests {
     #[test]
     fn response_reason_phrase_rejects_control_bytes_but_allows_utf8() {
         // RFC 3261 §§7.2, 25.1: descriptive UTF-8 is allowed, controls are not.
-        for bad in [b'\\0', b'\\t', b'\\x1b', b'\\x7f'] {
+        for bad in [b'\0', b'\t', b'\x1b', b'\x7f'] {
             let mut wire = b"SIP/2.0 200 O".to_vec();
             wire.push(bad);
-            wire.extend_from_slice(b"K\\r\\nContent-Length: 0\\r\\n\\r\\n");
+            wire.extend_from_slice(b"K\r\nContent-Length: 0\r\n\r\n");
             assert_eq!(parse_frame(&wire), Err(SipError::MalformedStartLine));
         }
-        let wire = "SIP/2.0 200 Erfolgreich ✓\\r\\nContent-Length: 0\\r\\n\\r\\n";
+        let wire = "SIP/2.0 200 Erfolgreich ✓\r\nContent-Length: 0\r\n\r\n";
         let (response, _) = parse_frame(wire.as_bytes()).unwrap().unwrap();
         assert_eq!(response.start_line, StartLine::Response {
             code: 200, reason: "Erfolgreich ✓".into(),
