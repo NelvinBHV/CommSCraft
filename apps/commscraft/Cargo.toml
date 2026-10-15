@@ -7,7 +7,7 @@ description = "CommSCraft native offline desktop prototype"
 
 [dependencies]
 eframe = "0.31.1"
-sfb-core = { path = "../../crates/sfb-core" }
+commscraft-core = { path = "../../crates/commscraft-core" }
 
 [[bin]]
 name = "CommSCraft"

@@ -1,10 +1,10 @@
 [package]
-name = "sfb-transport"
+name = "commscraft-transport"
 version = "0.13.0"
 edition.workspace = true
 license.workspace = true
 description = "Read-only validated TLS SIP transport; no registration or credentials"
 
 [dependencies]
-sfb-core = { path = "../sfb-core" }
+commscraft-core = { path = "../commscraft-core" }
 native-tls = "0.2"

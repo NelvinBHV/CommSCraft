@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/sfb-core", "crates/sfb-transport", "crates/sfb-router", "apps/commscraft", "apps/sfb-inspect", "apps/sfb-probe", "xtask", "crates/commscraft-register-events"]
+members = ["crates/commscraft-core", "crates/commscraft-transport", "crates/commscraft-router", "apps/commscraft", "apps/commscraft-inspect", "apps/commscraft-probe", "tools/commscraft-xtask", "crates/commscraft-register-events"]
 resolver = "2"
 
 [workspace.package]
