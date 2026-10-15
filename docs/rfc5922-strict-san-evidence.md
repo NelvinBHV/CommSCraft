@@ -91,3 +91,16 @@ CI commands: `cargo test -p commscraft-transport --all-targets`, `cargo test --w
 **Executable evidence:** `duplicate_subject_alternative_name_extensions_fail_closed` parses a public-only DER fixture `tests/fixtures/duplicate-san.pem` that carries two `subjectAltName` extensions. The self-signed certificate was modified after signing, so its signature is deliberately invalid; it is suitable **only for parser rejection testing** and must never be added to a trust store. The test explicitly confirms that `extensions_map()` reports an error and the SIP identity is rejected.
 
 **Microsoft boundary:** [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) still requires a verified Security Association, server MIC and replay checks independently. No certificate check may promote SIP REGISTER state. CI: full Linux/Windows workspace Rust tests, strict Clippy and preserved historical evidence ledgers, **standard GitHub-hosted runners only**. CommSCraft v1.0 release gate remains blocked.
+
+
+## Percent-encoded control bytes in SIP URI SAN — follow-up
+
+**RFC mapping:** [RFC 3261 §25.1](https://www.rfc-editor.org/rfc/rfc3261#section-25.1) defines the `% HEXDIG HEXDIG` syntax and [RFC 3261 §19.1.1](https://www.rfc-editor.org/rfc/rfc3261#section-19.1.1) describes SIP URIs. [RFC 5922 §7.1](https://www.rfc-editor.org/rfc/rfc5922#section-7.1) uses SIP-URI certificate SAN identities. Rejecting **syntactically valid** encodings of control bytes (for example `%0d%0a`, `%00` and `%7f`) is an additional **CommSCraft fail-closed security policy**, not a separate requirement imposed by the RFC.
+
+**Code:** `crates/commscraft-transport/src/sip_certificate.rs::sip_uri_host` checks each valid escaped byte and rejects ASCII C0 controls and DEL, including in otherwise ignored SIP URI parameters and headers, before it can return a certificate identity. Permissible escaped non-control characters continue to be accepted.
+
+**Test:** `encoded_ascii_controls_cannot_authorize_sip_certificate_identity` covers seven rejected encoded-control forms and three accepted benign escaped strings. It verifies both `sip_uri_host` and `match_sip_sans` fail closed.
+
+**Microsoft boundary:** [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) still independently requires trusted Security Association, server MIC and replay checks. No REGISTER success or live user sign-in is implied.
+
+**Verification:** Linux/Windows `cargo test --workspace --all-targets`, `cargo clippy --workspace --all-targets -- -D warnings`, RFC/MS source ledgers and SHA-256 history integrity. Standard GitHub-hosted runners only; CommSCraft 1.0 release gate remains closed. Test success is not claimed until CI completes.
