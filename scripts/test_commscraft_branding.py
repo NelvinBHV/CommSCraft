@@ -24,6 +24,40 @@ class CommSCraftIdentity(unittest.TestCase):
         self.assertIn("cargo run -p commscraft", readme)
         self.assertNotIn("cargo run -p sfb-desktop", readme)
 
+    def test_every_active_package_is_commscraft_branded(self):
+        workspace = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
+        required = {
+            "apps/commscraft": "commscraft",
+            "apps/commscraft-inspect": "commscraft-inspect",
+            "apps/commscraft-probe": "commscraft-probe",
+            "crates/commscraft-core": "commscraft-core",
+            "crates/commscraft-transport": "commscraft-transport",
+            "crates/commscraft-router": "commscraft-router",
+            "crates/commscraft-register-events": "commscraft-register-events",
+            "tools/commscraft-xtask": "commscraft-xtask",
+        }
+        self.assertEqual(set(workspace["workspace"]["members"]), set(required))
+        for folder, expected in required.items():
+            package = tomllib.loads((ROOT / folder / "Cargo.toml").read_text(encoding="utf-8"))
+            self.assertEqual(package["package"]["name"], expected)
+        for former in ("apps/sfb-inspect", "apps/sfb-probe", "crates/sfb-core",
+                       "crates/sfb-router", "crates/sfb-transport", "xtask"):
+            self.assertFalse((ROOT / former).exists(), former)
+
+    def test_readme_uses_new_commscraft_package_commands(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        for command in (
+            "cargo run -p commscraft",
+            "cargo run -p commscraft-inspect",
+            "cargo test -p commscraft-core",
+            "cargo test -p commscraft-router",
+            "cargo run -p commscraft-xtask",
+        ):
+            self.assertIn(command, readme)
+        for legacy in ("cargo run -p sfb-inspect", "cargo test -p sfb-core",
+                       "cargo test -p sfb-router", "cargo run -p xtask"):
+            self.assertNotIn(legacy, readme)
+
     def test_pristine_app_manifest_and_source_provenance(self):
         import json
         ledger = json.loads((ROOT / "docs/source-import-manifest.json").read_text())
