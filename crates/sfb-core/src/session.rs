@@ -371,7 +371,7 @@ mod tests {
         let mut gate = gate();
         let mut reply = signed_200(&gate, 9);
         reply.headers.iter_mut().find(|(k,_)| k == "Authentication-Info")
-            .unwrap().1.push_str("x");
+            .unwrap().1.push('x');
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
         assert!(matches!(gate.observe(&reply, &verifier, 1), Err(GateError::Mic(_))));
         assert_eq!(gate.state(), GateState::Rejected);
