@@ -25,8 +25,10 @@ def verify():
     cli = (ROOT/'apps/commscraft-probe/src/main.rs').read_text()
     assert 'SipStreamDecoder' in inbound and 'self.decoder.push' in inbound
     assert 'ReceiveError::Truncated' in inbound and 'ReceiveError::Malformed' in inbound
-    assert 'TlsConnector::new()' in tls and 'tls.connect(peer.host(), tcp)' in tls
+    assert 'TlsConnector::new()' in tls and 'tls.connect(peer.tls_reference_identity(), tcp)' in tls
     assert 'native_tls' in tls and 'TlsSipReceiver::connect' in cli
+    assert 'tls.peer_certificate()' in tls
+    assert 'pub fn tls_reference_identity(&self)' in tls
     assert 'pub fn send(' not in tls and 'pub fn register(' not in tls
     assert 'pub mod inbound;' in (ROOT/'crates/commscraft-core/src/lib.rs').read_text()
     assert '"crates/commscraft-transport"' in (ROOT/'Cargo.toml').read_text()

@@ -96,7 +96,7 @@ fn try_tls(candidate: &TlsCandidate, sip_domain: &str) -> ProbeResult {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let (plan, mode) = arguments()?;
-    println!("SFB SIP discovery for {} (no registration or auth)", plan.sip_domain);
+    println!("CommSCraft SIP discovery for {} (no registration or auth)", plan.sip_domain);
     for (service, name) in plan.srv_queries() {
         println!("  {name} [{}]", if service.is_tls() { "TLS" } else { "TCP: NEVER PROBED" });
     }
@@ -116,7 +116,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     for candidate in candidates.iter().filter(|c| authorized_target(&plan.sip_domain, &c.host)).take(8) {
         match try_tls(candidate, &plan.sip_domain) {
             ProbeResult::Connected => {
-                println!("TLS certificate + hostname verified for {}:{}; NOT signed in.", candidate.host, candidate.port);
+                println!("TLS platform-verified for SIP domain {} via {}:{}; RFC 5922 SAN/wildcard rules not fully verified; NOT signed in.", plan.sip_domain, candidate.host, candidate.port);
                 return Ok(());
             }
             ProbeResult::CannotConnect => {
