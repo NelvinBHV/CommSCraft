@@ -69,6 +69,17 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
             {
                 return None;
             }
+            // Local fail-closed protection: even syntactically valid percent
+            // escapes must not encode ASCII control bytes or DEL. The
+            // certificate-name parser deliberately never decodes URI headers.
+            let hex = |b: u8| -> u8 {
+                if b.is_ascii_digit() { b - b'0' }
+                else { b.to_ascii_lowercase() - b'a' + 10 }
+            };
+            let decoded = (hex(bytes[index + 1]) << 4) | hex(bytes[index + 2]);
+            if decoded <= 0x1f || decoded == 0x7f {
+                return None;
+            }
             index += 3;
         } else {
             index += 1;
@@ -298,6 +309,26 @@ mod tests {
             &[GeneralName::DNSName("XN--BCHER-KVA.EXAMPLE.COM")],
             valid
         ));
+    }
+
+    #[test]
+    fn encoded_ascii_controls_cannot_authorize_sip_certificate_identity() {
+        for uri in [
+            "sip:example.com%0d", "sip:example.com%0A",
+            "sip:example.com;transport=tls%0d%0aX:yes",
+            "sip:example.com?subject=%00", "sip:example.com?subject=%1f",
+            "sip:example.com?subject=%7F", "sip:example.com?subject=%09",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri:?}");
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
+        }
+        for uri in [
+            "sip:example.com;transport=tls?subject=hello%20world",
+            "sip:example.com?subject=ok%3Ayes",
+            "sip:example.com?subject=foo%2Fbar",
+        ] {
+            assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
+        }
     }
 
     #[test]
