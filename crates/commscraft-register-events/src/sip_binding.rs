@@ -32,6 +32,13 @@ pub fn parse_register_presence_response(
         }
     }
     let raw = cseq.ok_or(BindingError::InvalidCSeq)?;
+    // Defensive boundary for programmatically constructed SIP messages:
+    // reject embedded CR/LF and controls rather than treating injection as LWS.
+    if raw.bytes().any(|b| b == b'\r' || b == b'\n' || b == 0x7f
+        || (b < 0x20 && b != b'\t'))
+    {
+        return Err(BindingError::InvalidCSeq);
+    }
     let mut words = raw.split_ascii_whitespace();
     let (Some(number), Some(method), None) = (words.next(), words.next(), words.next()) else {
         return Err(BindingError::InvalidCSeq);
@@ -78,7 +85,9 @@ mod tests {
     fn malformed_and_duplicate_cseq_fail_closed() {
         for invalid in ["", "-1 REGISTER", "+1 REGISTER", "2147483648 REGISTER",
                         "4294967295 REGISTER", "4294967296 REGISTER",
-                        "1 REGISTER EXTRA", "1REGISTER", "notanumber REGISTER"] {
+                        "1 REGISTER EXTRA", "1REGISTER", "notanumber REGISTER",
+                        "1\r\nREGISTER", "1\nREGISTER", "1\vREGISTER",
+                        "1\0REGISTER"] {
             assert_eq!(parse_register_presence_response(&response(200, invalid)),
                 Err(BindingError::InvalidCSeq), "{invalid}");
         }
