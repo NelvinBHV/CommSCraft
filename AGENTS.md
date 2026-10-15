@@ -13,3 +13,4 @@ CommSCraft is a clean-room interoperability project based on public Microsoft Op
 9. Preserve historical evidence-ledger bytes across renames; record changed hashes separately.
 10. Never copy proprietary Microsoft or storytold WordCraft code, art or brand assets.
 11. v1.0 requires verified parity for every Windows Full Client feature, including policy-denied cases and recovery.
+12. GitHub Actions may run only on standard GitHub-hosted `ubuntu-latest` / `windows-latest` runners. Do not use paid larger, custom or self-hosted runners or paid external CI services. Enforce via `scripts/check_standard_runners.py`; obtain explicit approval before any potentially chargeable runner change.
