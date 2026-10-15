@@ -91,3 +91,13 @@ CI commands: `cargo test -p commscraft-transport --all-targets`, `cargo test --w
 **Executable evidence:** `duplicate_subject_alternative_name_extensions_fail_closed` parses a public-only DER fixture `tests/fixtures/duplicate-san.pem` that carries two `subjectAltName` extensions. The self-signed certificate was modified after signing, so its signature is deliberately invalid; it is suitable **only for parser rejection testing** and must never be added to a trust store. The test explicitly confirms that `extensions_map()` reports an error and the SIP identity is rejected.
 
 **Microsoft boundary:** [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) still requires a verified Security Association, server MIC and replay checks independently. No certificate check may promote SIP REGISTER state. CI: full Linux/Windows workspace Rust tests, strict Clippy and preserved historical evidence ledgers, **standard GitHub-hosted runners only**. CommSCraft v1.0 release gate remains blocked.
+
+## RFC 3261 SIP-URI header field syntax (additional certificate gate)
+
+**Normative source:** [RFC 3261 §25.1](https://www.rfc-editor.org/rfc/rfc3261#section-25.1) specifies `headers = "?" header *("&" header)`, `header = hname "=" hvalue`, `hname = 1*(...)`, and `hvalue = *(...)`. This means an empty header name or an absent equals sign is invalid, while an empty header value is valid.
+
+**Implementation:** `crates/commscraft-transport/src/sip_certificate.rs` rejects missing `=`, empty header name, empty header list, and dangling/duplicate ampersand components before using a `sip:` URI SAN to authenticate a domain. It does not use URI header values to select a certificate identity and intentionally remains a narrow fail-closed subset of the full RFC 3261 URI grammar.
+
+**Executable proof:** `malformed_sip_uri_headers_cannot_authorize_certificate_identity` checks seven malformed URI SANs and three valid header/parameter forms, and verifies that invalid URI SANs cannot authorize `example.com` in `match_sip_sans`.
+
+**Microsoft boundary:** [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) still independently requires a verified server Security Association, MIC, and replay checks. Header syntax checking never elevates TLS to an authenticated REGISTER session. No historic RFC/MS evidence ledger changed. Use only standard GitHub-hosted Linux/Windows runners, and count tests as proven only once the exact commit's CI checks are green.

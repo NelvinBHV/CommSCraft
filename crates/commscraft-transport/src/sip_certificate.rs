@@ -74,6 +74,20 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
             index += 1;
         }
     }
+    // RFC 3261 §25.1: URI headers use "?hname=hvalue" followed by
+    // "&hname=hvalue" pairs. Empty names, missing '=' and dangling '&'
+    // are invalid, even though the certificate identity check ignores
+    // those header values. hvalue is permitted to be empty.
+    if let Some((_, headers)) = remainder.split_once('?') {
+        if headers.is_empty() || headers.split('&').any(|header| {
+            let Some((name, _value)) = header.split_once('=') else {
+                return true;
+            };
+            name.is_empty()
+        }) {
+            return None;
+        }
+    }
     let host_and_port = remainder.split([';', '?']).next()?;
     let (host, port) = match host_and_port.split_once(':') {
         Some((host, port)) => (host, Some(port)),
@@ -298,6 +312,29 @@ mod tests {
             &[GeneralName::DNSName("XN--BCHER-KVA.EXAMPLE.COM")],
             valid
         ));
+    }
+
+    #[test]
+    fn malformed_sip_uri_headers_cannot_authorize_certificate_identity() {
+        for uri in [
+            "sip:example.com?", "sip:example.com?subject",
+            "sip:example.com?=value", "sip:example.com?subject=x&",
+            "sip:example.com?subject=x&&body=y",
+            "sip:example.com?subject=x&body",
+            "sip:example.com?subject=x&=y",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri:?}");
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
+        }
+        // RFC 3261 permits empty hvalue and repeated pairs with distinct
+        // names. URI headers do not supply the certificate host identity.
+        for uri in [
+            "sip:example.com?subject=",
+            "sip:example.com?subject=x&body=y",
+            "sip:example.com;transport=tls?subject=hello%20world",
+        ] {
+            assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
+        }
     }
 
     #[test]
