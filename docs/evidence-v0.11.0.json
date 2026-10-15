@@ -1,0 +1,26 @@
+{
+  "version": "0.11.0",
+  "date": "2026-10-15",
+  "native_rust_compilation": "not_run",
+  "windows_sspi_runtime": "not_run",
+  "sfb_server_interoperability": "not_run",
+  "v1_release_ready": false,
+  "rust_tests_authored": 9,
+  "rust_tests_executed": 0,
+  "rust_tests_result": "not_run_no_toolchain",
+  "sources": {
+    "RFC3261-17.1.2": "https://www.rfc-editor.org/rfc/rfc3261",
+    "RFC3261-10.2.4": "https://www.rfc-editor.org/rfc/rfc3261",
+    "MS-SIPAE-3.2.5.2": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c",
+    "MS-SIPREGE-BASIC-REG": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/bc4b0245-339d-490c-ba67-2410e1513ed9",
+    "MS-SIPREGE-BASIC-UNREG": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/1178018e-277b-42a3-a5fb-1a63049e0b50"
+  },
+  "sha256": {
+    "crates/sfb-core/src/registration.rs": "7ec294086d8f83de8dddc0a2c221e0bea8901c3b583bce7a5e35708cd62f3d69",
+    "crates/sfb-core/tests/verified_registration.rs": "ec1b8217c142e8fadb19e08d554fb223b2862453ae819a15e5b2115471fd403f",
+    "docs/verified-registration-evidence.md": "f13ca49fdf1465fb9310213eb14daa0efb76cbed99532bbcdd4a1bc27bc318ee",
+    "docs/spec-traceability.md": "3f394dd6cd4d1591c81d2905ff6fe1cb6742527ff290fb59c04ed04a9e886369",
+    "README.md": "1f4a6f8eef445197cc8f6e0f82363c80748927d78a2728b766613e101cea1212",
+    ".github/workflows/rust.yml": "164334d884b08717ae3b3363153d687d6da8d9fbf8b9abebe485b48b05e9b20e"
+  }
+}

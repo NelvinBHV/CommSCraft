@@ -1,0 +1,72 @@
+{
+  "version": "0.14.0",
+  "date": "2026-10-15",
+  "evidence_class": "source-and-python-static-checks-only",
+  "rust_compiled": false,
+  "rust_tests_executed": 0,
+  "windows_sspi_runtime_tested": false,
+  "real_sfb_interoperability_tested": false,
+  "v1_release_ready": false,
+  "requirements": [
+    {
+      "id": "GATE-01",
+      "source": "RFC3261-17.1.2",
+      "code": "crates/sfb-core/src/session.rs",
+      "tests": "authored-not-executed"
+    },
+    {
+      "id": "GATE-02",
+      "source": "RFC3261-17.1.3",
+      "code": "crates/sfb-core/src/session.rs",
+      "tests": "authored-not-executed"
+    },
+    {
+      "id": "GATE-03",
+      "source": "MS-SIPAE-3.2.5.2-1-4",
+      "code": "crates/sfb-core/src/session.rs",
+      "tests": "authored-not-executed"
+    },
+    {
+      "id": "GATE-04",
+      "source": "MS-SIPAE-3.2.5.2-5-6",
+      "code": "crates/sfb-core/src/session.rs",
+      "tests": "authored-not-executed"
+    },
+    {
+      "id": "GATE-05",
+      "source": "MS-SIPREGE-4.1.1",
+      "code": "crates/sfb-core/src/session.rs",
+      "tests": "authored-not-executed"
+    },
+    {
+      "id": "GATE-06",
+      "source": "RFC3261-17.1.2.2",
+      "code": "crates/sfb-core/src/session.rs",
+      "tests": "authored-not-executed"
+    },
+    {
+      "id": "GATE-07",
+      "source": "RFC3261-18.4",
+      "code": "crates/sfb-core/src/session.rs",
+      "tests": "authored-not-executed"
+    },
+    {
+      "id": "GATE-08",
+      "source": "MS-SIPAE-3.3.5.1",
+      "code": "crates/sfb-core/src/session.rs",
+      "tests": "authored-not-executed"
+    }
+  ],
+  "sha256": {
+    "crates/sfb-core/src/session.rs": "2930af8381ade0ef5e50fb7d43b06b7dfe00b92e7a9277a4f3e3a6d3847bfb02",
+    "crates/sfb-core/Cargo.toml": "cdf8df991e705acdbbd79e29868c630e2428438a21fe9cc0e03d312b3a0ea6e1",
+    "apps/sfb-desktop/Cargo.toml": "190d2bcf26dd929fafde793068bd575fe6be372277f8ae761d4ee0b925edd524",
+    "README.md": "8138972554f7dd18815cf669ac6ee574dfadfaa222e77ab0861c933ad6d90850",
+    "CHANGELOG.md": "86175a9a3124ba7b2977fa0a44e00184e17fb43c3591bc2dcac265fdb138ee4b",
+    "ROADMAP.md": "2cbceb5cf9bacc86a018b249167a5914f4b059ca405de9f670e0ee7e4d2268b9",
+    "docs/registration-gate-evidence.md": "966d0365f65297d1bc2de172a6c41c4a8265018aeef00d0837c05e7a57b1835f",
+    ".github/workflows/registration-gate.yml": "fb6d5736dde9ac2f7f68e607d1266172f044f731369455bf0e59907578f45de9",
+    "scripts/check_v014_evidence.py": "713b057b5560ce0fd5c7721eae06518617344b38e1965d36478a72c47bae6543",
+    "scripts/test_v014_contract.py": "35e4256c5a218a76989041b0a0b7b1a7ea28b4c9121fcce47273463c71efffc3"
+  }
+}

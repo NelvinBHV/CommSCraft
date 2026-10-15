@@ -1,0 +1,1665 @@
+{
+  "schema_version": 1,
+  "target": "100% client-visible feature and behavior parity with the last supported classic Skype for Business FULL Windows desktop client for configured on-premises Skype for Business Server 2019 / Subscription Edition, including Full-only features and Windows platform integrations. Feature testability depends on active policies, licensing and services, not a waiver.",
+  "baseline": "Minimum: each independent scenario in WINDOWS_REFERENCE_CASES.json derived from Microsoft Windows Full client feature comparison; expand with actual reference Windows build behavioral inventory, release-specific features, policy/failure edge cases. Refuse v1.0 until frozen reference versions, source revisions, automated evidence and human signoff exist.",
+  "release_policy": "Fail closed: Windows reference case list must be complete, each case has its own real-server interop evidence; every FEATURE_PARITY feature verified with local+real evidence, exact Windows-build inventory and signed-off manual differences review. Offline demos do not count.",
+  "features": [
+    {
+      "id": "dns-discovery",
+      "area": "identity",
+      "name": "Internal/external server discovery",
+      "status": "offline_subset",
+      "scope_note": "discovery.rs + sfb-probe diagnostics only",
+      "specifications": [
+        "MS-CONMGMT",
+        "RFC2782"
+      ],
+      "acceptance": "Connect through internal and external DNS and HTTPS autodiscover paths",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "auth",
+      "area": "identity",
+      "name": "Kerberos, NTLM and TLS-DSK authentication",
+      "status": "offline_subset",
+      "scope_note": "security.rs incoming synthetic MIC verification only",
+      "specifications": [
+        "MS-SIPAE",
+        "RFC2743"
+      ],
+      "acceptance": "Complete mutual authentication with negative/replay tests",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "register",
+      "area": "identity",
+      "name": "SIP registration, refresh and sign-out",
+      "status": "offline_subset",
+      "scope_note": "registration.rs offline planning only",
+      "specifications": [
+        "MS-SIPREGE",
+        "RFC3261"
+      ],
+      "acceptance": "Sign in, renew, sign out and recover after failures with real server",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "provision",
+      "area": "identity",
+      "name": "In-band provisioning and endpoint identity",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPREGE"
+      ],
+      "acceptance": "Fetch and interpret provisioning safely against server",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "certificates",
+      "area": "identity",
+      "name": "Certificate and service identity lifecycle",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPAE",
+        "MS-CONMGMT"
+      ],
+      "acceptance": "Validate server/certificate, handle renewal and refusal of wrong identity",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "federation",
+      "area": "identity",
+      "name": "Federated communication where server supports it",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE",
+        "MS-PRES"
+      ],
+      "acceptance": "Federated SIP domain messaging and presence interop",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-search",
+      "area": "contacts_presence",
+      "name": "Address book search and directory cards",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-ABCH"
+      ],
+      "acceptance": "Search and display correct on-prem address book results",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-groups",
+      "area": "contacts_presence",
+      "name": "Contact list and groups",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-PRES"
+      ],
+      "acceptance": "Add, remove, reorder and sync contacts and groups",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-privacy",
+      "area": "contacts_presence",
+      "name": "Presence visibility and privacy containers",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-PRES"
+      ],
+      "acceptance": "Honor privacy containers and personal contact relations",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-sub",
+      "area": "contacts_presence",
+      "name": "Subscribe to enhanced presence categories",
+      "status": "offline_subset",
+      "scope_note": "presence.rs RFC PIDF NOTIFY and SUBSCRIBE subset only",
+      "specifications": [
+        "MS-PRES",
+        "RFC6665"
+      ],
+      "acceptance": "Receive NOTIFY/BENOTIFY categories across multiple endpoints",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-publish",
+      "area": "contacts_presence",
+      "name": "Publish presence, availability, status, location and note",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-PRES"
+      ],
+      "acceptance": "Correct versioned publications and visibility by container",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "calendar-presence",
+      "area": "contacts_presence",
+      "name": "Calendar-driven availability and out-of-office",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-PRES"
+      ],
+      "acceptance": "Integrate with configured Exchange/Outlook services",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "photos",
+      "area": "contacts_presence",
+      "name": "Contact card photos and profile configuration",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-PRES"
+      ],
+      "acceptance": "Display profile photos and edits with policy enforcement",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "distribution-groups",
+      "area": "contacts_presence",
+      "name": "Distribution group expansion",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-ABCH"
+      ],
+      "acceptance": "Expand permitted distribution lists",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "im-1to1",
+      "area": "messaging",
+      "name": "One-to-one IM and conversation dialogs",
+      "status": "offline_subset",
+      "scope_note": "im.rs offline dialog and plain text MESSAGE subset only",
+      "specifications": [
+        "MS-SIPRE",
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Send/receive with invite/ack/message/bye and real interop",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "im-multiparty",
+      "area": "messaging",
+      "name": "Multiparty messaging",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFIM",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "IM MCU conference lifecycle and roster interop",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "im-richtext",
+      "area": "messaging",
+      "name": "Rich text, emoji and supported messaging formats",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Render accepted media types without HTML injection",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "im-history",
+      "area": "messaging",
+      "name": "Conversation history and missed messages",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Show local/server-supported conversation history subject to policy",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "im-file",
+      "area": "messaging",
+      "name": "File transfer with policy and malware checks",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Transfer files and handle AV/policy/permission constraints",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "persistent-chat",
+      "area": "messaging",
+      "name": "Persistent chat rooms where deployed",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-PCHAT"
+      ],
+      "acceptance": "Join and manage supported persistent chat",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "audio-call",
+      "area": "voice",
+      "name": "Peer-to-peer audio calls",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SDPEXT",
+        "MS-RTP",
+        "MS-SRTP"
+      ],
+      "acceptance": "Place and accept two-way authenticated encrypted calls",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "pstn",
+      "area": "voice",
+      "name": "Enterprise Voice PSTN dialing",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-OCPSTN"
+      ],
+      "acceptance": "Dial PSTN and receive inbound calls with proper normalization",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "hold",
+      "area": "voice",
+      "name": "Call hold/resume and mute",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SDPEXT",
+        "RFC3264"
+      ],
+      "acceptance": "Correct hold SDP transitions and microphone mute",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "transfer",
+      "area": "voice",
+      "name": "Attended and unattended transfer",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE",
+        "RFC3515"
+      ],
+      "acceptance": "Blind and consultative transfer interop",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "forwarding",
+      "area": "voice",
+      "name": "Call forwarding, simultaneous ring and DND routing",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Configure and respect server routing and policies",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "delegation",
+      "area": "voice",
+      "name": "Delegation, team call, pickup and shared line",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Manage delegates and shared call scenarios",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "callpark",
+      "area": "voice",
+      "name": "Call park, retrieval and call queues",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Park and retrieve calls with configured server feature",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "emergency",
+      "area": "voice",
+      "name": "Emergency calling and location controls",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-OCPSTN"
+      ],
+      "acceptance": "Policy-compliant emergency flows and location handling",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "voicemail",
+      "area": "voice",
+      "name": "Voicemail and missed call indicators",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-PRES"
+      ],
+      "acceptance": "Voicemail integration according to deployment",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "devices",
+      "area": "voice",
+      "name": "Audio devices, ring and switching",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SDPEXT"
+      ],
+      "acceptance": "Hot plug, switch, ringtone, microphone and speaker control",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "call-history",
+      "area": "voice",
+      "name": "Call history and call logs",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Accurate history with retention and privacy policies",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "video",
+      "area": "video_media",
+      "name": "Peer-to-peer video with camera controls",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SDPEXT",
+        "MS-RTP"
+      ],
+      "acceptance": "Negotiated protected camera streaming and device settings",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "ice",
+      "area": "video_media",
+      "name": "ICE/STUN/TURN and NAT traversal",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-ICE2",
+        "MS-TURN"
+      ],
+      "acceptance": "Media connectivity and fallback through NAT with test lab",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "srtp",
+      "area": "video_media",
+      "name": "SRTP key agreement, encryption and RTCP",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SRTP",
+        "RFC3711"
+      ],
+      "acceptance": "Secure media with authenticated key negotiation and replay checks",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "codecs",
+      "area": "video_media",
+      "name": "Microsoft-compatible SDP and codecs",
+      "status": "offline_subset",
+      "scope_note": "sdp.rs bounded SDP structure inspection only",
+      "specifications": [
+        "MS-SDPEXT",
+        "RFC3264"
+      ],
+      "acceptance": "Negotiate appropriate audio/video codecs across server versions",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "qos",
+      "area": "video_media",
+      "name": "Bandwidth adaptation, QoS and telemetry",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SDPEXT"
+      ],
+      "acceptance": "Quality metrics, reconfiguration and network policy",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-join",
+      "area": "meetings_sharing",
+      "name": "Scheduled and ad hoc conference join",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFBAS",
+        "MS-CONFPRO"
+      ],
+      "acceptance": "Join, leave and rejoin focus correctly",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-roster",
+      "area": "meetings_sharing",
+      "name": "Conference roster and permissions",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Participants, lobby, roles and presenter controls",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-audio",
+      "area": "meetings_sharing",
+      "name": "Audio/video conferencing and MCU",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFAV",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Join mixed AV conferences with secure media",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-im",
+      "area": "meetings_sharing",
+      "name": "Conference IM messaging",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFIM",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Send and receive conference IM/roster data",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "sharing-vbss",
+      "area": "meetings_sharing",
+      "name": "Video-based screen sharing",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SDPEXT",
+        "MS-CONFAS"
+      ],
+      "acceptance": "Share and view VbSS sessions where supported",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "sharing-rdp",
+      "area": "meetings_sharing",
+      "name": "Desktop/application sharing via RDP",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFAS",
+        "MS-RDPBCGR"
+      ],
+      "acceptance": "Interactive application share and viewer interop",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "presentation",
+      "area": "meetings_sharing",
+      "name": "Whiteboard and presentation collaboration",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Present and view supported collaboration content",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-controls",
+      "area": "meetings_sharing",
+      "name": "Meeting invitation, scheduling and controls",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFPRO"
+      ],
+      "acceptance": "Create meetings, invite participants and control meeting state",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "windows-ui",
+      "area": "client_platform",
+      "name": "Feature-complete native desktop client UX",
+      "status": "offline_subset",
+      "scope_note": "egui local demo only",
+      "specifications": [
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Equivalent supported Windows desktop controls and settings",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "notifications",
+      "area": "client_platform",
+      "name": "Toasts, tray behavior and call notifications",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Reliable user notifications, focus and accessibility",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "enterprise-policy",
+      "area": "client_platform",
+      "name": "Enterprise client policy and privacy enforcement",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPREGE"
+      ],
+      "acceptance": "Enforce server restrictions and data retention",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "accessibility",
+      "area": "client_platform",
+      "name": "Keyboard and screen reader operation",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "WCAG"
+      ],
+      "acceptance": "Pass accessibility audit and Windows usability testing",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "reliability",
+      "area": "client_platform",
+      "name": "Reconnect, crash recovery and resource limits",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONMGMT"
+      ],
+      "acceptance": "Sustained operation and reconnect under faults",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "packaging",
+      "area": "client_platform",
+      "name": "Signed Windows installation and update",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "Windows"
+      ],
+      "acceptance": "Reproducible signed MSI/MSIX and upgrade/rollback tests",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "enterprise-interop",
+      "area": "client_platform",
+      "name": "Windows client baseline compatibility",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Published parity test matrix against reference Windows client",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "modern-auth",
+      "area": "identity",
+      "name": "Modern Authentication (when supported by deployment)",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPAE"
+      ],
+      "acceptance": "Complete supported modern-auth flows with exact server/client policies",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-alerts",
+      "area": "contacts_presence",
+      "name": "Alerts when tagged contacts change presence",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-PRES"
+      ],
+      "acceptance": "User can enable and receive permission-respecting status notifications",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "outlook-contacts",
+      "area": "contacts_presence",
+      "name": "Outlook and Exchange contact integration",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-ABCH"
+      ],
+      "acceptance": "Find and use Outlook contacts within enabled organization",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "response-group-search",
+      "area": "contacts_presence",
+      "name": "Response Group search",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Resolve on-premises response groups",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "im-tabs",
+      "area": "messaging",
+      "name": "Multiple conversations and tabbed history",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Switch safely between concurrent conversations",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "im-importance",
+      "area": "messaging",
+      "name": "Message priority and high importance",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Send/receive supported importance indication",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "outlook-im-history",
+      "area": "messaging",
+      "name": "Outlook conversation history integration",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Write and retrieve history under consent and policy",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "call-monitor",
+      "area": "voice",
+      "name": "Call monitor and compact in-call UI",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "In-call UI functions with switching and incoming alerts",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "response-group-calls",
+      "area": "voice",
+      "name": "Response group telephony",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-OCPSTN"
+      ],
+      "acceptance": "Call on-prem response groups and handle expected queues",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-recording",
+      "area": "meetings_sharing",
+      "name": "Meeting recording and controls",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Record allowed sessions with privacy and policy safeguards",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-polls",
+      "area": "meetings_sharing",
+      "name": "Polls and Q&A in supported meetings",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Participants can view and use enabled meeting polls and Q&A",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "powerpoint-sharing",
+      "area": "meetings_sharing",
+      "name": "PowerPoint presentation sharing",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Share and view slides in supported meetings",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-lobby",
+      "area": "meetings_sharing",
+      "name": "Meeting lobby, admission and restrictions",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Join lobby and handle presenter admission rights",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-invite",
+      "area": "meetings_sharing",
+      "name": "Meeting invitations and Outlook scheduling",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONFPRO"
+      ],
+      "acceptance": "Join from and create calendar meeting invitations",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "logging",
+      "area": "client_platform",
+      "name": "Diagnostics, error reports and support logs",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-CONMGMT"
+      ],
+      "acceptance": "Generate privacy-safe actionable diagnostics",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "compliance",
+      "area": "client_platform",
+      "name": "Legal hold, archiving and compliance integration",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
+      "specifications": [
+        "MS-SIPRE"
+      ],
+      "acceptance": "Respect retention, recording, and compliance policy",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-notes",
+      "area": "contacts_presence",
+      "name": "Statusnotiz und Abwesenheitsnotiz darstellen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-PRES",
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Statusnotiz und Abwesenheitsnotiz darstellen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-location",
+      "area": "contacts_presence",
+      "name": "Benutzerdefinierte Ortsangabe festlegen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-PRES",
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Benutzerdefinierte Ortsangabe festlegen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-note-edit",
+      "area": "contacts_presence",
+      "name": "Eigene Statusnotiz bearbeiten",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-PRES",
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Eigene Statusnotiz bearbeiten: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "photos-public-url",
+      "area": "contacts_presence",
+      "name": "Erlaubtes Profilfoto über externe URL konfigurieren",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-PRES",
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Erlaubtes Profilfoto über externe URL konfigurieren: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-prepop",
+      "area": "contacts_presence",
+      "name": "Serverseitig vorbelegte Kontakte anzeigen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-PRES"
+      ],
+      "acceptance": "Serverseitig vorbelegte Kontakte anzeigen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "recent-contacts",
+      "area": "contacts_presence",
+      "name": "Zuletzt verwendete Kontakte anzeigen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-PRES"
+      ],
+      "acceptance": "Zuletzt verwendete Kontakte anzeigen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "current-conversations",
+      "area": "contacts_presence",
+      "name": "Aktuelle Konversationen anzeigen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-PRES"
+      ],
+      "acceptance": "Aktuelle Konversationen anzeigen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-layout",
+      "area": "contacts_presence",
+      "name": "Alternative Darstellungen der Kontaktliste",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-PRES"
+      ],
+      "acceptance": "Alternative Darstellungen der Kontaktliste: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "contacts-sorting",
+      "area": "contacts_presence",
+      "name": "Kontaktliste nach Gruppe und Beziehung sortieren",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-PRES"
+      ],
+      "acceptance": "Kontaktliste nach Gruppe und Beziehung sortieren: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "contacts-availability-sort",
+      "area": "contacts_presence",
+      "name": "Kontaktliste nach Status sortieren",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-PRES"
+      ],
+      "acceptance": "Kontaktliste nach Status sortieren: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "exchange-contacts",
+      "area": "contacts_presence",
+      "name": "Exchange-Kontakte durchsuchen und hinzufügen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-PRES"
+      ],
+      "acceptance": "Exchange-Kontakte durchsuchen und hinzufügen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "im-email-action",
+      "area": "messaging",
+      "name": "Kontakt wahlweise per IM oder E-Mail erreichen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Kontakt wahlweise per IM oder E-Mail erreichen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "spellcheck",
+      "area": "messaging",
+      "name": "Rechtschreibkorrektur im Chat",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Rechtschreibkorrektur im Chat: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "skills-sharepoint-search",
+      "area": "messaging",
+      "name": "Personen anhand von SharePoint-Fähigkeiten finden",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Personen anhand von SharePoint-Fähigkeiten finden: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "persistent-chat-escalate",
+      "area": "messaging",
+      "name": "Chatroom direkt zu einer Besprechung eskalieren",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Chatroom direkt zu einer Besprechung eskalieren: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "im-inline-photos",
+      "area": "messaging",
+      "name": "Fotos in Chatkonversationen anzeigen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Fotos in Chatkonversationen anzeigen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "im-ink-receive",
+      "area": "messaging",
+      "name": "Empfangene Freihandnachrichten anzeigen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Empfangene Freihandnachrichten anzeigen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-gallery",
+      "area": "meetings_sharing",
+      "name": "Videogalerie mit mehreren Teilnehmern",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Videogalerie mit mehreren Teilnehmern: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "app-sharing",
+      "area": "meetings_sharing",
+      "name": "Einzelnes Programm teilen und ansehen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Einzelnes Programm teilen und ansehen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-anonymous-invite",
+      "area": "meetings_sharing",
+      "name": "Anonyme Teilnehmer gemäß Richtlinie zulassen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Anonyme Teilnehmer gemäß Richtlinie zulassen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-dial-in",
+      "area": "meetings_sharing",
+      "name": "Per Einwahlaudio an Besprechungen teilnehmen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Per Einwahlaudio an Besprechungen teilnehmen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-meet-now",
+      "area": "meetings_sharing",
+      "name": "Sofortbesprechung starten",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Sofortbesprechung starten: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "powerpoint-navigation",
+      "area": "meetings_sharing",
+      "name": "PowerPoint-Präsentationen steuern",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "PowerPoint-Präsentationen steuern: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "onenote-notes",
+      "area": "meetings_sharing",
+      "name": "OneNote-Besprechungsnotizen erstellen und bearbeiten",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "OneNote-Besprechungsnotizen erstellen und bearbeiten: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "whiteboard",
+      "area": "meetings_sharing",
+      "name": "Interaktive Whiteboard-Sitzungen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Interaktive Whiteboard-Sitzungen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-file-upload",
+      "area": "meetings_sharing",
+      "name": "Dateien im Meeting hochladen und freigeben",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Dateien im Meeting hochladen und freigeben: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-scheduling",
+      "area": "meetings_sharing",
+      "name": "Termine über Outlook oder Web Scheduler planen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Termine über Outlook oder Web Scheduler planen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-qa",
+      "area": "meetings_sharing",
+      "name": "Fragen-und-Antworten-Moderation",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Fragen-und-Antworten-Moderation: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-disable-video",
+      "area": "meetings_sharing",
+      "name": "Teilnehmervideo deaktivieren",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Teilnehmervideo deaktivieren: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-disable-im",
+      "area": "meetings_sharing",
+      "name": "Meeting-Chat deaktivieren",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Meeting-Chat deaktivieren: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-mute-audience",
+      "area": "meetings_sharing",
+      "name": "Publikum stummschalten",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Publikum stummschalten: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-demote-all",
+      "area": "meetings_sharing",
+      "name": "Alle zu Teilnehmern herabstufen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Alle zu Teilnehmern herabstufen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-broadcast",
+      "area": "meetings_sharing",
+      "name": "Besprechungsübertragung bei konfiguriertem Dienst",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Besprechungsübertragung bei konfiguriertem Dienst: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-delegate-scheduling",
+      "area": "meetings_sharing",
+      "name": "Besprechung für vertretene Person planen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Besprechung für vertretene Person planen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "outlook-delegate-sync",
+      "area": "meetings_sharing",
+      "name": "Stellvertretung mit Outlook synchronisieren",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Stellvertretung mit Outlook synchronisieren: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-video-spotlight",
+      "area": "meetings_sharing",
+      "name": "Teilnehmervideo hervorheben und fixieren",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Teilnehmervideo hervorheben und fixieren: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-remote-control",
+      "area": "meetings_sharing",
+      "name": "Steuerung bei Bildschirmfreigabe geben und übernehmen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-CONFBAS"
+      ],
+      "acceptance": "Steuerung bei Bildschirmfreigabe geben und übernehmen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "click-to-call",
+      "area": "voice",
+      "name": "Anruf aus Kontaktkarte starten",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Anruf aus Kontaktkarte starten: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "e911-sip-notify",
+      "area": "voice",
+      "name": "Notruf-Benachrichtigung an SIP-URIs auslösen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Notruf-Benachrichtigung an SIP-URIs auslösen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "e911-distribution-notify",
+      "area": "voice",
+      "name": "Notruf-Benachrichtigung an Gruppe auslösen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Notruf-Benachrichtigung an Gruppe auslösen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "missed-calls",
+      "area": "voice",
+      "name": "Verpasste Anrufe anzeigen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Verpasste Anrufe anzeigen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "delegate-outbound",
+      "area": "voice",
+      "name": "Im Namen einer vertretenen Person anrufen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Im Namen einer vertretenen Person anrufen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "delegate-inbound",
+      "area": "voice",
+      "name": "Anruf im Namen einer anderen Person annehmen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Anruf im Namen einer anderen Person annehmen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "group-call-pickup",
+      "area": "voice",
+      "name": "Anruf einer Pickup-Gruppe übernehmen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Anruf einer Pickup-Gruppe übernehmen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "location-routing",
+      "area": "voice",
+      "name": "Standortabhängige Wahlregeln beachten",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Standortabhängige Wahlregeln beachten: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "response-group-management",
+      "area": "voice",
+      "name": "Response- und Team-Gruppen verwalten",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "RFC3261"
+      ],
+      "acceptance": "Response- und Team-Gruppen verwalten: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "public-im",
+      "area": "messaging",
+      "name": "IM an unterstützte öffentliche Kontakte",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-SIPRE"
+      ],
+      "acceptance": "IM an unterstützte öffentliche Kontakte: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "external-calling",
+      "area": "messaging",
+      "name": "Anrufe zu externen Benutzern und Konferenzen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT",
+        "MS-SIPRE"
+      ],
+      "acceptance": "Anrufe zu externen Benutzern und Konferenzen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-recording-artifacts",
+      "area": "meetings_sharing",
+      "name": "Dateien OneNote und PowerPoint-Anmerkungen aufzeichnen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Dateien OneNote und PowerPoint-Anmerkungen aufzeichnen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "recording-resolution",
+      "area": "meetings_sharing",
+      "name": "Aufzeichnungsauflösung auswählen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Aufzeichnungsauflösung auswählen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "mfa",
+      "area": "identity",
+      "name": "Mehrfaktoranmeldung verwenden",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-SIPAE"
+      ],
+      "acceptance": "Mehrfaktoranmeldung verwenden: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "certificate-auth",
+      "area": "identity",
+      "name": "Zertifikatsanmeldung auf berechtigten Geräten",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-SIPAE"
+      ],
+      "acceptance": "Zertifikatsanmeldung auf berechtigten Geräten: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "recording-archive-artifacts",
+      "area": "client_platform",
+      "name": "Datei- und Office-Inhalte gemäß Richtlinie archivieren",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Datei- und Office-Inhalte gemäß Richtlinie archivieren: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "sign-in-logs",
+      "area": "client_platform",
+      "name": "Client-Anmeldeprotokolle abrufbar machen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Client-Anmeldeprotokolle abrufbar machen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    },
+    {
+      "id": "high-volume-calls",
+      "area": "voice",
+      "name": "Hohe gleichzeitige Anruflast bedienen",
+      "status": "not_started",
+      "scope_note": "Kein funktionsfähiger Code; erfordert echte Windows-Full-Client-/Server-Interoperabilität",
+      "specifications": [
+        "MS-OCSPROT"
+      ],
+      "acceptance": "Hohe gleichzeitige Anruflast bedienen: gegen eine berechtigte Windows-Referenzumgebung mit positiven, negativen und Policy-Tests nachweisen",
+      "unit_evidence": [],
+      "interop_evidence": []
+    }
+  ],
+  "reference_case_file": "WINDOWS_REFERENCE_CASES.json"
+}

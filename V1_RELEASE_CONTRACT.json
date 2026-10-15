@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "reference": "full-windows-desktop-client",
+  "scope": "all-client-visible-features-no-exclusions",
+  "requirements": "all-features-and-all-reference-cases",
+  "release_on_unverified": false,
+  "primary_server": "Skype for Business Server Subscription Edition",
+  "official_feature_source": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison",
+  "reference_snapshot_date": "2026-10-14",
+  "mandatory_dimensions": [
+    "user_workflow",
+    "protocol_interoperability",
+    "security",
+    "policy_enforcement",
+    "failure_recovery",
+    "windows_integration",
+    "accessibility"
+  ],
+  "cross_client_directions": [
+    "windows_to_rust",
+    "rust_to_windows"
+  ],
+  "policy_probes": [
+    "enabled",
+    "disabled"
+  ],
+  "failure_probes": "verified-pass-required",
+  "source_policy": "RFCs and relevant Microsoft Open Specifications are binding for protocol implementation; actual Windows Full client behavior is the acceptance oracle; conflicts require documented review, not silent protocol deviations",
+  "development_status": "not-ready-for-v1.0",
+  "notes": "This contract must be extended when a real pinned Windows build reveals additional capabilities. All Microsoft Full-only features and supported third-party / Office integrations must remain in scope on Windows. Server-only features require the corresponding role/license/policy during testing. No fabricated evidence."
+}

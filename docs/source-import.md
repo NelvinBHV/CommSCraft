@@ -1,11 +1,17 @@
-# Historical source import
+# Historical source import: CommSCraft v0.14.0
 
-The existing v0.14.0 CommSCraft Rust workspace is available as a separate local ZIP artifact and is NOT YET present in this GitHub repository.
+The prepared v0.14.0 Rust workspace is now published on the feature branch for [Pull Request #8](https://github.com/NelvinBHV/CommSCraft/pull/8).
 
-Before claiming a working project, import apps/, crates/, xtask/, Cargo.toml, scripts/, tests/, all feature matrices and original docs/evidence files. Exclude build outputs, Python caches, secrets, enterprise traffic and debug logs.
+The source import includes all original Rust crates, apps, CLI tools, Python source-contract checks, test fixtures, Windows Full Client parity inventories and historical Microsoft/RFC evidence ledgers. It is **not yet merged into main** until GitHub Actions checks succeed and the import is reviewed.
 
-Preserve historical source hashes: original renamed bytes belong in immutable docs/history paths with explicit migration mapping; never rewrite original evidence digests.
+See `docs/source-import-manifest.json` for the 100 original SHA-256 file checks. Modified files are compared against immutable historical copies under `docs/history/import-v0.14.0/`; the older evidence ledgers are never rewritten. `scripts/check_import_integrity.py` performs those checks.
 
-Reconcile this README and other bootstrap files with the original, richer source documentation. Internal sfb-* Cargo package names can remain while the public project name is CommSCraft.
+The already-merged `commscraft-register-events` crate is now a member of the combined Cargo workspace.
 
-Run migration source tests and Rust Linux/Windows CI after import. Real Skype for Business server interoperability requires separate authorized tests.
+## Verification status
+- The SIP core and REGISTER response gate have passing **offline Rust tests on Linux and Windows** in GitHub Actions; consult the individual PR checks for current build and lint status.
+- All remaining workspace builds, compiler and lint warnings must be resolved before merging.
+- Live SIP REGISTER, Kerberos mutual authentication on a real server, presence/IM interoperability and full Windows-client parity **are not established**.
+- `cargo fmt --all -- --check` is a known source migration debt, reported as advisory during import only. The v1.0 release gate still requires it to pass.
+
+Avoid publishing real user credentials, enterprise server identities, unredacted SIP traces or personal contact data.

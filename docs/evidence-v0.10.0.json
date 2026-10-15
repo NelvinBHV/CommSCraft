@@ -1,0 +1,32 @@
+{
+  "project": "SFB Client RS",
+  "version": "0.10.0",
+  "verification_date": "2026-10-15",
+  "scope": "Windows SSPI Kerberos per-message MIC adapter; offline subset, no authenticated SIP transport",
+  "verified_in_authoring_environment": {
+    "python_unittest_total": 29,
+    "python_unittest_failures": 0,
+    "cargo_toml_parse": "passed",
+    "release_contract_structural_check": "passed",
+    "v1_release_gate": "failed_as_expected"
+  },
+  "not_verified": {
+    "rust_compiled": false,
+    "rust_tests_executed": false,
+    "windows_sspi_native_executed": false,
+    "active_directory_interop": false,
+    "skype_for_business_server_interop": false,
+    "windows_client_feature_parity": false
+  },
+  "normative_mappings": "docs/kerberos-mic-evidence.md",
+  "source_sha256": {
+    "crates/sfb-core/src/windows_sspi.rs": "aec3b0258a39afd0b006cb4046792842a4f96950fec227c2f80dec00035d37f9",
+    "crates/sfb-core/src/kerberos_mic.rs": "8f5f5f503801a875ed39a1f3381f8823515b314bab68c36ff3727951440ee7ce",
+    "crates/sfb-core/src/security.rs": "d39a14085c04d2d49f31aa85fa17b57c2c7305b5be94632761515793ef20c766",
+    "crates/sfb-core/src/lib.rs": "e9cebac58c63fd9420c1179e617f327d0be0f1968bfeefebeb68fc25d900f7ea",
+    "scripts/test_kerberos_mic_contract.py": "8bb2c71d5228064c1f895ed84e6b33c6ccb84354d584cfe228ce6508d56ef612",
+    "docs/kerberos-mic-evidence.md": "d01879df02080f29725750d3b9ce423c72c4a3e9a0608722b201e8b72faf7396",
+    "docs/spec-traceability.md": "d5997fefdbcc198b0cbed3a0f00388e1162523be8348784f7b2e0fcd1f55a916"
+  },
+  "notes": "Python source-contract checks cannot verify Rust syntax, Windows ABI operation, native cryptography or interop. Do not call this product v1.0."
+}

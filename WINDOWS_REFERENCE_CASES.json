@@ -1,0 +1,942 @@
+{
+  "schema_version": 1,
+  "reference_client": "Skype for Business 2019 Windows Full desktop client / C2R latest available for on-premises Server 2019 and Subscription Edition",
+  "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison",
+  "source_last_updated": "2023-01-25",
+  "reference_windows_build": "UNPINNED — must be pinned and inventoried before v1.0",
+  "scope": "Public Microsoft feature comparison is a mandatory minimum, not a definitive inventory of all build-specific behavior or Windows OS integration. A real-client comparative audit is additionally required.",
+  "windows_scenarios": [
+    {
+      "id": "status-publish",
+      "section": "presence",
+      "scenario": "Präsenzstatus veröffentlichen",
+      "feature_ids": [
+        "presence-publish"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "status-watch",
+      "section": "presence",
+      "scenario": "Präsenzstatus anderer Personen empfangen",
+      "feature_ids": [
+        "presence-sub"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "status-oof",
+      "section": "presence",
+      "scenario": "Statusnotiz und Abwesenheitsnotiz darstellen",
+      "feature_ids": [
+        "presence-notes"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "custom-location",
+      "section": "presence",
+      "scenario": "Benutzerdefinierte Ortsangabe festlegen",
+      "feature_ids": [
+        "presence-location"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "custom-note",
+      "section": "presence",
+      "scenario": "Eigene Statusnotiz bearbeiten",
+      "feature_ids": [
+        "presence-note-edit"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "external-photo-url",
+      "section": "presence",
+      "scenario": "Erlaubtes Profilfoto über externe URL konfigurieren",
+      "feature_ids": [
+        "photos-public-url"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "initial-contacts",
+      "section": "contacts",
+      "scenario": "Serverseitig vorbelegte Kontakte anzeigen",
+      "feature_ids": [
+        "contact-prepop"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "contacts-crud",
+      "section": "contacts",
+      "scenario": "Kontaktliste synchronisieren und bearbeiten",
+      "feature_ids": [
+        "contact-groups"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "tag-alerts",
+      "section": "contacts",
+      "scenario": "Statusalarme für markierte Kontakte erhalten",
+      "feature_ids": [
+        "presence-alerts"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "privacy-relationships",
+      "section": "contacts",
+      "scenario": "Kontaktbeziehungen und Sichtbarkeit steuern",
+      "feature_ids": [
+        "contact-privacy"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "corporate-address-book",
+      "section": "contacts",
+      "scenario": "Unternehmensadressbuch durchsuchen",
+      "feature_ids": [
+        "contact-search"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "outlook-contact-search",
+      "section": "contacts",
+      "scenario": "Outlook-Kontakte durchsuchen",
+      "feature_ids": [
+        "outlook-contacts"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "contact-group-edit",
+      "section": "contacts",
+      "scenario": "Kontaktgruppen verwalten",
+      "feature_ids": [
+        "contact-groups"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "directory-group-expansion",
+      "section": "contacts",
+      "scenario": "Verteiler und Microsoft-365-Gruppen auflösen",
+      "feature_ids": [
+        "distribution-groups"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "response-group-directory",
+      "section": "contacts",
+      "scenario": "Response Groups in der Suche finden",
+      "feature_ids": [
+        "response-group-search"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "recent-contact-list",
+      "section": "contacts",
+      "scenario": "Zuletzt verwendete Kontakte anzeigen",
+      "feature_ids": [
+        "recent-contacts"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "active-chat-list",
+      "section": "contacts",
+      "scenario": "Aktuelle Konversationen anzeigen",
+      "feature_ids": [
+        "current-conversations"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "alternative-contact-layouts",
+      "section": "contacts",
+      "scenario": "Alternative Darstellungen der Kontaktliste",
+      "feature_ids": [
+        "contact-layout"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "sort-by-group-relationship-new",
+      "section": "contacts",
+      "scenario": "Kontaktliste nach Gruppe und Beziehung sortieren",
+      "feature_ids": [
+        "contacts-sorting"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "sort-by-presence",
+      "section": "contacts",
+      "scenario": "Kontaktliste nach Status sortieren",
+      "feature_ids": [
+        "contacts-availability-sort"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "exchange-address-book",
+      "section": "contacts",
+      "scenario": "Exchange-Kontakte durchsuchen und hinzufügen",
+      "feature_ids": [
+        "exchange-contacts"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "message-or-email-action",
+      "section": "messaging",
+      "scenario": "Kontakt wahlweise per IM oder E-Mail erreichen",
+      "feature_ids": [
+        "im-1to1",
+        "im-email-action"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "tabbed-conversations",
+      "section": "messaging",
+      "scenario": "Mehrere Chats im Tab-Fenster verwalten",
+      "feature_ids": [
+        "im-tabs"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "outlook-im-log",
+      "section": "messaging",
+      "scenario": "IM-Verläufe gemäß Richtlinie in Outlook speichern",
+      "feature_ids": [
+        "outlook-im-history"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "spell-check",
+      "section": "messaging",
+      "scenario": "Rechtschreibkorrektur im Chat",
+      "feature_ids": [
+        "spellcheck"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "sharepoint-skill-search",
+      "section": "messaging",
+      "scenario": "Personen anhand von SharePoint-Fähigkeiten finden",
+      "feature_ids": [
+        "skills-sharepoint-search"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "persistent-room-client",
+      "section": "messaging",
+      "scenario": "Persistente Chatrooms nutzen",
+      "feature_ids": [
+        "persistent-chat"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "chatroom-escalation",
+      "section": "messaging",
+      "scenario": "Chatroom direkt zu einer Besprechung eskalieren",
+      "feature_ids": [
+        "persistent-chat-escalate"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "chat-profile-images",
+      "section": "messaging",
+      "scenario": "Fotos in Chatkonversationen anzeigen",
+      "feature_ids": [
+        "im-inline-photos"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "ink-message-display",
+      "section": "messaging",
+      "scenario": "Empfangene Freihandnachrichten anzeigen",
+      "feature_ids": [
+        "im-ink-receive"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "priority-im",
+      "section": "messaging",
+      "scenario": "IM mit hoher Priorität senden und erkennen",
+      "feature_ids": [
+        "im-importance"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "meeting-audio",
+      "section": "meetings",
+      "scenario": "Computer-Audio in Konferenzen",
+      "feature_ids": [
+        "conference-audio"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "meeting-video",
+      "section": "meetings",
+      "scenario": "Kameravideo in Konferenzen",
+      "feature_ids": [
+        "conference-audio",
+        "video"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "gallery-view",
+      "section": "meetings",
+      "scenario": "Videogalerie mit mehreren Teilnehmern",
+      "feature_ids": [
+        "conference-gallery"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "video-screen-sharing",
+      "section": "meetings",
+      "scenario": "VbSS senden und empfangen",
+      "feature_ids": [
+        "sharing-vbss"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "presenter-controls",
+      "section": "meetings",
+      "scenario": "Präsentatorfunktionen bedienen",
+      "feature_ids": [
+        "meeting-controls"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "complete-roster",
+      "section": "meetings",
+      "scenario": "Detaillierte Teilnehmerliste sehen",
+      "feature_ids": [
+        "conference-roster"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "group-im",
+      "section": "meetings",
+      "scenario": "Chat mit mehreren Besprechungsteilnehmern",
+      "feature_ids": [
+        "conference-im"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "desktop-share",
+      "section": "meetings",
+      "scenario": "Desktop teilen und ansehen",
+      "feature_ids": [
+        "sharing-rdp"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "application-share",
+      "section": "meetings",
+      "scenario": "Einzelnes Programm teilen und ansehen",
+      "feature_ids": [
+        "app-sharing"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "invite-anonymous",
+      "section": "meetings",
+      "scenario": "Anonyme Teilnehmer gemäß Richtlinie zulassen",
+      "feature_ids": [
+        "meeting-anonymous-invite"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "dialin-conference",
+      "section": "meetings",
+      "scenario": "Per Einwahlaudio an Besprechungen teilnehmen",
+      "feature_ids": [
+        "meeting-dial-in"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "meet-now",
+      "section": "meetings",
+      "scenario": "Sofortbesprechung starten",
+      "feature_ids": [
+        "meeting-meet-now"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "ppt-present",
+      "section": "meetings",
+      "scenario": "PowerPoint-Dateien hochladen und präsentieren",
+      "feature_ids": [
+        "powerpoint-sharing"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "ppt-navigation",
+      "section": "meetings",
+      "scenario": "PowerPoint-Präsentationen steuern",
+      "feature_ids": [
+        "powerpoint-navigation"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "onenote-meeting",
+      "section": "meetings",
+      "scenario": "OneNote-Besprechungsnotizen erstellen und bearbeiten",
+      "feature_ids": [
+        "onenote-notes"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "whiteboard",
+      "section": "meetings",
+      "scenario": "Interaktive Whiteboard-Sitzungen",
+      "feature_ids": [
+        "whiteboard"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "polls",
+      "section": "meetings",
+      "scenario": "Abstimmungen im Meeting durchführen",
+      "feature_ids": [
+        "meeting-polls"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "conference-upload",
+      "section": "meetings",
+      "scenario": "Dateien im Meeting hochladen und freigeben",
+      "feature_ids": [
+        "meeting-file-upload"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "schedule-meeting",
+      "section": "meetings",
+      "scenario": "Termine über Outlook oder Web Scheduler planen",
+      "feature_ids": [
+        "meeting-scheduling"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "qa-manager",
+      "section": "meetings",
+      "scenario": "Fragen-und-Antworten-Moderation",
+      "feature_ids": [
+        "meeting-qa"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "disable-participant-video",
+      "section": "meetings",
+      "scenario": "Teilnehmervideo deaktivieren",
+      "feature_ids": [
+        "meeting-disable-video"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "disable-conference-im",
+      "section": "meetings",
+      "scenario": "Meeting-Chat deaktivieren",
+      "feature_ids": [
+        "meeting-disable-im"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "mute-all",
+      "section": "meetings",
+      "scenario": "Publikum stummschalten",
+      "feature_ids": [
+        "meeting-mute-audience"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "demote-all",
+      "section": "meetings",
+      "scenario": "Alle zu Teilnehmern herabstufen",
+      "feature_ids": [
+        "meeting-demote-all"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "meeting-broadcast",
+      "section": "meetings",
+      "scenario": "Besprechungsübertragung bei konfiguriertem Dienst",
+      "feature_ids": [
+        "meeting-broadcast"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "schedule-for-delegator",
+      "section": "meetings",
+      "scenario": "Besprechung für vertretene Person planen",
+      "feature_ids": [
+        "meeting-delegate-scheduling"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "outlook-delegate-sync",
+      "section": "meetings",
+      "scenario": "Stellvertretung mit Outlook synchronisieren",
+      "feature_ids": [
+        "outlook-delegate-sync"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "spotlight-video",
+      "section": "meetings",
+      "scenario": "Teilnehmervideo hervorheben und fixieren",
+      "feature_ids": [
+        "meeting-video-spotlight"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "remote-control",
+      "section": "meetings",
+      "scenario": "Steuerung bei Bildschirmfreigabe geben und übernehmen",
+      "feature_ids": [
+        "meeting-remote-control"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "make-voice-call",
+      "section": "voice",
+      "scenario": "Sprachanruf initiieren",
+      "feature_ids": [
+        "audio-call"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "contact-click-to-call",
+      "section": "voice",
+      "scenario": "Anruf aus Kontaktkarte starten",
+      "feature_ids": [
+        "click-to-call"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "transfer-call",
+      "section": "voice",
+      "scenario": "Anruf vermitteln",
+      "feature_ids": [
+        "transfer"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "configure-forwarding",
+      "section": "voice",
+      "scenario": "Rufweiterleitung einstellen",
+      "feature_ids": [
+        "forwarding"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "team-call-configuration",
+      "section": "voice",
+      "scenario": "Teamrufgruppe konfigurieren",
+      "feature_ids": [
+        "delegation"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "delegate-configuration",
+      "section": "voice",
+      "scenario": "Stellvertreter konfigurieren",
+      "feature_ids": [
+        "delegation"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "dial-response-group",
+      "section": "voice",
+      "scenario": "Response Group anrufen",
+      "feature_ids": [
+        "response-group-calls"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "e911-routing",
+      "section": "voice",
+      "scenario": "Notrufrouting und Standort beachten",
+      "feature_ids": [
+        "emergency"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "e911-notify-sip",
+      "section": "voice",
+      "scenario": "Notruf-Benachrichtigung an SIP-URIs auslösen",
+      "feature_ids": [
+        "e911-sip-notify"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "e911-notify-group",
+      "section": "voice",
+      "scenario": "Notruf-Benachrichtigung an Gruppe auslösen",
+      "feature_ids": [
+        "e911-distribution-notify"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "voice-mail-greeting",
+      "section": "voice",
+      "scenario": "Voicemail abrufen und Begrüßung einstellen",
+      "feature_ids": [
+        "voicemail"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "missed-call-alert",
+      "section": "voice",
+      "scenario": "Verpasste Anrufe anzeigen",
+      "feature_ids": [
+        "missed-calls"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "call-on-behalf",
+      "section": "voice",
+      "scenario": "Im Namen einer vertretenen Person anrufen",
+      "feature_ids": [
+        "delegate-outbound"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "answer-delegated-call",
+      "section": "voice",
+      "scenario": "Anruf im Namen einer anderen Person annehmen",
+      "feature_ids": [
+        "delegate-inbound"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "parking-and-retrieval",
+      "section": "voice",
+      "scenario": "Anruf parken und wiederaufnehmen",
+      "feature_ids": [
+        "callpark"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "group-pickup",
+      "section": "voice",
+      "scenario": "Anruf einer Pickup-Gruppe übernehmen",
+      "feature_ids": [
+        "group-call-pickup"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "location-based-routing",
+      "section": "voice",
+      "scenario": "Standortabhängige Wahlregeln beachten",
+      "feature_ids": [
+        "location-routing"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "response-team-administration",
+      "section": "voice",
+      "scenario": "Response- und Team-Gruppen verwalten",
+      "feature_ids": [
+        "response-group-management"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "public-im",
+      "section": "external",
+      "scenario": "IM an unterstützte öffentliche Kontakte",
+      "feature_ids": [
+        "public-im"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "federated-im",
+      "section": "external",
+      "scenario": "IM an föderierte Kontakte",
+      "feature_ids": [
+        "federation"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "external-audio-calls",
+      "section": "external",
+      "scenario": "Anrufe zu externen Benutzern und Konferenzen",
+      "feature_ids": [
+        "external-calling"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "record-av-sharing",
+      "section": "recording",
+      "scenario": "Audio Video und Freigaben aufzeichnen",
+      "feature_ids": [
+        "meeting-recording"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "record-collaboration-content",
+      "section": "recording",
+      "scenario": "Dateien OneNote und PowerPoint-Anmerkungen aufzeichnen",
+      "feature_ids": [
+        "meeting-recording-artifacts"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "record-resolution",
+      "section": "recording",
+      "scenario": "Aufzeichnungsauflösung auswählen",
+      "feature_ids": [
+        "recording-resolution"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "modern-auth-flow",
+      "section": "authentication",
+      "scenario": "Modern Authentication einsetzen",
+      "feature_ids": [
+        "modern-auth"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "multi-factor-auth",
+      "section": "authentication",
+      "scenario": "Mehrfaktoranmeldung verwenden",
+      "feature_ids": [
+        "mfa"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "certificate-login",
+      "section": "authentication",
+      "scenario": "Zertifikatsanmeldung auf berechtigten Geräten",
+      "feature_ids": [
+        "certificate-auth"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "kerberos-login",
+      "section": "authentication",
+      "scenario": "Kerberos-Anmeldung verwenden",
+      "feature_ids": [
+        "auth"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "exchange-im-archive",
+      "section": "compliance",
+      "scenario": "IM-Konversation in Outlook-Verlauf archivieren",
+      "feature_ids": [
+        "outlook-im-history"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "media-record-archive",
+      "section": "compliance",
+      "scenario": "Konferenzaufnahme und Archivierung unterstützen",
+      "feature_ids": [
+        "compliance"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "record-file-archive",
+      "section": "compliance",
+      "scenario": "Datei- und Office-Inhalte gemäß Richtlinie archivieren",
+      "feature_ids": [
+        "recording-archive-artifacts"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "client-signin-logs",
+      "section": "compliance",
+      "scenario": "Client-Anmeldeprotokolle abrufbar machen",
+      "feature_ids": [
+        "sign-in-logs"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    },
+    {
+      "id": "high-call-volume",
+      "section": "full-client-only",
+      "scenario": "Hohe gleichzeitige Anruflast bedienen",
+      "feature_ids": [
+        "high-volume-calls"
+      ],
+      "condition": "when-enabled-by-server-policy",
+      "source_url": "https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison"
+    }
+  ]
+}

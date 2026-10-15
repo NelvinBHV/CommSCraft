@@ -1,21 +1,13 @@
-# Source import status — partial root workspace
+# CommSCraft historical source import: complete in PR #8
 
-- **Current GitHub artifact:** root Cargo workspace containing **only** `crates/commscraft-register-events`; see `Cargo.toml`.
-- **Prepared historical local source:** CommSCraft v0.14.0 archive, SHA-256 `fce47367eba3cf1e1f416e557028447c61e5f65254e3adbfec8c1153c60bbfad`.
-- **Historical source import:** **NOT DONE**. The archive contains additional apps, crates, fixtures, Python tests, feature matrices and history/evidence files. Its existence outside the repo does not prove that the GitHub tree contains those files.
-- **Earlier local checks:** 44 Python unit tests and hash checks passed; no Rust toolchain was available locally. These were **not** real server interoperability tests.
-- **Current executable scope:** offline REGISTER `Presence-State` parser only, with new conformance integration tests. Successful GitHub CI will prove build/test success for this limited scope only.
-- **v1.0 release:** **BLOCKED** pending verified Windows Full Client parity and full historical source import.
+**Scope:** The original CommSCraft v0.14.0 Rust workspace was imported into [PR #8](https://github.com/NelvinBHV/CommSCraft/pull/8) and reconciled with the existing `commscraft-register-events` module from the main branch. The live workspace contains eight packages across three main protocol crates, one Microsoft REGISTER-events crate, three application binaries and `xtask`.
 
-## RFC/MS traceability and migration acceptance
+**Source provenance:** `docs/source-import-manifest.json` lists the original 100 source/test/documentation files and SHA-256 digests. Earlier RFC/MS evidence ledgers are unchanged. Source changes made for compilation, tests, linting and merge integration are preserved with immutable historical snapshots under `docs/history/import-v0.14.0/`. Verify using `python3 scripts/check_import_integrity.py`.
 
-Import the unmodified historical `FEATURE_PARITY.json`, `WINDOWS_REFERENCE_CASES.json`, `V1_RELEASE_CONTRACT.json`, `Cargo.toml`, `apps/`, `crates/sfb-*`, `xtask/`, `tests/`, `scripts/` and `docs/evidence-v*.json`. Preserve original SHA-256 evidence, recording renamed files in immutable history instead of rewriting old ledgers.
+**Verification:** The import branch ran compiled offline Rust protocol tests on Linux and Windows. See [PR #8 Actions](https://github.com/NelvinBHV/CommSCraft/pull/8/checks) for exact results and the relevant commit SHA. `cargo fmt --all -- --check` remains a known quality task in [Issue #9](https://github.com/NelvinBHV/CommSCraft/issues/9): its advisory status is not proof of passing formatting.
 
-After import run:
-- `python3 scripts/check_commscraft_migration.py`
-- `python3 -m unittest discover -s scripts -p 'test*.py'`
-- `cargo test --workspace --all-targets` on Linux and Windows
-- `cargo clippy --workspace --all-targets -- -D warnings`
-- full signed-off Windows-to-Rust, Rust-to-Windows and server authentication interoperability tests
+**Normative sources:** [RFC 3261 §10](https://www.rfc-editor.org/rfc/rfc3261#section-10) on REGISTER and [§17.1.3](https://www.rfc-editor.org/rfc/rfc3261#section-17.1.3) on response matching; [MS-SIPREGE §2.2.1.4](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/affa7b0a-c039-4699-9889-1da2e585ef39) on `Presence-State`; [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) on MIC and replay processing.
 
-Normative references: [MS-SIPREGE 2.2.1.4](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/affa7b0a-c039-4699-9889-1da2e585ef39), [MS-SIPREGE 3.1.2.5.1](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/8b6cbbb4-b398-4b55-847d-950b9a8d3010), [MS-SIPAE](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/ba3e9821-fa85-4e0f-a80c-5a4c720a00bd), [RFC 3261 §10](https://www.rfc-editor.org/rfc/rfc3261#section-10).
+**Safety and release:** No live end-to-end MS-SIPAE/Kerberos registration, actual SfB Server SE interoperability, working calls or full Windows-client feature parity has been established. Version 1.0 remains blocked by the strict evidence gate. The 122-case feature inventory and 93 Windows-reference tests remain a coverage **plan**, not completed functions.
+
+This replaces the previous partial-workspace bootstrap status while retaining its historical content in Git history.
