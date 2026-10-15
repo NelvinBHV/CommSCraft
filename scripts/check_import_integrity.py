@@ -8,6 +8,7 @@ import json
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "docs/source-import-manifest.json"
 MOVED = {
+    "crates/sfb-core/src/windows_sspi.rs": "docs/history/import-v0.14.0/crates/sfb-core/src/windows_sspi.rs",
     "crates/sfb-core/src/transaction.rs": "docs/history/import-v0.14.0/crates/sfb-core/src/transaction.rs",
     "apps/sfb-desktop/Cargo.toml": "docs/history/import-v0.14.0/apps/sfb-desktop/Cargo.toml",
     "scripts/check_commscraft_migration.py": "docs/history/import-v0.14.0/scripts/check_commscraft_migration.py",
