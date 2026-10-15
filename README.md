@@ -22,7 +22,7 @@ The source-import manifest is at [docs/source-import-manifest.json](docs/source-
 ```shell
 git clone https://github.com/NelvinBHV/CommSCraft.git
 cd CommSCraft
-cargo run -p sfb-desktop                    # experimental offline desktop demo
+cargo run -p commscraft                    # CommSCraft offline desktop prototype
 cargo run -p sfb-inspect -- --register-demo # offline REGISTER protocol demonstration
 cargo run -p xtask -- ci                    # offline tests / source evidence / lints
 ```
@@ -142,7 +142,7 @@ See also [Windows parity and release validation](docs/windows-release-validation
 
 ## Repository naming
 
-**Project name: CommSCraft.** The internal `sfb-*` Rust crate/package names are retained for compatibility with authored offline fixtures, API references and historic source evidence. They are not separate products. See [migration evidence](docs/commscraft-migration-evidence.md).
+**Product and desktop application: CommSCraft.** The native desktop Cargo package is `commscraft` and its executable is `CommSCraft`. Older internal protocol libraries and diagnostic binaries retain their historical `sfb-*` identifiers for source/API compatibility; they are not additional products. See [migration evidence](docs/commscraft-migration-evidence.md).
 
 ## What is implemented
 
@@ -192,7 +192,7 @@ Install stable [Rust](https://rustup.rs) and development packages needed for
 
 ```bash
 cargo test -p sfb-core
-cargo run -p sfb-desktop                 # offline mock UI
+cargo run -p commscraft                 # CommSCraft offline mock UI
 cargo run -p sfb-inspect -- --demo       # offline SIP inspector
 cargo run -p sfb-inspect -- --register-demo  # synthetic 423 and 401 flow
 cargo run -p sfb-inspect -- --sa-demo        # synthetic HMAC verification + replay
@@ -228,7 +228,7 @@ Skype for Business interoperability.
 ## Workspace layout
 
 ```text
-apps/sfb-desktop/          native offline UI
+apps/commscraft/          native offline UI
 apps/sfb-inspect/          local SIP fixture analyzer, no networking
 apps/sfb-probe/            explicit opt-in DNS-SRV and TLS handshake diagnostics
 crates/sfb-core/src/       REGISTER planner/observer, parser, stream, SIP transactions, discovery,

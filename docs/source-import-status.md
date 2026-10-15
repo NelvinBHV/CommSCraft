@@ -11,3 +11,7 @@
 **Safety and release:** No live end-to-end MS-SIPAE/Kerberos registration, actual SfB Server SE interoperability, working calls or full Windows-client feature parity has been established. Version 1.0 remains blocked by the strict evidence gate. The 122-case feature inventory and 93 Windows-reference tests remain a coverage **plan**, not completed functions.
 
 This replaces the previous partial-workspace bootstrap status while retaining its historical content in Git history.
+
+## Current CommSCraft desktop identity
+
+The previously named desktop prototype now lives at `apps/commscraft/`, uses the Cargo package `commscraft` and builds the binary `CommSCraft`. The user-facing application is **CommSCraft**. See `docs/commscraft-migration-evidence.md` for preserved historical paths and hashes. This package rename does not validate a live Skype for Business sign-in.

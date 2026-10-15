@@ -12,5 +12,11 @@ for version, source, archived in [
     assert got==ledger['sha256'][source], (version, source)
 assert (ROOT/'README.md').read_text().startswith('# CommSCraft\n')
 assert 'NelvinBHV/CommSCraft' in (ROOT/'Cargo.toml').read_text()
-assert 'CommSCraft' in (ROOT/'apps/sfb-desktop/src/main.rs').read_text()
+assert 'CommSCraft' in (ROOT/'apps/commscraft/src/main.rs').read_text()
+import tomllib
+app = tomllib.loads((ROOT/'apps/commscraft/Cargo.toml').read_text())
+assert app['package']['name'] == 'commscraft'
+assert app['bin'][0]['name'] == 'CommSCraft'
+assert 'apps/commscraft' in tomllib.loads((ROOT/'Cargo.toml').read_text())['workspace']['members']
+assert not (ROOT/'apps/sfb-desktop').exists()
 print('CommSCraft migration source hashes verified (not a build/interop proof)')
