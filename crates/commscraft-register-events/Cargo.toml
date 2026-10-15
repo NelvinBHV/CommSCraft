@@ -8,5 +8,5 @@ description = "Standalone MS-SIPREGE untrusted Presence-State header parser"
 [lib]
 path = "src/lib.rs"
 
-[dev-dependencies]
+[dependencies]
 sfb-core = { path = "../sfb-core" }

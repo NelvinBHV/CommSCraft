@@ -2,7 +2,7 @@
 //! RFC 3261 §§7.3.1, 8.1.3, 10, 20.16 (CSeq); MS-SIPREGE §2.2.1.4.
 //! These are **untrusted message hints**; transaction matching, TLS peer
 //! validation and MS-SIPAE MIC verification remain external prerequisites.
-use commscraft_register_events::{parse_presence_state, ParseError, PresenceHint};
+use crate::{parse_presence_state, ParseError, PresenceHint};
 use sfb_core::sip::{SipMessage, StartLine};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

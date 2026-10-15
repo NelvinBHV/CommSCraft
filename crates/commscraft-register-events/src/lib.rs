@@ -246,3 +246,7 @@ mod tests {
         assert_eq!(state.action, RegisterAction::Added);
     }
 }
+
+/// Strict parsing of SIP REGISTER response context before Presence-State hints.
+pub mod sip_binding;
+pub use sip_binding::{parse_register_presence_response, BindingError};
