@@ -36,3 +36,10 @@ Their self-signatures **must never** be trusted in a live TLS context. Tests del
 **Execution:** `cargo test -p commscraft-transport --all-targets`, `cargo test --workspace --all-targets`, `cargo clippy --workspace --all-targets -- -D warnings`, `python3 -m unittest discover -s scripts -p 'test_*.py'`, `python3 scripts/check_import_integrity.py`, `python3 scripts/check_v012_evidence.py`. Do not report these tests as passed until the particular head commit's CI is complete.
 
 **Release policy:** CommSCraft 1.0 remains BLOCKED.
+
+
+## SIP URI SAN grammar hardening (follow-up)
+
+[RFC 3261 §19.1.1](https://www.rfc-editor.org/rfc/rfc3261#section-19.1.1) defines the SIP URI structure used by [RFC 5922 §7.1](https://www.rfc-editor.org/rfc/rfc5922#section-7.1) for certificate identity extraction. CommSCraft now rejects URI SAN values containing fragments (`#`), whitespace, ASCII control bytes and backslashes **anywhere**, including ignored URI-parameter/header suffixes, before extracting the matching host. This is a deliberate **fail-closed parser restriction**, not a claim of a complete SIP URI grammar parser. Legitimate semicolon URI parameters and question-mark SIP headers remain accepted. Regression test: `malformed_sip_uri_suffix_cannot_authorize_a_domain`, with both positive and negative cases.
+
+This is only an extra check on an already platform-verified peer leaf certificate. It is not independent certificate chain validation and does not change MS-SIPAE MIC/replay or Windows SSPI login boundaries. Execute `cargo test -p commscraft-transport --all-targets` and the strict full-workspace checks on standard GitHub-hosted Linux/Windows runners; CI evidence is only valid after completion.
