@@ -8,6 +8,7 @@ import json
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "docs/source-import-manifest.json"
 MOVED = {
+    "apps/sfb-desktop/src/main.rs": "docs/history/import-v0.14.0/apps/sfb-desktop/src/main.rs",
     "scripts/check_v012_evidence.py": "docs/history/import-v0.14.0/scripts/check_v012_evidence.py",
     "scripts/check_v013_evidence.py": "docs/history/import-v0.14.0/scripts/check_v013_evidence.py",
     ".github/workflows/ci.yml": "docs/history/import-v0.14.0/.github/workflows/ci.yml",

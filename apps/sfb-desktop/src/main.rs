@@ -239,7 +239,7 @@ impl SfbApp {
             match DiscoveryPlan::from_sip_uri(&self.sip_identity) {
                 Ok(plan) => {
                     ui.label("HTTPS-Hostnamen:");
-                    for host in plan.https_hosts { ui.monospace(host); }
+                    for host in &plan.https_hosts { ui.monospace(host); }
                     ui.label("Microsoft SIP SRV (MS-CONMGMT §3.1.5):");
                     for (service, name) in plan.srv_queries() {
                         ui.monospace(format!("{}  [{}]", name,
