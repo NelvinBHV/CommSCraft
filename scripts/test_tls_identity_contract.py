@@ -13,6 +13,7 @@ class TlsSipIdentityContract(unittest.TestCase):
         self.assertIn("pub fn sip_domain(&self)", source)
         self.assertIn("tls.peer_certificate()", source)
         self.assertIn("cert.to_der()", source)
+        self.assertIn("idna::domain_to_ascii_strict(name)", source)
         self.assertIn("sip_certificate::matches_sip_identity(", source)
         self.assertNotIn("if cert.is_none()", source)
         self.assertNotIn("tls.connect(peer.host(), tcp)", source)
@@ -34,6 +35,13 @@ class TlsSipIdentityContract(unittest.TestCase):
             self.assertTrue(pem.is_file(), fixture)
             self.assertIn("-----BEGIN CERTIFICATE-----", pem.read_text())
             self.assertNotIn("PRIVATE KEY", pem.read_text())
+
+    def test_invalid_punycode_rejected_for_cert_sans_and_tls_endpoints(self):
+        parser = (ROOT / "crates/commscraft-transport/src/sip_certificate.rs").read_text()
+        manifest = (ROOT / "crates/commscraft-transport/Cargo.toml").read_text()
+        self.assertIn("idna::domain_to_ascii_strict(name)", parser)
+        self.assertIn("valid_idna_a_labels_match_exact_domain_but_fake_punycode_cannot", parser)
+        self.assertIn('idna = "1.1.0"', manifest)
 
     def test_inbound_only_and_no_trust_bypass(self):
         source = (ROOT / "crates/commscraft-transport/src/lib.rs").read_text()
