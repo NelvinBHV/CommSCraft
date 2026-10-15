@@ -43,6 +43,19 @@ class TlsSipIdentityContract(unittest.TestCase):
         self.assertIn("valid_idna_a_labels_match_exact_domain_but_fake_punycode_cannot", parser)
         self.assertIn('idna = "1.1.0"', manifest)
 
+    def test_rfc9549_other_symbol_a_labels_checked_both_before_tls_and_in_sans(self):
+        transport = (ROOT / "crates/commscraft-transport/src/lib.rs").read_text()
+        cert = (ROOT / "crates/commscraft-transport/src/sip_certificate.rs").read_text()
+        policy = (ROOT / "crates/commscraft-transport/src/idna_policy.rs").read_text()
+        manifest = (ROOT / "crates/commscraft-transport/Cargo.toml").read_text()
+        self.assertIn("rfc9549_a_label_symbols_allowed(&canonical)", transport)
+        self.assertIn("rfc9549_a_label_symbols_allowed(name)", cert)
+        self.assertIn("GeneralCategory::OtherSymbol", policy)
+        self.assertIn("idna::domain_to_unicode", policy)
+        self.assertIn('unicode-general-category = "1.1.0"', manifest)
+        self.assertIn("rfc9549_rejects_other_symbol_a_labels_before_tls_dns_or_sni", transport)
+        self.assertIn("rfc9549_other_symbol_a_label_never_authorizes_sip_certificate_san", cert)
+
     def test_inbound_only_and_no_trust_bypass(self):
         source = (ROOT / "crates/commscraft-transport/src/lib.rs").read_text()
         self.assertIn("TlsConnector::new()", source)

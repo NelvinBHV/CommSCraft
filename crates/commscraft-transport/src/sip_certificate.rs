@@ -29,6 +29,9 @@ fn ascii_sip_domain(name: &str) -> Option<&str> {
     {
         return None;
     }
+    if !crate::idna_policy::rfc9549_a_label_symbols_allowed(name) {
+        return None;
+    }
     Some(name)
 }
 
@@ -230,6 +233,35 @@ mod tests {
         }
         // Certificate URI/dNSName SANs are IA5String: no Unicode U-labels.
         assert!(ascii_sip_domain("bücher.example").is_none());
+    }
+
+    #[test]
+    fn rfc9549_other_symbol_a_label_never_authorizes_sip_certificate_san() {
+        // RFC 9549 §1 explicitly rejects "♚" (Unicode General Category So).
+        // xn--45h is the punycode encoding of that character.
+        for invalid in ["xn--45h.example.com", "XN--45H.EXAMPLE.COM"] {
+            assert_eq!(ascii_sip_domain(invalid), None);
+            assert!(!match_sip_sans(
+                &[GeneralName::DNSName(invalid)],
+                invalid
+            ));
+            let uri = format!("sip:{invalid}");
+            assert_eq!(sip_uri_host(&uri), None);
+            assert!(!match_sip_sans(
+                &[GeneralName::URI(&uri)],
+                invalid
+            ));
+        }
+        let valid = "xn--bcher-kva.example.com";
+        assert_eq!(ascii_sip_domain(valid), Some(valid));
+        assert!(match_sip_sans(
+            &[GeneralName::URI("sip:xn--bcher-kva.example.com")],
+            valid
+        ));
+        assert!(match_sip_sans(
+            &[GeneralName::DNSName("XN--BCHER-KVA.EXAMPLE.COM")],
+            valid
+        ));
     }
 
     #[test]

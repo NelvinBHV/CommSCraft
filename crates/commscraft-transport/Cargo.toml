@@ -10,3 +10,4 @@ commscraft-core = { path = "../commscraft-core" }
 native-tls = "0.2"
 x509-parser = { version = "0.18.1", default-features = false }
 idna = "1.1.0"
+unicode-general-category = "1.1.0"
