@@ -626,7 +626,8 @@ mod tests {
         w.record(744);
         assert_eq!(w.check(744), Err(SecurityError::Replay));
         w.record(1200);
-        assert_eq!(w.check(744), Err(SecurityError::Replay));
+        // 744 is now beyond the 257-value sliding acceptance window.
+        assert_eq!(w.check(744), Err(SecurityError::TooOld));
     }
     #[test]
     fn rejects_wrong_origin_duplicate_and_bad_hex() {

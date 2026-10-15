@@ -69,7 +69,8 @@ pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
                 o = true;
             }
             "s=" => {
-                if !o || subject || !media.is_empty() { return Err(SdpError::DuplicateRequired); }
+                if !o { return Err(SdpError::Malformed); }
+                if subject || !media.is_empty() { return Err(SdpError::DuplicateRequired); }
                 subject = true;
             }
             "t=" => {
@@ -136,6 +137,7 @@ mod tests {
         assert_eq!(inspect_sdp(b"v=0\r\ns=-\r\nt=0 0\r\n"), Err(SdpError::Malformed));
         assert_eq!(inspect_sdp(SAMPLE.replace("49170", "999999").as_bytes()), Err(SdpError::BadMedia));
         assert_eq!(inspect_sdp(SAMPLE.replace("v=0", "v=1").as_bytes()), Err(SdpError::Malformed));
+        assert_eq!(inspect_sdp(SAMPLE.replace("s=-", "s=-\\r\\ns=-").as_bytes()), Err(SdpError::DuplicateRequired));
     }
     #[test]
     fn rejects_control_characters_and_unbounded_input() {
