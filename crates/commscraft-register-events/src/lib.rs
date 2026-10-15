@@ -250,3 +250,7 @@ mod tests {
 /// Strict parsing of SIP REGISTER response context before Presence-State hints.
 pub mod sip_binding;
 pub use sip_binding::{parse_register_presence_response, BindingError};
+
+/// Compose a correlated, MIC-checked REGISTER result with untrusted metadata.
+pub mod gated_presence;
+pub use gated_presence::{observe_register_with_presence, GatedPresenceError, GatedPresenceOutcome};
