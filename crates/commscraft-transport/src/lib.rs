@@ -9,6 +9,7 @@
 //! A successful TLS handshake is NOT a Microsoft SIPAE Security Association.
 //! No public API exists to send SIP, credentials, or REGISTER requests.
 
+mod idna_policy;
 mod sip_certificate;
 use native_tls::{TlsConnector, TlsStream};
 use commscraft_core::inbound::{ReceiveError, ReceiveEvent, SipInbound};
@@ -47,7 +48,9 @@ fn dns_name(raw: &str) -> Option<String> {
     // them as DNS targets or verified TLS reference identities. Do not
     // silently transform untrusted hostnames through compatibility mapping.
     let canonical = idna::domain_to_ascii_strict(name).ok()?;
-    if !canonical.eq_ignore_ascii_case(name) {
+    if !canonical.eq_ignore_ascii_case(name)
+        || !crate::idna_policy::rfc9549_a_label_symbols_allowed(&canonical)
+    {
         return None;
     }
     Some(canonical)
@@ -182,6 +185,30 @@ mod tests {
         assert_eq!(TlsEndpoint::from_domain_and_host(
             "bücher.example", "edge.xn--bcher-kva.example", 5061
         ), Err(TransportError::InvalidEndpoint));
+    }
+
+    #[test]
+    fn rfc9549_rejects_other_symbol_a_labels_before_tls_dns_or_sni() {
+        for invalid in ["xn--45h.example.com", "XN--45H.EXAMPLE.COM"] {
+            assert_eq!(
+                TlsEndpoint::from_domain_and_host(invalid, invalid, 5061),
+                Err(TransportError::InvalidEndpoint),
+                "forbidden Unicode Other Symbol A-label: {invalid}"
+            );
+            assert_eq!(
+                TlsEndpoint::from_domain_and_host(
+                    "example.com", &format!("edge.{invalid}"), 5061
+                ),
+                Err(TransportError::InvalidEndpoint),
+                "forbidden Unicode Other Symbol in DNS SRV destination: {invalid}"
+            );
+        }
+        let accepted = TlsEndpoint::from_domain_and_host(
+            "xn--bcher-kva.example.com", "edge.xn--bcher-kva.example.com", 5061
+        )
+        .expect("valid IDNA A-label");
+        assert_eq!(accepted.tls_reference_identity(), "xn--bcher-kva.example.com");
+        assert_eq!(accepted.host(), "edge.xn--bcher-kva.example.com");
     }
 
     #[test]
