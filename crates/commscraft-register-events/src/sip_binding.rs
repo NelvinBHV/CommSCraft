@@ -25,10 +25,10 @@ pub fn parse_register_presence_response(
     };
     let mut cseq = None;
     for (name, value) in &message.headers {
-        if name.eq_ignore_ascii_case("CSeq") {
-            if cseq.replace(value.as_str()).is_some() {
-                return Err(BindingError::DuplicateCSeq);
-            }
+        if name.eq_ignore_ascii_case("CSeq")
+            && cseq.replace(value.as_str()).is_some()
+        {
+            return Err(BindingError::DuplicateCSeq);
         }
     }
     let raw = cseq.ok_or(BindingError::InvalidCSeq)?;
@@ -36,10 +36,11 @@ pub fn parse_register_presence_response(
     let (Some(number), Some(method), None) = (words.next(), words.next(), words.next()) else {
         return Err(BindingError::InvalidCSeq);
     };
-    // RFC 3261 CSeq number is a 32-bit unsigned decimal; do not accept +, -,
-    // a Unicode digit, trailing bytes or integer overflow.
+    // RFC 3261 §§8.1.1.5, 20.16: requests use unsigned decimal
+    // CSeq below 2^31. This response is bound to that request syntax.
+    // Reject signs, Unicode digits, trailing bytes and overflow.
     if number.is_empty() || !number.bytes().all(|b| b.is_ascii_digit())
-        || number.parse::<u32>().is_err()
+        || !matches!(number.parse::<u32>(), Ok(n) if n < (1 << 31))
     {
         return Err(BindingError::InvalidCSeq);
     }
@@ -75,11 +76,14 @@ mod tests {
     }
     #[test]
     fn malformed_and_duplicate_cseq_fail_closed() {
-        for invalid in ["", "-1 REGISTER", "+1 REGISTER", "4294967296 REGISTER",
+        for invalid in ["", "-1 REGISTER", "+1 REGISTER", "2147483648 REGISTER",
+                        "4294967295 REGISTER", "4294967296 REGISTER",
                         "1 REGISTER EXTRA", "1REGISTER", "notanumber REGISTER"] {
             assert_eq!(parse_register_presence_response(&response(200, invalid)),
                 Err(BindingError::InvalidCSeq), "{invalid}");
         }
+        assert!(parse_register_presence_response(&response(200, "2147483647 REGISTER"))
+            .unwrap().is_some());
         let mut message = response(200, "1 REGISTER");
         message.headers.push(("cseq".into(), "2 REGISTER".into()));
         assert_eq!(parse_register_presence_response(&message), Err(BindingError::DuplicateCSeq));
