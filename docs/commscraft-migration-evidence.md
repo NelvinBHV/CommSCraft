@@ -1,6 +1,6 @@
 # CommSCraft migration evidence
 
-CommSCraft continues the existing Skype for Business client Rust research prototype at version **0.14.0**. The public project name and repository URL were changed, without asserting runtime interoperability. The native desktop application has been renamed to **CommSCraft** (`apps/commscraft`, Cargo package `commscraft`, executable `CommSCraft`). Historical internal SIP protocol and diagnostic package identifiers may retain `sfb-*` for API and evidence compatibility.
+CommSCraft continues the existing Skype for Business client Rust research prototype at version **0.14.0**. The public project name and repository URL were changed, without asserting runtime interoperability. The native desktop application has been renamed to **CommSCraft** (`apps/commscraft`, Cargo package `commscraft`, executable `CommSCraft`). All current internal protocol libraries, diagnostics and build tools now use `commscraft-*` package names. Only frozen historical source snapshots and their SHA-256 ledgers retain pre-rename identifiers.
 
 The following pre-migration source bytes are preserved so the earlier evidence is auditable after rebranding:
 
@@ -19,3 +19,7 @@ The active application is **CommSCraft**, not the historical `sfb-desktop` packa
 For auditability, `docs/history/import-v0.14.0/apps/sfb-desktop/Cargo.toml` contains the exact historical pre-rename package manifest. The previous desktop `main.rs` was already preserved under the corresponding historical path. `docs/source-import-manifest.json`, previous SHA-256 values and RFC/MS specification records are **not rewritten**. The active integrity checker maps historical file locations to those original bytes; the new desktop package is separately asserted by `scripts/test_commscraft_branding.py`.
 
 This is a **naming and packaging change only**. It does not claim live Kerberos authentication, Microsoft SIP REGISTER interoperability, a working contact/IM service, or Windows Full Client parity.
+
+## All CommSCraft packages
+
+The eight active packages are `commscraft`, `commscraft-core`, `commscraft-transport`, `commscraft-router`, `commscraft-register-events`, `commscraft-inspect`, `commscraft-probe` and `commscraft-xtask`. Historical source paths retain their actual former names in the archival directory only. The protocol's Microsoft specification identifiers (MS-SIPAE, MS-SIPREGE, etc.) are not product names and remain unchanged.

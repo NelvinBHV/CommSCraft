@@ -1,6 +1,6 @@
 # CommSCraft historical source import: complete in PR #8
 
-**Scope:** The original CommSCraft v0.14.0 Rust workspace was imported into [PR #8](https://github.com/NelvinBHV/CommSCraft/pull/8) and reconciled with the existing `commscraft-register-events` module from the main branch. The live workspace contains eight packages across three main protocol crates, one Microsoft REGISTER-events crate, three application binaries and `xtask`.
+**Scope:** The original CommSCraft v0.14.0 Rust workspace was imported into [PR #8](https://github.com/NelvinBHV/CommSCraft/pull/8) and reconciled with the existing `commscraft-register-events` module from the main branch. The live workspace contains eight packages across three main protocol crates, one Microsoft REGISTER-events crate, three application binaries and the `commscraft-xtask` task runner.
 
 **Source provenance:** `docs/source-import-manifest.json` lists the original 100 source/test/documentation files and SHA-256 digests. Earlier RFC/MS evidence ledgers are unchanged. Source changes made for compilation, tests, linting and merge integration are preserved with immutable historical snapshots under `docs/history/import-v0.14.0/`. Verify using `python3 scripts/check_import_integrity.py`.
 

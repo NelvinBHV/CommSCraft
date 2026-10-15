@@ -1,6 +1,6 @@
 # Security model (v0.9.0)
 
-The desktop app is a **local demo**. `sfb-probe` is separate, and makes live
+The desktop app is a **local demo**. `commscraft-probe` is separate, and makes live
 DNS or TLS connections **only when explicitly invoked with `--dns` or
 `--tls-probe`**. It never sends SIP requests or credentials.
 
@@ -27,7 +27,7 @@ DNS or TLS connections **only when explicitly invoked with `--dns` or
    generated GSS token in a fresh offline REGISTER draft, but it has no real
    native provider, credential store, actual token exchange, server MIC verification
    tied to Kerberos or sign-in.
-8. All CLI/protocol fixtures are synthetic. `sfb-inspect` shows sanitized
+8. All CLI/protocol fixtures are synthetic. `commscraft-inspect` shows sanitized
    results instead of printing raw SIP headers and user identities. `SipMessage`
    `Debug` intentionally omits all header values, request URIs and body contents.
 9. The Kerberos handshake plan pins a trusted service principal independently
@@ -43,7 +43,7 @@ DNS or TLS connections **only when explicitly invoked with `--dns` or
 - DNS is not DNSSEC-validated by default. DHCP option 120, proxies, HTTPS
   autodiscover, VPN/network change handling, and full MS-CONMGMT sequencing
   have not yet been implemented.
-- `sfb-probe` is intentionally a blocking diagnostic, not an asynchronous
+- `commscraft-probe` is intentionally a blocking diagnostic, not an asynchronous
   resilient production transport. Timeout and size limits exist but a fully
   cancellable I/O layer is still required.
 - RFC 3261 ABNF, Microsoft authentication security association (SA) lifecycle,
