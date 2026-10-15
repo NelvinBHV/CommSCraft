@@ -161,7 +161,7 @@ mod tests {
     #[test]
     fn dns_root_dot_and_forged_suffixes_fail_closed() {
         for host in ["sip.example.com..", "sip.example.com...", "sip.example.com.evil.",
-                     "sip..example.com", "*.example.com", "sip.example.com\\r\\n"] {
+                     "sip..example.com", "*.example.com", "sip.example.com\r\n"] {
             assert_eq!(TlsEndpoint::from_domain_and_host("example.com", host, 5061),
                 Err(TransportError::InvalidEndpoint), "{host:?}");
         }
