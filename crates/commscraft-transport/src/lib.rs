@@ -1,7 +1,9 @@
 //! Inbound-only SIP/TLS connection for an explicitly chosen discovered peer.
 //!
 //! RFC 3261 §§7.5, 18.3; RFC 3263 §7; [MS-CONMGMT] §3.1.5.
-//! `native_tls` verifies the system CA chain and the exact TLS peer name.
+//! `native_tls` validates the platform CA chain against the *original SIP
+//! domain*, not the potentially DNS-controlled SRV target (RFC 5922 §7.3).
+//! Platform hostname matching is NOT a full RFC 5922 SAN/URI/wildcard verifier.
 //! A successful TLS handshake is NOT a Microsoft SIPAE Security Association.
 //! No public API exists to send SIP, credentials, or REGISTER requests.
 
@@ -28,7 +30,8 @@ pub struct TlsEndpoint {
     port: u16,
 }
 fn dns_name(raw: &str) -> Option<String> {
-    let name = raw.trim_end_matches('.');
+    // Exactly one optional terminal DNS root dot; reject repeated dots.
+    let name = raw.strip_suffix('.').unwrap_or(raw);
     if name.len() > 253 || name.is_empty() || !name.is_ascii() || !name.contains('.') {
         return None;
     }
@@ -51,6 +54,11 @@ impl TlsEndpoint {
     pub fn host(&self) -> &str { &self.host }
     pub fn port(&self) -> u16 { self.port }
     pub fn sip_domain(&self) -> &str { &self.domain }
+
+    /// Identity to pass to TLS certificate verification and SNI. This is
+    /// taken from the originating SIP URI, NOT the DNS SRV target hostname.
+    /// RFC 5922 §§7.2–7.3: SIP domain identity is a full-domain match.
+    pub fn tls_reference_identity(&self) -> &str { &self.domain }
 }
 
 pub struct TlsSipReceiver {
@@ -63,6 +71,11 @@ impl TlsSipReceiver {
     /// No external CA or hostname verification bypass; never retries without TLS.
     /// Only TCP-connect failures are retried across A/AAAA addresses. The first
     /// TLS failure is terminal in accordance with [MS-CONMGMT] §3.1.5.
+    /// The original SIP domain is used for TLS SNI and platform certificate
+    /// validation. SRV hostnames are used ONLY for DNS address resolution;
+    /// that distinction is essential under RFC 5922 §7.3.
+    /// Note: platform validation may allow wildcard/CN rules beyond RFC 5922.
+    /// This remains a restricted diagnostic, NOT proof of full SIP identity.
     pub fn connect(peer: TlsEndpoint, timeout: Duration) -> Result<Self, TransportError> {
         if timeout.is_zero() || timeout > Duration::from_secs(30) {
             return Err(TransportError::InvalidEndpoint);
@@ -81,8 +94,18 @@ impl TlsSipReceiver {
                 || tcp.set_write_timeout(Some(timeout)).is_err() {
                 return Err(TransportError::TcpUnavailable);
             }
-            return match tls.connect(peer.host(), tcp) {
-                Ok(tls) => Ok(Self { tls, sip: SipInbound::new(), peer }),
+            return match tls.connect(peer.tls_reference_identity(), tcp) {
+                Ok(tls) => {
+                    // Even with the platform verifier, require an actual
+                    // X.509 peer certificate before accepting the diagnostic
+                    // connection. This is not complete RFC 5922 SAN parsing.
+                    let cert = tls.peer_certificate()
+                        .map_err(|_| TransportError::TlsVerificationFailed)?;
+                    if cert.is_none() {
+                        return Err(TransportError::TlsVerificationFailed);
+                    }
+                    Ok(Self { tls, sip: SipInbound::new(), peer })
+                }
                 Err(_) => Err(TransportError::TlsVerificationFailed),
             };
         }
@@ -118,6 +141,33 @@ mod tests {
         for invalid in ["bad\r\n.example.com", "example.com ", "foo_.example.com", "-foo.example.com", "singlelabel"] {
             assert_eq!(TlsEndpoint::from_domain_and_host(invalid, "sip.example.com", 5061),
                 Err(TransportError::InvalidEndpoint));
+        }
+    }
+    #[test]
+    fn tls_certificate_identity_is_original_sip_domain_not_srv_hostname() {
+        let endpoint = TlsEndpoint::from_domain_and_host(
+            "ExAmPlE.COM.", "sipedge01.EXAMPLE.COM.", 5061
+        ).unwrap();
+        assert_eq!(endpoint.host(), "sipedge01.example.com");
+        assert_eq!(endpoint.sip_domain(), "example.com");
+        assert_eq!(endpoint.tls_reference_identity(), "example.com");
+        // DNS SRV targets are NOT permitted to replace the origin identity.
+        assert_ne!(endpoint.tls_reference_identity(), endpoint.host());
+        let direct = TlsEndpoint::from_domain_and_host(
+            "example.com", "example.com", 5061
+        ).unwrap();
+        assert_eq!(direct.tls_reference_identity(), direct.host());
+    }
+    #[test]
+    fn dns_root_dot_and_forged_suffixes_fail_closed() {
+        for host in ["sip.example.com..", "sip.example.com...", "sip.example.com.evil.",
+                     "sip..example.com", "*.example.com", "sip.example.com\r\n"] {
+            assert_eq!(TlsEndpoint::from_domain_and_host("example.com", host, 5061),
+                Err(TransportError::InvalidEndpoint), "{host:?}");
+        }
+        for domain in ["example.com..", "example.com...", "*.example.com"] {
+            assert_eq!(TlsEndpoint::from_domain_and_host(domain, "sip.example.com", 5061),
+                Err(TransportError::InvalidEndpoint), "{domain:?}");
         }
     }
     #[test]
