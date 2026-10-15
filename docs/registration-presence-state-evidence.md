@@ -1,6 +1,8 @@
 # Evidence: REGISTER Presence-State (CommSCraft independent crate)
 
-Status: source authored on feature branch. Rust execution remains unconfirmed until GitHub Actions completes. No live Skype for Business authentication.
+Status: merged source; 11 Rust unit tests executed successfully on both Linux and Windows in GitHub Actions. No live Skype for Business authentication or overall workspace compilation has been demonstrated.
+
+Execution evidence: https://github.com/NelvinBHV/CommSCraft/actions/runs/38668931202 (Linux and Windows jobs successful, commit 028a905d02023a3efb4b9689a1546a1a82c63fa5). Merged via PR https://github.com/NelvinBHV/CommSCraft/pull/6.
 
 | Requirement | Normative reference | Source / test |
 | --- | --- | --- |
