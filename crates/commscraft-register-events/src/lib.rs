@@ -4,13 +4,23 @@
 
 /// The registrar's reported binding action; never a verified sign-in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RegisterAction { Added, Refreshed, Fixed }
+pub enum RegisterAction {
+    Added,
+    Refreshed,
+    Fixed,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Cluster { Central, Remote }
+pub enum Cluster {
+    Central,
+    Remote,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ClusterState { pub kind: Cluster, pub connected: bool }
+pub struct ClusterState {
+    pub kind: Cluster,
+    pub connected: bool,
+}
 
 /// Untrusted claim from a header. Must not promote session authentication.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -22,12 +32,19 @@ pub struct PresenceHint {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParseError {
-    DuplicateHeader, TooLong, InvalidSyntax, UnsupportedValue, UnknownField,
+    DuplicateHeader,
+    TooLong,
+    InvalidSyntax,
+    UnsupportedValue,
+    UnknownField,
 }
 const MAX_HEADER_BYTES: usize = 1024;
 
 fn key_value(segment: &str) -> Result<(&str, &str), ParseError> {
-    let (key, value) = segment.trim().split_once('=').ok_or(ParseError::InvalidSyntax)?;
+    let (key, value) = segment
+        .trim()
+        .split_once('=')
+        .ok_or(ParseError::InvalidSyntax)?;
     let (key, value) = (key.trim(), value.trim());
     if key.is_empty() || value.is_empty() || key.contains('=') {
         return Err(ParseError::InvalidSyntax);
@@ -35,10 +52,16 @@ fn key_value(segment: &str) -> Result<(&str, &str), ParseError> {
     Ok((key, value))
 }
 fn require_key(key: &str, expected: &str) -> Result<(), ParseError> {
-    if key.eq_ignore_ascii_case(expected) { Ok(()) } else { Err(ParseError::UnknownField) }
+    if key.eq_ignore_ascii_case(expected) {
+        Ok(())
+    } else {
+        Err(ParseError::UnknownField)
+    }
 }
 fn quoted(raw: &str) -> Result<&str, ParseError> {
-    let value = raw.strip_prefix('"').and_then(|v| v.strip_suffix('"'))
+    let value = raw
+        .strip_prefix('"')
+        .and_then(|v| v.strip_suffix('"'))
         .ok_or(ParseError::InvalidSyntax)?;
     if value.is_empty() || value.contains('"') {
         return Err(ParseError::InvalidSyntax);
@@ -53,17 +76,25 @@ pub fn parse_presence_state(
     sip_status: u16,
     headers: &[(&str, &str)],
 ) -> Result<Option<PresenceHint>, ParseError> {
-    if sip_status != 200 { return Ok(None); }
+    if sip_status != 200 {
+        return Ok(None);
+    }
     let mut found = None;
     for (key, value) in headers.iter().copied() {
         if key.eq_ignore_ascii_case("Presence-State") && found.replace(value).is_some() {
             return Err(ParseError::DuplicateHeader);
         }
     }
-    let Some(header) = found else { return Ok(None); };
-    if header.len() > MAX_HEADER_BYTES { return Err(ParseError::TooLong); }
-    if header.bytes().any(|b| b == b'\r' || b == b'\n' || b == 0x7f ||
-        (b < 0x20 && b != b'\t')) {
+    let Some(header) = found else {
+        return Ok(None);
+    };
+    if header.len() > MAX_HEADER_BYTES {
+        return Err(ParseError::TooLong);
+    }
+    if header
+        .bytes()
+        .any(|b| b == b'\r' || b == b'\n' || b == 0x7f || (b < 0x20 && b != b'\t'))
+    {
         return Err(ParseError::InvalidSyntax);
     }
     let mut fields = header.split(';');
@@ -96,12 +127,20 @@ pub fn parse_presence_state(
         if let Some(raw) = fields.next() {
             let (key, value) = key_value(raw)?;
             require_key(key, "user-services-state")?;
-            if !value.eq_ignore_ascii_case("unavailable") { return Err(ParseError::UnsupportedValue); }
+            if !value.eq_ignore_ascii_case("unavailable") {
+                return Err(ParseError::UnsupportedValue);
+            }
             unavailable = true;
         }
     }
-    if fields.next().is_some() { return Err(ParseError::InvalidSyntax); }
-    Ok(Some(PresenceHint { action, cluster, user_services_unavailable: unavailable }))
+    if fields.next().is_some() {
+        return Err(ParseError::InvalidSyntax);
+    }
+    Ok(Some(PresenceHint {
+        action,
+        cluster,
+        user_services_unavailable: unavailable,
+    }))
 }
 
 #[cfg(test)]
@@ -111,10 +150,15 @@ mod tests {
         parse_presence_state(200, &[("pReSeNcE-sTaTe", v)])
     }
     #[test]
-    fn optional_header_absent() { assert_eq!(parse_presence_state(200, &[]), Ok(None)); }
+    fn optional_header_absent() {
+        assert_eq!(parse_presence_state(200, &[]), Ok(None));
+    }
     #[test]
     fn non_ok_response_does_not_carry_register_hint() {
-        assert_eq!(parse_presence_state(401, &[("Presence-State", "bad")]), Ok(None));
+        assert_eq!(
+            parse_presence_state(401, &[("Presence-State", "bad")]),
+            Ok(None)
+        );
     }
     #[test]
     fn actions_from_microsoft_spec() {
@@ -123,25 +167,49 @@ mod tests {
             ("refreshed", RegisterAction::Refreshed),
             ("fixed", RegisterAction::Fixed),
         ] {
-            assert_eq!(parse(&format!("register-action=\"{text}\"")).unwrap().unwrap().action, action);
+            assert_eq!(
+                parse(&format!("register-action=\"{text}\""))
+                    .unwrap()
+                    .unwrap()
+                    .action,
+                action
+            );
         }
     }
     #[test]
     fn extended_cluster_state() {
         let parsed = parse("register-action=\"fixed\";primary-cluster-type=\"remote\";is-connected-to-primary=\"no\";user-services-state=unavailable").unwrap().unwrap();
-        assert_eq!(parsed.cluster, Some(ClusterState { kind: Cluster::Remote, connected: false }));
+        assert_eq!(
+            parsed.cluster,
+            Some(ClusterState {
+                kind: Cluster::Remote,
+                connected: false
+            })
+        );
         assert!(parsed.user_services_unavailable);
     }
     #[test]
     fn case_insensitive_sip_name_and_abnf_literals() {
-        assert_eq!(parse("REGISTER-ACTION = \"ADDED\"").unwrap().unwrap().action, RegisterAction::Added);
+        assert_eq!(
+            parse("REGISTER-ACTION = \"ADDED\"")
+                .unwrap()
+                .unwrap()
+                .action,
+            RegisterAction::Added
+        );
     }
     #[test]
     fn duplicate_header_is_rejected() {
-        assert_eq!(parse_presence_state(200, &[
-            ("Presence-State", "register-action=\"added\""),
-            ("presence-state", "register-action=\"fixed\"")
-        ]), Err(ParseError::DuplicateHeader));
+        assert_eq!(
+            parse_presence_state(
+                200,
+                &[
+                    ("Presence-State", "register-action=\"added\""),
+                    ("presence-state", "register-action=\"fixed\"")
+                ]
+            ),
+            Err(ParseError::DuplicateHeader)
+        );
     }
     #[test]
     fn malformed_extensions_are_rejected() {
@@ -156,7 +224,10 @@ mod tests {
     }
     #[test]
     fn rejects_header_injection_and_nul() {
-        for value in ["register-action=\"added\"\r\nTo: x", "register-action=\"added\"\0"] {
+        for value in [
+            "register-action=\"added\"\r\nTo: x",
+            "register-action=\"added\"\0",
+        ] {
             assert_eq!(parse(value), Err(ParseError::InvalidSyntax));
         }
     }

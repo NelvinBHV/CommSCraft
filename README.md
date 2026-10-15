@@ -11,6 +11,12 @@ Inspired by the modular Rust architecture and original implementation approach
 of [storytold/wordcraft](https://github.com/storytold/wordcraft). This is an
 independent project, not affiliated with Microsoft or storytold.
 
+## Source-import and validation status
+
+The complete historical v0.14.0 Rust workspace, fixtures, feature-parity inventories and unchanged RFC/Microsoft evidence ledgers were imported from the prepared source archive into [PR #8](https://github.com/NelvinBHV/CommSCraft/pull/8). The existing MS-SIPREGE `commscraft-register-events` module, its Linux/Windows-tested integration tests and its documentation were retained during the merge.
+
+The source-import manifest is at [docs/source-import-manifest.json](docs/source-import-manifest.json). Original file digests are checked against immutable snapshots by `python3 scripts/check_import_integrity.py`. A passing offline test is **not** proof of real mutual Kerberos authentication, SIP registration, live IM, calling or Windows Full Client parity.
+
 ## Quick start
 
 ```shell
@@ -21,7 +27,7 @@ cargo run -p sfb-inspect -- --register-demo # offline REGISTER protocol demonstr
 cargo run -p xtask -- ci                    # offline tests / source evidence / lints
 ```
 
-**The Rust compilation and SSPI runtime have not yet been independently confirmed.** The example commands require a working Rust toolchain. `cargo run -p xtask -- release-check` is expected to fail until Windows Full Client parity is genuinely verified.
+**The offline Rust workspace has compiled and passed source/offline tests on Linux and Windows in GitHub Actions for the source-import PR. Native Windows SSPI authentication against a real Skype for Business server remains untested.** The example commands require a working Rust toolchain. `cargo run -p xtask -- release-check` is expected to fail until Windows Full Client parity is genuinely verified.
 
 See [Development](docs/development.md), [Architecture](docs/architecture.md), [Security](SECURITY.md), [Release policy](docs/release-policy.md), [Roadmap](ROADMAP.md), [Contribution guidelines](CONTRIBUTING.md) and [Attribution](ATTRIBUTION.md).
 
@@ -69,7 +75,7 @@ python3 scripts/check_v013_evidence.py
 [Complete RFC/MS references, code references, authored tests and evidence
 limitations](docs/response-router-evidence.md). This is offline code; it cannot
 transmit SIP, authenticate a user or receive real registrar replies. **Rust
-compilation/Windows SfB interoperability are not yet verified.**
+live Windows SfB interoperability remains unverified.**
 
 ## Previously in v0.11.0: transaction-bound MIC-checked REGISTER responses
 
@@ -296,7 +302,7 @@ git remote add origin https://github.com/NelvinBHV/CommSCraft.git
 git push -u origin main
 ```
 
-The archive has **not** been published to GitHub automatically. MIT license.
+The original workspace was imported through [PR #8](https://github.com/NelvinBHV/CommSCraft/pull/8). This section preserves the historical manual publishing procedure. MIT license.
 
 ### Binding full Windows-client v1.0 contract
 

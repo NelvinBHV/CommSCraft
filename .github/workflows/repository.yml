@@ -49,6 +49,11 @@ jobs:
       - name: Clippy
         if: steps.code.outputs.present == 'true'
         run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Verify full imported workspace and immutable source provenance
+        if: steps.code.outputs.present == 'true'
+        run: |
+          python3 scripts/check_partial_workspace.py
+          python3 scripts/check_import_integrity.py
       - name: Python RFC/MS source evidence checks
         if: steps.code.outputs.present == 'true'
         shell: bash
