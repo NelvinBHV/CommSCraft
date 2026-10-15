@@ -34,6 +34,29 @@ const SECPKG_ATTR_SIZES: u32 = 0;
 const SECURITY_NATIVE_DREP: u32 = 0x10;
 const MAX_NATIVE_TOKEN: usize = 64 * 1024;
 
+/// Validate the *returned* ISC_RET_* security attributes, not merely
+/// requested ISC_REQ_* flags. Microsoft specifies that these attributes
+/// may change during multi-leg Kerberos negotiation and must only be
+/// evaluated when InitializeSecurityContext completes successfully.
+///
+/// Retained bit values coincide for the ISC_REQ/ISC_RET capabilities used
+/// here; this is NOT a certificate/TLS verification or login result.
+fn validate_final_context_attributes(status: i32, attributes: u32)
+    -> Result<(), KerberosError>
+{
+    match status {
+        SEC_E_OK | SEC_I_COMPLETE_NEEDED => {
+            if attributes & REQUIRE != REQUIRE {
+                Err(KerberosError::ProviderFailed)
+            } else {
+                Ok(())
+            }
+        }
+        SEC_I_CONTINUE_NEEDED | SEC_I_COMPLETE_AND_CONTINUE => Ok(()),
+        _ => Err(KerberosError::ProviderFailed),
+    }
+}
+
 #[repr(C)]
 #[derive(Default)]
 struct SecHandle { lower: usize, upper: usize }
@@ -178,17 +201,18 @@ impl WindowsKerberosProvider {
             return Err(KerberosError::ProviderFailed);
         }
         if out_buffer.size as usize > outgoing.len() ||
-            out_buffer.size as usize > MAX_GSS_TOKEN ||
-            (attrs & ISC_REQ_INTEGRITY) == 0 ||
-            (attrs & ISC_REQ_IDENTIFY) == 0 {
+            out_buffer.size as usize > MAX_GSS_TOKEN {
             self.failed = true;
             return Err(KerberosError::ProviderFailed);
+        }
+        // Only the final successful SSPI leg has authoritative security
+        // attributes. Fail closed if *any* requested service was not returned:
+        // mutual auth, integrity, replay, sequence or identify.
+        if let Err(error) = validate_final_context_attributes(status, attrs) {
+            self.failed = true;
+            return Err(error);
         }
         let complete = matches!(status, SEC_E_OK | SEC_I_COMPLETE_NEEDED);
-        if complete && (attrs & ISC_REQ_MUTUAL_AUTH) == 0 {
-            self.failed = true;
-            return Err(KerberosError::ProviderFailed);
-        }
         if out_buffer.size == 0 && !complete {
             self.failed = true;
             return Err(KerberosError::InvalidToken);
@@ -315,5 +339,51 @@ mod tests {
         assert_eq!(std::mem::size_of::<SecHandle>(), 2 * std::mem::size_of::<usize>());
         assert_eq!(std::mem::size_of::<SecBuffer>(), if cfg!(target_pointer_width="64") {16} else {12});
         assert_eq!(std::mem::size_of::<SecPkgContextSizes>(), 16);
+    }
+
+    #[test]
+    fn final_leg_requires_all_returned_security_attributes() {
+        // A requested flag alone is not proof the package actually negotiated it.
+        assert_eq!(validate_final_context_attributes(SEC_E_OK, REQUIRE), Ok(()));
+        assert_eq!(validate_final_context_attributes(SEC_I_COMPLETE_NEEDED, REQUIRE), Ok(()));
+        assert_eq!(validate_final_context_attributes(SEC_E_OK, REQUIRE | 0x8000_0000), Ok(()));
+        for missing in [
+            ISC_REQ_MUTUAL_AUTH,
+            ISC_REQ_REPLAY_DETECT,
+            ISC_REQ_SEQUENCE_DETECT,
+            ISC_REQ_INTEGRITY,
+            ISC_REQ_IDENTIFY,
+        ] {
+            assert_eq!(
+                validate_final_context_attributes(SEC_E_OK, REQUIRE & !missing),
+                Err(KerberosError::ProviderFailed),
+                "missing final SSPI attribute: {missing:#x}"
+            );
+            assert_eq!(
+                validate_final_context_attributes(SEC_I_COMPLETE_NEEDED, REQUIRE & !missing),
+                Err(KerberosError::ProviderFailed),
+                "missing final CompleteAuthToken attribute: {missing:#x}"
+            );
+        }
+    }
+
+    #[test]
+    fn intermediate_sspi_legs_do_not_require_final_security_attributes() {
+        // Microsoft: the security flags can change while negotiating.
+        // A CONTINUE return is never interpreted as a completed context.
+        for status in [SEC_I_CONTINUE_NEEDED, SEC_I_COMPLETE_AND_CONTINUE] {
+            assert_eq!(validate_final_context_attributes(status, 0), Ok(()));
+            assert_eq!(validate_final_context_attributes(status, ISC_REQ_INTEGRITY), Ok(()));
+        }
+        assert_eq!(validate_final_context_attributes(SEC_E_OK, 0),
+            Err(KerberosError::ProviderFailed));
+    }
+
+    #[test]
+    fn rejected_sspi_status_can_never_pass_attribute_gate() {
+        for status in [-1, 1, 0x0009_0311] {
+            assert_eq!(validate_final_context_attributes(status, REQUIRE),
+                Err(KerberosError::ProviderFailed));
+        }
     }
 }
