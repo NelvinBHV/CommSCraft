@@ -1,0 +1,3 @@
+* text=auto eol=lf
+# Original SIP fixtures are wire-format byte sequences containing CRLF.
+tests/fixtures/sip/*.sip -text
