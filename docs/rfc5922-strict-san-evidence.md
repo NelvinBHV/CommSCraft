@@ -81,3 +81,13 @@ CI commands: `cargo test -p commscraft-transport --all-targets`, `cargo test --w
 **Executable evidence:** Rust test `malformed_percent_escapes_in_sip_uri_san_never_authorize_identity` checks seven malformed URI values and three valid percent-escaped parameter/header values. CI requirements remain `cargo test -p commscraft-transport --all-targets`, full workspace Rust/Clippy and historical SHA-256 RFC/MS checks on standard GitHub-hosted Linux/Windows runners only.
 
 **Microsoft boundary:** [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) still requires Security Association/MIC/replay verification; certificate URI validity does **not** authenticate REGISTER or establish a signed-in CommSCraft session. No history ledger or release policy changed.
+
+## Duplicate X.509 extensions — RFC 5280 §4.2 (follow-up)
+
+**Requirement:** [RFC 5280 §4.2](https://www.rfc-editor.org/rfc/rfc5280#section-4.2) disallows multiple certificate extensions with the same OID. A SIP SAN parser must never silently accept a first `subjectAltName` and ignore a conflicting duplicate. RFC 5922 §§7.1–7.2 then governs comparison of the unambiguous SIP URI/DNSName identity.
+
+**Implementation:** `crates/commscraft-transport/src/sip_certificate.rs::matches_sip_identity` invokes `cert.extensions_map()` before reading SAN content and fails closed on a `DuplicateExtensions` error. This rejects *any* duplicate X.509 extension OID, not just duplicate SANs. The platform certificate/chain verification and original SIP domain checks remain mandatory.
+
+**Executable evidence:** `duplicate_subject_alternative_name_extensions_fail_closed` parses a public-only DER fixture `tests/fixtures/duplicate-san.pem` that carries two `subjectAltName` extensions. The self-signed certificate was modified after signing, so its signature is deliberately invalid; it is suitable **only for parser rejection testing** and must never be added to a trust store. The test explicitly confirms that `extensions_map()` reports an error and the SIP identity is rejected.
+
+**Microsoft boundary:** [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) still requires a verified Security Association, server MIC and replay checks independently. No certificate check may promote SIP REGISTER state. CI: full Linux/Windows workspace Rust tests, strict Clippy and preserved historical evidence ledgers, **standard GitHub-hosted runners only**. CommSCraft v1.0 release gate remains blocked.
