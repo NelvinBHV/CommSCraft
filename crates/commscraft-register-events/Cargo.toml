@@ -10,3 +10,7 @@ path = "src/lib.rs"
 
 [dependencies]
 sfb-core = { path = "../sfb-core" }
+
+[dev-dependencies]
+hmac = "0.12"
+sha2 = "0.10"
