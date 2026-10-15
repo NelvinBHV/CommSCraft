@@ -159,6 +159,7 @@ impl ResponseRouter {
 
 #[cfg(test)]
 mod tests {
+    use sfb_core::transaction::TIMER_F_MS;
     use super::*;
     use sfb_core::sip::illustrative_register;
 

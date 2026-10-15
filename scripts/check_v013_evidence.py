@@ -19,7 +19,8 @@ def verify():
     assert len(ledger['requirements']) >= 8
     for name, expected in ledger['sha256'].items():
         original = {'Cargo.toml': 'docs/history/v0.13.0/Cargo.toml',
-                    'scripts/check_v013_evidence.py': 'docs/history/v0.13.0/check_v013_evidence.py'}
+                    'scripts/check_v013_evidence.py': 'docs/history/v0.13.0/check_v013_evidence.py',
+                    'crates/sfb-router/src/lib.rs': 'docs/history/import-v0.14.0/crates/sfb-router/src/lib.rs'}
         file = (ROOT/original.get(name, name)).resolve()
         assert file.is_relative_to(ROOT.resolve()) and file.is_file(), name
         assert hashlib.sha256(file.read_bytes()).hexdigest() == expected, name

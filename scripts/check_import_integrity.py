@@ -7,7 +7,12 @@ import json
 
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "docs/source-import-manifest.json"
-MOVED = {"Cargo.toml": "docs/history/import-v0.14.0/Cargo.toml"}
+MOVED = {
+    "Cargo.toml": "docs/history/import-v0.14.0/Cargo.toml",
+    "crates/sfb-core/src/sip.rs": "docs/history/import-v0.14.0/crates/sfb-core/src/sip.rs",
+    "crates/sfb-core/src/security.rs": "docs/history/import-v0.14.0/crates/sfb-core/src/security.rs",
+    "crates/sfb-router/src/lib.rs": "docs/history/import-v0.14.0/crates/sfb-router/src/lib.rs",
+}
 
 def verify(root: Path = ROOT) -> int:
     manifest = json.loads((root / "docs/source-import-manifest.json").read_text(encoding="utf-8"))
