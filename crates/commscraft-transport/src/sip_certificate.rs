@@ -74,6 +74,18 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
             index += 1;
         }
     }
+    // RFC 3261 §25.1: a URI parameter requires a nonempty name;
+    // repeated or dangling ';' separators are malformed. This is a
+    // conservative identity-checking subset, not a complete SIP parser.
+    let authority_and_params = remainder.split('?').next()?;
+    if let Some((_, parameters)) = authority_and_params.split_once(';') {
+        for parameter in parameters.split(';') {
+            let name = parameter.split('=').next().unwrap_or("");
+            if name.is_empty() || parameter.matches('=').count() > 1 {
+                return None;
+            }
+        }
+    }
     let host_and_port = remainder.split([';', '?']).next()?;
     let (host, port) = match host_and_port.split_once(':') {
         Some((host, port)) => (host, Some(port)),
@@ -314,6 +326,25 @@ mod tests {
             "sip:example.com;transport=tls?subject=hello%20world",
             "sip:example.com?subject=foo%2Fbar",
             "sip:example.com;opaque=%3a",
+        ] {
+            assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
+        }
+    }
+
+    #[test]
+    fn malformed_uri_parameter_separators_cannot_authorize_sip_san() {
+        for uri in [
+            "sip:example.com;", "sip:example.com;;transport=tls",
+            "sip:example.com;=tls", "sip:example.com;transport=tls;",
+            "sip:example.com;transport==tls",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri:?}");
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
+        }
+        for uri in [
+            "sip:example.com;transport=tls",
+            "sip:example.com;lr",
+            "sip:example.com;foo=bar;lr?subject=hi",
         ] {
             assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
         }
