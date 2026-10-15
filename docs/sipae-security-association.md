@@ -60,9 +60,9 @@ additional address grammar not yet supported.
 ## Offline demonstration
 
 ```bash
-cargo test -p sfb-core
-cargo run -p sfb-inspect -- --sa-demo
-cargo run -p sfb-inspect -- --signing-demo
+cargo test -p commscraft-core
+cargo run -p commscraft-inspect -- --sa-demo
+cargo run -p commscraft-inspect -- --signing-demo
 ```
 
 `--sa-demo` verifies a fixture signed with the fixed public test key, then

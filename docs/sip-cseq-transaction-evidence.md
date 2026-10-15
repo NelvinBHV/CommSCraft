@@ -14,7 +14,7 @@
 
 - Requiring only uppercase request-method tokens is an existing **intentional subset**, not a general RFC 3261 ABNF implementation. `REGISTER` is supported.
 - The 128-byte CSeq length cap and rejection of already-unfolded header control bytes are local defensive hardening, not separately claimed Microsoft requirements.
-- The unmodified pre-change `transaction.rs` is archived byte-for-byte at `docs/history/import-v0.14.0/crates/sfb-core/src/transaction.rs`. Neither `docs/evidence-v0.13.0.json` nor `docs/source-import-manifest.json` is rewritten. Original SHA-256 values continue to be verified against the archived file.
+- The unmodified pre-change `transaction.rs` is archived byte-for-byte at `docs/history/import-v0.14.0/crates/commscraft-core/src/transaction.rs`. Neither `docs/evidence-v0.13.0.json` nor `docs/source-import-manifest.json` is rewritten. Original SHA-256 values continue to be verified against the archived file.
 - All CI must run on standard GitHub-hosted `ubuntu-latest` or `windows-latest` runners only (CommSCraft policy).
-- **Verification command:** `cargo test -p sfb-core --all-targets`, `cargo test --workspace --all-targets`, `cargo clippy --workspace --all-targets -- -D warnings`, `python3 scripts/check_import_integrity.py`, `python3 scripts/check_v013_evidence.py`. Test pass claims require actual CI results.
+- **Verification command:** `cargo test -p commscraft-core --all-targets`, `cargo test --workspace --all-targets`, `cargo clippy --workspace --all-targets -- -D warnings`, `python3 scripts/check_import_integrity.py`, `python3 scripts/check_v013_evidence.py`. Test pass claims require actual CI results.
 - There is no live Kerberos, mutual TLS, Skype for Business Server SE sign-in or Windows Full Client parity proof. The v1.0 release gate stays closed.
