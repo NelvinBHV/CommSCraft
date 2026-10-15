@@ -252,7 +252,7 @@ pub fn server_mic_buffer(msg: &SipMessage, info: &AuthenticationInfo) -> Result<
     let (sip_identity, tel_identity) = if info.version >= 3 { asserted(msg)? }
         else { (String::new(), String::new()) };
     if info.version >= 3 {
-        values.extend([&to_uri, &to_tag, &sip_identity, &tel_identity]);
+        values.extend([to_uri.as_str(), to_tag.as_str(), sip_identity.as_str(), tel_identity.as_str()]);
     } else {
         values.push(&to_tag);
     }
@@ -368,7 +368,7 @@ pub fn client_mic_buffer(msg: &SipMessage, key: &SaKey, version: u32,
         key.targetname.as_str(), call_id, number, method, &from_uri, &from_tag,
     ];
     if version >= 3 {
-        values.extend([&to_uri, &to_tag, &sip_identity, &tel_identity]);
+        values.extend([to_uri.as_str(), to_tag.as_str(), sip_identity.as_str(), tel_identity.as_str()]);
     } else {
         values.push(&to_tag);
     }
