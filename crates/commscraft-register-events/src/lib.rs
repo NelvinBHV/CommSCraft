@@ -96,7 +96,7 @@ pub fn parse_presence_state(
         if let Some(raw) = fields.next() {
             let (key, value) = key_value(raw)?;
             require_key(key, "user-services-state")?;
-            if value != "unavailable" { return Err(ParseError::UnsupportedValue); }
+            if !value.eq_ignore_ascii_case("unavailable") { return Err(ParseError::UnsupportedValue); }
             unavailable = true;
         }
     }
@@ -159,6 +159,11 @@ mod tests {
         for value in ["register-action=\"added\"\r\nTo: x", "register-action=\"added\"\0"] {
             assert_eq!(parse(value), Err(ParseError::InvalidSyntax));
         }
+    }
+    #[test]
+    fn accepts_case_insensitive_user_services_token() {
+        let parsed = parse("register-action=\"added\";primary-cluster-type=\"central\";is-connected-to-primary=\"yes\";user-services-state=UNAVAILABLE").unwrap().unwrap();
+        assert!(parsed.user_services_unavailable);
     }
     #[test]
     fn bounded_header() {
