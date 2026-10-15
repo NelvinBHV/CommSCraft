@@ -26,7 +26,7 @@ class TlsSipIdentityContract(unittest.TestCase):
             "GeneralName::DNSName(dns)",
             "if has_valid_sip_uri { uri_matches } else { dns_matches }",
             "if !remainder.is_empty()",
-            "ascii_sip_domain(name)",
+            "fn ascii_sip_domain(name: &str)",
         ):
             self.assertIn(phrase, cert)
         for fixture in ("sip-uri-san.pem", "conflicting-sip-uri.pem", "wildcard-dns.pem"):
