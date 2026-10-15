@@ -139,6 +139,13 @@ pub(super) fn matches_sip_identity(leaf_der: &[u8], expected_domain: &str) -> bo
     if !remainder.is_empty() {
         return false;
     }
+    // RFC 5280 §4.2: a certificate MUST NOT contain more than one
+    // extension with the same OID. Refuse ambiguous X.509 extension sets
+    // *before* reading the SAN identity. x509-parser's extensions_map()
+    // returns DuplicateExtensions, instead of silently selecting the first.
+    if cert.extensions_map().is_err() {
+        return false;
+    }
     // RFC 5922 permits CN fallback only if SAN is *absent*. We intentionally
     // reject CN-only certificates instead of using platform-specific heuristics.
     let Ok(Some(san)) = cert.subject_alternative_name() else {
@@ -180,6 +187,17 @@ mod tests {
         let cert = der(include_str!("../tests/fixtures/wildcard-dns.pem"));
         assert!(!matches_sip_identity(&cert, "sip.example.com"));
         assert!(!matches_sip_identity(&cert, "example.com"));
+    }
+
+    #[test]
+    fn duplicate_subject_alternative_name_extensions_fail_closed() {
+        // Test-only public certificate: its SAN extension occurs twice.
+        // The DER is deliberately modified after signing and MUST NEVER
+        // be trusted for a TLS connection. This tests parsing only.
+        let duplicated = der(include_str!("../tests/fixtures/duplicate-san.pem"));
+        let (_, cert) = parse_x509_certificate(&duplicated).unwrap();
+        assert!(cert.extensions_map().is_err());
+        assert!(!matches_sip_identity(&duplicated, "example.com"));
     }
 
     #[test]
