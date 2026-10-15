@@ -173,7 +173,7 @@ mod tests {
             );
             assert_eq!(
                 TlsEndpoint::from_domain_and_host(
-                    "example.com", &format!("edge.{invalid}"), 5061
+                    "example.com", &format!("edge.{invalid}.com"), 5061
                 ),
                 Err(TransportError::InvalidEndpoint), "bad SRV target {invalid}"
             );
