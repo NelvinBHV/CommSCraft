@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn request_never_becomes_a_register_success() {
         let mut m = response(200, "1 REGISTER");
-        m.start_line = StartLine::Request { method: "REGISTER".into(), uri: "sip:example.com".into(), version: "SIP/2.0".into() };
+        m.start_line = StartLine::Request { method: "REGISTER".into(), uri: "sip:example.com".into() };
         assert_eq!(parse_register_presence_response(&m), Err(BindingError::NotResponse));
     }
     #[test]
