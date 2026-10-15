@@ -20,6 +20,15 @@ fn ascii_sip_domain(name: &str) -> Option<&str> {
     {
         return None;
     }
+    // RFC 9549 §2.3 / RFC 5890: a syntactically plausible "xn--" label
+    // is NOT automatically a valid IDNA A-label. Use strict IDNA decoding
+    // and require an unchanged ASCII representation (apart from case).
+    // Unicode U-labels must be converted at a separate, trusted ingress.
+    if !idna::domain_to_ascii_strict(name)
+        .is_ok_and(|canonical| canonical.eq_ignore_ascii_case(name))
+    {
+        return None;
+    }
     Some(name)
 }
 
@@ -198,6 +207,29 @@ mod tests {
             GeneralName::DNSName("example.com")];
         assert!(!match_sip_sans(&preempt, "example.com"));
         assert!(match_sip_sans(&preempt, "other.example"));
+    }
+
+    #[test]
+    fn valid_idna_a_labels_match_exact_domain_but_fake_punycode_cannot() {
+        let valid = "xn--bcher-kva.example";
+        assert_eq!(ascii_sip_domain(valid), Some(valid));
+        assert!(match_sip_sans(
+            &[GeneralName::URI("sip:XN--BCHER-KVA.EXAMPLE")], valid
+        ));
+        assert!(match_sip_sans(
+            &[GeneralName::DNSName("xn--bcher-kva.example")], valid
+        ));
+        assert!(!match_sip_sans(
+            &[GeneralName::DNSName("xn--bcher-kva.example")],
+            "shop.xn--bcher-kva.example"
+        ));
+        for invalid in ["xn--a.example", "xn--ab.example", "xn--p.example"] {
+            assert_eq!(ascii_sip_domain(invalid), None, "{invalid}");
+            assert_eq!(sip_uri_host(&format!("sip:{invalid}")), None);
+            assert!(!match_sip_sans(&[GeneralName::DNSName(invalid)], invalid));
+        }
+        // Certificate URI/dNSName SANs are IA5String: no Unicode U-labels.
+        assert!(ascii_sip_domain("bücher.example").is_none());
     }
 
     #[test]
