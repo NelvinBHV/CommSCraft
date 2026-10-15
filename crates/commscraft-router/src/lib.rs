@@ -12,8 +12,8 @@
 //! * 401/407/423 are FINAL; retries require a freshly branched transaction.
 //! * Disconnect terminates all requests. Time uses caller's monotonic clock.
 
-use sfb_core::sip::{SipMessage, StartLine};
-use sfb_core::transaction::{NonInviteClientTransaction, TransactionError, TransactionEvent,
+use commscraft_core::sip::{SipMessage, StartLine};
+use commscraft_core::transaction::{NonInviteClientTransaction, TransactionError, TransactionEvent,
     TransactionKey};
 use std::collections::VecDeque;
 use std::fmt;
@@ -159,9 +159,9 @@ impl ResponseRouter {
 
 #[cfg(test)]
 mod tests {
-    use sfb_core::transaction::TIMER_F_MS;
+    use commscraft_core::transaction::TIMER_F_MS;
     use super::*;
-    use sfb_core::sip::illustrative_register;
+    use commscraft_core::sip::illustrative_register;
 
     fn request(seq: u32, branch: &str) -> SipMessage {
         let mut msg = illustrative_register("sip:alice@example.org").unwrap();

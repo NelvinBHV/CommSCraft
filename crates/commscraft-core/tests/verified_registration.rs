@@ -2,16 +2,16 @@
 //! replacement for a real TLS-DSK handshake or a trusted TLS connection.
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
-use sfb_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
-use sfb_core::registration::{
+use commscraft_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
+use commscraft_core::registration::{
     Endpoint, MicCheckedRegisterError, MicCheckedRegisterResult, RegisterFlow,
     RegisterState, RegistrationError,
 };
-use sfb_core::security::{
+use commscraft_core::security::{
     parse_authentication_info, server_mic_buffer, AssociationState,
     SecurityAssociation, SecurityError, TlsDskHmacSha256,
 };
-use sfb_core::sip::{SipMessage, StartLine};
+use commscraft_core::sip::{SipMessage, StartLine};
 
 const SERVER_KEY: [u8; 32] = [0x5a; 32]; // Synthetic only
 const BRANCH: &str = "z9hG4bK-integrated-000001";

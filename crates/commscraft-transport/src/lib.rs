@@ -6,7 +6,7 @@
 //! No public API exists to send SIP, credentials, or REGISTER requests.
 
 use native_tls::{TlsConnector, TlsStream};
-use sfb_core::inbound::{ReceiveError, ReceiveEvent, SipInbound};
+use commscraft_core::inbound::{ReceiveError, ReceiveEvent, SipInbound};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::time::Duration;
 

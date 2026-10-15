@@ -1,7 +1,7 @@
 //! Public synthetic fixtures – NEVER use these keys as real credentials.
-use sfb_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
-use sfb_core::security::{SecurityAssociation, SecurityError, TlsDskHmacSha256};
-use sfb_core::sip::parse_frame;
+use commscraft_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
+use commscraft_core::security::{SecurityAssociation, SecurityError, TlsDskHmacSha256};
+use commscraft_core::sip::parse_frame;
 
 fn offer() -> ChallengeOffer {
     ChallengeOffer {

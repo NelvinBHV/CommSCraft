@@ -1,16 +1,16 @@
 //! Offline-only local SIP fixture analyzer. No network and no raw header dumps.
-use sfb_core::sip::{illustrative_register, SipMessage, StartLine};
-use sfb_core::challenge::parse_challenges;
-use sfb_core::stream::SipStreamDecoder;
-use sfb_core::registration::{Endpoint, RegisterFlow, RegisterOutcome};
-use sfb_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
-use sfb_core::security::{SecurityAssociation, TlsDskHmacSha256, TlsDskClientHmacSha256, SecurityError, AssociationState};
-use sfb_core::sip::parse_frame;
-use sfb_core::kerberos::{KerberosNegotiation, KerberosError, NoKerberosProvider, KerberosPhase};
-use sfb_core::presence::PresenceSubscription;
-use sfb_core::im::{ImDialog, ImState};
-use sfb_core::sdp::inspect_sdp;
-use sfb_router::{ResponseRouter, RoutedEvent, RouterError};
+use commscraft_core::sip::{illustrative_register, SipMessage, StartLine};
+use commscraft_core::challenge::parse_challenges;
+use commscraft_core::stream::SipStreamDecoder;
+use commscraft_core::registration::{Endpoint, RegisterFlow, RegisterOutcome};
+use commscraft_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
+use commscraft_core::security::{SecurityAssociation, TlsDskHmacSha256, TlsDskClientHmacSha256, SecurityError, AssociationState};
+use commscraft_core::sip::parse_frame;
+use commscraft_core::kerberos::{KerberosNegotiation, KerberosError, NoKerberosProvider, KerberosPhase};
+use commscraft_core::presence::PresenceSubscription;
+use commscraft_core::im::{ImDialog, ImState};
+use commscraft_core::sdp::inspect_sdp;
+use commscraft_router::{ResponseRouter, RoutedEvent, RouterError};
 use std::fs::File;
 use std::io::{self, Read};
 
@@ -234,7 +234,7 @@ fn kerberos_plan_demo() -> Result<(), Box<dyn std::error::Error>> {
 /// InitializeSecurityContext, obtain a service ticket, or send network data.
 #[cfg(windows)]
 fn sspi_check() -> Result<(), Box<dyn std::error::Error>> {
-    match sfb_core::windows_sspi::WindowsKerberosProvider::new() {
+    match commscraft_core::windows_sspi::WindowsKerberosProvider::new() {
         Ok(_) => println!("Windows Kerberos SSPI credential handle acquired. Not authenticated."),
         Err(_) => println!("Windows Kerberos SSPI unavailable for this user. No fallback."),
     }
@@ -295,7 +295,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         (Some(path), None) if !path.starts_with('-') => inspect(File::open(path)?),
         _ => {
-            eprintln!("Usage: sfb-inspect --demo | --register-demo | --sa-demo | --signing-demo | --kerberos-plan-demo | --sspi-check | --protocol-demo | --router-demo | <local-sip-fixture-file>");
+            eprintln!("Usage: commscraft-inspect --demo | --register-demo | --sa-demo | --signing-demo | --kerberos-plan-demo | --sspi-check | --protocol-demo | --router-demo | <local-sip-fixture-file>");
             std::process::exit(2);
         }
     }

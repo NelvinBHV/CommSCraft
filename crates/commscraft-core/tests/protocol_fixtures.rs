@@ -1,8 +1,8 @@
 //! Synthetic, credential-free interoperability fixtures.
-use sfb_core::sip::{parse_frame, SipMessage};
-use sfb_core::challenge::{parse_challenges, Scheme, ChallengeSource};
-use sfb_core::stream::SipStreamDecoder;
-use sfb_core::transaction::{NonInviteClientTransaction, TransactionEvent, TransactionState};
+use commscraft_core::sip::{parse_frame, SipMessage};
+use commscraft_core::challenge::{parse_challenges, Scheme, ChallengeSource};
+use commscraft_core::stream::SipStreamDecoder;
+use commscraft_core::transaction::{NonInviteClientTransaction, TransactionEvent, TransactionState};
 
 const REGISTER: &[u8] = include_bytes!("../../../tests/fixtures/sip/register.sip");
 const TRYING: &[u8] = include_bytes!("../../../tests/fixtures/sip/trying.sip");
@@ -52,7 +52,7 @@ fn microsoft_auth_challenges_are_parsed_without_authenticating() {
 
 #[test]
 fn rfc_423_and_ms_registration_response_fixtures_are_bounded() {
-    use sfb_core::sip::StartLine;
+    use commscraft_core::sip::StartLine;
     let short = parse(TOO_BRIEF);
     assert!(matches!(short.start_line, StartLine::Response { code: 423, .. }));
     assert_eq!(short.header("Min-Expires"), Some("7200"));

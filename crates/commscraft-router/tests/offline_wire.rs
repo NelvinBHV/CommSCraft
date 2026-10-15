@@ -1,7 +1,7 @@
 //! Wire-level synthetic regression: no network I/O or authentication.
-use sfb_core::sip::{illustrative_register, SipMessage, StartLine};
-use sfb_core::stream::SipStreamDecoder;
-use sfb_router::{ResponseRouter, RoutedEvent, RouterError};
+use commscraft_core::sip::{illustrative_register, SipMessage, StartLine};
+use commscraft_core::stream::SipStreamDecoder;
+use commscraft_router::{ResponseRouter, RoutedEvent, RouterError};
 
 fn request(seq: u32, branch: &str) -> SipMessage {
     let mut msg = illustrative_register("sip:alice@example.com").unwrap();

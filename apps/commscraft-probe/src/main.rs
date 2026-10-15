@@ -2,10 +2,10 @@
 //! All live network operations require an explicit CLI flag.
 use hickory_resolver::Resolver;
 use rand::{rngs::OsRng, Rng};
-use sfb_core::discovery::{DiscoveryPlan, Service, SrvRandom, SrvRecord, TlsCandidate};
+use commscraft_core::discovery::{DiscoveryPlan, Service, SrvRandom, SrvRecord, TlsCandidate};
 use std::error::Error;
 use std::time::Duration;
-use sfb_transport::{TlsEndpoint, TlsSipReceiver, TransportError};
+use commscraft_transport::{TlsEndpoint, TlsSipReceiver, TransportError};
 
 struct SecureRandom(OsRng);
 impl SrvRandom for SecureRandom {
@@ -18,7 +18,7 @@ enum Mode { Plan, Dns, Tls }
 fn arguments() -> Result<(DiscoveryPlan, Mode), String> {
     let a: Vec<String> = std::env::args().collect();
     if a.len() < 3 || a.len() > 4 || a[1] != "--domain" {
-        return Err("Usage: sfb-probe --domain example.com [--dns | --tls-probe]\n\
+        return Err("Usage: commscraft-probe --domain example.com [--dns | --tls-probe]\n\
             Default: offline plan only. --dns sends 4 DNS SRV queries.\n\
             --tls-probe also connects using validated TLS, but sends NO SIP messages or credentials.\n\
             Only test domains/deployments you are authorized to contact.".into());

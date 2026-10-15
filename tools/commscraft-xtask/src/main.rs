@@ -24,8 +24,8 @@ fn main() -> ExitCode {
         "test" => run("cargo", &["test", "--workspace", "--all-targets"]),
         "evidence" => run(py, &["-m", "unittest", "discover", "-s", "scripts", "-p", "test*.py"]),
         "release-check" => run(py, &["scripts/check_release.py", "--release"]),
-        "help" | "--help" | "-h" => { println!("CommSCraft xtask: ci | test | evidence | release-check"); Ok(()) },
-        _ => Err(format!("Unknown xtask command: {arg}")),
+        "help" | "--help" | "-h" => { println!("CommSCraft build tools: ci | test | evidence | release-check"); Ok(()) },
+        _ => Err(format!("Unknown CommSCraft build command: {arg}")),
     };
     match result { Ok(()) => ExitCode::SUCCESS, Err(msg) => { eprintln!("{msg}"); ExitCode::FAILURE } }
 }

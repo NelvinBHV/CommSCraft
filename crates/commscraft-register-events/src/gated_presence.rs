@@ -5,10 +5,10 @@
 //! No caller may promote these results to an authenticated CommSCraft session.
 use crate::sip_binding::{parse_register_presence_response, BindingError};
 use crate::PresenceHint;
-use sfb_core::registration::MicCheckedRegisterResult;
-use sfb_core::security::ServerMicVerifier;
-use sfb_core::session::{GateError, GateEvent, RegisterVerificationGate};
-use sfb_core::sip::{SipMessage, StartLine};
+use commscraft_core::registration::MicCheckedRegisterResult;
+use commscraft_core::security::ServerMicVerifier;
+use commscraft_core::session::{GateError, GateEvent, RegisterVerificationGate};
+use commscraft_core::sip::{SipMessage, StartLine};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GatedPresenceError {
@@ -66,12 +66,12 @@ mod tests {
     use crate::RegisterAction;
     use hmac::{Hmac, Mac};
     use sha2::Sha256;
-    use sfb_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
-    use sfb_core::registration::{Endpoint, RegisterFlow};
-    use sfb_core::security::{
+    use commscraft_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
+    use commscraft_core::registration::{Endpoint, RegisterFlow};
+    use commscraft_core::security::{
         parse_authentication_info, server_mic_buffer, SecurityAssociation, TlsDskHmacSha256,
     };
-    use sfb_core::session::GateState;
+    use commscraft_core::session::GateState;
 
     fn gate() -> RegisterVerificationGate {
         let endpoint = Endpoint {
