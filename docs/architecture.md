@@ -2,7 +2,7 @@
 
 ```mermaid
 flowchart TD
-    UI[egui local demo] --> CORE[sfb-core]
+    UI[CommSCraft offline desktop] --> CORE[sfb-core]
     INSPECT[sfb-inspect offline fixtures] --> CORE
     PROBE[sfb-probe opt-in diagnostics] --> CORE
     CORE --> SIP[bounded SIP parser / encoder]
@@ -29,7 +29,7 @@ publication, IM delivery, calls, conferencing, or any media capture.
   `native-tls` for a TLS handshake with chain/hostname checking, OS socket
   resolver for TCP connection attempts. It does not send SIP bytes.
 - `sfb-inspect`: privacy-preserving inspection of local sample SIP packets.
-- `sfb-desktop`: demonstration with sample contacts and read-only diagnostics.
+- `commscraft`: **CommSCraft** native application (offline prototype) with sample contacts and read-only diagnostics.
 
 ## Future production data flow (not implemented)
 

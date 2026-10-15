@@ -22,6 +22,7 @@ def verify():
     assert len(data['requirements']) == 8
     for path, digest in data['sha256'].items():
         original = {'README.md': 'docs/history/v0.14.0/README.md',
+                    'apps/sfb-desktop/Cargo.toml': 'docs/history/import-v0.14.0/apps/sfb-desktop/Cargo.toml',
                     'crates/sfb-core/src/session.rs': 'docs/history/import-v0.14.0/crates/sfb-core/src/session.rs',
                     'scripts/check_v014_evidence.py': 'docs/history/v0.14.0/check_v014_evidence.py'}
         src = (ROOT / original.get(path, path)).resolve()
