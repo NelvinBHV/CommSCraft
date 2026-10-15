@@ -14,10 +14,10 @@
 
 ## Security boundaries and unresolved RFC requirements
 
-- RFC 5922 **does not allow wildcard identity matching** and defines scheme-aware SAN precedence. The platform TLS verifier can implement **HTTPS-style wildcard or CN fallback**; this change **does not implement** full RFC 5922 §§7.1–7.2 X.509 SAN parsing. Consequently a successful diagnostic connection must not be asserted as a fully RFC-5922-authenticated SIP domain.
+- RFC 5922 **does not allow wildcard identity matching** and defines SIP URI SAN precedence. The platform verifier alone may allow HTTPS-style wildcard or CN fallback, so CommSCraft additionally checks the parsed peer certificate SAN with `x509-parser` and demands an exact ASCII SIP-domain match. See [strict SAN proof](rfc5922-strict-san-evidence.md). The diagnostic is still a conservative subset: CN-only and internationalized U-label identifiers are rejected, and live platform PKIX interoperability remains unproven.
 - The SIP domain must originate from the application's trusted SIP identity, not be taken from an untrusted `Authentication-Info`, `Contact`, redirect or SRV target. This is the responsibility of the caller that constructs `TlsEndpoint`.
 - A legitimate deployment may present a certificate for its pool FQDN but not its SIP-domain origin; this strict diagnostic will fail closed. A conformant service-name/pool certificate policy and real Windows integration testing remain mandatory before expanding the transport.
-- `peer_certificate()` checks certificate presence but **does not** independently verify certificate identity; that is the responsibility of the platform TLS handshake.
+- `peer_certificate()` alone checks presence, but the current implementation now also parses the **actual DER certificate's** SAN identities as a second, strict RFC 5922 matching layer. This parser is not a trust-store/PKIX verifier; validation of chain, validity, EKU and certificate status remains with the platform TLS stack.
 - The previous diagnostic printed that a destination hostname was verified. It now distinguishes the original SIP domain from the SRV host and refuses to imply a signed-in state.
 - Existing historical RFC/MS hash ledgers and archived original source files are unchanged. The active v0.12 source checker now verifies the **new** transport reference identity while historical SHA-256 checks still use original archived bytes.
 - Only standard GitHub-hosted `ubuntu-latest` and `windows-latest` runners are permitted.
@@ -27,3 +27,7 @@
 `cargo test -p commscraft-transport --all-targets`; `cargo test --workspace --all-targets`; `cargo clippy --workspace --all-targets -- -D warnings`; `python3 scripts/check_v012_evidence.py`; `python3 -m unittest discover -s scripts -p 'test*.py'`.
 
 Do **not** count any new test as passed until GitHub Actions finishes. No real PKIX certificate test, MS-SIPAE Kerberos-to-TLS binding, Skype for Business Server SE interaction or Full Windows Client parity is established. The CommSCraft 1.0 release gate stays fail-closed.
+
+## Subsequent strict SAN check (CommSCraft)
+
+The [strict RFC 5922 SAN evidence matrix](rfc5922-strict-san-evidence.md) extends this historical TLSDOM reference-identity correction with parsed peer-certificate SIP URI and DNS SAN matching, URI precedence and wildcard exclusion. The original historical ledger and public certificate fixture trust distinction are preserved.

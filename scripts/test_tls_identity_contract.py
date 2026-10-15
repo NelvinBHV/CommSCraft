@@ -12,7 +12,28 @@ class TlsSipIdentityContract(unittest.TestCase):
         self.assertIn("pub fn tls_reference_identity(&self)", source)
         self.assertIn("pub fn sip_domain(&self)", source)
         self.assertIn("tls.peer_certificate()", source)
+        self.assertIn("cert.to_der()", source)
+        self.assertIn("sip_certificate::matches_sip_identity(", source)
+        self.assertNotIn("if cert.is_none()", source)
         self.assertNotIn("tls.connect(peer.host(), tcp)", source)
+
+    def test_sip_san_rules_bound_to_actual_peer_der(self):
+        cert = (ROOT / "crates/commscraft-transport/src/sip_certificate.rs").read_text()
+        for phrase in (
+            "parse_x509_certificate(leaf_der)",
+            "cert.subject_alternative_name()",
+            "GeneralName::URI(uri)",
+            "GeneralName::DNSName(dns)",
+            "if has_valid_sip_uri { uri_matches } else { dns_matches }",
+            "if !remainder.is_empty()",
+            "ascii_sip_domain(name)",
+        ):
+            self.assertIn(phrase, cert)
+        for fixture in ("sip-uri-san.pem", "conflicting-sip-uri.pem", "wildcard-dns.pem"):
+            pem = ROOT / "crates/commscraft-transport/tests/fixtures" / fixture
+            self.assertTrue(pem.is_file(), fixture)
+            self.assertIn("-----BEGIN CERTIFICATE-----", pem.read_text())
+            self.assertNotIn("PRIVATE KEY", pem.read_text())
 
     def test_inbound_only_and_no_trust_bypass(self):
         source = (ROOT / "crates/commscraft-transport/src/lib.rs").read_text()
