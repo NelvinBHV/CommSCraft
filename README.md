@@ -20,9 +20,18 @@ Inspired by the modular project structure, agent-friendly development approach, 
 | Area | Reality |
 | --- | --- |
 | SIP parsing, routing, REGISTER and SSPI-adapter source | Local v0.14.0 prototype; GitHub import pending |
+| REGISTER Presence-State ABNF parsing | Standalone Rust crate, tested on Linux and Windows, not integrated into live sign-in |
 | Real Skype for Business sign-in and presence | Not interoperably implemented |
 | Real chat, calling, media, conferencing and sharing | Not interoperably implemented |
 | Windows Full Client parity | Not verified; v1.0 must remain blocked |
+
+## Available standalone Rust module (tested)
+
+The independently compiled `commscraft-register-events` module parses optional Microsoft MS-SIPREGE `Presence-State` headers after REGISTER. It does **not** authenticate users or connect to a server. The GitHub Actions conformance tests passed on both Linux and Windows ([evidence](https://github.com/NelvinBHV/CommSCraft/actions/runs/38668931202)); see [specification traceability](docs/registration-presence-state-evidence.md).
+
+```sh
+cargo test --manifest-path crates/commscraft-register-events/Cargo.toml --all-targets
+```
 
 ## Developer quick start (AFTER source import)
 
