@@ -9,13 +9,13 @@ class GateContract(unittest.TestCase):
         self.assertEqual(verify()['requirements'], 8)
 
     def test_demo_200_cannot_claim_sign_in(self):
-        source = (ROOT/'crates/sfb-core/src/session.rs').read_text()
+        source = (ROOT/'crates/commscraft-core/src/session.rs').read_text()
         self.assertIn('AcceptanceUnverified', source)
         self.assertNotIn('SessionState::Registered', source)
         self.assertIn('fn demo_200_is_not_a_login()', source)
 
     def test_only_mic_path_can_accept_200(self):
-        source = (ROOT/'crates/sfb-core/src/session.rs').read_text()
+        source = (ROOT/'crates/commscraft-core/src/session.rs').read_text()
         self.assertIn('if code == 200 {', source)
         self.assertIn('observe_mic_checked_200(', source)
         self.assertIn('GateState::MicCheckedNotSignedIn', source)
@@ -23,7 +23,7 @@ class GateContract(unittest.TestCase):
         self.assertIn('fn bad_mic_in_synthetic_success_fails_closed()', source)
 
     def test_no_sip_network_send_and_release_contract_not_weakened(self):
-        source = (ROOT/'crates/sfb-core/src/session.rs').read_text()
+        source = (ROOT/'crates/commscraft-core/src/session.rs').read_text()
         self.assertNotIn('TcpStream', source)
         self.assertNotIn('TlsStream', source)
         self.assertNotIn('pub fn send(', source)

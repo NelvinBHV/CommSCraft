@@ -7,9 +7,9 @@ import tomllib
 root = Path(__file__).resolve().parent.parent
 data = tomllib.loads((root / "Cargo.toml").read_text(encoding="utf-8"))
 expected = {
-    "crates/sfb-core", "crates/sfb-transport", "crates/sfb-router",
+    "crates/commscraft-core", "crates/commscraft-transport", "crates/commscraft-router",
     "crates/commscraft-register-events", "apps/commscraft",
-    "apps/sfb-inspect", "apps/sfb-probe", "xtask",
+    "apps/commscraft-inspect", "apps/commscraft-probe", "tools/commscraft-xtask",
 }
 actual = data["workspace"]["members"]
 assert len(actual) == len(set(actual)) == 8, actual

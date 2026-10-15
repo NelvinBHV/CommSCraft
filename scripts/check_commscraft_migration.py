@@ -19,4 +19,8 @@ assert app['package']['name'] == 'commscraft'
 assert app['bin'][0]['name'] == 'CommSCraft'
 assert 'apps/commscraft' in tomllib.loads((ROOT/'Cargo.toml').read_text())['workspace']['members']
 assert not (ROOT/'apps/sfb-desktop').exists()
+for old in ('crates/sfb-core', 'crates/sfb-router', 'crates/sfb-transport', 'apps/sfb-inspect', 'apps/sfb-probe', 'xtask'):
+    assert not (ROOT/old).exists(), old
+for new in ('crates/commscraft-core', 'crates/commscraft-router', 'crates/commscraft-transport', 'apps/commscraft-inspect', 'apps/commscraft-probe', 'tools/commscraft-xtask'):
+    assert (ROOT/new/'Cargo.toml').is_file(), new
 print('CommSCraft migration source hashes verified (not a build/interop proof)')

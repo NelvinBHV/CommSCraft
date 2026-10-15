@@ -24,12 +24,13 @@ def verify() -> dict:
     for name, digest in ledger['sha256'].items():
         # Original immutable v0.11 files remain archived when v0.12 edits live documentation/CI.
         archive = {'README.md': 'docs/history/v0.11.0/README.md',
-                   'crates/sfb-core/src/registration.rs': 'docs/history/import-v0.14.0/crates/sfb-core/src/registration.rs',
+                   'crates/sfb-core/src/registration.rs': 'docs/history/import-v0.14.0/crates/commscraft-core/src/registration.rs',
                    '.github/workflows/rust.yml': 'docs/history/v0.11.0/rust.yml'}
-        file = ROOT / archive.get(name, name)
+        archived = ROOT / 'docs/history/import-v0.14.0' / name
+        file = ROOT / archive.get(name, str(archived.relative_to(ROOT)) if archived.is_file() else name)
         assert file.is_file() and file.resolve().is_relative_to(ROOT.resolve()), f'missing/unsafe source: {name}'
         assert hashlib.sha256(file.read_bytes()).hexdigest() == digest, f'changed file: {name}'
-    code = (ROOT / 'crates/sfb-core/src/registration.rs').read_text(encoding='utf-8')
+    code = (ROOT / 'crates/commscraft-core/src/registration.rs').read_text(encoding='utf-8')
     start = code.index('pub fn observe_mic_checked_200<')
     end = code.index('/// Returns a NEW independent transaction', start)
     block = code[start:end]
