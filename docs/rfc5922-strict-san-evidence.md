@@ -71,3 +71,13 @@ CI commands: `cargo test -p commscraft-transport --all-targets`, `cargo test --w
 **Limitations:** `unicode-general-category` 1.1.0 uses Unicode 16 character-category data. Rejecting `So` is one explicit RFC 9549 / IDNA2008 requirement, **not** complete IDNA2008 Derived Property / CONTEXTJ/CONTEXTO, bidirectional-script or current Unicode version conformance. This change **retains rejection of untrusted Unicode U-label input** and keeps native TLS/PKIX validation, RFC 5922 SAN comparison and MS-SIPAE server MIC/replay as independent prerequisites. No real Windows Skype for Business Server sign-in was performed. The v1.0 release gate remains blocked.
 
 **Verification:** `cargo test -p commscraft-transport --all-targets`, `cargo test --workspace --all-targets`, `cargo clippy --workspace --all-targets -- -D warnings`, `python3 -m unittest discover -s scripts -p 'test_*.py'`, immutable historical source SHA-256 / RFC-MS checks on standard GitHub-hosted `ubuntu-latest` and `windows-latest` only. Tests are **not** claimed as executed until the CI for the exact commit is successful.
+
+## Percent-encoded SIP URI SAN components — RFC 3261 follow-up
+
+**Requirement:** [RFC 3261 §25.1](https://www.rfc-editor.org/rfc/rfc3261#section-25.1) defines escaped URI content as `%` followed by two hexadecimal digits, within SIP-URI syntax from [§19.1.1](https://www.rfc-editor.org/rfc/rfc3261#section-19.1.1). [RFC 5922 §7.1](https://www.rfc-editor.org/rfc/rfc5922#section-7.1) uses SIP URI SAN identities for server-domain matching.
+
+**Implementation:** `sip_uri_host` now rejects malformed or truncated percent escapes **anywhere** in the SIP URI (including parameters and headers that are not used for name matching), before granting a SAN identity. Valid hex escapes in parameters and headers continue to be accepted. This is a local fail-closed RFC-3261 grammar check, not a claim of complete SIP URI ABNF parsing.
+
+**Executable evidence:** Rust test `malformed_percent_escapes_in_sip_uri_san_never_authorize_identity` checks seven malformed URI values and three valid percent-escaped parameter/header values. CI requirements remain `cargo test -p commscraft-transport --all-targets`, full workspace Rust/Clippy and historical SHA-256 RFC/MS checks on standard GitHub-hosted Linux/Windows runners only.
+
+**Microsoft boundary:** [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) still requires Security Association/MIC/replay verification; certificate URI validity does **not** authenticate REGISTER or establish a signed-in CommSCraft session. No history ledger or release policy changed.

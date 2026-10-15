@@ -56,6 +56,24 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
     {
         return None;
     }
+    // RFC 3261 §25.1: escaped URI bytes require '%' followed by exactly
+    // two HEXDIG characters, including in ignored URI parameters/headers.
+    // Incomplete or invalid escapes cannot authorize a certificate identity.
+    let bytes = remainder.as_bytes();
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' {
+            if index + 2 >= bytes.len()
+                || !bytes[index + 1].is_ascii_hexdigit()
+                || !bytes[index + 2].is_ascii_hexdigit()
+            {
+                return None;
+            }
+            index += 3;
+        } else {
+            index += 1;
+        }
+    }
     let host_and_port = remainder.split([';', '?']).next()?;
     let (host, port) = match host_and_port.split_once(':') {
         Some((host, port)) => (host, Some(port)),
@@ -262,6 +280,25 @@ mod tests {
             &[GeneralName::DNSName("XN--BCHER-KVA.EXAMPLE.COM")],
             valid
         ));
+    }
+
+    #[test]
+    fn malformed_percent_escapes_in_sip_uri_san_never_authorize_identity() {
+        for uri in [
+            "sip:example.com%", "sip:example.com%2", "sip:example.com%GG",
+            "sip:example.com;transport=%", "sip:example.com;transport=%G0",
+            "sip:example.com?subject=%2", "sip:example.com?subject=ok%zz",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri:?}");
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
+        }
+        for uri in [
+            "sip:example.com;transport=tls?subject=hello%20world",
+            "sip:example.com?subject=foo%2Fbar",
+            "sip:example.com;opaque=%3a",
+        ] {
+            assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
+        }
     }
 
     #[test]
