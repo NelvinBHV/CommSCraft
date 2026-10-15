@@ -20,22 +20,40 @@ fn fixed_and_remote_cluster_fields_match_microsoft_abnf() {
         "register-action=\"fixed\";primary-cluster-type=\"remote\";is-connected-to-primary=\"no\";user-services-state=unavailable",
     )]).unwrap().unwrap();
     assert_eq!(hint.action, RegisterAction::Fixed);
-    assert_eq!(hint.cluster, Some(ClusterState { kind: Cluster::Remote, connected: false }));
+    assert_eq!(
+        hint.cluster,
+        Some(ClusterState {
+            kind: Cluster::Remote,
+            connected: false
+        })
+    );
     assert!(hint.user_services_unavailable);
 }
 
 #[test]
 fn unknown_or_non_ok_responses_do_not_create_login_state() {
-    assert_eq!(parse_presence_state(401, &[("Presence-State", "register-action=\"added\"")]), Ok(None));
-    assert_eq!(parse_presence_state(503, &[("Presence-State", "register-action=\"refreshed\"")]), Ok(None));
+    assert_eq!(
+        parse_presence_state(401, &[("Presence-State", "register-action=\"added\"")]),
+        Ok(None)
+    );
+    assert_eq!(
+        parse_presence_state(503, &[("Presence-State", "register-action=\"refreshed\"")]),
+        Ok(None)
+    );
 }
 
 #[test]
 fn duplicated_header_is_rejected() {
-    assert_eq!(parse_presence_state(200, &[
-        ("Presence-State", "register-action=\"added\""),
-        ("pReSeNcE-sTaTe", "register-action=\"refreshed\"")
-    ]), Err(ParseError::DuplicateHeader));
+    assert_eq!(
+        parse_presence_state(
+            200,
+            &[
+                ("Presence-State", "register-action=\"added\""),
+                ("pReSeNcE-sTaTe", "register-action=\"refreshed\"")
+            ]
+        ),
+        Err(ParseError::DuplicateHeader)
+    );
 }
 
 #[test]
@@ -45,6 +63,9 @@ fn unauthorized_extension_and_header_injection_fail_closed() {
         "register-action=\"fixed\";primary-cluster-type=\"remote\"",
         "register-action=\"added\"\r\nAuthorization: Kerberos token",
     ] {
-        assert!(parse_presence_state(200, &[("Presence-State", bad)]).is_err(), "{bad}");
+        assert!(
+            parse_presence_state(200, &[("Presence-State", bad)]).is_err(),
+            "{bad}"
+        );
     }
 }
