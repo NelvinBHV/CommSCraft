@@ -3,10 +3,13 @@
 //! RFC 3261 §§7.5, 18.3; RFC 3263 §7; [MS-CONMGMT] §3.1.5.
 //! `native_tls` validates the platform CA chain against the *original SIP
 //! domain*, not the potentially DNS-controlled SRV target (RFC 5922 §7.3).
-//! Platform hostname matching is NOT a full RFC 5922 SAN/URI/wildcard verifier.
+//! Strict peer SIP SAN extraction and exact-domain comparison are applied
+//! after the platform TLS/PKIX handshake. Legacy CN-only and internationalized
+//! U-label identities are intentionally rejected until fully specified.
 //! A successful TLS handshake is NOT a Microsoft SIPAE Security Association.
 //! No public API exists to send SIP, credentials, or REGISTER requests.
 
+mod sip_certificate;
 use native_tls::{TlsConnector, TlsStream};
 use commscraft_core::inbound::{ReceiveError, ReceiveEvent, SipInbound};
 use std::net::{TcpStream, ToSocketAddrs};
@@ -74,8 +77,9 @@ impl TlsSipReceiver {
     /// The original SIP domain is used for TLS SNI and platform certificate
     /// validation. SRV hostnames are used ONLY for DNS address resolution;
     /// that distinction is essential under RFC 5922 §7.3.
-    /// Note: platform validation may allow wildcard/CN rules beyond RFC 5922.
-    /// This remains a restricted diagnostic, NOT proof of full SIP identity.
+    /// Platform validation can accept wildcard/CN names, so we additionally
+    /// require a strict RFC 5922 SIP-URI/DNS SAN identity from the real leaf
+    /// certificate. This remains an inbound-only diagnostic (not sign-in).
     pub fn connect(peer: TlsEndpoint, timeout: Duration) -> Result<Self, TransportError> {
         if timeout.is_zero() || timeout > Duration::from_secs(30) {
             return Err(TransportError::InvalidEndpoint);
@@ -101,7 +105,12 @@ impl TlsSipReceiver {
                     // connection. This is not complete RFC 5922 SAN parsing.
                     let cert = tls.peer_certificate()
                         .map_err(|_| TransportError::TlsVerificationFailed)?;
-                    if cert.is_none() {
+                    let cert = cert.ok_or(TransportError::TlsVerificationFailed)?;
+                    let der = cert.to_der()
+                        .map_err(|_| TransportError::TlsVerificationFailed)?;
+                    if !sip_certificate::matches_sip_identity(
+                        &der, peer.tls_reference_identity()
+                    ) {
                         return Err(TransportError::TlsVerificationFailed);
                     }
                     Ok(Self { tls, sip: SipInbound::new(), peer })

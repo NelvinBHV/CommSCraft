@@ -8,3 +8,4 @@ description = "Read-only validated TLS SIP transport; no registration or credent
 [dependencies]
 commscraft-core = { path = "../commscraft-core" }
 native-tls = "0.2"
+x509-parser = { version = "0.18.1", default-features = false }
