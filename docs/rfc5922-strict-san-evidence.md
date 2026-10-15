@@ -81,3 +81,13 @@ CI commands: `cargo test -p commscraft-transport --all-targets`, `cargo test --w
 **Executable evidence:** Rust test `malformed_percent_escapes_in_sip_uri_san_never_authorize_identity` checks seven malformed URI values and three valid percent-escaped parameter/header values. CI requirements remain `cargo test -p commscraft-transport --all-targets`, full workspace Rust/Clippy and historical SHA-256 RFC/MS checks on standard GitHub-hosted Linux/Windows runners only.
 
 **Microsoft boundary:** [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) still requires Security Association/MIC/replay verification; certificate URI validity does **not** authenticate REGISTER or establish a signed-in CommSCraft session. No history ledger or release policy changed.
+
+## RFC 3261 SIP-URI header field syntax (additional certificate gate)
+
+**Normative source:** [RFC 3261 §25.1](https://www.rfc-editor.org/rfc/rfc3261#section-25.1) specifies `headers = "?" header *("&" header)`, `header = hname "=" hvalue`, `hname = 1*(...)`, and `hvalue = *(...)`. This means an empty header name or an absent equals sign is invalid, while an empty header value is valid.
+
+**Implementation:** `crates/commscraft-transport/src/sip_certificate.rs` rejects missing `=`, empty header name, empty header list, and dangling/duplicate ampersand components before using a `sip:` URI SAN to authenticate a domain. It does not use URI header values to select a certificate identity and intentionally remains a narrow fail-closed subset of the full RFC 3261 URI grammar.
+
+**Executable proof:** `malformed_sip_uri_headers_cannot_authorize_certificate_identity` checks seven malformed URI SANs and three valid header/parameter forms, and verifies that invalid URI SANs cannot authorize `example.com` in `match_sip_sans`.
+
+**Microsoft boundary:** [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) still independently requires a verified server Security Association, MIC, and replay checks. Header syntax checking never elevates TLS to an authenticated REGISTER session. No historic RFC/MS evidence ledger changed. Use only standard GitHub-hosted Linux/Windows runners, and count tests as proven only once the exact commit's CI checks are green.
