@@ -1,0 +1,27 @@
+{
+  "description": "SYNTHETIC offline-only, NOT a Microsoft-supplied interoperable vector",
+  "reference": "MS-SIPAE \u00a73.2.4.1 and \u00a73.3.5.3",
+  "version": 4,
+  "key_hex": "6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b",
+  "crand": "11223344",
+  "cnum": 1,
+  "fields": [
+    "TLS-DSK",
+    "11223344",
+    "1",
+    "SIP Communications Service",
+    "server.example.com",
+    "requestCallABC",
+    "9",
+    "REGISTER",
+    "sip:alice@example.com",
+    "localTag",
+    "sip:alice@example.com",
+    "",
+    "",
+    "",
+    "3600"
+  ],
+  "buffer_utf8": "<TLS-DSK><11223344><1><SIP Communications Service><server.example.com><requestCallABC><9><REGISTER><sip:alice@example.com><localTag><sip:alice@example.com><><><><3600>",
+  "hmac_sha256_hex": "de04e2a668916e5aa4ef22d0e78639983a6fb38f6c6edaa50a831f111d7880e7"
+}

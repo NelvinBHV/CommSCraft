@@ -1,0 +1,34 @@
+{
+  "version": "0.12.0",
+  "date": "2026-10-15",
+  "rust_compiled": false,
+  "rust_tests_executed": 0,
+  "live_tls_handshake_tested": false,
+  "sfb_interoperability_tested": false,
+  "v1_release_ready": false,
+  "requirements": {
+    "TLS-RFC-01": "RFC 3261 §7.5",
+    "TLS-RFC-02": "RFC 3261 §§18.3,20.14",
+    "TLS-RFC-03": "RFC 3261 §18.4",
+    "TLS-MS-01": "MS-CONMGMT §3.1.5",
+    "TLS-MS-02": "MS-CONMGMT §1.5",
+    "TLS-RFC-04": "RFC 3263 §7",
+    "TLS-AUTH-01": "MS-SIPREGE §3.1.2.5.1; MS-SIPAE §3.2.5.2"
+  },
+  "sha256": {
+    "crates/sfb-core/src/inbound.rs": "013a965770c94fac7d64d611dd4d9913e712b17cac6738cfa62c44ef7b8252e6",
+    "crates/sfb-transport/src/lib.rs": "99710c105a98667c0eb1907504de89b000a666eaeb821f82b32371863154611e",
+    "apps/sfb-probe/src/main.rs": "5b0392a1ef5b7d3b541cb66231150bb65712d98073bc684012e5cddc2ffc0a87",
+    "crates/sfb-core/src/lib.rs": "5b0a8e733848bbfad3ba328d42ff1e3e018c12309fe8bfdb352df5a663a7e9ce",
+    ".github/workflows/rust.yml": "949fcaf61e18b2fbe02c06111e35b96cbb04ae9a8fea61afab675cb669d4e131",
+    "docs/tls-inbound-evidence.md": "9f4dc09df4f1be0a59018bacffcf2a9d3998977731e08ed6e0514f91ea482c76",
+    "scripts/check_v012_evidence.py": "68956c7666563346b9f4cb9a3b806ec96f453cfdad83d4ca4106b4655d23c398"
+  },
+  "limitations": [
+    "source-only evidence",
+    "read-only TLS (no SIP send)",
+    "no tested Windows SSPI mutual authentication",
+    "no production SIP REGISTER",
+    "no full Windows client parity"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "EXAMPLE_ONLY": "Do not rename to release/interop-signoff.json without real tests and independent review",
+  "windows_client_build": "REPLACE_WITH_EXACT_TESTED_FULL_CLIENT_BUILD",
+  "server_version": "REPLACE_WITH_ACTUAL_SFB_SERVER_VERSION",
+  "test_date": "YYYY-MM-DD",
+  "tester": "REPLACE_WITH_ACTUAL_TESTER",
+  "test_environment": "REPLACE_WITH_AUTHORIZED_LAB_ID_AND_CONFIG_REFERENCE",
+  "security_review": "REPLACE_WITH_APPROVED_REVIEW_REPORT_ID",
+  "windows_feature_inventory_reviewed": false,
+  "parity_differences_resolved": false,
+  "approved": false,
+  "reference_executable_sha256": "REPLACE_WITH_SHA256_OF_ACTUAL_WINDOWS_FULL_CLIENT_BINARY",
+  "windows_os_build": "REPLACE_WITH_WINDOWS_VERSION_AND_BUILD"
+}

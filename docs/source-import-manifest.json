@@ -1,0 +1,407 @@
+{
+  "source": "CommSCraft prepared v0.14.0 working tree",
+  "evidence_class": "local-source-hashes-not-rust-build-or-server-interop",
+  "file_count": 100,
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "ab052a03a14f610d924b06588d7d097542e9beaf8d2c4f4e0a6a259cacd2619f"
+    },
+    {
+      "path": ".github/workflows/registration-gate.yml",
+      "sha256": "fb6d5736dde9ac2f7f68e607d1266172f044f731369455bf0e59907578f45de9"
+    },
+    {
+      "path": ".github/workflows/release-snapshot.yml",
+      "sha256": "2016b26143cc5090e9ca29bf690118b53a073e294f611cfb224b8f8c758a59ff"
+    },
+    {
+      "path": ".github/workflows/response-router.yml",
+      "sha256": "77ebd5a1432491e24b1854a42bb3cf806c75e546a991c33274deb8aa4a2e5898"
+    },
+    {
+      "path": ".github/workflows/rust.yml",
+      "sha256": "949fcaf61e18b2fbe02c06111e35b96cbb04ae9a8fea61afab675cb669d4e131"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "86175a9a3124ba7b2977fa0a44e00184e17fb43c3591bc2dcac265fdb138ee4b"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "2874d99457833696d3e7df5fff0b6ac2ae0924cb47ac35b66621d87ab7930b58"
+    },
+    {
+      "path": "FEATURE_PARITY.json",
+      "sha256": "d744739c0ada84e556203e94fe5fda9613aae891d6b7e2f2d14ed7341553ab4e"
+    },
+    {
+      "path": "README.md",
+      "sha256": "2db5dcef6ca439c12bfaebabc5f69488439d2204bcea3031eb1848c1cb5968a9"
+    },
+    {
+      "path": "ROADMAP.md",
+      "sha256": "2cbceb5cf9bacc86a018b249167a5914f4b059ca405de9f670e0ee7e4d2268b9"
+    },
+    {
+      "path": "V1_RELEASE_CONTRACT.json",
+      "sha256": "7b5680a1eaa1081ed266f4dc42afc973eff42b008816cbdd91c5c8a2051d949c"
+    },
+    {
+      "path": "WINDOWS_REFERENCE_CASES.json",
+      "sha256": "0ac5e02d8bacaf2dffb9f6bef102d91430baee944e828866db8bc0ad8eee2050"
+    },
+    {
+      "path": "apps/sfb-desktop/Cargo.toml",
+      "sha256": "190d2bcf26dd929fafde793068bd575fe6be372277f8ae761d4ee0b925edd524"
+    },
+    {
+      "path": "apps/sfb-desktop/src/main.rs",
+      "sha256": "da696b655a4cc8d35f134ff468817a2851278282f13036fdd0158eaf42344292"
+    },
+    {
+      "path": "apps/sfb-inspect/Cargo.toml",
+      "sha256": "81871bbd453cc2ebda64256134568d54f9c5940fffde6ea40d9375c065f9fd18"
+    },
+    {
+      "path": "apps/sfb-inspect/src/main.rs",
+      "sha256": "5106f7986e8de2b8d6a5fd3f007e588269861370a237412f72b45a5bf86a3571"
+    },
+    {
+      "path": "apps/sfb-probe/Cargo.toml",
+      "sha256": "f37312272f9758190a1e78e0d857dd8d80dcb377faef67e4770671ea6f5d52e9"
+    },
+    {
+      "path": "apps/sfb-probe/src/main.rs",
+      "sha256": "5b0392a1ef5b7d3b541cb66231150bb65712d98073bc684012e5cddc2ffc0a87"
+    },
+    {
+      "path": "crates/sfb-core/Cargo.toml",
+      "sha256": "cdf8df991e705acdbbd79e29868c630e2428438a21fe9cc0e03d312b3a0ea6e1"
+    },
+    {
+      "path": "crates/sfb-core/src/challenge.rs",
+      "sha256": "0a435564681363f83377413d099ec578b99d497eac867df83d6a1284fd03640a"
+    },
+    {
+      "path": "crates/sfb-core/src/discovery.rs",
+      "sha256": "547493c88964b86105be5755688a1ac4695b7460d60b29c9ccee9c102ee6a65c"
+    },
+    {
+      "path": "crates/sfb-core/src/im.rs",
+      "sha256": "c87145254f6ad9a8f88aee09afc2bda8d5f1d06c461777fb6fafb9e87d4b0961"
+    },
+    {
+      "path": "crates/sfb-core/src/inbound.rs",
+      "sha256": "013a965770c94fac7d64d611dd4d9913e712b17cac6738cfa62c44ef7b8252e6"
+    },
+    {
+      "path": "crates/sfb-core/src/kerberos.rs",
+      "sha256": "366c0cb58243a08af26616fec8b301ee1cbf9816cacbe27a1a904e77f9fc98e3"
+    },
+    {
+      "path": "crates/sfb-core/src/kerberos_mic.rs",
+      "sha256": "8f5f5f503801a875ed39a1f3381f8823515b314bab68c36ff3727951440ee7ce"
+    },
+    {
+      "path": "crates/sfb-core/src/lib.rs",
+      "sha256": "5b0a8e733848bbfad3ba328d42ff1e3e018c12309fe8bfdb352df5a663a7e9ce"
+    },
+    {
+      "path": "crates/sfb-core/src/presence.rs",
+      "sha256": "c71c72b2c28f27248e5cb4e481dc64bc5ac18f1ded62b16166ce6db0767e94c8"
+    },
+    {
+      "path": "crates/sfb-core/src/registration.rs",
+      "sha256": "7ec294086d8f83de8dddc0a2c221e0bea8901c3b583bce7a5e35708cd62f3d69"
+    },
+    {
+      "path": "crates/sfb-core/src/sdp.rs",
+      "sha256": "7a7f911b31b3412d033c84c4f58964cd43354ea6ea3255dd179aa0a348a4af2e"
+    },
+    {
+      "path": "crates/sfb-core/src/security.rs",
+      "sha256": "d39a14085c04d2d49f31aa85fa17b57c2c7305b5be94632761515793ef20c766"
+    },
+    {
+      "path": "crates/sfb-core/src/session.rs",
+      "sha256": "2930af8381ade0ef5e50fb7d43b06b7dfe00b92e7a9277a4f3e3a6d3847bfb02"
+    },
+    {
+      "path": "crates/sfb-core/src/sip.rs",
+      "sha256": "9cb8f289e6b83a6542d84d8a86462d52412006a896f4cf5ee204435cc6fe4a51"
+    },
+    {
+      "path": "crates/sfb-core/src/stream.rs",
+      "sha256": "7ba4906f97ed9084f78cfb9bde9c0116f92234296ca14eb682aa24944fc1d490"
+    },
+    {
+      "path": "crates/sfb-core/src/transaction.rs",
+      "sha256": "8b77c398d623ff744173584d0ea7d2a06219bca5d143582ef336dc574b9dce91"
+    },
+    {
+      "path": "crates/sfb-core/src/windows_sspi.rs",
+      "sha256": "aec3b0258a39afd0b006cb4046792842a4f96950fec227c2f80dec00035d37f9"
+    },
+    {
+      "path": "crates/sfb-core/tests/authentication_fixtures.rs",
+      "sha256": "2f4c14d7920e5d9637760bc8946399ea2e57637343338311708c1d3611acb99b"
+    },
+    {
+      "path": "crates/sfb-core/tests/protocol_fixtures.rs",
+      "sha256": "9c0821c9ce1fb28bb6399ad4fc881104db08270c725cbb2df1061022a1b643d5"
+    },
+    {
+      "path": "crates/sfb-core/tests/verified_registration.rs",
+      "sha256": "ec1b8217c142e8fadb19e08d554fb223b2862453ae819a15e5b2115471fd403f"
+    },
+    {
+      "path": "crates/sfb-router/Cargo.toml",
+      "sha256": "7a1658b05f12a07033949b5e2dc50bda1ee76f37b09446a903e9579787b4e9ba"
+    },
+    {
+      "path": "crates/sfb-router/src/lib.rs",
+      "sha256": "700877ecc6b9de9472392c369833ce3339f284ea14e69ca4f4a863c8023a2ddd"
+    },
+    {
+      "path": "crates/sfb-router/tests/offline_wire.rs",
+      "sha256": "8e3e792560ce085a8d0119dfcb6109c4dc543aa6ddb259842a4c9101accbc03e"
+    },
+    {
+      "path": "crates/sfb-transport/Cargo.toml",
+      "sha256": "af1799c593e1880611739cca89a6952de9a45352922ab0ef02d583041bf1ffb3"
+    },
+    {
+      "path": "crates/sfb-transport/src/lib.rs",
+      "sha256": "99710c105a98667c0eb1907504de89b000a666eaeb821f82b32371863154611e"
+    },
+    {
+      "path": "docs/architecture.md",
+      "sha256": "36d3e4e3f8d1cd1f5b645e2a7aead7adbd852788b242cf329f1eba2b4cab45b2"
+    },
+    {
+      "path": "docs/client-mic-signing.md",
+      "sha256": "945ea52dc6dd7209cd8f1de25d6deed31a79e40e66f2a504fa4b7a08355a21c4"
+    },
+    {
+      "path": "docs/commscraft-migration-evidence.md",
+      "sha256": "c362e8966c1c9d3e7c87d640ceb3d0e81058c49fc5bbb42b9790c29f58382b28"
+    },
+    {
+      "path": "docs/development.md",
+      "sha256": "a033442b6831dd53c3d8aec01709a875d7047930f8e1a2b3a2750f3e942a9d61"
+    },
+    {
+      "path": "docs/evidence-v0.10.0.json",
+      "sha256": "a46f707670abd15d4eac800423307d47db59895044a1a4b6fecb2f95040aaa26"
+    },
+    {
+      "path": "docs/evidence-v0.11.0.json",
+      "sha256": "3da7b3e3a070a689e262c7163297fe0703117f563ca8bb0cf9556732b8072223"
+    },
+    {
+      "path": "docs/evidence-v0.12.0.json",
+      "sha256": "2280a094f07a7bd7977ae710d9c1351b6f10c5cdbd44466bd98edb623591b22b"
+    },
+    {
+      "path": "docs/evidence-v0.13.0.json",
+      "sha256": "d4460fb394cd73104c0efbbb14d7f34b6f1dad73a27ad0c83ddd45054f1073d4"
+    },
+    {
+      "path": "docs/evidence-v0.14.0.json",
+      "sha256": "4ebbb3d7933c40798a47a2182201e78126c67943c762190469f200d3c353f00d"
+    },
+    {
+      "path": "docs/history/v0.11.0/README.md",
+      "sha256": "1f4a6f8eef445197cc8f6e0f82363c80748927d78a2728b766613e101cea1212"
+    },
+    {
+      "path": "docs/history/v0.11.0/rust.yml",
+      "sha256": "164334d884b08717ae3b3363153d687d6da8d9fbf8b9abebe485b48b05e9b20e"
+    },
+    {
+      "path": "docs/history/v0.13.0/Cargo.toml",
+      "sha256": "c98f48011a8769bd57cdc3cc5c83d44d5a8c15f278115d15ee5a14973db20039"
+    },
+    {
+      "path": "docs/history/v0.13.0/check_v013_evidence.py",
+      "sha256": "5330e3855497d84bf38635cace86435c6ed8461f8558f1c277ff180bf2fac5b4"
+    },
+    {
+      "path": "docs/history/v0.14.0/README.md",
+      "sha256": "8138972554f7dd18815cf669ac6ee574dfadfaa222e77ab0861c933ad6d90850"
+    },
+    {
+      "path": "docs/history/v0.14.0/check_v014_evidence.py",
+      "sha256": "713b057b5560ce0fd5c7721eae06518617344b38e1965d36478a72c47bae6543"
+    },
+    {
+      "path": "docs/kerberos-mic-evidence.md",
+      "sha256": "d01879df02080f29725750d3b9ce423c72c4a3e9a0608722b201e8b72faf7396"
+    },
+    {
+      "path": "docs/kerberos-negotiation.md",
+      "sha256": "019bb1d680b2fdf995f62a7d7627a547f933f0699d0994c7ababa5d41b1b40c8"
+    },
+    {
+      "path": "docs/protocol-matrix.md",
+      "sha256": "049fa81d19eec867727ae6c616ff55d46b72498cd1bba7c5e415356cce0f8eb2"
+    },
+    {
+      "path": "docs/registration-gate-evidence.md",
+      "sha256": "966d0365f65297d1bc2de172a6c41c4a8265018aeef00d0837c05e7a57b1835f"
+    },
+    {
+      "path": "docs/registration-protocol.md",
+      "sha256": "4559c8e49fdb44df47235a9aff254fe5e49b4cc1836054d212e5398b5ff5ee28"
+    },
+    {
+      "path": "docs/release-policy.md",
+      "sha256": "354d9e7d09e52fab669d16e63293418d0793179de3b5bfefdbc58a6304515544"
+    },
+    {
+      "path": "docs/response-router-evidence.md",
+      "sha256": "6a69ebf876d34e4e478a07af98196bf429478b5cbafd3a8dac5e3f9ecc13e060"
+    },
+    {
+      "path": "docs/security.md",
+      "sha256": "62387b3ffc0c4ef55a032ccc29552e5387022bf646f96c785ac8e022c1b10e81"
+    },
+    {
+      "path": "docs/sipae-security-association.md",
+      "sha256": "e56d29f685fe397eef9f66a1f0906c34121407b8c27a4193b9f7ae1380dca5c9"
+    },
+    {
+      "path": "docs/spec-traceability.md",
+      "sha256": "3f394dd6cd4d1591c81d2905ff6fe1cb6742527ff290fb59c04ed04a9e886369"
+    },
+    {
+      "path": "docs/tls-inbound-evidence.md",
+      "sha256": "9f4dc09df4f1be0a59018bacffcf2a9d3998977731e08ed6e0514f91ea482c76"
+    },
+    {
+      "path": "docs/verified-registration-evidence.md",
+      "sha256": "f13ca49fdf1465fb9310213eb14daa0efb76cbed99532bbcdd4a1bc27bc318ee"
+    },
+    {
+      "path": "docs/windows-parity.md",
+      "sha256": "3d29f249f49c181e0f6ac4a2bc4baf4193001d71e989f041cbd5621ef6776544"
+    },
+    {
+      "path": "docs/windows-release-validation.md",
+      "sha256": "92a96ec6b72dd49668ffeb7914f0294d1d9e70762d977e417a8668fdb0f3fdf4"
+    },
+    {
+      "path": "docs/windows-sspi-kerberos.md",
+      "sha256": "65838680515fe3401bfeef1dc28853709615282ab6bf659ae42aa92bfe1fb5cc"
+    },
+    {
+      "path": "release-signoff-example.json",
+      "sha256": "3958cfc0d1e490e9a2e6b2d453fced08e4de1729a24ec059ab54e1e5707ff98c"
+    },
+    {
+      "path": "scripts/check_commscraft_migration.py",
+      "sha256": "a5dbd243583ecb21b22f8557f3343a1de11c84221468a654203a80a0e3c0da11"
+    },
+    {
+      "path": "scripts/check_release.py",
+      "sha256": "01474770943c9f896c893e5ac7699f43fb70cb70bc760e9bfd69a5dd68e2cd80"
+    },
+    {
+      "path": "scripts/check_v011_evidence.py",
+      "sha256": "afc665e198c2fe0bde1f12d5bb4a333c71f7556b9586b3f0d7e5b941edf1950c"
+    },
+    {
+      "path": "scripts/check_v012_evidence.py",
+      "sha256": "68956c7666563346b9f4cb9a3b806ec96f453cfdad83d4ca4106b4655d23c398"
+    },
+    {
+      "path": "scripts/check_v013_evidence.py",
+      "sha256": "730f636ad987ba140d96ac824b5cda47082df02de2112c4a4f9805da27b56ef7"
+    },
+    {
+      "path": "scripts/check_v014_evidence.py",
+      "sha256": "9fc9eb39a6a95ee5347935981cab7be8e9a6fd4e112d0661d1cf645fa6a32280"
+    },
+    {
+      "path": "scripts/test_check_release.py",
+      "sha256": "aeb8806d9386364c504fcaf1d711281e529129c37265a9e2adbca5b017d65331"
+    },
+    {
+      "path": "scripts/test_kerberos_mic_contract.py",
+      "sha256": "8bb2c71d5228064c1f895ed84e6b33c6ccb84354d584cfe228ce6508d56ef612"
+    },
+    {
+      "path": "scripts/test_mic_vectors.py",
+      "sha256": "150a1b1bc43fb6da05f142b691fdc418ce0e2e9718ca03353ba63a1ff8606e2e"
+    },
+    {
+      "path": "scripts/test_v012_contract.py",
+      "sha256": "99b6885c249df8566d781428bcfdbda07a8bfec783a35c2bc1eff3065c7c65a0"
+    },
+    {
+      "path": "scripts/test_v013_contract.py",
+      "sha256": "940aae44ddf17f1e29b2f1ae01b3e9920e0081d405b91b385c64cb182fbefa68"
+    },
+    {
+      "path": "scripts/test_v014_contract.py",
+      "sha256": "35e4256c5a218a76989041b0a0b7b1a7ea28b4c9121fcce47273463c71efffc3"
+    },
+    {
+      "path": "scripts/test_verified_registration_contract.py",
+      "sha256": "0e1839a0766e4126db9f0b7274d1609909ca1dcc49a3a830ed9de0e081c8e1be"
+    },
+    {
+      "path": "scripts/test_windows_sspi_contract.py",
+      "sha256": "29e04616a9db7abb60289422684bf502eadcea3fd01193e24cb6005dfdbe6a5f"
+    },
+    {
+      "path": "tests/fixtures/sip/README.md",
+      "sha256": "601ffff7d56951db65bd43c61b6e1cb3959180d21668547811be8e1fc613b5ea"
+    },
+    {
+      "path": "tests/fixtures/sip/challenge.sip",
+      "sha256": "ed451ca190425494ed21e28f142d65a44a69a885b4c6cad606178317a5162f2c"
+    },
+    {
+      "path": "tests/fixtures/sip/register-423.sip",
+      "sha256": "5d790349b363c33cfea4d0fea902cf5fe07e82aeebb2f3ed701fa559dbf0a4e8"
+    },
+    {
+      "path": "tests/fixtures/sip/register-ms-gruu-200.sip",
+      "sha256": "d07cde5069edfcddd293530a6c23503cccd4e815ab3feefcfe421f45315c2f23"
+    },
+    {
+      "path": "tests/fixtures/sip/register.sip",
+      "sha256": "82eab906a486a0d5cc147080e30d742dad67cbd4ed99caeb394b7e181264c08b"
+    },
+    {
+      "path": "tests/fixtures/sip/signed-register-invalid-mic.sip",
+      "sha256": "f6af29054bcd405c898ec0abcf9028d49c6c5b03298ba9c0de9a0bdbf16bbb08"
+    },
+    {
+      "path": "tests/fixtures/sip/signed-register-ok.sip",
+      "sha256": "c697cd2ce2a98d10f1d149342fe0744ab7856285143f970b5660a28047204cc9"
+    },
+    {
+      "path": "tests/fixtures/sip/trying.sip",
+      "sha256": "344ee527bdbaa78a985923b71ed2859c1811f5d5256db78c38f2aee498fd78a9"
+    },
+    {
+      "path": "tests/fixtures/sip/unauthorized.sip",
+      "sha256": "2dcb2a0674d25413be6c136325c3e15e46b4d68ef0205ae59452875d4699cc86"
+    },
+    {
+      "path": "tests/vectors/client-mic-v4.json",
+      "sha256": "51c363e15153fd3c23c396f7bbd1c0f9338026c4fc4d489799a2e9471146f1bd"
+    },
+    {
+      "path": "xtask/Cargo.toml",
+      "sha256": "4a226697455a8bdac04b0c75a15872786121f3208df1e17247249c9ab6b7956e"
+    },
+    {
+      "path": "xtask/src/main.rs",
+      "sha256": "46bac698440d1ec0942f121ffb3d2715843d2b11ba2507ba84e44e595663b039"
+    }
+  ]
+}
