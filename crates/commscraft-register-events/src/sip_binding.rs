@@ -86,7 +86,7 @@ mod tests {
         for invalid in ["", "-1 REGISTER", "+1 REGISTER", "2147483648 REGISTER",
                         "4294967295 REGISTER", "4294967296 REGISTER",
                         "1 REGISTER EXTRA", "1REGISTER", "notanumber REGISTER",
-                        "1\r\nREGISTER", "1\nREGISTER", "1\vREGISTER",
+                        "1\r\nREGISTER", "1\nREGISTER", "1\x0BREGISTER",
                         "1\0REGISTER"] {
             assert_eq!(parse_register_presence_response(&response(200, invalid)),
                 Err(BindingError::InvalidCSeq), "{invalid}");
