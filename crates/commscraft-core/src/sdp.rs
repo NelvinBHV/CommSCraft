@@ -178,11 +178,12 @@ pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
                     last.attribute_count += 1;
                 } else { session_attributes += 1; }
             }
-            // Connection, bandwidth, encryption keys etc are not validated
-            // as active media configuration in the read-only inspector.
-            _ => {
+            // Recognized fields remain inert in this read-only inspector.
+            "i=" | "u=" | "e=" | "p=" | "c=" | "b=" | "k=" => {
                 if !subject { return Err(SdpError::Malformed); }
             }
+            // RFC 8866 §5: extensions use a= attributes, not new fields.
+            _ => return Err(SdpError::Malformed),
         }
     }
     if !(v && o && subject && time) { return Err(SdpError::MissingRequired); }
@@ -304,6 +305,22 @@ mod tests {
         }
         let after_media = SAMPLE.to_owned() + "r=1h 1h 0\r\n";
         assert_eq!(inspect_sdp(after_media.as_bytes()), Err(SdpError::Malformed));
+    }
+
+    #[test]
+    fn rfc8866_unknown_field_types_fail_closed() {
+        for field in ["x=vendor-private", "q=unexpected", "y=opaque"] {
+            let session = SAMPLE.replace("t=0 0\r\n",
+                &format!("t=0 0\r\n{field}\r\n"));
+            assert_eq!(inspect_sdp(session.as_bytes()), Err(SdpError::Malformed),
+                "unknown session field {field}");
+            let media = format!("{SAMPLE}{field}\r\n");
+            assert_eq!(inspect_sdp(media.as_bytes()), Err(SdpError::Malformed),
+                "unknown media field {field}");
+        }
+        let attribute = SAMPLE.replace("a=group:BUNDLE 0 1\r\n",
+            "a=x-vendor-private:opaque\r\na=group:BUNDLE 0 1\r\n");
+        assert!(inspect_sdp(attribute.as_bytes()).is_ok());
     }
 
     #[test]
