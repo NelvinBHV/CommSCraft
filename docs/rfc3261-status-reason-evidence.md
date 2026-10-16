@@ -65,3 +65,13 @@ The corrective Rust test and documentation are included in PR #32 head `7719906d
 | Same-head push events | Runs 38843125879, 38843125816, 38843125763, 38843125718, 38843125678 | All five **success** |
 
 The earlier `unexpected closing delimiter` compilation regression on `fef1c6279e34` is therefore **resolved at the verified head**. The extended negative C0/DEL regression test is **tested-offline**, not independently verified Microsoft interoperability. This evidence-only amendment is a **new commit**, so its own CI status is *pending* until it completes. Existing evidence-ledger bytes and historical SHA-256 records remain unchanged. Do not merge without updated-head checks, comprehensive security integration and authorized independent Windows Full Client interop/policy/recovery evidence. v1.0 remains **BLOCKED**.
+
+
+## Status-code boundary regression — 2026-10-16
+
+| Requirement | Normative version/section | Implementation / tests | Execution |
+| --- | --- | --- | --- |
+| SIP-STATUS-05 | [RFC 3261 (June 2002) §7.2](https://www.rfc-editor.org/rfc/rfc3261#section-7.2), response Status-Line requires three decimal digits and the defined 1xx–6xx classes | Existing `crates/commscraft-core/src/sip.rs::parse_frame` range/syntax validation is unchanged. New `response_status_code_rejects_out_of_range_and_non_decimal_values` negative fixtures: 000, 099, 700, 999, 20A, 20, 2000, +200. Positive fixtures: 100, 200, 699; confirm exact consumed bytes. | **Source-only** until CI for source commit `82d4abe0c4b8a86c74fe1c9968abd3a23a902682` or a descendant runs to completion. |
+| MS-STATUS-05 | [MS-SIPREGE revision 17.1 (19 August 2025) §3.1.2.5.1](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/8b6cbbb4-b398-4b55-847d-950b9a8d3010), Microsoft REGISTER response context independent of SIP status-line syntax | No registration, TLS, SSPI, server MIC or replay logic changed; existing offline SIPAE tests still required | No live Windows/SfB interoperability evidence; v1.0 **BLOCKED**. |
+
+Standard hosted Linux/Windows Rust tests, strict Clippy and Python evidence scripts are required for the amended head; the earlier 11/11 CI success on `7719906d68b016918b13f98ca373495ce842a91f` and its documentation follow-up `3b418c37bc230a2dc2d29fc5184d97c8cf453d35` do not prove this new test passed. No historical SHA-256 ledger or workflow updated.
