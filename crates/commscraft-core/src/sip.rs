@@ -240,6 +240,24 @@ mod tests {
             Err(SipError::MalformedStartLine));
     }
     #[test]
+    fn response_status_code_rejects_out_of_range_and_non_decimal_values() {
+        // RFC 3261 §7.2: exactly three decimal digits, in the 100..=699 classes.
+        for code in ["000", "099", "700", "999", "20A", "20", "2000", "+200"] {
+            let wire = format!("SIP/2.0 {code} OK\r\nContent-Length: 0\r\n\r\n");
+            assert_eq!(parse_frame(wire.as_bytes()), Err(SipError::MalformedStartLine),
+                "invalid response code: {code}");
+        }
+        for code in ["100", "200", "699"] {
+            let wire = format!("SIP/2.0 {code} OK\r\nContent-Length: 0\r\n\r\n");
+            let (response, consumed) = parse_frame(wire.as_bytes()).unwrap().unwrap();
+            assert_eq!(consumed, wire.len());
+            assert_eq!(response.start_line, StartLine::Response {
+                code: code.parse().unwrap(), reason: "OK".into(),
+            });
+        }
+    }
+
+    #[test]
     fn response_reason_phrase_rejects_control_bytes_but_allows_utf8() {
         // RFC 3261 §§7.2, 25.1: descriptive UTF-8 is allowed, controls are not.
         // Exercise the full ASCII C0 range, not just representative samples.
