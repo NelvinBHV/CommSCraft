@@ -131,6 +131,10 @@ pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
                     protocol: protocol.into(), formats, attribute_count: 0 });
             }
             "a=" => {
+                // RFC 8866 §5: session attributes follow the time descriptions.
+                // Otherwise early attributes could be misclassified as trusted
+                // session defaults despite an invalid SDP field order.
+                if !time { return Err(SdpError::Malformed); }
                 if let Some(last) = media.last_mut() {
                     last.attribute_count += 1;
                 } else { session_attributes += 1; }
@@ -220,6 +224,23 @@ mod tests {
         assert!(inspect_sdp(wire.as_bytes()).is_ok());
         let wire = SAMPLE.replace("t=0 0", &format!("t=0 {oversized}"));
         assert!(inspect_sdp(wire.as_bytes()).is_ok());
+    }
+
+    #[test]
+    fn rfc8866_session_attributes_follow_timing_not_origin_or_name() {
+        for misplaced in [
+            SAMPLE.replace("o=- 1 1 IN IP4 192.0.2.1\r\n",
+                "a=x-mediabw:100\r\no=- 1 1 IN IP4 192.0.2.1\r\n"),
+            SAMPLE.replace("s=-\r\n", "s=-\r\na=x-devicecaps:1\r\n"),
+        ] {
+            assert_eq!(inspect_sdp(misplaced.as_bytes()), Err(SdpError::Malformed));
+        }
+        // Session- and media-level extension attributes remain countable only.
+        let valid = SAMPLE.replace("a=group:BUNDLE 0 1\r\n",
+            "a=x-mediabw:100\r\na=group:BUNDLE 0 1\r\n");
+        let summary = inspect_sdp(valid.as_bytes()).unwrap();
+        assert_eq!(summary.session_attribute_count, 2);
+        assert_eq!(summary.media[0].attribute_count, 1);
     }
 
     #[test]
