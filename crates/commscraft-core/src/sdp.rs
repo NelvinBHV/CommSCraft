@@ -77,6 +77,17 @@ pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
                 {
                     return Err(SdpError::Malformed);
                 }
+                // MS-SDPEXT §3.1.5.19: Microsoft SDP origin uses IN
+                // with an actual IP4/IP6 literal, not an untrusted hostname.
+                // RFC 8866 also permits FQDNs; this is a stricter MS profile.
+                let valid_address = match fields[4] {
+                    "IP4" => fields[5].parse::<std::net::Ipv4Addr>().is_ok(),
+                    "IP6" => fields[5].parse::<std::net::Ipv6Addr>().is_ok(),
+                    _ => false,
+                };
+                if fields[3] != "IN" || !valid_address {
+                    return Err(SdpError::Malformed);
+                }
                 o = true;
             }
             "s=" => {
@@ -173,6 +184,29 @@ mod tests {
         let valid = SAMPLE.replace("o=- 1 1 IN IP4 192.0.2.1",
             &format!("o=- {long_id} 0 IN IP4 192.0.2.1"));
         assert!(inspect_sdp(valid.as_bytes()).is_ok());
+    }
+
+    #[test]
+    fn ms_sdpext_origin_requires_in_and_address_family_literal() {
+        for origin in [
+            "o=- 1 1 OTHER IP4 192.0.2.1",
+            "o=- 1 1 IN IP5 192.0.2.1",
+            "o=- 1 1 IN IP4 2001:db8::1",
+            "o=- 1 1 IN IP6 192.0.2.1",
+            "o=- 1 1 IN IP4 999.1.2.3",
+            "o=- 1 1 IN IP4 host.example",
+            "o=- 1 1 IN IP6 fe80::1%eth0",
+        ] {
+            let wire = SAMPLE.replace("o=- 1 1 IN IP4 192.0.2.1", origin);
+            assert_eq!(inspect_sdp(wire.as_bytes()), Err(SdpError::Malformed), "{origin}");
+        }
+        for origin in [
+            "o=- 1 1 IN IP4 192.0.2.1",
+            "o=- 1 1 IN IP6 2001:db8::1",
+        ] {
+            let wire = SAMPLE.replace("o=- 1 1 IN IP4 192.0.2.1", origin);
+            assert!(inspect_sdp(wire.as_bytes()).is_ok(), "{origin}");
+        }
     }
 
     #[test]
