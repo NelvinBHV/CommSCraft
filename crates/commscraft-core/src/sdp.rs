@@ -34,7 +34,7 @@ pub struct SdpSummary {
 // RFC 8866 §5.10: decimal seconds, optionally suffixed by d/h/m/s.
 // Do not convert to a fixed-width number in this read-only inspector.
 fn time_unit_token(token: &str) -> bool {
-    let digits = if token.as_bytes().last().is_some_and(|b| matches!(b, b'd' | b'h' | b'm' | b's')) {
+    let digits = if token.as_bytes().last().is_some_and(|b| matches!(*b, b'd' | b'h' | b'm' | b's')) {
         &token[..token.len() - 1]
     } else {
         token
