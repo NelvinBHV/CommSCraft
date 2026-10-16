@@ -97,3 +97,18 @@ Normative context unchanged: [RFC 8866 (January 2021) §§5.10–5.11](https://w
 | MS-CONTEXT-04 | [MS-SDPEXT revision 16.0 (20 May 2025), §1.3](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/ecbc55ab-5787-42c2-9499-69b6f6ad52ae) provides Microsoft SDP extension context, not authorization of unknown SDP field letters. | Same bounded, read-only parser; no negotiated media, SIP authentication or Windows interop. | Independent Microsoft interoperability **unverified**. |
 
 **Prior condition:** the default match arm accepted any lowercase unrecognized SDP prefix after `s=`. This pre-existing defect was observable in `main` and PR #33, not an introduced regression. The change is intentionally limited to rejecting unknown field *types*; recognizing other known fields is not a claim of full grammar/ordering validation. Run standard hosted Ubuntu/Windows Rust, strict Clippy and RFC/MS evidence checks for the **final PR head**. No historical SHA-256 evidence changed, no real network tests or security relaxation. v1.0 remains **BLOCKED**.
+
+
+## Executed CI — unknown field hardening, 2026-10-16
+
+The source change `623a907d50500c05ae04ee5ec77bb8e699062371` and evidence update `00d9335c1e587944bacc55df1716a51e4b99196e` were checked on the latter **exact head**.
+
+| Normative requirement → source → fixture | Actual GitHub Actions evidence | Outcome and limits |
+| --- | --- | --- |
+| SDP-FIELD-01: [RFC 8866 (January 2021) §5](https://www.rfc-editor.org/rfc/rfc8866#section-5) → `crates/commscraft-core/src/sdp.rs::inspect_sdp` → `rfc8866_unknown_field_types_fail_closed` | [Rust workspace PR run 38898777506](https://github.com/NelvinBHV/CommSCraft/actions/runs/38898777506) | **success** (offline Rust workflow, not actual Microsoft interop) |
+| SDP-FIELD-01 and MS-CONTEXT-04: [MS-SDPEXT revision 16.0, 20 May 2025, §1.3](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/ecbc55ab-5787-42c2-9499-69b6f6ad52ae) | [CI PR run 38898777715](https://github.com/NelvinBHV/CommSCraft/actions/runs/38898777715), Ubuntu job 116965590336 and Windows job 116965590695 | Both **success**, including existing RFC/MS evidence workflow; no real Microsoft server verification |
+| Standard-runner governance / Rust workspace | [Repository PR run 38898777823](https://github.com/NelvinBHV/CommSCraft/actions/runs/38898777823), Ubuntu job 116965591186, Windows job 116965591515, governance job 116965591447 | All **success** |
+| Additional PR-triggered gates | Presence 38898777682; SIPAE 38898777869; SIP router 38898777559 | All **success** |
+| Same-head push-triggered workflows | Presence 38898770052; router 38898770019; Rust 38898769918; SIPAE 38898769779; repository 38898769775 | All five **success** |
+
+The 11/11 workflow success is **tested-offline**, not full RFC 8866 compliance or Windows Full Client parity. This evidence-only commit must pass its own new CI before it can be described as verified at the latest head. Historical evidence and SHA-256 manifests are unchanged. No live traffic, no credentials, no security bypass, and v1.0 stays **BLOCKED**.
