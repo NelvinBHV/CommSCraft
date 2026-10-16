@@ -242,7 +242,7 @@ mod tests {
     #[test]
     fn response_reason_phrase_rejects_control_bytes_but_allows_utf8() {
         // RFC 3261 §§7.2, 25.1: descriptive UTF-8 is allowed, controls are not.
-        for &bad in b"\0\t\x1b\x7f" {
+        // Exercise the full ASCII C0 range, not just representative samples.\n        // CR/LF are framing delimiters and are tested by start-line framing tests.\n        for bad in (0u8..=31).filter(|byte| *byte != b\'\\r\' && *byte != b\'\\n\').chain([127]) {
             let mut wire = b"SIP/2.0 200 O".to_vec();
             wire.push(bad);
             wire.extend_from_slice(b"K\r\nContent-Length: 0\r\n\r\n");
