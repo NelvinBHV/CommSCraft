@@ -86,9 +86,15 @@ pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
             }
             "t=" => {
                 if !subject || !media.is_empty() { return Err(SdpError::Malformed); }
+                // RFC 8866 §5.9: timestamps are arbitrary-length decimal
+                // strings, not fixed-width u64 numbers (2036 rollover safe).
                 let mut parts = value.split_ascii_whitespace();
-                if parts.next().and_then(|s| s.parse::<u64>().ok()).is_none()
-                    || parts.next().and_then(|s| s.parse::<u64>().ok()).is_none()
+                let valid_time = |part: Option<&str>| {
+                    part.is_some_and(|digits| {
+                        !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit())
+                    })
+                };
+                if !valid_time(parts.next()) || !valid_time(parts.next())
                     || parts.next().is_some() { return Err(SdpError::Malformed); }
                 time = true;
             }
@@ -167,6 +173,19 @@ mod tests {
         let valid = SAMPLE.replace("o=- 1 1 IN IP4 192.0.2.1",
             &format!("o=- {long_id} 0 IN IP4 192.0.2.1"));
         assert!(inspect_sdp(valid.as_bytes()).is_ok());
+    }
+
+    #[test]
+    fn rfc8866_time_fields_accept_long_decimals_and_reject_invalid_values() {
+        for invalid in ["-1 0", "1 +2", "1 2.5", "foo 0", "1 0x10", "1"] {
+            let wire = SAMPLE.replace("t=0 0", &format!("t={invalid}"));
+            assert_eq!(inspect_sdp(wire.as_bytes()), Err(SdpError::Malformed), "{invalid}");
+        }
+        let oversized = "9".repeat(80);
+        let wire = SAMPLE.replace("t=0 0", &format!("t={oversized} 0"));
+        assert!(inspect_sdp(wire.as_bytes()).is_ok());
+        let wire = SAMPLE.replace("t=0 0", &format!("t=0 {oversized}"));
+        assert!(inspect_sdp(wire.as_bytes()).is_ok());
     }
 
     #[test]
