@@ -51,3 +51,12 @@ The required `AGENTS.md` evidence levels remain distinct: source-authored is not
 | MS-CONTEXT-03 | [MS-SDPEXT §1.3](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/ecbc55ab-5787-42c2-9499-69b6f6ad52ae): Microsoft A/V session negotiation uses SDP | Read-only scheduling grammar does not activate Microsoft negotiation, SIP authentication, media sockets, SRTP or policy acceptance | existing `inspection_does_not_negotiate_media` | No SfB lab interoperability evidence |
 
 Deliberate limitations: this is structural, bounded offline SDP inspection, not complete RFC 8866 scheduling semantics or Microsoft SDP parity. The parser does not calculate or schedule repeats. All historical SHA-256 files remain unchanged; all Ubuntu/Windows Rust, Clippy, Python RFC/MS evidence checks are mandatory. CommSCraft v1.0 remains BLOCKED.
+
+## SDP signed zone-offset ambiguity — 2026-10-16
+
+| Evidence ID | Normative reference | Code mapping | Regression mapping | Executed status |
+| --- | --- | --- | --- | --- |
+| SDP-TIME-05 | [RFC 8866 (January 2021) §5.11](https://www.rfc-editor.org/rfc/rfc8866#section-5.11) zone offsets use an optional single sign followed by a time value. | `crates/commscraft-core/src/sdp.rs::inspect_sdp`: replace `trim_start_matches('-')` (which consumed arbitrarily many minus signs) with `strip_prefix('-')` (at most one); the existing decimal/time-unit validator now rejects all remaining signs. | `rfc8866_repeat_and_zone_are_bounded_and_ordered`: negative `z=10 --1h`, `z=10 ---1h`, `z=10 +1h`; previously supported `z=3730928400 -1h` remains positive. | **Source-authored, not yet CI-confirmed** on commit after this documentation change. |
+| SDP-TIME-06 | [MS-SDPEXT §1.3](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/ecbc55ab-5787-42c2-9499-69b6f6ad52ae) defines Microsoft extensions to SDP; this is RFC-level scheduling input validation, not a Microsoft-specific wire feature. | Same read-only `inspect_sdp`, no media, no credential use, no negotiation. | Existing offline regression above; live SfB evidence absent. | **Interoperability unverified**. |
+
+The parser remains a deliberate bounded subset of RFC 8866; no semantic schedule calculation, complete MS-SDPEXT acceptance or Windows full client parity claimed. Historical SHA-256 manifests unchanged. Required checks: standard GitHub-hosted Linux/Windows workspace tests, Clippy and RFC/MS Python evidence. Do not merge until passed; v1.0 remains **BLOCKED**.
