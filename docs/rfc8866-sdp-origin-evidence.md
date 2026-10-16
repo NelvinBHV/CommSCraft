@@ -13,3 +13,12 @@ Microsoft publication index: [MS-SDPEXT published revision 16.0 (2025-05-20)](ht
 **Verification:** `cargo test -p commscraft-core --all-targets`, `cargo test --workspace --all-targets`, `cargo clippy --workspace --all-targets -- -D warnings`, Python RFC/MS historical integrity checks, standard hosted Ubuntu/Windows jobs. Report individual CI outcomes only after completion. No historical evidence manifests modified.
 
 **Nonclaims:** not full RFC 8866 grammar compliance, not MS-SDPEXT parity, not authenticated SIP/SDP signaling, no real RTP/SRTP, no verified Skype for Business server interoperability. CommSCraft 1.0 remains BLOCKED.
+
+## SDP timing fields (RFC 8866 §5.9)
+
+| ID | Normative source | Source behavior | Regression tests |
+| --- | --- | --- | --- |
+| SDP-TIME-01 | [RFC 8866 (January 2021) §5.9](https://www.rfc-editor.org/rfc/rfc8866#section-5.9): `t=<start-time> <stop-time>` contains decimal time representations of arbitrary length and need not fit a 64-bit integer | `crates/commscraft-core/src/sdp.rs` `inspect_sdp` checks exactly two nonempty ASCII decimal fields without `u64` conversion, retaining the existing 2,048-character line bound | `rfc8866_time_fields_accept_long_decimals_and_reject_invalid_values`: 80-digit start and stop times accepted, signs, fractional/nondecimal and missing field denied |
+| SDP-TIME-02 | [MS-SDPEXT revision 16.0 (20 May 2025) §1.3](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/ecbc55ab-5787-42c2-9499-69b6f6ad52ae): extensions to SDP used in Microsoft audio/video and application sharing negotiation | Parsing a time value alone does not imply successful offer/answer or a trusted Microsoft media session; no negotiation, sockets or credentials added | Existing `inspection_does_not_negotiate_media` and time negative tests |
+
+Execution status: authored on PR branch; only GitHub Actions checks completed on the **new** head commit may establish test success. Historical SHA-256 ledgers remain unchanged; v1.0 stays BLOCKED.
