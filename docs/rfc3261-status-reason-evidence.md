@@ -50,3 +50,18 @@ The previous C0 test expansion at `064b3aa66d2e18733b63eda5fdbee59206b4ec50`, re
 **Repair:** `crates/commscraft-core/src/sip.rs::tests::response_reason_phrase_rejects_control_bytes_but_allows_utf8` was corrected in source commit `c0a99ad311f3eea424b0cf322d904f487af2e4bc` to use real Rust lines and valid `b'\\r'` / `b'\\n'` byte literals; the intended C0/DEL negative regression cases remain. Applicable basis unchanged: [RFC 3261 (June 2002) §§7.2, 25.1](https://www.rfc-editor.org/rfc/rfc3261#section-7.2), and [MS-SIPREGE §3.1.2.5.1](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/8b6cbbb4-b398-4b55-847d-950b9a8d3010) as independent Microsoft registration context.
 
 **Verification status:** source fix authored; required Ubuntu/Windows GitHub Actions outcomes for the corrected head are **pending** as of this documentation change. This incident is a new test-source syntax regression, not an established pre-existing baseline error or Microsoft server-interoperability failure. No historic hash artifacts, trust configuration, workflows, credentials or real network traffic changed. CommSCraft v1.0 remains **BLOCKED**.
+
+
+## Verified resolution of CI syntax regression — 2026-10-16
+
+The corrective Rust test and documentation are included in PR #32 head `7719906d68b016918b13f98ca373495ce842a91f`. GitHub Actions on **this exact head** completed successfully:
+
+| Requirement → code → test | GitHub Actions actual evidence | Outcome |
+| --- | --- | --- |
+| SIP-STATUS-01/02/04, [RFC 3261 (June 2002) §§7.2, 25.1](https://www.rfc-editor.org/rfc/rfc3261#section-7.2) → `crates/commscraft-core/src/sip.rs::parse_frame` → `response_reason_phrase_rejects_control_bytes_but_allows_utf8` | [Rust workspace PR run 38843129896](https://github.com/NelvinBHV/CommSCraft/actions/runs/38843129896), Ubuntu `test` job 116787522500, Windows `windows-build` job 116787522412 | Both **success**; offline tests/build only |
+| SIP-STATUS-01/02/03/04, including [MS-SIPREGE §3.1.2.5.1](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/8b6cbbb4-b398-4b55-847d-950b9a8d3010) as independent registration context | [CI PR run 38843130013](https://github.com/NelvinBHV/CommSCraft/actions/runs/38843130013): Ubuntu job 116787523037, Windows job 116787523254 | Both **success** (Rust and RFC/MS evidence workflow) |
+| Standard runners and repository verification | [Repository PR run 38843129985](https://github.com/NelvinBHV/CommSCraft/actions/runs/38843129985): governance job 116787523307, Windows job 116787523501, Ubuntu job 116787523597 | All three **success** |
+| Additional registration, presence and router offline gates | PR runs 38843129889, 38843129861, 38843129888 respectively | All **success** |
+| Same-head push events | Runs 38843125879, 38843125816, 38843125763, 38843125718, 38843125678 | All five **success** |
+
+The earlier `unexpected closing delimiter` compilation regression on `fef1c6279e34` is therefore **resolved at the verified head**. The extended negative C0/DEL regression test is **tested-offline**, not independently verified Microsoft interoperability. This evidence-only amendment is a **new commit**, so its own CI status is *pending* until it completes. Existing evidence-ledger bytes and historical SHA-256 records remain unchanged. Do not merge without updated-head checks, comprehensive security integration and authorized independent Windows Full Client interop/policy/recovery evidence. v1.0 remains **BLOCKED**.
