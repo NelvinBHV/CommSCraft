@@ -79,13 +79,35 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
     // boundary; ignore the separate '?' header portion here.
     let authority_and_parameters = remainder.split('?').next()?;
     if let Some((_, parameters)) = authority_and_parameters.split_once(';') {
-        let mut seen: Vec<&str> = Vec::new();
+        let mut seen: Vec<String> = Vec::new();
         for parameter in parameters.split(';') {
             let name = parameter.split('=').next()?;
-            if !name.is_empty() && seen.iter().any(|old| old.eq_ignore_ascii_case(name)) {
+            // RFC 3261 §19.1.4: unreserved URI characters and their
+            // percent-encoded forms compare as equal. Normalize names before
+            // checking the §19.1.1 no-duplicate requirement.
+            let bytes = name.as_bytes();
+            let mut canonical = String::with_capacity(name.len());
+            let mut i = 0;
+            while i < bytes.len() {
+                if bytes[i] == b'%' && i + 2 < bytes.len() {
+                    let hex = |b: u8| (b as char).to_digit(16);
+                    let decoded = (hex(bytes[i + 1])? * 16 + hex(bytes[i + 2])?) as u8;
+                    if decoded.is_ascii_alphanumeric() || b"-_.!~*'()".contains(&decoded) {
+                        canonical.push(decoded as char);
+                    } else {
+                        canonical.push_str(&name[i..i + 3]);
+                    }
+                    i += 3;
+                } else {
+                    canonical.push(bytes[i] as char);
+                    i += 1;
+                }
+            }
+            if !canonical.is_empty()
+                && seen.iter().any(|old| old.eq_ignore_ascii_case(&canonical)) {
                 return None;
             }
-            seen.push(name);
+            seen.push(canonical);
         }
     }
     let host_and_port = remainder.split([';', '?']).next()?;
@@ -351,6 +373,22 @@ mod tests {
         ] {
             assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
         }
+    }
+
+    #[test]
+    fn percent_encoded_unreserved_duplicate_parameters_are_rejected() {
+        for uri in [
+            "sip:example.com;transport=tcp;%74ransport=tls",
+            "sip:example.com;foo=1;f%6Fo=2",
+            "sip:example.com;%6Cr;lr",
+            "sip:example.com;X%2DTrace=one;x-trace=two",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri}");
+        }
+        assert_eq!(
+            sip_uri_host("sip:example.com;%66oo=1;bar=2"),
+            Some("example.com")
+        );
     }
 
     #[test]
