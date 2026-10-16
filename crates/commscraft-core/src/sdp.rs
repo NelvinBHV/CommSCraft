@@ -138,10 +138,10 @@ pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
                 }
                 let parts: Vec<_> = value.split_ascii_whitespace().collect();
                 if parts.len() < 2 || parts.len() % 2 != 0
-                    || parts.chunks_exact(2).any(|pair| {
-                        !pair[0].bytes().all(|b| b.is_ascii_digit())
-                            || pair[0].is_empty()
-                            || !time_unit_token(pair[1].strip_prefix('-').unwrap_or(pair[1]))
+                    || parts.iter().step_by(2).zip(parts.iter().skip(1).step_by(2)).any(|(stamp, offset)| {
+                        !stamp.bytes().all(|b| b.is_ascii_digit())
+                            || stamp.is_empty()
+                            || !time_unit_token(offset.strip_prefix('-').unwrap_or(offset))
                     })
                 {
                     return Err(SdpError::Malformed);
