@@ -141,7 +141,7 @@ pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
                     || parts.chunks_exact(2).any(|pair| {
                         !pair[0].bytes().all(|b| b.is_ascii_digit())
                             || pair[0].is_empty()
-                            || !time_unit_token(pair[1].trim_start_matches('-'))
+                            || !time_unit_token(pair[1].strip_prefix('-').unwrap_or(pair[1]))
                     })
                 {
                     return Err(SdpError::Malformed);
@@ -295,6 +295,9 @@ mod tests {
             "r=1h 1h", "r=1h 1h +2", "r=1h 1h 1w",
             "z=3730928400 -1h", "r=1h 1h 0\r\nz=10",
             "r=1h 1h 0\r\nz=10 -1w",
+            "r=1h 1h 0\r\nz=10 --1h",
+            "r=1h 1h 0\r\nz=10 ---1h",
+            "r=1h 1h 0\r\nz=10 +1h",
         ] {
             let wire = SAMPLE.replace("t=0 0\r\n", &format!("t=0 0\r\n{bad}\r\n"));
             assert_eq!(inspect_sdp(wire.as_bytes()), Err(SdpError::Malformed), "{bad:?}");
