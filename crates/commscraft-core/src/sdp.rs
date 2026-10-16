@@ -31,6 +31,13 @@ pub struct SdpSummary {
     pub session_attribute_count: usize,
 }
 
+// RFC 8866 §5.10: decimal seconds, optionally suffixed by d/h/m/s.
+// Do not convert to a fixed-width number in this read-only inspector.
+fn time_unit_token(token: &str) -> bool {
+    let digits = token.strip_suffix(['d', 'h', 'm', 's']).unwrap_or(token);
+    !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit())
+}
+
 /// Parse only trusted structural fields: v/o/s/t and m. No media will be
 /// negotiated based on this result. Strict CRLF is required on every line.
 pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
@@ -41,6 +48,8 @@ pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
     let mut o = false;
     let mut subject = false;
     let mut time = false;
+    let mut repeat = false;
+    let mut zone = false;
     let mut media: Vec<MediaDescription> = Vec::new();
     let mut session_attributes = 0usize;
     let mut lines = 0usize;
@@ -108,6 +117,32 @@ pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
                 if !valid_time(parts.next()) || !valid_time(parts.next())
                     || parts.next().is_some() { return Err(SdpError::Malformed); }
                 time = true;
+                repeat = false;
+                zone = false;
+            }
+            "r=" => {
+                if !time || zone || !media.is_empty() { return Err(SdpError::Malformed); }
+                let parts: Vec<_> = value.split_ascii_whitespace().collect();
+                if parts.len() < 3 || parts.iter().any(|part| !time_unit_token(part)) {
+                    return Err(SdpError::Malformed);
+                }
+                repeat = true;
+            }
+            "z=" => {
+                if !time || !repeat || zone || !media.is_empty() {
+                    return Err(SdpError::Malformed);
+                }
+                let parts: Vec<_> = value.split_ascii_whitespace().collect();
+                if parts.len() < 2 || parts.len() % 2 != 0
+                    || parts.chunks_exact(2).any(|pair| {
+                        !pair[0].bytes().all(|b| b.is_ascii_digit())
+                            || pair[0].is_empty()
+                            || !time_unit_token(pair[1].trim_start_matches('-'))
+                    })
+                {
+                    return Err(SdpError::Malformed);
+                }
+                zone = true;
             }
             "m=" => {
                 if !time || media.len() >= 32 { return Err(SdpError::BadMedia); }
@@ -241,6 +276,27 @@ mod tests {
         let summary = inspect_sdp(valid.as_bytes()).unwrap();
         assert_eq!(summary.session_attribute_count, 2);
         assert_eq!(summary.media[0].attribute_count, 1);
+    }
+
+    #[test]
+    fn rfc8866_repeat_and_zone_are_bounded_and_ordered() {
+        for good in [
+            "r=7d 1h 0 25h\r\n",
+            "r=604800 3600 0 90000\r\nz=3730928400 -1h 3749680800 0\r\n",
+        ] {
+            let wire = SAMPLE.replace("t=0 0\r\n", &format!("t=0 0\r\n{good}"));
+            assert!(inspect_sdp(wire.as_bytes()).is_ok(), "{good:?}");
+        }
+        for bad in [
+            "r=1h 1h", "r=1h 1h +2", "r=1h 1h 1w",
+            "z=3730928400 -1h", "r=1h 1h 0\r\nz=10",
+            "r=1h 1h 0\r\nz=10 -1w",
+        ] {
+            let wire = SAMPLE.replace("t=0 0\r\n", &format!("t=0 0\r\n{bad}\r\n"));
+            assert_eq!(inspect_sdp(wire.as_bytes()), Err(SdpError::Malformed), "{bad:?}");
+        }
+        let after_media = SAMPLE.to_owned() + "r=1h 1h 0\r\n";
+        assert_eq!(inspect_sdp(after_media.as_bytes()), Err(SdpError::Malformed));
     }
 
     #[test]
