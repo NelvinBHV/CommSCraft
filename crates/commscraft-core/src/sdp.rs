@@ -65,7 +65,18 @@ pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
             }
             "o=" => {
                 if !v || o || !media.is_empty() { return Err(SdpError::DuplicateRequired); }
-                if value.split_ascii_whitespace().count() != 6 { return Err(SdpError::Malformed); }
+                // RFC 8866 §5.2: the origin has exactly six fields and its
+                // session identifier/version are nonempty decimal digit strings.
+                // Do not parse them into fixed-width integers: RFC 8866 does
+                // not bound their numeric range.
+                let fields: Vec<_> = value.split_ascii_whitespace().collect();
+                if fields.len() != 6
+                    || fields[1..=2].iter().any(|field| {
+                        field.is_empty() || !field.bytes().all(|b| b.is_ascii_digit())
+                    })
+                {
+                    return Err(SdpError::Malformed);
+                }
                 o = true;
             }
             "s=" => {
@@ -139,6 +150,25 @@ mod tests {
         assert_eq!(inspect_sdp(SAMPLE.replace("v=0", "v=1").as_bytes()), Err(SdpError::Malformed));
         assert_eq!(inspect_sdp(SAMPLE.replace("s=-", "s=-\r\ns=-").as_bytes()), Err(SdpError::DuplicateRequired));
     }
+    #[test]
+    fn rfc8866_origin_rejects_nonnumeric_session_identity_and_version() {
+        for origin in [
+            "o=- not-a-number 1 IN IP4 192.0.2.1",
+            "o=- 1 not-a-number IN IP4 192.0.2.1",
+            "o=- +1 1 IN IP4 192.0.2.1",
+            "o=- 1 -1 IN IP4 192.0.2.1",
+            "o=- 1 1.0 IN IP4 192.0.2.1",
+        ] {
+            let invalid = SAMPLE.replace("o=- 1 1 IN IP4 192.0.2.1", origin);
+            assert_eq!(inspect_sdp(invalid.as_bytes()), Err(SdpError::Malformed), "{origin}");
+        }
+        // Preserve arbitrarily long decimal identities without overflow.
+        let long_id = "9".repeat(80);
+        let valid = SAMPLE.replace("o=- 1 1 IN IP4 192.0.2.1",
+            &format!("o=- {long_id} 0 IN IP4 192.0.2.1"));
+        assert!(inspect_sdp(valid.as_bytes()).is_ok());
+    }
+
     #[test]
     fn rejects_control_characters_and_unbounded_input() {
         assert_eq!(inspect_sdp(&vec![b'a'; MAX_SDP_BYTES + 1]), Err(SdpError::TooLarge));
