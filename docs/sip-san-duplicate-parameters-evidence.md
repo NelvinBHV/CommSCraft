@@ -53,3 +53,14 @@ No historical SHA-256 ledgers, workflows, permissions, TLS bypasses or network c
 | SAN-DUP-08, [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) | No live Security Association, MIC/replay validation or Kerberos code changes | Real Microsoft interoperability and complete Windows Full Client parity **unverified**. |
 
 The further documentation-only commit requires its own CI. No historical SHA-256 ledgers, trust bypass, runner policy, workflows or network tests were changed. Coordinate overlapping PRs #26–#31 before integration; v1.0 **BLOCKED**.
+
+
+## Verified matcher CI and further alias regression — 2026-10-17
+
+| Requirement and public specification | Code path and offline fixture | Actual execution |
+| --- | --- | --- |
+| SAN-DUP-05/07: [RFC 3261 (June 2002) §§19.1.1, 19.1.4](https://www.rfc-editor.org/rfc/rfc3261#section-19.1.4), [RFC 5922 (June 2010) §7.1](https://www.rfc-editor.org/rfc/rfc5922#section-7.1) | `crates/commscraft-transport/src/sip_certificate.rs::sip_uri_host`, `match_sip_sans`, `percent_encoded_unreserved_duplicate_parameters_are_rejected`, including case/HEX aliases | PR #31 head `832513c1e208eb131236a646b89b343c81734125`: [CI run 38994581295](https://github.com/NelvinBHV/CommSCraft/actions/runs/38994581295) Ubuntu job 117284188813 **success**, Windows job 117284188963 **success**; [repository run 38994581445](https://github.com/NelvinBHV/CommSCraft/actions/runs/38994581445) Ubuntu job 117284189489 **success**, Windows job 117284189583 **success**, governance job 117284189707 **success**. Other PR-triggered Rust, presence, SIPAE, router runs and five push-triggered runs all **success**: total **11/11**. |
+| SAN-DUP-09: same RFC 3261 rules | The same test now also covers `param1/param%31` and `key/%6bey` aliases, source commit `3d8336b1de995e7693f26ba76aaa34636d57b18e`. | **Source authored; final-head CI pending**; previous green head cannot verify these new assertions. |
+| SAN-DUP-08: [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) | Independent server SA/MIC/replay; no new implementation or live connection | Microsoft interoperability **unverified**; Windows Full Client v1.0 **BLOCKED**. |
+
+Only offline regression coverage and evidence were changed; historical SHA-256 records, workflow permissions, runner configuration, and credential handling remain untouched. Since PRs #26–#31 modify the same certificate module, individual successful CI is not integrated full coverage. This documentation commit itself requires updated-head CI confirmation.
