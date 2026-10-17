@@ -64,3 +64,14 @@ The further documentation-only commit requires its own CI. No historical SHA-256
 | SAN-DUP-08: [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) | Independent server SA/MIC/replay; no new implementation or live connection | Microsoft interoperability **unverified**; Windows Full Client v1.0 **BLOCKED**. |
 
 Only offline regression coverage and evidence were changed; historical SHA-256 records, workflow permissions, runner configuration, and credential handling remain untouched. Since PRs #26–#31 modify the same certificate module, individual successful CI is not integrated full coverage. This documentation commit itself requires updated-head CI confirmation.
+
+
+## Percent-triplet hexadecimal case hardening — 2026-10-17
+
+| Requirement | Source/version | Code / fixture | CI result |
+| --- | --- | --- | --- |
+| SAN-DUP-10: equivalent percent-encoded URI parameter-name octets cannot evade duplicate detection | [RFC 3261 (June 2002) §§19.1.1, 19.1.4](https://www.rfc-editor.org/rfc/rfc3261#section-19.1.4); [RFC 3986 (January 2005) §2.1](https://www.rfc-editor.org/rfc/rfc3986#section-2.1) explicitly treats percent-encoding hexadecimal digits as case-insensitive; [RFC 5922 (June 2010) §7.1](https://www.rfc-editor.org/rfc/rfc5922#section-7.1) covers SIP domain identity from certificate SANs. | `crates/commscraft-transport/src/sip_certificate.rs::sip_uri_host` preserves escaped reserved octets while uppercasing percent-triplet hex digits. The existing `percent_encoded_unreserved_duplicate_parameters_are_rejected` fixture adds `foo%2Fbar` vs `foo%2fbar` and negative `match_sip_sans` identity matching; implementation commit `c3239f17132614f92aed8a86526acb82dc1965a0`. | **New head pending**. Source authored, no executed results claimed for this changed behavior. |
+| SAN-DUP-09 earlier digit and hex-alias test | Same RFC 3261 / RFC 5922 basis | `param1/param%31`, `key/%6bey` in the same offline fixture | Code commit `3d8336b1de995e7693f26ba76aaa34636d57b18e`: [CI run 38995679743](https://github.com/NelvinBHV/CommSCraft/actions/runs/38995679743) **success**; all 11 same-sha workflows **success**. Latest evidence head `3c3ba8973fa6828b7ac66d629e4c14ec554ecf5f` still had in-progress jobs at this check; no green claim for unfinished runs. |
+| Microsoft security context | [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) | No changes to Security Association, Kerberos, MIC, TLS trust or replay | Independent Microsoft interoperability **unverified**. |
+
+The latest evidence commit triggers its own CI; standard `ubuntu-latest`/`windows-latest` only. PRs #26–#31 continue to overlap and need joint integration testing. Historic evidence ledgers / SHA-256 files unchanged, no live network or credentials, and v1.0 remains **BLOCKED**.
