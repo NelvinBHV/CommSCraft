@@ -48,7 +48,7 @@ def validate_manifest(data: object) -> list[str]:
             errors.append(f"{key}: must be an object")
             continue
         outcome = row.get("outcome")
-        if outcome not in VALID_OUTCOMES:
+        if not isinstance(outcome, str) or outcome not in VALID_OUTCOMES:
             errors.append(f"{key}: invalid outcome")
         if outcome != "passed":
             errors.append(f"{key}: not independently passed")
