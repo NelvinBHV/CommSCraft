@@ -384,6 +384,8 @@ mod tests {
             "sip:example.com;X%2DTrace=one;x-trace=two",
             "sip:example.com;%54rAnSpOrT=tcp;transport=tls",
             "sip:example.com;f%4Fo=one;F%6fo=two",
+            "sip:example.com;param1=one;param%31=two",
+            "sip:example.com;key=one;%6bey=two",
         ] {
             assert_eq!(sip_uri_host(uri), None, "{uri}");
             assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"),
