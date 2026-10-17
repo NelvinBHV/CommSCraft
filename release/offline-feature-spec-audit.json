@@ -147,11 +147,11 @@
         },
         {
           "id": "MS-SDPEXT",
-          "edition": "UNVERIFIED",
-          "published": "UNVERIFIED",
+          "edition": "16.0",
+          "published": "2025-05-20",
           "section": "UNVERIFIED",
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
-          "review": "version_catalog_only_or_unverified"
+          "review": "published_revision_confirmed_section_unverified"
         }
       ]
     },
@@ -338,7 +338,7 @@
           "published": "2025-05-20",
           "section": "not-applicable-local-only",
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confim/",
-          "review": "context_only_not_implemented"
+          "review": "published_revision_confirmed_section_unverified"
         }
       ]
     },
@@ -368,11 +368,11 @@
       "refs": [
         {
           "id": "MS-SDPEXT",
-          "edition": "UNVERIFIED",
-          "published": "UNVERIFIED",
+          "edition": "16.0",
+          "published": "2025-05-20",
           "section": "not-applicable-local-only",
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
-          "review": "context_only_not_implemented"
+          "review": "published_revision_confirmed_section_unverified"
         }
       ]
     },
@@ -385,11 +385,11 @@
       "refs": [
         {
           "id": "MS-SDPEXT",
-          "edition": "UNVERIFIED",
-          "published": "UNVERIFIED",
+          "edition": "16.0",
+          "published": "2025-05-20",
           "section": "not-applicable-local-only",
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
-          "review": "context_only_not_implemented"
+          "review": "published_revision_confirmed_section_unverified"
         }
       ]
     },
@@ -436,11 +436,11 @@
       "refs": [
         {
           "id": "MS-CONFBAS",
-          "edition": "UNVERIFIED",
-          "published": "UNVERIFIED",
+          "edition": "15.0",
+          "published": "2025-05-20",
           "section": "not-applicable-local-only",
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
-          "review": "context_only_not_implemented"
+          "review": "published_revision_confirmed_section_unverified"
         }
       ]
     },
@@ -453,11 +453,11 @@
       "refs": [
         {
           "id": "MS-SDPEXT",
-          "edition": "UNVERIFIED",
-          "published": "UNVERIFIED",
+          "edition": "16.0",
+          "published": "2025-05-20",
           "section": "not-applicable-local-only",
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
-          "review": "context_only_not_implemented"
+          "review": "published_revision_confirmed_section_unverified"
         }
       ]
     },
