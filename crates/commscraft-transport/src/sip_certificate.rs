@@ -302,7 +302,9 @@ mod tests {
         assert!(!match_sip_sans(&names, "sub.example.com"));
         let user = [GeneralName::URI("sip:alice@example.com"),
             GeneralName::DNSName("EXAMPLE.COM")];
-        assert!(match_sip_sans(&user, "example.com"));
+        // A SIP-scheme URI with userinfo is malformed for this certificate
+        // identity subset and must not silently fall back to DNS SAN.
+        assert!(!match_sip_sans(&user, "example.com"));
         let different = [GeneralName::URI("sips:example.com"),
             GeneralName::DNSName("example.com")];
         assert!(match_sip_sans(&different, "example.com")); // non-sip URI ignored
