@@ -1,3 +1,20 @@
+# Target milestone: v0.30.0 (planned, not released)
+
+The repository currently describes **v0.14.0** as the implemented experimental source baseline. **v0.30.0** is the requested next target, not a claim of completed authentication, Skype for Business interoperability or a published release.
+
+## Completion criteria for the v0.30.0 experimental milestone
+
+- [ ] Coordinate and integrate SIP-domain certificate SAN hardening from PRs #26–#31 on **one reviewed integration branch**. Resolve shared `crates/commscraft-transport/src/sip_certificate.rs` conflicts deliberately, including overlapping #26/#27 evidence. Verify RFC 5922 (June 2010) §§7.1–7.3, RFC 5280 (May 2008) §4.2.1.6 and RFC 3261 (June 2002) §§19.1.1, 19.1.4, 25.1 against source paths, negative DER/URI SAN fixtures and executed results.
+- [ ] Preserve the strict DNS/original SIP service reference domain, RFC 5922 URI/DNS SAN precedence, no wildcards, no silent TLS downgrade, no accidental CN fallback, and prevent user-provided flags from declaring a trusted peer. The *actual* peer certificate must be checked on the same TLS connection; separate host/SRV/CNAME authority from SIP domain identity.
+- [ ] Keep Kerberos SPN, REGISTER transaction, Microsoft Security Association and MIC/replay acceptance distinct from offline hostname or SAN acceptance. Map publicly documented MS-SIPAE §3.2.5.2 and MS-CONMGMT §3.1.5 to precise source/tests, recording Microsoft Open Specifications publication revision from the authoritative source at the time of implementation.
+- [ ] Establish deterministic, bounded offline tests for hostile SIP URI encoding, malformed certs/SAN, duplicate and reserved parameter names, SDP frame and unknown field handling, SIP response framing and status codes, failed trust/identity/policy decisions.
+- [ ] Prove one consolidated SHA on ordinary GitHub-hosted `ubuntu-latest` and `windows-latest`: Rust formatting check, all workspace targets/tests, strict Clippy, Python unittest/evidence and `scripts/check_standard_runners.py`, with no hidden continue-on-error or skipped success. Track historical rustfmt baseline separately per Issue #9; do **not** mutate historic SHA-256 evidence.
+- [ ] Record per-check CI run/job links, source-to-fixture mapping and explicit tested-offline vs unverified status. Require independent security review before any assertion of real authentication or interop.
+
+**Not included in v0.30.0 claims:** a working authenticated production sign-in, real SfB connectivity, full Windows Full Client feature parity, or v1.0 eligibility. Live Microsoft testing requires explicit authorization, a pinned lab and sanitized independently reviewed evidence. Do not tag v0.30.0 until all scope-appropriate gates above are fulfilled and reviewed.
+
+---
+
 ## Current milestone v0.14.0 — fail-closed REGISTER response coordinator
 
 - [x] Model MIC-checked REGISTER 200 separately from server-verified sign-in.
