@@ -87,6 +87,20 @@ def validate_manifest(data: object) -> list[str]:
                 url[len(prefix):].split("/", 1)[0].isdigit()
             ):
                 errors.append(f"{key}: URL must reference a concrete Actions run")
+    # A syntactically plausible evidence URI is not independently verified
+    # interoperability. CI gates may be mechanically cross-checked, but any
+    # human sign-off must still be independently inspected by reviewers.
+    for key in ("combined_san_ci_ubuntu", "combined_san_ci_windows"):
+        row = checks.get(key)
+        if not isinstance(row, dict) or row.get("outcome") != "passed":
+            continue
+        url = row.get("url", "")
+        prefix = "https://github.com/NelvinBHV/CommSCraft/actions/runs/"
+        if isinstance(url, str) and url.startswith(prefix):
+            suffix = url[len(prefix):]
+            pieces = suffix.split("/")
+            if len(pieces) > 1 and (len(pieces) != 3 or pieces[1] != "job" or not pieces[2].isdigit()):
+                errors.append(f"{key}: invalid GitHub Actions job link")
     return errors
 
 
