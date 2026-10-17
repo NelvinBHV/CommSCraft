@@ -171,6 +171,9 @@ fn match_sip_sans(names: &[GeneralName<'_>], expected_domain: &str) -> bool {
     for name in names {
         match name {
             GeneralName::URI(uri) => {
+                // Never downgrade to a matching DNS SAN if an oversized
+                // URI SAN could hide a conflicting SIP identity.
+                if uri.len() > MAX_SIP_SAN_URI_BYTES { return false; }
                 if let Some(host) = sip_uri_host(uri) {
                     has_valid_sip_uri = true;
                     if host.eq_ignore_ascii_case(reference) {
@@ -437,6 +440,23 @@ mod tests {
         assert!(!match_sip_sans(
             &[GeneralName::URI(encoded_reserved)], "other.example"
         ));
+    }
+
+    #[test]
+    fn oversized_uri_san_cannot_fall_back_to_matching_dns_san() {
+        let oversized = format!("sip:other.example;opaque={}", "x".repeat(MAX_SIP_SAN_URI_BYTES));
+        let names = [
+            GeneralName::URI(&oversized),
+            GeneralName::DNSName("example.com"),
+        ];
+        assert!(!match_sip_sans(&names, "example.com"));
+        assert!(!match_sip_sans(&names, "other.example"));
+        // Unrelated valid SIP SAN still takes precedence over matching DNS.
+        let conflicting = [
+            GeneralName::URI("sip:other.example"),
+            GeneralName::DNSName("example.com"),
+        ];
+        assert!(!match_sip_sans(&conflicting, "example.com"));
     }
 
     #[test]
