@@ -7,13 +7,17 @@ fn sip(s:&str)->bool{clean(s)&&s.starts_with("sip:")&&s.matches('@').count()==1&
 #[derive(Default)]
 pub struct PresenceAlertsDraft { watchers:Vec<String> }
 impl PresenceAlertsDraft{
- pub fn follow(&mut self,uri:&str)->Result<(),DraftError>{if !sip(uri){return Err(DraftError::Invalid)}if self.watchers.iter().any(|x|x.eq_ignore_ascii_case(uri)){return Err(DraftError::Duplicate)}if self.watchers.len()>=MAX{return Err(DraftError::Capacity)}self.watchers.push(uri.into());Ok(())}
+ pub fn follow(&mut self,uri:&str)->Result<(),DraftError>{if !sip(uri){return Err(DraftError::Invalid)}
+ if self.watchers.iter().any(|x|x.eq_ignore_ascii_case(uri)){return Err(DraftError::Duplicate)}
+ if self.watchers.len()>=MAX{return Err(DraftError::Capacity)}self.watchers.push(uri.into());Ok(())}
  pub fn watchers(&self)->&[String]{&self.watchers}
 }
 #[derive(Default)]
 pub struct TabbedConversationsDraft { tabs:Vec<String>,active:Option<usize> }
 impl TabbedConversationsDraft{
- pub fn open(&mut self,uri:&str)->Result<(),DraftError>{if !sip(uri){return Err(DraftError::Invalid)}if self.tabs.iter().any(|x|x.eq_ignore_ascii_case(uri)){return Err(DraftError::Duplicate)}if self.tabs.len()>=MAX{return Err(DraftError::Capacity)}self.tabs.push(uri.into());self.active=Some(self.tabs.len()-1);Ok(())}
+ pub fn open(&mut self,uri:&str)->Result<(),DraftError>{if !sip(uri){return Err(DraftError::Invalid)}
+ if self.tabs.iter().any(|x|x.eq_ignore_ascii_case(uri)){return Err(DraftError::Duplicate)}
+ if self.tabs.len()>=MAX{return Err(DraftError::Capacity)}self.tabs.push(uri.into());self.active=Some(self.tabs.len()-1);Ok(())}
  pub fn active(&self)->Option<&str>{self.active.and_then(|i|self.tabs.get(i).map(String::as_str))}
  pub fn close(&mut self,uri:&str)->Result<(),DraftError>{let i=self.tabs.iter().position(|x|x.eq_ignore_ascii_case(uri)).ok_or(DraftError::Missing)?;self.tabs.remove(i);self.active=if self.tabs.is_empty(){None}else{Some(0)};Ok(())}
 }
@@ -26,9 +30,11 @@ impl MessageImportanceDraft{
 #[derive(Default)]
 pub struct NotificationDraft { items:Vec<String> }
 impl NotificationDraft{
- pub fn push(&mut self,message:&str)->Result<(),DraftError>{if !clean(message){return Err(DraftError::Invalid)}if self.items.len()>=MAX{return Err(DraftError::Capacity)}self.items.push(message.into());Ok(())}
+ pub fn push(&mut self,message:&str)->Result<(),DraftError>{if !clean(message){return Err(DraftError::Invalid)}
+ if self.items.len()>=MAX{return Err(DraftError::Capacity)}self.items.push(message.into());Ok(())}
  pub fn dismiss_all(&mut self){self.items.clear();}
  pub fn len(&self)->usize{self.items.len()}
+ pub fn is_empty(&self)->bool{self.items.is_empty()}
 }
 #[derive(Debug,Clone,Copy,PartialEq,Eq)]
 pub enum LobbyState{Waiting,Admitted,Denied}
