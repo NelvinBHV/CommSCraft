@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "scope": "Individually traced offline RFC requirements; Microsoft revision-specific clauses are NOT verified and cannot be inferred from RFC checks.",
+  "requirements": [
+    {
+      "id": "RFC2782-SRV-PRIORITY",
+      "feature": "dns-discovery",
+      "authority": {
+        "document": "RFC 2782",
+        "edition": "February 2000",
+        "section": "3",
+        "url": "https://www.rfc-editor.org/rfc/rfc2782#section-3"
+      },
+      "requirement": "Try reachable targets in lowest numeric priority group first, then follow weighted ordering within each group.",
+      "source": "crates/commscraft-core/src/discovery.rs",
+      "positive_test": "weight_and_priority_follow_rfc2782",
+      "negative_test": "dot_target_is_not_a_connectable_endpoint",
+      "verification": "fixture_mapped_execution_pending",
+      "interop": false,
+      "ms_counterpart": "MS-CONMGMT §3.1.5 edition and normative overlap unverified"
+    },
+    {
+      "id": "RFC3261-REGISTER-TX",
+      "feature": "register",
+      "authority": {
+        "document": "RFC 3261",
+        "edition": "June 2002",
+        "section": "10.2",
+        "url": "https://www.rfc-editor.org/rfc/rfc3261#section-10.2"
+      },
+      "requirement": "REGISTER client builds request and handles transaction response; this project does not authenticate/sign a live REGISTER.",
+      "source": "crates/commscraft-core/src/registration.rs",
+      "positive_test": "microsoft_register_has_required_identity_and_capability",
+      "negative_test": "ms_sipae_challenge_cannot_be_auto_authenticated",
+      "verification": "fixture_mapped_execution_pending",
+      "interop": false,
+      "ms_counterpart": "MS-SIPREGE 17.1 §4.1.1; normative text not yet independently matched"
+    },
+    {
+      "id": "RFC6665-SUBSCRIBE",
+      "feature": "presence-sub",
+      "authority": {
+        "document": "RFC 6665",
+        "edition": "July 2012",
+        "section": "4",
+        "url": "https://www.rfc-editor.org/rfc/rfc6665#section-4"
+      },
+      "requirement": "Model SUBSCRIBE and NOTIFY state transitions and reject unexpected or replayed NOTIFY messages.",
+      "source": "crates/commscraft-core/src/presence.rs",
+      "positive_test": "receives_initial_notify_before_subscribe_response_and_rejects_replays",
+      "negative_test": "mismatched_or_unsupported_notify_does_not_advance_state",
+      "verification": "fixture_mapped_execution_pending",
+      "interop": false,
+      "ms_counterpart": "MS-PRES 13.0; exact Microsoft-specific section unverified"
+    },
+    {
+      "id": "RFC8866-SDP-STRUCTURE",
+      "feature": "codecs",
+      "authority": {
+        "document": "RFC 8866",
+        "edition": "January 2021",
+        "section": "5",
+        "url": "https://www.rfc-editor.org/rfc/rfc8866#section-5"
+      },
+      "requirement": "Inspect bounded SDP field structure; RFC 3264 offer/answer is explicitly out of scope.",
+      "source": "crates/commscraft-core/src/sdp.rs",
+      "positive_test": "inspection_does_not_negotiate_media",
+      "negative_test": "rejects_truncated_and_malformed_sdp",
+      "verification": "fixture_mapped_execution_pending",
+      "interop": false,
+      "ms_counterpart": "MS-SDPEXT 16.0; extension-specific section unverified"
+    }
+  ]
+}
