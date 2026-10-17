@@ -45,6 +45,26 @@ class V030MilestoneTest(unittest.TestCase):
         data["checks"]["combined_san_ci_windows"]["commit_sha"] = "fake"
         self.assertTrue(validate_manifest(data))
 
+    def test_cross_platform_sha_disagreement_blocks_release(self):
+        data = template()
+        for key in REQUIRED_CHECKS:
+            data["checks"][key] = {
+                "outcome": "passed", "commit_sha": "a" * 40,
+                "url": "https://github.com/NelvinBHV/CommSCraft/actions/runs/123",
+                "reviewer": "independent reviewer",
+            }
+        data["checks"]["combined_san_ci_windows"]["commit_sha"] = "b" * 40
+        self.assertTrue(any("different commits" in e for e in validate_manifest(data)))
+
+    def test_ci_requires_actual_actions_run_link(self):
+        data = template()
+        data["checks"]["combined_san_ci_ubuntu"] = {
+            "outcome": "passed", "commit_sha": "a" * 40,
+            "url": "https://github.com/NelvinBHV/CommSCraft/pull/35",
+            "reviewer": "independent reviewer",
+        }
+        self.assertTrue(any("concrete Actions run" in e for e in validate_manifest(data)))
+
     def test_unsupported_and_untrusted_manifest_rejected(self):
         data = template()
         data["milestone"] = "v1.0.0"
