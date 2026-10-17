@@ -95,7 +95,11 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
                     if decoded.is_ascii_alphanumeric() || b"-_.!~*'()".contains(&decoded) {
                         canonical.push(decoded as char);
                     } else {
-                        canonical.push_str(&name[i..i + 3]);
+                        // Percent-triplet hex case does not change the octet.
+                        // Keep reserved bytes encoded; canonicalize hex digits.
+                        canonical.push('%');
+                        canonical.push((bytes[i + 1] as char).to_ascii_uppercase());
+                        canonical.push((bytes[i + 2] as char).to_ascii_uppercase());
                     }
                     i += 3;
                 } else {
@@ -386,6 +390,7 @@ mod tests {
             "sip:example.com;f%4Fo=one;F%6fo=two",
             "sip:example.com;param1=one;param%31=two",
             "sip:example.com;key=one;%6bey=two",
+            "sip:example.com;foo%2Fbar=one;foo%2fbar=two",
         ] {
             assert_eq!(sip_uri_host(uri), None, "{uri}");
             assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"),
