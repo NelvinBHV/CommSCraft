@@ -12,6 +12,8 @@ const MAX_CERT_DER: usize = 64 * 1024;
 const MAX_SAN_NAMES: usize = 128;
 
 fn ascii_sip_domain(name: &str) -> Option<&str> {
+    // RFC 5922: numeric IP literals cannot stand in for DNS SIP domains.
+    if name.parse::<std::net::Ipv4Addr>().is_ok() { return None; }
     if name.len() > 253 || name.is_empty() || !name.is_ascii()
         || !name.contains('.') || name.contains('*')
         || name.split('.').any(|label| label.is_empty() || label.len() > 63
@@ -50,7 +52,7 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
     // in the *whole* SAN URI, including params/headers that we do not match.
     // Otherwise a malformed certificate identity could be accepted simply
     // because its host prefix looks valid.
-    if remainder.bytes().any(|b| b <= 0x20 || b == 0x7f)
+    if !uri.is_ascii() || remainder.bytes().any(|b| b <= 0x20 || b == 0x7f)
         || remainder.contains('#')
         || remainder.contains('\\')
     {
@@ -69,10 +71,25 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
             {
                 return None;
             }
+            // Conservative SAN identity policy: escaped controls cannot
+            // authorize a peer even when percent-triplet syntax is valid.
+            let hex = |b: u8| -> u8 {
+                if b.is_ascii_digit() { b - b'0' }
+                else { b.to_ascii_lowercase() - b'a' + 10 }
+            };
+            let decoded = (hex(bytes[index + 1]) << 4) | hex(bytes[index + 2]);
+            if decoded <= 0x1f || decoded == 0x7f { return None; }
             index += 3;
         } else {
             index += 1;
         }
+    }
+    // RFC 3261 §25.1: URI headers are nonempty hname=hvalue pairs.
+    if let Some((_, headers)) = remainder.split_once('?') {
+        if headers.is_empty() || headers.split('&').any(|header| {
+            let Some((name, _)) = header.split_once('=') else { return true; };
+            name.is_empty()
+        }) { return None; }
     }
     // RFC 3261 §19.1.1: a SIP URI parameter name MUST NOT occur
     // more than once. Apply case-insensitive matching at the identity
@@ -82,6 +99,9 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
         let mut seen: Vec<String> = Vec::new();
         for parameter in parameters.split(';') {
             let name = parameter.split('=').next()?;
+            if name.is_empty() || parameter.matches('=').count() > 1 {
+                return None;
+            }
             // RFC 3261 §19.1.4: unreserved URI characters and their
             // percent-encoded forms compare as equal. Normalize names before
             // checking the §19.1.1 no-duplicate requirement.
@@ -411,6 +431,44 @@ mod tests {
         assert!(!match_sip_sans(
             &[GeneralName::URI(encoded_reserved)], "other.example"
         ));
+    }
+
+    #[test]
+    fn coordinated_sip_san_negative_and_positive_matrix() {
+        // RFC 3261 §§19.1.1, 25.1, RFC 5280 §4.2.1.6,
+        // RFC 5922 §§7.1-7.2: fail closed at certificate identity boundary.
+        for uri in [
+            "sip:example.com?", "sip:example.com?subject",
+            "sip:example.com?=value", "sip:example.com?subject=x&",
+            "sip:example.com?subject=x&&body=y",
+            "sip:example.com?subject=x&body",
+            "sip:example.com;transport=tls%0d%0aX:yes",
+            "sip:example.com?subject=%00", "sip:example.com?subject=%1f",
+            "sip:example.com?subject=%7F", "sip:example.com?subject=%09",
+            "sip:example.com;", "sip:example.com;;transport=tls",
+            "sip:example.com;=tls", "sip:example.com;transport=tls;",
+            "sip:example.com;transport==tls",
+            "sip:example.com;note=bücher", "sip:example.com?subject=grüße",
+            "sip:example.com;note=☃",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri:?}");
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
+        }
+        for uri in [
+            "sip:example.com?subject=",
+            "sip:example.com?subject=x&body=y",
+            "sip:example.com;transport=tls?subject=hello%20world",
+            "sip:example.com?subject=gr%C3%BC%C3%9Fe",
+            "sip:example.com;transport=tls",
+            "sip:example.com;lr",
+        ] {
+            assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
+        }
+        for ip in ["127.0.0.1", "192.0.2.5", "255.255.255.255"] {
+            assert_eq!(ascii_sip_domain(ip), None);
+            assert_eq!(sip_uri_host(&format!("sip:{ip}")), None);
+            assert!(!match_sip_sans(&[GeneralName::DNSName(ip)], ip));
+        }
     }
 
     #[test]
