@@ -34,7 +34,7 @@
       "negative_test": "ms_sipae_challenge_cannot_be_auto_authenticated",
       "verification": "fixture_mapped_execution_pending",
       "interop": false,
-      "ms_counterpart": "MS-SIPREGE 17.1 §4.1.1; normative text not yet independently matched"
+      "ms_counterpart": "MS-SIPREGE 17.1 §4.1.1; normative text unverified; not yet independently matched"
     },
     {
       "id": "RFC6665-SUBSCRIBE",
