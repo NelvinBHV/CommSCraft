@@ -119,6 +119,13 @@ def main() -> int:
                         help="Refuse milestone sign-off without all reviewed evidence")
     args = parser.parse_args()
     errors = milestone_errors(args.manifest)
+    # Development may have intentionally pending gates, but a malformed,
+    # untrusted or contradictory manifest must fail even without --release.
+    invalid = [error for error in errors if not error.endswith(": not independently passed")]
+    if invalid and not args.release:
+        for error in invalid:
+            print(f"INVALID v0.30.0 evidence: {error}")
+        return 1
     if errors:
         if args.release:
             for error in errors:
