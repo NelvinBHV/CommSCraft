@@ -1,3 +1,71 @@
+# CommSCraft roadmap
+
+**Stage:** experimental source baseline v0.14.0 · **next target:** v0.30.0 · **target application:** Skype for Business Windows Full desktop client with on-premises Server 2019 / Subscription Edition.
+
+> **Last reviewed:** 2026-10-17 · **Reference:** [WordCraft's public roadmap format](https://github.com/storytold/wordcraft/blob/main/ROADMAP.md), adapted to CommSCraft's own feature inventory; this page uses original CommSCraft wording and no WordCraft code or assets. · **Development:** [certificate integration PR #35](https://github.com/NelvinBHV/CommSCraft/pull/35) and [roadmap PR #34](https://github.com/NelvinBHV/CommSCraft/pull/34).
+
+This page is the **summary dashboard**. The machine-readable requirement inventory is [`FEATURE_PARITY.json`](FEATURE_PARITY.json), the independent Windows acceptance inventory is [`WINDOWS_REFERENCE_CASES.json`](WINDOWS_REFERENCE_CASES.json), and the detailed release requirements are in [`docs/release-policy.md`](docs/release-policy.md). The draft integration branch adds [a Python report generator](https://github.com/NelvinBHV/CommSCraft/blob/integration/v030-sip-san-six-prs/scripts/report_feature_parity.py) and [a dated progress report](https://github.com/NelvinBHV/CommSCraft/blob/integration/v030-sip-san-six-prs/docs/skype-for-business-feature-parity-status.md). Until merged, those are **draft changes**, not features of `main`.
+
+## Headline numbers — 2026-10-17
+
+| Metric | Value | Basis / interpretation |
+| --- | ---: | --- |
+| Windows Full Client feature requirements | **122** | counted in `FEATURE_PARITY.json` |
+| Requirements marked `offline_subset` | **7 / 122 (5.7%)** | only an inventory label for partial offline code; **not** 5.7% usable parity |
+| Requirements marked `not_started` | **115 / 122 (94.3%)** | conservative declared status even if isolated source may exist |
+| Fully and independently verified features | **0 / 122 (0%)** | no real-client/server verification registered |
+| Independent Windows reference cases | **93** | `WINDOWS_REFERENCE_CASES.json` |
+| Reference cases with registered real-server interop proof | **0 / 93 (0%)** | not executed / not evidenced |
+| v0.30.0 integration | **draft PR #35** | latest PR CI and review must be checked against its exact head |
+| v1.0.0 | **BLOCKED** | complete Windows Full Client reference parity, reviewed security, `check_release.py --release` |
+
+**No unsupported weighted parity or engineering-hours estimates.** The 5.7% partial-inventory ratio is not an end-to-end completeness measure. For a real user, authenticated sign-in, contacts, voice and collaboration have not been demonstrated. Work estimates require a measured throughput baseline, scoped reference environment and completed requirements; they are intentionally **not estimated** here.
+
+## Feature breadth by area
+
+| Area | Requirements | Registered offline partials | Verified | Primary stage |
+| --- | ---: | ---: | ---: | --- |
+| Identity / discovery / sign-in | 9 | 3 | 0 | v0.30–v0.50 |
+| Contacts / presence | 22 | 1 | 0 | v0.60 |
+| Instant messaging | 17 | 1 | 0 | v0.60 |
+| Voice / telephony | 23 | 0 | 0 | v0.70 |
+| Video / media | 5 | 1 | 0 | v0.70 |
+| Meetings / sharing | 35 | 0 | 0 | v0.80 |
+| Windows client / platform | 11 | 1 | 0 | v0.90 |
+| **Total** | **122** | **7** | **0** | **v1.0 requires all** |
+
+## Readiness by user workflow
+
+| Workflow | Offline / source situation | Full Windows parity |
+| --- | --- | --- |
+| DNS and server lookup | Partial diagnostics; no complete real-world discovery | Not verified |
+| Secure peer identity | RFC 5922 SAN tests and actual TLS peer certificate validation in receive-only transport; combined security draft PR #35 | Not verified |
+| Kerberos / registration | Synthetic MIC/replay and REGISTER response handling only; not a connected authenticated sign-in | Not verified |
+| Presence and contacts | Limited offline models and parsing | Not verified |
+| Instant messaging | Offline partial models; no demonstrated bidirectional real-server messaging | Not verified |
+| Audio / video calls | Incomplete; no verified full call flow | Not verified |
+| Conferences / screen sharing | Not started per registry | Not verified |
+| Windows UI and integrations | Partial local UI work; no Windows Full parity evidence | Not verified |
+
+## Ranked next work
+
+1. **Land verified v0.30.0 security integration:** CI of exact final PR #35 SHA; reconcile #26–#31, negative SAN and transport tests; independently review; follow [v0.30.0 gates](#completion-criteria-for-the-v0300-experimental-milestone).
+2. **Close trust-binding gaps:** same original SIP-domain, TLS peer identity, service principal and REGISTER transaction; no downgrade or reuse after disconnection. Do not present a TLS handshake or synthetic MIC as authenticated sign-in.
+3. **Complete native Windows SSPI / MS-SIPAE and authorized interoperability testing:** requires actual permitted Windows/SfB lab, pinned builds and sanitized proof; v0.50.0 gate.
+4. **Deliver authenticated presence, contacts and IM** (v0.60), then **calling/media** (v0.70) and **conferencing/sharing** (v0.80) with negative-policy and recovery tests.
+5. **Audit all 122 features and 93 reference scenarios** and finish independent security, packaging and parity release gates. No skipped Full Client features.
+
+## Progress log
+
+| Date | Change | Evidence | What it does **not** prove |
+| --- | --- | --- | --- |
+| 2026-10-17 | Coordinated certificate SAN hardening from #26–#31; URI length, control, duplicate-parameter and DNS-fallback safeguards | [draft PR #35](https://github.com/NelvinBHV/CommSCraft/pull/35), [SAN trace](https://github.com/NelvinBHV/CommSCraft/blob/integration/v030-sip-san-six-prs/docs/v030-certificate-integration-evidence.md) | Authenticated Windows sign-in or live interoperability |
+| 2026-10-17 | Automatic milestone release blocker and tests | [`check_v030_milestone.py`](https://github.com/NelvinBHV/CommSCraft/blob/integration/v030-sip-san-six-prs/scripts/check_v030_milestone.py) | Independent sign-off without real artifacts |
+| 2026-10-17 | Feature parity inventory: 122 requirements, 93 reference cases, 7 offline partials, 0 verified | `FEATURE_PARITY.json`, `WINDOWS_REFERENCE_CASES.json`, [report generator](https://github.com/NelvinBHV/CommSCraft/blob/integration/v030-sip-san-six-prs/scripts/report_feature_parity.py) | Usable feature completion or weighted parity |
+| 2026-10-17 | WordCraft-style top-level status and milestone presentation adapted for CommSCraft | this file, [PR #34](https://github.com/NelvinBHV/CommSCraft/pull/34) | Changes on `main`, any new protocol implementation |
+
+---
+
 # Target milestone: v0.30.0 (planned, not released)
 
 The repository currently describes **v0.14.0** as the implemented experimental source baseline. **v0.30.0** is the requested next target, not a claim of completed authentication, Skype for Business interoperability or a published release.
