@@ -1,3 +1,114 @@
+# CommSCraft roadmap
+
+**Stage:** experimental source baseline v0.14.0 · **next target:** v0.30.0 · **target application:** Skype for Business Windows Full desktop client with on-premises Server 2019 / Subscription Edition.
+
+> **Last reviewed:** 2026-10-17 · **Reference:** [WordCraft's public roadmap format](https://github.com/storytold/wordcraft/blob/main/ROADMAP.md), adapted to CommSCraft's own feature inventory; this page uses original CommSCraft wording and no WordCraft code or assets. · **Development:** [certificate integration PR #35](https://github.com/NelvinBHV/CommSCraft/pull/35) and [roadmap PR #34](https://github.com/NelvinBHV/CommSCraft/pull/34).
+
+This page is the **summary dashboard**. The machine-readable requirement inventory is [`FEATURE_PARITY.json`](FEATURE_PARITY.json), the independent Windows acceptance inventory is [`WINDOWS_REFERENCE_CASES.json`](WINDOWS_REFERENCE_CASES.json), and the detailed release requirements are in [`docs/release-policy.md`](docs/release-policy.md). The draft integration branch adds [a Python report generator](https://github.com/NelvinBHV/CommSCraft/blob/integration/v030-sip-san-six-prs/scripts/report_feature_parity.py) and [a dated progress report](https://github.com/NelvinBHV/CommSCraft/blob/integration/v030-sip-san-six-prs/docs/skype-for-business-feature-parity-status.md). Until merged, those are **draft changes**, not features of `main`.
+
+## Headline numbers — 2026-10-17
+
+| Metric | Value | Basis / interpretation |
+| --- | ---: | --- |
+| Windows Full Client feature requirements | **122** | counted in `FEATURE_PARITY.json` |
+| Requirements marked `offline_subset` | **7 / 122 (5.7%)** | only an inventory label for partial offline code; **not** 5.7% usable parity |
+| Requirements marked `not_started` | **115 / 122 (94.3%)** | conservative declared status even if isolated source may exist |
+| Fully and independently verified features | **0 / 122 (0%)** | no real-client/server verification registered |
+| Independent Windows reference cases | **93** | `WINDOWS_REFERENCE_CASES.json` |
+| Reference cases with registered real-server interop proof | **0 / 93 (0%)** | not executed / not evidenced |
+| v0.30.0 integration | **draft PR #35** | latest PR CI and review must be checked against its exact head |
+| v1.0.0 | **BLOCKED** | complete Windows Full Client reference parity, reviewed security, `check_release.py --release` |
+
+**No unsupported weighted parity or engineering-hours estimates.** The 5.7% partial-inventory ratio is not an end-to-end completeness measure. For a real user, authenticated sign-in, contacts, voice and collaboration have not been demonstrated. Work estimates require a measured throughput baseline, scoped reference environment and completed requirements; they are intentionally **not estimated** here.
+
+## Feature breadth by area
+
+| Area | Requirements | Registered offline partials | Verified | Primary stage |
+| --- | ---: | ---: | ---: | --- |
+| Identity / discovery / sign-in | 9 | 3 | 0 | v0.30–v0.50 |
+| Contacts / presence | 22 | 1 | 0 | v0.60 |
+| Instant messaging | 17 | 1 | 0 | v0.60 |
+| Voice / telephony | 23 | 0 | 0 | v0.70 |
+| Video / media | 5 | 1 | 0 | v0.70 |
+| Meetings / sharing | 35 | 0 | 0 | v0.80 |
+| Windows client / platform | 11 | 1 | 0 | v0.90 |
+| **Total** | **122** | **7** | **0** | **v1.0 requires all** |
+
+## Readiness by user workflow
+
+| Workflow | Offline / source situation | Full Windows parity |
+| --- | --- | --- |
+| DNS and server lookup | Partial diagnostics; no complete real-world discovery | Not verified |
+| Secure peer identity | RFC 5922 SAN tests and actual TLS peer certificate validation in receive-only transport; combined security draft PR #35 | Not verified |
+| Kerberos / registration | Synthetic MIC/replay and REGISTER response handling only; not a connected authenticated sign-in | Not verified |
+| Presence and contacts | Limited offline models and parsing | Not verified |
+| Instant messaging | Offline partial models; no demonstrated bidirectional real-server messaging | Not verified |
+| Audio / video calls | Incomplete; no verified full call flow | Not verified |
+| Conferences / screen sharing | Not started per registry | Not verified |
+| Windows UI and integrations | Partial local UI work; no Windows Full parity evidence | Not verified |
+
+## Ranked next work
+
+1. **Land verified v0.30.0 security integration:** CI of exact final PR #35 SHA; reconcile #26–#31, negative SAN and transport tests; independently review; follow [v0.30.0 gates](#completion-criteria-for-the-v0300-experimental-milestone).
+2. **Close trust-binding gaps:** same original SIP-domain, TLS peer identity, service principal and REGISTER transaction; no downgrade or reuse after disconnection. Do not present a TLS handshake or synthetic MIC as authenticated sign-in.
+3. **Complete native Windows SSPI / MS-SIPAE and authorized interoperability testing:** requires actual permitted Windows/SfB lab, pinned builds and sanitized proof; v0.50.0 gate.
+4. **Deliver authenticated presence, contacts and IM** (v0.60), then **calling/media** (v0.70) and **conferencing/sharing** (v0.80) with negative-policy and recovery tests.
+5. **Audit all 122 features and 93 reference scenarios** and finish independent security, packaging and parity release gates. No skipped Full Client features.
+
+## Progress log
+
+| Date | Change | Evidence | What it does **not** prove |
+| --- | --- | --- | --- |
+| 2026-10-17 | Coordinated certificate SAN hardening from #26–#31; URI length, control, duplicate-parameter and DNS-fallback safeguards | [draft PR #35](https://github.com/NelvinBHV/CommSCraft/pull/35), [SAN trace](https://github.com/NelvinBHV/CommSCraft/blob/integration/v030-sip-san-six-prs/docs/v030-certificate-integration-evidence.md) | Authenticated Windows sign-in or live interoperability |
+| 2026-10-17 | Automatic milestone release blocker and tests | [`check_v030_milestone.py`](https://github.com/NelvinBHV/CommSCraft/blob/integration/v030-sip-san-six-prs/scripts/check_v030_milestone.py) | Independent sign-off without real artifacts |
+| 2026-10-17 | Feature parity inventory: 122 requirements, 93 reference cases, 7 offline partials, 0 verified | `FEATURE_PARITY.json`, `WINDOWS_REFERENCE_CASES.json`, [report generator](https://github.com/NelvinBHV/CommSCraft/blob/integration/v030-sip-san-six-prs/scripts/report_feature_parity.py) | Usable feature completion or weighted parity |
+| 2026-10-17 | WordCraft-style top-level status and milestone presentation adapted for CommSCraft | this file, [PR #34](https://github.com/NelvinBHV/CommSCraft/pull/34) | Changes on `main`, any new protocol implementation |
+
+---
+
+# Target milestone: v0.30.0 (planned, not released)
+
+The repository currently describes **v0.14.0** as the implemented experimental source baseline. **v0.30.0** is the requested next target, not a claim of completed authentication, Skype for Business interoperability or a published release.
+
+## Completion criteria for the v0.30.0 experimental milestone
+
+- [ ] Coordinate and integrate SIP-domain certificate SAN hardening from PRs #26–#31 on **one reviewed integration branch**. Resolve shared `crates/commscraft-transport/src/sip_certificate.rs` conflicts deliberately, including overlapping #26/#27 evidence. Verify RFC 5922 (June 2010) §§7.1–7.3, RFC 5280 (May 2008) §4.2.1.6 and RFC 3261 (June 2002) §§19.1.1, 19.1.4, 25.1 against source paths, negative DER/URI SAN fixtures and executed results.
+- [ ] Preserve the strict DNS/original SIP service reference domain, RFC 5922 URI/DNS SAN precedence, no wildcards, no silent TLS downgrade, no accidental CN fallback, and prevent user-provided flags from declaring a trusted peer. The *actual* peer certificate must be checked on the same TLS connection; separate host/SRV/CNAME authority from SIP domain identity.
+- [ ] Keep Kerberos SPN, REGISTER transaction, Microsoft Security Association and MIC/replay acceptance distinct from offline hostname or SAN acceptance. Map publicly documented MS-SIPAE §3.2.5.2 and MS-CONMGMT §3.1.5 to precise source/tests, recording Microsoft Open Specifications publication revision from the authoritative source at the time of implementation.
+- [ ] Establish deterministic, bounded offline tests for hostile SIP URI encoding, malformed certs/SAN, duplicate and reserved parameter names, SDP frame and unknown field handling, SIP response framing and status codes, failed trust/identity/policy decisions.
+- [ ] Prove one consolidated SHA on ordinary GitHub-hosted `ubuntu-latest` and `windows-latest`: Rust formatting check, all workspace targets/tests, strict Clippy, Python unittest/evidence and `scripts/check_standard_runners.py`, with no hidden continue-on-error or skipped success. Track historical rustfmt baseline separately per Issue #9; do **not** mutate historic SHA-256 evidence.
+- [ ] Record per-check CI run/job links, source-to-fixture mapping and explicit tested-offline vs unverified status. Require independent security review before any assertion of real authentication or interop.
+
+**Not included in v0.30.0 claims:** a working authenticated production sign-in, real SfB connectivity, full Windows Full Client feature parity, or v1.0 eligibility. Live Microsoft testing requires explicit authorization, a pinned lab and sanitized independently reviewed evidence. Do not tag v0.30.0 until all scope-appropriate gates above are fulfilled and reviewed.
+
+---
+
+# Planned development stages from v0.30.0 to v1.0 (not released)
+
+These are **proposed engineering gates**, not claims that particular functionality already exists. Each intermediate version requires an explicit scope review, source-to-test mapping, and successful new-head CI before any tag. Work may be reordered as security evidence requires; moving to the next stage is not automatic.
+
+| Planned milestone | Required deliverables and independently checkable exit criteria | Status |
+| --- | --- | --- |
+| **v0.30.0 — certificate identity and CI integration** | Meet all v0.30.0 gates above: one consolidated branch for #26–#31, correct original SIP-domain trust, bounded hostile-input tests and ordinary Ubuntu/Windows checks at one SHA | **OPEN** |
+| **v0.40.0 — trustworthy transport and transaction binding** | Bind actual verified TLS peer cert identity and pinned service-origin/SPN to the same reliable SIP transport/REGISTER transaction; reject mismatched SRV target, downgraded TLS, changed endpoints, stale/replayed state; offline adversarial tests and security review | **OPEN** |
+| **v0.50.0 — Windows Kerberos/MS-SIPAE interoperability** | Complete native multi-step SSPI/GSS SA negotiation, bidirectional signing/verification, replay behavior, and actual authorized Windows lab REGISTER/refresh/unregister evidence with exact builds and sanitized traces; a parsed 200, acquired handle or offline MIC alone does **not** count | **OPEN** |
+| **v0.60.0 — real presence, contacts and messaging** | Implement authenticated, policy-aware sync, subscribe/notify and bidirectional IM handling with retry/recovery, server deny cases, bounded parsing and actual Windows/SfB interoperability evidence | **OPEN** |
+| **v0.70.0 — media, calls, devices** | Review and implement required offer/answer, ICE/STUN/TURN, SRTP, call state, device selection, mute/hold, and negative authorization/failure paths, with security and accessibility evidence against reference client | **OPEN** |
+| **v0.80.0 — conferencing and collaboration** | Conferencing/focus, participants, transfers and sharing capabilities under server policy, including denied and disconnected recovery scenarios; repeatable bidirectional evidence and privacy review | **OPEN** |
+| **v0.90.0 — complete Windows Full Client feature parity** | Every requirement in `FEATURE_PARITY.json` and every case in `WINDOWS_REFERENCE_CASES.json` implemented and independently verified with exact pinned reference-client and server builds, allow/deny, accessibility, recovery and Office integration; no exclusions | **OPEN** |
+| **v0.99.0 — release candidate and independent security review** | Cross-platform release CI, format migration without historical hash edits, packaging/signing, threat model and penetration review, reproducible evidence/artefact hashes, and no outstanding high-severity risks; demonstrate the strict release gate passes | **OPEN** |
+| **v1.0.0 — fully evidenced Windows Full Client parity** | **All** `V1_RELEASE_CONTRACT.json` and `docs/release-policy.md` conditions satisfied, independently reviewed real end-to-end interoperability, performance, security, accessibility, policy denied/recovery, with `python3 scripts/check_release.py --release` passing. No override or nominal version-only promotion. | **BLOCKED** |
+
+## Cross-stage rules and reference evidence
+
+- Keep the three statuses explicit: **source-only**, **tested-offline**, and **independently verified interoperable**. GitHub Actions success proves only the checks actually executed; it does not prove enterprise identity, Kerberos authentication or parity.
+- For every protocol-affecting commit, record the **precise public document revision/date, URL and section**, code path, positive/negative test fixture, actual run/job outcome and any unverified integration dependency. Baseline examples: [RFC 3261 (June 2002) §§10,17,19](https://www.rfc-editor.org/rfc/rfc3261), [RFC 5922 (June 2010) §§7.1–7.3](https://www.rfc-editor.org/rfc/rfc5922), [RFC 8866 (January 2021) §5](https://www.rfc-editor.org/rfc/rfc8866), [MS-SIPAE §§3.2.4–3.2.5](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/), [MS-SIPREGE](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/) and [MS-CONMGMT](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-conmgmt/). Pin exact applicable Microsoft publication revisions at implementation time, not by assumption in this planning document.
+- No real credentials or productive network tests without explicit authorization. Fail closed on certificate/hostname/SPN, trust chain, MIC/replay, malicious SIP/SDP data, and policy denial. Only `ubuntu-latest` / `windows-latest` GitHub-hosted runners; no paid CI and no TLS downgrade.
+- Preserve immutable source archives, historical evidence ledgers and recorded SHA-256 bytes. Treat rustfmt migration [Issue #9](https://github.com/NelvinBHV/CommSCraft/issues/9) as provenance-controlled.
+- **No merge to `main`, release tag or v1.0 claim by automation.** Owner approval and independent security/interoperability signoff are mandatory for release gating; missing authorized lab results are blockers, not checkboxes to waive.
+
+---
+
 ## Current milestone v0.14.0 — fail-closed REGISTER response coordinator
 
 - [x] Model MIC-checked REGISTER 200 separately from server-verified sign-in.
