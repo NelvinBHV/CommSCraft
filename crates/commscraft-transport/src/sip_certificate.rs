@@ -171,14 +171,22 @@ fn match_sip_sans(names: &[GeneralName<'_>], expected_domain: &str) -> bool {
     for name in names {
         match name {
             GeneralName::URI(uri) => {
-                // Never downgrade to a matching DNS SAN if an oversized
-                // URI SAN could hide a conflicting SIP identity.
-                if uri.len() > MAX_SIP_SAN_URI_BYTES { return false; }
+                // Never downgrade to a DNS SAN if a malformed SIP-scheme
+                // URI could conceal a conflicting SIP domain identity.
+                // Other URI schemes carry no SIP domain (RFC 5922 §7.1).
+                let sip_scheme = uri.split_once(':').is_some_and(|(scheme, _)|
+                    scheme.eq_ignore_ascii_case("sip")
+                );
+                if uri.len() > MAX_SIP_SAN_URI_BYTES {
+                    return false;
+                }
                 if let Some(host) = sip_uri_host(uri) {
                     has_valid_sip_uri = true;
                     if host.eq_ignore_ascii_case(reference) {
                         uri_matches = true;
                     }
+                } else if sip_scheme {
+                    return false;
                 }
             }
             GeneralName::DNSName(dns)
@@ -440,6 +448,36 @@ mod tests {
         assert!(!match_sip_sans(
             &[GeneralName::URI(encoded_reserved)], "other.example"
         ));
+    }
+
+    #[test]
+    fn malformed_sip_uri_san_does_not_silently_enable_dns_fallback() {
+        for malformed in [
+            "sip:evil.example;transport=%0d",
+            "sip:evil.example;transport==tls",
+            "sip:evil.example?subject",
+            "SIP:evil.example;foo=☃",
+            "sip:evil.example;transport=tls;transport=tcp",
+        ] {
+            let mixed = [
+                GeneralName::URI(malformed),
+                GeneralName::DNSName("example.com"),
+            ];
+            assert!(!match_sip_sans(&mixed, "example.com"), "{malformed:?}");
+        }
+        // Unrelated non-SIP URI SANs cannot preempt a valid DNS SAN.
+        let other_scheme = [
+            GeneralName::URI("https://portal.example.com/profile"),
+            GeneralName::DNSName("example.com"),
+        ];
+        assert!(match_sip_sans(&other_scheme, "example.com"));
+        // A valid matching SIP URI SAN still authorizes the exact domain.
+        let valid = [
+            GeneralName::URI("sip:example.com;transport=tls"),
+            GeneralName::DNSName("evil.example"),
+        ];
+        assert!(match_sip_sans(&valid, "example.com"));
+        assert!(!match_sip_sans(&valid, "evil.example"));
     }
 
     #[test]
