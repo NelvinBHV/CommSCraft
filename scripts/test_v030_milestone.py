@@ -65,6 +65,16 @@ class V030MilestoneTest(unittest.TestCase):
         }
         self.assertTrue(any("concrete Actions run" in e for e in validate_manifest(data)))
 
+    def test_malformed_actions_job_link_is_rejected(self):
+        data = template()
+        data["checks"]["combined_san_ci_windows"] = {
+            "outcome": "passed",
+            "commit_sha": "a" * 40,
+            "url": "https://github.com/NelvinBHV/CommSCraft/actions/runs/12/garbage",
+            "reviewer": "independent reviewer",
+        }
+        self.assertTrue(any("invalid GitHub Actions job link" in e for e in validate_manifest(data)))
+
     def test_unsupported_and_untrusted_manifest_rejected(self):
         data = template()
         data["milestone"] = "v1.0.0"
