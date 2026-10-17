@@ -25,3 +25,5 @@ pub mod kerberos_mic;
 pub mod windows_sspi;
 
 pub mod inbound;
+
+pub mod client_offline;
