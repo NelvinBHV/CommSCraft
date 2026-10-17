@@ -145,6 +145,46 @@
       "tests": "call_drafts::tests",
       "scope": "bounded local planning data only; no SIP, server, media device access or interop",
       "interop_evidence": []
+    },
+    {
+      "id": "presence-alerts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests",
+      "scope": "bounded local prototype only; no transport, remote notifications, enterprise policy or SfB interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-tabs",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests",
+      "scope": "bounded local prototype only; no transport, remote notifications, enterprise policy or SfB interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-importance",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests",
+      "scope": "bounded local prototype only; no transport, remote notifications, enterprise policy or SfB interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "notifications",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests",
+      "scope": "bounded local prototype only; no transport, remote notifications, enterprise policy or SfB interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-lobby",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests",
+      "scope": "bounded local prototype only; no transport, remote notifications, enterprise policy or SfB interoperability",
+      "interop_evidence": []
     }
   ]
 }
