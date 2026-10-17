@@ -25,7 +25,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-conmgmt/",
           "review": "version_catalog_only_or_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
     },
     {
       "id": "auth",
@@ -49,7 +51,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/",
           "review": "version_catalog_only_or_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
     },
     {
       "id": "register",
@@ -73,7 +77,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/",
           "review": "version_catalog_only_or_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
     },
     {
       "id": "presence-sub",
@@ -97,7 +103,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
           "review": "version_catalog_only_or_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
     },
     {
       "id": "im-1to1",
@@ -129,7 +137,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
           "review": "version_catalog_only_or_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
     },
     {
       "id": "codecs",
@@ -139,11 +149,18 @@
       "normative_claim": "unverified_mapping",
       "refs": [
         {
+          "id": "RFC 8866",
+          "edition": "January 2021",
+          "section": "5",
+          "url": "https://www.rfc-editor.org/rfc/rfc8866#section-5",
+          "review": "actual_sdp_structural_parsing_reference_not_full_rfc_conformance"
+        },
+        {
           "id": "RFC 3264",
           "edition": "June 2002",
           "section": "5",
           "url": "https://www.rfc-editor.org/rfc/rfc3264#section-5",
-          "review": "reference_identified_not_requirement_audited"
+          "review": "related_offer_answer_only_not_implemented"
         },
         {
           "id": "MS-SDPEXT",
@@ -153,12 +170,14 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
           "review": "published_revision_confirmed_section_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
     },
     {
       "id": "windows-ui",
       "source": "apps/commscraft-desktop/src/main.rs",
-      "tests": "crates/commscraft-core/src/lib.rs tests: requires fixture-level audit",
+      "tests": "UI demonstration; fixture-level evidence unverified",
       "status": "offline_subset",
       "normative_claim": "unverified_mapping",
       "refs": [
@@ -170,7 +189,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
           "review": "version_catalog_only_or_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
     },
     {
       "id": "contact-groups",
@@ -187,7 +208,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "presence-publish",
@@ -204,7 +227,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "im-history",
@@ -221,7 +246,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "contact-search",
@@ -238,7 +265,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-abch/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "contact-privacy",
@@ -255,7 +284,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "im-richtext",
@@ -272,7 +303,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "calendar-presence",
@@ -289,7 +322,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "photos",
@@ -306,7 +341,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "distribution-groups",
@@ -323,7 +360,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-abch/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "im-multiparty",
@@ -340,7 +379,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confim/",
           "review": "published_revision_confirmed_section_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "im-file",
@@ -357,7 +398,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "audio-call",
@@ -374,7 +417,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
           "review": "published_revision_confirmed_section_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "hold",
@@ -391,7 +436,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
           "review": "published_revision_confirmed_section_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "forwarding",
@@ -408,7 +455,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "transfer",
@@ -425,7 +474,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "conference-roster",
@@ -442,7 +493,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
           "review": "published_revision_confirmed_section_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "devices",
@@ -459,7 +512,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
           "review": "published_revision_confirmed_section_unverified"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     },
     {
       "id": "call-history",
@@ -476,7 +531,9 @@
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
           "review": "context_only_not_implemented"
         }
-      ]
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "module_test_family_only_no_protocol_requirement"
     }
   ]
 }
