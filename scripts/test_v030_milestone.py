@@ -104,6 +104,23 @@ class V030MilestoneTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("NOT READY", result.stdout)
 
+    def test_malformed_manifest_fails_in_development_mode(self):
+        script = pathlib.Path(__file__).with_name("check_v030_milestone.py")
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = pathlib.Path(directory) / "bad.json"
+            for payload in ("{broken", "[]", json.dumps({
+                "schema_version": 1,
+                "milestone": "v0.30.0",
+                "checks": {"unrecognized": {"outcome": "pending"}},
+            })):
+                manifest.write_text(payload, encoding="utf-8")
+                result = subprocess.run(
+                    [sys.executable, str(script), "--manifest", str(manifest)],
+                    capture_output=True, text=True, check=False, timeout=15,
+                )
+                self.assertNotEqual(result.returncode, 0, payload)
+                self.assertIn("INVALID v0.30.0 evidence", result.stdout)
+
     def test_malformed_file_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             path = pathlib.Path(directory) / "manifest.json"
