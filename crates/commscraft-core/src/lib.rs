@@ -35,3 +35,5 @@ pub mod auxiliary_offline;
 pub mod interaction_offline;
 
 pub mod call_drafts;
+
+pub mod usability_offline;
