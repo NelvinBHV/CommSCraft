@@ -3,6 +3,7 @@ import copy
 import json
 import pathlib
 import sys
+import subprocess
 import tempfile
 import unittest
 
@@ -83,6 +84,25 @@ class V030MilestoneTest(unittest.TestCase):
         data["checks"]["unexpected"] = {"outcome": "passed"}
         self.assertTrue(validate_manifest(data))
         self.assertTrue(validate_manifest([]))
+
+    def test_release_cli_fails_closed_for_current_pending_manifest(self):
+        script = pathlib.Path(__file__).with_name("check_v030_milestone.py")
+        result = subprocess.run(
+            [sys.executable, str(script), "--release"],
+            capture_output=True, text=True, check=False, timeout=15,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("BLOCKED v0.30.0", result.stdout)
+        self.assertNotIn("structurally complete", result.stdout)
+
+    def test_development_cli_does_not_mislabel_release(self):
+        script = pathlib.Path(__file__).with_name("check_v030_milestone.py")
+        result = subprocess.run(
+            [sys.executable, str(script)],
+            capture_output=True, text=True, check=False, timeout=15,
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("NOT READY", result.stdout)
 
     def test_malformed_file_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
