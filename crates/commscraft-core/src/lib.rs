@@ -31,3 +31,5 @@ pub mod client_offline;
 pub mod local_features;
 
 pub mod auxiliary_offline;
+
+pub mod interaction_offline;
