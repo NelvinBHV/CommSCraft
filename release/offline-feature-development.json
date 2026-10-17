@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "baseline": "FEATURE_PARITY.json is immutable historical evidence; this file records development-only partial source coverage",
+  "overrides": [
+    {
+      "id": "contact-groups",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "tests": "client_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-publish",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "tests": "client_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-history",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "tests": "client_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-search",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "tests": "local_features::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-privacy",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "tests": "local_features::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-richtext",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "tests": "local_features::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "calendar-presence",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "tests": "auxiliary_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "photos",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "tests": "auxiliary_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "distribution-groups",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "tests": "auxiliary_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    }
+  ]
+}
