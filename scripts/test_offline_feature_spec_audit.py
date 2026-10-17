@@ -26,6 +26,19 @@ class SpecAudit(unittest.TestCase):
                 self.assertTrue(ref["review"])
             if record["normative_claim"] == "none_local_only":
                 self.assertTrue(all(ref["review"] == "context_only_not_implemented" for ref in record["refs"]))
+    def test_source_and_fixture_symbols_exist(self):
+        audit = json.loads((ROOT / "release/offline-feature-spec-audit.json").read_text(encoding="utf-8"))
+        for row in audit["records"]:
+            source = ROOT / row["source"]
+            self.assertTrue(source.is_file(), row["id"])
+            if row["id"] == "windows-ui":
+                self.assertIn("no fixture", row["tests"].lower())
+                continue
+            source_code = source.read_text(encoding="utf-8")
+            for full_name in row["tests"].split("; "):
+                test_name = full_name.rsplit("::", 1)[-1]
+                self.assertIn("fn " + test_name + "(", source_code, row["id"] + ": " + test_name)
+
     def test_no_false_normative_claim(self):
         audit = json.loads((ROOT / "release/offline-feature-spec-audit.json").read_text(encoding="utf-8"))
         self.assertEqual(sum(r["normative_claim"] == "requirement_verified" for r in audit["records"]), 0)
