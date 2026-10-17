@@ -26,9 +26,9 @@ class ParityReportTest(unittest.TestCase):
             root = pathlib.Path(directory)
             features = {"features": [
                 {"id": "a", "status": "offline_subset", "area": "identity"},
-                {"id": "b", "status": "verified", "area": "identity"},
+                {"id": "b", "status": "verified", "area": "identity", "interop_evidence": ["reviewed-fixture"]},
             ]}
-            cases = {"windows_scenarios": [{"id": "one"}]}
+            cases = {"windows_scenarios": [{"id": "one", "feature_ids": ["a"]}]}
             (root / "WINDOWS_REFERENCE_CASES.json").write_text(json.dumps(cases), encoding="utf-8")
             path = root / "FEATURE_PARITY.json"
             path.write_text(json.dumps(features), encoding="utf-8")
@@ -38,6 +38,17 @@ class ParityReportTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 summarize(root)
             features["features"][1]["id"] = "b"
+            cases["windows_scenarios"][0]["feature_ids"] = ["unmapped"]
+            (root / "WINDOWS_REFERENCE_CASES.json").write_text(json.dumps(cases), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                summarize(root)
+            cases["windows_scenarios"][0]["feature_ids"] = ["a"]
+            (root / "WINDOWS_REFERENCE_CASES.json").write_text(json.dumps(cases), encoding="utf-8")
+            features["features"][1]["interop_evidence"] = []
+            path.write_text(json.dumps(features), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                summarize(root)
+            features["features"][1]["interop_evidence"] = ["reviewed-fixture"]
             features["features"][1]["status"] = "unknown"
             path.write_text(json.dumps(features), encoding="utf-8")
             with self.assertRaises(ValueError):
