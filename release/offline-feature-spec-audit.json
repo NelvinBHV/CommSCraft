@@ -6,7 +6,7 @@
     {
       "id": "dns-discovery",
       "source": "crates/commscraft-core/src/discovery.rs",
-      "tests": "crates/commscraft-core/src/discovery.rs tests: requires fixture-level audit",
+      "tests": "discovery::tests::microsoft_names_cover_four_srv_services; discovery::tests::rejects_invalid_identity_or_hostnames",
       "status": "offline_subset",
       "normative_claim": "unverified_mapping",
       "refs": [
@@ -27,12 +27,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "auth",
       "source": "crates/commscraft-core/src/security.rs",
-      "tests": "crates/commscraft-core/src/security.rs tests: requires fixture-level audit",
+      "tests": "security::tests::signed_response_establishes_then_replay_is_rejected; security::tests::invalid_signature_never_consumes_replay_number",
       "status": "offline_subset",
       "normative_claim": "unverified_mapping",
       "refs": [
@@ -53,12 +54,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "register",
       "source": "crates/commscraft-core/src/registration.rs",
-      "tests": "crates/commscraft-core/src/registration.rs tests: requires fixture-level audit",
+      "tests": "registration::tests::microsoft_register_has_required_identity_and_capability; registration::tests::ms_sipae_challenge_cannot_be_auto_authenticated",
       "status": "offline_subset",
       "normative_claim": "unverified_mapping",
       "refs": [
@@ -79,12 +81,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "presence-sub",
       "source": "crates/commscraft-core/src/presence.rs",
-      "tests": "crates/commscraft-core/src/presence.rs tests: requires fixture-level audit",
+      "tests": "presence::tests::creates_unsigned_but_valid_subscribe; presence::tests::mismatched_or_unsupported_notify_does_not_advance_state",
       "status": "offline_subset",
       "normative_claim": "unverified_mapping",
       "refs": [
@@ -105,12 +108,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "im-1to1",
       "source": "crates/commscraft-core/src/im.rs",
-      "tests": "crates/commscraft-core/src/im.rs tests: requires fixture-level audit",
+      "tests": "im::tests::invite_ack_message_and_sip_acceptance_not_read_receipt; im::tests::malformed_and_replayed_incoming_text_is_rejected",
       "status": "offline_subset",
       "normative_claim": "unverified_mapping",
       "refs": [
@@ -139,12 +143,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "codecs",
       "source": "crates/commscraft-core/src/sdp.rs",
-      "tests": "crates/commscraft-core/src/sdp.rs tests: requires fixture-level audit",
+      "tests": "sdp::tests::inspection_does_not_negotiate_media; sdp::tests::rejects_truncated_and_malformed_sdp",
       "status": "offline_subset",
       "normative_claim": "unverified_mapping",
       "refs": [
@@ -172,12 +177,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "windows-ui",
-      "source": "apps/commscraft-desktop/src/main.rs",
-      "tests": "UI demonstration; fixture-level evidence unverified",
+      "source": "apps/commscraft/src/main.rs",
+      "tests": "no fixture identified; UI parity unverified",
       "status": "offline_subset",
       "normative_claim": "unverified_mapping",
       "refs": [
@@ -191,12 +197,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "source_reviewed_fixture_level_normative_verification_pending"
+      "source_test_verification": "path corrected; no automated Windows UI behavioral fixture located",
+      "normative_requirement_verified": false
     },
     {
       "id": "contact-groups",
       "source": "crates/commscraft-core/src/client_offline.rs",
-      "tests": "client_offline::tests",
+      "tests": "client_offline::tests::contact_group_rejects_duplicate_injection_and_missing_group",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -210,12 +217,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "presence-publish",
       "source": "crates/commscraft-core/src/client_offline.rs",
-      "tests": "client_offline::tests",
+      "tests": "client_offline::tests::presence_draft_is_not_a_server_publication",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -229,12 +237,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "im-history",
       "source": "crates/commscraft-core/src/client_offline.rs",
-      "tests": "client_offline::tests",
+      "tests": "client_offline::tests::history_is_bounded_and_can_be_wiped",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -248,12 +257,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "contact-search",
       "source": "crates/commscraft-core/src/local_features.rs",
-      "tests": "local_features::tests",
+      "tests": "local_features::tests::directory_filters_case_insensitively_and_rejects_injection",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -267,12 +277,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "contact-privacy",
       "source": "crates/commscraft-core/src/local_features.rs",
-      "tests": "local_features::tests",
+      "tests": "local_features::tests::privacy_draft_preserves_block_and_does_not_claim_server_policy",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -286,12 +297,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "im-richtext",
       "source": "crates/commscraft-core/src/local_features.rs",
-      "tests": "local_features::tests",
+      "tests": "local_features::tests::preview_escapes_markup_and_rejects_control_characters",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -305,12 +317,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "calendar-presence",
       "source": "crates/commscraft-core/src/auxiliary_offline.rs",
-      "tests": "auxiliary_offline::tests",
+      "tests": "auxiliary_offline::tests::calendar_rejects_overlaps_and_uses_half_open_interval",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -324,12 +337,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "photos",
       "source": "crates/commscraft-core/src/auxiliary_offline.rs",
-      "tests": "auxiliary_offline::tests",
+      "tests": "auxiliary_offline::tests::photos_are_size_and_mime_bounded",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -343,12 +357,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "distribution-groups",
       "source": "crates/commscraft-core/src/auxiliary_offline.rs",
-      "tests": "auxiliary_offline::tests",
+      "tests": "auxiliary_offline::tests::distribution_members_are_unique_and_bounded",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -362,12 +377,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "im-multiparty",
       "source": "crates/commscraft-core/src/interaction_offline.rs",
-      "tests": "interaction_offline::tests",
+      "tests": "interaction_offline::tests::bounded_multiparty_roster",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -381,12 +397,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "im-file",
       "source": "crates/commscraft-core/src/interaction_offline.rs",
-      "tests": "interaction_offline::tests",
+      "tests": "interaction_offline::tests::file_drafts_do_not_move_files",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -400,12 +417,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "audio-call",
       "source": "crates/commscraft-core/src/interaction_offline.rs",
-      "tests": "interaction_offline::tests",
+      "tests": "interaction_offline::tests::call_controls_require_connected_state_and_clear_on_end",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -419,12 +437,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "hold",
       "source": "crates/commscraft-core/src/interaction_offline.rs",
-      "tests": "interaction_offline::tests",
+      "tests": "interaction_offline::tests::call_controls_require_connected_state_and_clear_on_end",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -438,12 +457,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "forwarding",
       "source": "crates/commscraft-core/src/call_drafts.rs",
-      "tests": "call_drafts::tests",
+      "tests": "call_drafts::tests::forwarding_and_transfer_fail_closed",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -457,12 +477,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "transfer",
       "source": "crates/commscraft-core/src/call_drafts.rs",
-      "tests": "call_drafts::tests",
+      "tests": "call_drafts::tests::forwarding_and_transfer_fail_closed",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -476,12 +497,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "conference-roster",
       "source": "crates/commscraft-core/src/call_drafts.rs",
-      "tests": "call_drafts::tests",
+      "tests": "call_drafts::tests::roster_and_devices_are_bounded",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -495,12 +517,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "devices",
       "source": "crates/commscraft-core/src/call_drafts.rs",
-      "tests": "call_drafts::tests",
+      "tests": "call_drafts::tests::roster_and_devices_are_bounded",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -514,12 +537,13 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     },
     {
       "id": "call-history",
       "source": "crates/commscraft-core/src/call_drafts.rs",
-      "tests": "call_drafts::tests",
+      "tests": "call_drafts::tests::history_rejects_injection_and_overflow",
       "status": "offline_subset",
       "normative_claim": "none_local_only",
       "refs": [
@@ -533,7 +557,17 @@
         }
       ],
       "requirement_evidence": "NO_CLAIM",
-      "source_test_verification": "module_test_family_only_no_protocol_requirement"
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
     }
-  ]
+  ],
+  "audit_summary": {
+    "entries": 25,
+    "source_paths_corrected": true,
+    "exact_test_names_mapped": 24,
+    "source_only_ui_no_fixture": 1,
+    "normative_requirement_verified": 0,
+    "live_interoperability_verified": 0,
+    "methodology": "file+test symbol inspection; RFC primary sources; Microsoft edition catalog only for certain specifications; no revision-specific normative PDF assertion review"
+  }
 }
