@@ -12,6 +12,23 @@ AREAS = ("identity", "contacts_presence", "messaging", "voice", "video_media", "
 def summarize(root=ROOT):
     features = json.loads((root / "FEATURE_PARITY.json").read_text(encoding="utf-8"))["features"]
     cases = json.loads((root / "WINDOWS_REFERENCE_CASES.json").read_text(encoding="utf-8"))["windows_scenarios"]
+    overlays_path = root / "release" / "offline-feature-development.json"
+    if overlays_path.is_file():
+        overrides = json.loads(overlays_path.read_text(encoding="utf-8"))["overrides"]
+        lookup = {feature["id"]: feature for feature in features}
+        seen_overrides = set()
+        for override in overrides:
+            fid = override["id"]
+            if fid in seen_overrides or fid not in lookup or override["status"] != "offline_subset":
+                raise ValueError("Invalid offline development override")
+            seen_overrides.add(fid)
+            feature = lookup[fid]
+            if feature["status"] not in ("not_started", "offline_subset"):
+                raise ValueError("Offline override cannot downgrade verified status")
+            if not override.get("source") or not override.get("tests") or override.get("interop_evidence"):
+                raise ValueError("Override needs source/test and cannot claim interoperability")
+            feature["status"] = "offline_subset"
+
     for records in (features, cases):
         if not isinstance(records, list) or any(not isinstance(r, dict) or not isinstance(r.get("id"), str) or not r["id"] for r in records):
             raise ValueError("Invalid parity records")
