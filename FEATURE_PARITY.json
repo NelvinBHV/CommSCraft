@@ -104,15 +104,13 @@
       "id": "contact-groups",
       "area": "contacts_presence",
       "name": "Contact list and groups",
-      "status": "offline_subset",
-      "scope_note": "Bounded local-only primitives in crates/commscraft-core/src/client_offline.rs; no server synchronization, publication, persisted messages or verified SfB behavior",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
       "specifications": [
         "MS-PRES"
       ],
       "acceptance": "Add, remove, reorder and sync contacts and groups",
-      "unit_evidence": [
-        "client_offline::tests (pending exact-head CI)"
-      ],
+      "unit_evidence": [],
       "interop_evidence": []
     },
     {
@@ -146,15 +144,13 @@
       "id": "presence-publish",
       "area": "contacts_presence",
       "name": "Publish presence, availability, status, location and note",
-      "status": "offline_subset",
-      "scope_note": "Bounded local-only primitives in crates/commscraft-core/src/client_offline.rs; no server synchronization, publication, persisted messages or verified SfB behavior",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
       "specifications": [
         "MS-PRES"
       ],
       "acceptance": "Correct versioned publications and visibility by container",
-      "unit_evidence": [
-        "client_offline::tests (pending exact-head CI)"
-      ],
+      "unit_evidence": [],
       "interop_evidence": []
     },
     {
@@ -242,15 +238,13 @@
       "id": "im-history",
       "area": "messaging",
       "name": "Conversation history and missed messages",
-      "status": "offline_subset",
-      "scope_note": "Bounded local-only primitives in crates/commscraft-core/src/client_offline.rs; no server synchronization, publication, persisted messages or verified SfB behavior",
+      "status": "not_started",
+      "scope_note": "Requires implementation and real-world verification",
       "specifications": [
         "MS-SIPRE"
       ],
       "acceptance": "Show local/server-supported conversation history subject to policy",
-      "unit_evidence": [
-        "client_offline::tests (pending exact-head CI)"
-      ],
+      "unit_evidence": [],
       "interop_evidence": []
     },
     {
