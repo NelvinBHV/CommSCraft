@@ -17,3 +17,12 @@ Dedicated branch `integration/v030-sip-san-six-prs` starts from PR #31 and expli
 RFC links: [3261](https://www.rfc-editor.org/rfc/rfc3261), [5922](https://www.rfc-editor.org/rfc/rfc5922), [5280](https://www.rfc-editor.org/rfc/rfc5280), [3986](https://www.rfc-editor.org/rfc/rfc3986).
 
 Required proof: consolidated exact SHA under standard `ubuntu-latest` and `windows-latest`, strict Rust tests/Clippy, Python evidence checks and `scripts/check_standard_runners.py`. Existing Issue #9 formatting/provenance limitations remain explicit. Historical SHA-256 ledgers remain untouched. No real networks, secrets, paid runners, merges to `main` or releases. v1.0 **BLOCKED**.
+
+
+## Cross-feature combination regression — 2026-10-17
+
+The consolidated fixture `crates/commscraft-transport/src/sip_certificate.rs::tests::coordinated_sip_san_negative_and_positive_matrix` now additionally asserts rejection from both `sip_uri_host` and `match_sip_sans` for: (1) equivalent encoded duplicate `transport/%74ransport` **with otherwise well-formed URI headers**; (2) valid `lr` parameter **with malformed trailing header pair**; (3) valid `transport` parameter **with percent-encoded CR in a header value**. Code source commit `d36cffe391847c958fce5a83e63095782a9956ac`.
+
+**Normative mapping:** [RFC 3261 (June 2002) §§19.1.1, 19.1.4, 25.1](https://www.rfc-editor.org/rfc/rfc3261); [RFC 3986 (January 2005) §2.1](https://www.rfc-editor.org/rfc/rfc3986#section-2.1); [RFC 5922 (June 2010) §§7.1–7.2](https://www.rfc-editor.org/rfc/rfc5922#section-7.1); and [RFC 5280 (May 2008) §4.2.1.6](https://www.rfc-editor.org/rfc/rfc5280#section-4.2.1.6). Escaped-control rejection is a documented conservative local trust-boundary restriction, not a claim that every control escaped in generic SIP contexts is forbidden by RFC 3261. Microsoft context [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) requires independent security association evidence, not satisfied here.
+
+**Result:** source authored; CI results for this new integrated head **pending**, including Linux/Windows tests. Previous integration head `51acf037de3aa0493ca1915ee908200cf66f6bba` showed running/queued checks, with successful presence and router jobs at the last inspection but no complete 11/11 result. Nothing is represented as verified Microsoft interoperability. Preserve historical SHA-256 and source provenance; no nonstandard runners, networks, releases or merges.
