@@ -20,6 +20,17 @@ def summarize(root=ROOT):
             raise ValueError("Duplicate parity IDs")
     if any(f.get("status") not in STATUSES or f.get("area") not in AREAS for f in features):
         raise ValueError("Unknown status or functional area")
+    known_features = {f["id"] for f in features}
+    for case in cases:
+        references = case.get("feature_ids")
+        if not isinstance(references, list) or not references or any(
+            not isinstance(fid, str) or fid not in known_features
+            for fid in references
+        ):
+            raise ValueError("Windows reference case has missing or unknown feature IDs")
+    for feature in features:
+        if feature["status"] == "verified" and not feature.get("interop_evidence"):
+            raise ValueError("Verified feature has no independent interop evidence")
     counts = Counter(f["status"] for f in features)
     return {
         "total_features": len(features),
