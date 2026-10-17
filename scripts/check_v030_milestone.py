@@ -68,6 +68,25 @@ def validate_manifest(data: object) -> list[str]:
             errors.append(f"{key}: missing repository evidence URL")
         if not isinstance(row.get("reviewer"), str) or not row["reviewer"].strip():
             errors.append(f"{key}: missing independent reviewer")
+    # Linux and Windows evidence must refer to the same integrated revision.
+    linux = checks.get("combined_san_ci_ubuntu")
+    windows = checks.get("combined_san_ci_windows")
+    if isinstance(linux, dict) and isinstance(windows, dict) and (
+        linux.get("outcome") == "passed" and windows.get("outcome") == "passed"
+        and linux.get("commit_sha") != windows.get("commit_sha")
+    ):
+        errors.append("Ubuntu/Windows CI evidence refers to different commits")
+    # Release CI claims must link to a concrete Actions run, not an arbitrary
+    # repository URL that happens to satisfy the generic evidence prefix.
+    for key in ("combined_san_ci_ubuntu", "combined_san_ci_windows"):
+        row = checks.get(key)
+        if isinstance(row, dict) and row.get("outcome") == "passed":
+            url = row.get("url")
+            prefix = "https://github.com/NelvinBHV/CommSCraft/actions/runs/"
+            if not isinstance(url, str) or not url.startswith(prefix) or not (
+                url[len(prefix):].split("/", 1)[0].isdigit()
+            ):
+                errors.append(f"{key}: URL must reference a concrete Actions run")
     return errors
 
 
