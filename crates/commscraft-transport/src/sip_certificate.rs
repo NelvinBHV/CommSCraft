@@ -74,6 +74,46 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
             index += 1;
         }
     }
+    // RFC 3261 §19.1.1: a SIP URI parameter name MUST NOT occur
+    // more than once. Apply case-insensitive matching at the identity
+    // boundary; ignore the separate '?' header portion here.
+    let authority_and_parameters = remainder.split('?').next()?;
+    if let Some((_, parameters)) = authority_and_parameters.split_once(';') {
+        let mut seen: Vec<String> = Vec::new();
+        for parameter in parameters.split(';') {
+            let name = parameter.split('=').next()?;
+            // RFC 3261 §19.1.4: unreserved URI characters and their
+            // percent-encoded forms compare as equal. Normalize names before
+            // checking the §19.1.1 no-duplicate requirement.
+            let bytes = name.as_bytes();
+            let mut canonical = String::with_capacity(name.len());
+            let mut i = 0;
+            while i < bytes.len() {
+                if bytes[i] == b'%' && i + 2 < bytes.len() {
+                    let hex = |b: u8| (b as char).to_digit(16);
+                    let decoded = (hex(bytes[i + 1])? * 16 + hex(bytes[i + 2])?) as u8;
+                    if decoded.is_ascii_alphanumeric() || b"-_.!~*'()".contains(&decoded) {
+                        canonical.push(decoded as char);
+                    } else {
+                        // Percent-triplet hex case does not change the octet.
+                        // Keep reserved bytes encoded; canonicalize hex digits.
+                        canonical.push('%');
+                        canonical.push((bytes[i + 1] as char).to_ascii_uppercase());
+                        canonical.push((bytes[i + 2] as char).to_ascii_uppercase());
+                    }
+                    i += 3;
+                } else {
+                    canonical.push(bytes[i] as char);
+                    i += 1;
+                }
+            }
+            if !canonical.is_empty()
+                && seen.iter().any(|old| old.eq_ignore_ascii_case(&canonical)) {
+                return None;
+            }
+            seen.push(canonical);
+        }
+    }
     let host_and_port = remainder.split([';', '?']).next()?;
     let (host, port) = match host_and_port.split_once(':') {
         Some((host, port)) => (host, Some(port)),
@@ -317,6 +357,60 @@ mod tests {
         ] {
             assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
         }
+    }
+
+    #[test]
+    fn duplicate_sip_uri_parameter_names_cannot_authorize_certificate_identity() {
+        for uri in [
+            "sip:example.com;transport=tcp;transport=tls",
+            "sip:example.com;Transport=tcp;transport=tls",
+            "sip:example.com;lr;LR",
+            "sip:example.com;foo=1;foo=2?subject=ok",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri:?}");
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
+        }
+        for uri in [
+            "sip:example.com;transport=tls;lr",
+            "sip:example.com;foo=1;bar=2?subject=ok",
+            "sip:example.com?subject=ok&subject=again",
+        ] {
+            assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri:?}");
+        }
+    }
+
+    #[test]
+    fn percent_encoded_unreserved_duplicate_parameters_are_rejected() {
+        for uri in [
+            "sip:example.com;transport=tcp;%74ransport=tls",
+            "sip:example.com;foo=1;f%6Fo=2",
+            "sip:example.com;%6Cr;lr",
+            "sip:example.com;X%2DTrace=one;x-trace=two",
+            "sip:example.com;%54rAnSpOrT=tcp;transport=tls",
+            "sip:example.com;f%4Fo=one;F%6fo=two",
+            "sip:example.com;param1=one;param%31=two",
+            "sip:example.com;key=one;%6bey=two",
+            "sip:example.com;foo%2Fbar=one;foo%2fbar=two",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri}");
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"),
+                "duplicate alias must not authorize certificate identity: {uri}");
+        }
+        let distinct = "sip:example.com;%66oo=1;bar=2";
+        assert_eq!(sip_uri_host(distinct), Some("example.com"));
+        // Canonicalizing escaped names must not reject distinct parameters.
+        assert!(match_sip_sans(&[GeneralName::URI(distinct)], "example.com"));
+        assert!(!match_sip_sans(&[GeneralName::URI(distinct)], "other.example"));
+        // Reserved octets are not decoded to separators: distinct encoded
+        // and literal parameter names must not become false duplicates.
+        let encoded_reserved = "sip:example.com;foo%2Fbar=one;foo%3Fbar=two";
+        assert_eq!(sip_uri_host(encoded_reserved), Some("example.com"));
+        assert!(match_sip_sans(
+            &[GeneralName::URI(encoded_reserved)], "example.com"
+        ));
+        assert!(!match_sip_sans(
+            &[GeneralName::URI(encoded_reserved)], "other.example"
+        ));
     }
 
     #[test]
