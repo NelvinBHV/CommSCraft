@@ -105,6 +105,46 @@
       "tests": "interaction_offline::tests",
       "scope": "local-only bounded draft; no SIP signaling, media, file transfer or Microsoft server interop",
       "interop_evidence": []
+    },
+    {
+      "id": "forwarding",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests",
+      "scope": "bounded local planning data only; no SIP, server, media device access or interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "transfer",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests",
+      "scope": "bounded local planning data only; no SIP, server, media device access or interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-roster",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests",
+      "scope": "bounded local planning data only; no SIP, server, media device access or interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "devices",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests",
+      "scope": "bounded local planning data only; no SIP, server, media device access or interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "call-history",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests",
+      "scope": "bounded local planning data only; no SIP, server, media device access or interop",
+      "interop_evidence": []
     }
   ]
 }
