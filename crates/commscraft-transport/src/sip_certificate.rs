@@ -450,6 +450,11 @@ mod tests {
             "sip:example.com;transport==tls",
             "sip:example.com;note=bücher", "sip:example.com?subject=grüße",
             "sip:example.com;note=☃",
+            // Cross-feature cases: no independently safe check may mask an
+            // invalid second URI component at the certificate boundary.
+            "sip:example.com;transport=tls;%74ransport=tcp?subject=ok",
+            "sip:example.com;lr?subject=ok&body",
+            "sip:example.com;transport=tls?subject=%0d",
         ] {
             assert_eq!(sip_uri_host(uri), None, "{uri:?}");
             assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
