@@ -10,6 +10,9 @@ use x509_parser::parse_x509_certificate;
 
 const MAX_CERT_DER: usize = 64 * 1024;
 const MAX_SAN_NAMES: usize = 128;
+// Conservative local bounds for untrusted certificate URI SAN parsing.
+const MAX_SIP_SAN_URI_BYTES: usize = 4096;
+const MAX_SIP_SAN_URI_COMPONENTS: usize = 64;
 
 fn ascii_sip_domain(name: &str) -> Option<&str> {
     // RFC 5922: numeric IP literals cannot stand in for DNS SIP domains.
@@ -42,6 +45,7 @@ fn ascii_sip_domain(name: &str) -> Option<&str> {
 /// RFC 5922 §7.2 compares host only and ignores transport/URI parameters.
 /// We intentionally support the DNS-host SIP URI subset, not IPv6 literals.
 fn sip_uri_host(uri: &str) -> Option<&str> {
+    if uri.len() > MAX_SIP_SAN_URI_BYTES { return None; }
     let (scheme, remainder) = uri.split_once(':')?;
     if !scheme.eq_ignore_ascii_case("sip") || remainder.contains('@')
         || remainder.starts_with("//")
@@ -86,6 +90,7 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
     }
     // RFC 3261 §25.1: URI headers are nonempty hname=hvalue pairs.
     if let Some((_, headers)) = remainder.split_once('?') {
+        if headers.split('&').count() > MAX_SIP_SAN_URI_COMPONENTS { return None; }
         if headers.is_empty() || headers.split('&').any(|header| {
             let Some((name, _)) = header.split_once('=') else { return true; };
             name.is_empty()
@@ -96,6 +101,7 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
     // boundary; ignore the separate '?' header portion here.
     let authority_and_parameters = remainder.split('?').next()?;
     if let Some((_, parameters)) = authority_and_parameters.split_once(';') {
+        if parameters.split(';').count() > MAX_SIP_SAN_URI_COMPONENTS { return None; }
         let mut seen: Vec<String> = Vec::new();
         for parameter in parameters.split(';') {
             let name = parameter.split('=').next()?;
@@ -431,6 +437,29 @@ mod tests {
         assert!(!match_sip_sans(
             &[GeneralName::URI(encoded_reserved)], "other.example"
         ));
+    }
+
+    #[test]
+    fn bounded_sip_certificate_uri_components_fail_closed() {
+        let long_uri = format!("sip:example.com;foo={}", "a".repeat(MAX_SIP_SAN_URI_BYTES));
+        let too_many_parameters = format!(
+            "sip:example.com;{}",
+            (0..=MAX_SIP_SAN_URI_COMPONENTS)
+                .map(|i| format!("p{i}=v")).collect::<Vec<_>>().join(";")
+        );
+        let too_many_headers = format!(
+            "sip:example.com?{}",
+            (0..=MAX_SIP_SAN_URI_COMPONENTS)
+                .map(|i| format!("h{i}=v")).collect::<Vec<_>>().join("&")
+        );
+        for uri in [&long_uri, &too_many_parameters, &too_many_headers] {
+            assert_eq!(sip_uri_host(uri), None);
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
+        }
+        assert_eq!(
+            sip_uri_host("sip:example.com;transport=tls?subject=ok"),
+            Some("example.com")
+        );
     }
 
     #[test]
