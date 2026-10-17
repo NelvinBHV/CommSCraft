@@ -453,6 +453,40 @@ mod tests {
     }
 
     #[test]
+    fn one_valid_sip_uri_does_not_hide_an_invalid_sip_uri() {
+        let invalid = [
+            "sip:other.example;transport=tls;transport=tcp",
+            "SIP:other.example?subject",
+            "sip:other.example;opaque=%0d",
+            "sip:alice@other.example",
+        ];
+        for malformed in invalid {
+            for names in [
+                vec![
+                    GeneralName::URI("sip:example.com"),
+                    GeneralName::URI(malformed),
+                    GeneralName::DNSName("example.com"),
+                ],
+                vec![
+                    GeneralName::URI(malformed),
+                    GeneralName::URI("sip:example.com"),
+                    GeneralName::DNSName("example.com"),
+                ],
+            ] {
+                assert!(!match_sip_sans(&names, "example.com"), "{malformed:?}");
+            }
+        }
+        // Multiple well-formed SIP URI SANs do not authorize the wrong host.
+        let valid = [
+            GeneralName::URI("sip:other.example"),
+            GeneralName::URI("sip:example.com"),
+        ];
+        assert!(match_sip_sans(&valid, "example.com"));
+        assert!(match_sip_sans(&valid, "other.example"));
+        assert!(!match_sip_sans(&valid, "unrelated.example"));
+    }
+
+    #[test]
     fn malformed_sip_uri_san_does_not_silently_enable_dns_fallback() {
         for malformed in [
             "sip:evil.example;transport=%0d",
