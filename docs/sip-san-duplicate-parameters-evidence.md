@@ -75,3 +75,13 @@ Only offline regression coverage and evidence were changed; historical SHA-256 r
 | Microsoft security context | [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) | No changes to Security Association, Kerberos, MIC, TLS trust or replay | Independent Microsoft interoperability **unverified**. |
 
 The latest evidence commit triggers its own CI; standard `ubuntu-latest`/`windows-latest` only. PRs #26–#31 continue to overlap and need joint integration testing. Historic evidence ledgers / SHA-256 files unchanged, no live network or credentials, and v1.0 remains **BLOCKED**.
+
+
+## Positive SAN matcher counterexample and verified previous head — 2026-10-17
+
+| Requirement / source | Code and test mapping | Actual execution |
+| --- | --- | --- |
+| SAN-DUP-10, [RFC 3986 (January 2005) §2.1](https://www.rfc-editor.org/rfc/rfc3986#section-2.1), [RFC 3261 (June 2002) §§19.1.1, 19.1.4](https://www.rfc-editor.org/rfc/rfc3261#section-19.1.4), [RFC 5922 (June 2010) §7.1](https://www.rfc-editor.org/rfc/rfc5922#section-7.1) | `crates/commscraft-transport/src/sip_certificate.rs::sip_uri_host`, `match_sip_sans`, `percent_encoded_unreserved_duplicate_parameters_are_rejected` | Prior head `674ab130263a584caf6f8e748040bb041f665ba2`: [CI run 38995944951](https://github.com/NelvinBHV/CommSCraft/actions/runs/38995944951), Ubuntu/Windows jobs **success**; Rust run 38995945009, repository/governance 38995944982, router 38995944981, presence 38995944972, SIPAE 38995944955, plus five same-head push workflows: **11/11 success**; tested-offline only. |
+| SAN-DUP-11, same RFC 3261 and RFC 5922 sections, plus [MS-SIPAE §3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c) as *independent* Microsoft security context | New positive `match_sip_sans` fixture for `sip:example.com;%66oo=1;bar=2` with expected `example.com`, and negative expected domain `other.example`, in `percent_encoded_unreserved_duplicate_parameters_are_rejected`; source commit `1be3569623cbb5d42fc306e47f0857af8aa242b6` | **Source only / updated-head CI pending**; previous green workflow does not establish the new assertions passed. No Microsoft server network or SA/MIC/replay verification. |
+
+Intent: cover both rejection of equivalent duplicate names and preservation of valid, distinct parameter names, while requiring matching host identity. The other SAN-related PRs #26–#30 still require integrated tests with #31. No trust-policy changes, real network traffic, historical SHA-256 edits, costly runners or merge to `main`; v1.0 **BLOCKED**.
