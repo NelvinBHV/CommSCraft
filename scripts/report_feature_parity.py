@@ -28,6 +28,10 @@ def summarize(root=ROOT):
             for fid in references
         ):
             raise ValueError("Windows reference case has missing or unknown feature IDs")
+    scenario_links = Counter(fid for case in cases for fid in case["feature_ids"])
+    for feature in features:
+        if feature["status"] == "verified" and scenario_links[feature["id"]] == 0:
+            raise ValueError("Verified feature has no Windows reference scenario")
     for feature in features:
         if feature["status"] == "verified" and not feature.get("interop_evidence"):
             raise ValueError("Verified feature has no independent interop evidence")
@@ -40,6 +44,8 @@ def summarize(root=ROOT):
             "verified": sum(f["area"] == area and f["status"] == "verified" for f in features)}
             for area in AREAS},
         "reference_cases": len(cases),
+        "features_linked_to_windows_cases": sum(bool(scenario_links[f["id"]]) for f in features),
+        "unmapped_feature_ids": sorted(f["id"] for f in features if not scenario_links[f["id"]]),
         "features_with_registered_interop_evidence": sum(bool(f.get("interop_evidence")) for f in features),
         "cases_with_registered_interop_evidence": sum(bool(c.get("interop_evidence")) for c in cases),
     }
