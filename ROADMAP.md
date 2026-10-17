@@ -15,6 +15,32 @@ The repository currently describes **v0.14.0** as the implemented experimental s
 
 ---
 
+# Planned development stages from v0.30.0 to v1.0 (not released)
+
+These are **proposed engineering gates**, not claims that particular functionality already exists. Each intermediate version requires an explicit scope review, source-to-test mapping, and successful new-head CI before any tag. Work may be reordered as security evidence requires; moving to the next stage is not automatic.
+
+| Planned milestone | Required deliverables and independently checkable exit criteria | Status |
+| --- | --- | --- |
+| **v0.30.0 — certificate identity and CI integration** | Meet all v0.30.0 gates above: one consolidated branch for #26–#31, correct original SIP-domain trust, bounded hostile-input tests and ordinary Ubuntu/Windows checks at one SHA | **OPEN** |
+| **v0.40.0 — trustworthy transport and transaction binding** | Bind actual verified TLS peer cert identity and pinned service-origin/SPN to the same reliable SIP transport/REGISTER transaction; reject mismatched SRV target, downgraded TLS, changed endpoints, stale/replayed state; offline adversarial tests and security review | **OPEN** |
+| **v0.50.0 — Windows Kerberos/MS-SIPAE interoperability** | Complete native multi-step SSPI/GSS SA negotiation, bidirectional signing/verification, replay behavior, and actual authorized Windows lab REGISTER/refresh/unregister evidence with exact builds and sanitized traces; a parsed 200, acquired handle or offline MIC alone does **not** count | **OPEN** |
+| **v0.60.0 — real presence, contacts and messaging** | Implement authenticated, policy-aware sync, subscribe/notify and bidirectional IM handling with retry/recovery, server deny cases, bounded parsing and actual Windows/SfB interoperability evidence | **OPEN** |
+| **v0.70.0 — media, calls, devices** | Review and implement required offer/answer, ICE/STUN/TURN, SRTP, call state, device selection, mute/hold, and negative authorization/failure paths, with security and accessibility evidence against reference client | **OPEN** |
+| **v0.80.0 — conferencing and collaboration** | Conferencing/focus, participants, transfers and sharing capabilities under server policy, including denied and disconnected recovery scenarios; repeatable bidirectional evidence and privacy review | **OPEN** |
+| **v0.90.0 — complete Windows Full Client feature parity** | Every requirement in `FEATURE_PARITY.json` and every case in `WINDOWS_REFERENCE_CASES.json` implemented and independently verified with exact pinned reference-client and server builds, allow/deny, accessibility, recovery and Office integration; no exclusions | **OPEN** |
+| **v0.99.0 — release candidate and independent security review** | Cross-platform release CI, format migration without historical hash edits, packaging/signing, threat model and penetration review, reproducible evidence/artefact hashes, and no outstanding high-severity risks; demonstrate the strict release gate passes | **OPEN** |
+| **v1.0.0 — fully evidenced Windows Full Client parity** | **All** `V1_RELEASE_CONTRACT.json` and `docs/release-policy.md` conditions satisfied, independently reviewed real end-to-end interoperability, performance, security, accessibility, policy denied/recovery, with `python3 scripts/check_release.py --release` passing. No override or nominal version-only promotion. | **BLOCKED** |
+
+## Cross-stage rules and reference evidence
+
+- Keep the three statuses explicit: **source-only**, **tested-offline**, and **independently verified interoperable**. GitHub Actions success proves only the checks actually executed; it does not prove enterprise identity, Kerberos authentication or parity.
+- For every protocol-affecting commit, record the **precise public document revision/date, URL and section**, code path, positive/negative test fixture, actual run/job outcome and any unverified integration dependency. Baseline examples: [RFC 3261 (June 2002) §§10,17,19](https://www.rfc-editor.org/rfc/rfc3261), [RFC 5922 (June 2010) §§7.1–7.3](https://www.rfc-editor.org/rfc/rfc5922), [RFC 8866 (January 2021) §5](https://www.rfc-editor.org/rfc/rfc8866), [MS-SIPAE §§3.2.4–3.2.5](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/), [MS-SIPREGE](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/) and [MS-CONMGMT](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-conmgmt/). Pin exact applicable Microsoft publication revisions at implementation time, not by assumption in this planning document.
+- No real credentials or productive network tests without explicit authorization. Fail closed on certificate/hostname/SPN, trust chain, MIC/replay, malicious SIP/SDP data, and policy denial. Only `ubuntu-latest` / `windows-latest` GitHub-hosted runners; no paid CI and no TLS downgrade.
+- Preserve immutable source archives, historical evidence ledgers and recorded SHA-256 bytes. Treat rustfmt migration [Issue #9](https://github.com/NelvinBHV/CommSCraft/issues/9) as provenance-controlled.
+- **No merge to `main`, release tag or v1.0 claim by automation.** Owner approval and independent security/interoperability signoff are mandatory for release gating; missing authorized lab results are blockers, not checkboxes to waive.
+
+---
+
 ## Current milestone v0.14.0 — fail-closed REGISTER response coordinator
 
 - [x] Model MIC-checked REGISTER 200 separately from server-verified sign-in.
