@@ -396,10 +396,11 @@ mod tests {
             assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"),
                 "duplicate alias must not authorize certificate identity: {uri}");
         }
-        assert_eq!(
-            sip_uri_host("sip:example.com;%66oo=1;bar=2"),
-            Some("example.com")
-        );
+        let distinct = "sip:example.com;%66oo=1;bar=2";
+        assert_eq!(sip_uri_host(distinct), Some("example.com"));
+        // Canonicalizing escaped names must not reject distinct parameters.
+        assert!(match_sip_sans(&[GeneralName::URI(distinct)], "example.com"));
+        assert!(!match_sip_sans(&[GeneralName::URI(distinct)], "other.example"));
     }
 
     #[test]
