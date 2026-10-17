@@ -46,3 +46,9 @@ Referenz: [Microsoft Windows Full Client feature comparison](https://learn.micro
 - `im-history`: flüchtiger, begrenzter Gesprächsverlauf (128 Einträge) mit Löschfunktion und Tests für Überlauf und Steuerzeichen; **keine** Dateispeicherung, Serververbindung oder geräteübergreifende Synchronisierung.
 
 Quellpfad `crates/commscraft-core/src/client_offline.rs`; Testfixtures `client_offline::tests::*`. Normative Orientierung: [RFC 3261 (June 2002) §19](https://www.rfc-editor.org/rfc/rfc3261), [RFC 3856 (August 2004) §§3–4](https://www.rfc-editor.org/rfc/rfc3856), [RFC 3428 (December 2002) §3](https://www.rfc-editor.org/rfc/rfc3428); die lokalen Modelle implementieren **keine** Netzprotokollkonformität. Ergebnisse des neueren SHA sind bis zum CI-Abschluss noch nicht bestätigt.
+
+## Additional offline code under validation — not yet counted in matrix
+
+The following three bounded APIs have been added in `crates/commscraft-core/src/local_features.rs`: local address-card search (`contact-search`), local privacy relation drafts (`contact-privacy`), and HTML-escaped text preview (`im-richtext`). All are offline-only; they do not implement Microsoft server search, privacy enforcement or rich-text messaging. Tests cover malformed data, case-insensitive lookups, duplicate entries and markup escaping. **The central FEATURE_PARITY.json registry is still authoritative and must be updated only when the exact-head CI verifies these tests.** No claim of 13 registered features or live parity before that update.
+
+Context: Microsoft Open Specifications [MS-ABCH](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-abch/), [MS-PRES](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/), [MS-SIPRE](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/). These local-only models implement no normative network behavior. Source commit `3741724aef4efb3cd0c57130de6b23f4a698ea87`; test execution still pending.
