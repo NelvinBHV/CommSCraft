@@ -401,6 +401,16 @@ mod tests {
         // Canonicalizing escaped names must not reject distinct parameters.
         assert!(match_sip_sans(&[GeneralName::URI(distinct)], "example.com"));
         assert!(!match_sip_sans(&[GeneralName::URI(distinct)], "other.example"));
+        // Reserved octets are not decoded to separators: distinct encoded
+        // and literal parameter names must not become false duplicates.
+        let encoded_reserved = "sip:example.com;foo%2Fbar=one;foo%3Fbar=two";
+        assert_eq!(sip_uri_host(encoded_reserved), Some("example.com"));
+        assert!(match_sip_sans(
+            &[GeneralName::URI(encoded_reserved)], "example.com"
+        ));
+        assert!(!match_sip_sans(
+            &[GeneralName::URI(encoded_reserved)], "other.example"
+        ));
     }
 
     #[test]
