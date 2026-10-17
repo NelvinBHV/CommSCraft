@@ -393,7 +393,7 @@
           "published": "2025-05-20",
           "section": "not-applicable-local-only",
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confim/",
-          "review": "published_revision_confirmed_section_unverified"
+          "review": "context_only_not_implemented"
         }
       ],
       "requirement_evidence": "NO_CLAIM",
@@ -433,7 +433,7 @@
           "published": "2025-05-20",
           "section": "not-applicable-local-only",
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
-          "review": "published_revision_confirmed_section_unverified"
+          "review": "context_only_not_implemented"
         }
       ],
       "requirement_evidence": "NO_CLAIM",
@@ -453,7 +453,7 @@
           "published": "2025-05-20",
           "section": "not-applicable-local-only",
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
-          "review": "published_revision_confirmed_section_unverified"
+          "review": "context_only_not_implemented"
         }
       ],
       "requirement_evidence": "NO_CLAIM",
@@ -513,7 +513,7 @@
           "published": "2025-05-20",
           "section": "not-applicable-local-only",
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
-          "review": "published_revision_confirmed_section_unverified"
+          "review": "context_only_not_implemented"
         }
       ],
       "requirement_evidence": "NO_CLAIM",
@@ -533,7 +533,7 @@
           "published": "2025-05-20",
           "section": "not-applicable-local-only",
           "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
-          "review": "published_revision_confirmed_section_unverified"
+          "review": "context_only_not_implemented"
         }
       ],
       "requirement_evidence": "NO_CLAIM",
