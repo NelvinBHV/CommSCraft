@@ -5,25 +5,25 @@
 | Kennzahl | Wert |
 | --- | ---: |
 | Erfasste Full-Client-Funktionsanforderungen | **122** |
-| Davon als Offline-Teilimplementierung registriert | **7 (5,7 %)** |
-| Als noch nicht begonnen registriert | **115 (94,3 %)** |
+| Davon als Offline-Teilimplementierung registriert | **10 (8,2 %)** |
+| Als noch nicht begonnen registriert | **112 (91,8 %)** |
 | Vollständig verifiziert registriert | **0 (0 %)** |
 | Unabhängige Windows-Referenzfälle | **93** |
 | Funktionen mit hinterlegten Interoperabilitätsbelegen | **0** |
 | Referenzfälle mit hinterlegten Interoperabilitätsbelegen | **0** |
 
-**Wichtig:** 5,7 % bedeutet *Anteil der Funktionsanforderungen mit registrierter Offline-Teilfunktion*, **nicht** „5,7 % funktionale Gleichwertigkeit zu Skype for Business“. Die Zahl der verifizierten Funktionen ist **0/122**. Ein grüner Rust-CI-Lauf bedeutet keine Anmeldung an einem echten Microsoft-Server.
+**Wichtig:** 8,2 % bedeutet *Anteil der Funktionsanforderungen mit registrierter Offline-Teilfunktion*, **nicht** „5,7 % funktionale Gleichwertigkeit zu Skype for Business“. Die Zahl der verifizierten Funktionen ist **0/122**. Ein grüner Rust-CI-Lauf bedeutet keine Anmeldung an einem echten Microsoft-Server.
 
 | Funktionsbereich | Gesamt | Offline-Teilfunktion | Verifiziert |
 | --- | ---: | ---: | ---: |
 | Identität / Anmeldung | 9 | 3 | 0 |
-| Kontakte / Präsenz | 22 | 1 | 0 |
-| Messaging | 17 | 1 | 0 |
+| Kontakte / Präsenz | 22 | 3 | 0 |
+| Messaging | 17 | 2 | 0 |
 | Sprache / Telefonie | 23 | 0 | 0 |
 | Video / Medien | 5 | 1 | 0 |
 | Konferenzen / Freigaben | 35 | 0 | 0 |
 | Client / Plattform | 11 | 1 | 0 |
-| **Gesamt** | **122** | **7** | **0** |
+| **Gesamt** | **122** | **10** | **0** |
 
 ## Reproduzierbare Fortschrittsmessung
 
@@ -38,3 +38,11 @@
 Quellcode zu einem Feature kann existieren, obwohl das konservative Matrix-Register es noch als `not_started` führt. Für `verified` genügt weder vorhandener Rust-Code, synthetisches MIC, ein 200-OK-Parser noch die offline getestete RFC-5922-SAN-Prüfung. Erforderlich sind unabhängige echte Windows-Full-Client-Referenzfälle, richtige und verweigerte Policies, Sicherheit und Recovery; `docs/release-policy.md` bleibt verbindlich. Die 93 Referenzszenarien sind **nicht** proportional auf die 122 Feature-Einträge zu verteilen. Keine frei erfundene Gesamt-Prozentparität.
 
 Referenz: [Microsoft Windows Full Client feature comparison](https://learn.microsoft.com/en-us/skypeforbusiness/plan/feature-comparison); `docs/release-policy.md`; `ROADMAP.md`.
+
+## Neue Teilfunktionen (Quelle, keine Server-Parität)
+
+- `contact-groups`: lokale Kontaktgruppen und Mitgliedschaft, begrenzt auf 128 Gruppen/Mitglieder, negative Tests für Duplikate, fehlende Gruppen und Steuerzeichen.
+- `presence-publish`: lokale, validierte Verfügbarkeits-/Notiz-Entwürfe; **kein** SIP PUBLISH oder authentifizierte Zustandsübermittlung.
+- `im-history`: flüchtiger, begrenzter Gesprächsverlauf (128 Einträge) mit Löschfunktion und Tests für Überlauf und Steuerzeichen; **keine** Dateispeicherung, Serververbindung oder geräteübergreifende Synchronisierung.
+
+Quellpfad `crates/commscraft-core/src/client_offline.rs`; Testfixtures `client_offline::tests::*`. Normative Orientierung: [RFC 3261 (June 2002) §19](https://www.rfc-editor.org/rfc/rfc3261), [RFC 3856 (August 2004) §§3–4](https://www.rfc-editor.org/rfc/rfc3856), [RFC 3428 (December 2002) §3](https://www.rfc-editor.org/rfc/rfc3428); die lokalen Modelle implementieren **keine** Netzprotokollkonformität. Ergebnisse des neueren SHA sind bis zum CI-Abschluss noch nicht bestätigt.
