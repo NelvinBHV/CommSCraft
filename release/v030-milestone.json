@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "milestone": "v0.30.0",
+  "checks": {
+    "combined_san_ci_ubuntu": {
+      "outcome": "pending",
+      "note": "Not independently verified; see PR #35 and ROADMAP.md"
+    },
+    "combined_san_ci_windows": {
+      "outcome": "pending",
+      "note": "Not independently verified; see PR #35 and ROADMAP.md"
+    },
+    "combined_san_review": {
+      "outcome": "pending",
+      "note": "Not independently verified; see PR #35 and ROADMAP.md"
+    },
+    "sip_domain_tls_peer_binding": {
+      "outcome": "pending",
+      "note": "Not independently verified; see PR #35 and ROADMAP.md"
+    },
+    "spn_registration_binding": {
+      "outcome": "pending",
+      "note": "Not independently verified; see PR #35 and ROADMAP.md"
+    },
+    "hostile_input_offline_tests": {
+      "outcome": "pending",
+      "note": "Not independently verified; see PR #35 and ROADMAP.md"
+    },
+    "source_evidence_review": {
+      "outcome": "pending",
+      "note": "Not independently verified; see PR #35 and ROADMAP.md"
+    },
+    "provenance_format_review": {
+      "outcome": "pending",
+      "note": "Not independently verified; see PR #35 and ROADMAP.md"
+    },
+    "independent_security_review": {
+      "outcome": "pending",
+      "note": "Not independently verified; see PR #35 and ROADMAP.md"
+    }
+  }
+}

@@ -25,3 +25,15 @@ pub mod kerberos_mic;
 pub mod windows_sspi;
 
 pub mod inbound;
+
+pub mod client_offline;
+
+pub mod local_features;
+
+pub mod auxiliary_offline;
+
+pub mod interaction_offline;
+
+pub mod call_drafts;
+
+pub mod usability_offline;

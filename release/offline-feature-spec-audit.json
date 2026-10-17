@@ -1,0 +1,668 @@
+{
+  "schema_version": 1,
+  "baseline_sha": "973196b49b384ee1708bddb016cd1c2f9915f72f",
+  "meaning": "25 source-backed offline inventory entries; no feature marked specification-audited unless exact requirement, fixture and evidence independently checked",
+  "records": [
+    {
+      "id": "dns-discovery",
+      "source": "crates/commscraft-core/src/discovery.rs",
+      "tests": "discovery::tests::microsoft_names_cover_four_srv_services; discovery::tests::rejects_invalid_identity_or_hostnames",
+      "status": "offline_subset",
+      "normative_claim": "unverified_mapping",
+      "refs": [
+        {
+          "id": "RFC 2782",
+          "edition": "February 2000",
+          "section": "3",
+          "url": "https://www.rfc-editor.org/rfc/rfc2782#section-3",
+          "review": "reference_identified_not_requirement_audited"
+        },
+        {
+          "id": "MS-CONMGMT",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "UNVERIFIED",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-conmgmt/",
+          "review": "version_catalog_only_or_unverified"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "auth",
+      "source": "crates/commscraft-core/src/security.rs",
+      "tests": "security::tests::signed_response_establishes_then_replay_is_rejected; security::tests::invalid_signature_never_consumes_replay_number",
+      "status": "offline_subset",
+      "normative_claim": "unverified_mapping",
+      "refs": [
+        {
+          "id": "RFC 2743",
+          "edition": "January 2000",
+          "section": "2",
+          "url": "https://www.rfc-editor.org/rfc/rfc2743#section-2",
+          "review": "reference_identified_not_requirement_audited"
+        },
+        {
+          "id": "MS-SIPAE",
+          "edition": "11.0",
+          "published": "2025-05-20",
+          "section": "UNVERIFIED",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/",
+          "review": "version_catalog_only_or_unverified"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "register",
+      "source": "crates/commscraft-core/src/registration.rs",
+      "tests": "registration::tests::microsoft_register_has_required_identity_and_capability; registration::tests::ms_sipae_challenge_cannot_be_auto_authenticated",
+      "status": "offline_subset",
+      "normative_claim": "unverified_mapping",
+      "refs": [
+        {
+          "id": "RFC 3261",
+          "edition": "June 2002",
+          "section": "10",
+          "url": "https://www.rfc-editor.org/rfc/rfc3261#section-10",
+          "review": "reference_identified_not_requirement_audited"
+        },
+        {
+          "id": "MS-SIPREGE",
+          "edition": "17.1",
+          "published": "2025-08-19",
+          "section": "UNVERIFIED",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/",
+          "review": "version_catalog_only_or_unverified"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "presence-sub",
+      "source": "crates/commscraft-core/src/presence.rs",
+      "tests": "presence::tests::creates_unsigned_but_valid_subscribe; presence::tests::mismatched_or_unsupported_notify_does_not_advance_state",
+      "status": "offline_subset",
+      "normative_claim": "unverified_mapping",
+      "refs": [
+        {
+          "id": "RFC 6665",
+          "edition": "July 2012",
+          "section": "4.1",
+          "url": "https://www.rfc-editor.org/rfc/rfc6665#section-4.1",
+          "review": "reference_identified_not_requirement_audited"
+        },
+        {
+          "id": "MS-PRES",
+          "edition": "13.0",
+          "published": "2025-05-20",
+          "section": "UNVERIFIED",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "version_catalog_only_or_unverified"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "im-1to1",
+      "source": "crates/commscraft-core/src/im.rs",
+      "tests": "im::tests::invite_ack_message_and_sip_acceptance_not_read_receipt; im::tests::malformed_and_replayed_incoming_text_is_rejected",
+      "status": "offline_subset",
+      "normative_claim": "unverified_mapping",
+      "refs": [
+        {
+          "id": "RFC 3261",
+          "edition": "June 2002",
+          "section": "12",
+          "url": "https://www.rfc-editor.org/rfc/rfc3261#section-12",
+          "review": "reference_identified_not_requirement_audited"
+        },
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "UNVERIFIED",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "version_catalog_only_or_unverified"
+        },
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "UNVERIFIED",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "version_catalog_only_or_unverified"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "codecs",
+      "source": "crates/commscraft-core/src/sdp.rs",
+      "tests": "sdp::tests::inspection_does_not_negotiate_media; sdp::tests::rejects_truncated_and_malformed_sdp",
+      "status": "offline_subset",
+      "normative_claim": "unverified_mapping",
+      "refs": [
+        {
+          "id": "RFC 8866",
+          "edition": "January 2021",
+          "section": "5",
+          "url": "https://www.rfc-editor.org/rfc/rfc8866#section-5",
+          "review": "actual_sdp_structural_parsing_reference_not_full_rfc_conformance"
+        },
+        {
+          "id": "RFC 3264",
+          "edition": "June 2002",
+          "section": "5",
+          "url": "https://www.rfc-editor.org/rfc/rfc3264#section-5",
+          "review": "related_offer_answer_only_not_implemented"
+        },
+        {
+          "id": "MS-SDPEXT",
+          "edition": "16.0",
+          "published": "2025-05-20",
+          "section": "UNVERIFIED",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
+          "review": "published_revision_confirmed_section_unverified"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "windows-ui",
+      "source": "apps/commscraft/src/main.rs",
+      "tests": "no fixture identified; UI parity unverified",
+      "status": "offline_subset",
+      "normative_claim": "unverified_mapping",
+      "refs": [
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "UNVERIFIED",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "version_catalog_only_or_unverified"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "path corrected; no automated Windows UI behavioral fixture located",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "contact-groups",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "tests": "client_offline::tests::contact_group_rejects_duplicate_injection_and_missing_group",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-PRES",
+          "edition": "13.0",
+          "published": "2025-05-20",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "presence-publish",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "tests": "client_offline::tests::presence_draft_is_not_a_server_publication",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-PRES",
+          "edition": "13.0",
+          "published": "2025-05-20",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "im-history",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "tests": "client_offline::tests::history_is_bounded_and_can_be_wiped",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "contact-search",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "tests": "local_features::tests::directory_filters_case_insensitively_and_rejects_injection",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-ABCH",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-abch/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "contact-privacy",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "tests": "local_features::tests::privacy_draft_preserves_block_and_does_not_claim_server_policy",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-PRES",
+          "edition": "13.0",
+          "published": "2025-05-20",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "im-richtext",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "tests": "local_features::tests::preview_escapes_markup_and_rejects_control_characters",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "calendar-presence",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "tests": "auxiliary_offline::tests::calendar_rejects_overlaps_and_uses_half_open_interval",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-PRES",
+          "edition": "13.0",
+          "published": "2025-05-20",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "photos",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "tests": "auxiliary_offline::tests::photos_are_size_and_mime_bounded",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-PRES",
+          "edition": "13.0",
+          "published": "2025-05-20",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "distribution-groups",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "tests": "auxiliary_offline::tests::distribution_members_are_unique_and_bounded",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-ABCH",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-abch/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "im-multiparty",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "tests": "interaction_offline::tests::bounded_multiparty_roster",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFIM",
+          "edition": "11.0",
+          "published": "2025-05-20",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confim/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "im-file",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "tests": "interaction_offline::tests::file_drafts_do_not_move_files",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "audio-call",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "tests": "interaction_offline::tests::call_controls_require_connected_state_and_clear_on_end",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SDPEXT",
+          "edition": "16.0",
+          "published": "2025-05-20",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "hold",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "tests": "interaction_offline::tests::call_controls_require_connected_state_and_clear_on_end",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SDPEXT",
+          "edition": "16.0",
+          "published": "2025-05-20",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "forwarding",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests::forwarding_and_transfer_fail_closed",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "transfer",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests::forwarding_and_transfer_fail_closed",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "conference-roster",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests::roster_and_devices_are_bounded",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "15.0",
+          "published": "2025-05-20",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "devices",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests::roster_and_devices_are_bounded",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SDPEXT",
+          "edition": "16.0",
+          "published": "2025-05-20",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "call-history",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests::history_rejects_injection_and_overflow",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "published": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_names_found_in_source; per-normative assertion comparison not complete",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "presence-alerts",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests::alerts_reject_duplicate_and_injection",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-PRES",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_symbol_in_source; exact-head CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "im-tabs",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests::tabs_reject_duplicate_and_close_cleanly",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_symbol_in_source; exact-head CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "im-importance",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests::importance_rejects_control_characters",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_symbol_in_source; exact-head CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "notifications",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests::notifications_are_bounded",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_symbol_in_source; exact-head CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "meeting-lobby",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests::lobby_is_terminal",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "test_symbol_in_source; exact-head CI pending",
+      "normative_requirement_verified": false
+    }
+  ],
+  "audit_summary": {
+    "entries": 30,
+    "source_paths_corrected": true,
+    "exact_test_names_mapped": 29,
+    "source_only_ui_no_fixture": 1,
+    "normative_requirement_verified": 0,
+    "live_interoperability_verified": 0,
+    "methodology": "file+test symbol inspection; RFC primary sources; Microsoft edition catalog only for certain specifications; no revision-specific normative PDF assertion review"
+  }
+}
