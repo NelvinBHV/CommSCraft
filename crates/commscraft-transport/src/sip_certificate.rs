@@ -382,8 +382,12 @@ mod tests {
             "sip:example.com;foo=1;f%6Fo=2",
             "sip:example.com;%6Cr;lr",
             "sip:example.com;X%2DTrace=one;x-trace=two",
+            "sip:example.com;%54rAnSpOrT=tcp;transport=tls",
+            "sip:example.com;f%4Fo=one;F%6fo=two",
         ] {
             assert_eq!(sip_uri_host(uri), None, "{uri}");
+            assert!(!match_sip_sans(&[GeneralName::URI(uri)], "example.com"),
+                "duplicate alias must not authorize certificate identity: {uri}");
         }
         assert_eq!(
             sip_uri_host("sip:example.com;%66oo=1;bar=2"),
