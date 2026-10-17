@@ -27,3 +27,5 @@ pub mod windows_sspi;
 pub mod inbound;
 
 pub mod client_offline;
+
+pub mod local_features;
