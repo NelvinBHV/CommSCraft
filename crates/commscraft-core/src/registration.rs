@@ -437,6 +437,11 @@ fn unquote(s: &str) -> Result<&str, RegistrationError> {
 fn matching_binding(msg: &SipMessage, endpoint: &Endpoint)
     -> Result<(u32, Option<String>), RegistrationError>
 {
+    // Directly constructed SipMessage values must be bounded too; not all
+    // callers necessarily used the bounded SIP wire parser.
+    if msg.headers.len() > 128 || msg.headers.iter().any(|(_, v)| v.len() > 16 * 1024) {
+        return Err(RegistrationError::InvalidResponse);
+    }
     let default_expiry = unique_header(msg, "Expires")?
         .map(|s| parse_seconds(s).ok_or(RegistrationError::InvalidResponse))
         .transpose()?;
@@ -652,6 +657,33 @@ mod tests {
         let response = reply(&f2, 200, &[("Contact", own_no_expiry)]);
         assert_eq!(f2.observe(&response, 200),
             Err(RegistrationError::InvalidResponse));
+    }
+    #[test]
+    fn oversized_direct_response_headers_are_rejected_without_acceptance() {
+        let mut f = flow();
+        let own = "<sip:198.51.100.25>;expires=3600;+sip.instance=\"<urn:uuid:b43b3d1d-9f8f-5fdc-9f74-3ca273cadb97>\"";
+        let mut response = reply(&f, 200, &[("Contact", own)]);
+        for _ in 0..129 { response.headers.push(("X-Filler".into(), "x".into())); }
+        assert_eq!(f.observe(&response, 200), Err(RegistrationError::InvalidResponse));
+        assert_eq!(f.state(), RegisterState::Rejected);
+    }
+    #[test]
+    fn oversized_contact_header_is_rejected_without_acceptance() {
+        let mut f = flow();
+        let long = format!("<sip:host.example.com>;+sip.instance=\"<urn:uuid:{}>\";unused={}",
+            endpoint().instance_uuid, "a".repeat(16 * 1024));
+        let response = reply(&f, 200, &[("Contact", &long)]);
+        assert_eq!(f.observe(&response, 200), Err(RegistrationError::InvalidResponse));
+        assert_eq!(f.state(), RegisterState::Rejected);
+    }
+    #[test]
+    fn auth_retry_cseq_overflow_does_not_recycle_transaction_id() {
+        let mut f = RegisterFlow::new(endpoint(), u32::MAX, BRANCH1, 3600, 100).unwrap();
+        let challenge = reply(&f, 401, &[("WWW-Authenticate",
+            "NTLM realm=\"r\", targetname=\"sip.example.com\", version=3")]);
+        assert!(matches!(f.observe(&challenge, 200), Ok(RegisterOutcome::Challenge { .. })));
+        assert!(matches!(f.plan_authentication_retry(BRANCH2, 300),
+            Err(RegistrationError::ExhaustedCseq)));
     }
     #[test]
     fn response_matching_precedes_state_change() {
