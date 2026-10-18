@@ -37,3 +37,5 @@ pub mod interaction_offline;
 pub mod call_drafts;
 
 pub mod usability_offline;
+
+pub mod contacts_ui_offline;
