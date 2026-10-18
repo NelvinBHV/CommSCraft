@@ -1889,12 +1889,107 @@
       "requirement_evidence": "NO_CLAIM",
       "source_test_verification": "fixture authored; exact commit CI pending",
       "normative_requirement_verified": false
+    },
+    {
+      "id": "provision",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests::provisioning_rejects_invalid_host_and_normalizes",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPREGE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; latest SHA CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "certificates",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests::certificates_reject_bad_sha256_and_duplicate",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPAE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; latest SHA CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "federation",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests::federation_rejects_duplicate_and_bad_domains",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; latest SHA CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "persistent-chat",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests::persistent_chat_is_bounded_and_wipeable",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; latest SHA CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "packaging",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests::package_names_reject_paths_and_duplicates",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; latest SHA CI pending",
+      "normative_requirement_verified": false
     }
   ],
   "audit_summary": {
-    "entries": 95,
+    "entries": 100,
     "source_paths_corrected": true,
-    "exact_test_names_mapped": 94,
+    "exact_test_names_mapped": 99,
     "source_only_ui_no_fixture": 1,
     "normative_requirement_verified": 0,
     "live_interoperability_verified": 0,
