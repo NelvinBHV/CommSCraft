@@ -844,12 +844,107 @@
       "requirement_evidence": "NO_CLAIM",
       "source_test_verification": "fixture authored; exact-head CI pending",
       "normative_requirement_verified": false
+    },
+    {
+      "id": "meeting-qa",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests::qa_rejects_control_and_bounds_queue",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored, same-commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "meeting-disable-video",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests::media_disable_flags_fail_closed_locally",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored, same-commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "meeting-disable-im",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests::media_disable_flags_fail_closed_locally",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFIM",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confim/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored, same-commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "meeting-mute-audience",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests::audience_mute_switches_local_state",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored, same-commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "conference-gallery",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests::gallery_rejects_duplicate_and_missing_user",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored, same-commit CI pending",
+      "normative_requirement_verified": false
     }
   ],
   "audit_summary": {
-    "entries": 40,
+    "entries": 45,
     "source_paths_corrected": true,
-    "exact_test_names_mapped": 39,
+    "exact_test_names_mapped": 44,
     "source_only_ui_no_fixture": 1,
     "normative_requirement_verified": 0,
     "live_interoperability_verified": 0,
