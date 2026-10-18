@@ -1509,12 +1509,107 @@
       "requirement_evidence": "NO_CLAIM",
       "source_test_verification": "fixture authored; CI pending",
       "normative_requirement_verified": false
+    },
+    {
+      "id": "meeting-remote-control",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests::remote_control_preview_rejects_invalid_address",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; new HEAD CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "delegate-outbound",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests::delegated_outbound_rejects_duplicates_and_controls",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; new HEAD CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "delegate-inbound",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests::delegated_inbound_rejects_duplicates_and_controls",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; new HEAD CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "meeting-demote-all",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests::meeting_roles_reject_missing_and_duplicate_attendees",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; new HEAD CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "meeting-delegate-scheduling",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests::delegate_calendar_rejects_controls_and_duplicate_labels",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; new HEAD CI pending",
+      "normative_requirement_verified": false
     }
   ],
   "audit_summary": {
-    "entries": 75,
+    "entries": 80,
     "source_paths_corrected": true,
-    "exact_test_names_mapped": 74,
+    "exact_test_names_mapped": 79,
     "source_only_ui_no_fixture": 1,
     "normative_requirement_verified": 0,
     "live_interoperability_verified": 0,
