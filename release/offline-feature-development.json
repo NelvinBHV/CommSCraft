@@ -345,6 +345,46 @@
       "tests": "additional_meeting_offline::tests",
       "scope": "bounded local-only draft; no live Microsoft meeting, PSTN signaling or OneNote integration",
       "interop_evidence": []
+    },
+    {
+      "id": "presence-note-edit",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests",
+      "scope": "bounded local draft only; no authenticated Microsoft or third-party service interactions",
+      "interop_evidence": []
+    },
+    {
+      "id": "photos-public-url",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests",
+      "scope": "bounded local draft only; no authenticated Microsoft or third-party service interactions",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-inline-photos",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests",
+      "scope": "bounded local draft only; no authenticated Microsoft or third-party service interactions",
+      "interop_evidence": []
+    },
+    {
+      "id": "click-to-call",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests",
+      "scope": "bounded local draft only; no authenticated Microsoft or third-party service interactions",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-email-action",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests",
+      "scope": "bounded local draft only; no authenticated Microsoft or third-party service interactions",
+      "interop_evidence": []
     }
   ]
 }
