@@ -225,6 +225,46 @@
       "tests": "contacts_ui_offline::tests",
       "scope": "local bounded UI state only, no MS server presence, contact synchronization or interoperable messages",
       "interop_evidence": []
+    },
+    {
+      "id": "contacts-availability-sort",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests",
+      "scope": "bounded local prototype only; no SIP messaging, Microsoft services, dictionary engine or server policy",
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-layout",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests",
+      "scope": "bounded local prototype only; no SIP messaging, Microsoft services, dictionary engine or server policy",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-invite",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests",
+      "scope": "bounded local prototype only; no SIP messaging, Microsoft services, dictionary engine or server policy",
+      "interop_evidence": []
+    },
+    {
+      "id": "spellcheck",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests",
+      "scope": "bounded local prototype only; no SIP messaging, Microsoft services, dictionary engine or server policy",
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-prepop",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests",
+      "scope": "bounded local prototype only; no SIP messaging, Microsoft services, dictionary engine or server policy",
+      "interop_evidence": []
     }
   ]
 }
