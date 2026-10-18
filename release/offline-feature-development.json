@@ -185,6 +185,46 @@
       "tests": "usability_offline::tests",
       "scope": "bounded local prototype only; no transport, remote notifications, enterprise policy or SfB interoperability",
       "interop_evidence": []
+    },
+    {
+      "id": "presence-notes",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests",
+      "scope": "local bounded UI state only, no MS server presence, contact synchronization or interoperable messages",
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-location",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests",
+      "scope": "local bounded UI state only, no MS server presence, contact synchronization or interoperable messages",
+      "interop_evidence": []
+    },
+    {
+      "id": "recent-contacts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests",
+      "scope": "local bounded UI state only, no MS server presence, contact synchronization or interoperable messages",
+      "interop_evidence": []
+    },
+    {
+      "id": "contacts-sorting",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests",
+      "scope": "local bounded UI state only, no MS server presence, contact synchronization or interoperable messages",
+      "interop_evidence": []
+    },
+    {
+      "id": "current-conversations",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests",
+      "scope": "local bounded UI state only, no MS server presence, contact synchronization or interoperable messages",
+      "interop_evidence": []
     }
   ]
 }
