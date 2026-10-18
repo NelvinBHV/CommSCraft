@@ -47,3 +47,5 @@ pub mod meeting_controls_offline;
 pub mod additional_meeting_offline;
 
 pub mod communication_drafts_offline;
+
+pub mod client_operations_offline;
