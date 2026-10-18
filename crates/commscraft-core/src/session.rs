@@ -114,6 +114,15 @@ pub enum GateError {
     Mic(MicCheckedRegisterError),
 }
 
+/// Offline-only policy assessment, NOT a transport certificate-validation API.
+/// A caller-supplied flag is NOT proof of TLS identity or authenticated sign-in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OfflineTrustAssessment {
+    pub tls_peer_approved_by_fixture: bool,
+    pub mic_and_replay_checked: bool,
+    /// Always false: no production transport, GSS handshake or server trust anchor.
+    pub authenticated_sign_in: bool,
+}
 /// Intentionally not Clone and not a network object: no socket, packet send,
 /// credential token or "is_signed_in" method can be obtained from this gate.
 pub struct RegisterVerificationGate {
@@ -130,6 +139,14 @@ impl RegisterVerificationGate {
     pub fn request(&self) -> &SipMessage { self.flow.request() }
     pub fn state(&self) -> GateState { self.state }
     pub fn observed_register_state(&self) -> RegisterState { self.flow.state() }
+    pub fn offline_trust_assessment(&self, fixture_tls_peer_approved: bool) -> OfflineTrustAssessment {
+        OfflineTrustAssessment {
+            tls_peer_approved_by_fixture: fixture_tls_peer_approved,
+            mic_and_replay_checked: matches!(self.state, GateState::MicCheckedNotSignedIn | GateState::RemovalMicChecked),
+            authenticated_sign_in: false,
+        }
+    }
+
     pub fn highest_verified_server_sequence(&self) -> Option<u64> {
         self.association.highest_verified()
     }
@@ -365,6 +382,38 @@ mod tests {
         assert_eq!(gate.highest_verified_server_sequence(), Some(7));
         // An old response cannot enter another phase in this gate.
         assert_eq!(gate.observe(&reply, &verifier, 6), Err(GateError::Closed));
+    }
+    #[test]
+    fn offline_tls_gate_never_reports_authenticated_sign_in() {
+        let mut gate = gate();
+        let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
+        let reply = signed_200(&gate, 17);
+        let before = gate.offline_trust_assessment(false);
+        assert!(!before.mic_and_replay_checked);
+        assert!(!before.authenticated_sign_in);
+        assert!(gate.observe(&reply, &verifier, 5).is_ok());
+        let denied = gate.offline_trust_assessment(false);
+        assert!(denied.mic_and_replay_checked);
+        assert!(!denied.tls_peer_approved_by_fixture);
+        assert!(!denied.authenticated_sign_in);
+        let approved_fixture_only = gate.offline_trust_assessment(true);
+        assert!(approved_fixture_only.tls_peer_approved_by_fixture);
+        assert!(!approved_fixture_only.authenticated_sign_in);
+        gate.disconnect();
+        assert!(!gate.offline_trust_assessment(true).mic_and_replay_checked);
+    }
+    #[test]
+    fn synthetic_bad_mic_and_expired_sa_cannot_pass_trust_gate() {
+        let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
+        let mut invalid = gate();
+        let mut bad = signed_200(&invalid, 23);
+        bad.headers.iter_mut().find(|(k, _)| k == "Authentication-Info").unwrap().1.push('x');
+        assert!(invalid.observe(&bad, &verifier, 5).is_err());
+        assert!(!invalid.offline_trust_assessment(true).mic_and_replay_checked);
+        let mut expired = gate();
+        let valid = signed_200(&expired, 24);
+        assert!(expired.observe(&valid, &verifier, 8_000_000).is_err());
+        assert!(!expired.offline_trust_assessment(true).authenticated_sign_in);
     }
     #[test]
     fn bad_mic_in_synthetic_success_fails_closed() {
