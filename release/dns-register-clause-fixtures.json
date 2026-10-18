@@ -85,6 +85,20 @@
       "scope": "offline challenge state transition only; cannot authenticate or emit credentials",
       "ms": "MS-SIPAE §3.2.5.1; MS-SIPREGE §4.1.2 (example only)",
       "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/71b7e07d-505f-4ca6-9577-0a27bd12b0e9"
+    },
+    {
+      "id": "OFFLINE-RFC3261-DNS-REGISTER-SEQUENCE",
+      "feature": "register",
+      "document": "RFC 3261",
+      "edition": "June 2002",
+      "section": "10.2",
+      "url": "https://www.rfc-editor.org/rfc/rfc3261#section-10.2",
+      "source": "crates/commscraft-core/src/registration.rs",
+      "positive": "offline_discovery_register_challenge_refresh_unregistration_end_to_end",
+      "negative": "offline_discovery_register_timeout_and_replayed_response_fail_closed",
+      "scope": "synthetic DNS/SRV and SIP messages, no network, credentials, MIC or TLS connection",
+      "ms": "MS-SIPREGE §§4.1.1-4.1.2; MS-SIPAE §3.2.5.1 context only",
+      "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/"
     }
   ],
   "execution": "pending exact SHA GitHub Actions",
