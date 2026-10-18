@@ -465,6 +465,46 @@
       "tests": "client_admin_offline::tests",
       "scope": "bounded local-only preview; no live calls, server policy, archived recordings, Outlook contacts or interoperable protocols",
       "interop_evidence": []
+    },
+    {
+      "id": "meeting-file-upload",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "tests": "meeting_entry_offline::tests",
+      "scope": "in-memory UI draft only; no files, telephony, service invitation, presentation or transport integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-meet-now",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "tests": "meeting_entry_offline::tests",
+      "scope": "in-memory UI draft only; no files, telephony, service invitation, presentation or transport integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "powerpoint-navigation",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "tests": "meeting_entry_offline::tests",
+      "scope": "in-memory UI draft only; no files, telephony, service invitation, presentation or transport integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-anonymous-invite",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "tests": "meeting_entry_offline::tests",
+      "scope": "in-memory UI draft only; no files, telephony, service invitation, presentation or transport integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-dial-in",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "tests": "meeting_entry_offline::tests",
+      "scope": "in-memory UI draft only; no files, telephony, service invitation, presentation or transport integration",
+      "interop_evidence": []
     }
   ]
 }
