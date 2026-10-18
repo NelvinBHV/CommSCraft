@@ -1984,12 +1984,107 @@
       "requirement_evidence": "NO_CLAIM",
       "source_test_verification": "fixture authored; latest SHA CI pending",
       "normative_requirement_verified": false
+    },
+    {
+      "id": "pstn",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests::pstn_draft_rejects_bad_numbers",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; new commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "emergency",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests::emergency_draft_does_not_silently_acknowledge",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; new commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "video",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests::video_device_draft_rejects_duplicate_and_controls",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; new commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "ice",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests::ice_priority_draft_rejects_duplicate_and_zero",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-ICE2",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ice2/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; new commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "srtp",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests::srtp_suite_draft_rejects_unrecognized_labels",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SRTP",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-srtp/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; new commit CI pending",
+      "normative_requirement_verified": false
     }
   ],
   "audit_summary": {
-    "entries": 100,
+    "entries": 105,
     "source_paths_corrected": true,
-    "exact_test_names_mapped": 99,
+    "exact_test_names_mapped": 104,
     "source_only_ui_no_fixture": 1,
     "normative_requirement_verified": 0,
     "live_interoperability_verified": 0,
