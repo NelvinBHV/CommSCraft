@@ -43,6 +43,20 @@
       "scope": "offline timeout state machine; no retransmission over transport",
       "ms": "MS-SIPREGE (context only)",
       "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/"
+    },
+    {
+      "id": "RFC2782-BOUNDED-OFFLINE-ANSWER",
+      "feature": "dns-discovery",
+      "document": "RFC 2782",
+      "edition": "February 2000",
+      "section": "3",
+      "url": "https://www.rfc-editor.org/rfc/rfc2782#section-3",
+      "source": "crates/commscraft-core/src/discovery.rs",
+      "positive": "empty_dns_answers_keep_tls_only_fallback_and_unique_hosts",
+      "negative": "hostile_many_duplicate_service_answers_have_bounded_candidate_output",
+      "scope": "project-specific bounded-result hardening against untrusted DNS answers, not mandated count 256 by RFC",
+      "ms": "MS-CONMGMT §3.1.5 context only",
+      "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-conmgmt/40d79c10-2275-4e52-bb4b-67c703d092c3"
     }
   ],
   "execution": "pending exact SHA GitHub Actions",
