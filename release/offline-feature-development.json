@@ -305,6 +305,46 @@
       "tests": "meeting_controls_offline::tests",
       "scope": "bounded local meeting UI model; no conferencing server, enforceable moderation or protocol implementation",
       "interop_evidence": []
+    },
+    {
+      "id": "meeting-polls",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "tests": "additional_meeting_offline::tests",
+      "scope": "bounded local-only draft; no live Microsoft meeting, PSTN signaling or OneNote integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "whiteboard",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "tests": "additional_meeting_offline::tests",
+      "scope": "bounded local-only draft; no live Microsoft meeting, PSTN signaling or OneNote integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-scheduling",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "tests": "additional_meeting_offline::tests",
+      "scope": "bounded local-only draft; no live Microsoft meeting, PSTN signaling or OneNote integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "missed-calls",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "tests": "additional_meeting_offline::tests",
+      "scope": "bounded local-only draft; no live Microsoft meeting, PSTN signaling or OneNote integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "onenote-notes",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "tests": "additional_meeting_offline::tests",
+      "scope": "bounded local-only draft; no live Microsoft meeting, PSTN signaling or OneNote integration",
+      "interop_evidence": []
     }
   ]
 }
