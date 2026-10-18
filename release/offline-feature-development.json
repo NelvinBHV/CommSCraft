@@ -545,6 +545,46 @@
       "tests": "advanced_client_offline::tests",
       "scope": "in-memory UI preview only; no real telephony, server delegation, meeting broadcast or policy routing",
       "interop_evidence": []
+    },
+    {
+      "id": "meeting-remote-control",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests",
+      "scope": "in-memory UI preview only; no server privileges, remote control, outbound calls, actual role demotion or calendar synchronization",
+      "interop_evidence": []
+    },
+    {
+      "id": "delegate-outbound",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests",
+      "scope": "in-memory UI preview only; no server privileges, remote control, outbound calls, actual role demotion or calendar synchronization",
+      "interop_evidence": []
+    },
+    {
+      "id": "delegate-inbound",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests",
+      "scope": "in-memory UI preview only; no server privileges, remote control, outbound calls, actual role demotion or calendar synchronization",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-demote-all",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests",
+      "scope": "in-memory UI preview only; no server privileges, remote control, outbound calls, actual role demotion or calendar synchronization",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-delegate-scheduling",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests",
+      "scope": "in-memory UI preview only; no server privileges, remote control, outbound calls, actual role demotion or calendar synchronization",
+      "interop_evidence": []
     }
   ]
 }
