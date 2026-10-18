@@ -551,6 +551,23 @@ mod tests {
         });
     }
     #[test]
+    fn rfc3261_423_rejects_duplicate_min_expires_fail_closed() {
+        let mut f = flow();
+        let response = reply(&f, 423, &[("Min-Expires", "7200"), ("Min-Expires", "8000")]);
+        assert_eq!(f.observe(&response, 200), Err(RegistrationError::DuplicateHeader));
+        assert_eq!(f.state(), RegisterState::Rejected);
+        assert!(matches!(f.plan_interval_retry(BRANCH2, 300), Err(RegistrationError::InvalidState)));
+    }
+    #[test]
+    fn rfc3261_423_rejects_invalid_or_nonincreasing_min_expires() {
+        for value in ["0", "3600", "not-a-number", "86401"] {
+            let mut f = flow();
+            let response = reply(&f, 423, &[("Min-Expires", value)]);
+            assert_eq!(f.observe(&response, 200), Err(RegistrationError::InvalidMinExpires));
+            assert_eq!(f.state(), RegisterState::Rejected);
+        }
+    }
+    #[test]
     fn rfc_423_creates_new_transaction_with_new_cseq_and_branch() {
         let mut f = flow();
         let provisional = reply(&f, 100, &[]);
