@@ -71,6 +71,20 @@
       "scope": "conservative offline syntax gate before instance matching; not full SIP URI grammar or authenticated acceptance",
       "ms": "MS-SIPREGE §4.1.1 illustrative registration response only",
       "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/bc4b0245-339d-490c-ba67-2410e1513ed9"
+    },
+    {
+      "id": "MS-SIPAE-CHALLENGE-SAFE-RETRY",
+      "feature": "register",
+      "document": "RFC 3261",
+      "edition": "June 2002",
+      "section": "22",
+      "url": "https://www.rfc-editor.org/rfc/rfc3261#section-22",
+      "source": "crates/commscraft-core/src/registration.rs",
+      "positive": "supported_407_challenge_retry_retains_unregistration_intent",
+      "negative": "unsupported_only_401_407_challenges_fail_closed",
+      "scope": "offline challenge state transition only; cannot authenticate or emit credentials",
+      "ms": "MS-SIPAE §3.2.5.1; MS-SIPREGE §4.1.2 (example only)",
+      "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/71b7e07d-505f-4ca6-9577-0a27bd12b0e9"
     }
   ],
   "execution": "pending exact SHA GitHub Actions",
