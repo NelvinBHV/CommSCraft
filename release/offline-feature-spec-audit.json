@@ -749,12 +749,107 @@
       "requirement_evidence": "NO_CLAIM",
       "source_test_verification": "source fixture authored; CI pending",
       "normative_requirement_verified": false
+    },
+    {
+      "id": "contacts-availability-sort",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests::availability_sort_is_local_and_bounded",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-PRES",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact-head CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "contact-layout",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests::layout_is_just_local_preferences",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact-head CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "meeting-invite",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests::invite_draft_rejects_injection_and_duplicates",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact-head CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "spellcheck",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests::spelling_flags_do_not_claim_dictionary_check",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact-head CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "contact-prepop",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests::contact_prepopulation_is_deduplicated",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-ABCH",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-abch/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact-head CI pending",
+      "normative_requirement_verified": false
     }
   ],
   "audit_summary": {
-    "entries": 35,
+    "entries": 40,
     "source_paths_corrected": true,
-    "exact_test_names_mapped": 34,
+    "exact_test_names_mapped": 39,
     "source_only_ui_no_fixture": 1,
     "normative_requirement_verified": 0,
     "live_interoperability_verified": 0,
