@@ -584,6 +584,27 @@ mod tests {
         assert!(matches!(f.plan_interval_retry(BRANCH1, 300), Err(RegistrationError::InvalidIdentity)));
     }
     #[test]
+    fn rfc3261_423_retry_recovery_is_new_independent_transaction() {
+        let mut first = flow();
+        let response = reply(&first, 423, &[("Min-Expires", "7200")]);
+        assert_eq!(first.observe(&response, 200).unwrap(),
+            RegisterOutcome::IntervalTooBrief { minimum_seconds: 7200 });
+        let retry = first.plan_interval_retry(BRANCH2, 300).unwrap();
+        assert_eq!(retry.state(), RegisterState::AwaitingResponse);
+        assert_eq!(retry.request().header("Expires"), Some("7200"));
+        assert_ne!(retry.request().header("Via"), first.request().header("Via"));
+        assert_eq!(retry.request().header("Call-ID"), first.request().header("Call-ID"));
+        assert!(matches!(first.plan_refresh(BRANCH2, 301), Err(RegistrationError::InvalidState)));
+    }
+    #[test]
+    fn registration_timeout_disallows_refresh_or_retry_without_new_flow() {
+        let mut flow = flow();
+        assert_eq!(flow.tick(100 + crate::transaction::TIMER_F_MS), Some(RegisterOutcome::TimedOut));
+        assert!(matches!(flow.plan_refresh(BRANCH2, 500), Err(RegistrationError::InvalidState)));
+        assert!(matches!(flow.plan_interval_retry(BRANCH2, 500), Err(RegistrationError::InvalidState)));
+        assert!(matches!(flow.plan_authentication_retry(BRANCH2, 500), Err(RegistrationError::InvalidState)));
+    }
+    #[test]
     fn rejects_invalid_or_overlarge_min_expires() {
         for val in ["0", "3600", "invalid", "86401", " 7200 7"] {
             let mut f = flow();
