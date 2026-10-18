@@ -5,17 +5,23 @@ fn safe(s:&str)->bool{!s.is_empty()&&s.len()<=128&&!s.chars().any(char::is_contr
 fn sip(s:&str)->bool{safe(s)&&s.starts_with("sip:")&&s.matches('@').count()==1&&!s.bytes().any(|b|b.is_ascii_whitespace())}
 #[derive(Default)]pub struct DelegatePreview{delegates:Vec<String>}
 impl DelegatePreview{
- pub fn add(&mut self,uri:&str)->Result<(),Error>{if !sip(uri){return Err(Error::Invalid);}if self.delegates.iter().any(|x|x.eq_ignore_ascii_case(uri)){return Err(Error::Duplicate);}if self.delegates.len()>=LIMIT{return Err(Error::Capacity);}self.delegates.push(uri.into());Ok(())}
+ pub fn add(&mut self,uri:&str)->Result<(),Error>{if !sip(uri){return Err(Error::Invalid);}
+        if self.delegates.iter().any(|x|x.eq_ignore_ascii_case(uri)){return Err(Error::Duplicate);}
+        if self.delegates.len()>=LIMIT{return Err(Error::Capacity);}self.delegates.push(uri.into());Ok(())}
  pub fn entries(&self)->&[String]{&self.delegates}
 }
 #[derive(Default)]pub struct GroupPickupPreview{groups:Vec<String>}
 impl GroupPickupPreview{
- pub fn add(&mut self,name:&str)->Result<(),Error>{if !safe(name){return Err(Error::Invalid);}if self.groups.iter().any(|x|x.eq_ignore_ascii_case(name)){return Err(Error::Duplicate);}if self.groups.len()>=LIMIT{return Err(Error::Capacity);}self.groups.push(name.into());Ok(())}
+ pub fn add(&mut self,name:&str)->Result<(),Error>{if !safe(name){return Err(Error::Invalid);}
+        if self.groups.iter().any(|x|x.eq_ignore_ascii_case(name)){return Err(Error::Duplicate);}
+        if self.groups.len()>=LIMIT{return Err(Error::Capacity);}self.groups.push(name.into());Ok(())}
  pub fn names(&self)->&[String]{&self.groups}
 }
 #[derive(Default)]pub struct BroadcastPreview{audience:Vec<String>}
 impl BroadcastPreview{
- pub fn stage(&mut self,uri:&str)->Result<(),Error>{if !sip(uri){return Err(Error::Invalid);}if self.audience.iter().any(|x|x.eq_ignore_ascii_case(uri)){return Err(Error::Duplicate);}if self.audience.len()>=LIMIT{return Err(Error::Capacity);}self.audience.push(uri.into());Ok(())}
+ pub fn stage(&mut self,uri:&str)->Result<(),Error>{if !sip(uri){return Err(Error::Invalid);}
+        if self.audience.iter().any(|x|x.eq_ignore_ascii_case(uri)){return Err(Error::Duplicate);}
+        if self.audience.len()>=LIMIT{return Err(Error::Capacity);}self.audience.push(uri.into());Ok(())}
  pub fn audience(&self)->&[String]{&self.audience}
 }
 #[derive(Default)]pub struct VideoSpotlightPreview{spotlight:Option<String>}
