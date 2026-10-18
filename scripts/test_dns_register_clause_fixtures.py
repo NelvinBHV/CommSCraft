@@ -9,7 +9,7 @@ class DnsRegisterClauses(unittest.TestCase):
     def test_pinned_rfc_sections_and_fixture_symbols(self):
         data = json.loads((ROOT / "release/dns-register-clause-fixtures.json").read_text(encoding="utf-8"))
         rows = data["records"]
-        self.assertEqual(len(rows), 4)
+        self.assertEqual(len(rows), 5)
         self.assertEqual(len({r["id"] for r in rows}), len(rows))
         self.assertEqual(data["normative_full_feature_verified"], 0)
         self.assertEqual(data["microsoft_interoperability_verified"], 0)
