@@ -57,3 +57,5 @@ pub mod meeting_entry_offline;
 pub mod advanced_client_offline;
 
 pub mod delegate_meetings_offline;
+
+pub mod enterprise_preview_offline;
