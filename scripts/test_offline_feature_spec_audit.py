@@ -14,7 +14,7 @@ class SpecAudit(unittest.TestCase):
         records = audit["records"]
         self.assertEqual(len(records), len({r["id"] for r in records}))
         self.assertEqual({r["id"] for r in records}, wanted)
-        self.assertEqual(len(wanted), 50)
+        self.assertEqual(len(wanted), 55)
         self.assertEqual(audit["audit_summary"]["entries"], len(records))
         self.assertEqual(audit["audit_summary"]["exact_test_names_mapped"], len(records) - 1)
         for record in records:
