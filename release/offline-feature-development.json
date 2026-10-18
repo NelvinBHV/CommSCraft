@@ -745,6 +745,46 @@
       "tests": "preflight_offline::tests",
       "scope": "bounded in-memory preflight only, no provisioning, TLS validation, federation, persistent storage or Windows packaging",
       "interop_evidence": []
+    },
+    {
+      "id": "pstn",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests",
+      "scope": "in-memory UI draft only: no emergency routing, location service, live PSTN, camera access, ICE connectivity or SRTP crypto",
+      "interop_evidence": []
+    },
+    {
+      "id": "emergency",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests",
+      "scope": "in-memory UI draft only: no emergency routing, location service, live PSTN, camera access, ICE connectivity or SRTP crypto",
+      "interop_evidence": []
+    },
+    {
+      "id": "video",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests",
+      "scope": "in-memory UI draft only: no emergency routing, location service, live PSTN, camera access, ICE connectivity or SRTP crypto",
+      "interop_evidence": []
+    },
+    {
+      "id": "ice",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests",
+      "scope": "in-memory UI draft only: no emergency routing, location service, live PSTN, camera access, ICE connectivity or SRTP crypto",
+      "interop_evidence": []
+    },
+    {
+      "id": "srtp",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests",
+      "scope": "in-memory UI draft only: no emergency routing, location service, live PSTN, camera access, ICE connectivity or SRTP crypto",
+      "interop_evidence": []
     }
   ]
 }
