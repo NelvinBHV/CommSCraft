@@ -113,6 +113,20 @@
       "scope": "synthetic offline trust assessment with no ability to assert authenticated sign-in; TLS fixture verdict is not certificate validation",
       "ms": "MS-SIPAE §§3.2.1,3.2.5.2 (offline MIC context only)",
       "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/"
+    },
+    {
+      "id": "RFC5922-OFFLINE-TLS-IDENTITY-BOUNDARY",
+      "feature": "register",
+      "document": "RFC 5922",
+      "edition": "June 2010",
+      "section": "7.1-7.3",
+      "url": "https://www.rfc-editor.org/rfc/rfc5922#section-7",
+      "source": "crates/commscraft-core/src/tls_boundary.rs",
+      "positive": "offline_tls_valid_fixture_mic_replay_and_disconnect",
+      "negative": "offline_tls_rejects_unverified_chain_eku_hostname_and_peer",
+      "scope": "offline fixture contract only; does not parse X.509, validate actual PKIX, bind live TLS or authorize sign-in",
+      "ms": "MS-SIPAE revision 11.0 (2025-05-20), §3.2.5.2 context",
+      "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/ba3e9821-fa85-4e0f-a80c-5a4c720a00bd"
     }
   ],
   "execution": "pending exact SHA GitHub Actions",
