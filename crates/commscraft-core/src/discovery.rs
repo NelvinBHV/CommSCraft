@@ -169,7 +169,10 @@ impl DiscoveryPlan {
     }
 }
 
+const MAX_TLS_CANDIDATES: usize = 256;
+
 fn push_unique(result: &mut Vec<TlsCandidate>, candidate: TlsCandidate) {
+    if result.len() >= MAX_TLS_CANDIDATES { return; }
     if !result.iter().any(|c| c.host == candidate.host && c.port == candidate.port) {
         result.push(candidate);
     }
@@ -246,6 +249,28 @@ mod tests {
     fn malformed_srv_target_and_zero_port_rejected_without_candidates() {
         assert_eq!(SrvRecord::new(0, 10, 5061, "bad..example.com"), Err(DiscoveryError::InvalidSrvTarget));
         assert_eq!(SrvRecord::new(0, 10, 0, "ok.example.com"), Err(DiscoveryError::InvalidPort));
+    }
+    #[test]
+    fn hostile_many_duplicate_service_answers_have_bounded_candidate_output() {
+        let p = DiscoveryPlan::from_domain("example.com").unwrap();
+        let mut answers = Vec::new();
+        for i in 0..6u16 {
+            let records: Vec<_> = (0..200u16).map(|j| {
+                rr(0, 0, &format!("host-{i}-{j}.example.com"))
+            }).collect();
+            answers.push((Service::InternalTls, records));
+        }
+        let got = p.tls_candidates(&answers, &mut Draws(vec![]));
+        assert_eq!(got.len(), MAX_TLS_CANDIDATES);
+        assert_eq!(got[0].origin, CandidateOrigin::Srv(Service::InternalTls));
+        assert!(got.iter().all(|c| c.port != 0));
+    }
+    #[test]
+    fn empty_dns_answers_keep_tls_only_fallback_and_unique_hosts() {
+        let p = DiscoveryPlan::from_domain("example.com").unwrap();
+        let got = p.tls_candidates(&[], &mut Draws(vec![]));
+        assert_eq!(got.len(), 3);
+        assert!(got.iter().all(|c| c.port == 443 && c.origin == CandidateOrigin::Fallback));
     }
     #[test]
     fn never_includes_plaintext_dns_candidates() {
