@@ -67,3 +67,5 @@ pub mod client_services_offline;
 pub mod preflight_offline;
 
 pub mod media_preflight_offline;
+
+pub mod conference_media_previews_offline;
