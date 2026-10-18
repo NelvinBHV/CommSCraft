@@ -265,6 +265,46 @@
       "tests": "client_preferences_offline::tests",
       "scope": "bounded local prototype only; no SIP messaging, Microsoft services, dictionary engine or server policy",
       "interop_evidence": []
+    },
+    {
+      "id": "meeting-qa",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests",
+      "scope": "bounded local meeting UI model; no conferencing server, enforceable moderation or protocol implementation",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-disable-video",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests",
+      "scope": "bounded local meeting UI model; no conferencing server, enforceable moderation or protocol implementation",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-disable-im",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests",
+      "scope": "bounded local meeting UI model; no conferencing server, enforceable moderation or protocol implementation",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-mute-audience",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests",
+      "scope": "bounded local meeting UI model; no conferencing server, enforceable moderation or protocol implementation",
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-gallery",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests",
+      "scope": "bounded local meeting UI model; no conferencing server, enforceable moderation or protocol implementation",
+      "interop_evidence": []
     }
   ]
 }
