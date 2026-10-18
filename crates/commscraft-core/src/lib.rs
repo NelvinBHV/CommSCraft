@@ -65,3 +65,5 @@ pub mod collaboration_staging_offline;
 pub mod client_services_offline;
 
 pub mod preflight_offline;
+
+pub mod media_preflight_offline;
