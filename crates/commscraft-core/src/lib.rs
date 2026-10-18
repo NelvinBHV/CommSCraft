@@ -73,3 +73,5 @@ pub mod conference_media_previews_offline;
 pub mod enterprise_meeting_drafts_offline;
 
 pub mod safety_client_previews_offline;
+
+pub mod final_inventory_previews_offline;
