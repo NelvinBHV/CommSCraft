@@ -235,6 +235,11 @@ impl RegisterFlow {
         match code {
             401 | 407 => {
                 let offers = parse_challenges(response).map_err(|_| RegistrationError::InvalidResponse)?;
+                // An unsupported-only offer cannot produce a valid new
+                // authentication transaction; keep the flow terminal.
+                if offers.iter().all(|offer| offer.scheme == Scheme::Unsupported) {
+                    return Err(RegistrationError::InvalidResponse);
+                }
                 self.state = RegisterState::NeedsAuthentication;
                 Ok(RegisterOutcome::Challenge {
                     from: offers[0].source,
@@ -561,6 +566,33 @@ mod tests {
         assert_eq!(f.observe(&response, 200).unwrap(), RegisterOutcome::Challenge {
             from: ChallengeSource::Proxy, schemes: vec![Scheme::TlsDsk],
         });
+    }
+    #[test]
+    fn unsupported_only_401_407_challenges_fail_closed() {
+        for (code, header) in [(401, "WWW-Authenticate"), (407, "Proxy-Authenticate")] {
+            let mut f = flow();
+            let response = reply(&f, code, &[(header, "UnknownAuth realm=\"r\"")]);
+            assert_eq!(f.observe(&response, 200), Err(RegistrationError::InvalidResponse));
+            assert_eq!(f.state(), RegisterState::Rejected);
+            assert!(matches!(f.plan_authentication_retry(BRANCH2, 300), Err(RegistrationError::InvalidState)));
+        }
+    }
+    #[test]
+    fn supported_407_challenge_retry_retains_unregistration_intent() {
+        let mut f = flow();
+        let contact = format!("<sip:198.51.100.25>;expires=3600;+sip.instance=\"<urn:uuid:{}>\"", endpoint().instance_uuid);
+        let ok = reply(&f, 200, &[("Contact", &contact)]);
+        assert!(matches!(f.observe(&ok, 200), Ok(RegisterOutcome::AcceptanceReported { .. })));
+        let mut unreg = f.plan_unregistration(BRANCH2, 300).unwrap();
+        assert_eq!(unreg.request().header("Expires"), Some("0"));
+        let challenge = reply(&unreg, 407, &[("Proxy-Authenticate", "TLS-DSK realm=\"r\", targetname=\"sip.example.com\", version=4")]);
+        assert!(matches!(unreg.observe(&challenge, 400), Ok(RegisterOutcome::Challenge { .. })));
+        let branch3 = "z9hG4bK-branch-00000003";
+        let retry = unreg.plan_authentication_retry(branch3, 500).unwrap();
+        assert_eq!(retry.request().header("Expires"), Some("0"));
+        assert_eq!(retry.request().header("CSeq"), Some("5 REGISTER"));
+        assert_ne!(retry.request().header("Via"), unreg.request().header("Via"));
+        assert!(!retry.request().headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("Authorization")));
     }
     #[test]
     fn rfc3261_423_rejects_duplicate_min_expires_fail_closed() {
