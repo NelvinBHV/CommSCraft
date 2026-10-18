@@ -865,6 +865,46 @@
       "tests": "enterprise_meeting_drafts_offline::tests",
       "scope": "bounded in-memory staging only; no presentation transport, meeting commands, verified enterprise interoperability, authentication or actual response group calls",
       "interop_evidence": []
+    },
+    {
+      "id": "meeting-recording",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "tests": "safety_client_previews_offline::tests",
+      "scope": "in-memory display-only placeholders: no recording, emergency notification, safety dispatch, remote calls, second factor or authentication",
+      "interop_evidence": []
+    },
+    {
+      "id": "e911-sip-notify",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "tests": "safety_client_previews_offline::tests",
+      "scope": "in-memory display-only placeholders: no recording, emergency notification, safety dispatch, remote calls, second factor or authentication",
+      "interop_evidence": []
+    },
+    {
+      "id": "e911-distribution-notify",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "tests": "safety_client_previews_offline::tests",
+      "scope": "in-memory display-only placeholders: no recording, emergency notification, safety dispatch, remote calls, second factor or authentication",
+      "interop_evidence": []
+    },
+    {
+      "id": "external-calling",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "tests": "safety_client_previews_offline::tests",
+      "scope": "in-memory display-only placeholders: no recording, emergency notification, safety dispatch, remote calls, second factor or authentication",
+      "interop_evidence": []
+    },
+    {
+      "id": "mfa",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "tests": "safety_client_previews_offline::tests",
+      "scope": "in-memory display-only placeholders: no recording, emergency notification, safety dispatch, remote calls, second factor or authentication",
+      "interop_evidence": []
     }
   ]
 }
