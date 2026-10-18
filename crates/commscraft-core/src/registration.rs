@@ -677,13 +677,13 @@ mod tests {
         assert_eq!(f.state(), RegisterState::Rejected);
     }
     #[test]
-    fn auth_retry_cseq_overflow_does_not_recycle_transaction_id() {
-        let mut f = RegisterFlow::new(endpoint(), u32::MAX, BRANCH1, 3600, 100).unwrap();
+    fn auth_retry_cseq_boundary_rejects_out_of_range_new_transaction() {
+        let mut f = RegisterFlow::new(endpoint(), 2_147_483_647, BRANCH1, 3600, 100).unwrap();
         let challenge = reply(&f, 401, &[("WWW-Authenticate",
             "NTLM realm=\"r\", targetname=\"sip.example.com\", version=3")]);
         assert!(matches!(f.observe(&challenge, 200), Ok(RegisterOutcome::Challenge { .. })));
         assert!(matches!(f.plan_authentication_retry(BRANCH2, 300),
-            Err(RegistrationError::ExhaustedCseq)));
+            Err(RegistrationError::Transaction)));
     }
     #[test]
     fn response_matching_precedes_state_change() {
