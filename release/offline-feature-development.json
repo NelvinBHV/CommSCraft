@@ -585,6 +585,46 @@
       "tests": "delegate_meetings_offline::tests",
       "scope": "in-memory UI preview only; no server privileges, remote control, outbound calls, actual role demotion or calendar synchronization",
       "interop_evidence": []
+    },
+    {
+      "id": "exchange-contacts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "tests": "enterprise_preview_offline::tests",
+      "scope": "local bounded staging only: no Exchange, SharePoint, Outlook or response-group integration; no network",
+      "interop_evidence": []
+    },
+    {
+      "id": "skills-sharepoint-search",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "tests": "enterprise_preview_offline::tests",
+      "scope": "local bounded staging only: no Exchange, SharePoint, Outlook or response-group integration; no network",
+      "interop_evidence": []
+    },
+    {
+      "id": "response-group-search",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "tests": "enterprise_preview_offline::tests",
+      "scope": "local bounded staging only: no Exchange, SharePoint, Outlook or response-group integration; no network",
+      "interop_evidence": []
+    },
+    {
+      "id": "outlook-im-history",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "tests": "enterprise_preview_offline::tests",
+      "scope": "local bounded staging only: no Exchange, SharePoint, Outlook or response-group integration; no network",
+      "interop_evidence": []
+    },
+    {
+      "id": "outlook-delegate-sync",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "tests": "enterprise_preview_offline::tests",
+      "scope": "local bounded staging only: no Exchange, SharePoint, Outlook or response-group integration; no network",
+      "interop_evidence": []
     }
   ]
 }
