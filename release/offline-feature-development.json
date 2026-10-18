@@ -625,6 +625,46 @@
       "tests": "enterprise_preview_offline::tests",
       "scope": "local bounded staging only: no Exchange, SharePoint, Outlook or response-group integration; no network",
       "interop_evidence": []
+    },
+    {
+      "id": "persistent-chat-escalate",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "tests": "collaboration_staging_offline::tests",
+      "scope": "bounded in-memory staging only; no Microsoft server, media, file or collaborative sync",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-ink-receive",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "tests": "collaboration_staging_offline::tests",
+      "scope": "bounded in-memory staging only; no Microsoft server, media, file or collaborative sync",
+      "interop_evidence": []
+    },
+    {
+      "id": "app-sharing",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "tests": "collaboration_staging_offline::tests",
+      "scope": "bounded in-memory staging only; no Microsoft server, media, file or collaborative sync",
+      "interop_evidence": []
+    },
+    {
+      "id": "response-group-management",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "tests": "collaboration_staging_offline::tests",
+      "scope": "bounded in-memory staging only; no Microsoft server, media, file or collaborative sync",
+      "interop_evidence": []
+    },
+    {
+      "id": "powerpoint-sharing",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "tests": "collaboration_staging_offline::tests",
+      "scope": "bounded in-memory staging only; no Microsoft server, media, file or collaborative sync",
+      "interop_evidence": []
     }
   ]
 }
