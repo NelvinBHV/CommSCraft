@@ -235,6 +235,19 @@ mod tests {
         assert_eq!(result[0].target, "zero.example.com");
     }
     #[test]
+    fn srv_priority_is_preserved_after_retrying_weighted_group() {
+        let input = [rr(20, 5, "backup.example.com"),
+            rr(10, 1, "primary.example.com"), rr(10, 0, "zero.example.com")];
+        let result = order_srv(&input, &mut Draws(vec![0, 1, 1]));
+        assert_eq!(result.iter().map(|r| r.priority).collect::<Vec<_>>(), vec![10, 10, 20]);
+        assert_eq!(result.len(), input.len());
+    }
+    #[test]
+    fn malformed_srv_target_and_zero_port_rejected_without_candidates() {
+        assert_eq!(SrvRecord::new(0, 10, 5061, "bad..example.com"), Err(DiscoveryError::InvalidSrvTarget));
+        assert_eq!(SrvRecord::new(0, 10, 0, "ok.example.com"), Err(DiscoveryError::InvalidPort));
+    }
+    #[test]
     fn never_includes_plaintext_dns_candidates() {
         let p = DiscoveryPlan::from_domain("example.com").unwrap();
         let got = p.tls_candidates(&[
