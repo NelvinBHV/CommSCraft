@@ -825,6 +825,46 @@
       "tests": "conference_media_previews_offline::tests",
       "scope": "bounded in-memory staging only; no packet QoS, conference signaling, IM delivery, screen capture, VBSS or RDP",
       "interop_evidence": []
+    },
+    {
+      "id": "presentation",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "tests": "enterprise_meeting_drafts_offline::tests",
+      "scope": "bounded in-memory staging only; no presentation transport, meeting commands, verified enterprise interoperability, authentication or actual response group calls",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-controls",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "tests": "enterprise_meeting_drafts_offline::tests",
+      "scope": "bounded in-memory staging only; no presentation transport, meeting commands, verified enterprise interoperability, authentication or actual response group calls",
+      "interop_evidence": []
+    },
+    {
+      "id": "enterprise-interop",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "tests": "enterprise_meeting_drafts_offline::tests",
+      "scope": "bounded in-memory staging only; no presentation transport, meeting commands, verified enterprise interoperability, authentication or actual response group calls",
+      "interop_evidence": []
+    },
+    {
+      "id": "modern-auth",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "tests": "enterprise_meeting_drafts_offline::tests",
+      "scope": "bounded in-memory staging only; no presentation transport, meeting commands, verified enterprise interoperability, authentication or actual response group calls",
+      "interop_evidence": []
+    },
+    {
+      "id": "response-group-calls",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "tests": "enterprise_meeting_drafts_offline::tests",
+      "scope": "bounded in-memory staging only; no presentation transport, meeting commands, verified enterprise interoperability, authentication or actual response group calls",
+      "interop_evidence": []
     }
   ]
 }
