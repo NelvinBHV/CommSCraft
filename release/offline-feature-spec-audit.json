@@ -1034,12 +1034,107 @@
       "requirement_evidence": "NO_CLAIM",
       "source_test_verification": "fixture authored; CI execution pending",
       "normative_requirement_verified": false
+    },
+    {
+      "id": "presence-note-edit",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests::note_editor_rejects_injection",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-PRES",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "photos-public-url",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests::photo_url_requires_https_and_no_userinfo",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-PRES",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "im-inline-photos",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests::inline_image_ids_reject_control_and_duplicates",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "click-to-call",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests::dial_draft_rejects_invalid_numbers",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "im-email-action",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests::email_action_rejects_duplicate_and_bad_uri",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact commit CI pending",
+      "normative_requirement_verified": false
     }
   ],
   "audit_summary": {
-    "entries": 50,
+    "entries": 55,
     "source_paths_corrected": true,
-    "exact_test_names_mapped": 49,
+    "exact_test_names_mapped": 54,
     "source_only_ui_no_fixture": 1,
     "normative_requirement_verified": 0,
     "live_interoperability_verified": 0,
