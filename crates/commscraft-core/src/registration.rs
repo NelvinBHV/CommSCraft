@@ -454,6 +454,13 @@ fn matching_binding(msg: &SipMessage, endpoint: &Endpoint)
             if !contact[..start].trim().is_empty() { // Display name permitted, don't interpret it.
                 if contact[..start].len() > 256 { return Err(RegistrationError::InvalidResponse); }
             }
+            // Untrusted Contact URI must be syntactically plausible before
+            // endpoint-instance matching; a forged instance is not enough.
+            let uri = &contact[start+1..end];
+            if !uri.starts_with("sip:") || !safe_ascii(uri, 2048)
+                || uri.contains(&['<', '>', '"', ','][..]) {
+                return Err(RegistrationError::InvalidResponse);
+            }
             let params = contact[end+1..].trim();
             if !params.is_empty() && !params.starts_with(';') { return Err(RegistrationError::InvalidResponse); }
             let mut instance = None;
@@ -684,6 +691,27 @@ mod tests {
         assert!(matches!(f.observe(&challenge, 200), Ok(RegisterOutcome::Challenge { .. })));
         assert!(matches!(f.plan_authentication_retry(BRANCH2, 300),
             Err(RegistrationError::Transaction)));
+    }
+    #[test]
+    fn malformed_contact_uri_cannot_claim_our_instance() {
+        let instance = endpoint().instance_uuid;
+        for uri in ["", "https://evil.example", "sip:evil.example<spoof>"] {
+            let mut f = flow();
+            let contact = format!("<{uri}>;expires=3600;+sip.instance=\"<urn:uuid:{instance}>\"");
+            let response = reply(&f, 200, &[("Contact", &contact)]);
+            assert_eq!(f.observe(&response, 200), Err(RegistrationError::InvalidResponse));
+            assert_eq!(f.state(), RegisterState::Rejected);
+        }
+    }
+    #[test]
+    fn valid_contact_uri_can_report_unverified_binding() {
+        let mut f = flow();
+        let contact = format!("<sip:198.51.100.25:5061;transport=tls>;expires=3600;+sip.instance=\"<urn:uuid:{}>\"", endpoint().instance_uuid);
+        let response = reply(&f, 200, &[("Contact", &contact)]);
+        assert_eq!(f.observe(&response, 200), Ok(RegisterOutcome::AcceptanceReported {
+            expires_seconds: 3600, gruu: None
+        }));
+        assert_eq!(f.state(), RegisterState::UnverifiedAcceptance);
     }
     #[test]
     fn response_matching_precedes_state_change() {
