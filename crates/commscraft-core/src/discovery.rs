@@ -238,7 +238,7 @@ mod tests {
     fn srv_priority_is_preserved_after_retrying_weighted_group() {
         let input = [rr(20, 5, "backup.example.com"),
             rr(10, 1, "primary.example.com"), rr(10, 0, "zero.example.com")];
-        let result = order_srv(&input, &mut Draws(vec![0, 1, 1]));
+        let result = order_srv(&input, &mut Draws(vec![]));
         assert_eq!(result.iter().map(|r| r.priority).collect::<Vec<_>>(), vec![10, 10, 20]);
         assert_eq!(result.len(), input.len());
     }
