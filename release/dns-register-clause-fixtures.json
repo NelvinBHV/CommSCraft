@@ -57,6 +57,20 @@
       "scope": "project-specific bounded-result hardening against untrusted DNS answers, not mandated count 256 by RFC",
       "ms": "MS-CONMGMT §3.1.5 context only",
       "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-conmgmt/40d79c10-2275-4e52-bb4b-67c703d092c3"
+    },
+    {
+      "id": "RFC3261-CONTACT-URI-GUARD",
+      "feature": "register",
+      "document": "RFC 3261",
+      "edition": "June 2002",
+      "section": "20.10",
+      "url": "https://www.rfc-editor.org/rfc/rfc3261#section-20.10",
+      "source": "crates/commscraft-core/src/registration.rs",
+      "positive": "valid_contact_uri_can_report_unverified_binding",
+      "negative": "malformed_contact_uri_cannot_claim_our_instance",
+      "scope": "conservative offline syntax gate before instance matching; not full SIP URI grammar or authenticated acceptance",
+      "ms": "MS-SIPREGE §4.1.1 illustrative registration response only",
+      "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/bc4b0245-339d-490c-ba67-2410e1513ed9"
     }
   ],
   "execution": "pending exact SHA GitHub Actions",
