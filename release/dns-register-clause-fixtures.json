@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "scope": "Limited offline RFC test linkage; normative and MS interoperability not certified",
+  "records": [
+    {
+      "id": "RFC2782-PRIORITY-RECOVERY",
+      "feature": "dns-discovery",
+      "document": "RFC 2782",
+      "edition": "February 2000",
+      "section": "3",
+      "url": "https://www.rfc-editor.org/rfc/rfc2782#section-3",
+      "source": "crates/commscraft-core/src/discovery.rs",
+      "positive": "srv_priority_is_preserved_after_retrying_weighted_group",
+      "negative": "malformed_srv_target_and_zero_port_rejected_without_candidates",
+      "scope": "bounded in-memory ordering and record validation; not a live resolver",
+      "ms": "MS-CONMGMT §3.1.5",
+      "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-conmgmt/40d79c10-2275-4e52-bb4b-67c703d092c3"
+    },
+    {
+      "id": "RFC3261-423-RETRY-RECOVERY",
+      "feature": "register",
+      "document": "RFC 3261",
+      "edition": "June 2002",
+      "section": "10.2.8",
+      "url": "https://www.rfc-editor.org/rfc/rfc3261#section-10.2.8",
+      "source": "crates/commscraft-core/src/registration.rs",
+      "positive": "rfc3261_423_retry_recovery_is_new_independent_transaction",
+      "negative": "rfc3261_423_rejects_duplicate_min_expires_fail_closed",
+      "scope": "offline planner/observer only; no authenticated REGISTER or TLS peer validation",
+      "ms": "MS-SIPREGE §4.1.1 (example only)",
+      "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/bc4b0245-339d-490c-ba67-2410e1513ed9"
+    },
+    {
+      "id": "RFC3261-TIMEOUT-RECOVERY",
+      "feature": "register",
+      "document": "RFC 3261",
+      "edition": "June 2002",
+      "section": "17.1.2",
+      "url": "https://www.rfc-editor.org/rfc/rfc3261#section-17.1.2",
+      "source": "crates/commscraft-core/src/registration.rs",
+      "positive": "rfc_timer_f_expires",
+      "negative": "registration_timeout_disallows_refresh_or_retry_without_new_flow",
+      "scope": "offline timeout state machine; no retransmission over transport",
+      "ms": "MS-SIPREGE (context only)",
+      "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/"
+    }
+  ],
+  "execution": "pending exact SHA GitHub Actions",
+  "normative_full_feature_verified": 0,
+  "microsoft_interoperability_verified": 0
+}
