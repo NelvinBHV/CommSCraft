@@ -905,6 +905,22 @@
       "tests": "safety_client_previews_offline::tests",
       "scope": "in-memory display-only placeholders: no recording, emergency notification, safety dispatch, remote calls, second factor or authentication",
       "interop_evidence": []
+    },
+    {
+      "id": "certificate-auth",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/final_inventory_previews_offline.rs",
+      "tests": "final_inventory_previews_offline::tests",
+      "scope": "bounded in-memory metadata only; absolutely no certificate-based login, X.509 validation, call routing, concurrency/load proof or network activity",
+      "interop_evidence": []
+    },
+    {
+      "id": "high-volume-calls",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/final_inventory_previews_offline.rs",
+      "tests": "final_inventory_previews_offline::tests",
+      "scope": "bounded in-memory metadata only; absolutely no certificate-based login, X.509 validation, call routing, concurrency/load proof or network activity",
+      "interop_evidence": []
     }
   ]
 }
