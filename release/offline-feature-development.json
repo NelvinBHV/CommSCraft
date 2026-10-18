@@ -385,6 +385,46 @@
       "tests": "communication_drafts_offline::tests",
       "scope": "bounded local draft only; no authenticated Microsoft or third-party service interactions",
       "interop_evidence": []
+    },
+    {
+      "id": "accessibility",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "tests": "client_operations_offline::tests",
+      "scope": "bounded local-only UI or diagnostic metadata; no OS accessibility integration, identity provider sign-in, recording or server compliance",
+      "interop_evidence": []
+    },
+    {
+      "id": "logging",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "tests": "client_operations_offline::tests",
+      "scope": "bounded local-only UI or diagnostic metadata; no OS accessibility integration, identity provider sign-in, recording or server compliance",
+      "interop_evidence": []
+    },
+    {
+      "id": "sign-in-logs",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "tests": "client_operations_offline::tests",
+      "scope": "bounded local-only UI or diagnostic metadata; no OS accessibility integration, identity provider sign-in, recording or server compliance",
+      "interop_evidence": []
+    },
+    {
+      "id": "recording-resolution",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "tests": "client_operations_offline::tests",
+      "scope": "bounded local-only UI or diagnostic metadata; no OS accessibility integration, identity provider sign-in, recording or server compliance",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-recording-artifacts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "tests": "client_operations_offline::tests",
+      "scope": "bounded local-only UI or diagnostic metadata; no OS accessibility integration, identity provider sign-in, recording or server compliance",
+      "interop_evidence": []
     }
   ]
 }
