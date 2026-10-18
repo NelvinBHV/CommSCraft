@@ -61,3 +61,5 @@ pub mod delegate_meetings_offline;
 pub mod enterprise_preview_offline;
 
 pub mod collaboration_staging_offline;
+
+pub mod client_services_offline;
