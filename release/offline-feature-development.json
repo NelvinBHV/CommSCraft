@@ -705,6 +705,46 @@
       "tests": "client_services_offline::tests",
       "scope": "in-memory UI preview only; no telephony, voicemail, conference media, retention/compliance enforcement or public federation",
       "interop_evidence": []
+    },
+    {
+      "id": "provision",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests",
+      "scope": "bounded in-memory preflight only, no provisioning, TLS validation, federation, persistent storage or Windows packaging",
+      "interop_evidence": []
+    },
+    {
+      "id": "certificates",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests",
+      "scope": "bounded in-memory preflight only, no provisioning, TLS validation, federation, persistent storage or Windows packaging",
+      "interop_evidence": []
+    },
+    {
+      "id": "federation",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests",
+      "scope": "bounded in-memory preflight only, no provisioning, TLS validation, federation, persistent storage or Windows packaging",
+      "interop_evidence": []
+    },
+    {
+      "id": "persistent-chat",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests",
+      "scope": "bounded in-memory preflight only, no provisioning, TLS validation, federation, persistent storage or Windows packaging",
+      "interop_evidence": []
+    },
+    {
+      "id": "packaging",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests",
+      "scope": "bounded in-memory preflight only, no provisioning, TLS validation, federation, persistent storage or Windows packaging",
+      "interop_evidence": []
     }
   ]
 }
