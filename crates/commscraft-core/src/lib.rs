@@ -69,3 +69,5 @@ pub mod preflight_offline;
 pub mod media_preflight_offline;
 
 pub mod conference_media_previews_offline;
+
+pub mod enterprise_meeting_drafts_offline;
