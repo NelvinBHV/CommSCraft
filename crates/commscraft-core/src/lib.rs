@@ -51,3 +51,5 @@ pub mod communication_drafts_offline;
 pub mod client_operations_offline;
 
 pub mod client_admin_offline;
+
+pub mod meeting_entry_offline;
