@@ -13,6 +13,7 @@ pub mod sip;
 pub mod stream;
 pub mod transaction;
 pub mod security;
+pub mod tls_boundary;
 pub mod presence;
 pub mod im;
 pub mod sdp;
