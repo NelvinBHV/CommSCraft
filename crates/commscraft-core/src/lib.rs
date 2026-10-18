@@ -41,3 +41,5 @@ pub mod usability_offline;
 pub mod contacts_ui_offline;
 
 pub mod client_preferences_offline;
+
+pub mod meeting_controls_offline;
