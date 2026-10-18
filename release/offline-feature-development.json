@@ -425,6 +425,46 @@
       "tests": "client_operations_offline::tests",
       "scope": "bounded local-only UI or diagnostic metadata; no OS accessibility integration, identity provider sign-in, recording or server compliance",
       "interop_evidence": []
+    },
+    {
+      "id": "call-monitor",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "tests": "client_admin_offline::tests",
+      "scope": "bounded local-only preview; no live calls, server policy, archived recordings, Outlook contacts or interoperable protocols",
+      "interop_evidence": []
+    },
+    {
+      "id": "reliability",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "tests": "client_admin_offline::tests",
+      "scope": "bounded local-only preview; no live calls, server policy, archived recordings, Outlook contacts or interoperable protocols",
+      "interop_evidence": []
+    },
+    {
+      "id": "enterprise-policy",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "tests": "client_admin_offline::tests",
+      "scope": "bounded local-only preview; no live calls, server policy, archived recordings, Outlook contacts or interoperable protocols",
+      "interop_evidence": []
+    },
+    {
+      "id": "recording-archive-artifacts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "tests": "client_admin_offline::tests",
+      "scope": "bounded local-only preview; no live calls, server policy, archived recordings, Outlook contacts or interoperable protocols",
+      "interop_evidence": []
+    },
+    {
+      "id": "outlook-contacts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "tests": "client_admin_offline::tests",
+      "scope": "bounded local-only preview; no live calls, server policy, archived recordings, Outlook contacts or interoperable protocols",
+      "interop_evidence": []
     }
   ]
 }
