@@ -1794,12 +1794,107 @@
       "requirement_evidence": "NO_CLAIM",
       "source_test_verification": "fixture authored; new SHA CI pending",
       "normative_requirement_verified": false
+    },
+    {
+      "id": "callpark",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "tests": "client_services_offline::tests::park_labels_reject_duplicate_and_controls",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "voicemail",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "tests": "client_services_offline::tests::voicemail_metadata_rejects_paths_and_duplicates",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "conference-audio",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "tests": "client_services_offline::tests::meeting_audio_rejects_out_of_range_volume",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-CONFBAS",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-confbas/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "compliance",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "tests": "client_services_offline::tests::compliance_labels_reject_control_and_duplicate",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact commit CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "public-im",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "tests": "client_services_offline::tests::public_im_preview_rejects_bad_addresses",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-SIPRE",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "fixture authored; exact commit CI pending",
+      "normative_requirement_verified": false
     }
   ],
   "audit_summary": {
-    "entries": 90,
+    "entries": 95,
     "source_paths_corrected": true,
-    "exact_test_names_mapped": 89,
+    "exact_test_names_mapped": 94,
     "source_only_ui_no_fixture": 1,
     "normative_requirement_verified": 0,
     "live_interoperability_verified": 0,
