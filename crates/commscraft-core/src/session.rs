@@ -255,7 +255,8 @@ mod tests {
     use crate::security::TlsDskHmacSha256;
     use crate::sip::SipMessage;
 
-    fn gate() -> RegisterVerificationGate {
+    fn gate() -> RegisterVerificationGate { gate_with_sa_expiry(8_000_000) }
+    fn gate_with_sa_expiry(expiry_ms: u64) -> RegisterVerificationGate {
         let endpoint = Endpoint {
             aor: "sip:alice@example.com".into(),
             sent_by: "192.0.2.50:5061".into(),
@@ -275,7 +276,7 @@ mod tests {
             version: Some(4),
             sts_uri: None,
             gssapi_data: None,
-        }, 8_000_000).unwrap();
+        }, expiry_ms).unwrap();
         RegisterVerificationGate::new(flow, association)
     }
     fn matching_reply(gate: &RegisterVerificationGate, code: u16) -> SipMessage {
@@ -410,9 +411,10 @@ mod tests {
         bad.headers.iter_mut().find(|(k, _)| k == "Authentication-Info").unwrap().1.push('x');
         assert!(invalid.observe(&bad, &verifier, 5).is_err());
         assert!(!invalid.offline_trust_assessment(true).mic_and_replay_checked);
-        let mut expired = gate();
+        let mut expired = gate_with_sa_expiry(4);
         let valid = signed_200(&expired, 24);
-        assert!(expired.observe(&valid, &verifier, 8_000_000).is_err());
+        // Expire the security association BEFORE the 32-second SIP timer F.
+        assert!(expired.observe(&valid, &verifier, 5).is_err());
         assert!(!expired.offline_trust_assessment(true).authenticated_sign_in);
     }
     #[test]
