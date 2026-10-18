@@ -505,6 +505,46 @@
       "tests": "meeting_entry_offline::tests",
       "scope": "in-memory UI draft only; no files, telephony, service invitation, presentation or transport integration",
       "interop_evidence": []
+    },
+    {
+      "id": "delegation",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "tests": "advanced_client_offline::tests",
+      "scope": "in-memory UI preview only; no real telephony, server delegation, meeting broadcast or policy routing",
+      "interop_evidence": []
+    },
+    {
+      "id": "group-call-pickup",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "tests": "advanced_client_offline::tests",
+      "scope": "in-memory UI preview only; no real telephony, server delegation, meeting broadcast or policy routing",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-broadcast",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "tests": "advanced_client_offline::tests",
+      "scope": "in-memory UI preview only; no real telephony, server delegation, meeting broadcast or policy routing",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-video-spotlight",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "tests": "advanced_client_offline::tests",
+      "scope": "in-memory UI preview only; no real telephony, server delegation, meeting broadcast or policy routing",
+      "interop_evidence": []
+    },
+    {
+      "id": "location-routing",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "tests": "advanced_client_offline::tests",
+      "scope": "in-memory UI preview only; no real telephony, server delegation, meeting broadcast or policy routing",
+      "interop_evidence": []
     }
   ]
 }
