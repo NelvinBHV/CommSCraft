@@ -654,12 +654,107 @@
       "requirement_evidence": "NO_CLAIM",
       "source_test_verification": "test_symbol_in_source; exact-head CI pending",
       "normative_requirement_verified": false
+    },
+    {
+      "id": "presence-notes",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests::notes_reject_controls_and_clear",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-PRES",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source fixture authored; CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "presence-location",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests::locations_reject_untrusted_controls",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-PRES",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source fixture authored; CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "recent-contacts",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests::recents_are_unique_most_recent_first_and_bounded",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-ABCH",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-abch/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source fixture authored; CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "contacts-sorting",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests::contacts_sorted_stably_and_duplicates_denied",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-ABCH",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-abch/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source fixture authored; CI pending",
+      "normative_requirement_verified": false
+    },
+    {
+      "id": "current-conversations",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests::current_conversations_guard_state",
+      "status": "offline_subset",
+      "normative_claim": "none_local_only",
+      "refs": [
+        {
+          "id": "MS-OCSPROT",
+          "edition": "UNVERIFIED",
+          "section": "not-applicable-local-only",
+          "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/",
+          "review": "context_only_not_implemented"
+        }
+      ],
+      "requirement_evidence": "NO_CLAIM",
+      "source_test_verification": "source fixture authored; CI pending",
+      "normative_requirement_verified": false
     }
   ],
   "audit_summary": {
-    "entries": 30,
+    "entries": 35,
     "source_paths_corrected": true,
-    "exact_test_names_mapped": 29,
+    "exact_test_names_mapped": 34,
     "source_only_ui_no_fixture": 1,
     "normative_requirement_verified": 0,
     "live_interoperability_verified": 0,
