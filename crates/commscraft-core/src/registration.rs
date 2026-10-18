@@ -761,6 +761,91 @@ mod tests {
         assert_eq!(f.state(), RegisterState::TimedOut);
     }
     #[test]
+    fn offline_discovery_register_challenge_refresh_unregistration_end_to_end() {
+        use crate::discovery::{DiscoveryPlan, Service, SrvRecord, SrvRandom, CandidateOrigin};
+        struct ZeroDraw;
+        impl SrvRandom for ZeroDraw {
+            fn choose_inclusive(&mut self, _maximum: u32) -> u32 { 0 }
+        }
+        let discovery = DiscoveryPlan::from_sip_uri("sip:alice@example.com").unwrap();
+        let records = vec![SrvRecord::new(0, 1, 5061, "registrar.example.com").unwrap()];
+        let targets = discovery.tls_candidates(&[
+            (Service::InternalTcp, vec![SrvRecord::new(0, 1, 5060, "plaintext.example.com").unwrap()]),
+            (Service::InternalTls, records),
+        ], &mut ZeroDraw);
+        assert_eq!(targets[0].host, "registrar.example.com");
+        assert_eq!(targets[0].port, 5061);
+        assert_eq!(targets[0].origin, CandidateOrigin::Srv(Service::InternalTls));
+        assert!(targets.iter().all(|c| c.host != "plaintext.example.com"));
+
+        let mut registration = flow();
+        let first = reply(&registration, 401, &[("WWW-Authenticate",
+            "Kerberos realm=\"r\", targetname=\"sip/registrar.example.com\", version=3")]);
+        assert!(matches!(registration.observe(&first, 200),
+            Ok(RegisterOutcome::Challenge { from: ChallengeSource::Registrar, .. })));
+        assert_eq!(registration.state(), RegisterState::NeedsAuthentication);
+        assert!(matches!(registration.observe(&first, 201), Err(RegistrationError::InvalidState)));
+
+        let mut retry = registration.plan_authentication_retry(BRANCH2, 300).unwrap();
+        assert_eq!(retry.request().header("CSeq"), Some("4 REGISTER"));
+        assert!(!retry.request().headers.iter().any(|(k,_)| k == "Authorization"));
+        let binding = format!("<sip:198.51.100.25:5061;transport=tls>;expires=3600;+sip.instance=\"<urn:uuid:{}>\"",
+            endpoint().instance_uuid);
+        let ok = reply(&retry, 200, &[("Contact", &binding)]);
+        assert!(matches!(retry.observe(&ok, 400), Ok(RegisterOutcome::AcceptanceReported { expires_seconds: 3600, .. })));
+        assert_eq!(retry.state(), RegisterState::UnverifiedAcceptance);
+        assert_eq!(retry.observe(&ok, 401), Err(RegistrationError::InvalidState));
+
+        const BRANCH3: &str = "z9hG4bK-branch-00000003";
+        const BRANCH4: &str = "z9hG4bK-branch-00000004";
+        const BRANCH5: &str = "z9hG4bK-branch-00000005";
+        let mut refresh = retry.plan_refresh(BRANCH3, 500).unwrap();
+        assert_eq!(refresh.request().header("CSeq"), Some("5 REGISTER"));
+        assert_eq!(refresh.request().header("Expires"), Some("3600"));
+        let refreshed = reply(&refresh, 200, &[("Contact", &binding)]);
+        assert!(matches!(refresh.observe(&refreshed, 600), Ok(RegisterOutcome::AcceptanceReported { .. })));
+
+        let mut remove = refresh.plan_unregistration(BRANCH4, 700).unwrap();
+        assert_eq!(remove.request().header("Expires"), Some("0"));
+        assert_ne!(remove.request().header("Contact"), Some("*"));
+        let proxy = reply(&remove, 407, &[("Proxy-Authenticate",
+            "TLS-DSK realm=\"r\", targetname=\"registrar.example.com\", version=4")]);
+        assert!(matches!(remove.observe(&proxy, 800), Ok(RegisterOutcome::Challenge { from: ChallengeSource::Proxy, .. })));
+        let mut remove_retry = remove.plan_authentication_retry(BRANCH5, 900).unwrap();
+        assert_eq!(remove_retry.request().header("Expires"), Some("0"));
+        assert_eq!(remove_retry.request().header("CSeq"), Some("7 REGISTER"));
+        let removed = reply(&remove_retry, 200, &[]);
+        assert_eq!(remove_retry.observe(&removed, 1000), Ok(RegisterOutcome::UnregistrationReported));
+        assert_eq!(remove_retry.state(), RegisterState::UnverifiedUnregistration);
+        assert!(matches!(remove_retry.plan_refresh(BRANCH3, 1100), Err(RegistrationError::InvalidState)));
+    }
+
+    #[test]
+    fn offline_discovery_register_timeout_and_replayed_response_fail_closed() {
+        use crate::discovery::{DiscoveryPlan, Service, SrvRecord, SrvRandom};
+        struct ZeroDraw;
+        impl SrvRandom for ZeroDraw {
+            fn choose_inclusive(&mut self, _maximum: u32) -> u32 { 0 }
+        }
+        let discovery = DiscoveryPlan::from_domain("example.com").unwrap();
+        let candidates = discovery.tls_candidates(&[
+            (Service::InternalTcp, vec![SrvRecord::new(0, 1, 5060, "plaintext.example.com").unwrap()]),
+            (Service::InternalTls, vec![SrvRecord::new(0, 0, 5061, ".").unwrap()]),
+        ], &mut ZeroDraw);
+        assert_eq!(candidates.len(), 3);
+        assert!(candidates.iter().all(|x| x.port == 443));
+        let mut registration = flow();
+        let challenge = reply(&registration, 401, &[("WWW-Authenticate",
+            "NTLM realm=\"r\", targetname=\"sip.example.com\", version=3")]);
+        assert!(matches!(registration.observe(&challenge, 200), Ok(RegisterOutcome::Challenge { .. })));
+        let mut retry = registration.plan_authentication_retry(BRANCH2, 300).unwrap();
+        assert_eq!(retry.tick(300 + crate::transaction::TIMER_F_MS), Some(RegisterOutcome::TimedOut));
+        assert_eq!(retry.observe(&reply(&retry, 200, &[]), 300 + crate::transaction::TIMER_F_MS + 1),
+            Err(RegistrationError::InvalidState));
+        assert!(matches!(retry.plan_refresh(BRANCH1, 40000), Err(RegistrationError::InvalidState)));
+        assert!(matches!(retry.plan_unregistration(BRANCH1, 40000), Err(RegistrationError::InvalidState)));
+    }
+    #[test]
     fn validates_identity_and_input_instead_of_interpolating_unsafe_text() {
         let mut p = endpoint();
         p.aor = "sip:alice@example.com\r\nInjected: 1".into();
