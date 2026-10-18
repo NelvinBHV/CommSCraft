@@ -39,3 +39,5 @@ pub mod call_drafts;
 pub mod usability_offline;
 
 pub mod contacts_ui_offline;
+
+pub mod client_preferences_offline;
