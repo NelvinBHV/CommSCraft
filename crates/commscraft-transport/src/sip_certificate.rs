@@ -126,7 +126,7 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
     // hnv-unreserved = "[" / "]" / "/" / "?" / ":" / "+" / "$".
     if let Some((_, headers)) = remainder.split_once('?') {
         for header in headers.split('&') {
-            let Some((name, value)) = header.split_once('=') else { return None; };
+            let (name, value) = header.split_once('=')?;
             if !component_chars_valid(name, b"[]/?:+$")
                 || !component_chars_valid(value, b"[]/?:+$") {
                 return None;
