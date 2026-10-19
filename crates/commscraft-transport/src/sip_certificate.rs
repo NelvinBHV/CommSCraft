@@ -88,6 +88,51 @@ fn sip_uri_host(uri: &str) -> Option<&str> {
             index += 1;
         }
     }
+    // RFC 3261 (June 2002) §25.1: apply the ABNF character classes to
+    // every URI parameter and header, not just to the host and percent escapes.
+    // RFC 5922 (June 2010) §§7.1-7.3: malformed SIP URI SANs cannot
+    // authorize a TLS peer identity or enable fallback to a DNS SAN.
+    fn component_chars_valid(value: &str, extra: &[u8]) -> bool {
+        let bytes = value.as_bytes();
+        let mut i = 0;
+        while i < bytes.len() {
+            let b = bytes[i];
+            if b == b'%' {
+                // Percent-triplet syntax and escaped control bytes were
+                // checked for the entire URI above.
+                i += 3;
+                continue;
+            }
+            if !(b.is_ascii_alphanumeric() || b"-_.!~*'()".contains(&b)
+                || extra.contains(&b)) {
+                return false;
+            }
+            i += 1;
+        }
+        true
+    }
+    // paramchar = param-unreserved / unreserved / escaped;
+    // param-unreserved = "[" / "]" / "/" / ":" / "&" / "+" / "$".
+    if let Some((_, params)) = remainder.split('?').next()?.split_once(';') {
+        for param in params.split(';') {
+            let (name, value) = param.split_once('=').unwrap_or((param, ""));
+            if !component_chars_valid(name, b"[]/:&+$")
+                || !component_chars_valid(value, b"[]/:&+$") {
+                return None;
+            }
+        }
+    }
+    // hname/hvalue = 1*(hnv-unreserved / unreserved / escaped);
+    // hnv-unreserved = "[" / "]" / "/" / "?" / ":" / "+" / "$".
+    if let Some((_, headers)) = remainder.split_once('?') {
+        for header in headers.split('&') {
+            let Some((name, value)) = header.split_once('=') else { return None; };
+            if !component_chars_valid(name, b"[]/?:+$")
+                || !component_chars_valid(value, b"[]/?:+$") {
+                return None;
+            }
+        }
+    }
     // RFC 3261 §25.1: URI headers are nonempty hname=hvalue pairs.
     if let Some((_, headers)) = remainder.split_once('?') {
         if headers.split('&').count() > MAX_SIP_SAN_URI_COMPONENTS { return None; }
@@ -377,6 +422,36 @@ mod tests {
             &[GeneralName::DNSName("XN--BCHER-KVA.EXAMPLE.COM")],
             valid
         ));
+    }
+
+    #[test]
+    fn rfc3261_uri_san_parameter_and_header_character_classes() {
+        // RFC 3261 (June 2002) §25.1; RFC 5922 (June 2010) §§7.1-7.3.
+        for uri in [
+            "sip:example.com;foo={bar}",
+            "sip:example.com;foo=bar|baz",
+            "sip:example.com;foo=bar^baz",
+            "sip:example.com?subject={bar}",
+            "sip:example.com?subject=bar;baz",
+            "sip:example.com?subject=bar=again",
+            "sip:example.com?bad{name=value",
+            "sip:example.com;bad{name=value",
+        ] {
+            assert_eq!(sip_uri_host(uri), None, "{uri}");
+            assert!(!match_sip_sans(&[
+                GeneralName::URI(uri), GeneralName::DNSName("example.com"),
+            ], "example.com"), "no DNS SAN fallback: {uri}");
+        }
+        for uri in [
+            "sip:example.com;foo=[x]/:&+$",
+            "sip:example.com;foo=%7Bbar%7D",
+            "sip:example.com?subject=[x]/?:+$",
+            "sip:example.com?subject=hello%20world",
+            "sip:example.com;transport=tls?subject=ok&priority=high",
+        ] {
+            assert_eq!(sip_uri_host(uri), Some("example.com"), "{uri}");
+            assert!(match_sip_sans(&[GeneralName::URI(uri)], "example.com"));
+        }
     }
 
     #[test]
