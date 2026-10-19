@@ -127,6 +127,20 @@
       "scope": "offline fixture contract only; does not parse X.509, validate actual PKIX, bind live TLS or authorize sign-in",
       "ms": "MS-SIPAE revision 11.0 (2025-05-20), §3.2.5.2 context",
       "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/ba3e9821-fa85-4e0f-a80c-5a4c720a00bd"
+    },
+    {
+      "id": "SECURITY-BOUNDARY-V3-OFFLINE-CHAIN",
+      "feature": "register",
+      "document": "RFC 3261",
+      "edition": "June 2002",
+      "section": "10.2,17.1.2,22,26.3.1",
+      "url": "https://www.rfc-editor.org/rfc/rfc3261#section-26.3.1",
+      "source": "crates/commscraft-core/src/session.rs",
+      "positive": "security_boundary_v3_discovery_tls_register_signed_mic_replay_and_recovery",
+      "negative": "security_boundary_v3_bad_peer_mic_and_expiry_fail_closed",
+      "scope": "single synthetic Rust sequence integrating RFC2782 SRV planning, RFC5922-style peer report, existing HMAC MIC verifier, transaction binding, replay and reconnect; not X.509 or live authenticated login",
+      "ms": "MS-CONMGMT §3.1.5; MS-SIPAE §3.2.5.2; MS-SIPREGE §4.1.1 contextual only",
+      "ms_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/"
     }
   ],
   "execution": "pending exact SHA GitHub Actions",
