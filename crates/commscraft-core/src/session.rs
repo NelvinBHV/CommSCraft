@@ -418,6 +418,82 @@ mod tests {
         assert!(!expired.offline_trust_assessment(true).authenticated_sign_in);
     }
     #[test]
+    fn security_boundary_v3_discovery_tls_register_signed_mic_replay_and_recovery() {
+        use crate::discovery::{DiscoveryPlan, Service, SrvRecord, SrvRandom};
+        use crate::tls_boundary::{BoundaryError, FixturePeerReport, OfflineTlsBoundary};
+        struct ZeroDraw;
+        impl SrvRandom for ZeroDraw { fn choose_inclusive(&mut self, _: u32) -> u32 { 0 } }
+        let discovery = DiscoveryPlan::from_sip_uri("sip:alice@example.com").unwrap();
+        let candidates = discovery.tls_candidates(&[
+            (Service::InternalTcp, vec![SrvRecord::new(0, 0, 5060, "insecure.example.com").unwrap()]),
+            (Service::InternalTls, vec![SrvRecord::new(0, 1, 5061, "server.example.com").unwrap()]),
+        ], &mut ZeroDraw);
+        assert_eq!(candidates[0].host, "server.example.com");
+        assert_eq!(candidates[0].port, 5061);
+        assert!(!candidates.iter().any(|c| c.host == "insecure.example.com"));
+        let report = FixturePeerReport {
+            expected_sip_domain: discovery.sip_domain.clone(),
+            authenticated_sip_domain: "example.com".into(),
+            selected_tls_host: candidates[0].host.clone(),
+            reported_tls_host: "server.example.com".into(),
+            chain_validated: true, eku_approved: true,
+            generation: 10, expires_at_ms: 1000,
+        };
+        let mut tls = OfflineTlsBoundary::from_fixture(report.clone(), 0).unwrap();
+        let mut registration = gate();
+        let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
+        let response = signed_200(&registration, 31);
+        assert!(matches!(registration.observe(&response, &verifier, 5),
+            Ok(GateEvent::MicChecked(MicCheckedRegisterResult::RegistrarReportedBinding { .. }))));
+        assert_eq!(registration.highest_verified_server_sequence(), Some(31));
+        assert_eq!(tls.observe_offline_mic(10,
+            registration.offline_trust_assessment(true).mic_and_replay_checked, 31, 6), Ok(()));
+        assert_eq!(tls.observe_offline_mic(10, true, 31, 7), Err(BoundaryError::Replay));
+        assert_eq!(tls.observe_offline_mic(11, true, 32, 8), Err(BoundaryError::ConnectionChanged));
+        assert_eq!(tls.highest_mic_sequence(), Some(31));
+        assert!(!tls.authenticated_sign_in());
+        assert!(!registration.offline_trust_assessment(true).authenticated_sign_in);
+        registration.disconnect();
+        tls.disconnect();
+        assert_eq!(tls.observe_offline_mic(10, true, 32, 9), Err(BoundaryError::ConnectionChanged));
+        assert_eq!(registration.observe(&response, &verifier, 9), Err(GateError::Closed));
+        let mut recovered_report = report;
+        recovered_report.generation = 11;
+        let mut recovered_tls = OfflineTlsBoundary::from_fixture(recovered_report, 10).unwrap();
+        let mut recovered_registration = gate();
+        let new_response = signed_200(&recovered_registration, 32);
+        assert!(recovered_registration.observe(&new_response, &verifier, 11).is_ok());
+        assert_eq!(recovered_tls.observe_offline_mic(11, true, 32, 12), Ok(()));
+        assert!(!recovered_tls.authenticated_sign_in());
+    }
+
+    #[test]
+    fn security_boundary_v3_bad_peer_mic_and_expiry_fail_closed() {
+        use crate::tls_boundary::{BoundaryError, FixturePeerReport, OfflineTlsBoundary};
+        let report = FixturePeerReport {
+            expected_sip_domain: "example.com".into(),
+            authenticated_sip_domain: "example.com".into(),
+            selected_tls_host: "server.example.com".into(),
+            reported_tls_host: "attacker.example.com".into(),
+            chain_validated: true, eku_approved: true,
+            generation: 1, expires_at_ms: 15,
+        };
+        assert!(matches!(OfflineTlsBoundary::from_fixture(report.clone(), 0), Err(BoundaryError::PeerMismatch)));
+        let mut good = report;
+        good.reported_tls_host = "server.example.com".into();
+        let mut tls = OfflineTlsBoundary::from_fixture(good, 0).unwrap();
+        let mut registration = gate();
+        let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
+        let mut forged = signed_200(&registration, 50);
+        forged.headers.iter_mut().find(|(name,_)| name == "Authentication-Info").unwrap().1.push('f');
+        assert!(registration.observe(&forged, &verifier, 1).is_err());
+        assert_eq!(registration.highest_verified_server_sequence(), None);
+        assert_eq!(tls.observe_offline_mic(1, false, 50, 2), Err(BoundaryError::MicUnverified));
+        assert_eq!(tls.highest_mic_sequence(), None);
+        assert_eq!(tls.observe_offline_mic(1, true, 50, 15), Err(BoundaryError::Expired));
+        assert!(!tls.authenticated_sign_in());
+    }
+    #[test]
     fn bad_mic_in_synthetic_success_fails_closed() {
         let mut gate = gate();
         let mut reply = signed_200(&gate, 9);
