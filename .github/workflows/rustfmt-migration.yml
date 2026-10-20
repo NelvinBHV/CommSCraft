@@ -1,5 +1,5 @@
 name: One-time provenance-safe rustfmt migration
-# Retry after fixing compacted assignment-order assertion; fail-closed gates remain enforced.
+# Retry after TLS certificate DER contract whitespace fix; safety checks unchanged.
 
 on:
   push:
