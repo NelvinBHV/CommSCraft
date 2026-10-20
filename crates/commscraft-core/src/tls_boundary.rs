@@ -208,9 +208,8 @@ mod tests {
     #[test]
     fn fixture_binding_rejects_spn_transaction_generation_and_unverified_mic() {
         let branch = "z9hG4bK-offline-registration-1";
-        let mut binding = OfflineRegisterBinding::from_fixture(
-            report(), "sip/example.com", branch, 0
-        ).unwrap();
+        let mut binding =
+            OfflineRegisterBinding::from_fixture(report(), "sip/example.com", branch, 0).unwrap();
         assert!(!binding.authenticated_sign_in());
         assert_eq!(
             binding.observe_fixture_server_mic(1, "sip/attacker.example", branch, true, 1, 1),
@@ -246,21 +245,30 @@ mod tests {
 
     #[test]
     fn fixture_binding_rejects_untrusted_identity_and_bad_branch() {
-        for spn in ["sip/attacker.example", "HTTP/example.com", "sip/example.com.evil"] {
-            assert!(OfflineRegisterBinding::from_fixture(
-                report(), spn, "z9hG4bK-safe", 0
-            ).is_err());
+        for spn in [
+            "sip/attacker.example",
+            "HTTP/example.com",
+            "sip/example.com.evil",
+        ] {
+            assert!(
+                OfflineRegisterBinding::from_fixture(report(), spn, "z9hG4bK-safe", 0).is_err()
+            );
         }
         for branch in ["", "no-cookie", "z9hG4bK", "z9hG4bK\r\nInjected"] {
-            assert!(OfflineRegisterBinding::from_fixture(
-                report(), "sip/example.com", branch, 0
-            ).is_err());
+            assert!(
+                OfflineRegisterBinding::from_fixture(report(), "sip/example.com", branch, 0)
+                    .is_err()
+            );
         }
         let mut invalid = report();
         invalid.chain_validated = false;
         assert!(OfflineRegisterBinding::from_fixture(
-            invalid, "sip/example.com", "z9hG4bK-safe", 0
-        ).is_err());
+            invalid,
+            "sip/example.com",
+            "z9hG4bK-safe",
+            0
+        )
+        .is_err());
     }
 
     #[test]
