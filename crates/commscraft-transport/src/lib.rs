@@ -9,8 +9,8 @@
 //! A successful TLS handshake is NOT a Microsoft SIPAE Security Association.
 //! No public API exists to send SIP, credentials, or REGISTER requests.
 
-pub mod offline_session_identity;
 mod idna_policy;
+pub mod offline_session_identity;
 mod sip_certificate;
 use commscraft_core::inbound::{ReceiveError, ReceiveEvent, SipInbound};
 use native_tls::{TlsConnector, TlsStream};
