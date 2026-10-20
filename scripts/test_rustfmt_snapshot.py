@@ -25,6 +25,8 @@ class RustfmtSnapshotTests(unittest.TestCase):
             manifest = snapshot(ROOT, destination, paths)
             self.assertEqual(len(manifest["files"]), len(paths))
             self.assertEqual(verify(destination), 56)
+            # CI evidence for a blob-preserving permanent Git archive.
+            print("RUSTFMT_BASELINE_SHA256_JSON=" + json.dumps(manifest, sort_keys=True))
             self.assertEqual(
                 {row["path"]: row["sha256"] for row in manifest["files"]},
                 before,
