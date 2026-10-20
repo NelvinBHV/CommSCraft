@@ -20,3 +20,9 @@ This stage **does not run rustfmt or claim formatting success**. It prepares a v
 ## Evidence classification
 
 This audit is repository provenance checking only, **not** RFC 3261 / RFC 8866 conformance, authenticated sign-in, or interoperability. No production network test, release or merge is authorized.
+
+## Executed rustfmt diagnostic (GitHub Actions, 2026-10-19)
+
+On PR #38 exact head `34480a954574a68d7e463a6f7eef50d22cac73c9`, standard Ubuntu CI job `118151063724` in [run 39279531812](https://github.com/NelvinBHV/CommSCraft/actions/runs/39279531812) executed `cargo fmt --all -- --check`. The log contains **735 `Diff in` hunks across 58 unique Rust files**, including SIP, SDP, Windows SSPI, transport certificate identity and tests. The step displays `success` because `continue-on-error: true`; this **does not** mean formatting passed. The six workflow conclusions are green for the audit commit, not for strict rustfmt.
+
+Before any formatting, archive **the current pre-format bytes** of all 58 affected Rust files and a manifest of their exact SHA-256 digests; the historical import manifest and evidence ledgers must remain untouched. Then format, enforce strict Linux/Windows checks and rerun all offline/security tests on the formatted commit. Do not silently reclassify an advisory step as a pass.
