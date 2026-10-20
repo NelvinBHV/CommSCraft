@@ -13,7 +13,7 @@ class TlsSipIdentityContract(unittest.TestCase):
         self.assertIn("pub fn tls_reference_identity(&self)", source)
         self.assertIn("pub fn sip_domain(&self)", source)
         self.assertIn("tls.peer_certificate()", re.sub(r"\s+", "", source))
-        self.assertIn("cert.to_der()", source)
+        self.assertIn("cert.to_der()", re.sub(r"\s+", "", source))
         self.assertIn("idna::domain_to_ascii_strict(name)", source)
         self.assertIn("sip_certificate::matches_sip_identity(", source)
         self.assertNotIn("if cert.is_none()", source)
