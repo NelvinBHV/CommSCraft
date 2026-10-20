@@ -240,14 +240,8 @@ impl FixtureSessionCorrelation {
         if leaf_sha256 != &self.leaf_sha256 {
             return Err(BoundaryError::PeerMismatch);
         }
-        self.binding.observe_fixture_server_mic(
-            generation,
-            spn,
-            transaction,
-            mic.0,
-            mic.1,
-            mic.2,
-        )
+        self.binding
+            .observe_fixture_server_mic(generation, spn, transaction, mic.0, mic.1, mic.2)
     }
 
     pub fn disconnect(&mut self) {
