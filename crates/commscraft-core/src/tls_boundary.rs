@@ -190,6 +190,74 @@ impl OfflineRegisterBinding {
     }
 }
 
+/// A non-authorizing model of the evidence that a future transport/SA
+/// integration would need to keep bound to one TLS session. All inputs are
+/// synthetic fixtures: a fingerprint is NOT proof of PKIX verification.
+/// RFC 5922 (June 2010) §§7.1–7.3; RFC 3261 (June 2002) §17.1.3;
+/// MS-SIPAE §3.2.5.2. No live constructor or authentication capability.
+#[derive(Debug)]
+pub struct FixtureSessionCorrelation {
+    binding: OfflineRegisterBinding,
+    leaf_sha256: [u8; 32],
+    connection_generation: u64,
+    closed: bool,
+}
+
+impl FixtureSessionCorrelation {
+    pub fn from_fixture(
+        report: FixturePeerReport,
+        leaf_sha256: [u8; 32],
+        spn: &str,
+        transaction: &str,
+        now_ms: u64,
+    ) -> Result<Self, BoundaryError> {
+        if leaf_sha256 == [0; 32] {
+            return Err(BoundaryError::CertificateUnverified);
+        }
+        let connection_generation = report.generation;
+        let binding = OfflineRegisterBinding::from_fixture(report, spn, transaction, now_ms)?;
+        Ok(Self {
+            binding,
+            leaf_sha256,
+            connection_generation,
+            closed: false,
+        })
+    }
+
+    /// Every observation must name the SAME fixture certificate, connection,
+    /// SPN and transaction; a mismatch never advances the replay counter.
+    pub fn observe_fixture(
+        &mut self,
+        leaf_sha256: &[u8; 32],
+        generation: u64,
+        spn: &str,
+        transaction: &str,
+        mic_checked: bool,
+        sequence: u64,
+        now_ms: u64,
+    ) -> Result<(), BoundaryError> {
+        if self.closed || generation != self.connection_generation {
+            return Err(BoundaryError::ConnectionChanged);
+        }
+        if leaf_sha256 != &self.leaf_sha256 {
+            return Err(BoundaryError::PeerMismatch);
+        }
+        self.binding.observe_fixture_server_mic(
+            generation, spn, transaction, mic_checked, sequence, now_ms,
+        )
+    }
+
+    pub fn disconnect(&mut self) {
+        self.closed = true;
+        self.binding.disconnect();
+    }
+
+    /// Deliberately constant: no fixture can authorize real sign-in.
+    pub fn authenticated_sign_in(&self) -> bool {
+        false
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
