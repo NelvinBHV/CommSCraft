@@ -54,7 +54,8 @@ pub fn execute_offline(
 mod tests {
     use super::*;
 
-    const SAMPLE: &[u8] = b"v=0\r\no=- 1 1 IN IP4 192.0.2.1\r\ns=-\r\nt=0 0\r\nm=audio 49170 RTP/AVP 0\r\n";
+    const SAMPLE: &[u8] =
+        b"v=0\r\no=- 1 1 IN IP4 192.0.2.1\r\ns=-\r\nt=0 0\r\nm=audio 49170 RTP/AVP 0\r\n";
 
     fn allowed() -> CommandContext {
         CommandContext {
@@ -73,27 +74,65 @@ mod tests {
 
     #[test]
     fn deny_unknown_or_network_commands() {
-        for id in ["", "sip.register", "presence.publish", "diagnostics.inspect-sdp.v2"] {
-            assert_eq!(execute_offline(id, SAMPLE, allowed()), Err(CommandError::UnknownCommand));
+        for id in [
+            "",
+            "sip.register",
+            "presence.publish",
+            "diagnostics.inspect-sdp.v2",
+        ] {
+            assert_eq!(
+                execute_offline(id, SAMPLE, allowed()),
+                Err(CommandError::UnknownCommand)
+            );
         }
     }
 
     #[test]
     fn consent_and_policy_are_both_mandatory() {
         for (context, expected) in [
-            (CommandContext { user_consented: false, policy_allows: true }, CommandError::ConsentRequired),
-            (CommandContext { user_consented: true, policy_allows: false }, CommandError::PolicyDenied),
-            (CommandContext { user_consented: false, policy_allows: false }, CommandError::ConsentRequired),
+            (
+                CommandContext {
+                    user_consented: false,
+                    policy_allows: true,
+                },
+                CommandError::ConsentRequired,
+            ),
+            (
+                CommandContext {
+                    user_consented: true,
+                    policy_allows: false,
+                },
+                CommandError::PolicyDenied,
+            ),
+            (
+                CommandContext {
+                    user_consented: false,
+                    policy_allows: false,
+                },
+                CommandError::ConsentRequired,
+            ),
         ] {
-            assert_eq!(execute_offline(INSPECT_SDP_ID, SAMPLE, context), Err(expected));
+            assert_eq!(
+                execute_offline(INSPECT_SDP_ID, SAMPLE, context),
+                Err(expected)
+            );
         }
     }
 
     #[test]
     fn malformed_empty_and_oversized_inputs_fail_closed() {
-        assert_eq!(execute_offline(INSPECT_SDP_ID, b"", allowed()), Err(CommandError::InvalidInput));
-        assert_eq!(execute_offline(INSPECT_SDP_ID, b"v=0\n", allowed()), Err(CommandError::MalformedSdp));
+        assert_eq!(
+            execute_offline(INSPECT_SDP_ID, b"", allowed()),
+            Err(CommandError::InvalidInput)
+        );
+        assert_eq!(
+            execute_offline(INSPECT_SDP_ID, b"v=0\n", allowed()),
+            Err(CommandError::MalformedSdp)
+        );
         let huge = vec![b'a'; MAX_COMMAND_INPUT + 1];
-        assert_eq!(execute_offline(INSPECT_SDP_ID, &huge, allowed()), Err(CommandError::InputTooLarge));
+        assert_eq!(
+            execute_offline(INSPECT_SDP_ID, &huge, allowed()),
+            Err(CommandError::InputTooLarge)
+        );
     }
 }
