@@ -1,0 +1,926 @@
+{
+  "schema_version": 1,
+  "baseline": "FEATURE_PARITY.json is immutable historical evidence; this file records development-only partial source coverage",
+  "overrides": [
+    {
+      "id": "contact-groups",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "tests": "client_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-publish",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "tests": "client_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-history",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "tests": "client_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-search",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "tests": "local_features::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-privacy",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "tests": "local_features::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-richtext",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "tests": "local_features::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "calendar-presence",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "tests": "auxiliary_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "photos",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "tests": "auxiliary_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "distribution-groups",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "tests": "auxiliary_offline::tests",
+      "scope": "local offline-only subset; no Microsoft server interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-multiparty",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "tests": "interaction_offline::tests",
+      "scope": "local-only bounded draft; no SIP signaling, media, file transfer or Microsoft server interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-file",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "tests": "interaction_offline::tests",
+      "scope": "local-only bounded draft; no SIP signaling, media, file transfer or Microsoft server interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "audio-call",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "tests": "interaction_offline::tests",
+      "scope": "local-only bounded draft; no SIP signaling, media, file transfer or Microsoft server interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "hold",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "tests": "interaction_offline::tests",
+      "scope": "local-only bounded draft; no SIP signaling, media, file transfer or Microsoft server interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "forwarding",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests",
+      "scope": "bounded local planning data only; no SIP, server, media device access or interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "transfer",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests",
+      "scope": "bounded local planning data only; no SIP, server, media device access or interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-roster",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests",
+      "scope": "bounded local planning data only; no SIP, server, media device access or interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "devices",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests",
+      "scope": "bounded local planning data only; no SIP, server, media device access or interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "call-history",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "tests": "call_drafts::tests",
+      "scope": "bounded local planning data only; no SIP, server, media device access or interop",
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-alerts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests",
+      "scope": "bounded local prototype only; no transport, remote notifications, enterprise policy or SfB interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-tabs",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests",
+      "scope": "bounded local prototype only; no transport, remote notifications, enterprise policy or SfB interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-importance",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests",
+      "scope": "bounded local prototype only; no transport, remote notifications, enterprise policy or SfB interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "notifications",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests",
+      "scope": "bounded local prototype only; no transport, remote notifications, enterprise policy or SfB interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-lobby",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "tests": "usability_offline::tests",
+      "scope": "bounded local prototype only; no transport, remote notifications, enterprise policy or SfB interoperability",
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-notes",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests",
+      "scope": "local bounded UI state only, no MS server presence, contact synchronization or interoperable messages",
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-location",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests",
+      "scope": "local bounded UI state only, no MS server presence, contact synchronization or interoperable messages",
+      "interop_evidence": []
+    },
+    {
+      "id": "recent-contacts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests",
+      "scope": "local bounded UI state only, no MS server presence, contact synchronization or interoperable messages",
+      "interop_evidence": []
+    },
+    {
+      "id": "contacts-sorting",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests",
+      "scope": "local bounded UI state only, no MS server presence, contact synchronization or interoperable messages",
+      "interop_evidence": []
+    },
+    {
+      "id": "current-conversations",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "tests": "contacts_ui_offline::tests",
+      "scope": "local bounded UI state only, no MS server presence, contact synchronization or interoperable messages",
+      "interop_evidence": []
+    },
+    {
+      "id": "contacts-availability-sort",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests",
+      "scope": "bounded local prototype only; no SIP messaging, Microsoft services, dictionary engine or server policy",
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-layout",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests",
+      "scope": "bounded local prototype only; no SIP messaging, Microsoft services, dictionary engine or server policy",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-invite",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests",
+      "scope": "bounded local prototype only; no SIP messaging, Microsoft services, dictionary engine or server policy",
+      "interop_evidence": []
+    },
+    {
+      "id": "spellcheck",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests",
+      "scope": "bounded local prototype only; no SIP messaging, Microsoft services, dictionary engine or server policy",
+      "interop_evidence": []
+    },
+    {
+      "id": "contact-prepop",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "tests": "client_preferences_offline::tests",
+      "scope": "bounded local prototype only; no SIP messaging, Microsoft services, dictionary engine or server policy",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-qa",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests",
+      "scope": "bounded local meeting UI model; no conferencing server, enforceable moderation or protocol implementation",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-disable-video",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests",
+      "scope": "bounded local meeting UI model; no conferencing server, enforceable moderation or protocol implementation",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-disable-im",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests",
+      "scope": "bounded local meeting UI model; no conferencing server, enforceable moderation or protocol implementation",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-mute-audience",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests",
+      "scope": "bounded local meeting UI model; no conferencing server, enforceable moderation or protocol implementation",
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-gallery",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "tests": "meeting_controls_offline::tests",
+      "scope": "bounded local meeting UI model; no conferencing server, enforceable moderation or protocol implementation",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-polls",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "tests": "additional_meeting_offline::tests",
+      "scope": "bounded local-only draft; no live Microsoft meeting, PSTN signaling or OneNote integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "whiteboard",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "tests": "additional_meeting_offline::tests",
+      "scope": "bounded local-only draft; no live Microsoft meeting, PSTN signaling or OneNote integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-scheduling",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "tests": "additional_meeting_offline::tests",
+      "scope": "bounded local-only draft; no live Microsoft meeting, PSTN signaling or OneNote integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "missed-calls",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "tests": "additional_meeting_offline::tests",
+      "scope": "bounded local-only draft; no live Microsoft meeting, PSTN signaling or OneNote integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "onenote-notes",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "tests": "additional_meeting_offline::tests",
+      "scope": "bounded local-only draft; no live Microsoft meeting, PSTN signaling or OneNote integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "presence-note-edit",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests",
+      "scope": "bounded local draft only; no authenticated Microsoft or third-party service interactions",
+      "interop_evidence": []
+    },
+    {
+      "id": "photos-public-url",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests",
+      "scope": "bounded local draft only; no authenticated Microsoft or third-party service interactions",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-inline-photos",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests",
+      "scope": "bounded local draft only; no authenticated Microsoft or third-party service interactions",
+      "interop_evidence": []
+    },
+    {
+      "id": "click-to-call",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests",
+      "scope": "bounded local draft only; no authenticated Microsoft or third-party service interactions",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-email-action",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "tests": "communication_drafts_offline::tests",
+      "scope": "bounded local draft only; no authenticated Microsoft or third-party service interactions",
+      "interop_evidence": []
+    },
+    {
+      "id": "accessibility",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "tests": "client_operations_offline::tests",
+      "scope": "bounded local-only UI or diagnostic metadata; no OS accessibility integration, identity provider sign-in, recording or server compliance",
+      "interop_evidence": []
+    },
+    {
+      "id": "logging",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "tests": "client_operations_offline::tests",
+      "scope": "bounded local-only UI or diagnostic metadata; no OS accessibility integration, identity provider sign-in, recording or server compliance",
+      "interop_evidence": []
+    },
+    {
+      "id": "sign-in-logs",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "tests": "client_operations_offline::tests",
+      "scope": "bounded local-only UI or diagnostic metadata; no OS accessibility integration, identity provider sign-in, recording or server compliance",
+      "interop_evidence": []
+    },
+    {
+      "id": "recording-resolution",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "tests": "client_operations_offline::tests",
+      "scope": "bounded local-only UI or diagnostic metadata; no OS accessibility integration, identity provider sign-in, recording or server compliance",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-recording-artifacts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "tests": "client_operations_offline::tests",
+      "scope": "bounded local-only UI or diagnostic metadata; no OS accessibility integration, identity provider sign-in, recording or server compliance",
+      "interop_evidence": []
+    },
+    {
+      "id": "call-monitor",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "tests": "client_admin_offline::tests",
+      "scope": "bounded local-only preview; no live calls, server policy, archived recordings, Outlook contacts or interoperable protocols",
+      "interop_evidence": []
+    },
+    {
+      "id": "reliability",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "tests": "client_admin_offline::tests",
+      "scope": "bounded local-only preview; no live calls, server policy, archived recordings, Outlook contacts or interoperable protocols",
+      "interop_evidence": []
+    },
+    {
+      "id": "enterprise-policy",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "tests": "client_admin_offline::tests",
+      "scope": "bounded local-only preview; no live calls, server policy, archived recordings, Outlook contacts or interoperable protocols",
+      "interop_evidence": []
+    },
+    {
+      "id": "recording-archive-artifacts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "tests": "client_admin_offline::tests",
+      "scope": "bounded local-only preview; no live calls, server policy, archived recordings, Outlook contacts or interoperable protocols",
+      "interop_evidence": []
+    },
+    {
+      "id": "outlook-contacts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "tests": "client_admin_offline::tests",
+      "scope": "bounded local-only preview; no live calls, server policy, archived recordings, Outlook contacts or interoperable protocols",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-file-upload",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "tests": "meeting_entry_offline::tests",
+      "scope": "in-memory UI draft only; no files, telephony, service invitation, presentation or transport integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-meet-now",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "tests": "meeting_entry_offline::tests",
+      "scope": "in-memory UI draft only; no files, telephony, service invitation, presentation or transport integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "powerpoint-navigation",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "tests": "meeting_entry_offline::tests",
+      "scope": "in-memory UI draft only; no files, telephony, service invitation, presentation or transport integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-anonymous-invite",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "tests": "meeting_entry_offline::tests",
+      "scope": "in-memory UI draft only; no files, telephony, service invitation, presentation or transport integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-dial-in",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "tests": "meeting_entry_offline::tests",
+      "scope": "in-memory UI draft only; no files, telephony, service invitation, presentation or transport integration",
+      "interop_evidence": []
+    },
+    {
+      "id": "delegation",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "tests": "advanced_client_offline::tests",
+      "scope": "in-memory UI preview only; no real telephony, server delegation, meeting broadcast or policy routing",
+      "interop_evidence": []
+    },
+    {
+      "id": "group-call-pickup",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "tests": "advanced_client_offline::tests",
+      "scope": "in-memory UI preview only; no real telephony, server delegation, meeting broadcast or policy routing",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-broadcast",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "tests": "advanced_client_offline::tests",
+      "scope": "in-memory UI preview only; no real telephony, server delegation, meeting broadcast or policy routing",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-video-spotlight",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "tests": "advanced_client_offline::tests",
+      "scope": "in-memory UI preview only; no real telephony, server delegation, meeting broadcast or policy routing",
+      "interop_evidence": []
+    },
+    {
+      "id": "location-routing",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "tests": "advanced_client_offline::tests",
+      "scope": "in-memory UI preview only; no real telephony, server delegation, meeting broadcast or policy routing",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-remote-control",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests",
+      "scope": "in-memory UI preview only; no server privileges, remote control, outbound calls, actual role demotion or calendar synchronization",
+      "interop_evidence": []
+    },
+    {
+      "id": "delegate-outbound",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests",
+      "scope": "in-memory UI preview only; no server privileges, remote control, outbound calls, actual role demotion or calendar synchronization",
+      "interop_evidence": []
+    },
+    {
+      "id": "delegate-inbound",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests",
+      "scope": "in-memory UI preview only; no server privileges, remote control, outbound calls, actual role demotion or calendar synchronization",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-demote-all",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests",
+      "scope": "in-memory UI preview only; no server privileges, remote control, outbound calls, actual role demotion or calendar synchronization",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-delegate-scheduling",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "tests": "delegate_meetings_offline::tests",
+      "scope": "in-memory UI preview only; no server privileges, remote control, outbound calls, actual role demotion or calendar synchronization",
+      "interop_evidence": []
+    },
+    {
+      "id": "exchange-contacts",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "tests": "enterprise_preview_offline::tests",
+      "scope": "local bounded staging only: no Exchange, SharePoint, Outlook or response-group integration; no network",
+      "interop_evidence": []
+    },
+    {
+      "id": "skills-sharepoint-search",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "tests": "enterprise_preview_offline::tests",
+      "scope": "local bounded staging only: no Exchange, SharePoint, Outlook or response-group integration; no network",
+      "interop_evidence": []
+    },
+    {
+      "id": "response-group-search",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "tests": "enterprise_preview_offline::tests",
+      "scope": "local bounded staging only: no Exchange, SharePoint, Outlook or response-group integration; no network",
+      "interop_evidence": []
+    },
+    {
+      "id": "outlook-im-history",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "tests": "enterprise_preview_offline::tests",
+      "scope": "local bounded staging only: no Exchange, SharePoint, Outlook or response-group integration; no network",
+      "interop_evidence": []
+    },
+    {
+      "id": "outlook-delegate-sync",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "tests": "enterprise_preview_offline::tests",
+      "scope": "local bounded staging only: no Exchange, SharePoint, Outlook or response-group integration; no network",
+      "interop_evidence": []
+    },
+    {
+      "id": "persistent-chat-escalate",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "tests": "collaboration_staging_offline::tests",
+      "scope": "bounded in-memory staging only; no Microsoft server, media, file or collaborative sync",
+      "interop_evidence": []
+    },
+    {
+      "id": "im-ink-receive",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "tests": "collaboration_staging_offline::tests",
+      "scope": "bounded in-memory staging only; no Microsoft server, media, file or collaborative sync",
+      "interop_evidence": []
+    },
+    {
+      "id": "app-sharing",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "tests": "collaboration_staging_offline::tests",
+      "scope": "bounded in-memory staging only; no Microsoft server, media, file or collaborative sync",
+      "interop_evidence": []
+    },
+    {
+      "id": "response-group-management",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "tests": "collaboration_staging_offline::tests",
+      "scope": "bounded in-memory staging only; no Microsoft server, media, file or collaborative sync",
+      "interop_evidence": []
+    },
+    {
+      "id": "powerpoint-sharing",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "tests": "collaboration_staging_offline::tests",
+      "scope": "bounded in-memory staging only; no Microsoft server, media, file or collaborative sync",
+      "interop_evidence": []
+    },
+    {
+      "id": "callpark",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "tests": "client_services_offline::tests",
+      "scope": "in-memory UI preview only; no telephony, voicemail, conference media, retention/compliance enforcement or public federation",
+      "interop_evidence": []
+    },
+    {
+      "id": "voicemail",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "tests": "client_services_offline::tests",
+      "scope": "in-memory UI preview only; no telephony, voicemail, conference media, retention/compliance enforcement or public federation",
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-audio",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "tests": "client_services_offline::tests",
+      "scope": "in-memory UI preview only; no telephony, voicemail, conference media, retention/compliance enforcement or public federation",
+      "interop_evidence": []
+    },
+    {
+      "id": "compliance",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "tests": "client_services_offline::tests",
+      "scope": "in-memory UI preview only; no telephony, voicemail, conference media, retention/compliance enforcement or public federation",
+      "interop_evidence": []
+    },
+    {
+      "id": "public-im",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "tests": "client_services_offline::tests",
+      "scope": "in-memory UI preview only; no telephony, voicemail, conference media, retention/compliance enforcement or public federation",
+      "interop_evidence": []
+    },
+    {
+      "id": "provision",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests",
+      "scope": "bounded in-memory preflight only, no provisioning, TLS validation, federation, persistent storage or Windows packaging",
+      "interop_evidence": []
+    },
+    {
+      "id": "certificates",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests",
+      "scope": "bounded in-memory preflight only, no provisioning, TLS validation, federation, persistent storage or Windows packaging",
+      "interop_evidence": []
+    },
+    {
+      "id": "federation",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests",
+      "scope": "bounded in-memory preflight only, no provisioning, TLS validation, federation, persistent storage or Windows packaging",
+      "interop_evidence": []
+    },
+    {
+      "id": "persistent-chat",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests",
+      "scope": "bounded in-memory preflight only, no provisioning, TLS validation, federation, persistent storage or Windows packaging",
+      "interop_evidence": []
+    },
+    {
+      "id": "packaging",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "tests": "preflight_offline::tests",
+      "scope": "bounded in-memory preflight only, no provisioning, TLS validation, federation, persistent storage or Windows packaging",
+      "interop_evidence": []
+    },
+    {
+      "id": "pstn",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests",
+      "scope": "in-memory UI draft only: no emergency routing, location service, live PSTN, camera access, ICE connectivity or SRTP crypto",
+      "interop_evidence": []
+    },
+    {
+      "id": "emergency",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests",
+      "scope": "in-memory UI draft only: no emergency routing, location service, live PSTN, camera access, ICE connectivity or SRTP crypto",
+      "interop_evidence": []
+    },
+    {
+      "id": "video",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests",
+      "scope": "in-memory UI draft only: no emergency routing, location service, live PSTN, camera access, ICE connectivity or SRTP crypto",
+      "interop_evidence": []
+    },
+    {
+      "id": "ice",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests",
+      "scope": "in-memory UI draft only: no emergency routing, location service, live PSTN, camera access, ICE connectivity or SRTP crypto",
+      "interop_evidence": []
+    },
+    {
+      "id": "srtp",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "tests": "media_preflight_offline::tests",
+      "scope": "in-memory UI draft only: no emergency routing, location service, live PSTN, camera access, ICE connectivity or SRTP crypto",
+      "interop_evidence": []
+    },
+    {
+      "id": "qos",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/conference_media_previews_offline.rs",
+      "tests": "conference_media_previews_offline::tests",
+      "scope": "bounded in-memory staging only; no packet QoS, conference signaling, IM delivery, screen capture, VBSS or RDP",
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-join",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/conference_media_previews_offline.rs",
+      "tests": "conference_media_previews_offline::tests",
+      "scope": "bounded in-memory staging only; no packet QoS, conference signaling, IM delivery, screen capture, VBSS or RDP",
+      "interop_evidence": []
+    },
+    {
+      "id": "conference-im",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/conference_media_previews_offline.rs",
+      "tests": "conference_media_previews_offline::tests",
+      "scope": "bounded in-memory staging only; no packet QoS, conference signaling, IM delivery, screen capture, VBSS or RDP",
+      "interop_evidence": []
+    },
+    {
+      "id": "sharing-vbss",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/conference_media_previews_offline.rs",
+      "tests": "conference_media_previews_offline::tests",
+      "scope": "bounded in-memory staging only; no packet QoS, conference signaling, IM delivery, screen capture, VBSS or RDP",
+      "interop_evidence": []
+    },
+    {
+      "id": "sharing-rdp",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/conference_media_previews_offline.rs",
+      "tests": "conference_media_previews_offline::tests",
+      "scope": "bounded in-memory staging only; no packet QoS, conference signaling, IM delivery, screen capture, VBSS or RDP",
+      "interop_evidence": []
+    },
+    {
+      "id": "presentation",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "tests": "enterprise_meeting_drafts_offline::tests",
+      "scope": "bounded in-memory staging only; no presentation transport, meeting commands, verified enterprise interoperability, authentication or actual response group calls",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-controls",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "tests": "enterprise_meeting_drafts_offline::tests",
+      "scope": "bounded in-memory staging only; no presentation transport, meeting commands, verified enterprise interoperability, authentication or actual response group calls",
+      "interop_evidence": []
+    },
+    {
+      "id": "enterprise-interop",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "tests": "enterprise_meeting_drafts_offline::tests",
+      "scope": "bounded in-memory staging only; no presentation transport, meeting commands, verified enterprise interoperability, authentication or actual response group calls",
+      "interop_evidence": []
+    },
+    {
+      "id": "modern-auth",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "tests": "enterprise_meeting_drafts_offline::tests",
+      "scope": "bounded in-memory staging only; no presentation transport, meeting commands, verified enterprise interoperability, authentication or actual response group calls",
+      "interop_evidence": []
+    },
+    {
+      "id": "response-group-calls",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "tests": "enterprise_meeting_drafts_offline::tests",
+      "scope": "bounded in-memory staging only; no presentation transport, meeting commands, verified enterprise interoperability, authentication or actual response group calls",
+      "interop_evidence": []
+    },
+    {
+      "id": "meeting-recording",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "tests": "safety_client_previews_offline::tests",
+      "scope": "in-memory display-only placeholders: no recording, emergency notification, safety dispatch, remote calls, second factor or authentication",
+      "interop_evidence": []
+    },
+    {
+      "id": "e911-sip-notify",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "tests": "safety_client_previews_offline::tests",
+      "scope": "in-memory display-only placeholders: no recording, emergency notification, safety dispatch, remote calls, second factor or authentication",
+      "interop_evidence": []
+    },
+    {
+      "id": "e911-distribution-notify",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "tests": "safety_client_previews_offline::tests",
+      "scope": "in-memory display-only placeholders: no recording, emergency notification, safety dispatch, remote calls, second factor or authentication",
+      "interop_evidence": []
+    },
+    {
+      "id": "external-calling",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "tests": "safety_client_previews_offline::tests",
+      "scope": "in-memory display-only placeholders: no recording, emergency notification, safety dispatch, remote calls, second factor or authentication",
+      "interop_evidence": []
+    },
+    {
+      "id": "mfa",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "tests": "safety_client_previews_offline::tests",
+      "scope": "in-memory display-only placeholders: no recording, emergency notification, safety dispatch, remote calls, second factor or authentication",
+      "interop_evidence": []
+    },
+    {
+      "id": "certificate-auth",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/final_inventory_previews_offline.rs",
+      "tests": "final_inventory_previews_offline::tests",
+      "scope": "bounded in-memory metadata only; absolutely no certificate-based login, X.509 validation, call routing, concurrency/load proof or network activity",
+      "interop_evidence": []
+    },
+    {
+      "id": "high-volume-calls",
+      "status": "offline_subset",
+      "source": "crates/commscraft-core/src/final_inventory_previews_offline.rs",
+      "tests": "final_inventory_previews_offline::tests",
+      "scope": "bounded in-memory metadata only; absolutely no certificate-based login, X.509 validation, call routing, concurrency/load proof or network activity",
+      "interop_evidence": []
+    }
+  ]
+}

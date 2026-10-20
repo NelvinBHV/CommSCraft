@@ -71,8 +71,8 @@ pub struct TlsCandidate {
 
 /// A uniform random draw over 0..=maximum, supplied externally. The caller
 /// should use a proper RNG in production; tests can inject deterministic draws.
-/// Invalid >maximum values are reduced modulo maximum+1 to avoid panics from
-/// hostile/mock sources (production RNG should already obey the requested range).
+/// Invalid >maximum values fail closed to the zero draw rather than introducing
+/// modulo bias. A production caller must supply an unbiased secure RNG.
 pub trait SrvRandom { fn choose_inclusive(&mut self, maximum: u32) -> u32; }
 
 /// RFC 2782 §Priority/Weight: ascending priority, zero-weight records placed
@@ -93,7 +93,8 @@ pub fn order_srv(records: &[SrvRecord], rng: &mut impl SrvRandom) -> Vec<SrvReco
         while !group.is_empty() {
             group.sort_by_key(|r| r.weight != 0); // zero-weight first, stable
             let total: u32 = group.iter().map(|r| u32::from(r.weight)).sum();
-            let draw = rng.choose_inclusive(total) % (total + 1);
+            let sampled = rng.choose_inclusive(total);
+            let draw = if sampled <= total { sampled } else { 0 };
             let mut running = 0;
             let index = group.iter().position(|r| {
                 running += u32::from(r.weight);
@@ -168,7 +169,10 @@ impl DiscoveryPlan {
     }
 }
 
+const MAX_TLS_CANDIDATES: usize = 256;
+
 fn push_unique(result: &mut Vec<TlsCandidate>, candidate: TlsCandidate) {
+    if result.len() >= MAX_TLS_CANDIDATES { return; }
     if !result.iter().any(|c| c.host == candidate.host && c.port == candidate.port) {
         result.push(candidate);
     }
@@ -214,6 +218,59 @@ mod tests {
         let got = order_srv(&records, &mut Draws(vec![0, 1, 4]));
         assert_eq!(got.iter().map(|r| r.target.as_str()).collect::<Vec<_>>(),
             vec!["one.example.com", "three.example.com", "zero.example.com", "slow.example.com"]);
+    }
+    #[test]
+    fn srvs_with_equal_priority_never_precede_a_lower_priority_group() {
+        let input = [rr(9, 0, "later.example.com"), rr(1, 0, "first.example.com"),
+            rr(1, 0, "second.example.com")];
+        let result = order_srv(&input, &mut Draws(vec![]));
+        assert!(result[..2].iter().all(|r| r.priority == 1));
+        assert_eq!(result[2].priority, 9);
+    }
+    #[test]
+    fn invalid_rng_draw_fails_closed_without_modulo_bias_or_panic() {
+        struct OutOfRange;
+        impl SrvRandom for OutOfRange {
+            fn choose_inclusive(&mut self, maximum: u32) -> u32 { maximum.saturating_add(1) }
+        }
+        let input = [rr(0, 0, "zero.example.com"), rr(0, 10, "weighted.example.com")];
+        let result = order_srv(&input, &mut OutOfRange);
+        assert_eq!(result[0].target, "zero.example.com");
+    }
+    #[test]
+    fn srv_priority_is_preserved_after_retrying_weighted_group() {
+        let input = [rr(20, 5, "backup.example.com"),
+            rr(10, 1, "primary.example.com"), rr(10, 0, "zero.example.com")];
+        let result = order_srv(&input, &mut Draws(vec![]));
+        assert_eq!(result.iter().map(|r| r.priority).collect::<Vec<_>>(), vec![10, 10, 20]);
+        assert_eq!(result.len(), input.len());
+    }
+    #[test]
+    fn malformed_srv_target_and_zero_port_rejected_without_candidates() {
+        assert_eq!(SrvRecord::new(0, 10, 5061, "bad..example.com"), Err(DiscoveryError::InvalidSrvTarget));
+        assert_eq!(SrvRecord::new(0, 10, 0, "ok.example.com"), Err(DiscoveryError::InvalidPort));
+    }
+    #[test]
+    fn hostile_many_duplicate_service_answers_have_bounded_candidate_output() {
+        let p = DiscoveryPlan::from_domain("example.com").unwrap();
+        let mut answers = Vec::new();
+        for i in 0..6u16 {
+            let records: Vec<_> = (0..200u16).map(|j| {
+                rr(0, 0, &format!("host-{i}-{j}.example.com"))
+            }).collect();
+            answers.push((Service::InternalTls, records));
+        }
+        let got = p.tls_candidates(&answers, &mut Draws(vec![]));
+        assert_eq!(got.len(), MAX_TLS_CANDIDATES);
+        assert_eq!(got[0].origin, CandidateOrigin::Srv(Service::InternalTls));
+        assert!(got.iter().all(|c| c.port != 0));
+    }
+    #[test]
+    fn empty_dns_answers_keep_tls_only_fallback_and_unique_hosts() {
+        let p = DiscoveryPlan::from_domain("example.com").unwrap();
+        let got = p.tls_candidates(&[], &mut Draws(vec![]));
+        assert_eq!(got.len(), 3);
+        assert!(got.iter().all(|c| c.port == 443 && c.origin == CandidateOrigin::Fallback));
     }
     #[test]
     fn never_includes_plaintext_dns_candidates() {

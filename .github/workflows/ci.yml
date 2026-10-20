@@ -27,6 +27,10 @@ jobs:
           python3 scripts/check_release.py
           python3 -m unittest discover -s scripts -p "test*.py"
           python3 scripts/check_import_integrity.py
+      - name: Validate v0.30 milestone evidence structure (pending gates allowed)
+        run: python3 scripts/check_v030_milestone.py
+      - name: Compute Windows Full Client feature parity inventory
+        run: python3 scripts/report_feature_parity.py --json
       - name: Run imported Rust offline tests
         run: cargo test --workspace --all-targets
       - name: Historical import rustfmt check (tracked debt, not green)

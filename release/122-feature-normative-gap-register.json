@@ -1,0 +1,1716 @@
+{
+  "schema_version": 1,
+  "generated_utc_date": "2026-10-18",
+  "finding": "122 inventory records; 0 normative feature completions and 0 verified interoperability",
+  "requirements": [
+    {
+      "id": "dns-discovery",
+      "source": "crates/commscraft-core/src/discovery.rs",
+      "test": "discovery::tests::microsoft_names_cover_four_srv_services; discovery::tests::rejects_invalid_identity_or_hostnames",
+      "reference": "RFC 2782 February 2000 §3 | MS-CONMGMT UNVERIFIED §UNVERIFIED",
+      "rfc_mapping": "fixture_mapped_execution_pending",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "auth",
+      "source": "crates/commscraft-core/src/security.rs",
+      "test": "security::tests::signed_response_establishes_then_replay_is_rejected; security::tests::invalid_signature_never_consumes_replay_number",
+      "reference": "RFC 2743 January 2000 §2 | MS-SIPAE 11.0 §UNVERIFIED",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "register",
+      "source": "crates/commscraft-core/src/registration.rs",
+      "test": "registration::tests::microsoft_register_has_required_identity_and_capability; registration::tests::ms_sipae_challenge_cannot_be_auto_authenticated",
+      "reference": "RFC 3261 June 2002 §10 | MS-SIPREGE 17.1 §UNVERIFIED",
+      "rfc_mapping": "fixture_mapped_execution_pending",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "presence-sub",
+      "source": "crates/commscraft-core/src/presence.rs",
+      "test": "presence::tests::creates_unsigned_but_valid_subscribe; presence::tests::mismatched_or_unsupported_notify_does_not_advance_state",
+      "reference": "RFC 6665 July 2012 §4.1 | MS-PRES 13.0 §UNVERIFIED",
+      "rfc_mapping": "fixture_mapped_execution_pending",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "im-1to1",
+      "source": "crates/commscraft-core/src/im.rs",
+      "test": "im::tests::invite_ack_message_and_sip_acceptance_not_read_receipt; im::tests::malformed_and_replayed_incoming_text_is_rejected",
+      "reference": "RFC 3261 June 2002 §12 | MS-SIPRE UNVERIFIED §UNVERIFIED | MS-OCSPROT UNVERIFIED §UNVERIFIED",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "codecs",
+      "source": "crates/commscraft-core/src/sdp.rs",
+      "test": "sdp::tests::inspection_does_not_negotiate_media; sdp::tests::rejects_truncated_and_malformed_sdp",
+      "reference": "RFC 8866 January 2021 §5 | RFC 3264 June 2002 §5 | MS-SDPEXT 16.0 §UNVERIFIED",
+      "rfc_mapping": "fixture_mapped_execution_pending",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "windows-ui",
+      "source": "apps/commscraft/src/main.rs",
+      "test": "no fixture identified; UI parity unverified",
+      "reference": "MS-OCSPROT UNVERIFIED §UNVERIFIED",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence",
+        "executable UI fixture"
+      ]
+    },
+    {
+      "id": "contact-groups",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "test": "client_offline::tests::contact_group_rejects_duplicate_injection_and_missing_group",
+      "reference": "MS-PRES 13.0 §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "presence-publish",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "test": "client_offline::tests::presence_draft_is_not_a_server_publication",
+      "reference": "MS-PRES 13.0 §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "im-history",
+      "source": "crates/commscraft-core/src/client_offline.rs",
+      "test": "client_offline::tests::history_is_bounded_and_can_be_wiped",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "contact-search",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "test": "local_features::tests::directory_filters_case_insensitively_and_rejects_injection",
+      "reference": "MS-ABCH UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "contact-privacy",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "test": "local_features::tests::privacy_draft_preserves_block_and_does_not_claim_server_policy",
+      "reference": "MS-PRES 13.0 §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "im-richtext",
+      "source": "crates/commscraft-core/src/local_features.rs",
+      "test": "local_features::tests::preview_escapes_markup_and_rejects_control_characters",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "calendar-presence",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "test": "auxiliary_offline::tests::calendar_rejects_overlaps_and_uses_half_open_interval",
+      "reference": "MS-PRES 13.0 §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "photos",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "test": "auxiliary_offline::tests::photos_are_size_and_mime_bounded",
+      "reference": "MS-PRES 13.0 §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "distribution-groups",
+      "source": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "test": "auxiliary_offline::tests::distribution_members_are_unique_and_bounded",
+      "reference": "MS-ABCH UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "im-multiparty",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "test": "interaction_offline::tests::bounded_multiparty_roster",
+      "reference": "MS-CONFIM 11.0 §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "im-file",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "test": "interaction_offline::tests::file_drafts_do_not_move_files",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "audio-call",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "test": "interaction_offline::tests::call_controls_require_connected_state_and_clear_on_end",
+      "reference": "MS-SDPEXT 16.0 §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "hold",
+      "source": "crates/commscraft-core/src/interaction_offline.rs",
+      "test": "interaction_offline::tests::call_controls_require_connected_state_and_clear_on_end",
+      "reference": "MS-SDPEXT 16.0 §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "forwarding",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "test": "call_drafts::tests::forwarding_and_transfer_fail_closed",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "transfer",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "test": "call_drafts::tests::forwarding_and_transfer_fail_closed",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "conference-roster",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "test": "call_drafts::tests::roster_and_devices_are_bounded",
+      "reference": "MS-CONFBAS 15.0 §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "devices",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "test": "call_drafts::tests::roster_and_devices_are_bounded",
+      "reference": "MS-SDPEXT 16.0 §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "call-history",
+      "source": "crates/commscraft-core/src/call_drafts.rs",
+      "test": "call_drafts::tests::history_rejects_injection_and_overflow",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "presence-alerts",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "test": "usability_offline::tests::alerts_reject_duplicate_and_injection",
+      "reference": "MS-PRES UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "im-tabs",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "test": "usability_offline::tests::tabs_reject_duplicate_and_close_cleanly",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "im-importance",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "test": "usability_offline::tests::importance_rejects_control_characters",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "notifications",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "test": "usability_offline::tests::notifications_are_bounded",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-lobby",
+      "source": "crates/commscraft-core/src/usability_offline.rs",
+      "test": "usability_offline::tests::lobby_is_terminal",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "presence-notes",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "test": "contacts_ui_offline::tests::notes_reject_controls_and_clear",
+      "reference": "MS-PRES UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "presence-location",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "test": "contacts_ui_offline::tests::locations_reject_untrusted_controls",
+      "reference": "MS-PRES UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "recent-contacts",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "test": "contacts_ui_offline::tests::recents_are_unique_most_recent_first_and_bounded",
+      "reference": "MS-ABCH UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "contacts-sorting",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "test": "contacts_ui_offline::tests::contacts_sorted_stably_and_duplicates_denied",
+      "reference": "MS-ABCH UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "current-conversations",
+      "source": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "test": "contacts_ui_offline::tests::current_conversations_guard_state",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "contacts-availability-sort",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "test": "client_preferences_offline::tests::availability_sort_is_local_and_bounded",
+      "reference": "MS-PRES UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "contact-layout",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "test": "client_preferences_offline::tests::layout_is_just_local_preferences",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-invite",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "test": "client_preferences_offline::tests::invite_draft_rejects_injection_and_duplicates",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "spellcheck",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "test": "client_preferences_offline::tests::spelling_flags_do_not_claim_dictionary_check",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "contact-prepop",
+      "source": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "test": "client_preferences_offline::tests::contact_prepopulation_is_deduplicated",
+      "reference": "MS-ABCH UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-qa",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "test": "meeting_controls_offline::tests::qa_rejects_control_and_bounds_queue",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-disable-video",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "test": "meeting_controls_offline::tests::media_disable_flags_fail_closed_locally",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-disable-im",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "test": "meeting_controls_offline::tests::media_disable_flags_fail_closed_locally",
+      "reference": "MS-CONFIM UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-mute-audience",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "test": "meeting_controls_offline::tests::audience_mute_switches_local_state",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "conference-gallery",
+      "source": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "test": "meeting_controls_offline::tests::gallery_rejects_duplicate_and_missing_user",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-polls",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "test": "additional_meeting_offline::tests::polls_validate_choices_and_vote_indices",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "whiteboard",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "test": "additional_meeting_offline::tests::board_rejects_empty_and_oversized_strokes",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-scheduling",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "test": "additional_meeting_offline::tests::schedule_rejects_invalid_windows",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "missed-calls",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "test": "additional_meeting_offline::tests::missed_calls_bound_and_reject_control",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "onenote-notes",
+      "source": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "test": "additional_meeting_offline::tests::onenote_draft_does_not_sync",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "presence-note-edit",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "test": "communication_drafts_offline::tests::note_editor_rejects_injection",
+      "reference": "MS-PRES UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "photos-public-url",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "test": "communication_drafts_offline::tests::photo_url_requires_https_and_no_userinfo",
+      "reference": "MS-PRES UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "im-inline-photos",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "test": "communication_drafts_offline::tests::inline_image_ids_reject_control_and_duplicates",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "click-to-call",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "test": "communication_drafts_offline::tests::dial_draft_rejects_invalid_numbers",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "im-email-action",
+      "source": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "test": "communication_drafts_offline::tests::email_action_rejects_duplicate_and_bad_uri",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "accessibility",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "test": "client_operations_offline::tests::accessibility_settings_are_local_only",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "logging",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "test": "client_operations_offline::tests::logging_rejects_arbitrary_sensitive_values",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "sign-in-logs",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "test": "client_operations_offline::tests::sign_in_logs_store_only_boolean_results",
+      "reference": "MS-SIPAE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "recording-resolution",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "test": "client_operations_offline::tests::recording_resolution_rejects_unsupported_bounds",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-recording-artifacts",
+      "source": "crates/commscraft-core/src/client_operations_offline.rs",
+      "test": "client_operations_offline::tests::recording_artifacts_reject_paths_and_duplicates",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "call-monitor",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "test": "client_admin_offline::tests::call_monitor_rejects_duplicates_and_invalid_sip",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "reliability",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "test": "client_admin_offline::tests::reliability_only_allows_static_safe_failures",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "enterprise-policy",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "test": "client_admin_offline::tests::policy_preview_never_enforces_server_policy",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "recording-archive-artifacts",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "test": "client_admin_offline::tests::archive_metadata_rejects_paths_and_duplicates",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "outlook-contacts",
+      "source": "crates/commscraft-core/src/client_admin_offline.rs",
+      "test": "client_admin_offline::tests::import_preview_deduplicates_and_validates",
+      "reference": "MS-ABCH UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-file-upload",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "test": "meeting_entry_offline::tests::upload_stage_rejects_path_and_duplicate",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-meet-now",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "test": "meeting_entry_offline::tests::meet_now_stage_rejects_control_and_duplicate",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "powerpoint-navigation",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "test": "meeting_entry_offline::tests::powerpoint_navigation_bounds_pages",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-anonymous-invite",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "test": "meeting_entry_offline::tests::anonymous_invite_label_rejects_controls",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-dial-in",
+      "source": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "test": "meeting_entry_offline::tests::dial_in_stage_rejects_command_injection",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "delegation",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "test": "advanced_client_offline::tests::delegate_preview_rejects_duplicate_and_controls",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "group-call-pickup",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "test": "advanced_client_offline::tests::pickup_preview_rejects_duplicate_and_controls",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-broadcast",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "test": "advanced_client_offline::tests::broadcast_preview_rejects_bad_addresses",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-video-spotlight",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "test": "advanced_client_offline::tests::video_spotlight_preview_rejects_invalid_selection",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "location-routing",
+      "source": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "test": "advanced_client_offline::tests::location_routing_preview_rejects_controls",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-remote-control",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "test": "delegate_meetings_offline::tests::remote_control_preview_rejects_invalid_address",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "delegate-outbound",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "test": "delegate_meetings_offline::tests::delegated_outbound_rejects_duplicates_and_controls",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "delegate-inbound",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "test": "delegate_meetings_offline::tests::delegated_inbound_rejects_duplicates_and_controls",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-demote-all",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "test": "delegate_meetings_offline::tests::meeting_roles_reject_missing_and_duplicate_attendees",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-delegate-scheduling",
+      "source": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "test": "delegate_meetings_offline::tests::delegate_calendar_rejects_controls_and_duplicate_labels",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "exchange-contacts",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "test": "enterprise_preview_offline::tests::exchange_contacts_preview_rejects_invalid_and_duplicate",
+      "reference": "MS-ABCH UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "skills-sharepoint-search",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "test": "enterprise_preview_offline::tests::sharepoint_preview_rejects_controls",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "response-group-search",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "test": "enterprise_preview_offline::tests::response_group_preview_rejects_controls",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "outlook-im-history",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "test": "enterprise_preview_offline::tests::outlook_history_preview_rejects_paths",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "outlook-delegate-sync",
+      "source": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "test": "enterprise_preview_offline::tests::delegate_sync_preview_rejects_duplicate_and_controls",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "persistent-chat-escalate",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "test": "collaboration_staging_offline::tests::persistent_chat_escalation_rejects_injection",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "im-ink-receive",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "test": "collaboration_staging_offline::tests::ink_receive_rejects_empty_and_excess_points",
+      "reference": "MS-CONFIM UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "app-sharing",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "test": "collaboration_staging_offline::tests::app_sharing_rejects_control_characters",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "response-group-management",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "test": "collaboration_staging_offline::tests::response_group_management_rejects_duplicate_and_controls",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "powerpoint-sharing",
+      "source": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "test": "collaboration_staging_offline::tests::powerpoint_sharing_bounds_slide_count",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "callpark",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "test": "client_services_offline::tests::park_labels_reject_duplicate_and_controls",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "voicemail",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "test": "client_services_offline::tests::voicemail_metadata_rejects_paths_and_duplicates",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "conference-audio",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "test": "client_services_offline::tests::meeting_audio_rejects_out_of_range_volume",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "compliance",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "test": "client_services_offline::tests::compliance_labels_reject_control_and_duplicate",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "public-im",
+      "source": "crates/commscraft-core/src/client_services_offline.rs",
+      "test": "client_services_offline::tests::public_im_preview_rejects_bad_addresses",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "provision",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "test": "preflight_offline::tests::provisioning_rejects_invalid_host_and_normalizes",
+      "reference": "MS-SIPREGE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "certificates",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "test": "preflight_offline::tests::certificates_reject_bad_sha256_and_duplicate",
+      "reference": "MS-SIPAE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "federation",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "test": "preflight_offline::tests::federation_rejects_duplicate_and_bad_domains",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "persistent-chat",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "test": "preflight_offline::tests::persistent_chat_is_bounded_and_wipeable",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "packaging",
+      "source": "crates/commscraft-core/src/preflight_offline.rs",
+      "test": "preflight_offline::tests::package_names_reject_paths_and_duplicates",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "pstn",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "test": "media_preflight_offline::tests::pstn_draft_rejects_bad_numbers",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "emergency",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "test": "media_preflight_offline::tests::emergency_draft_does_not_silently_acknowledge",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "video",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "test": "media_preflight_offline::tests::video_device_draft_rejects_duplicate_and_controls",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "ice",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "test": "media_preflight_offline::tests::ice_priority_draft_rejects_duplicate_and_zero",
+      "reference": "MS-ICE2 UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "srtp",
+      "source": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "test": "media_preflight_offline::tests::srtp_suite_draft_rejects_unrecognized_labels",
+      "reference": "MS-SRTP UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "qos",
+      "source": "crates/commscraft-core/src/conference_media_previews_offline.rs",
+      "test": "conference_media_previews_offline::tests::qos_dscp_rejects_out_of_range",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "conference-join",
+      "source": "crates/commscraft-core/src/conference_media_previews_offline.rs",
+      "test": "conference_media_previews_offline::tests::conference_join_rejects_injected_uri",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "conference-im",
+      "source": "crates/commscraft-core/src/conference_media_previews_offline.rs",
+      "test": "conference_media_previews_offline::tests::conference_im_rejects_controls_and_capacity",
+      "reference": "MS-CONFIM UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "sharing-vbss",
+      "source": "crates/commscraft-core/src/conference_media_previews_offline.rs",
+      "test": "conference_media_previews_offline::tests::vbss_preview_rejects_control_characters",
+      "reference": "MS-VBSS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "sharing-rdp",
+      "source": "crates/commscraft-core/src/conference_media_previews_offline.rs",
+      "test": "conference_media_previews_offline::tests::rdp_channels_reject_paths_and_duplicates",
+      "reference": "MS-RDPEFS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "presentation",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "test": "enterprise_meeting_drafts_offline::tests::presentation_rejects_zero_and_oversized_deck",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-controls",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "test": "enterprise_meeting_drafts_offline::tests::meeting_controls_rejects_duplicate_and_invalid_attendees",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "enterprise-interop",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "test": "enterprise_meeting_drafts_offline::tests::enterprise_checklist_rejects_paths_and_duplicates",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "modern-auth",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "test": "enterprise_meeting_drafts_offline::tests::modern_auth_display_rejects_controls",
+      "reference": "MS-SIPAE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "response-group-calls",
+      "source": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "test": "enterprise_meeting_drafts_offline::tests::response_group_calls_rejects_duplicate_and_control",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "meeting-recording",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "test": "safety_client_previews_offline::tests::recording_notice_defaults_to_unacknowledged",
+      "reference": "MS-CONFBAS UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "e911-sip-notify",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "test": "safety_client_previews_offline::tests::e911_sip_notice_rejects_duplicate_and_control_chars",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "e911-distribution-notify",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "test": "safety_client_previews_offline::tests::e911_distribution_rejects_duplicate_and_injected_uri",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "external-calling",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "test": "safety_client_previews_offline::tests::external_call_preview_rejects_bad_uri",
+      "reference": "MS-SIPRE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "mfa",
+      "source": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "test": "safety_client_previews_offline::tests::mfa_display_rejects_controls_and_path_names",
+      "reference": "MS-SIPAE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "certificate-auth",
+      "source": "crates/commscraft-core/src/final_inventory_previews_offline.rs",
+      "test": "final_inventory_previews_offline::tests::certificate_auth_display_rejects_malformed_device_labels",
+      "reference": "MS-SIPAE UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    },
+    {
+      "id": "high-volume-calls",
+      "source": "crates/commscraft-core/src/final_inventory_previews_offline.rs",
+      "test": "final_inventory_previews_offline::tests::call_load_preview_rejects_duplicates_and_bounded_overflow",
+      "reference": "MS-OCSPROT UNVERIFIED §not-applicable-local-only",
+      "rfc_mapping": "none",
+      "normative_verified": false,
+      "interop_verified": false,
+      "missing": [
+        "version-pinned MS clause-to-requirement mapping",
+        "positive/negative/policy/recovery executed evidence",
+        "authorized Windows Full Client/server interoperability evidence"
+      ]
+    }
+  ]
+}

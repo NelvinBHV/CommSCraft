@@ -235,6 +235,11 @@ impl RegisterFlow {
         match code {
             401 | 407 => {
                 let offers = parse_challenges(response).map_err(|_| RegistrationError::InvalidResponse)?;
+                // An unsupported-only offer cannot produce a valid new
+                // authentication transaction; keep the flow terminal.
+                if offers.iter().all(|offer| offer.scheme == Scheme::Unsupported) {
+                    return Err(RegistrationError::InvalidResponse);
+                }
                 self.state = RegisterState::NeedsAuthentication;
                 Ok(RegisterOutcome::Challenge {
                     from: offers[0].source,
@@ -437,6 +442,11 @@ fn unquote(s: &str) -> Result<&str, RegistrationError> {
 fn matching_binding(msg: &SipMessage, endpoint: &Endpoint)
     -> Result<(u32, Option<String>), RegistrationError>
 {
+    // Directly constructed SipMessage values must be bounded too; not all
+    // callers necessarily used the bounded SIP wire parser.
+    if msg.headers.len() > 128 || msg.headers.iter().any(|(_, v)| v.len() > 16 * 1024) {
+        return Err(RegistrationError::InvalidResponse);
+    }
     let default_expiry = unique_header(msg, "Expires")?
         .map(|s| parse_seconds(s).ok_or(RegistrationError::InvalidResponse))
         .transpose()?;
@@ -448,6 +458,13 @@ fn matching_binding(msg: &SipMessage, endpoint: &Endpoint)
             let end = contact[start+1..].find('>').ok_or(RegistrationError::InvalidResponse)? + start + 1;
             if !contact[..start].trim().is_empty() { // Display name permitted, don't interpret it.
                 if contact[..start].len() > 256 { return Err(RegistrationError::InvalidResponse); }
+            }
+            // Untrusted Contact URI must be syntactically plausible before
+            // endpoint-instance matching; a forged instance is not enough.
+            let uri = &contact[start+1..end];
+            if !uri.starts_with("sip:") || !safe_ascii(uri, 2048)
+                || uri.contains(&['<', '>', '"', ','][..]) {
+                return Err(RegistrationError::InvalidResponse);
             }
             let params = contact[end+1..].trim();
             if !params.is_empty() && !params.starts_with(';') { return Err(RegistrationError::InvalidResponse); }
@@ -551,6 +568,50 @@ mod tests {
         });
     }
     #[test]
+    fn unsupported_only_401_407_challenges_fail_closed() {
+        for (code, header) in [(401, "WWW-Authenticate"), (407, "Proxy-Authenticate")] {
+            let mut f = flow();
+            let response = reply(&f, code, &[(header, "UnknownAuth realm=\"r\"")]);
+            assert_eq!(f.observe(&response, 200), Err(RegistrationError::InvalidResponse));
+            assert_eq!(f.state(), RegisterState::Rejected);
+            assert!(matches!(f.plan_authentication_retry(BRANCH2, 300), Err(RegistrationError::InvalidState)));
+        }
+    }
+    #[test]
+    fn supported_407_challenge_retry_retains_unregistration_intent() {
+        let mut f = flow();
+        let contact = format!("<sip:198.51.100.25>;expires=3600;+sip.instance=\"<urn:uuid:{}>\"", endpoint().instance_uuid);
+        let ok = reply(&f, 200, &[("Contact", &contact)]);
+        assert!(matches!(f.observe(&ok, 200), Ok(RegisterOutcome::AcceptanceReported { .. })));
+        let mut unreg = f.plan_unregistration(BRANCH2, 300).unwrap();
+        assert_eq!(unreg.request().header("Expires"), Some("0"));
+        let challenge = reply(&unreg, 407, &[("Proxy-Authenticate", "TLS-DSK realm=\"r\", targetname=\"sip.example.com\", version=4")]);
+        assert!(matches!(unreg.observe(&challenge, 400), Ok(RegisterOutcome::Challenge { .. })));
+        let branch3 = "z9hG4bK-branch-00000003";
+        let retry = unreg.plan_authentication_retry(branch3, 500).unwrap();
+        assert_eq!(retry.request().header("Expires"), Some("0"));
+        assert_eq!(retry.request().header("CSeq"), Some("5 REGISTER"));
+        assert_ne!(retry.request().header("Via"), unreg.request().header("Via"));
+        assert!(!retry.request().headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("Authorization")));
+    }
+    #[test]
+    fn rfc3261_423_rejects_duplicate_min_expires_fail_closed() {
+        let mut f = flow();
+        let response = reply(&f, 423, &[("Min-Expires", "7200"), ("Min-Expires", "8000")]);
+        assert_eq!(f.observe(&response, 200), Err(RegistrationError::DuplicateHeader));
+        assert_eq!(f.state(), RegisterState::Rejected);
+        assert!(matches!(f.plan_interval_retry(BRANCH2, 300), Err(RegistrationError::InvalidState)));
+    }
+    #[test]
+    fn rfc3261_423_rejects_invalid_or_nonincreasing_min_expires() {
+        for value in ["0", "3600", "not-a-number", "86401"] {
+            let mut f = flow();
+            let response = reply(&f, 423, &[("Min-Expires", value)]);
+            assert_eq!(f.observe(&response, 200), Err(RegistrationError::InvalidMinExpires));
+            assert_eq!(f.state(), RegisterState::Rejected);
+        }
+    }
+    #[test]
     fn rfc_423_creates_new_transaction_with_new_cseq_and_branch() {
         let mut f = flow();
         let provisional = reply(&f, 100, &[]);
@@ -565,6 +626,27 @@ mod tests {
         assert_eq!(f2.request().header("Expires"), Some("7200"));
         assert_eq!(f2.state(), RegisterState::AwaitingResponse);
         assert!(matches!(f.plan_interval_retry(BRANCH1, 300), Err(RegistrationError::InvalidIdentity)));
+    }
+    #[test]
+    fn rfc3261_423_retry_recovery_is_new_independent_transaction() {
+        let mut first = flow();
+        let response = reply(&first, 423, &[("Min-Expires", "7200")]);
+        assert_eq!(first.observe(&response, 200).unwrap(),
+            RegisterOutcome::IntervalTooBrief { minimum_seconds: 7200 });
+        let retry = first.plan_interval_retry(BRANCH2, 300).unwrap();
+        assert_eq!(retry.state(), RegisterState::AwaitingResponse);
+        assert_eq!(retry.request().header("Expires"), Some("7200"));
+        assert_ne!(retry.request().header("Via"), first.request().header("Via"));
+        assert_eq!(retry.request().header("Call-ID"), first.request().header("Call-ID"));
+        assert!(matches!(first.plan_refresh(BRANCH2, 301), Err(RegistrationError::InvalidState)));
+    }
+    #[test]
+    fn registration_timeout_disallows_refresh_or_retry_without_new_flow() {
+        let mut flow = flow();
+        assert_eq!(flow.tick(100 + crate::transaction::TIMER_F_MS), Some(RegisterOutcome::TimedOut));
+        assert!(matches!(flow.plan_refresh(BRANCH2, 500), Err(RegistrationError::InvalidState)));
+        assert!(matches!(flow.plan_interval_retry(BRANCH2, 500), Err(RegistrationError::InvalidState)));
+        assert!(matches!(flow.plan_authentication_retry(BRANCH2, 500), Err(RegistrationError::InvalidState)));
     }
     #[test]
     fn rejects_invalid_or_overlarge_min_expires() {
@@ -616,6 +698,54 @@ mod tests {
             Err(RegistrationError::InvalidResponse));
     }
     #[test]
+    fn oversized_direct_response_headers_are_rejected_without_acceptance() {
+        let mut f = flow();
+        let own = "<sip:198.51.100.25>;expires=3600;+sip.instance=\"<urn:uuid:b43b3d1d-9f8f-5fdc-9f74-3ca273cadb97>\"";
+        let mut response = reply(&f, 200, &[("Contact", own)]);
+        for _ in 0..129 { response.headers.push(("X-Filler".into(), "x".into())); }
+        assert_eq!(f.observe(&response, 200), Err(RegistrationError::InvalidResponse));
+        assert_eq!(f.state(), RegisterState::Rejected);
+    }
+    #[test]
+    fn oversized_contact_header_is_rejected_without_acceptance() {
+        let mut f = flow();
+        let long = format!("<sip:host.example.com>;+sip.instance=\"<urn:uuid:{}>\";unused={}",
+            endpoint().instance_uuid, "a".repeat(16 * 1024));
+        let response = reply(&f, 200, &[("Contact", &long)]);
+        assert_eq!(f.observe(&response, 200), Err(RegistrationError::InvalidResponse));
+        assert_eq!(f.state(), RegisterState::Rejected);
+    }
+    #[test]
+    fn auth_retry_cseq_boundary_rejects_out_of_range_new_transaction() {
+        let mut f = RegisterFlow::new(endpoint(), 2_147_483_647, BRANCH1, 3600, 100).unwrap();
+        let challenge = reply(&f, 401, &[("WWW-Authenticate",
+            "NTLM realm=\"r\", targetname=\"sip.example.com\", version=3")]);
+        assert!(matches!(f.observe(&challenge, 200), Ok(RegisterOutcome::Challenge { .. })));
+        assert!(matches!(f.plan_authentication_retry(BRANCH2, 300),
+            Err(RegistrationError::Transaction)));
+    }
+    #[test]
+    fn malformed_contact_uri_cannot_claim_our_instance() {
+        let instance = endpoint().instance_uuid;
+        for uri in ["", "https://evil.example", "sip:evil.example<spoof>"] {
+            let mut f = flow();
+            let contact = format!("<{uri}>;expires=3600;+sip.instance=\"<urn:uuid:{instance}>\"");
+            let response = reply(&f, 200, &[("Contact", &contact)]);
+            assert_eq!(f.observe(&response, 200), Err(RegistrationError::InvalidResponse));
+            assert_eq!(f.state(), RegisterState::Rejected);
+        }
+    }
+    #[test]
+    fn valid_contact_uri_can_report_unverified_binding() {
+        let mut f = flow();
+        let contact = format!("<sip:198.51.100.25:5061;transport=tls>;expires=3600;+sip.instance=\"<urn:uuid:{}>\"", endpoint().instance_uuid);
+        let response = reply(&f, 200, &[("Contact", &contact)]);
+        assert_eq!(f.observe(&response, 200), Ok(RegisterOutcome::AcceptanceReported {
+            expires_seconds: 3600, gruu: None
+        }));
+        assert_eq!(f.state(), RegisterState::UnverifiedAcceptance);
+    }
+    #[test]
     fn response_matching_precedes_state_change() {
         let mut f = flow();
         let mut response = reply(&f, 401, &[("WWW-Authenticate", "NTLM realm=\"r\", targetname=\"s\", version=3")]);
@@ -629,6 +759,91 @@ mod tests {
         assert_eq!(f.tick(100), None);
         assert_eq!(f.tick(100 + crate::transaction::TIMER_F_MS), Some(RegisterOutcome::TimedOut));
         assert_eq!(f.state(), RegisterState::TimedOut);
+    }
+    #[test]
+    fn offline_discovery_register_challenge_refresh_unregistration_end_to_end() {
+        use crate::discovery::{DiscoveryPlan, Service, SrvRecord, SrvRandom, CandidateOrigin};
+        struct ZeroDraw;
+        impl SrvRandom for ZeroDraw {
+            fn choose_inclusive(&mut self, _maximum: u32) -> u32 { 0 }
+        }
+        let discovery = DiscoveryPlan::from_sip_uri("sip:alice@example.com").unwrap();
+        let records = vec![SrvRecord::new(0, 1, 5061, "registrar.example.com").unwrap()];
+        let targets = discovery.tls_candidates(&[
+            (Service::InternalTcp, vec![SrvRecord::new(0, 1, 5060, "plaintext.example.com").unwrap()]),
+            (Service::InternalTls, records),
+        ], &mut ZeroDraw);
+        assert_eq!(targets[0].host, "registrar.example.com");
+        assert_eq!(targets[0].port, 5061);
+        assert_eq!(targets[0].origin, CandidateOrigin::Srv(Service::InternalTls));
+        assert!(targets.iter().all(|c| c.host != "plaintext.example.com"));
+
+        let mut registration = flow();
+        let first = reply(&registration, 401, &[("WWW-Authenticate",
+            "Kerberos realm=\"r\", targetname=\"sip/registrar.example.com\", version=3")]);
+        assert!(matches!(registration.observe(&first, 200),
+            Ok(RegisterOutcome::Challenge { from: ChallengeSource::Registrar, .. })));
+        assert_eq!(registration.state(), RegisterState::NeedsAuthentication);
+        assert!(matches!(registration.observe(&first, 201), Err(RegistrationError::InvalidState)));
+
+        let mut retry = registration.plan_authentication_retry(BRANCH2, 300).unwrap();
+        assert_eq!(retry.request().header("CSeq"), Some("4 REGISTER"));
+        assert!(!retry.request().headers.iter().any(|(k,_)| k == "Authorization"));
+        let binding = format!("<sip:198.51.100.25:5061;transport=tls>;expires=3600;+sip.instance=\"<urn:uuid:{}>\"",
+            endpoint().instance_uuid);
+        let ok = reply(&retry, 200, &[("Contact", &binding)]);
+        assert!(matches!(retry.observe(&ok, 400), Ok(RegisterOutcome::AcceptanceReported { expires_seconds: 3600, .. })));
+        assert_eq!(retry.state(), RegisterState::UnverifiedAcceptance);
+        assert_eq!(retry.observe(&ok, 401), Err(RegistrationError::InvalidState));
+
+        const BRANCH3: &str = "z9hG4bK-branch-00000003";
+        const BRANCH4: &str = "z9hG4bK-branch-00000004";
+        const BRANCH5: &str = "z9hG4bK-branch-00000005";
+        let mut refresh = retry.plan_refresh(BRANCH3, 500).unwrap();
+        assert_eq!(refresh.request().header("CSeq"), Some("5 REGISTER"));
+        assert_eq!(refresh.request().header("Expires"), Some("3600"));
+        let refreshed = reply(&refresh, 200, &[("Contact", &binding)]);
+        assert!(matches!(refresh.observe(&refreshed, 600), Ok(RegisterOutcome::AcceptanceReported { .. })));
+
+        let mut remove = refresh.plan_unregistration(BRANCH4, 700).unwrap();
+        assert_eq!(remove.request().header("Expires"), Some("0"));
+        assert_ne!(remove.request().header("Contact"), Some("*"));
+        let proxy = reply(&remove, 407, &[("Proxy-Authenticate",
+            "TLS-DSK realm=\"r\", targetname=\"registrar.example.com\", version=4")]);
+        assert!(matches!(remove.observe(&proxy, 800), Ok(RegisterOutcome::Challenge { from: ChallengeSource::Proxy, .. })));
+        let mut remove_retry = remove.plan_authentication_retry(BRANCH5, 900).unwrap();
+        assert_eq!(remove_retry.request().header("Expires"), Some("0"));
+        assert_eq!(remove_retry.request().header("CSeq"), Some("7 REGISTER"));
+        let removed = reply(&remove_retry, 200, &[]);
+        assert_eq!(remove_retry.observe(&removed, 1000), Ok(RegisterOutcome::UnregistrationReported));
+        assert_eq!(remove_retry.state(), RegisterState::UnverifiedUnregistration);
+        assert!(matches!(remove_retry.plan_refresh(BRANCH3, 1100), Err(RegistrationError::InvalidState)));
+    }
+
+    #[test]
+    fn offline_discovery_register_timeout_and_replayed_response_fail_closed() {
+        use crate::discovery::{DiscoveryPlan, Service, SrvRecord, SrvRandom};
+        struct ZeroDraw;
+        impl SrvRandom for ZeroDraw {
+            fn choose_inclusive(&mut self, _maximum: u32) -> u32 { 0 }
+        }
+        let discovery = DiscoveryPlan::from_domain("example.com").unwrap();
+        let candidates = discovery.tls_candidates(&[
+            (Service::InternalTcp, vec![SrvRecord::new(0, 1, 5060, "plaintext.example.com").unwrap()]),
+            (Service::InternalTls, vec![SrvRecord::new(0, 0, 5061, ".").unwrap()]),
+        ], &mut ZeroDraw);
+        assert_eq!(candidates.len(), 3);
+        assert!(candidates.iter().all(|x| x.port == 443));
+        let mut registration = flow();
+        let challenge = reply(&registration, 401, &[("WWW-Authenticate",
+            "NTLM realm=\"r\", targetname=\"sip.example.com\", version=3")]);
+        assert!(matches!(registration.observe(&challenge, 200), Ok(RegisterOutcome::Challenge { .. })));
+        let mut retry = registration.plan_authentication_retry(BRANCH2, 300).unwrap();
+        assert_eq!(retry.tick(300 + crate::transaction::TIMER_F_MS), Some(RegisterOutcome::TimedOut));
+        assert_eq!(retry.observe(&reply(&retry, 200, &[]), 300 + crate::transaction::TIMER_F_MS + 1),
+            Err(RegistrationError::InvalidState));
+        assert!(matches!(retry.plan_refresh(BRANCH1, 40000), Err(RegistrationError::InvalidState)));
+        assert!(matches!(retry.plan_unregistration(BRANCH1, 40000), Err(RegistrationError::InvalidState)));
     }
     #[test]
     fn validates_identity_and_input_instead_of_interpolating_unsafe_text() {
