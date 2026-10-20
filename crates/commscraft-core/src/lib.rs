@@ -8,6 +8,7 @@
 pub mod challenge;
 pub mod discovery;
 pub mod im;
+pub mod offline_session_adapter;
 pub mod presence;
 pub mod registration;
 pub mod sdp;
@@ -16,7 +17,6 @@ pub mod session;
 pub mod sip;
 pub mod stream;
 pub mod tls_boundary;
-pub mod offline_session_adapter;
 pub mod transaction;
 
 pub mod kerberos;
