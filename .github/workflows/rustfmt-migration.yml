@@ -1,4 +1,5 @@
 name: One-time provenance-safe rustfmt migration
+# Retry only after preserving the original security-contract predicates under rustfmt.
 
 on:
   push:
