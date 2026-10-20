@@ -2,8 +2,8 @@
 """Source-hash and documented-contract checks only: NOT a compiler or interoperability test."""
 import hashlib
 import json
-import re
 from pathlib import Path
+from rust_source_contract import code_without_layout
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER = ROOT / 'docs/evidence-v0.12.0.json'
 
@@ -28,7 +28,7 @@ def verify():
     assert 'ReceiveError::Truncated' in inbound and 'ReceiveError::Malformed' in inbound
     assert 'TlsConnector::new()' in tls and 'tls.connect(peer.tls_reference_identity(), tcp)' in tls
     assert 'native_tls' in tls and 'TlsSipReceiver::connect' in cli
-    assert 'tls.peer_certificate()' in re.sub(r'\s+', '', tls)
+    assert 'tls.peer_certificate()' in code_without_layout(tls)
     assert 'sip_certificate::matches_sip_identity(' in tls
     cert_parser = (ROOT/'crates/commscraft-transport/src/sip_certificate.rs').read_text()
     assert 'parse_x509_certificate(leaf_der)' in cert_parser
