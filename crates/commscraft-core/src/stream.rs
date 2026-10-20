@@ -17,14 +17,20 @@ pub struct SipStreamDecoder {
 }
 
 impl SipStreamDecoder {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
-    pub fn pending_bytes(&self) -> usize { self.pending.len() }
+    pub fn pending_bytes(&self) -> usize {
+        self.pending.len()
+    }
 
     /// Returns all fully framed messages. A bad frame poisons the decoder,
     /// because there is no safe, general-purpose stream resynchronization.
     pub fn push(&mut self, input: &[u8]) -> Result<Vec<SipMessage>, SipError> {
-        if self.failed { return Err(SipError::DecoderPoisoned); }
+        if self.failed {
+            return Err(SipError::DecoderPoisoned);
+        }
         let mut out = Vec::new();
         for part in input.chunks(INPUT_CHUNK_BYTES) {
             self.pending.extend_from_slice(part);
@@ -45,23 +51,27 @@ impl SipStreamDecoder {
             while self.pending.get(count..count + 2) == Some(&b"\r\n"[..]) {
                 count += 2;
             }
-            if count != 0 { self.pending.drain(..count); }
-            if self.pending.is_empty() || self.pending.len() == 1 && self.pending[0] == b'\r' { return Ok(()); }
+            if count != 0 {
+                self.pending.drain(..count);
+            }
+            if self.pending.is_empty() || self.pending.len() == 1 && self.pending[0] == b'\r' {
+                return Ok(());
+            }
 
             match parse_frame(&self.pending)? {
                 Some((message, used)) => {
                     // Unlike message-oriented transports, TCP/TLS MUST carry
                     // Content-Length, including for zero-byte bodies.
-                    if message.header("Content-Length").is_none()
-                        && message.header("l").is_none()
-                    {
+                    if message.header("Content-Length").is_none() && message.header("l").is_none() {
                         return Err(SipError::MissingContentLength);
                     }
                     self.pending.drain(..used);
                     out.push(message);
                 }
                 None => {
-                    if self.pending.len() > MAX_FRAME_BYTES { return Err(SipError::Oversize); }
+                    if self.pending.len() > MAX_FRAME_BYTES {
+                        return Err(SipError::Oversize);
+                    }
                     return Ok(());
                 }
             }
@@ -92,8 +102,10 @@ mod tests {
     #[test]
     fn strict_content_length_and_poison_after_malformed() {
         let mut stream = SipStreamDecoder::new();
-        assert_eq!(stream.push(b"SIP/2.0 200 OK\r\nVia: test\r\n\r\n"),
-            Err(SipError::MissingContentLength));
+        assert_eq!(
+            stream.push(b"SIP/2.0 200 OK\r\nVia: test\r\n\r\n"),
+            Err(SipError::MissingContentLength)
+        );
         assert_eq!(stream.push(SECOND), Err(SipError::DecoderPoisoned));
     }
 

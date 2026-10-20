@@ -37,7 +37,9 @@ pub struct SipInbound {
 }
 
 impl SipInbound {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     /// Call from a TLS-decrypted stream. `read` is invoked at most once;
     /// callers choose their own timeouts. A read timeout preserves framing.
@@ -45,18 +47,26 @@ impl SipInbound {
         if let Some(message) = self.ready.pop_front() {
             return Ok(ReceiveEvent::Message(message));
         }
-        if self.closed { return Err(ReceiveError::Closed); }
+        if self.closed {
+            return Err(ReceiveError::Closed);
+        }
         let mut buf = [0_u8; 8192];
         match io.read(&mut buf) {
             Ok(0) => {
                 self.closed = true;
-                if self.decoder.pending_bytes() > 0 { Err(ReceiveError::Truncated) }
-                else { Err(ReceiveError::Closed) }
+                if self.decoder.pending_bytes() > 0 {
+                    Err(ReceiveError::Truncated)
+                } else {
+                    Err(ReceiveError::Closed)
+                }
             }
             Ok(count) => match self.decoder.push(&buf[..count]) {
                 Ok(frames) => {
                     self.ready.extend(frames);
-                    Ok(self.ready.pop_front().map(ReceiveEvent::Message)
+                    Ok(self
+                        .ready
+                        .pop_front()
+                        .map(ReceiveEvent::Message)
                         .unwrap_or(ReceiveEvent::Pending))
                 }
                 Err(error) => {
@@ -64,8 +74,16 @@ impl SipInbound {
                     Err(ReceiveError::Malformed(error))
                 }
             },
-            Err(error) if matches!(error.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut
-                | io::ErrorKind::Interrupted) => Ok(ReceiveEvent::Pending),
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::WouldBlock
+                        | io::ErrorKind::TimedOut
+                        | io::ErrorKind::Interrupted
+                ) =>
+            {
+                Ok(ReceiveEvent::Pending)
+            }
             Err(error) => {
                 self.closed = true;
                 Err(ReceiveError::Transport(error.kind()))
@@ -86,7 +104,9 @@ mod tests {
     }
     impl Scripted {
         fn from(steps: Vec<Result<Vec<u8>, ErrorKind>>) -> Self {
-            Self { steps: steps.into() }
+            Self {
+                steps: steps.into(),
+            }
         }
     }
     impl Read for Scripted {
@@ -107,23 +127,34 @@ mod tests {
     fn coalesced_frames_returned_without_second_read() {
         let mut input = Cursor::new([TRY, OK].concat());
         let mut receiver = SipInbound::new();
-        assert!(matches!(receiver.receive(&mut input), Ok(ReceiveEvent::Message(_))));
-        assert!(matches!(receiver.receive(&mut input), Ok(ReceiveEvent::Message(_))));
+        assert!(matches!(
+            receiver.receive(&mut input),
+            Ok(ReceiveEvent::Message(_))
+        ));
+        assert!(matches!(
+            receiver.receive(&mut input),
+            Ok(ReceiveEvent::Message(_))
+        ));
         assert_eq!(receiver.receive(&mut input), Err(ReceiveError::Closed));
     }
     #[test]
     fn fragment_then_timeout_retains_partial_message() {
         let mut input = Scripted::from(vec![
-            Ok(OK[..10].to_vec()), Err(ErrorKind::TimedOut), Ok(OK[10..].to_vec()),
+            Ok(OK[..10].to_vec()),
+            Err(ErrorKind::TimedOut),
+            Ok(OK[10..].to_vec()),
         ]);
         let mut receiver = SipInbound::new();
         assert_eq!(receiver.receive(&mut input), Ok(ReceiveEvent::Pending));
         assert_eq!(receiver.receive(&mut input), Ok(ReceiveEvent::Pending));
-        assert!(matches!(receiver.receive(&mut input), Ok(ReceiveEvent::Message(_))));
+        assert!(matches!(
+            receiver.receive(&mut input),
+            Ok(ReceiveEvent::Message(_))
+        ));
     }
     #[test]
     fn truncated_frame_at_eof_rejected() {
-        let mut input = Cursor::new(&OK[..OK.len()-1]);
+        let mut input = Cursor::new(&OK[..OK.len() - 1]);
         let mut receiver = SipInbound::new();
         assert_eq!(receiver.receive(&mut input), Ok(ReceiveEvent::Pending));
         assert_eq!(receiver.receive(&mut input), Err(ReceiveError::Truncated));
@@ -133,26 +164,38 @@ mod tests {
     fn missing_length_fails_closed() {
         let mut input = Cursor::new(b"SIP/2.0 200 OK\r\nVia: test\r\n\r\n");
         let mut receiver = SipInbound::new();
-        assert_eq!(receiver.receive(&mut input), Err(ReceiveError::Malformed(SipError::MissingContentLength)));
+        assert_eq!(
+            receiver.receive(&mut input),
+            Err(ReceiveError::Malformed(SipError::MissingContentLength))
+        );
         assert_eq!(receiver.receive(&mut input), Err(ReceiveError::Closed));
     }
     #[test]
     fn duplicate_length_fails_closed() {
         let mut input = Cursor::new(b"SIP/2.0 200 OK\r\nl: 0\r\nContent-Length: 0\r\n\r\n");
         let mut receiver = SipInbound::new();
-        assert_eq!(receiver.receive(&mut input), Err(ReceiveError::Malformed(SipError::DuplicateContentLength)));
+        assert_eq!(
+            receiver.receive(&mut input),
+            Err(ReceiveError::Malformed(SipError::DuplicateContentLength))
+        );
     }
     #[test]
     fn keepalive_crlf_is_skipped() {
         let mut input = Cursor::new([&b"\r\n\r\n"[..], OK].concat());
         let mut receiver = SipInbound::new();
-        assert!(matches!(receiver.receive(&mut input), Ok(ReceiveEvent::Message(_))));
+        assert!(matches!(
+            receiver.receive(&mut input),
+            Ok(ReceiveEvent::Message(_))
+        ));
     }
     #[test]
     fn transport_error_poisoned() {
         let mut input = Scripted::from(vec![Err(ErrorKind::ConnectionReset), Ok(OK.to_vec())]);
         let mut receiver = SipInbound::new();
-        assert_eq!(receiver.receive(&mut input), Err(ReceiveError::Transport(ErrorKind::ConnectionReset)));
+        assert_eq!(
+            receiver.receive(&mut input),
+            Err(ReceiveError::Transport(ErrorKind::ConnectionReset))
+        );
         assert_eq!(receiver.receive(&mut input), Err(ReceiveError::Closed));
     }
     #[test]
@@ -160,7 +203,10 @@ mod tests {
         let mut input = Scripted::from(vec![Err(ErrorKind::Interrupted), Ok(OK.to_vec())]);
         let mut receiver = SipInbound::new();
         assert_eq!(receiver.receive(&mut input), Ok(ReceiveEvent::Pending));
-        assert!(matches!(receiver.receive(&mut input), Ok(ReceiveEvent::Message(_))));
+        assert!(matches!(
+            receiver.receive(&mut input),
+            Ok(ReceiveEvent::Message(_))
+        ));
     }
     #[test]
     fn huge_header_is_rejected() {
@@ -169,8 +215,11 @@ mod tests {
         let mut failed = false;
         for _ in 0..20 {
             match receiver.receive(&mut input) {
-                Err(ReceiveError::Malformed(SipError::Oversize)) => { failed = true; break; },
-                Ok(ReceiveEvent::Pending) => {},
+                Err(ReceiveError::Malformed(SipError::Oversize)) => {
+                    failed = true;
+                    break;
+                }
+                Ok(ReceiveEvent::Pending) => {}
                 other => panic!("unexpected result: {other:?}"),
             }
         }

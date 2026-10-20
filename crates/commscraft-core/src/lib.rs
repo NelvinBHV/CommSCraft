@@ -5,18 +5,18 @@
 //! The transaction and stream components operate only on offline data.
 //! Its inputs must be treated as untrusted when integrated into a network client.
 
-pub mod discovery;
-pub mod registration;
 pub mod challenge;
+pub mod discovery;
+pub mod im;
+pub mod presence;
+pub mod registration;
+pub mod sdp;
+pub mod security;
 pub mod session;
 pub mod sip;
 pub mod stream;
-pub mod transaction;
-pub mod security;
 pub mod tls_boundary;
-pub mod presence;
-pub mod im;
-pub mod sdp;
+pub mod transaction;
 
 pub mod kerberos;
 pub mod kerberos_mic;

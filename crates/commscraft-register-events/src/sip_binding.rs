@@ -25,17 +25,16 @@ pub fn parse_register_presence_response(
     };
     let mut cseq = None;
     for (name, value) in &message.headers {
-        if name.eq_ignore_ascii_case("CSeq")
-            && cseq.replace(value.as_str()).is_some()
-        {
+        if name.eq_ignore_ascii_case("CSeq") && cseq.replace(value.as_str()).is_some() {
             return Err(BindingError::DuplicateCSeq);
         }
     }
     let raw = cseq.ok_or(BindingError::InvalidCSeq)?;
     // Defensive boundary for programmatically constructed SIP messages:
     // reject embedded CR/LF and controls rather than treating injection as LWS.
-    if raw.bytes().any(|b| b == b'\r' || b == b'\n' || b == 0x7f
-        || (b < 0x20 && b != b'\t'))
+    if raw
+        .bytes()
+        .any(|b| b == b'\r' || b == b'\n' || b == 0x7f || (b < 0x20 && b != b'\t'))
     {
         return Err(BindingError::InvalidCSeq);
     }
@@ -46,7 +45,8 @@ pub fn parse_register_presence_response(
     // RFC 3261 §§8.1.1.5, 20.16: requests use unsigned decimal
     // CSeq below 2^31. This response is bound to that request syntax.
     // Reject signs, Unicode digits, trailing bytes and overflow.
-    if number.is_empty() || !number.bytes().all(|b| b.is_ascii_digit())
+    if number.is_empty()
+        || !number.bytes().all(|b| b.is_ascii_digit())
         || !matches!(number.parse::<u32>(), Ok(n) if n < (1 << 31))
     {
         return Err(BindingError::InvalidCSeq);
@@ -56,8 +56,11 @@ pub fn parse_register_presence_response(
     if method != "REGISTER" || code != 200 {
         return Ok(None);
     }
-    let fields: Vec<(&str, &str)> = message.headers.iter()
-        .map(|(key, value)| (key.as_str(), value.as_str())).collect();
+    let fields: Vec<(&str, &str)> = message
+        .headers
+        .iter()
+        .map(|(key, value)| (key.as_str(), value.as_str()))
+        .collect();
     parse_presence_state(code, &fields).map_err(BindingError::Presence)
 }
 
@@ -66,7 +69,10 @@ mod tests {
     use super::*;
     fn response(code: u16, cseq: &str) -> SipMessage {
         SipMessage {
-            start_line: StartLine::Response { code, reason: "Synthetic".into() },
+            start_line: StartLine::Response {
+                code,
+                reason: "Synthetic".into(),
+            },
             headers: vec![
                 ("CSeq".into(), cseq.into()),
                 ("Presence-State".into(), "register-action=\"added\"".into()),
@@ -76,39 +82,80 @@ mod tests {
     }
     #[test]
     fn only_register_200_returns_hint() {
-        assert!(parse_register_presence_response(&response(200, "1 REGISTER")).unwrap().is_some());
+        assert!(
+            parse_register_presence_response(&response(200, "1 REGISTER"))
+                .unwrap()
+                .is_some()
+        );
         for (status, cseq) in [(200, "1 INVITE"), (401, "1 REGISTER"), (200, "1 register")] {
-            assert_eq!(parse_register_presence_response(&response(status, cseq)), Ok(None));
+            assert_eq!(
+                parse_register_presence_response(&response(status, cseq)),
+                Ok(None)
+            );
         }
     }
     #[test]
     fn malformed_and_duplicate_cseq_fail_closed() {
-        for invalid in ["", "-1 REGISTER", "+1 REGISTER", "2147483648 REGISTER",
-                        "4294967295 REGISTER", "4294967296 REGISTER",
-                        "1 REGISTER EXTRA", "1REGISTER", "notanumber REGISTER",
-                        "1\r\nREGISTER", "1\nREGISTER", "1\x0BREGISTER",
-                        "1\0REGISTER"] {
-            assert_eq!(parse_register_presence_response(&response(200, invalid)),
-                Err(BindingError::InvalidCSeq), "{invalid}");
+        for invalid in [
+            "",
+            "-1 REGISTER",
+            "+1 REGISTER",
+            "2147483648 REGISTER",
+            "4294967295 REGISTER",
+            "4294967296 REGISTER",
+            "1 REGISTER EXTRA",
+            "1REGISTER",
+            "notanumber REGISTER",
+            "1\r\nREGISTER",
+            "1\nREGISTER",
+            "1\x0BREGISTER",
+            "1\0REGISTER",
+        ] {
+            assert_eq!(
+                parse_register_presence_response(&response(200, invalid)),
+                Err(BindingError::InvalidCSeq),
+                "{invalid}"
+            );
         }
-        assert!(parse_register_presence_response(&response(200, "2147483647 REGISTER"))
-            .unwrap().is_some());
+        assert!(
+            parse_register_presence_response(&response(200, "2147483647 REGISTER"))
+                .unwrap()
+                .is_some()
+        );
         let mut message = response(200, "1 REGISTER");
         message.headers.push(("cseq".into(), "2 REGISTER".into()));
-        assert_eq!(parse_register_presence_response(&message), Err(BindingError::DuplicateCSeq));
-        message.headers.retain(|(key, _)| !key.eq_ignore_ascii_case("CSeq"));
-        assert_eq!(parse_register_presence_response(&message), Err(BindingError::InvalidCSeq));
+        assert_eq!(
+            parse_register_presence_response(&message),
+            Err(BindingError::DuplicateCSeq)
+        );
+        message
+            .headers
+            .retain(|(key, _)| !key.eq_ignore_ascii_case("CSeq"));
+        assert_eq!(
+            parse_register_presence_response(&message),
+            Err(BindingError::InvalidCSeq)
+        );
     }
     #[test]
     fn request_never_becomes_a_register_success() {
         let mut m = response(200, "1 REGISTER");
-        m.start_line = StartLine::Request { method: "REGISTER".into(), uri: "sip:example.com".into() };
-        assert_eq!(parse_register_presence_response(&m), Err(BindingError::NotResponse));
+        m.start_line = StartLine::Request {
+            method: "REGISTER".into(),
+            uri: "sip:example.com".into(),
+        };
+        assert_eq!(
+            parse_register_presence_response(&m),
+            Err(BindingError::NotResponse)
+        );
     }
     #[test]
     fn duplicate_presence_state_is_rejected() {
         let mut m = response(200, "1 REGISTER");
-        m.headers.push(("presence-state".into(), "register-action=\"fixed\"".into()));
-        assert_eq!(parse_register_presence_response(&m), Err(BindingError::Presence(ParseError::DuplicateHeader)));
+        m.headers
+            .push(("presence-state".into(), "register-action=\"fixed\"".into()));
+        assert_eq!(
+            parse_register_presence_response(&m),
+            Err(BindingError::Presence(ParseError::DuplicateHeader))
+        );
     }
 }

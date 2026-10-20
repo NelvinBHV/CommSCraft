@@ -7,8 +7,8 @@
 //! synthetic MIC or TLS-independent message to a productive user session.
 
 use crate::registration::{
-    MicCheckedRegisterError, MicCheckedRegisterResult, RegisterFlow,
-    RegisterOutcome, RegisterState, RegistrationError,
+    MicCheckedRegisterError, MicCheckedRegisterResult, RegisterFlow, RegisterOutcome,
+    RegisterState, RegistrationError,
 };
 use crate::security::{SecurityAssociation, ServerMicVerifier};
 use crate::sip::{SipMessage, StartLine};
@@ -45,14 +45,22 @@ pub enum SessionEvent {
 }
 
 #[derive(Debug, Clone)]
-pub struct SessionMachine { state: SessionState }
+pub struct SessionMachine {
+    state: SessionState,
+}
 
 impl Default for SessionMachine {
-    fn default() -> Self { Self { state: SessionState::Offline } }
+    fn default() -> Self {
+        Self {
+            state: SessionState::Offline,
+        }
+    }
 }
 
 impl SessionMachine {
-    pub fn state(&self) -> SessionState { self.state }
+    pub fn state(&self) -> SessionState {
+        self.state
+    }
 
     pub fn dispatch(&mut self, event: SessionEvent) -> Result<SessionState, &'static str> {
         use SessionEvent as E;
@@ -98,7 +106,9 @@ pub enum GateEvent {
     /// A challenge is an unauthenticated request to begin GSS negotiation,
     /// NOT proof of server identity or of completion of authentication.
     ChallengeRequired(RegisterOutcome),
-    IntervalRetryRequired { minimum_seconds: u32 },
+    IntervalRetryRequired {
+        minimum_seconds: u32,
+    },
     MicChecked(MicCheckedRegisterResult),
     Rejected(u16),
     TimedOut,
@@ -133,16 +143,32 @@ pub struct RegisterVerificationGate {
 
 impl RegisterVerificationGate {
     pub fn new(flow: RegisterFlow, association: SecurityAssociation) -> Self {
-        Self { flow, association, state: GateState::AwaitingResponse }
+        Self {
+            flow,
+            association,
+            state: GateState::AwaitingResponse,
+        }
     }
 
-    pub fn request(&self) -> &SipMessage { self.flow.request() }
-    pub fn state(&self) -> GateState { self.state }
-    pub fn observed_register_state(&self) -> RegisterState { self.flow.state() }
-    pub fn offline_trust_assessment(&self, fixture_tls_peer_approved: bool) -> OfflineTrustAssessment {
+    pub fn request(&self) -> &SipMessage {
+        self.flow.request()
+    }
+    pub fn state(&self) -> GateState {
+        self.state
+    }
+    pub fn observed_register_state(&self) -> RegisterState {
+        self.flow.state()
+    }
+    pub fn offline_trust_assessment(
+        &self,
+        fixture_tls_peer_approved: bool,
+    ) -> OfflineTrustAssessment {
         OfflineTrustAssessment {
             tls_peer_approved_by_fixture: fixture_tls_peer_approved,
-            mic_and_replay_checked: matches!(self.state, GateState::MicCheckedNotSignedIn | GateState::RemovalMicChecked),
+            mic_and_replay_checked: matches!(
+                self.state,
+                GateState::MicCheckedNotSignedIn | GateState::RemovalMicChecked
+            ),
             authenticated_sign_in: false,
         }
     }
@@ -156,9 +182,14 @@ impl RegisterVerificationGate {
     /// aborts this exchange (fail closed); an unrelated response is ignored.
     /// RFC 3261 §17.1.2: 401/407/423 are final and require a new transaction.
     pub fn observe<V: ServerMicVerifier>(
-        &mut self, response: &SipMessage, verifier: &V, now_ms: u64,
+        &mut self,
+        response: &SipMessage,
+        verifier: &V,
+        now_ms: u64,
     ) -> Result<GateEvent, GateError> {
-        if self.state != GateState::AwaitingResponse { return Err(GateError::Closed); }
+        if self.state != GateState::AwaitingResponse {
+            return Err(GateError::Closed);
+        }
         if self.flow.tick(now_ms).is_some() {
             self.state = GateState::TimedOut;
             return Ok(GateEvent::TimedOut);
@@ -171,21 +202,29 @@ impl RegisterVerificationGate {
         };
         if code == 200 {
             return match self.flow.observe_mic_checked_200(
-                response, &mut self.association, verifier, now_ms,
+                response,
+                &mut self.association,
+                verifier,
+                now_ms,
             ) {
                 Ok(result) => {
                     self.state = match result {
-                        MicCheckedRegisterResult::RegistrarReportedRemoval => GateState::RemovalMicChecked,
-                        MicCheckedRegisterResult::RegistrarReportedBinding { .. } => GateState::MicCheckedNotSignedIn,
+                        MicCheckedRegisterResult::RegistrarReportedRemoval => {
+                            GateState::RemovalMicChecked
+                        }
+                        MicCheckedRegisterResult::RegistrarReportedBinding { .. } => {
+                            GateState::MicCheckedNotSignedIn
+                        }
                     };
                     Ok(GateEvent::MicChecked(result))
                 }
-                Err(MicCheckedRegisterError::Transaction | MicCheckedRegisterError::NotFinalOk) =>
-                    Err(GateError::UnmatchedResponse),
+                Err(MicCheckedRegisterError::Transaction | MicCheckedRegisterError::NotFinalOk) => {
+                    Err(GateError::UnmatchedResponse)
+                }
                 Err(error) => {
                     self.state = GateState::Rejected;
                     Err(GateError::Mic(error))
-                },
+                }
             };
         }
         // Non-200 responses cannot imply registration success. Clone to
@@ -225,7 +264,8 @@ impl RegisterVerificationGate {
                 Ok(GateEvent::TimedOut)
             }
             // The only path that accepts a 200 is the MIC-gated one above.
-            RegisterOutcome::AcceptanceReported { .. } | RegisterOutcome::UnregistrationReported => {
+            RegisterOutcome::AcceptanceReported { .. }
+            | RegisterOutcome::UnregistrationReported => {
                 self.state = GateState::Rejected;
                 Err(GateError::InvalidOrUnverifiedFinal)
             }
@@ -255,7 +295,9 @@ mod tests {
     use crate::security::TlsDskHmacSha256;
     use crate::sip::SipMessage;
 
-    fn gate() -> RegisterVerificationGate { gate_with_sa_expiry(8_000_000) }
+    fn gate() -> RegisterVerificationGate {
+        gate_with_sa_expiry(8_000_000)
+    }
     fn gate_with_sa_expiry(expiry_ms: u64) -> RegisterVerificationGate {
         let endpoint = Endpoint {
             aor: "sip:alice@example.com".into(),
@@ -267,44 +309,64 @@ mod tests {
             call_id: "aabbccdd0011@example.com".into(),
         };
         let flow = RegisterFlow::new(endpoint, 8, "z9hG4bK-integrated-000001", 3600, 0).unwrap();
-        let association = SecurityAssociation::begin(&ChallengeOffer {
-            scheme: Scheme::TlsDsk,
-            source: ChallengeSource::Registrar,
-            realm: Some("SIP Communications Service".into()),
-            targetname: Some("server.example.com".into()),
-            opaque: Some("opaque123".into()),
-            version: Some(4),
-            sts_uri: None,
-            gssapi_data: None,
-        }, expiry_ms).unwrap();
+        let association = SecurityAssociation::begin(
+            &ChallengeOffer {
+                scheme: Scheme::TlsDsk,
+                source: ChallengeSource::Registrar,
+                realm: Some("SIP Communications Service".into()),
+                targetname: Some("server.example.com".into()),
+                opaque: Some("opaque123".into()),
+                version: Some(4),
+                sts_uri: None,
+                gssapi_data: None,
+            },
+            expiry_ms,
+        )
+        .unwrap();
         RegisterVerificationGate::new(flow, association)
     }
     fn matching_reply(gate: &RegisterVerificationGate, code: u16) -> SipMessage {
         SipMessage {
-            start_line: StartLine::Response { code, reason: "Synthetic".into() },
-            headers: ["Via", "Call-ID", "CSeq"].iter().map(|name|
-                ((*name).into(), gate.request().header(name).unwrap().into())).collect(),
+            start_line: StartLine::Response {
+                code,
+                reason: "Synthetic".into(),
+            },
+            headers: ["Via", "Call-ID", "CSeq"]
+                .iter()
+                .map(|name| ((*name).into(), gate.request().header(name).unwrap().into()))
+                .collect(),
             body: Vec::new(),
         }
     }
     #[test]
     fn demo_200_is_not_a_login() {
         let mut demo = SessionMachine::default();
-        for event in [SessionEvent::Start, SessionEvent::DiscoverySucceeded,
-            SessionEvent::Connected, SessionEvent::ChallengeReceived,
-            SessionEvent::CredentialsPrepared, SessionEvent::RegistrationAccepted] {
+        for event in [
+            SessionEvent::Start,
+            SessionEvent::DiscoverySucceeded,
+            SessionEvent::Connected,
+            SessionEvent::ChallengeReceived,
+            SessionEvent::CredentialsPrepared,
+            SessionEvent::RegistrationAccepted,
+        ] {
             demo.dispatch(event).unwrap();
         }
         assert_eq!(demo.state(), SessionState::AcceptanceUnverified);
         demo.dispatch(SessionEvent::TransportLost).unwrap();
-        assert_eq!(demo.dispatch(SessionEvent::Retry).unwrap(), SessionState::Discovering);
+        assert_eq!(
+            demo.dispatch(SessionEvent::Retry).unwrap(),
+            SessionState::Discovering
+        );
     }
     #[test]
     fn untrusted_200_poisoned_without_consuming_synthetic_sa() {
         let mut gate = gate();
         let reply = matching_reply(&gate, 200);
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
-        assert!(matches!(gate.observe(&reply, &verifier, 100), Err(GateError::Mic(_))));
+        assert!(matches!(
+            gate.observe(&reply, &verifier, 100),
+            Err(GateError::Mic(_))
+        ));
         assert_eq!(gate.state(), GateState::Rejected);
         assert_eq!(gate.highest_verified_server_sequence(), None);
         assert_eq!(gate.observe(&reply, &verifier, 101), Err(GateError::Closed));
@@ -316,18 +378,33 @@ mod tests {
         response.headers.push(("WWW-Authenticate".into(),
             "Kerberos realm=\"SIP Communications Service\", targetname=\"sip/server.example.com\", version=4".into()));
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
-        assert!(matches!(gate.observe(&response, &verifier, 100), Ok(GateEvent::ChallengeRequired(_))));
+        assert!(matches!(
+            gate.observe(&response, &verifier, 100),
+            Ok(GateEvent::ChallengeRequired(_))
+        ));
         assert_eq!(gate.state(), GateState::ChallengeRequired);
         assert_eq!(gate.highest_verified_server_sequence(), None);
-        assert_eq!(gate.observe(&response, &verifier, 101), Err(GateError::Closed));
+        assert_eq!(
+            gate.observe(&response, &verifier, 101),
+            Err(GateError::Closed)
+        );
     }
     #[test]
     fn unrelated_200_does_not_consume_gate() {
         let mut gate = gate();
         let mut reply = matching_reply(&gate, 200);
-        reply.headers.iter_mut().find(|(k, _)| k == "Call-ID").unwrap().1.push_str("-wrong");
+        reply
+            .headers
+            .iter_mut()
+            .find(|(k, _)| k == "Call-ID")
+            .unwrap()
+            .1
+            .push_str("-wrong");
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
-        assert_eq!(gate.observe(&reply, &verifier, 100), Err(GateError::UnmatchedResponse));
+        assert_eq!(
+            gate.observe(&reply, &verifier, 100),
+            Err(GateError::UnmatchedResponse)
+        );
         assert_eq!(gate.state(), GateState::AwaitingResponse);
         assert_eq!(gate.highest_verified_server_sequence(), None);
     }
@@ -363,12 +440,22 @@ mod tests {
         let buffer = server_mic_buffer(&reply, &info).unwrap();
         let mut hmac = <Hmac<Sha256> as Mac>::new_from_slice(&[0x5a; 32]).unwrap();
         hmac.update(&buffer);
-        let mic: String = hmac.finalize().into_bytes().iter()
-            .map(|v| format!("{v:02x}")).collect();
-        let signed = reply.header("Authentication-Info").unwrap()
+        let mic: String = hmac
+            .finalize()
+            .into_bytes()
+            .iter()
+            .map(|v| format!("{v:02x}"))
+            .collect();
+        let signed = reply
+            .header("Authentication-Info")
+            .unwrap()
             .replace("rspauth=\"00\"", &format!("rspauth=\"{mic}\""));
-        reply.headers.iter_mut().find(|(name, _)| name == "Authentication-Info")
-            .unwrap().1 = signed;
+        reply
+            .headers
+            .iter_mut()
+            .find(|(name, _)| name == "Authentication-Info")
+            .unwrap()
+            .1 = signed;
         reply
     }
     #[test]
@@ -377,8 +464,12 @@ mod tests {
         let reply = signed_200(&gate, 7);
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
         let result = gate.observe(&reply, &verifier, 5);
-        assert!(matches!(result, Ok(GateEvent::MicChecked(
-            MicCheckedRegisterResult::RegistrarReportedBinding { .. }))));
+        assert!(matches!(
+            result,
+            Ok(GateEvent::MicChecked(
+                MicCheckedRegisterResult::RegistrarReportedBinding { .. }
+            ))
+        ));
         assert_eq!(gate.state(), GateState::MicCheckedNotSignedIn);
         assert_eq!(gate.highest_verified_server_sequence(), Some(7));
         // An old response cannot enter another phase in this gate.
@@ -408,9 +499,18 @@ mod tests {
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
         let mut invalid = gate();
         let mut bad = signed_200(&invalid, 23);
-        bad.headers.iter_mut().find(|(k, _)| k == "Authentication-Info").unwrap().1.push('x');
+        bad.headers
+            .iter_mut()
+            .find(|(k, _)| k == "Authentication-Info")
+            .unwrap()
+            .1
+            .push('x');
         assert!(invalid.observe(&bad, &verifier, 5).is_err());
-        assert!(!invalid.offline_trust_assessment(true).mic_and_replay_checked);
+        assert!(
+            !invalid
+                .offline_trust_assessment(true)
+                .mic_and_replay_checked
+        );
         let mut expired = gate_with_sa_expiry(4);
         let valid = signed_200(&expired, 24);
         // Expire the security association BEFORE the 32-second SIP timer F.
@@ -419,15 +519,28 @@ mod tests {
     }
     #[test]
     fn security_boundary_v3_discovery_tls_register_signed_mic_replay_and_recovery() {
-        use crate::discovery::{DiscoveryPlan, Service, SrvRecord, SrvRandom};
+        use crate::discovery::{DiscoveryPlan, Service, SrvRandom, SrvRecord};
         use crate::tls_boundary::{BoundaryError, FixturePeerReport, OfflineTlsBoundary};
         struct ZeroDraw;
-        impl SrvRandom for ZeroDraw { fn choose_inclusive(&mut self, _: u32) -> u32 { 0 } }
+        impl SrvRandom for ZeroDraw {
+            fn choose_inclusive(&mut self, _: u32) -> u32 {
+                0
+            }
+        }
         let discovery = DiscoveryPlan::from_sip_uri("sip:alice@example.com").unwrap();
-        let candidates = discovery.tls_candidates(&[
-            (Service::InternalTcp, vec![SrvRecord::new(0, 0, 5060, "insecure.example.com").unwrap()]),
-            (Service::InternalTls, vec![SrvRecord::new(0, 1, 5061, "server.example.com").unwrap()]),
-        ], &mut ZeroDraw);
+        let candidates = discovery.tls_candidates(
+            &[
+                (
+                    Service::InternalTcp,
+                    vec![SrvRecord::new(0, 0, 5060, "insecure.example.com").unwrap()],
+                ),
+                (
+                    Service::InternalTls,
+                    vec![SrvRecord::new(0, 1, 5061, "server.example.com").unwrap()],
+                ),
+            ],
+            &mut ZeroDraw,
+        );
         assert_eq!(candidates[0].host, "server.example.com");
         assert_eq!(candidates[0].port, 5061);
         assert!(!candidates.iter().any(|c| c.host == "insecure.example.com"));
@@ -436,33 +549,66 @@ mod tests {
             authenticated_sip_domain: "example.com".into(),
             selected_tls_host: candidates[0].host.clone(),
             reported_tls_host: "server.example.com".into(),
-            chain_validated: true, eku_approved: true,
-            generation: 10, expires_at_ms: 1000,
+            chain_validated: true,
+            eku_approved: true,
+            generation: 10,
+            expires_at_ms: 1000,
         };
         let mut tls = OfflineTlsBoundary::from_fixture(report.clone(), 0).unwrap();
         let mut registration = gate();
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
         let response = signed_200(&registration, 31);
-        assert!(matches!(registration.observe(&response, &verifier, 5),
-            Ok(GateEvent::MicChecked(MicCheckedRegisterResult::RegistrarReportedBinding { .. }))));
+        assert!(matches!(
+            registration.observe(&response, &verifier, 5),
+            Ok(GateEvent::MicChecked(
+                MicCheckedRegisterResult::RegistrarReportedBinding { .. }
+            ))
+        ));
         assert_eq!(registration.highest_verified_server_sequence(), Some(31));
-        assert_eq!(tls.observe_offline_mic(10,
-            registration.offline_trust_assessment(true).mic_and_replay_checked, 31, 6), Ok(()));
-        assert_eq!(tls.observe_offline_mic(10, true, 31, 7), Err(BoundaryError::Replay));
-        assert_eq!(tls.observe_offline_mic(11, true, 32, 8), Err(BoundaryError::ConnectionChanged));
+        assert_eq!(
+            tls.observe_offline_mic(
+                10,
+                registration
+                    .offline_trust_assessment(true)
+                    .mic_and_replay_checked,
+                31,
+                6
+            ),
+            Ok(())
+        );
+        assert_eq!(
+            tls.observe_offline_mic(10, true, 31, 7),
+            Err(BoundaryError::Replay)
+        );
+        assert_eq!(
+            tls.observe_offline_mic(11, true, 32, 8),
+            Err(BoundaryError::ConnectionChanged)
+        );
         assert_eq!(tls.highest_mic_sequence(), Some(31));
         assert!(!tls.authenticated_sign_in());
-        assert!(!registration.offline_trust_assessment(true).authenticated_sign_in);
+        assert!(
+            !registration
+                .offline_trust_assessment(true)
+                .authenticated_sign_in
+        );
         registration.disconnect();
         tls.disconnect();
-        assert_eq!(tls.observe_offline_mic(10, true, 32, 9), Err(BoundaryError::ConnectionChanged));
-        assert_eq!(registration.observe(&response, &verifier, 9), Err(GateError::Closed));
+        assert_eq!(
+            tls.observe_offline_mic(10, true, 32, 9),
+            Err(BoundaryError::ConnectionChanged)
+        );
+        assert_eq!(
+            registration.observe(&response, &verifier, 9),
+            Err(GateError::Closed)
+        );
         let mut recovered_report = report;
         recovered_report.generation = 11;
         let mut recovered_tls = OfflineTlsBoundary::from_fixture(recovered_report, 10).unwrap();
         let mut recovered_registration = gate();
         let new_response = signed_200(&recovered_registration, 32);
-        assert!(recovered_registration.observe(&new_response, &verifier, 11).is_ok());
+        assert!(recovered_registration
+            .observe(&new_response, &verifier, 11)
+            .is_ok());
         assert_eq!(recovered_tls.observe_offline_mic(11, true, 32, 12), Ok(()));
         assert!(!recovered_tls.authenticated_sign_in());
     }
@@ -475,32 +621,57 @@ mod tests {
             authenticated_sip_domain: "example.com".into(),
             selected_tls_host: "server.example.com".into(),
             reported_tls_host: "attacker.example.com".into(),
-            chain_validated: true, eku_approved: true,
-            generation: 1, expires_at_ms: 15,
+            chain_validated: true,
+            eku_approved: true,
+            generation: 1,
+            expires_at_ms: 15,
         };
-        assert!(matches!(OfflineTlsBoundary::from_fixture(report.clone(), 0), Err(BoundaryError::PeerMismatch)));
+        assert!(matches!(
+            OfflineTlsBoundary::from_fixture(report.clone(), 0),
+            Err(BoundaryError::PeerMismatch)
+        ));
         let mut good = report;
         good.reported_tls_host = "server.example.com".into();
         let mut tls = OfflineTlsBoundary::from_fixture(good, 0).unwrap();
         let mut registration = gate();
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
         let mut forged = signed_200(&registration, 50);
-        forged.headers.iter_mut().find(|(name,_)| name == "Authentication-Info").unwrap().1.push('f');
+        forged
+            .headers
+            .iter_mut()
+            .find(|(name, _)| name == "Authentication-Info")
+            .unwrap()
+            .1
+            .push('f');
         assert!(registration.observe(&forged, &verifier, 1).is_err());
         assert_eq!(registration.highest_verified_server_sequence(), None);
-        assert_eq!(tls.observe_offline_mic(1, false, 50, 2), Err(BoundaryError::MicUnverified));
+        assert_eq!(
+            tls.observe_offline_mic(1, false, 50, 2),
+            Err(BoundaryError::MicUnverified)
+        );
         assert_eq!(tls.highest_mic_sequence(), None);
-        assert_eq!(tls.observe_offline_mic(1, true, 50, 15), Err(BoundaryError::Expired));
+        assert_eq!(
+            tls.observe_offline_mic(1, true, 50, 15),
+            Err(BoundaryError::Expired)
+        );
         assert!(!tls.authenticated_sign_in());
     }
     #[test]
     fn bad_mic_in_synthetic_success_fails_closed() {
         let mut gate = gate();
         let mut reply = signed_200(&gate, 9);
-        reply.headers.iter_mut().find(|(k,_)| k == "Authentication-Info")
-            .unwrap().1.push('x');
+        reply
+            .headers
+            .iter_mut()
+            .find(|(k, _)| k == "Authentication-Info")
+            .unwrap()
+            .1
+            .push('x');
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
-        assert!(matches!(gate.observe(&reply, &verifier, 1), Err(GateError::Mic(_))));
+        assert!(matches!(
+            gate.observe(&reply, &verifier, 1),
+            Err(GateError::Mic(_))
+        ));
         assert_eq!(gate.state(), GateState::Rejected);
         assert_eq!(gate.highest_verified_server_sequence(), None);
     }
@@ -513,7 +684,10 @@ mod tests {
             "Kerberos realm=\"SIP Communications Service\", targetname=\"sip/server.example.com\", version=4".into()));
         assert!(gate.observe(&challenge, &verifier, 1).is_ok());
         let late_200 = signed_200(&gate, 2);
-        assert_eq!(gate.observe(&late_200, &verifier, 2), Err(GateError::Closed));
+        assert_eq!(
+            gate.observe(&late_200, &verifier, 2),
+            Err(GateError::Closed)
+        );
     }
 
     #[test]
@@ -521,7 +695,10 @@ mod tests {
         let mut gate = gate();
         let reply = matching_reply(&gate, 401); // matching transaction, missing WWW-Authenticate
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
-        assert!(matches!(gate.observe(&reply, &verifier, 1), Err(GateError::Registration(_))));
+        assert!(matches!(
+            gate.observe(&reply, &verifier, 1),
+            Err(GateError::Registration(_))
+        ));
         assert_eq!(gate.state(), GateState::Rejected);
     }
     #[test]
@@ -529,8 +706,10 @@ mod tests {
         let mut gate = gate();
         let reply = matching_reply(&gate, 401);
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
-        assert_eq!(gate.observe(&reply, &verifier, 32_000), Ok(GateEvent::TimedOut));
+        assert_eq!(
+            gate.observe(&reply, &verifier, 32_000),
+            Ok(GateEvent::TimedOut)
+        );
         assert_eq!(gate.state(), GateState::TimedOut);
     }
-
 }

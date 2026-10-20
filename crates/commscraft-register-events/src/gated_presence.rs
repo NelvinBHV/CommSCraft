@@ -57,21 +57,24 @@ pub fn observe_register_with_presence<V: ServerMicVerifier>(
     } else {
         None
     };
-    Ok(GatedPresenceOutcome { event, untrusted_hint })
+    Ok(GatedPresenceOutcome {
+        event,
+        untrusted_hint,
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::RegisterAction;
-    use hmac::{Hmac, Mac};
-    use sha2::Sha256;
     use commscraft_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
     use commscraft_core::registration::{Endpoint, RegisterFlow};
     use commscraft_core::security::{
         parse_authentication_info, server_mic_buffer, SecurityAssociation, TlsDskHmacSha256,
     };
     use commscraft_core::session::GateState;
+    use hmac::{Hmac, Mac};
+    use sha2::Sha256;
 
     fn gate() -> RegisterVerificationGate {
         let endpoint = Endpoint {
@@ -85,25 +88,38 @@ mod tests {
         };
         let flow = RegisterFlow::new(endpoint, 8, "z9hG4bK-integrated-000001", 3600, 0)
             .expect("valid synthetic REGISTER");
-        let association = SecurityAssociation::begin(&ChallengeOffer {
-            scheme: Scheme::TlsDsk,
-            source: ChallengeSource::Registrar,
-            realm: Some("SIP Communications Service".into()),
-            targetname: Some("server.example.com".into()),
-            opaque: Some("opaque123".into()),
-            version: Some(4),
-            sts_uri: None,
-            gssapi_data: None,
-        }, 8_000_000).expect("synthetic security association");
+        let association = SecurityAssociation::begin(
+            &ChallengeOffer {
+                scheme: Scheme::TlsDsk,
+                source: ChallengeSource::Registrar,
+                realm: Some("SIP Communications Service".into()),
+                targetname: Some("server.example.com".into()),
+                opaque: Some("opaque123".into()),
+                version: Some(4),
+                sts_uri: None,
+                gssapi_data: None,
+            },
+            8_000_000,
+        )
+        .expect("synthetic security association");
         RegisterVerificationGate::new(flow, association)
     }
 
     fn reply(gate: &RegisterVerificationGate, status: u16) -> SipMessage {
         SipMessage {
-            start_line: StartLine::Response { code: status, reason: "Synthetic".into() },
-            headers: ["Via", "Call-ID", "CSeq"].iter().map(|name| {
-                ((*name).into(), gate.request().header(name).expect("request header").into())
-            }).collect(),
+            start_line: StartLine::Response {
+                code: status,
+                reason: "Synthetic".into(),
+            },
+            headers: ["Via", "Call-ID", "CSeq"]
+                .iter()
+                .map(|name| {
+                    (
+                        (*name).into(),
+                        gate.request().header(name).expect("request header").into(),
+                    )
+                })
+                .collect(),
             body: Vec::new(),
         }
     }
@@ -123,13 +139,23 @@ mod tests {
         let signed_bytes = server_mic_buffer(&msg, &info).expect("valid MIC buffer");
         let mut mac = <Hmac<Sha256> as Mac>::new_from_slice(&[0x5a; 32]).expect("test key");
         mac.update(&signed_bytes);
-        let digest: String = mac.finalize().into_bytes().iter()
-            .map(|byte| format!("{byte:02x}")).collect();
-        let value = msg.header("Authentication-Info").expect("authentication info")
+        let digest: String = mac
+            .finalize()
+            .into_bytes()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect();
+        let value = msg
+            .header("Authentication-Info")
+            .expect("authentication info")
             .replace("rspauth=\"00\"", &format!("rspauth=\"{digest}\""));
-        msg.headers.iter_mut().find(|(name, _)| name == "Authentication-Info")
-            .expect("authentication info header").1 = value;
-        msg.headers.push(("Presence-State".into(), "register-action=\"added\"".into()));
+        msg.headers
+            .iter_mut()
+            .find(|(name, _)| name == "Authentication-Info")
+            .expect("authentication info header")
+            .1 = value;
+        msg.headers
+            .push(("Presence-State".into(), "register-action=\"added\"".into()));
         msg
     }
 
@@ -143,10 +169,14 @@ mod tests {
         let msg = signed_200(&gate, 7);
         let got = observe_register_with_presence(&mut gate, &msg, &verifier(), 5)
             .expect("synthetic MIC-checked response");
-        assert!(matches!(got.event, GateEvent::MicChecked(
-            MicCheckedRegisterResult::RegistrarReportedBinding { .. }
-        )));
-        assert_eq!(got.untrusted_hint.expect("header present").action, RegisterAction::Added);
+        assert!(matches!(
+            got.event,
+            GateEvent::MicChecked(MicCheckedRegisterResult::RegistrarReportedBinding { .. })
+        ));
+        assert_eq!(
+            got.untrusted_hint.expect("header present").action,
+            RegisterAction::Added
+        );
         assert_eq!(gate.state(), GateState::MicCheckedNotSignedIn);
         assert_eq!(gate.highest_verified_server_sequence(), Some(7));
     }
@@ -155,11 +185,17 @@ mod tests {
     fn wrong_transaction_cannot_reveal_hint_or_advance_gate() {
         let mut gate = gate();
         let mut msg = signed_200(&gate, 7);
-        msg.headers.iter_mut().find(|(name, _)| name == "Call-ID")
-            .expect("Call-ID").1.push_str("-forged");
+        msg.headers
+            .iter_mut()
+            .find(|(name, _)| name == "Call-ID")
+            .expect("Call-ID")
+            .1
+            .push_str("-forged");
         assert_eq!(
             observe_register_with_presence(&mut gate, &msg, &verifier(), 5),
-            Err(GatedPresenceError::RegistrationGate(GateError::UnmatchedResponse))
+            Err(GatedPresenceError::RegistrationGate(
+                GateError::UnmatchedResponse
+            ))
         );
         assert_eq!(gate.state(), GateState::AwaitingResponse);
         assert_eq!(gate.highest_verified_server_sequence(), None);
@@ -169,8 +205,12 @@ mod tests {
     fn invalid_mic_does_not_release_hint_or_record_replay_number() {
         let mut gate = gate();
         let mut msg = signed_200(&gate, 7);
-        msg.headers.iter_mut().find(|(name, _)| name == "Authentication-Info")
-            .expect("Authentication-Info").1.push('x');
+        msg.headers
+            .iter_mut()
+            .find(|(name, _)| name == "Authentication-Info")
+            .expect("Authentication-Info")
+            .1
+            .push('x');
         assert!(matches!(
             observe_register_with_presence(&mut gate, &msg, &verifier(), 5),
             Err(GatedPresenceError::RegistrationGate(GateError::Mic(_)))
@@ -183,7 +223,8 @@ mod tests {
     fn invalid_optional_metadata_does_not_consume_valid_mic_or_transaction() {
         let mut gate = gate();
         let mut msg = signed_200(&gate, 7);
-        msg.headers.push(("presence-state".into(), "register-action=\"fixed\"".into()));
+        msg.headers
+            .push(("presence-state".into(), "register-action=\"fixed\"".into()));
         assert_eq!(
             observe_register_with_presence(&mut gate, &msg, &verifier(), 5),
             Err(GatedPresenceError::InvalidPresence(BindingError::Presence(
@@ -194,18 +235,25 @@ mod tests {
         assert_eq!(gate.highest_verified_server_sequence(), None);
         msg.headers.pop();
         let good = observe_register_with_presence(&mut gate, &msg, &verifier(), 6);
-        assert!(matches!(good, Ok(GatedPresenceOutcome { untrusted_hint: Some(_), .. })));
+        assert!(matches!(
+            good,
+            Ok(GatedPresenceOutcome {
+                untrusted_hint: Some(_),
+                ..
+            })
+        ));
     }
 
     #[test]
     fn challenge_never_exposes_microsoft_presence_hint() {
         let mut gate = gate();
         let mut msg = reply(&gate, 401);
-        msg.headers.push(("Presence-State".into(), "register-action=\"added\"".into()));
+        msg.headers
+            .push(("Presence-State".into(), "register-action=\"added\"".into()));
         msg.headers.push(("WWW-Authenticate".into(),
             "Kerberos realm=\"SIP Communications Service\", targetname=\"sip/server.example.com\", version=4".into()));
-        let result = observe_register_with_presence(&mut gate, &msg, &verifier(), 5)
-            .expect("challenge");
+        let result =
+            observe_register_with_presence(&mut gate, &msg, &verifier(), 5).expect("challenge");
         assert!(matches!(result.event, GateEvent::ChallengeRequired(_)));
         assert_eq!(result.untrusted_hint, None);
         assert_eq!(gate.state(), GateState::ChallengeRequired);
