@@ -23,6 +23,69 @@ This audit is repository provenance checking only, **not** RFC 3261 / RFC 8866 c
 
 ## Executed rustfmt diagnostic (GitHub Actions, 2026-10-19)
 
-On PR #38 exact head `34480a954574a68d7e463a6f7eef50d22cac73c9`, standard Ubuntu CI job `118151063724` in [run 39279531812](https://github.com/NelvinBHV/CommSCraft/actions/runs/39279531812) executed `cargo fmt --all -- --check`. The log contains **735 `Diff in` hunks across 58 unique Rust files**, including SIP, SDP, Windows SSPI, transport certificate identity and tests. The step displays `success` because `continue-on-error: true`; this **does not** mean formatting passed. The six workflow conclusions are green for the audit commit, not for strict rustfmt.
+On PR #38 exact head `34480a954574a68d7e463a6f7eef50d22cac73c9`, standard Ubuntu CI job `118151063724` in [run 39279531812](https://github.com/NelvinBHV/CommSCraft/actions/runs/39279531812) executed `cargo fmt --all -- --check`. The log contains **735 `Diff in` hunks across 56 unique Rust files**, including SIP, SDP, Windows SSPI, transport certificate identity and tests. The step displays `success` because `continue-on-error: true`; this **does not** mean formatting passed. The six workflow conclusions are green for the audit commit, not for strict rustfmt.
 
-Before any formatting, archive **the current pre-format bytes** of all 58 affected Rust files and a manifest of their exact SHA-256 digests; the historical import manifest and evidence ledgers must remain untouched. Then format, enforce strict Linux/Windows checks and rerun all offline/security tests on the formatted commit. Do not silently reclassify an advisory step as a pass.
+Before any formatting, archive **the current pre-format bytes** of all 56 affected Rust files and a manifest of their exact SHA-256 digests; the historical import manifest and evidence ledgers must remain untouched. Then format, enforce strict Linux/Windows checks and rerun all offline/security tests on the formatted commit. Do not silently reclassify an advisory step as a pass.
+
+## Exact file inventory from latest Ubuntu + Windows diagnostics
+
+At head `45d86e620e7bbae03e8a644e134db7637ef8737a`, the ubuntu-latest job [118401065505](https://github.com/NelvinBHV/CommSCraft/actions/runs/39352923944) reported **735 diff hunks across 56 distinct tracked Rust files**. The windows-latest job [118401065211](https://github.com/NelvinBHV/CommSCraft/actions/runs/39352923944) independently reported **735 hunks across 56 files**. The earlier 58-file count was a diagnostic parsing overcount and is superseded by this full-path-normalized inventory. File counts are informational only; no archive or format mutation was performed.
+
+- `apps/commscraft-inspect/src/main.rs`
+- `apps/commscraft-probe/src/main.rs`
+- `apps/commscraft/src/main.rs`
+- `crates/commscraft-core/src/additional_meeting_offline.rs`
+- `crates/commscraft-core/src/advanced_client_offline.rs`
+- `crates/commscraft-core/src/auxiliary_offline.rs`
+- `crates/commscraft-core/src/call_drafts.rs`
+- `crates/commscraft-core/src/challenge.rs`
+- `crates/commscraft-core/src/client_admin_offline.rs`
+- `crates/commscraft-core/src/client_offline.rs`
+- `crates/commscraft-core/src/client_operations_offline.rs`
+- `crates/commscraft-core/src/client_preferences_offline.rs`
+- `crates/commscraft-core/src/client_services_offline.rs`
+- `crates/commscraft-core/src/collaboration_staging_offline.rs`
+- `crates/commscraft-core/src/communication_drafts_offline.rs`
+- `crates/commscraft-core/src/conference_media_previews_offline.rs`
+- `crates/commscraft-core/src/contacts_ui_offline.rs`
+- `crates/commscraft-core/src/delegate_meetings_offline.rs`
+- `crates/commscraft-core/src/discovery.rs`
+- `crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs`
+- `crates/commscraft-core/src/enterprise_preview_offline.rs`
+- `crates/commscraft-core/src/final_inventory_previews_offline.rs`
+- `crates/commscraft-core/src/im.rs`
+- `crates/commscraft-core/src/inbound.rs`
+- `crates/commscraft-core/src/interaction_offline.rs`
+- `crates/commscraft-core/src/kerberos.rs`
+- `crates/commscraft-core/src/kerberos_mic.rs`
+- `crates/commscraft-core/src/lib.rs`
+- `crates/commscraft-core/src/local_features.rs`
+- `crates/commscraft-core/src/media_preflight_offline.rs`
+- `crates/commscraft-core/src/meeting_controls_offline.rs`
+- `crates/commscraft-core/src/meeting_entry_offline.rs`
+- `crates/commscraft-core/src/preflight_offline.rs`
+- `crates/commscraft-core/src/presence.rs`
+- `crates/commscraft-core/src/registration.rs`
+- `crates/commscraft-core/src/safety_client_previews_offline.rs`
+- `crates/commscraft-core/src/sdp.rs`
+- `crates/commscraft-core/src/security.rs`
+- `crates/commscraft-core/src/session.rs`
+- `crates/commscraft-core/src/sip.rs`
+- `crates/commscraft-core/src/stream.rs`
+- `crates/commscraft-core/src/tls_boundary.rs`
+- `crates/commscraft-core/src/transaction.rs`
+- `crates/commscraft-core/src/usability_offline.rs`
+- `crates/commscraft-core/src/windows_sspi.rs`
+- `crates/commscraft-core/tests/authentication_fixtures.rs`
+- `crates/commscraft-core/tests/protocol_fixtures.rs`
+- `crates/commscraft-core/tests/verified_registration.rs`
+- `crates/commscraft-register-events/src/gated_presence.rs`
+- `crates/commscraft-register-events/src/lib.rs`
+- `crates/commscraft-register-events/src/sip_binding.rs`
+- `crates/commscraft-router/src/lib.rs`
+- `crates/commscraft-router/tests/offline_wire.rs`
+- `crates/commscraft-transport/src/lib.rs`
+- `crates/commscraft-transport/src/sip_certificate.rs`
+- `tools/commscraft-xtask/src/main.rs`
+
+Before formatting, capture original current bytes and SHA-256 of every listed file as a distinct immutable baseline, then verify them after archiving. Do **not** overwrite existing historical Evidence or the original import manifest. The advisory `cargo fmt` step is not yet a passing gate.
