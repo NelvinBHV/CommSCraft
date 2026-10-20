@@ -11,6 +11,25 @@ from snapshot_rustfmt_baseline import ROOT, paths_from_plan, snapshot, verify
 
 
 class RustfmtSnapshotTests(unittest.TestCase):
+    def test_committed_archive_matches_original_source_bytes(self):
+        # The archive was recorded before any rustfmt changes; verify its
+        # byte-level manifest and unchanged original source on this stage.
+        archive = ROOT / "docs/history/rustfmt-baseline-2026-10-20"
+        manifest = json.loads((archive / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["source_commit"], "72f70b268432abdee76d2a007a204cef2f788e13")
+        self.assertEqual(verify(archive), 56)
+        self.assertEqual(len(manifest["files"]), 56)
+        self.assertEqual(
+            sorted(row["path"] for row in manifest["files"]),
+            paths_from_plan(ROOT),
+        )
+        for row in manifest["files"]:
+            self.assertEqual(
+                hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest(),
+                row["sha256"],
+                row["path"],
+            )
+
     def test_real_repository_inventory_snapshots_without_source_mutation(self):
         # Smoke-test all current Rust bytes in an OS temp directory. The
         # repository, imported archives, and evidence hashes remain untouched.
