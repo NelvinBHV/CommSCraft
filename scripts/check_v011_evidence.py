@@ -6,8 +6,8 @@ This checks source files and declarations, NOT Rust compilation or SfB interop.
 from __future__ import annotations
 import hashlib
 import json
-import re
 from pathlib import Path
+from rust_source_contract import code_without_layout
 
 ROOT = Path(__file__).resolve().parent.parent
 LEDGER = ROOT / 'docs' / 'evidence-v0.11.0.json'
@@ -34,7 +34,7 @@ def verify() -> dict:
     code = (ROOT / 'crates/commscraft-core/src/registration.rs').read_text(encoding='utf-8')
     start = code.index('pub fn observe_mic_checked_200<')
     end = code.index('/// Returns a NEW independent transaction', start)
-    block = re.sub(r'\s+', '', code[start:end])
+    block = code_without_layout(code[start:end])
     assert block.index('candidate.receive_response') < block.index('matching_binding')
     assert block.index('matching_binding') < block.index('sa.verify_server_message')
     assert block.index('sa.verify_server_message') < block.index('self.transaction=candidate')
