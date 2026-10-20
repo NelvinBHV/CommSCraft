@@ -446,7 +446,7 @@ mod offline_cli_tests {
     use super::*;
 
     const SAMPLE: &[u8] =
-        b"v=0\\r\\no=- 1 1 IN IP4 192.0.2.1\\r\\ns=-\\r\\nt=0 0\\r\\nm=audio 49170 RTP/AVP 0\\r\\n";
+        b"v=0\r\no=- 1 1 IN IP4 192.0.2.1\r\ns=-\r\nt=0 0\r\nm=audio 49170 RTP/AVP 0\r\n";
 
     #[test]
     fn requires_both_consent_and_policy_for_stdin() {
@@ -462,7 +462,7 @@ mod offline_cli_tests {
         let id = commscraft_core::offline_commands::INSPECT_SDP_ID;
         let input = vec![b'a'; MAX_COMMAND_INPUT + 100];
         assert!(offline_command(io::Cursor::new(input), id, true, true).is_err());
-        assert!(offline_command(io::Cursor::new(b"v=0\\n"), id, true, true).is_err());
+        assert!(offline_command(io::Cursor::new(b"v=0\n"), id, true, true).is_err());
     }
 }
 
