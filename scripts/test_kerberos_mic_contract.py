@@ -1,7 +1,7 @@
 """Source-level checks. Not a Rust build, SSPI runtime or interoperability test."""
 from pathlib import Path
 import unittest
-import re
+from rust_source_contract import code_without_layout
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -27,7 +27,7 @@ class KerberosMicSourceContract(unittest.TestCase):
                           'if status != SEC_E_OK || qop != 0',
                           'if status != SEC_E_OK || buffers[1].size == 0'):
             with self.subTest(condition=condition):
-                self.assertIn(re.sub(r'\s+', '', condition), re.sub(r'\s+', '', win))
+                self.assertIn(code_without_layout(condition), code_without_layout(win))
 
     def test_sspi_signing_does_not_use_ntlm_or_fallback(self):
         win = source('windows_sspi.rs')
@@ -59,7 +59,7 @@ class KerberosMicSourceContract(unittest.TestCase):
 
     def test_existing_security_fixture_tracks_gssapi_field(self):
         sec = source('security.rs')
-        self.assertIn('sts_uri:None,gssapi_data:None', re.sub(r'\s+', '', sec))
+        self.assertIn('sts_uri:None,gssapi_data:None', code_without_layout(sec))
 
     def test_reliably_no_live_transport_enablement(self):
         bridge = source('kerberos_mic.rs')
