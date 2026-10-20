@@ -201,7 +201,7 @@ mod tests {
                 FixtureRegisterIntent::new_fixture(spn, "z9hG4bK-local"),
                 0,
             )
-        .is_err());
+            .is_err());
         }
         assert!(OfflineSessionAdapter::bind_fixture(
             FixtureTransportEvidence::new_fixture(report(), [0x11; 32]),
