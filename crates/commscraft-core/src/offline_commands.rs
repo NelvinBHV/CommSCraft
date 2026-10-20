@@ -6,6 +6,32 @@ use crate::sdp::{inspect_sdp, SdpError, SdpSummary};
 pub const MAX_COMMAND_INPUT: usize = 64 * 1024;
 pub const INSPECT_SDP_ID: &str = "diagnostics.inspect-sdp.v1";
 
+/// Immutable public inventory of commands that have an executable offline gate.
+/// Discovery does not confer consent, policy authorization or an ability to
+/// connect to a server.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CommandDescriptor {
+    pub id: &'static str,
+    pub read_only: bool,
+    pub offline_only: bool,
+    pub max_input_bytes: usize,
+}
+
+pub const COMMAND_CATALOG: &[CommandDescriptor] = &[CommandDescriptor {
+    id: INSPECT_SDP_ID,
+    read_only: true,
+    offline_only: true,
+    max_input_bytes: MAX_COMMAND_INPUT,
+}];
+
+/// Reject unknown identifiers; do not silently fall back to a different
+/// version, network operation or unregistered extension.
+pub fn lookup_command(id: &str) -> Option<&'static CommandDescriptor> {
+    COMMAND_CATALOG
+        .iter()
+        .find(|descriptor| descriptor.id == id)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CommandError {
     UnknownCommand,
@@ -29,7 +55,7 @@ pub fn execute_offline(
 ) -> Result<SdpSummary, CommandError> {
     // Deny unknown operations before authorization or parsing. There is
     // intentionally no network-capable command, fallback or token API.
-    if command_id != INSPECT_SDP_ID {
+    if lookup_command(command_id).is_none() {
         return Err(CommandError::UnknownCommand);
     }
     if !context.user_consented {
@@ -62,6 +88,23 @@ mod tests {
             user_consented: true,
             policy_allows: true,
         }
+    }
+
+    #[test]
+    fn catalog_is_complete_unique_and_offline_only() {
+        assert_eq!(COMMAND_CATALOG.len(), 1);
+        for (index, descriptor) in COMMAND_CATALOG.iter().enumerate() {
+            assert!(descriptor.read_only);
+            assert!(descriptor.offline_only);
+            assert_eq!(descriptor.max_input_bytes, MAX_COMMAND_INPUT);
+            assert_eq!(lookup_command(descriptor.id), Some(descriptor));
+            assert!(COMMAND_CATALOG[..index]
+                .iter()
+                .all(|earlier| earlier.id != descriptor.id));
+        }
+        assert!(lookup_command("sip.register").is_none());
+        assert!(lookup_command("diagnostics.inspect-sdp.v2").is_none());
+        assert!(lookup_command("").is_none());
     }
 
     #[test]
