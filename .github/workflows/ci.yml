@@ -33,8 +33,7 @@ jobs:
         run: python3 scripts/report_feature_parity.py --json
       - name: Run imported Rust offline tests
         run: cargo test --workspace --all-targets
-      - name: Historical import rustfmt check (tracked debt, not green)
-        continue-on-error: true
+      - name: Require workspace rustfmt (Ubuntu and Windows)
         run: cargo fmt --all -- --check
       - name: Strict Rust warnings
         run: cargo clippy --workspace --all-targets -- -D warnings
