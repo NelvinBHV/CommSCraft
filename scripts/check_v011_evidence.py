@@ -37,7 +37,7 @@ def verify() -> dict:
     block = re.sub(r'\s+', '', code[start:end])
     assert block.index('candidate.receive_response') < block.index('matching_binding')
     assert block.index('matching_binding') < block.index('sa.verify_server_message')
-    assert block.index('sa.verify_server_message') < block.index('self.transaction = candidate')
+    assert block.index('sa.verify_server_message') < block.index('self.transaction=candidate')
     assert 'untrusted_gruu' in block and 'RegistrarReportedBinding' in block
     return {'verified_files': len(ledger['sha256']), 'declared_specifications': len(ledger['sources'])}
 
