@@ -190,6 +190,71 @@ impl OfflineRegisterBinding {
     }
 }
 
+/// A non-authorizing model of the evidence that a future transport/SA
+/// integration would need to keep bound to one TLS session. All inputs are
+/// synthetic fixtures: a fingerprint is NOT proof of PKIX verification.
+/// RFC 5922 (June 2010) §§7.1–7.3; RFC 3261 (June 2002) §17.1.3;
+/// MS-SIPAE §3.2.5.2. No live constructor or authentication capability.
+#[derive(Debug)]
+pub struct FixtureSessionCorrelation {
+    binding: OfflineRegisterBinding,
+    leaf_sha256: [u8; 32],
+    connection_generation: u64,
+    closed: bool,
+}
+
+impl FixtureSessionCorrelation {
+    pub fn from_fixture(
+        report: FixturePeerReport,
+        leaf_sha256: [u8; 32],
+        spn: &str,
+        transaction: &str,
+        now_ms: u64,
+    ) -> Result<Self, BoundaryError> {
+        if leaf_sha256 == [0; 32] {
+            return Err(BoundaryError::CertificateUnverified);
+        }
+        let connection_generation = report.generation;
+        let binding = OfflineRegisterBinding::from_fixture(report, spn, transaction, now_ms)?;
+        Ok(Self {
+            binding,
+            leaf_sha256,
+            connection_generation,
+            closed: false,
+        })
+    }
+
+    /// Every observation must name the SAME fixture certificate, connection,
+    /// SPN and transaction; a mismatch never advances the replay counter.
+    pub fn observe_fixture(
+        &mut self,
+        leaf_sha256: &[u8; 32],
+        generation: u64,
+        spn: &str,
+        transaction: &str,
+        mic: (bool, u64, u64),
+    ) -> Result<(), BoundaryError> {
+        if self.closed || generation != self.connection_generation {
+            return Err(BoundaryError::ConnectionChanged);
+        }
+        if leaf_sha256 != &self.leaf_sha256 {
+            return Err(BoundaryError::PeerMismatch);
+        }
+        self.binding
+            .observe_fixture_server_mic(generation, spn, transaction, mic.0, mic.1, mic.2)
+    }
+
+    pub fn disconnect(&mut self) {
+        self.closed = true;
+        self.binding.disconnect();
+    }
+
+    /// Deliberately constant: no fixture can authorize real sign-in.
+    pub fn authenticated_sign_in(&self) -> bool {
+        false
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -205,6 +270,84 @@ mod tests {
             expires_at_ms: 1000,
         }
     }
+    #[test]
+    fn fixture_session_rejects_certificate_spn_transaction_replay_and_disconnect() {
+        let fingerprint = [0x42; 32];
+        let branch = "z9hG4bK-fixture-session";
+        let mut session = FixtureSessionCorrelation::from_fixture(
+            report(),
+            fingerprint,
+            "sip/example.com",
+            branch,
+            0,
+        )
+        .unwrap();
+        assert!(!session.authenticated_sign_in());
+        assert_eq!(
+            session.observe_fixture(&[0x43; 32], 1, "sip/example.com", branch, (true, 1, 1)),
+            Err(BoundaryError::PeerMismatch)
+        );
+        assert_eq!(
+            session.observe_fixture(&fingerprint, 2, "sip/example.com", branch, (true, 1, 1)),
+            Err(BoundaryError::ConnectionChanged)
+        );
+        assert_eq!(
+            session.observe_fixture(&fingerprint, 1, "sip/evil.example", branch, (true, 1, 1)),
+            Err(BoundaryError::PeerMismatch)
+        );
+        assert_eq!(
+            session.observe_fixture(
+                &fingerprint,
+                1,
+                "sip/example.com",
+                "z9hG4bK-other",
+                (true, 1, 1)
+            ),
+            Err(BoundaryError::PeerMismatch)
+        );
+        assert_eq!(
+            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, (false, 1, 1)),
+            Err(BoundaryError::MicUnverified)
+        );
+        assert_eq!(
+            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, (true, 1, 1)),
+            Ok(())
+        );
+        assert_eq!(
+            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, (true, 1, 2)),
+            Err(BoundaryError::Replay)
+        );
+        session.disconnect();
+        assert_eq!(
+            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, (true, 2, 3)),
+            Err(BoundaryError::ConnectionChanged)
+        );
+        assert!(!session.authenticated_sign_in());
+    }
+
+    #[test]
+    fn fixture_session_rejects_missing_certificate_and_expiry() {
+        assert_eq!(
+            FixtureSessionCorrelation::from_fixture(
+                report(),
+                [0; 32],
+                "sip/example.com",
+                "z9hG4bK-fixture",
+                0
+            )
+            .err(),
+            Some(BoundaryError::CertificateUnverified)
+        );
+        assert!(FixtureSessionCorrelation::from_fixture(
+            report(),
+            [1; 32],
+            "sip/example.com",
+            "z9hG4bK-fixture",
+            1000
+        )
+        .is_err());
+    }
+
     #[test]
     fn fixture_binding_rejects_spn_transaction_generation_and_unverified_mic() {
         let branch = "z9hG4bK-offline-registration-1";
