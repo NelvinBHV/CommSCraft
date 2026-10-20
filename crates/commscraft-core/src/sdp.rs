@@ -109,7 +109,7 @@ pub fn inspect_sdp(bytes: &[u8]) -> Result<SdpSummary, SdpError> {
                 subject = true;
             }
             "t=" => {
-                if !subject || !media.is_empty() { return Err(SdpError::Malformed); }
+                if !subject || !media.is_empty() || zone { return Err(SdpError::Malformed); }
                 // RFC 8866 §5.9: timestamps are arbitrary-length decimal
                 // strings, not fixed-width u64 numbers (2036 rollover safe).
                 let mut parts = value.split_ascii_whitespace();
@@ -305,6 +305,22 @@ mod tests {
         }
         let after_media = SAMPLE.to_owned() + "r=1h 1h 0\r\n";
         assert_eq!(inspect_sdp(after_media.as_bytes()), Err(SdpError::Malformed));
+    }
+
+    #[test]
+    fn rfc8866_rejects_time_description_after_zone_adjustments() {
+        // RFC 8866 §§5.9–5.11: zone adjustments follow the time
+        // descriptions; subsequent t=/r= must not restart their sequence.
+        for suffix in [
+            "t=0 0\\r\\n",
+            "t=1 2\\r\\nr=7d 1h 0\\r\\n",
+        ] {
+            let replacement = format!(
+                "t=0 0\\r\\nr=7d 1h 0\\r\\nz=3730928400 -1h\\r\\n{suffix}"
+            );
+            let wire = SAMPLE.replace("t=0 0\\r\\n", &replacement);
+            assert_eq!(inspect_sdp(wire.as_bytes()), Err(SdpError::Malformed));
+        }
     }
 
     #[test]
