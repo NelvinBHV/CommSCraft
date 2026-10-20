@@ -1,13 +1,11 @@
 //! Offline-only local SIP fixture analyzer. No network and no raw header dumps.
 use commscraft_core::challenge::parse_challenges;
 use commscraft_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
-use commscraft_core::offline_commands::{
-    execute_offline, CommandContext, MAX_COMMAND_INPUT,
-};
 use commscraft_core::im::{ImDialog, ImState};
 use commscraft_core::kerberos::{
     KerberosError, KerberosNegotiation, KerberosPhase, NoKerberosProvider,
 };
+use commscraft_core::offline_commands::{execute_offline, CommandContext, MAX_COMMAND_INPUT};
 use commscraft_core::presence::PresenceSubscription;
 use commscraft_core::registration::{Endpoint, RegisterFlow, RegisterOutcome};
 use commscraft_core::sdp::inspect_sdp;
@@ -441,36 +439,15 @@ fn offline_command<R: Read>(
     Ok(result.media.len())
 }
 
-#[cfg(test)]
-mod offline_cli_tests {
-    use super::*;
-
-    const SAMPLE: &[u8] =
-        b"v=0\r\no=- 1 1 IN IP4 192.0.2.1\r\ns=-\r\nt=0 0\r\nm=audio 49170 RTP/AVP 0\r\n";
-
-    #[test]
-    fn requires_both_consent_and_policy_for_stdin() {
-        let id = commscraft_core::offline_commands::INSPECT_SDP_ID;
-        assert_eq!(offline_command(io::Cursor::new(SAMPLE), id, true, true), Ok(1));
-        assert!(offline_command(io::Cursor::new(SAMPLE), id, false, true).is_err());
-        assert!(offline_command(io::Cursor::new(SAMPLE), id, true, false).is_err());
-        assert!(offline_command(io::Cursor::new(SAMPLE), "sip.register", true, true).is_err());
-    }
-
-    #[test]
-    fn rejects_excess_stdin_without_unbounded_allocation() {
-        let id = commscraft_core::offline_commands::INSPECT_SDP_ID;
-        let input = vec![b'a'; MAX_COMMAND_INPUT + 100];
-        assert!(offline_command(io::Cursor::new(input), id, true, true).is_err());
-        assert!(offline_command(io::Cursor::new(b"v=0\n"), id, true, true).is_err());
-    }
-}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // This syntax is intentionally exact: no defaults, implicit consent,
     // arbitrary path reads or network-capable command dispatch.
     let arguments: Vec<String> = std::env::args().skip(1).collect();
-    if arguments.first().is_some_and(|argument| argument == "--command") {
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--command")
+    {
         if let [_, id, consent, policy] = arguments.as_slice() {
             if consent == "--consent" && policy == "--policy-allow" {
                 match offline_command(io::stdin(), id, true, true) {
@@ -482,7 +459,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
         }
-        return Err("usage: --command diagnostics.inspect-sdp.v1 --consent --policy-allow < stdin".into());
+        return Err(
+            "usage: --command diagnostics.inspect-sdp.v1 --consent --policy-allow < stdin".into(),
+        );
     }
     let mut args = std::env::args();
     let _binary = args.next();
@@ -505,5 +484,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             eprintln!("Usage: commscraft-inspect --demo | --register-demo | --sa-demo | --signing-demo | --kerberos-plan-demo | --sspi-check | --protocol-demo | --router-demo | <local-sip-fixture-file>");
             std::process::exit(2);
         }
+    }
+}
+
+#[cfg(test)]
+mod offline_cli_tests {
+    use super::*;
+
+    const SAMPLE: &[u8] =
+        b"v=0\r\no=- 1 1 IN IP4 192.0.2.1\r\ns=-\r\nt=0 0\r\nm=audio 49170 RTP/AVP 0\r\n";
+
+    #[test]
+    fn requires_both_consent_and_policy_for_stdin() {
+        let id = commscraft_core::offline_commands::INSPECT_SDP_ID;
+        assert_eq!(
+            offline_command(io::Cursor::new(SAMPLE), id, true, true),
+            Ok(1)
+        );
+        assert!(offline_command(io::Cursor::new(SAMPLE), id, false, true).is_err());
+        assert!(offline_command(io::Cursor::new(SAMPLE), id, true, false).is_err());
+        assert!(offline_command(io::Cursor::new(SAMPLE), "sip.register", true, true).is_err());
+    }
+
+    #[test]
+    fn rejects_excess_stdin_without_unbounded_allocation() {
+        let id = commscraft_core::offline_commands::INSPECT_SDP_ID;
+        let input = vec![b'a'; MAX_COMMAND_INPUT + 100];
+        assert!(offline_command(io::Cursor::new(input), id, true, true).is_err());
+        assert!(offline_command(io::Cursor::new(b"v=0\n"), id, true, true).is_err());
     }
 }
