@@ -1,6 +1,7 @@
 """Source-level safety contract checks (NOT compilation or Windows tests)."""
 import pathlib
 import unittest
+from rust_source_contract import code_without_layout
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -24,7 +25,7 @@ class WindowsSspiSourceContract(unittest.TestCase):
     def test_context_not_authentication(self):
         core = (ROOT / 'crates/commscraft-core/src/kerberos.rs').read_text()
         self.assertIn('AwaitingContextContinuation', core)
-        self.assertIn('else { KerberosPhase::AwaitingContextContinuation }', core)
+        self.assertIn('else{KerberosPhase::AwaitingContextContinuation}', code_without_layout(core))
         self.assertIn('fn incomplete_gss_context_produces_initial_token_without_claiming_authentication', core)
 
 

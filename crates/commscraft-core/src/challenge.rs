@@ -9,9 +9,18 @@ use crate::sip::{SipMessage, StartLine};
 use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Scheme { Kerberos, Ntlm, TlsDsk, Digest, Unsupported }
+pub enum Scheme {
+    Kerberos,
+    Ntlm,
+    TlsDsk,
+    Digest,
+    Unsupported,
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ChallengeSource { Registrar, Proxy }
+pub enum ChallengeSource {
+    Registrar,
+    Proxy,
+}
 
 /// Private data is deliberately redacted from Debug output.
 #[derive(Clone, PartialEq, Eq)]
@@ -39,59 +48,96 @@ impl fmt::Debug for ChallengeOffer {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ChallengeError {
-    NotResponse, NotChallenge, MissingHeader, InvalidSyntax, DuplicateParameter, Oversized,
+    NotResponse,
+    NotChallenge,
+    MissingHeader,
+    InvalidSyntax,
+    DuplicateParameter,
+    Oversized,
 }
 impl fmt::Display for ChallengeError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result { write!(f, "{self:?}") }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{self:?}")
+    }
 }
 impl std::error::Error for ChallengeError {}
 
 fn split_params(s: &str) -> Result<Vec<&str>, ChallengeError> {
     // Split on unquoted commas, reject unterminated strings, CRLF, control
     // characters, and oversized inputs before interpreting any token.
-    if s.len() > 8192 || s.bytes().any(|b| b == b'\r' || b == b'\n' || b == 0 || b == 127
-        || (b < 32 && b != b'\t')) { return Err(ChallengeError::Oversized); }
+    if s.len() > 8192
+        || s.bytes()
+            .any(|b| b == b'\r' || b == b'\n' || b == 0 || b == 127 || (b < 32 && b != b'\t'))
+    {
+        return Err(ChallengeError::Oversized);
+    }
     let mut parts = Vec::new();
     let (mut start, mut quoted, mut escaped) = (0, false, false);
     for (i, b) in s.bytes().enumerate() {
-        if escaped { escaped = false; continue; }
-        if b == b'\\' && quoted { escaped = true; continue; }
-        if b == b'"' { quoted = !quoted; }
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        if b == b'\\' && quoted {
+            escaped = true;
+            continue;
+        }
+        if b == b'"' {
+            quoted = !quoted;
+        }
         if b == b',' && !quoted {
             parts.push(&s[start..i]);
             start = i + 1;
         }
     }
-    if quoted || escaped { return Err(ChallengeError::InvalidSyntax); }
+    if quoted || escaped {
+        return Err(ChallengeError::InvalidSyntax);
+    }
     parts.push(&s[start..]);
-    if parts.len() > 32 { return Err(ChallengeError::Oversized); }
+    if parts.len() > 32 {
+        return Err(ChallengeError::Oversized);
+    }
     Ok(parts)
 }
 
 fn unquote(value: &str) -> Result<String, ChallengeError> {
     let value = value.trim();
     if value.starts_with('"') {
-        if !value.ends_with('"') || value.len() < 2 { return Err(ChallengeError::InvalidSyntax); }
+        if !value.ends_with('"') || value.len() < 2 {
+            return Err(ChallengeError::InvalidSyntax);
+        }
         let mut result = String::new();
         let mut chars = value[1..value.len() - 1].chars();
         while let Some(c) = chars.next() {
             if c == '\\' {
                 let next = chars.next().ok_or(ChallengeError::InvalidSyntax)?;
-                if next == '\r' || next == '\n' { return Err(ChallengeError::InvalidSyntax); }
+                if next == '\r' || next == '\n' {
+                    return Err(ChallengeError::InvalidSyntax);
+                }
                 result.push(next);
             } else if c == '"' || c.is_control() {
                 return Err(ChallengeError::InvalidSyntax);
-            } else { result.push(c); }
+            } else {
+                result.push(c);
+            }
         }
         Ok(result)
-    } else if value.is_empty() || !value.bytes().all(|b| b.is_ascii_alphanumeric() || b"-._~!%*+`'".contains(&b)) {
+    } else if value.is_empty()
+        || !value
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b"-._~!%*+`'".contains(&b))
+    {
         Err(ChallengeError::InvalidSyntax)
-    } else { Ok(value.to_owned()) }
+    } else {
+        Ok(value.to_owned())
+    }
 }
 
 fn parse_offer(value: &str, source: ChallengeSource) -> Result<ChallengeOffer, ChallengeError> {
     let value = value.trim();
-    let space = value.find(char::is_whitespace).ok_or(ChallengeError::InvalidSyntax)?;
+    let space = value
+        .find(char::is_whitespace)
+        .ok_or(ChallengeError::InvalidSyntax)?;
     let scheme = match &value[..space].to_ascii_lowercase()[..] {
         "kerberos" => Scheme::Kerberos,
         "ntlm" => Scheme::Ntlm,
@@ -99,16 +145,29 @@ fn parse_offer(value: &str, source: ChallengeSource) -> Result<ChallengeOffer, C
         "digest" => Scheme::Digest,
         _ => Scheme::Unsupported,
     };
-    let mut offer = ChallengeOffer { scheme, source, realm: None, targetname: None,
-        version: None, sts_uri: None, opaque: None, gssapi_data: None };
+    let mut offer = ChallengeOffer {
+        scheme,
+        source,
+        realm: None,
+        targetname: None,
+        version: None,
+        sts_uri: None,
+        opaque: None,
+        gssapi_data: None,
+    };
     let mut found = std::collections::HashSet::new();
     for entry in split_params(&value[space..])? {
-        let (key, val) = entry.trim().split_once('=').ok_or(ChallengeError::InvalidSyntax)?;
+        let (key, val) = entry
+            .trim()
+            .split_once('=')
+            .ok_or(ChallengeError::InvalidSyntax)?;
         let key = key.trim().to_ascii_lowercase();
         if key.is_empty() || !key.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-') {
             return Err(ChallengeError::InvalidSyntax);
         }
-        if !found.insert(key.clone()) { return Err(ChallengeError::DuplicateParameter); }
+        if !found.insert(key.clone()) {
+            return Err(ChallengeError::DuplicateParameter);
+        }
         // Validate every parsed value, even an unsupported extension, to avoid
         // accidentally accepting malformed quoted values at this trust boundary.
         let val = unquote(val)?;
@@ -118,7 +177,9 @@ fn parse_offer(value: &str, source: ChallengeSource) -> Result<ChallengeOffer, C
             "opaque" => offer.opaque = Some(val),
             "gssapi-data" => offer.gssapi_data = Some(val),
             "sts-uri" => offer.sts_uri = Some(val),
-            "version" => offer.version = Some(val.parse().map_err(|_| ChallengeError::InvalidSyntax)?),
+            "version" => {
+                offer.version = Some(val.parse().map_err(|_| ChallengeError::InvalidSyntax)?)
+            }
             _ => {}
         }
     }
@@ -138,11 +199,15 @@ pub fn parse_challenges(response: &SipMessage) -> Result<Vec<ChallengeOffer>, Ch
     let mut result = Vec::new();
     for (name, value) in &response.headers {
         if name.eq_ignore_ascii_case(header) {
-            if result.len() >= 8 { return Err(ChallengeError::Oversized); }
+            if result.len() >= 8 {
+                return Err(ChallengeError::Oversized);
+            }
             result.push(parse_offer(value, source)?);
         }
     }
-    if result.is_empty() { return Err(ChallengeError::MissingHeader); }
+    if result.is_empty() {
+        return Err(ChallengeError::MissingHeader);
+    }
     Ok(result)
 }
 
@@ -150,8 +215,17 @@ pub fn parse_challenges(response: &SipMessage) -> Result<Vec<ChallengeOffer>, Ch
 mod tests {
     use super::*;
     fn message(code: u16, fields: &[(&str, &str)]) -> SipMessage {
-        SipMessage { start_line: StartLine::Response { code, reason: String::from("Test") },
-            headers: fields.iter().map(|(k,v)| ((*k).into(), (*v).into())).collect(), body: vec![] }
+        SipMessage {
+            start_line: StartLine::Response {
+                code,
+                reason: String::from("Test"),
+            },
+            headers: fields
+                .iter()
+                .map(|(k, v)| ((*k).into(), (*v).into()))
+                .collect(),
+            body: vec![],
+        }
     }
     #[test]
     fn microsoft_multiple_auth_offers_with_quoted_comma() {
@@ -162,7 +236,10 @@ mod tests {
         let offers = parse_challenges(&m).unwrap();
         assert_eq!(offers.len(), 2);
         assert_eq!(offers[0].scheme, Scheme::Ntlm);
-        assert_eq!(offers[0].realm.as_deref(), Some("SIP, Communications Service"));
+        assert_eq!(
+            offers[0].realm.as_deref(),
+            Some("SIP, Communications Service")
+        );
         assert_eq!(offers[1].scheme, Scheme::Kerberos);
         assert_eq!(offers[1].version, Some(4));
         let redacted = format!("{:?}", offers[0]);
@@ -171,7 +248,13 @@ mod tests {
     }
     #[test]
     fn distinguishes_proxy_challenges() {
-        let m = message(407, &[("Proxy-Authenticate", "TLS-DSK realm=\"x\", targetname=\"a.example.com\", version=4")]);
+        let m = message(
+            407,
+            &[(
+                "Proxy-Authenticate",
+                "TLS-DSK realm=\"x\", targetname=\"a.example.com\", version=4",
+            )],
+        );
         let offers = parse_challenges(&m).unwrap();
         assert_eq!(offers[0].source, ChallengeSource::Proxy);
         assert_eq!(offers[0].scheme, Scheme::TlsDsk);
@@ -188,15 +271,29 @@ mod tests {
     fn duplicate_gssapi_data_is_rejected() {
         let m = message(407, &[("Proxy-Authenticate",
             "NTLM realm=\"x\", targetname=\"a.example.com\", version=3, gssapi-data=\"AQ==\", gssapi-data=\"Ag==\"")]);
-        assert_eq!(parse_challenges(&m), Err(ChallengeError::DuplicateParameter));
+        assert_eq!(
+            parse_challenges(&m),
+            Err(ChallengeError::DuplicateParameter)
+        );
     }
     #[test]
     fn rejects_malformed_and_duplicate_input() {
-        for value in ["NTLM realm=\"unterminated", "NTLM realm=ok, realm=again", "NTLM realm=hi\r\nEvil:yes", "NTLM nonsense"] {
+        for value in [
+            "NTLM realm=\"unterminated",
+            "NTLM realm=ok, realm=again",
+            "NTLM realm=hi\r\nEvil:yes",
+            "NTLM nonsense",
+        ] {
             let m = message(401, &[("WWW-Authenticate", value)]);
             assert!(parse_challenges(&m).is_err(), "{value:?}");
         }
-        assert_eq!(parse_challenges(&message(200, &[])), Err(ChallengeError::NotChallenge));
-        assert_eq!(parse_challenges(&message(401, &[])), Err(ChallengeError::MissingHeader));
+        assert_eq!(
+            parse_challenges(&message(200, &[])),
+            Err(ChallengeError::NotChallenge)
+        );
+        assert_eq!(
+            parse_challenges(&message(401, &[])),
+            Err(ChallengeError::MissingHeader)
+        );
     }
 }

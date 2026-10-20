@@ -36,8 +36,12 @@ pub trait KerberosMicBackend {
 }
 
 impl<T: KerberosMicBackend + ?Sized> KerberosMicBackend for &mut T {
-    fn complete(&self) -> bool { (**self).complete() }
-    fn target_spn(&self) -> Option<&str> { (**self).target_spn() }
+    fn complete(&self) -> bool {
+        (**self).complete()
+    }
+    fn target_spn(&self) -> Option<&str> {
+        (**self).target_spn()
+    }
     fn get_mic(&mut self, bytes: &[u8]) -> Result<Vec<u8>, KerberosMicError> {
         (**self).get_mic(bytes)
     }
@@ -57,23 +61,36 @@ pub struct KerberosMicBridge<B: KerberosMicBackend> {
 impl<B: KerberosMicBackend> fmt::Debug for KerberosMicBridge<B> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("KerberosMicBridge")
-            .field("context_and_identity", &"[REDACTED]").finish()
+            .field("context_and_identity", &"[REDACTED]")
+            .finish()
     }
 }
 impl<B: KerberosMicBackend> KerberosMicBridge<B> {
     pub fn bind(backend: B, sa: &SaKey) -> Result<Self, KerberosMicError> {
-        if !backend.complete() { return Err(KerberosMicError::IncompleteContext); }
-        if sa.scheme != "Kerberos" || sa.realm.is_empty() ||
-            !sa.realm.is_ascii() ||
-            sa.realm.bytes().any(|b| b == b'<' || b == b'>' || b.is_ascii_control()) ||
-            backend.target_spn() != Some(sa.targetname.as_str()) {
+        if !backend.complete() {
+            return Err(KerberosMicError::IncompleteContext);
+        }
+        if sa.scheme != "Kerberos"
+            || sa.realm.is_empty()
+            || !sa.realm.is_ascii()
+            || sa
+                .realm
+                .bytes()
+                .any(|b| b == b'<' || b == b'>' || b.is_ascii_control())
+            || backend.target_spn() != Some(sa.targetname.as_str())
+        {
             return Err(KerberosMicError::OriginMismatch);
         }
-        Ok(Self { backend: RefCell::new(backend), bound_key: sa.clone() })
+        Ok(Self {
+            backend: RefCell::new(backend),
+            bound_key: sa.clone(),
+        })
     }
     fn ready(&self) -> bool {
-        self.backend.try_borrow().map(|b| b.complete() &&
-            b.target_spn() == Some(self.bound_key.targetname.as_str())).unwrap_or(false)
+        self.backend
+            .try_borrow()
+            .map(|b| b.complete() && b.target_spn() == Some(self.bound_key.targetname.as_str()))
+            .unwrap_or(false)
     }
     /// Check that MS-SIPAE input fields #1/#4/#5 match this bound context.
     /// `SecurityAssociation` additionally checks authorization source and the
@@ -82,17 +99,25 @@ impl<B: KerberosMicBackend> KerberosMicBridge<B> {
     fn accepts_mic_input(&self, message: &[u8]) -> bool {
         let mut rest = message;
         for index in 0..5 {
-            if !rest.starts_with(b"<") { return false; }
-            let Some(end) = rest[1..].iter().position(|&b| b == b'>') else { return false; };
+            if !rest.starts_with(b"<") {
+                return false;
+            }
+            let Some(end) = rest[1..].iter().position(|&b| b == b'>') else {
+                return false;
+            };
             let value = &rest[1..1 + end];
-            if value.contains(&b'<') { return false; }
+            if value.contains(&b'<') {
+                return false;
+            }
             let expected = match index {
                 0 => Some(self.bound_key.scheme.as_bytes()),
                 3 => Some(self.bound_key.realm.as_bytes()),
                 4 => Some(self.bound_key.targetname.as_bytes()),
                 _ => None,
             };
-            if expected.is_some_and(|e| e != value) { return false; }
+            if expected.is_some_and(|e| e != value) {
+                return false;
+            }
             rest = &rest[2 + end..];
         }
         !rest.is_empty()
@@ -100,22 +125,37 @@ impl<B: KerberosMicBackend> KerberosMicBridge<B> {
 }
 impl<B: KerberosMicBackend> ServerMicVerifier for KerberosMicBridge<B> {
     fn verify(&self, message: &[u8], token: &[u8]) -> bool {
-        if message.is_empty() || message.len() > MAX_MIC_INPUT ||
-            token.is_empty() || token.len() > MAX_MIC_TOKEN ||
-            !self.ready() || !self.accepts_mic_input(message) { return false; }
-        let Ok(mut backend) = self.backend.try_borrow_mut() else { return false; };
+        if message.is_empty()
+            || message.len() > MAX_MIC_INPUT
+            || token.is_empty()
+            || token.len() > MAX_MIC_TOKEN
+            || !self.ready()
+            || !self.accepts_mic_input(message)
+        {
+            return false;
+        }
+        let Ok(mut backend) = self.backend.try_borrow_mut() else {
+            return false;
+        };
         backend.verify_mic(message, token).is_ok()
     }
 }
 impl<B: KerberosMicBackend> ClientMicSigner for KerberosMicBridge<B> {
     fn sign(&self, message: &[u8]) -> Result<Vec<u8>, SecurityError> {
-        if message.is_empty() || message.len() > MAX_MIC_INPUT ||
-            !self.ready() || !self.accepts_mic_input(message) {
+        if message.is_empty()
+            || message.len() > MAX_MIC_INPUT
+            || !self.ready()
+            || !self.accepts_mic_input(message)
+        {
             return Err(SecurityError::SigningFailed);
         }
-        let mut backend = self.backend.try_borrow_mut()
+        let mut backend = self
+            .backend
+            .try_borrow_mut()
             .map_err(|_| SecurityError::SigningFailed)?;
-        let result = backend.get_mic(message).map_err(|_| SecurityError::SigningFailed)?;
+        let result = backend
+            .get_mic(message)
+            .map_err(|_| SecurityError::SigningFailed)?;
         if result.is_empty() || result.len() > MAX_MIC_TOKEN {
             return Err(SecurityError::SigningFailed);
         }
@@ -130,10 +170,18 @@ mod tests {
 
     // Synthetic backend deliberately NOT cryptographically secure and only
     // compiled under #[cfg(test)]. No production test-key fallback exists.
-    struct FakeBackend { ready: bool, target: String, calls: usize }
+    struct FakeBackend {
+        ready: bool,
+        target: String,
+        calls: usize,
+    }
     impl KerberosMicBackend for FakeBackend {
-        fn complete(&self) -> bool { self.ready }
-        fn target_spn(&self) -> Option<&str> { Some(&self.target) }
+        fn complete(&self) -> bool {
+            self.ready
+        }
+        fn target_spn(&self) -> Option<&str> {
+            Some(&self.target)
+        }
         fn get_mic(&mut self, data: &[u8]) -> Result<Vec<u8>, KerberosMicError> {
             self.calls += 1;
             Ok(vec![data.iter().fold(0u8, |sum, b| sum.wrapping_add(*b))])
@@ -141,21 +189,49 @@ mod tests {
         fn verify_mic(&mut self, data: &[u8], token: &[u8]) -> Result<(), KerberosMicError> {
             self.calls += 1;
             let expected = [data.iter().fold(0u8, |sum, b| sum.wrapping_add(*b))];
-            if token == expected.as_slice() { Ok(()) } else { Err(KerberosMicError::NativeFailure) }
+            if token == expected.as_slice() {
+                Ok(())
+            } else {
+                Err(KerberosMicError::NativeFailure)
+            }
         }
     }
-    fn key() -> SaKey { SaKey { scheme: "Kerberos".into(), realm: "SIP Communications Service".into(),
-        targetname: "sip/server.example.com".into(), source: AuthSource::Registrar } }
-    fn fake() -> FakeBackend { FakeBackend {ready: true, target: "sip/server.example.com".into(), calls: 0} }
+    fn key() -> SaKey {
+        SaKey {
+            scheme: "Kerberos".into(),
+            realm: "SIP Communications Service".into(),
+            targetname: "sip/server.example.com".into(),
+            source: AuthSource::Registrar,
+        }
+    }
+    fn fake() -> FakeBackend {
+        FakeBackend {
+            ready: true,
+            target: "sip/server.example.com".into(),
+            calls: 0,
+        }
+    }
 
     #[test]
     fn refuses_incomplete_and_incorrect_origin() {
-        let mut incomplete = fake(); incomplete.ready = false;
-        assert!(matches!(KerberosMicBridge::bind(incomplete, &key()), Err(KerberosMicError::IncompleteContext)));
-        let mut altered = key(); altered.targetname = "sip/other.example.com".into();
-        assert!(matches!(KerberosMicBridge::bind(fake(), &altered), Err(KerberosMicError::OriginMismatch)));
-        altered = key(); altered.scheme = "TLS-DSK".into();
-        assert!(matches!(KerberosMicBridge::bind(fake(), &altered), Err(KerberosMicError::OriginMismatch)));
+        let mut incomplete = fake();
+        incomplete.ready = false;
+        assert!(matches!(
+            KerberosMicBridge::bind(incomplete, &key()),
+            Err(KerberosMicError::IncompleteContext)
+        ));
+        let mut altered = key();
+        altered.targetname = "sip/other.example.com".into();
+        assert!(matches!(
+            KerberosMicBridge::bind(fake(), &altered),
+            Err(KerberosMicError::OriginMismatch)
+        ));
+        altered = key();
+        altered.scheme = "TLS-DSK".into();
+        assert!(matches!(
+            KerberosMicBridge::bind(fake(), &altered),
+            Err(KerberosMicError::OriginMismatch)
+        ));
     }
     #[test]
     fn accepts_only_valid_mic_and_bounded_material() {
@@ -167,10 +243,14 @@ mod tests {
         assert!(!adapter.verify(changed, &mic));
         assert!(!adapter.verify(signed, &[]));
         assert!(!adapter.verify(signed, &vec![0; MAX_MIC_TOKEN + 1]));
-        let wrong = b"<Kerberos><abcdef01><1><SIP Communications Service><sip/other.example.com><callid>";
+        let wrong =
+            b"<Kerberos><abcdef01><1><SIP Communications Service><sip/other.example.com><callid>";
         assert!(!adapter.verify(wrong, &mic));
         assert_eq!(adapter.sign(wrong), Err(SecurityError::SigningFailed));
-        assert_eq!(adapter.sign(&vec![b'A'; MAX_MIC_INPUT + 1]), Err(SecurityError::SigningFailed));
+        assert_eq!(
+            adapter.sign(&vec![b'A'; MAX_MIC_INPUT + 1]),
+            Err(SecurityError::SigningFailed)
+        );
         assert!(!format!("{adapter:?}").contains("sip/server.example.com"));
     }
 }
