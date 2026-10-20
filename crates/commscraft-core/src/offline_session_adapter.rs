@@ -3,9 +3,7 @@
 //! RFC 5922 (June 2010) §§7.1–7.3; RFC 3261 (June 2002) §17.1.3;
 //! [MS-SIPAE] §3.2.5.2. These are design constraints, not interop evidence.
 
-use crate::tls_boundary::{
-    BoundaryError, FixturePeerReport, FixtureSessionCorrelation,
-};
+use crate::tls_boundary::{BoundaryError, FixturePeerReport, FixtureSessionCorrelation};
 
 /// Synthetic evidence captured together for ONE fixture connection.
 /// Private fields prevent callers from mutating the connection identity after
@@ -18,7 +16,10 @@ pub struct FixtureTransportEvidence {
 
 impl FixtureTransportEvidence {
     pub fn new_fixture(report: FixturePeerReport, leaf_sha256: [u8; 32]) -> Self {
-        Self { report, leaf_sha256 }
+        Self {
+            report,
+            leaf_sha256,
+        }
     }
 }
 
@@ -192,23 +193,27 @@ mod tests {
             FixtureTransportEvidence::new_fixture(bad, [0x11; 32]),
             FixtureRegisterIntent::new_fixture("sip/example.com", "z9hG4bK-local"),
             0,
-        ).is_err());
+        )
+        .is_err());
         for spn in ["sip/attacker.example", "HTTP/example.com"] {
             assert!(OfflineSessionAdapter::bind_fixture(
                 FixtureTransportEvidence::new_fixture(report(), [0x11; 32]),
                 FixtureRegisterIntent::new_fixture(spn, "z9hG4bK-local"),
                 0,
-            ).is_err());
+            )
+        .is_err());
         }
         assert!(OfflineSessionAdapter::bind_fixture(
             FixtureTransportEvidence::new_fixture(report(), [0x11; 32]),
             FixtureRegisterIntent::new_fixture("sip/example.com", "z9hG4bK\r\nattack"),
             0,
-        ).is_err());
+        )
+        .is_err());
         assert!(OfflineSessionAdapter::bind_fixture(
             FixtureTransportEvidence::new_fixture(report(), [0; 32]),
             FixtureRegisterIntent::new_fixture("sip/example.com", "z9hG4bK-local"),
             0,
-        ).is_err());
+        )
+        .is_err());
     }
 }
