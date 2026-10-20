@@ -51,10 +51,7 @@ impl OfflineTransportSessionOwner {
     }
 
     /// Check only the local lifecycle; this does not verify TLS or X.509.
-    pub fn check_fixture(
-        &self,
-        handle: &FixtureSessionHandle,
-    ) -> Result<(), SessionIdentityError> {
+    pub fn check_fixture(&self, handle: &FixtureSessionHandle) -> Result<(), SessionIdentityError> {
         if !self.connected {
             return Err(SessionIdentityError::Disconnected);
         }
