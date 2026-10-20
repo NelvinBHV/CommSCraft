@@ -1,5 +1,5 @@
 name: One-time provenance-safe rustfmt migration
-# Retry only after preserving the original security-contract predicates under rustfmt.
+# Retry after fixing compacted assignment-order assertion; fail-closed gates remain enforced.
 
 on:
   push:
