@@ -1,0 +1,77 @@
+name: One-time provenance-safe rustfmt migration
+
+on:
+  push:
+    branches:
+      - maintenance/rustfmt-provenance-audit-20261019
+    paths:
+      - .github/workflows/rustfmt-migration.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rustfmt-migration-issue-9
+  cancel-in-progress: false
+
+jobs:
+  format-reviewed-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Install standard Linux Rust build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libxkbcommon-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libgl1-mesa-dev libssl-dev pkg-config
+      - name: Verify historical provenance before formatting
+        run: |
+          python3 scripts/check_standard_runners.py
+          python3 scripts/check_import_integrity.py
+          python3 scripts/audit_rustfmt_provenance.py
+          python3 scripts/snapshot_rustfmt_baseline.py --verify
+          python3 -m unittest discover -s scripts -p "test*.py"
+      - name: Run rustfmt
+        run: cargo fmt --all
+      - name: Fail closed on unlisted source edits
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          from scripts.snapshot_rustfmt_baseline import ROOT, paths_from_plan, verify
+          expected = set(paths_from_plan(ROOT))
+          changed = set(subprocess.check_output(
+              ["git", "diff", "--name-only", "--diff-filter=ACMRT"],
+              text=True,
+          ).splitlines())
+          assert changed, "rustfmt produced no changes; investigate diagnostic"
+          unexpected = sorted(changed - expected)
+          assert not unexpected, f"non-baseline source files changed: {unexpected}"
+          assert verify(ROOT / "docs/history/rustfmt-baseline-2026-10-20") == 56
+          print(f"FORMAT_CHANGE_PATHS={len(changed)}")
+          PY
+          git diff --check
+          cargo fmt --all -- --check
+      - name: Verify post-format offline tests and provenance
+        run: |
+          python3 scripts/check_import_integrity.py
+          python3 -m unittest discover -s scripts -p "test*.py"
+          cargo test --workspace --all-targets
+          cargo clippy --workspace --all-targets -- -D warnings
+      - name: Commit ONLY reviewed formatted sources to the maintenance branch
+        run: |
+          test "$GITHUB_REF" = "refs/heads/maintenance/rustfmt-provenance-audit-20261019"
+          python3 - <<'PY'
+          import subprocess
+          from scripts.snapshot_rustfmt_baseline import ROOT, paths_from_plan
+          allowed = set(paths_from_plan(ROOT))
+          changed = subprocess.check_output(["git", "diff", "--name-only"], text=True).splitlines()
+          assert changed and set(changed).issubset(allowed), "unexpected changed source files"
+          subprocess.run(["git", "add", "--", *changed], check=True)
+          staged = subprocess.check_output(["git", "diff", "--cached", "--name-only"], text=True).splitlines()
+          assert sorted(staged) == sorted(changed), "staged files differ"
+          PY
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "style(rust): format archived current sources for issue 9"
+          git push origin HEAD:refs/heads/maintenance/rustfmt-provenance-audit-20261019
