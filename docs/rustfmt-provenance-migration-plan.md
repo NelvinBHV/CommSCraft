@@ -89,3 +89,9 @@ At head `45d86e620e7bbae03e8a644e134db7637ef8737a`, the ubuntu-latest job [11840
 - `tools/commscraft-xtask/src/main.rs`
 
 Before formatting, capture original current bytes and SHA-256 of every listed file as a distinct immutable baseline, then verify them after archiving. Do **not** overwrite existing historical Evidence or the original import manifest. The advisory `cargo fmt` step is not yet a passing gate.
+
+## Snapshot tool (staged, not yet executed)
+
+`scripts/snapshot_rustfmt_baseline.py` reads the 56-path inventory above and creates `docs/history/rustfmt-baseline-2026-10-20/` with byte-for-byte current-source copies and a new independent `manifest.json` (SHA-256 plus byte count). It fails closed on missing sources, path traversal, altered snapshots and existing destination; existing original-import archives and evidence ledgers are not touched. `--verify` checks an existing snapshot without mutation. `scripts/test_rustfmt_snapshot.py` includes positive and negative offline fixtures. **The snapshot has not been generated; new scripts require exact-head CI before use.** No Rust source formatting has occurred.
+
+Do not run the snapshot while concurrent source commits are in flight; pin the source revision first and review the generated archive and manifest before committing it. Only after successful archival and verification may formatting begin.
