@@ -2,7 +2,7 @@
 
 The [WordCraft](https://github.com/storytold/wordcraft) project demonstrates a useful principle: one set of application commands should work consistently from the GUI, CLI and automation tools. CommSCraft may adopt that architectural pattern while implementing its own secure communications behavior.
 
-## Proposed command surface (NOT IMPLEMENTED)
+## Proposed command surface (only one offline diagnostic implemented)
 
 - read-only local diagnostics: inspect synthetic SIP, SDP, transaction traces, protocol evidence
 - explicit configuration and safe connection status reporting
@@ -22,4 +22,4 @@ Every command must use the same core state machine as the desktop app; no separa
 
 Command IDs; input validation; tests for missing consent and malformed data; explicit negative permissions; behavior parity with the Windows Full Client where applicable; Microsoft/RFC references for all protocol effects.
 
-Status: design proposal only. The previous local commscraft-inspect tool is a limited offline diagnostic CLI and is not a general command bus.
+Status: one core-only offline command gate implemented in `crates/commscraft-core/src/offline_commands.rs`. Stable ID `diagnostics.inspect-sdp.v1` inspects caller-provided SDP bytes locally and returns a bounded structural summary. A caller must explicitly set both `user_consented` and `policy_allows`; failure is fail-closed. Command names other than the single allowlisted ID are rejected. Rust unit tests cover deterministic output, consent denial, policy denial, unknown IDs, malformed SDP and input size. No network commands, CLI/UI/MCP adapter, authenticated session, interop evidence or feature-parity upgrade exists. This is an incremental implementation of issue #5, not its completion.
