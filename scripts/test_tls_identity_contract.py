@@ -1,6 +1,6 @@
 """CommSCraft security source contract: transport must authenticate SIP origin, not SRV target."""
 import unittest
-import re
+from rust_source_contract import code_without_layout
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -12,8 +12,8 @@ class TlsSipIdentityContract(unittest.TestCase):
         self.assertIn("tls.connect(peer.tls_reference_identity(), tcp)", source)
         self.assertIn("pub fn tls_reference_identity(&self)", source)
         self.assertIn("pub fn sip_domain(&self)", source)
-        self.assertIn("tls.peer_certificate()", re.sub(r"\s+", "", source))
-        self.assertIn("cert.to_der()", re.sub(r"\s+", "", source))
+        self.assertIn("tls.peer_certificate()", code_without_layout(source))
+        self.assertIn("cert.to_der()", code_without_layout(source))
         self.assertIn("idna::domain_to_ascii_strict(name)", source)
         self.assertIn("sip_certificate::matches_sip_identity(", source)
         self.assertNotIn("if cert.is_none()", source)
@@ -30,7 +30,7 @@ class TlsSipIdentityContract(unittest.TestCase):
             "if !remainder.is_empty()",
             "fn ascii_sip_domain(name: &str)",
         ):
-            self.assertIn(re.sub(r'\s+', '', phrase), re.sub(r'\s+', '', cert))
+            self.assertIn(code_without_layout(phrase), code_without_layout(cert))
         for fixture in ("sip-uri-san.pem", "conflicting-sip-uri.pem", "wildcard-dns.pem"):
             pem = ROOT / "crates/commscraft-transport/tests/fixtures" / fixture
             self.assertTrue(pem.is_file(), fixture)
