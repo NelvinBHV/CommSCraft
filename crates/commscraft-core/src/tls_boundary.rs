@@ -232,9 +232,7 @@ impl FixtureSessionCorrelation {
         generation: u64,
         spn: &str,
         transaction: &str,
-        mic_checked: bool,
-        sequence: u64,
-        now_ms: u64,
+        mic: (bool, u64, u64),
     ) -> Result<(), BoundaryError> {
         if self.closed || generation != self.connection_generation {
             return Err(BoundaryError::ConnectionChanged);
@@ -243,7 +241,12 @@ impl FixtureSessionCorrelation {
             return Err(BoundaryError::PeerMismatch);
         }
         self.binding.observe_fixture_server_mic(
-            generation, spn, transaction, mic_checked, sequence, now_ms,
+            generation,
+            spn,
+            transaction,
+            mic.0,
+            mic.1,
+            mic.2,
         )
     }
 
@@ -278,40 +281,51 @@ mod tests {
         let fingerprint = [0x42; 32];
         let branch = "z9hG4bK-fixture-session";
         let mut session = FixtureSessionCorrelation::from_fixture(
-            report(), fingerprint, "sip/example.com", branch, 0
-        ).unwrap();
+            report(),
+            fingerprint,
+            "sip/example.com",
+            branch,
+            0,
+        )
+        .unwrap();
         assert!(!session.authenticated_sign_in());
         assert_eq!(
-            session.observe_fixture(&[0x43; 32], 1, "sip/example.com", branch, true, 1, 1),
+            session.observe_fixture(&[0x43; 32], 1, "sip/example.com", branch, (true, 1, 1)),
             Err(BoundaryError::PeerMismatch)
         );
         assert_eq!(
-            session.observe_fixture(&fingerprint, 2, "sip/example.com", branch, true, 1, 1),
+            session.observe_fixture(&fingerprint, 2, "sip/example.com", branch, (true, 1, 1)),
             Err(BoundaryError::ConnectionChanged)
         );
         assert_eq!(
-            session.observe_fixture(&fingerprint, 1, "sip/evil.example", branch, true, 1, 1),
+            session.observe_fixture(&fingerprint, 1, "sip/evil.example", branch, (true, 1, 1)),
             Err(BoundaryError::PeerMismatch)
         );
         assert_eq!(
-            session.observe_fixture(&fingerprint, 1, "sip/example.com", "z9hG4bK-other", true, 1, 1),
+            session.observe_fixture(
+                &fingerprint,
+                1,
+                "sip/example.com",
+                "z9hG4bK-other",
+                (true, 1, 1)
+            ),
             Err(BoundaryError::PeerMismatch)
         );
         assert_eq!(
-            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, false, 1, 1),
+            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, (false, 1, 1)),
             Err(BoundaryError::MicUnverified)
         );
         assert_eq!(
-            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, true, 1, 1),
+            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, (true, 1, 1)),
             Ok(())
         );
         assert_eq!(
-            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, true, 1, 2),
+            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, (true, 1, 2)),
             Err(BoundaryError::Replay)
         );
         session.disconnect();
         assert_eq!(
-            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, true, 2, 3),
+            session.observe_fixture(&fingerprint, 1, "sip/example.com", branch, (true, 2, 3)),
             Err(BoundaryError::ConnectionChanged)
         );
         assert!(!session.authenticated_sign_in());
@@ -321,13 +335,23 @@ mod tests {
     fn fixture_session_rejects_missing_certificate_and_expiry() {
         assert_eq!(
             FixtureSessionCorrelation::from_fixture(
-                report(), [0; 32], "sip/example.com", "z9hG4bK-fixture", 0
-            ).err(),
+                report(),
+                [0; 32],
+                "sip/example.com",
+                "z9hG4bK-fixture",
+                0
+            )
+            .err(),
             Some(BoundaryError::CertificateUnverified)
         );
         assert!(FixtureSessionCorrelation::from_fixture(
-            report(), [1; 32], "sip/example.com", "z9hG4bK-fixture", 1000
-        ).is_err());
+            report(),
+            [1; 32],
+            "sip/example.com",
+            "z9hG4bK-fixture",
+            1000
+        )
+        .is_err());
     }
 
     #[test]
