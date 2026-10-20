@@ -30,7 +30,7 @@ class RustfmtSnapshotTests(unittest.TestCase):
             self.assertEqual(hashlib.sha256(original).hexdigest(), row["sha256"])
             self.assertEqual(
                 hashlib.sha1(
-                    b"blob " + str(len(original)).encode("ascii") + b"\\0" + original
+                    b"blob " + str(len(original)).encode("ascii") + b"\0" + original
                 ).hexdigest(),
                 row["git_blob_sha"],
                 row["path"],
