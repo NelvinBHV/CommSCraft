@@ -117,6 +117,79 @@ impl OfflineTlsBoundary {
     }
 }
 
+/// Offline-only binding of a fixture TLS connection generation to an
+/// independently pinned Kerberos SPN and REGISTER transaction identifier.
+/// This is deliberately not constructible from a live transport, and never
+/// grants permission to authenticate, send SIP, or use credentials.
+/// RFC 5922 (June 2010) §§7.1–7.3; RFC 3261 (June 2002) §17.1.3;
+/// MS-SIPAE §3.2.5.2 (server MIC validation remains independent).
+#[derive(Debug)]
+pub struct OfflineRegisterBinding {
+    boundary: OfflineTlsBoundary,
+    expected_spn: String,
+    register_transaction: String,
+}
+
+impl OfflineRegisterBinding {
+    pub fn from_fixture(
+        report: FixturePeerReport,
+        expected_spn: &str,
+        register_transaction: &str,
+        now_ms: u64,
+    ) -> Result<Self, BoundaryError> {
+        let boundary = OfflineTlsBoundary::from_fixture(report, now_ms)?;
+        let spn_domain = expected_spn
+            .strip_prefix("sip/")
+            .ok_or(BoundaryError::NameMismatch)?;
+        let normalized_spn =
+            normalize_domain(spn_domain).map_err(|_| BoundaryError::InvalidDomain)?;
+        if normalized_spn != boundary.sip_domain {
+            return Err(BoundaryError::NameMismatch);
+        }
+        // A SIP Via branch is a local transaction correlation token, not
+        // authentication. Require the RFC 3261 magic cookie and safe ASCII.
+        if !register_transaction.starts_with("z9hG4bK")
+            || register_transaction.len() <= 7
+            || register_transaction.len() > 255
+            || !register_transaction
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"-._!%*+\x60'~".contains(&b))
+        {
+            return Err(BoundaryError::InvalidDomain);
+        }
+        Ok(Self {
+            boundary,
+            expected_spn: format!("sip/{normalized_spn}"),
+            register_transaction: register_transaction.into(),
+        })
+    }
+
+    pub fn observe_fixture_server_mic(
+        &mut self,
+        generation: u64,
+        spn: &str,
+        transaction: &str,
+        mic_checked: bool,
+        sequence: u64,
+        now_ms: u64,
+    ) -> Result<(), BoundaryError> {
+        if spn != self.expected_spn || transaction != self.register_transaction {
+            return Err(BoundaryError::PeerMismatch);
+        }
+        self.boundary
+            .observe_offline_mic(generation, mic_checked, sequence, now_ms)
+    }
+
+    pub fn disconnect(&mut self) {
+        self.boundary.disconnect();
+    }
+
+    /// Always false: synthetic evidence cannot authorize sign-in.
+    pub fn authenticated_sign_in(&self) -> bool {
+        false
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
