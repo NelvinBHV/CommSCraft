@@ -7,10 +7,34 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from snapshot_rustfmt_baseline import snapshot, verify
+from snapshot_rustfmt_baseline import ROOT, paths_from_plan, snapshot, verify
 
 
 class RustfmtSnapshotTests(unittest.TestCase):
+    def test_real_repository_inventory_snapshots_without_source_mutation(self):
+        # Smoke-test all current Rust bytes in an OS temp directory. The
+        # repository, imported archives, and evidence hashes remain untouched.
+        paths = paths_from_plan(ROOT)
+        self.assertEqual(len(paths), 56)
+        before = {
+            path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
+            for path in paths
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            destination = Path(temp) / "snapshot"
+            manifest = snapshot(ROOT, destination, paths)
+            self.assertEqual(len(manifest["files"]), len(paths))
+            self.assertEqual(verify(destination), 56)
+            self.assertEqual(
+                {row["path"]: row["sha256"] for row in manifest["files"]},
+                before,
+            )
+        after = {
+            path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
+            for path in paths
+        }
+        self.assertEqual(before, after)
+
     def test_exact_bytes_and_repeat_refusal(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
