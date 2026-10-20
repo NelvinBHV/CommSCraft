@@ -312,13 +312,13 @@ mod tests {
         // RFC 8866 §§5.9–5.11: zone adjustments follow the time
         // descriptions; subsequent t=/r= must not restart their sequence.
         for suffix in [
-            "t=0 0\\r\\n",
-            "t=1 2\\r\\nr=7d 1h 0\\r\\n",
+            "t=0 0\r\n",
+            "t=1 2\r\nr=7d 1h 0\r\n",
         ] {
             let replacement = format!(
-                "t=0 0\\r\\nr=7d 1h 0\\r\\nz=3730928400 -1h\\r\\n{suffix}"
+                "t=0 0\r\nr=7d 1h 0\r\nz=3730928400 -1h\r\n{suffix}"
             );
-            let wire = SAMPLE.replace("t=0 0\\r\\n", &replacement);
+            let wire = SAMPLE.replace("t=0 0\r\n", &replacement);
             assert_eq!(inspect_sdp(wire.as_bytes()), Err(SdpError::Malformed));
         }
     }
