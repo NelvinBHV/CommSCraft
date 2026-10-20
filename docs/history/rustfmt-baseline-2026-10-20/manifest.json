@@ -1,0 +1,343 @@
+{
+  "schema": 1,
+  "source_commit": "72f70b268432abdee76d2a007a204cef2f788e13",
+  "source": "current pre-rustfmt working tree",
+  "files": [
+    {
+      "path": "apps/commscraft-inspect/src/main.rs",
+      "sha256": "31d3ad952adf3629fedd3e75eb78d18f6e9e7bf3695de0d194cc12f537fbcd47",
+      "size": 16344,
+      "git_blob_sha": "6d1a4685659655ba4b88d76f81ac79def5650c8f"
+    },
+    {
+      "path": "apps/commscraft-probe/src/main.rs",
+      "sha256": "d87ecf1d32cd9d0c7c81bf0c3deb8d52dfddc5e1be173febf80680d1e92f7966",
+      "size": 6829,
+      "git_blob_sha": "863c7b0d63272ec08cc0c45d2f88d13cc0dc7f8e"
+    },
+    {
+      "path": "apps/commscraft/src/main.rs",
+      "sha256": "f8cd2ab4b63165d92d090eb775083bb84580cc45197f7127e38340a94bacb408",
+      "size": 17448,
+      "git_blob_sha": "07e82faf662cad5d78fd095eb99d05f9eee365ce"
+    },
+    {
+      "path": "crates/commscraft-core/src/additional_meeting_offline.rs",
+      "sha256": "778087ae660e3ee17825574a547b4104ccd5a24f55158e061ab4c2df54366ce0",
+      "size": 3957,
+      "git_blob_sha": "712783584443cff269bc4197a6f95f41a63dfdf0"
+    },
+    {
+      "path": "crates/commscraft-core/src/advanced_client_offline.rs",
+      "sha256": "8a669f16bfcedd6d3f376f20b90cdcbbcedd8db648a10556ad901b79d9fc7f9c",
+      "size": 3674,
+      "git_blob_sha": "71fd8b2680b81bca4660383c6a09263ec93bf896"
+    },
+    {
+      "path": "crates/commscraft-core/src/auxiliary_offline.rs",
+      "sha256": "40bf242812575ba2e0234d9c72dda8d0253a913bce6a8e0343645154fd492adf",
+      "size": 4859,
+      "git_blob_sha": "a65aa7af92401a3620c3893432ed207a09b257cf"
+    },
+    {
+      "path": "crates/commscraft-core/src/call_drafts.rs",
+      "sha256": "7d3e3499a981f88c2f92271c2be5a4a5aa505d3575607cfc17c0f66ca9990ea7",
+      "size": 4777,
+      "git_blob_sha": "fd001df907c5014bef717cfb305c7cf3038c160e"
+    },
+    {
+      "path": "crates/commscraft-core/src/challenge.rs",
+      "sha256": "0a435564681363f83377413d099ec578b99d497eac867df83d6a1284fd03640a",
+      "size": 9421,
+      "git_blob_sha": "276acb2bb82844a5dffe47cfec77a73999577056"
+    },
+    {
+      "path": "crates/commscraft-core/src/client_admin_offline.rs",
+      "sha256": "7afe7ad17fc97530d836a33c7baa6a0d42d7af3942fb877e550fb4201100d5e7",
+      "size": 4271,
+      "git_blob_sha": "5a7b4c83b759d53c563e9c8bdd258bc41de5473e"
+    },
+    {
+      "path": "crates/commscraft-core/src/client_offline.rs",
+      "sha256": "0cda5ec5583cd3e423851e044db9c0560b1709b4faa4e7c046397575e55a6b8d",
+      "size": 5090,
+      "git_blob_sha": "6eb57774ae7e20c09893a63142e2a0e47da6f102"
+    },
+    {
+      "path": "crates/commscraft-core/src/client_operations_offline.rs",
+      "sha256": "25b98583adfa778f8d59dd719a8ff349eb89d60bf820ae905579631dfa349c38",
+      "size": 4086,
+      "git_blob_sha": "0064f9153e39eb580fa09b3224f969acc6b9e1c2"
+    },
+    {
+      "path": "crates/commscraft-core/src/client_preferences_offline.rs",
+      "sha256": "445c660d98f86b2632729d3a5026a47ed87d2d0d64741f835e26581cf310ee69",
+      "size": 4968,
+      "git_blob_sha": "849d60ddd172a322dbf23db9515dd1ed5e06be4b"
+    },
+    {
+      "path": "crates/commscraft-core/src/client_services_offline.rs",
+      "sha256": "a472df3b9e357d449f45c24be7a59bb9ac040f5dcc8ffc0a48f707083a9af405",
+      "size": 4148,
+      "git_blob_sha": "40dd84d9a2c2da8122275e6180073278bbd5fb30"
+    },
+    {
+      "path": "crates/commscraft-core/src/collaboration_staging_offline.rs",
+      "sha256": "c0e6bd7540826636a6dcd6a78a318786fc2a5d68604ab6ec598e98db758c7c8f",
+      "size": 3399,
+      "git_blob_sha": "bcaeaefa7ef530cb3253f4c81cdb7444323372b4"
+    },
+    {
+      "path": "crates/commscraft-core/src/communication_drafts_offline.rs",
+      "sha256": "18440ebbad4814d995670fc553143247fa000eeded8cb9564dd96ace25081aea",
+      "size": 3713,
+      "git_blob_sha": "90c313368ed5bc7beba72dd9b0491c3a24c3ffbb"
+    },
+    {
+      "path": "crates/commscraft-core/src/conference_media_previews_offline.rs",
+      "sha256": "f125d052bb1fb782cf0518eafe61ba5c3c88a6bac0045b6697ef55dce16a0acc",
+      "size": 3526,
+      "git_blob_sha": "60836188d17a6bee8f49369da468ca452c04c6f3"
+    },
+    {
+      "path": "crates/commscraft-core/src/contacts_ui_offline.rs",
+      "sha256": "7bf4d4b0401e85a0cca7260058ad6961a44cf99ad9fd82df2eaddb44c82933a1",
+      "size": 5874,
+      "git_blob_sha": "bf77216853e1c737e73226e8a23cae30893f59de"
+    },
+    {
+      "path": "crates/commscraft-core/src/delegate_meetings_offline.rs",
+      "sha256": "1331c15acf1f38a1bdc143ddaeb02bf370601cb6e4c66e6fe137579f17196a5f",
+      "size": 4659,
+      "git_blob_sha": "73b505fb4412b2f7844d924418e034f67db6b96f"
+    },
+    {
+      "path": "crates/commscraft-core/src/discovery.rs",
+      "sha256": "f94fa7a5f9bdb83ff5a7520e8f0d24d82380f5796ca9d65837c99ac7d41f4158",
+      "size": 13704,
+      "git_blob_sha": "6b15c112d52548a21dd9c5adf6eaa2c436d9f987"
+    },
+    {
+      "path": "crates/commscraft-core/src/enterprise_meeting_drafts_offline.rs",
+      "sha256": "50c2ef8c4f833fbd1c683673fb98c9fc4d667822577b54687f6f3321df260c6f",
+      "size": 4099,
+      "git_blob_sha": "8613de6e547b327a795f60bd1b53231e65800d15"
+    },
+    {
+      "path": "crates/commscraft-core/src/enterprise_preview_offline.rs",
+      "sha256": "d5f04d9a6858a7bf4d24a877f62de83ff5aa38c0372d70268730874011806b85",
+      "size": 3802,
+      "git_blob_sha": "bb2857881830784b504b6103a393164a121007f7"
+    },
+    {
+      "path": "crates/commscraft-core/src/final_inventory_previews_offline.rs",
+      "sha256": "8c9d36210d38daa11719c334368e7e3e13a78c941754bf6b63bff6a7a05de491",
+      "size": 2331,
+      "git_blob_sha": "711bc890b37fc34f0743784295d0eca7b461020e"
+    },
+    {
+      "path": "crates/commscraft-core/src/im.rs",
+      "sha256": "c87145254f6ad9a8f88aee09afc2bda8d5f1d06c461777fb6fafb9e87d4b0961",
+      "size": 15324,
+      "git_blob_sha": "f8bcbc468ffa1fcbb2e110d127b467d56ad5d9df"
+    },
+    {
+      "path": "crates/commscraft-core/src/inbound.rs",
+      "sha256": "013a965770c94fac7d64d611dd4d9913e712b17cac6738cfa62c44ef7b8252e6",
+      "size": 7273,
+      "git_blob_sha": "227158993c0d60d564fdde7f58b24d5208534108"
+    },
+    {
+      "path": "crates/commscraft-core/src/interaction_offline.rs",
+      "sha256": "f35f3d98a3bfc87cd47a799aafc0048fb8875770c9a41290f4eeb8ecb55a2684",
+      "size": 4660,
+      "git_blob_sha": "935f6f9cae189d394b76f2a2bf483d5e090a839c"
+    },
+    {
+      "path": "crates/commscraft-core/src/kerberos.rs",
+      "sha256": "16a0c21504c04fa6838d9eb8cadcce0e192e541cdc175db471ba38f6ec847b77",
+      "size": 18219,
+      "git_blob_sha": "24950e55e55893b0f8b85f408b5cea2b67f539d7"
+    },
+    {
+      "path": "crates/commscraft-core/src/kerberos_mic.rs",
+      "sha256": "8f5f5f503801a875ed39a1f3381f8823515b314bab68c36ff3727951440ee7ce",
+      "size": 8682,
+      "git_blob_sha": "c427f3b20f6e3c0849f0b142a674c8a9a42d231a"
+    },
+    {
+      "path": "crates/commscraft-core/src/lib.rs",
+      "sha256": "4e8db4b4fcbb09d15569855709ec5f49aca0ff345590aa81089feb18e90acd2e",
+      "size": 1647,
+      "git_blob_sha": "a505beb711e8304c54fd23b0b0923363fde74915"
+    },
+    {
+      "path": "crates/commscraft-core/src/local_features.rs",
+      "sha256": "f5edf5d3ee428d7608b11f99e6f671fffae35926360a260444207d53c00b8edd",
+      "size": 4851,
+      "git_blob_sha": "20eebc0a53a249f817085da7bc99a1b7c35dd840"
+    },
+    {
+      "path": "crates/commscraft-core/src/media_preflight_offline.rs",
+      "sha256": "783be66c44824df7c0fc324cffff8a8fb1ab6205e2a6a0321c22999638090cc0",
+      "size": 3332,
+      "git_blob_sha": "a9b4d86ab88ff39a4787d345633d4a72ae7efe1d"
+    },
+    {
+      "path": "crates/commscraft-core/src/meeting_controls_offline.rs",
+      "sha256": "9e0af9d45bc3ea5080d194a1ff8f3336e8f81c86c9e50e93108e3796729eab62",
+      "size": 3972,
+      "git_blob_sha": "adc1172c71cb818610a6e1273ef65a4825088637"
+    },
+    {
+      "path": "crates/commscraft-core/src/meeting_entry_offline.rs",
+      "sha256": "67a8de4915e8ea5596d54071a0f5d4964e28cc8d89a46cdc4f76d28f636afcc7",
+      "size": 3870,
+      "git_blob_sha": "f21d775e431522e649c2d3a111b2582190fff5b5"
+    },
+    {
+      "path": "crates/commscraft-core/src/preflight_offline.rs",
+      "sha256": "8fdf664aaae461b104c01366dcade03e7a3613afc626fb228201c6251b6e4ad3",
+      "size": 5374,
+      "git_blob_sha": "5305aea9f40fb6b195b153ad41fdd1ebaf423cf4"
+    },
+    {
+      "path": "crates/commscraft-core/src/presence.rs",
+      "sha256": "c71c72b2c28f27248e5cb4e481dc64bc5ac18f1ded62b16166ce6db0767e94c8",
+      "size": 12135,
+      "git_blob_sha": "b5b90c421f574a508a0714bd326bce6de905ad62"
+    },
+    {
+      "path": "crates/commscraft-core/src/registration.rs",
+      "sha256": "377b610b52073b16316843835f08982744f595bed510d480d8e9b1d036baeb51",
+      "size": 45467,
+      "git_blob_sha": "3e71f5319be74891d482b90142a8af24c6ee1223"
+    },
+    {
+      "path": "crates/commscraft-core/src/safety_client_previews_offline.rs",
+      "sha256": "ba0903a598bd13f336e6a1fdf6b34a2b3cdef4a653ec555ba0da139a80bfb5fa",
+      "size": 4120,
+      "git_blob_sha": "e491d3e1d5a2008556978330470c2c49625b0477"
+    },
+    {
+      "path": "crates/commscraft-core/src/sdp.rs",
+      "sha256": "18968ed2f7a4a58a95c4851434d9a8fd473bf42a4e5a6e14a79e6457edecdb6c",
+      "size": 15504,
+      "git_blob_sha": "6df8696d2aaa642277548bc74533fe7709b940d3"
+    },
+    {
+      "path": "crates/commscraft-core/src/security.rs",
+      "sha256": "bd350ea0d37063475bab15a317bfd3b76ebde7685d923ec60df0a81d825b560f",
+      "size": 40674,
+      "git_blob_sha": "039d40aea5b40967ab9f747bf2a971fb545049b7"
+    },
+    {
+      "path": "crates/commscraft-core/src/session.rs",
+      "sha256": "1cc70021069298d1c443bf544690e2f7fdf4dbc5304ec86af0f56ed12305d9d7",
+      "size": 25431,
+      "git_blob_sha": "c007ffac64b2d97cb2aeb6eb47a5d559f2bf74d2"
+    },
+    {
+      "path": "crates/commscraft-core/src/sip.rs",
+      "sha256": "3e4ba80dcefea2dc3864f1d9f49cdaaa8067c03669674d900f358997a22cbdb8",
+      "size": 14109,
+      "git_blob_sha": "c40a8ddfd90c556fb60e6656e521b80af581828d"
+    },
+    {
+      "path": "crates/commscraft-core/src/stream.rs",
+      "sha256": "7ba4906f97ed9084f78cfb9bde9c0116f92234296ca14eb682aa24944fc1d490",
+      "size": 4619,
+      "git_blob_sha": "f1bbbc7a2fb08270e28429f44f766ec68eb6b7f2"
+    },
+    {
+      "path": "crates/commscraft-core/src/tls_boundary.rs",
+      "sha256": "8c6ca6a98ec1c3fc8d738b0568276578dc50f65d1da20cba3ef9b6c8d06a550f",
+      "size": 6640,
+      "git_blob_sha": "34cb361dcfe0b1c5764bb000df0cb932db3c9ca3"
+    },
+    {
+      "path": "crates/commscraft-core/src/transaction.rs",
+      "sha256": "4fc713cc9342105de51b84f8a8d6f90a5ede337867ba0274d2fb48ce656779f6",
+      "size": 13736,
+      "git_blob_sha": "8c97eaf00fe78fb07c48375fede94caff260cb05"
+    },
+    {
+      "path": "crates/commscraft-core/src/usability_offline.rs",
+      "sha256": "0b750b905b1d66416a8d471c685a1cec0e17ba13a31d5fba739366ce90a72015",
+      "size": 4295,
+      "git_blob_sha": "5520f568f62dbf6816ca281a552adc68c467ed74"
+    },
+    {
+      "path": "crates/commscraft-core/src/windows_sspi.rs",
+      "sha256": "dd95607fdd2a5eb5e1fffa8124c08c87b0a5245da6ebee185ae04bf8f17e045d",
+      "size": 18022,
+      "git_blob_sha": "45fd052a6b56f956479406cd1066cd74b63ccb86"
+    },
+    {
+      "path": "crates/commscraft-core/tests/authentication_fixtures.rs",
+      "sha256": "f32c49fa830f48ac058c8138f5fa261bb6a96377f62e563343d94dfc66ba4d77",
+      "size": 1531,
+      "git_blob_sha": "ec196e5d59d6151967762d4a965f3b55c54210eb"
+    },
+    {
+      "path": "crates/commscraft-core/tests/protocol_fixtures.rs",
+      "sha256": "693283f57abf4b425b74f1e0fb73f6c5bd2df7f9f3b5471a725e58caa2ae9efc",
+      "size": 3033,
+      "git_blob_sha": "9c42e03fd0b8f336f36751748ca4ef7e5a657577"
+    },
+    {
+      "path": "crates/commscraft-core/tests/verified_registration.rs",
+      "sha256": "77470c6ab690e41218e62d2c7260f36a57c81c6ca75eefa9e159acb5e5a9e68f",
+      "size": 9321,
+      "git_blob_sha": "88a934939b300782fd37c8d1ac266b954b949cf6"
+    },
+    {
+      "path": "crates/commscraft-register-events/src/gated_presence.rs",
+      "sha256": "3307baff2373484989d41febc59dfabc497ae90e0ad008fbf442c348f93232b6",
+      "size": 10653,
+      "git_blob_sha": "8d726b882706c3a416e4dffb95b7ac1a688bffef"
+    },
+    {
+      "path": "crates/commscraft-register-events/src/lib.rs",
+      "sha256": "4ea7d75cfd4782d227307618bf5f3fd46862be605001e439a80564e28f9fb8cd",
+      "size": 8743,
+      "git_blob_sha": "7a7569f4a182c93baff1350d19b12d98764f727d"
+    },
+    {
+      "path": "crates/commscraft-register-events/src/sip_binding.rs",
+      "sha256": "d0ea4ec3435e6b094239ace7eecd743f5d37293f7f1d6e57e931acdff8e1293c",
+      "size": 5193,
+      "git_blob_sha": "85c8d99a7745206e2c014382253e019bc9d73538"
+    },
+    {
+      "path": "crates/commscraft-router/src/lib.rs",
+      "sha256": "87771bb4f0a0bb23d5b52d0be6592da891deaf169d9f9cda241d5ab757f661c5",
+      "size": 13653,
+      "git_blob_sha": "72eed52f8df6c8b25b22154de96c24e06a658ed8"
+    },
+    {
+      "path": "crates/commscraft-router/tests/offline_wire.rs",
+      "sha256": "b4fc58f41a05834636e5d8ca4c2e343fcc0dcab3855956778fd968724af7db52",
+      "size": 3248,
+      "git_blob_sha": "e8bdaafa87c3dffa019756ea51ba17d58efebb98"
+    },
+    {
+      "path": "crates/commscraft-transport/src/lib.rs",
+      "sha256": "8d3159e94e31a36b7b73b8646012424485ee6cb91f5fb95a9b2774925c0fb2f4",
+      "size": 12508,
+      "git_blob_sha": "ac0c6d1d70e603fff342ef0c46a84a23b5303bf8"
+    },
+    {
+      "path": "crates/commscraft-transport/src/sip_certificate.rs",
+      "sha256": "072f978a8f8e1ce0a062095c89bf83edad72a8bcb6d9793c5ed379ec04276746",
+      "size": 30978,
+      "git_blob_sha": "a51d4ae9d62513d1b61add480e4d0f7930cc200b"
+    },
+    {
+      "path": "tools/commscraft-xtask/src/main.rs",
+      "sha256": "09f252b83ea7806c53ff64e0391499240850d4e73ce27fed2074037ed9b981fd",
+      "size": 1613,
+      "git_blob_sha": "259f938bda9f56640de957272e50c654729182d9"
+    }
+  ]
+}
