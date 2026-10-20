@@ -23,8 +23,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libxkbcommon-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libgl1-mesa-dev libssl-dev pkg-config
       - name: Verify source integrity before any formatting
         run: python3 scripts/check_import_integrity.py
-      - name: Legacy import formatting check (advisory until provenance-preserving rustfmt migration)
-        continue-on-error: true
+      - name: Require workspace rustfmt
         run: cargo fmt --all -- --check
       - name: Unit and offline fixture tests
         run: cargo test --workspace --all-targets
@@ -62,6 +61,9 @@ jobs:
         run: |
           python scripts/check_release.py
           python -m unittest discover -s scripts -p 'test_*.py'
+      - name: Require Windows workspace rustfmt
+        shell: pwsh
+        run: cargo fmt --all -- --check
       - name: Windows compile and offline tests
         shell: pwsh
         run: |
