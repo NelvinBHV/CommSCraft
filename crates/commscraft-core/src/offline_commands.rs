@@ -27,7 +27,9 @@ pub const COMMAND_CATALOG: &[CommandDescriptor] = &[CommandDescriptor {
 /// Reject unknown identifiers; do not silently fall back to a different
 /// version, network operation or unregistered extension.
 pub fn lookup_command(id: &str) -> Option<&'static CommandDescriptor> {
-    COMMAND_CATALOG.iter().find(|descriptor| descriptor.id == id)
+    COMMAND_CATALOG
+        .iter()
+        .find(|descriptor| descriptor.id == id)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
