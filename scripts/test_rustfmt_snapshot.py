@@ -13,7 +13,7 @@ from snapshot_rustfmt_baseline import ROOT, paths_from_plan, snapshot, verify
 class RustfmtSnapshotTests(unittest.TestCase):
     def test_committed_archive_matches_original_source_bytes(self):
         # The archive was recorded before any rustfmt changes; verify its
-        # byte-level manifest and unchanged original source on this stage.
+        # byte-level manifest independently of future live-source formatting.
         archive = ROOT / "docs/history/rustfmt-baseline-2026-10-20"
         manifest = json.loads((archive / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["source_commit"], "72f70b268432abdee76d2a007a204cef2f788e13")
@@ -24,9 +24,15 @@ class RustfmtSnapshotTests(unittest.TestCase):
             paths_from_plan(ROOT),
         )
         for row in manifest["files"]:
+            # Verify the immutable archived bytes, not the live source:
+            # the latter is *expected* to change during rustfmt migration.
+            original = (archive / row["path"]).read_bytes()
+            self.assertEqual(hashlib.sha256(original).hexdigest(), row["sha256"])
             self.assertEqual(
-                hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest(),
-                row["sha256"],
+                hashlib.sha1(
+                    b"blob " + str(len(original)).encode("ascii") + b"\\0" + original
+                ).hexdigest(),
+                row["git_blob_sha"],
                 row["path"],
             )
 
