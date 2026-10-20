@@ -439,7 +439,6 @@ fn offline_command<R: Read>(
     Ok(result.media.len())
 }
 
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // This syntax is intentionally exact: no defaults, implicit consent,
     // arbitrary path reads or network-capable command dispatch.
