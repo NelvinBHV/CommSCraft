@@ -51,8 +51,6 @@ mod tests {
         assert!(
             FixtureRegisterBranch::new_fixture(&format!("z9hG4bK{}", "a".repeat(122))).is_err()
         );
-        assert!(
-            FixtureRegisterBranch::new_fixture(&format!("z9hG4bK{}", "a".repeat(121))).is_ok()
-        );
+        assert!(FixtureRegisterBranch::new_fixture(&format!("z9hG4bK{}", "a".repeat(121))).is_ok());
     }
 }
