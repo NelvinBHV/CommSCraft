@@ -74,6 +74,23 @@ impl OfflineSignInCoordinator {
         false
     }
 
+    /// The MIC milestone is sourced from the actual offline verification gate,
+    /// not from a caller-supplied `mic_verified` flag. The gate itself is
+    /// responsible for transaction matching, server MIC and replay checks.
+    /// This still does not authenticate a live TLS peer or sign in.
+    pub fn observe_mic_gate_fixture(
+        &mut self,
+        generation: u64,
+        gate: &crate::session::RegisterVerificationGate,
+        now_ms: u64,
+    ) -> Result<OfflineSignInPhase, OfflineSignInError> {
+        if gate.state() != crate::session::GateState::MicCheckedNotSignedIn {
+            self.close();
+            return Err(OfflineSignInError::InvalidTransition);
+        }
+        self.observe_fixture(generation, OfflineSignInEvent::ServerMicChecked, now_ms)
+    }
+
     pub fn close(&mut self) {
         self.phase = OfflineSignInPhase::Closed;
     }
@@ -190,6 +207,51 @@ mod tests {
             coordinator.observe_fixture(1, STEPS[0], 2),
             Err(OfflineSignInError::Closed)
         );
+    }
+
+    #[test]
+    fn unverified_gate_cannot_advance_mic_milestone() {
+        use crate::challenge::{ChallengeOffer, ChallengeSource, Scheme};
+        use crate::registration::{Endpoint, RegisterFlow};
+        use crate::security::SecurityAssociation;
+        use crate::session::RegisterVerificationGate;
+
+        let endpoint = Endpoint {
+            aor: "sip:alice@example.com".into(),
+            sent_by: "client.example.com".into(),
+            contact_uri: "sip:alice@client.example.com;transport=tls".into(),
+            instance_uuid: "b43b3d1d-9f8f-5fdc-9f74-3ca273cadb97".into(),
+            epid: "492a7ce35f".into(),
+            from_tag: "2d0be03279".into(),
+            call_id: "offline-gate@example.com".into(),
+        };
+        let flow = RegisterFlow::new(endpoint, 1, "z9hG4bK-offline-gate", 3600, 0).unwrap();
+        let association = SecurityAssociation::begin(
+            &ChallengeOffer {
+                scheme: Scheme::TlsDsk,
+                source: ChallengeSource::Registrar,
+                realm: Some("SIP Communications Service".into()),
+                targetname: Some("server.example.com".into()),
+                opaque: Some("opaque123".into()),
+                version: Some(4),
+                sts_uri: None,
+                gssapi_data: None,
+            },
+            8_000_000,
+        )
+        .unwrap();
+        let gate = RegisterVerificationGate::new(flow, association);
+        let mut coordinator = OfflineSignInCoordinator::new_fixture(1, 0, 100).unwrap();
+        for event in STEPS.iter().take(5) {
+            coordinator.observe_fixture(1, *event, 1).unwrap();
+        }
+        assert_eq!(coordinator.phase(), OfflineSignInPhase::ServerMicVerification);
+        assert_eq!(
+            coordinator.observe_mic_gate_fixture(1, &gate, 2),
+            Err(OfflineSignInError::InvalidTransition)
+        );
+        assert_eq!(coordinator.phase(), OfflineSignInPhase::Closed);
+        assert!(!coordinator.authenticated_sign_in());
     }
 
     #[test]
