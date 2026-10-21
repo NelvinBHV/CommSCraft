@@ -122,7 +122,6 @@ impl TransportBoundOfflineSignIn {
             .observe_mic_gate_fixture(1, gate, now_ms)
             .map_err(BoundSignInError::Lifecycle)
     }
-
 }
 
 #[cfg(test)]
