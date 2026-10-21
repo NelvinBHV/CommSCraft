@@ -29,12 +29,17 @@ impl TransportBoundOfflineSignIn {
         now_ms: u64,
         deadline_ms: u64,
     ) -> Result<Self, BoundSignInError> {
-        owner.check_fixture(&session).map_err(|_| BoundSignInError::InvalidSession)?;
+        owner
+            .check_fixture(&session)
+            .map_err(|_| BoundSignInError::InvalidSession)?;
         // This local coordinator epoch is not a TLS identity. The transport
         // handle is separately checked on every observation.
         let coordinator = OfflineSignInCoordinator::new_fixture(1, now_ms, deadline_ms)
             .map_err(BoundSignInError::Lifecycle)?;
-        Ok(Self { session, coordinator })
+        Ok(Self {
+            session,
+            coordinator,
+        })
     }
 
     pub fn phase(&self) -> OfflineSignInPhase {
@@ -49,7 +54,10 @@ impl TransportBoundOfflineSignIn {
         self.coordinator.close();
     }
 
-    fn check_owner(&mut self, owner: &OfflineTransportSessionOwner) -> Result<(), BoundSignInError> {
+    fn check_owner(
+        &mut self,
+        owner: &OfflineTransportSessionOwner,
+    ) -> Result<(), BoundSignInError> {
         if owner.check_fixture(&self.session).is_err() {
             self.coordinator.close();
             return Err(BoundSignInError::InvalidSession);
@@ -64,7 +72,8 @@ impl TransportBoundOfflineSignIn {
         now_ms: u64,
     ) -> Result<OfflineSignInPhase, BoundSignInError> {
         self.check_owner(owner)?;
-        self.coordinator.observe_fixture(1, event, now_ms)
+        self.coordinator
+            .observe_fixture(1, event, now_ms)
             .map_err(BoundSignInError::Lifecycle)
     }
 
@@ -75,7 +84,8 @@ impl TransportBoundOfflineSignIn {
         now_ms: u64,
     ) -> Result<OfflineSignInPhase, BoundSignInError> {
         self.check_owner(owner)?;
-        self.coordinator.observe_mic_gate_fixture(1, gate, now_ms)
+        self.coordinator
+            .observe_mic_gate_fixture(1, gate, now_ms)
             .map_err(BoundSignInError::Lifecycle)
     }
 }
@@ -108,21 +118,24 @@ mod tests {
         let session = owner.connect_fixture().unwrap();
         let mut foreign = OfflineTransportSessionOwner::new_fixture(92).unwrap();
         foreign.connect_fixture().unwrap();
-        let mut attempt = TransportBoundOfflineSignIn::new_fixture(&owner, session, 0, 100).unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, session, 0, 100).unwrap();
         assert_eq!(
             attempt.observe_fixture(&foreign, OfflineSignInEvent::DiscoveryResolved, 1),
             Err(BoundSignInError::InvalidSession)
         );
         assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
         let session = owner.connect_fixture().unwrap();
-        let mut expired = TransportBoundOfflineSignIn::new_fixture(&owner, session, 0, 100).unwrap();
+        let mut expired =
+            TransportBoundOfflineSignIn::new_fixture(&owner, session, 0, 100).unwrap();
         assert_eq!(
             expired.observe_fixture(&owner, OfflineSignInEvent::DiscoveryResolved, 100),
             Err(BoundSignInError::Lifecycle(OfflineSignInError::Expired))
         );
         assert_eq!(expired.phase(), OfflineSignInPhase::Closed);
         let session = owner.connect_fixture().unwrap();
-        let mut disconnected = TransportBoundOfflineSignIn::new_fixture(&owner, session, 0, 100).unwrap();
+        let mut disconnected =
+            TransportBoundOfflineSignIn::new_fixture(&owner, session, 0, 100).unwrap();
         owner.disconnect();
         assert_eq!(
             disconnected.observe_fixture(&owner, OfflineSignInEvent::DiscoveryResolved, 1),
