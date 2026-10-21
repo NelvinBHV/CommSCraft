@@ -130,8 +130,8 @@ impl OfflineRegisterResponsePipeline {
             self.transaction.disconnect_fixture();
             return Err(IntegratedRegisterError::TrailingBytes);
         }
-        let status = match message.start_line {
-            StartLine::Response { code, .. } if (200..=699).contains(&code) => code,
+        let status = match &message.start_line {
+            StartLine::Response { code, .. } if (200..=699).contains(code) => *code,
             _ => {
                 self.transaction.disconnect_fixture();
                 return Err(IntegratedRegisterError::InvalidResponse);
