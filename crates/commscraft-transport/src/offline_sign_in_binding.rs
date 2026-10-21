@@ -123,17 +123,6 @@ impl TransportBoundOfflineSignIn {
             .map_err(BoundSignInError::Lifecycle)
     }
 
-    pub fn observe_mic_gate_fixture(
-        &mut self,
-        owner: &OfflineTransportSessionOwner,
-        gate: &RegisterVerificationGate,
-        now_ms: u64,
-    ) -> Result<OfflineSignInPhase, BoundSignInError> {
-        self.check_owner(owner)?;
-        self.coordinator
-            .observe_mic_gate_fixture(1, gate, now_ms)
-            .map_err(BoundSignInError::Lifecycle)
-    }
 }
 
 #[cfg(test)]
