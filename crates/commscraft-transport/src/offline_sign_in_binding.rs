@@ -134,6 +134,87 @@ impl TransportBoundOfflineSignIn {
 mod tests {
     use super::*;
 
+    struct RejectMic;
+
+    impl ServerMicVerifier for RejectMic {
+        fn verify(&self, _message: &[u8], _token: &[u8]) -> bool {
+            false
+        }
+    }
+
+    #[test]
+    fn premature_register_response_closes_attempt_and_pipeline() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(93).unwrap();
+        let pipeline_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            pipeline_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let attempt_session = owner.connect_fixture().unwrap();
+        let mut attempt = TransportBoundOfflineSignIn::new_fixture(
+            &owner,
+            attempt_session,
+            0,
+            100,
+        )
+        .unwrap();
+        let mut gate = register_gate();
+        let wire = b"SIP/2.0 200 OK\\r\\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\\r\\nCSeq: 17 REGISTER\\r\\nContent-Length: 0\\r\\n\\r\\n";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::Lifecycle(
+                OfflineSignInError::InvalidTransition
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(gate.state(), commscraft_core::session::GateState::Disconnected);
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    fn register_gate() -> RegisterVerificationGate {
+        use commscraft_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
+        use commscraft_core::registration::{Endpoint, RegisterFlow};
+        use commscraft_core::security::SecurityAssociation;
+
+        let endpoint = Endpoint {
+            aor: "sip:alice@example.com".into(),
+            sent_by: "client.invalid".into(),
+            contact_uri: "sip:alice@client.invalid;transport=tls".into(),
+            instance_uuid: "b43b3d1d-9f8f-5fdc-9f74-3ca273cadb97".into(),
+            epid: "492a7ce35f".into(),
+            from_tag: "2d0be03279".into(),
+            call_id: "bound-register@example.com".into(),
+        };
+        let flow = RegisterFlow::new(endpoint, 17, "z9hG4bK-pipeline", 3600, 0).unwrap();
+        let association = SecurityAssociation::begin(
+            &ChallengeOffer {
+                scheme: Scheme::TlsDsk,
+                source: ChallengeSource::Registrar,
+                realm: Some("SIP Communications Service".into()),
+                targetname: Some("server.example.com".into()),
+                opaque: Some("opaque123".into()),
+                version: Some(4),
+                sts_uri: None,
+                gssapi_data: None,
+            },
+            8_000_000,
+        )
+        .unwrap();
+        RegisterVerificationGate::new(flow, association)
+    }
+
     #[test]
     fn connection_replacement_revokes_attempt() {
         let mut owner = OfflineTransportSessionOwner::new_fixture(90).unwrap();
