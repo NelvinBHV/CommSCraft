@@ -21,7 +21,10 @@ pub struct OfflineRegisterResponsePipeline {
     transaction: OfflineRegisterTransaction,
 }
 
-fn unique_header<'a>(message: &'a SipMessage, key: &str) -> Result<&'a str, IntegratedRegisterError> {
+fn unique_header<'a>(
+    message: &'a SipMessage,
+    key: &str,
+) -> Result<&'a str, IntegratedRegisterError> {
     let mut found = None;
     for (name, value) in &message.headers {
         if name.eq_ignore_ascii_case(key) && found.replace(value.as_str()).is_some() {
@@ -38,13 +41,17 @@ fn response_identity(message: &SipMessage) -> Result<(&str, u32), IntegratedRegi
         return Err(IntegratedRegisterError::InvalidResponse);
     }
     let mut params = via.split(';');
-    let sent_by = params.next().ok_or(IntegratedRegisterError::InvalidResponse)?;
+    let sent_by = params
+        .next()
+        .ok_or(IntegratedRegisterError::InvalidResponse)?;
     if !sent_by.starts_with("SIP/2.0/TLS ") || sent_by.len() <= 12 {
         return Err(IntegratedRegisterError::InvalidResponse);
     }
     let mut branch = None;
     for param in params {
-        let (key, value) = param.split_once('=').ok_or(IntegratedRegisterError::InvalidResponse)?;
+        let (key, value) = param
+            .split_once('=')
+            .ok_or(IntegratedRegisterError::InvalidResponse)?;
         if key.trim().eq_ignore_ascii_case("branch") {
             if branch.replace(value.trim()).is_some() {
                 return Err(IntegratedRegisterError::InvalidResponse);
@@ -63,7 +70,9 @@ fn response_identity(message: &SipMessage) -> Result<(&str, u32), IntegratedRegi
     if number.is_empty() || !number.bytes().all(|b| b.is_ascii_digit()) {
         return Err(IntegratedRegisterError::InvalidResponse);
     }
-    let sequence = number.parse::<u32>().map_err(|_| IntegratedRegisterError::InvalidResponse)?;
+    let sequence = number
+        .parse::<u32>()
+        .map_err(|_| IntegratedRegisterError::InvalidResponse)?;
     if sequence == 0 || sequence > 2_147_483_647 {
         return Err(IntegratedRegisterError::InvalidResponse);
     }
@@ -80,8 +89,14 @@ impl OfflineRegisterResponsePipeline {
         deadline_ms: u64,
     ) -> Result<Self, IntegratedRegisterError> {
         let transaction = OfflineRegisterTransaction::new_fixture(
-            owner, session, branch, cseq, now_ms, deadline_ms
-        ).map_err(IntegratedRegisterError::Lifecycle)?;
+            owner,
+            session,
+            branch,
+            cseq,
+            now_ms,
+            deadline_ms,
+        )
+        .map_err(IntegratedRegisterError::Lifecycle)?;
         Ok(Self { transaction })
     }
 
@@ -97,7 +112,9 @@ impl OfflineRegisterResponsePipeline {
         // Poison first so malformed responses cannot be followed by a good 200.
         // The transaction's own one-shot gate remains authoritative.
         if self.transaction.is_closed() {
-            return Err(IntegratedRegisterError::Lifecycle(RegisterLifecycleError::Closed));
+            return Err(IntegratedRegisterError::Lifecycle(
+                RegisterLifecycleError::Closed,
+            ));
         }
         let parsed = parse_frame(wire).map_err(IntegratedRegisterError::Frame);
         let (message, consumed) = match parsed {
@@ -129,9 +146,9 @@ impl OfflineRegisterResponsePipeline {
                 return Err(error);
             }
         };
-        self.transaction.observe_final_fixture(
-            owner, branch, cseq, status, mic_verified_fixture, now_ms
-        ).map_err(IntegratedRegisterError::Lifecycle)
+        self.transaction
+            .observe_final_fixture(owner, branch, cseq, status, mic_verified_fixture, now_ms)
+            .map_err(IntegratedRegisterError::Lifecycle)
     }
 
     pub fn timeout_fixture(&mut self) {
@@ -151,32 +168,49 @@ impl OfflineRegisterResponsePipeline {
 mod tests {
     use super::*;
 
-    fn setup() -> (OfflineTransportSessionOwner, OfflineRegisterResponsePipeline) {
+    fn setup() -> (
+        OfflineTransportSessionOwner,
+        OfflineRegisterResponsePipeline,
+    ) {
         let mut owner = OfflineTransportSessionOwner::new_fixture(51).unwrap();
         let handle = owner.connect_fixture().unwrap();
         let pipeline = OfflineRegisterResponsePipeline::new_fixture(
-            &owner, handle, "z9hG4bK-pipeline", 17, 0, 100
-        ).unwrap();
+            &owner,
+            handle,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
         (owner, pipeline)
     }
 
     fn wire(via: &str, cseq: &str, status: u16) -> Vec<u8> {
-        format!(
-            "SIP/2.0 {status} Test\r\nVia: {via}\r\nCSeq: {cseq}\r\nContent-Length: 0\r\n\r\n"
-        ).into_bytes()
+        format!("SIP/2.0 {status} Test\r\nVia: {via}\r\nCSeq: {cseq}\r\nContent-Length: 0\r\n\r\n")
+            .into_bytes()
     }
 
     fn good() -> Vec<u8> {
-        wire("SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline", "17 REGISTER", 200)
+        wire(
+            "SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline",
+            "17 REGISTER",
+            200,
+        )
     }
 
     #[test]
     fn parsed_correlated_fixture_is_one_shot_not_sign_in() {
         let (owner, mut pipeline) = setup();
-        assert_eq!(pipeline.observe_final_frame_fixture(&owner, &good(), true, 1), Ok(()));
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, &good(), true, 1),
+            Ok(())
+        );
         assert_eq!(
             pipeline.observe_final_frame_fixture(&owner, &good(), true, 2),
-            Err(IntegratedRegisterError::Lifecycle(RegisterLifecycleError::Closed))
+            Err(IntegratedRegisterError::Lifecycle(
+                RegisterLifecycleError::Closed
+            ))
         );
         assert!(!pipeline.authenticated_sign_in());
     }
@@ -184,16 +218,41 @@ mod tests {
     #[test]
     fn wrong_branch_cseq_status_and_mic_fail_closed() {
         for (wire, mic) in [
-            (wire("SIP/2.0/TLS client.invalid;branch=z9hG4bK-other", "17 REGISTER", 200), true),
-            (wire("SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline", "18 REGISTER", 200), true),
-            (wire("SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline", "17 REGISTER", 401), true),
+            (
+                wire(
+                    "SIP/2.0/TLS client.invalid;branch=z9hG4bK-other",
+                    "17 REGISTER",
+                    200,
+                ),
+                true,
+            ),
+            (
+                wire(
+                    "SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline",
+                    "18 REGISTER",
+                    200,
+                ),
+                true,
+            ),
+            (
+                wire(
+                    "SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline",
+                    "17 REGISTER",
+                    401,
+                ),
+                true,
+            ),
             (good(), false),
         ] {
             let (owner, mut pipeline) = setup();
-            assert!(pipeline.observe_final_frame_fixture(&owner, &wire, mic, 1).is_err());
+            assert!(pipeline
+                .observe_final_frame_fixture(&owner, &wire, mic, 1)
+                .is_err());
             assert_eq!(
                 pipeline.observe_final_frame_fixture(&owner, &good(), true, 2),
-                Err(IntegratedRegisterError::Lifecycle(RegisterLifecycleError::Closed))
+                Err(IntegratedRegisterError::Lifecycle(
+                    RegisterLifecycleError::Closed
+                ))
             );
         }
     }
@@ -210,14 +269,26 @@ mod tests {
             trailing,
             b"SIP/2.0 200 OK\r\nVia: x".to_vec(),
             b"SIP/2.0 200 OK\r\nContent-Length: 999999999\r\n\r\n".to_vec(),
-            wire("SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline;branch=z9hG4bK-pipeline", "17 REGISTER", 200),
-            wire("SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline", "17 INVITE", 200),
+            wire(
+                "SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline;branch=z9hG4bK-pipeline",
+                "17 REGISTER",
+                200,
+            ),
+            wire(
+                "SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline",
+                "17 INVITE",
+                200,
+            ),
         ] {
             let (owner, mut pipeline) = setup();
-            assert!(pipeline.observe_final_frame_fixture(&owner, &bytes, true, 1).is_err());
+            assert!(pipeline
+                .observe_final_frame_fixture(&owner, &bytes, true, 1)
+                .is_err());
             assert_eq!(
                 pipeline.observe_final_frame_fixture(&owner, &good(), true, 2),
-                Err(IntegratedRegisterError::Lifecycle(RegisterLifecycleError::Closed))
+                Err(IntegratedRegisterError::Lifecycle(
+                    RegisterLifecycleError::Closed
+                ))
             );
         }
     }
@@ -225,12 +296,18 @@ mod tests {
     #[test]
     fn timeout_and_reconnect_reject_late_success() {
         let (owner, mut pipeline) = setup();
-        assert!(pipeline.observe_final_frame_fixture(&owner, &good(), true, 100).is_err());
+        assert!(pipeline
+            .observe_final_frame_fixture(&owner, &good(), true, 100)
+            .is_err());
         let (mut owner, mut pipeline) = setup();
         owner.connect_fixture().unwrap();
-        assert!(pipeline.observe_final_frame_fixture(&owner, &good(), true, 1).is_err());
+        assert!(pipeline
+            .observe_final_frame_fixture(&owner, &good(), true, 1)
+            .is_err());
         let (owner, mut pipeline) = setup();
         pipeline.timeout_fixture();
-        assert!(pipeline.observe_final_frame_fixture(&owner, &good(), true, 1).is_err());
+        assert!(pipeline
+            .observe_final_frame_fixture(&owner, &good(), true, 1)
+            .is_err());
     }
 }
