@@ -3,6 +3,8 @@
 //! Neither synthetic handles nor state transitions authorize real sign-in.
 
 use crate::offline_session_identity::{FixtureSessionHandle, OfflineTransportSessionOwner};
+use crate::offline_register_response_pipeline::{IntegratedRegisterError, OfflineRegisterResponsePipeline};
+use commscraft_core::security::ServerMicVerifier;
 use commscraft_core::offline_sign_in_coordinator::{
     OfflineSignInCoordinator, OfflineSignInError, OfflineSignInEvent, OfflineSignInPhase,
 };
@@ -12,6 +14,7 @@ use commscraft_core::session::RegisterVerificationGate;
 pub enum BoundSignInError {
     InvalidSession,
     Lifecycle(OfflineSignInError),
+    Register(IntegratedRegisterError),
 }
 
 /// Non-cloneable owner of the original fixture handle. No caller-supplied
@@ -74,6 +77,36 @@ impl TransportBoundOfflineSignIn {
         self.check_owner(owner)?;
         self.coordinator
             .observe_fixture(1, event, now_ms)
+            .map_err(BoundSignInError::Lifecycle)
+    }
+
+    /// A correlated final REGISTER response and the verified MIC must both
+    /// succeed on the same transport owner before advancing this attempt.
+    /// This fixture API cannot create a real authenticated session.
+    pub fn observe_verified_register_fixture<V: ServerMicVerifier>(
+        &mut self,
+        owner: &OfflineTransportSessionOwner,
+        pipeline: &mut OfflineRegisterResponsePipeline,
+        wire: &[u8],
+        gate: &mut RegisterVerificationGate,
+        verifier: &V,
+        now_ms: u64,
+    ) -> Result<OfflineSignInPhase, BoundSignInError> {
+        self.check_owner(owner)?;
+        if self.coordinator.phase() != OfflineSignInPhase::ServerMicVerification {
+            self.coordinator.close();
+            pipeline.disconnect_fixture();
+            gate.disconnect();
+            return Err(BoundSignInError::Lifecycle(OfflineSignInError::InvalidTransition));
+        }
+        if let Err(error) = pipeline.observe_verified_final_frame_fixture(
+            owner, wire, gate, verifier, now_ms,
+        ) {
+            self.coordinator.close();
+            return Err(BoundSignInError::Register(error));
+        }
+        self.coordinator
+            .observe_mic_gate_fixture(1, gate, now_ms)
             .map_err(BoundSignInError::Lifecycle)
     }
 
