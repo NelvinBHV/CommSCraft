@@ -80,6 +80,12 @@ impl TransportBoundOfflineSignIn {
         now_ms: u64,
     ) -> Result<OfflineSignInPhase, BoundSignInError> {
         self.check_owner(owner)?;
+        if event == OfflineSignInEvent::ServerMicChecked {
+            self.coordinator.close();
+            return Err(BoundSignInError::Lifecycle(
+                OfflineSignInError::InvalidTransition,
+            ));
+        }
         self.coordinator
             .observe_fixture(1, event, now_ms)
             .map_err(BoundSignInError::Lifecycle)
@@ -211,6 +217,22 @@ mod tests {
         )
         .unwrap();
         RegisterVerificationGate::new(flow, association)
+    }
+
+    #[test]
+    fn generic_mic_event_cannot_bypass_verification_gate() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(94).unwrap();
+        let session = owner.connect_fixture().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, session, 0, 100).unwrap();
+        assert_eq!(
+            attempt.observe_fixture(&owner, OfflineSignInEvent::ServerMicChecked, 1),
+            Err(BoundSignInError::Lifecycle(
+                OfflineSignInError::InvalidTransition
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert!(!attempt.authenticated_sign_in());
     }
 
     #[test]
