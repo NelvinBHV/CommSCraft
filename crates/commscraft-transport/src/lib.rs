@@ -15,6 +15,7 @@ pub mod offline_register_response_pipeline;
 pub mod offline_register_security_handoff;
 pub mod offline_register_transaction;
 pub mod offline_session_identity;
+pub mod offline_sign_in_binding;
 mod sip_certificate;
 use commscraft_core::inbound::{ReceiveError, ReceiveEvent, SipInbound};
 use native_tls::{TlsConnector, TlsStream};
