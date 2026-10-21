@@ -393,6 +393,17 @@ mod tests {
             ))
         );
         assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, &wire, true, 4),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
     }
 
     #[test]
