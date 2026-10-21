@@ -61,6 +61,9 @@ impl TransportBoundOfflineSignIn {
         &mut self,
         owner: &OfflineTransportSessionOwner,
     ) -> Result<(), BoundSignInError> {
+        if self.coordinator.phase() == OfflineSignInPhase::Closed {
+            return Err(BoundSignInError::Lifecycle(OfflineSignInError::Closed));
+        }
         if owner.check_fixture(&self.session).is_err() {
             self.coordinator.close();
             return Err(BoundSignInError::InvalidSession);
