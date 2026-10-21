@@ -120,6 +120,8 @@ impl TransportBoundOfflineSignIn {
             pipeline.observe_verified_final_frame_fixture(owner, wire, gate, verifier, now_ms)
         {
             self.coordinator.close();
+            pipeline.disconnect_fixture();
+            gate.disconnect();
             return Err(BoundSignInError::Register(error));
         }
         match self.coordinator.observe_mic_gate_fixture(1, gate, now_ms) {
@@ -354,6 +356,12 @@ mod tests {
         assert_eq!(
             rejected_gate.state(),
             commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            rejected_pipeline.observe_final_frame_fixture(&rejected_owner, &wire, true, 3),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
         );
         assert!(!rejected_attempt.authenticated_sign_in());
 
