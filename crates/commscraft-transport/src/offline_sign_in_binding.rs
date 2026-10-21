@@ -224,6 +224,108 @@ mod tests {
     }
 
     #[test]
+    fn signed_register_response_advances_only_offline_mic_milestone() {
+        use commscraft_core::security::{
+            parse_authentication_info, server_mic_buffer, TlsDskHmacSha256,
+        };
+        use commscraft_core::sip::{SipMessage, StartLine};
+        use hmac::{Hmac, Mac};
+        use sha2::Sha256;
+
+        let mut owner = OfflineTransportSessionOwner::new_fixture(95).unwrap();
+        let pipeline_handle = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            pipeline_handle,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let attempt_handle = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, attempt_handle, 0, 100).unwrap();
+        let mut gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            attempt.observe_fixture(&owner, event, 1).unwrap();
+        }
+        assert_eq!(attempt.phase(), OfflineSignInPhase::ServerMicVerification);
+        let mut reply = SipMessage {
+            start_line: StartLine::Response {
+                code: 200,
+                reason: "Synthetic".into(),
+            },
+            headers: ["Via", "Call-ID", "CSeq"]
+                .iter()
+                .map(|name| ((*name).into(), gate.request().header(name).unwrap().into()))
+                .collect(),
+            body: Vec::new(),
+        };
+        reply.headers.extend([
+            ("From".into(), "<sip:alice@example.com>;tag=2d0be03279;epid=492a7ce35f".into()),
+            ("To".into(), "<sip:alice@example.com>;tag=server".into()),
+            ("Contact".into(), "<sip:alice@client.invalid;transport=tls>;expires=3600;+sip.instance=\"<urn:uuid:b43b3d1d-9f8f-5fdc-9f74-3ca273cadb97>\"".into()),
+            ("Expires".into(), "3600".into()),
+            ("Authentication-Info".into(), "TLS-DSK realm=\"SIP Communications Service\", targetname=\"server.example.com\", opaque=\"opaque123\", qop=auth, snum=7, srand=abcdef09, version=4, rspauth=\"00\"".into()),
+        ]);
+        let info = parse_authentication_info(&reply).unwrap();
+        let signed_buffer = server_mic_buffer(&reply, &info).unwrap();
+        let mut mac = <Hmac<Sha256> as Mac>::new_from_slice(&[0x5a; 32]).unwrap();
+        mac.update(&signed_buffer);
+        let signature: String = mac
+            .finalize()
+            .into_bytes()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect();
+        for (name, value) in &mut reply.headers {
+            if name == "Authentication-Info" {
+                *value = value.replace("rspauth=\"00\"", &format!("rspauth=\"{signature}\""));
+            }
+        }
+        let mut wire = b"SIP/2.0 200 Synthetic\r\n".to_vec();
+        for (name, value) in &reply.headers {
+            wire.extend_from_slice(format!("{name}: {value}\r\n").as_bytes());
+        }
+        wire.extend_from_slice(b"Content-Length: 0\r\n\r\n");
+        let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                &wire,
+                &mut gate,
+                &verifier,
+                2,
+            ),
+            Ok(OfflineSignInPhase::RegistrationObserved)
+        );
+        assert_eq!(gate.highest_verified_server_sequence(), Some(7));
+        assert!(!attempt.authenticated_sign_in());
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                &wire,
+                &mut gate,
+                &verifier,
+                3,
+            ),
+            Err(BoundSignInError::Lifecycle(
+                OfflineSignInError::InvalidTransition
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+    }
+
+    #[test]
     fn connection_replacement_revokes_attempt() {
         let mut owner = OfflineTransportSessionOwner::new_fixture(90).unwrap();
         let handle = owner.connect_fixture().unwrap();
