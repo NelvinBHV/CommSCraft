@@ -11,6 +11,7 @@
 
 mod idna_policy;
 pub mod offline_register_branch;
+pub mod offline_register_response_pipeline;
 pub mod offline_register_security_handoff;
 pub mod offline_register_transaction;
 pub mod offline_session_identity;
