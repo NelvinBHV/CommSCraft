@@ -52,10 +52,8 @@ fn response_identity(message: &SipMessage) -> Result<(&str, u32), IntegratedRegi
         let (key, value) = param
             .split_once('=')
             .ok_or(IntegratedRegisterError::InvalidResponse)?;
-        if key.trim().eq_ignore_ascii_case("branch") {
-            if branch.replace(value.trim()).is_some() {
-                return Err(IntegratedRegisterError::InvalidResponse);
-            }
+        if key.trim().eq_ignore_ascii_case("branch") && branch.replace(value.trim()).is_some() {
+            return Err(IntegratedRegisterError::InvalidResponse);
         }
     }
     let branch = branch.ok_or(IntegratedRegisterError::InvalidResponse)?;
