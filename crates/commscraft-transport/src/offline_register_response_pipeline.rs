@@ -378,14 +378,28 @@ mod tests {
         let (owner, mut pipeline) = setup();
         let mut gate = security_gate();
         assert_eq!(
-            pipeline.observe_verified_final_frame_fixture(&owner, &good(), &mut gate, &RejectMic, 1),
+            pipeline.observe_verified_final_frame_fixture(
+                &owner,
+                &good(),
+                &mut gate,
+                &RejectMic,
+                1
+            ),
             Err(IntegratedRegisterError::SecurityGateRejected)
         );
         assert_eq!(gate.state(), GateState::Disconnected);
         assert_eq!(gate.highest_verified_server_sequence(), None);
         assert_eq!(
-            pipeline.observe_verified_final_frame_fixture(&owner, &good(), &mut gate, &RejectMic, 2),
-            Err(IntegratedRegisterError::Lifecycle(RegisterLifecycleError::Closed))
+            pipeline.observe_verified_final_frame_fixture(
+                &owner,
+                &good(),
+                &mut gate,
+                &RejectMic,
+                2
+            ),
+            Err(IntegratedRegisterError::Lifecycle(
+                RegisterLifecycleError::Closed
+            ))
         );
         assert!(!pipeline.authenticated_sign_in());
     }
