@@ -12,6 +12,7 @@
 mod idna_policy;
 pub mod offline_register_branch;
 pub mod offline_register_security_handoff;
+pub mod offline_register_transaction;
 pub mod offline_session_identity;
 mod sip_certificate;
 use commscraft_core::inbound::{ReceiveError, ReceiveEvent, SipInbound};
