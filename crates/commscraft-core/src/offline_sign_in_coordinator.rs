@@ -84,7 +84,9 @@ impl OfflineSignInCoordinator {
         gate: &crate::session::RegisterVerificationGate,
         now_ms: u64,
     ) -> Result<OfflineSignInPhase, OfflineSignInError> {
-        if gate.state() != crate::session::GateState::MicCheckedNotSignedIn {
+        if gate.state() != crate::session::GateState::MicCheckedNotSignedIn
+            || gate.highest_verified_server_sequence().is_none()
+        {
             self.close();
             return Err(OfflineSignInError::InvalidTransition);
         }
