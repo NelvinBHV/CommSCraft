@@ -159,7 +159,7 @@ mod tests {
         let mut attempt =
             TransportBoundOfflineSignIn::new_fixture(&owner, attempt_session, 0, 100).unwrap();
         let mut gate = register_gate();
-        let wire = b"SIP/2.0 200 OK\\r\\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\\r\\nCSeq: 17 REGISTER\\r\\nContent-Length: 0\\r\\n\\r\\n";
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nCSeq: 17 REGISTER\r\nContent-Length: 0\r\n\r\n";
         assert_eq!(
             attempt.observe_verified_register_fixture(
                 &owner,
