@@ -103,7 +103,11 @@ impl TransportBoundOfflineSignIn {
         verifier: &V,
         now_ms: u64,
     ) -> Result<OfflineSignInPhase, BoundSignInError> {
-        self.check_owner(owner)?;
+        if let Err(error) = self.check_owner(owner) {
+            pipeline.disconnect_fixture();
+            gate.disconnect();
+            return Err(error);
+        }
         if self.coordinator.phase() != OfflineSignInPhase::ServerMicVerification {
             self.coordinator.close();
             pipeline.disconnect_fixture();
@@ -475,6 +479,50 @@ mod tests {
         assert_eq!(gate.highest_verified_server_sequence(), Some(7));
         assert_eq!(
             pipeline.observe_final_frame_fixture(&owner, &wire, true, 3),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn lost_transport_revokes_register_pipeline_and_mic_gate() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(97).unwrap();
+        let register_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            register_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let sign_in_session = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, sign_in_session, 0, 100).unwrap();
+        let mut gate = register_gate();
+        owner.disconnect();
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nCSeq: 17 REGISTER\r\nContent-Length: 0\r\n\r\n";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::InvalidSession)
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, wire, true, 2),
             Err(IntegratedRegisterError::Lifecycle(
                 crate::offline_register_transaction::RegisterLifecycleError::Closed
             ))
