@@ -35,7 +35,9 @@ impl FixtureRegisterSecurityHandoff {
         if !branch.starts_with("z9hG4bK")
             || branch.len() <= 7
             || branch.len() > 128
-            || !branch.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'.' || b == b'_')
+            || !branch
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'.' || b == b'_')
         {
             return Err(HandoffError::TransactionMismatch);
         }
@@ -83,12 +85,9 @@ mod tests {
     fn rejects_missing_security_wrong_transaction_and_replay() {
         let mut owner = OfflineTransportSessionOwner::new_fixture(11).unwrap();
         let session = owner.connect_fixture();
-        let mut handoff = FixtureRegisterSecurityHandoff::new_fixture(
-            &owner,
-            session,
-            "z9hG4bK-transaction",
-        )
-        .unwrap();
+        let mut handoff =
+            FixtureRegisterSecurityHandoff::new_fixture(&owner, session, "z9hG4bK-transaction")
+                .unwrap();
         assert_eq!(
             handoff.accept_fixture(&owner, "z9hG4bK-transaction", false),
             Err(HandoffError::SecurityUnverified)
