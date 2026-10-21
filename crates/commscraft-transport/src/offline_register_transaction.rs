@@ -145,10 +145,34 @@ mod tests {
     #[test]
     fn mismatches_and_unverified_responses_are_terminal() {
         for (branch, cseq, status, mic, expected) in [
-            ("z9hG4bK-other", 42, 200, true, RegisterLifecycleError::InvalidTransaction),
-            ("z9hG4bK-register-31", 43, 200, true, RegisterLifecycleError::InvalidTransaction),
-            ("z9hG4bK-register-31", 42, 401, true, RegisterLifecycleError::Unverified),
-            ("z9hG4bK-register-31", 42, 200, false, RegisterLifecycleError::Unverified),
+            (
+                "z9hG4bK-other",
+                42,
+                200,
+                true,
+                RegisterLifecycleError::InvalidTransaction,
+            ),
+            (
+                "z9hG4bK-register-31",
+                43,
+                200,
+                true,
+                RegisterLifecycleError::InvalidTransaction,
+            ),
+            (
+                "z9hG4bK-register-31",
+                42,
+                401,
+                true,
+                RegisterLifecycleError::Unverified,
+            ),
+            (
+                "z9hG4bK-register-31",
+                42,
+                200,
+                false,
+                RegisterLifecycleError::Unverified,
+            ),
         ] {
             let (owner, mut tx) = setup();
             assert_eq!(
@@ -208,24 +232,27 @@ mod tests {
             let handle = owner.connect_fixture().unwrap();
             assert_eq!(
                 OfflineRegisterTransaction::new_fixture(
-                    &owner, handle, "z9hG4bK-test", cseq, 10, 100
-                ).err(),
+                    &owner,
+                    handle,
+                    "z9hG4bK-test",
+                    cseq,
+                    10,
+                    100
+                )
+                .err(),
                 Some(RegisterLifecycleError::InvalidTransaction)
             );
         }
         let mut owner = OfflineTransportSessionOwner::new_fixture(33).unwrap();
         let handle = owner.connect_fixture().unwrap();
         assert_eq!(
-            OfflineRegisterTransaction::new_fixture(
-                &owner, handle, "z9hG4bK-test", 1, 10, 10
-            ).err(),
+            OfflineRegisterTransaction::new_fixture(&owner, handle, "z9hG4bK-test", 1, 10, 10)
+                .err(),
             Some(RegisterLifecycleError::InvalidDeadline)
         );
         let handle = owner.connect_fixture().unwrap();
         assert_eq!(
-            OfflineRegisterTransaction::new_fixture(
-                &owner, handle, "bad-branch", 1, 10, 100
-            ).err(),
+            OfflineRegisterTransaction::new_fixture(&owner, handle, "bad-branch", 1, 10, 100).err(),
             Some(RegisterLifecycleError::InvalidTransaction)
         );
     }
