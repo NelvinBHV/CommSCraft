@@ -332,6 +332,81 @@ mod tests {
         }
     }
 
+    struct RejectMic;
+
+    impl ServerMicVerifier for RejectMic {
+        fn verify(&self, _message: &[u8], _token: &[u8]) -> bool {
+            false
+        }
+    }
+
+    fn security_gate() -> RegisterVerificationGate {
+        use commscraft_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
+        use commscraft_core::registration::{Endpoint, RegisterFlow};
+        use commscraft_core::security::SecurityAssociation;
+
+        let endpoint = Endpoint {
+            aor: "sip:alice@example.com".into(),
+            sent_by: "client.invalid".into(),
+            contact_uri: "sip:alice@client.invalid;transport=tls".into(),
+            instance_uuid: "b43b3d1d-9f8f-5fdc-9f74-3ca273cadb97".into(),
+            epid: "492a7ce35f".into(),
+            from_tag: "2d0be03279".into(),
+            call_id: "bridge-call@example.com".into(),
+        };
+        let flow = RegisterFlow::new(endpoint, 17, "z9hG4bK-pipeline", 3600, 0).unwrap();
+        let association = SecurityAssociation::begin(
+            &ChallengeOffer {
+                scheme: Scheme::TlsDsk,
+                source: ChallengeSource::Registrar,
+                realm: Some("SIP Communications Service".into()),
+                targetname: Some("server.example.com".into()),
+                opaque: Some("opaque123".into()),
+                version: Some(4),
+                sts_uri: None,
+                gssapi_data: None,
+            },
+            8_000_000,
+        )
+        .unwrap();
+        RegisterVerificationGate::new(flow, association)
+    }
+
+    #[test]
+    fn fixture_flag_cannot_bypass_real_mic_gate() {
+        use commscraft_core::session::GateState;
+        let (owner, mut pipeline) = setup();
+        let mut gate = security_gate();
+        assert_eq!(
+            pipeline.observe_verified_final_frame_fixture(&owner, &good(), &mut gate, &RejectMic, 1),
+            Err(IntegratedRegisterError::SecurityGateRejected)
+        );
+        assert_eq!(gate.state(), GateState::Disconnected);
+        assert_eq!(gate.highest_verified_server_sequence(), None);
+        assert_eq!(
+            pipeline.observe_verified_final_frame_fixture(&owner, &good(), &mut gate, &RejectMic, 2),
+            Err(IntegratedRegisterError::Lifecycle(RegisterLifecycleError::Closed))
+        );
+        assert!(!pipeline.authenticated_sign_in());
+    }
+
+    #[test]
+    fn mismatched_transport_response_never_advances_mic_gate() {
+        use commscraft_core::session::GateState;
+        let (owner, mut pipeline) = setup();
+        let mut gate = security_gate();
+        let wrong = wire(
+            "SIP/2.0/TLS client.invalid;branch=z9hG4bK-other",
+            "17 REGISTER",
+            200,
+        );
+        assert!(pipeline
+            .observe_verified_final_frame_fixture(&owner, &wrong, &mut gate, &RejectMic, 1)
+            .is_err());
+        assert_eq!(gate.state(), GateState::Disconnected);
+        assert_eq!(gate.highest_verified_server_sequence(), None);
+    }
+
     #[test]
     fn timeout_and_reconnect_reject_late_success() {
         let (owner, mut pipeline) = setup();
