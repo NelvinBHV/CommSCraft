@@ -2,12 +2,14 @@
 //! RFC 3261 (June 2002) §17.1.2; RFC 5922 (June 2010) §7.3.
 //! Neither synthetic handles nor state transitions authorize real sign-in.
 
+use crate::offline_register_response_pipeline::{
+    IntegratedRegisterError, OfflineRegisterResponsePipeline,
+};
 use crate::offline_session_identity::{FixtureSessionHandle, OfflineTransportSessionOwner};
-use crate::offline_register_response_pipeline::{IntegratedRegisterError, OfflineRegisterResponsePipeline};
-use commscraft_core::security::ServerMicVerifier;
 use commscraft_core::offline_sign_in_coordinator::{
     OfflineSignInCoordinator, OfflineSignInError, OfflineSignInEvent, OfflineSignInPhase,
 };
+use commscraft_core::security::ServerMicVerifier;
 use commscraft_core::session::RegisterVerificationGate;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -100,11 +102,13 @@ impl TransportBoundOfflineSignIn {
             self.coordinator.close();
             pipeline.disconnect_fixture();
             gate.disconnect();
-            return Err(BoundSignInError::Lifecycle(OfflineSignInError::InvalidTransition));
+            return Err(BoundSignInError::Lifecycle(
+                OfflineSignInError::InvalidTransition,
+            ));
         }
-        if let Err(error) = pipeline.observe_verified_final_frame_fixture(
-            owner, wire, gate, verifier, now_ms,
-        ) {
+        if let Err(error) =
+            pipeline.observe_verified_final_frame_fixture(owner, wire, gate, verifier, now_ms)
+        {
             self.coordinator.close();
             return Err(BoundSignInError::Register(error));
         }
