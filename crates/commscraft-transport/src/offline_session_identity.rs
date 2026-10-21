@@ -66,6 +66,21 @@ impl OfflineTransportSessionOwner {
         })
     }
 
+    /// Issue a second non-cloneable handle for the same active fixture
+    /// connection, allowing separate REGISTER and lifecycle components to
+    /// retain their own handle without reconnecting. Only the owner can issue
+    /// handles; all become stale on reconnect or disconnect.
+    pub fn issue_fixture_handle(&self) -> Result<FixtureSessionHandle, SessionIdentityError> {
+        if !self.connected {
+            return Err(SessionIdentityError::Disconnected);
+        }
+        Ok(FixtureSessionHandle {
+            owner: self.owner,
+            instance: self.instance,
+            generation: self.generation,
+        })
+    }
+
     /// Check only the local lifecycle; this does not verify TLS or X.509.
     pub fn check_fixture(&self, handle: &FixtureSessionHandle) -> Result<(), SessionIdentityError> {
         if !self.connected {
