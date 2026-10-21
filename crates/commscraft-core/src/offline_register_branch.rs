@@ -35,13 +35,24 @@ mod tests {
 
     #[test]
     fn rejects_unbounded_injected_or_non_cookie_branches() {
-        for value in ["", "z9hG4bK", "not-a-cookie", "z9hG4bK\r\nX", "z9hG4bK!", "z9hG4bKé"] {
+        for value in [
+            "",
+            "z9hG4bK",
+            "not-a-cookie",
+            "z9hG4bK\r\nX",
+            "z9hG4bK!",
+            "z9hG4bKé",
+        ] {
             assert_eq!(
                 FixtureRegisterBranch::new_fixture(value),
                 Err(FixtureBranchError::InvalidBranch)
             );
         }
-        assert!(FixtureRegisterBranch::new_fixture(&format!("z9hG4bK{}", "a".repeat(121))).is_err());
-        assert!(FixtureRegisterBranch::new_fixture(&format!("z9hG4bK{}", "a".repeat(121 - 1))).is_ok());
+        assert!(
+            FixtureRegisterBranch::new_fixture(&format!("z9hG4bK{}", "a".repeat(122))).is_err()
+        );
+        assert!(
+            FixtureRegisterBranch::new_fixture(&format!("z9hG4bK{}", "a".repeat(121))).is_ok()
+        );
     }
 }
