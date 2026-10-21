@@ -3,11 +3,16 @@
 //! RFC 5922 (June 2010) §§7.1-7.3: SIP identity must be verified on the
 //! actual TLS peer; a caller-provided digest or generation is not evidence.
 
+use std::sync::atomic::{AtomicU64, Ordering};
+
+static NEXT_FIXTURE_OWNER_INSTANCE: AtomicU64 = AtomicU64::new(1);
+
 /// Opaque, non-cloneable handle issued by a single offline transport owner.
 /// It is not a live TLS session identifier or a cryptographic capability.
 #[derive(Debug, PartialEq, Eq)]
 pub struct FixtureSessionHandle {
     owner: u64,
+    instance: u64,
     generation: u64,
 }
 
@@ -16,6 +21,7 @@ pub enum SessionIdentityError {
     InvalidOwner,
     StaleSession,
     Disconnected,
+    Exhausted,
 }
 
 /// A local fixture owner controls handle issuance and revocation. The
@@ -23,6 +29,7 @@ pub enum SessionIdentityError {
 #[derive(Debug)]
 pub struct OfflineTransportSessionOwner {
     owner: u64,
+    instance: u64,
     generation: u64,
     connected: bool,
 }
@@ -33,21 +40,30 @@ impl OfflineTransportSessionOwner {
         if owner == 0 {
             return Err(SessionIdentityError::InvalidOwner);
         }
+        let instance = NEXT_FIXTURE_OWNER_INSTANCE
+            .try_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
+            .map_err(|_| SessionIdentityError::Exhausted)?;
         Ok(Self {
             owner,
+            instance,
             generation: 0,
             connected: false,
         })
     }
 
     /// Simulate a new connection. Previous handles become invalid.
-    pub fn connect_fixture(&mut self) -> FixtureSessionHandle {
-        self.generation = self.generation.saturating_add(1);
+    pub fn connect_fixture(&mut self) -> Result<FixtureSessionHandle, SessionIdentityError> {
+        self.connected = false;
+        self.generation = self
+            .generation
+            .checked_add(1)
+            .ok_or(SessionIdentityError::Exhausted)?;
         self.connected = true;
-        FixtureSessionHandle {
+        Ok(FixtureSessionHandle {
             owner: self.owner,
+            instance: self.instance,
             generation: self.generation,
-        }
+        })
     }
 
     /// Check only the local lifecycle; this does not verify TLS or X.509.
@@ -55,7 +71,10 @@ impl OfflineTransportSessionOwner {
         if !self.connected {
             return Err(SessionIdentityError::Disconnected);
         }
-        if handle.owner != self.owner || handle.generation != self.generation {
+        if handle.owner != self.owner
+            || handle.instance != self.instance
+            || handle.generation != self.generation
+        {
             return Err(SessionIdentityError::StaleSession);
         }
         Ok(())
@@ -78,14 +97,14 @@ mod tests {
     fn rejects_cross_owner_and_reconnect_stale_handles() {
         let mut first = OfflineTransportSessionOwner::new_fixture(1).unwrap();
         let mut second = OfflineTransportSessionOwner::new_fixture(2).unwrap();
-        let old = first.connect_fixture();
-        let foreign = second.connect_fixture();
+        let old = first.connect_fixture().unwrap();
+        let foreign = second.connect_fixture().unwrap();
         assert_eq!(first.check_fixture(&old), Ok(()));
         assert_eq!(
             first.check_fixture(&foreign),
             Err(SessionIdentityError::StaleSession)
         );
-        let current = first.connect_fixture();
+        let current = first.connect_fixture().unwrap();
         assert_eq!(
             first.check_fixture(&old),
             Err(SessionIdentityError::StaleSession)
@@ -108,11 +127,47 @@ mod tests {
         let owner = OfflineTransportSessionOwner::new_fixture(1).unwrap();
         let handle = FixtureSessionHandle {
             owner: 1,
+            instance: owner.instance,
             generation: 0,
         };
         assert_eq!(
             owner.check_fixture(&handle),
             Err(SessionIdentityError::Disconnected)
+        );
+    }
+    #[test]
+    fn rejects_distinct_instances_with_identical_fixture_owner_ids() {
+        let mut first = OfflineTransportSessionOwner::new_fixture(99).unwrap();
+        let mut second = OfflineTransportSessionOwner::new_fixture(99).unwrap();
+        let first_handle = first.connect_fixture().unwrap();
+        let second_handle = second.connect_fixture().unwrap();
+        assert_eq!(
+            first.check_fixture(&second_handle),
+            Err(SessionIdentityError::StaleSession)
+        );
+        assert_eq!(
+            second.check_fixture(&first_handle),
+            Err(SessionIdentityError::StaleSession)
+        );
+    }
+
+    #[test]
+    fn generation_exhaustion_revokes_existing_handle_and_never_wraps() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(100).unwrap();
+        owner.generation = u64::MAX - 1;
+        let last = owner.connect_fixture().unwrap();
+        assert_eq!(owner.check_fixture(&last), Ok(()));
+        assert_eq!(
+            owner.connect_fixture(),
+            Err(SessionIdentityError::Exhausted)
+        );
+        assert_eq!(
+            owner.check_fixture(&last),
+            Err(SessionIdentityError::Disconnected)
+        );
+        assert_eq!(
+            owner.connect_fixture(),
+            Err(SessionIdentityError::Exhausted)
         );
     }
 }
