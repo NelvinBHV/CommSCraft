@@ -5,6 +5,8 @@
 
 use crate::offline_register_transaction::{OfflineRegisterTransaction, RegisterLifecycleError};
 use crate::offline_session_identity::{FixtureSessionHandle, OfflineTransportSessionOwner};
+use commscraft_core::security::ServerMicVerifier;
+use commscraft_core::session::{GateEvent, RegisterVerificationGate};
 use commscraft_core::sip::{parse_frame, SipError, SipMessage, StartLine};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -14,6 +16,7 @@ pub enum IntegratedRegisterError {
     TrailingBytes,
     InvalidResponse,
     Lifecycle(RegisterLifecycleError),
+    SecurityGateRejected,
 }
 
 #[derive(Debug)]
@@ -147,6 +150,44 @@ impl OfflineRegisterResponsePipeline {
         self.transaction
             .observe_final_fixture(owner, branch, cseq, status, mic_verified_fixture, now_ms)
             .map_err(IntegratedRegisterError::Lifecycle)
+    }
+
+    /// Composes the transport-owned fixture transaction with the existing
+    /// MS-SIPAE MIC, replay, and REGISTER verification gate. A successful
+    /// result is only an offline MIC-checked observation, never a sign-in.
+    ///
+    /// The one-shot transport gate runs before the cryptographic verifier:
+    /// invalid branch, CSeq, session or deadline never reaches the MIC gate.
+    /// On any failure both gates become unusable for subsequent responses.
+    pub fn observe_verified_final_frame_fixture<V: ServerMicVerifier>(
+        &mut self,
+        owner: &OfflineTransportSessionOwner,
+        wire: &[u8],
+        gate: &mut RegisterVerificationGate,
+        verifier: &V,
+        now_ms: u64,
+    ) -> Result<GateEvent, IntegratedRegisterError> {
+        // Do not interpret the synthetic flag as verification. This call
+        // only reserves/consumes the correlated fixture transaction.
+        if let Err(error) = self.observe_final_frame_fixture(owner, wire, true, now_ms) {
+            gate.disconnect();
+            return Err(error);
+        }
+        // The exact same complete frame has already passed strict framing.
+        let response = match parse_frame(wire) {
+            Ok(Some((message, consumed))) if consumed == wire.len() => message,
+            _ => {
+                gate.disconnect();
+                return Err(IntegratedRegisterError::InvalidResponse);
+            }
+        };
+        match gate.observe(&response, verifier, now_ms) {
+            Ok(event @ GateEvent::MicChecked(_)) => Ok(event),
+            _ => {
+                gate.disconnect();
+                Err(IntegratedRegisterError::SecurityGateRejected)
+            }
+        }
     }
 
     pub fn timeout_fixture(&mut self) {
