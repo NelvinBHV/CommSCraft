@@ -118,9 +118,14 @@ impl TransportBoundOfflineSignIn {
             self.coordinator.close();
             return Err(BoundSignInError::Register(error));
         }
-        self.coordinator
-            .observe_mic_gate_fixture(1, gate, now_ms)
-            .map_err(BoundSignInError::Lifecycle)
+        match self.coordinator.observe_mic_gate_fixture(1, gate, now_ms) {
+            Ok(phase) => Ok(phase),
+            Err(error) => {
+                pipeline.disconnect_fixture();
+                gate.disconnect();
+                Err(BoundSignInError::Lifecycle(error))
+            }
+        }
     }
 }
 
