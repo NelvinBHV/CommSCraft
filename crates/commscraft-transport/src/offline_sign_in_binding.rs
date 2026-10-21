@@ -156,13 +156,8 @@ mod tests {
         )
         .unwrap();
         let attempt_session = owner.issue_fixture_handle().unwrap();
-        let mut attempt = TransportBoundOfflineSignIn::new_fixture(
-            &owner,
-            attempt_session,
-            0,
-            100,
-        )
-        .unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, attempt_session, 0, 100).unwrap();
         let mut gate = register_gate();
         let wire = b"SIP/2.0 200 OK\\r\\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\\r\\nCSeq: 17 REGISTER\\r\\nContent-Length: 0\\r\\n\\r\\n";
         assert_eq!(
@@ -179,7 +174,10 @@ mod tests {
             ))
         );
         assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
-        assert_eq!(gate.state(), commscraft_core::session::GateState::Disconnected);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
         assert!(!attempt.authenticated_sign_in());
     }
 
