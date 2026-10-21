@@ -245,7 +245,10 @@ mod tests {
         for event in STEPS.iter().take(5) {
             coordinator.observe_fixture(1, *event, 1).unwrap();
         }
-        assert_eq!(coordinator.phase(), OfflineSignInPhase::ServerMicVerification);
+        assert_eq!(
+            coordinator.phase(),
+            OfflineSignInPhase::ServerMicVerification
+        );
         assert_eq!(
             coordinator.observe_mic_gate_fixture(1, &gate, 2),
             Err(OfflineSignInError::InvalidTransition)
