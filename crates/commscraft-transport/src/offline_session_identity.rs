@@ -170,5 +170,4 @@ mod tests {
             Err(SessionIdentityError::Exhausted)
         );
     }
-
 }
