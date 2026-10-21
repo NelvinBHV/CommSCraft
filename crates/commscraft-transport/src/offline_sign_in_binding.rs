@@ -295,6 +295,59 @@ mod tests {
             wire.extend_from_slice(format!("{name}: {value}\r\n").as_bytes());
         }
         wire.extend_from_slice(b"Content-Length: 0\r\n\r\n");
+        // A correctly correlated frame with a real synthetic signature must
+        // still fail closed when the verifier rejects its MIC.
+        let mut rejected_owner = OfflineTransportSessionOwner::new_fixture(96).unwrap();
+        let rejected_handle = rejected_owner.connect_fixture().unwrap();
+        let mut rejected_pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &rejected_owner,
+            rejected_handle,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let rejected_attempt_handle = rejected_owner.issue_fixture_handle().unwrap();
+        let mut rejected_attempt = TransportBoundOfflineSignIn::new_fixture(
+            &rejected_owner,
+            rejected_attempt_handle,
+            0,
+            100,
+        )
+        .unwrap();
+        let mut rejected_gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            rejected_attempt
+                .observe_fixture(&rejected_owner, event, 1)
+                .unwrap();
+        }
+        assert_eq!(
+            rejected_attempt.observe_verified_register_fixture(
+                &rejected_owner,
+                &mut rejected_pipeline,
+                &wire,
+                &mut rejected_gate,
+                &RejectMic,
+                2,
+            ),
+            Err(BoundSignInError::Register(
+                IntegratedRegisterError::SecurityGateRejected
+            ))
+        );
+        assert_eq!(rejected_attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            rejected_gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert!(!rejected_attempt.authenticated_sign_in());
+
         let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
         assert_eq!(
             attempt.observe_verified_register_fixture(
