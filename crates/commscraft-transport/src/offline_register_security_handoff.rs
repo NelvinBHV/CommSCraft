@@ -2,6 +2,7 @@
 //! RFC 3261 (June 2002) §17.1.3; RFC 5922 (June 2010) §§7.1-7.3;
 //! MS-SIPAE §3.2.5.2. This is not live protocol interoperability evidence.
 
+use crate::offline_register_branch::FixtureRegisterBranch;
 use crate::offline_session_identity::{FixtureSessionHandle, OfflineTransportSessionOwner};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -18,7 +19,7 @@ pub enum HandoffError {
 #[derive(Debug)]
 pub struct FixtureRegisterSecurityHandoff {
     session: FixtureSessionHandle,
-    branch: String,
+    branch: FixtureRegisterBranch,
     consumed: bool,
 }
 
@@ -32,18 +33,11 @@ impl FixtureRegisterSecurityHandoff {
         if transport.check_fixture(&session).is_err() {
             return Err(HandoffError::SessionInvalid);
         }
-        if !branch.starts_with("z9hG4bK")
-            || branch.len() <= 7
-            || branch.len() > 128
-            || !branch
-                .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'.' || b == b'_')
-        {
-            return Err(HandoffError::TransactionMismatch);
-        }
+        let branch = FixtureRegisterBranch::new_fixture(branch)
+            .map_err(|_| HandoffError::TransactionMismatch)?;
         Ok(Self {
             session,
-            branch: branch.to_owned(),
+            branch,
             consumed: false,
         })
     }
@@ -62,7 +56,7 @@ impl FixtureRegisterSecurityHandoff {
         if transport.check_fixture(&self.session).is_err() {
             return Err(HandoffError::SessionInvalid);
         }
-        if branch != self.branch {
+        if branch != self.branch.as_str() {
             return Err(HandoffError::TransactionMismatch);
         }
         if !mic_verified_fixture {

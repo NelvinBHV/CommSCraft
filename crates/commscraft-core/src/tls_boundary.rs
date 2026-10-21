@@ -4,6 +4,7 @@
 //! No socket, TLS handshake, real peer authentication, or sign-in is provided.
 
 use crate::discovery::normalize_domain;
+use crate::offline_register_branch::FixtureRegisterBranch;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BoundaryError {
@@ -127,7 +128,7 @@ impl OfflineTlsBoundary {
 pub struct OfflineRegisterBinding {
     boundary: OfflineTlsBoundary,
     expected_spn: String,
-    register_transaction: String,
+    register_transaction: FixtureRegisterBranch,
 }
 
 impl OfflineRegisterBinding {
@@ -148,19 +149,12 @@ impl OfflineRegisterBinding {
         }
         // A SIP Via branch is a local transaction correlation token, not
         // authentication. Require the RFC 3261 magic cookie and safe ASCII.
-        if !register_transaction.starts_with("z9hG4bK")
-            || register_transaction.len() <= 7
-            || register_transaction.len() > 255
-            || !register_transaction
-                .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b"-._!%*+\x60'~".contains(&b))
-        {
-            return Err(BoundaryError::InvalidDomain);
-        }
+        let register_transaction = FixtureRegisterBranch::new_fixture(register_transaction)
+            .map_err(|_| BoundaryError::InvalidDomain)?;
         Ok(Self {
             boundary,
             expected_spn: format!("sip/{normalized_spn}"),
-            register_transaction: register_transaction.into(),
+            register_transaction,
         })
     }
 
@@ -173,7 +167,7 @@ impl OfflineRegisterBinding {
         sequence: u64,
         now_ms: u64,
     ) -> Result<(), BoundaryError> {
-        if spn != self.expected_spn || transaction != self.register_transaction {
+        if spn != self.expected_spn || transaction != self.register_transaction.as_str() {
             return Err(BoundaryError::PeerMismatch);
         }
         self.boundary
