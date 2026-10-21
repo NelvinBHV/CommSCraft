@@ -155,7 +155,7 @@ mod tests {
             100,
         )
         .unwrap();
-        let attempt_session = owner.connect_fixture().unwrap();
+        let attempt_session = owner.issue_fixture_handle().unwrap();
         let mut attempt = TransportBoundOfflineSignIn::new_fixture(
             &owner,
             attempt_session,
