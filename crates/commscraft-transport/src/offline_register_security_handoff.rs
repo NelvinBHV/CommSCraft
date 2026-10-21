@@ -84,7 +84,7 @@ mod tests {
     #[test]
     fn rejects_missing_security_wrong_transaction_and_replay() {
         let mut owner = OfflineTransportSessionOwner::new_fixture(11).unwrap();
-        let session = owner.connect_fixture();
+        let session = owner.connect_fixture().unwrap();
         let mut handoff =
             FixtureRegisterSecurityHandoff::new_fixture(&owner, session, "z9hG4bK-transaction")
                 .unwrap();
@@ -111,20 +111,20 @@ mod tests {
     fn rejects_reconnect_disconnect_and_foreign_owner() {
         let mut first = OfflineTransportSessionOwner::new_fixture(12).unwrap();
         let mut second = OfflineTransportSessionOwner::new_fixture(13).unwrap();
-        let old = first.connect_fixture();
+        let old = first.connect_fixture().unwrap();
         let mut handoff =
             FixtureRegisterSecurityHandoff::new_fixture(&first, old, "z9hG4bK-first").unwrap();
-        second.connect_fixture();
+        second.connect_fixture().unwrap();
         assert_eq!(
             handoff.accept_fixture(&second, "z9hG4bK-first", true),
             Err(HandoffError::SessionInvalid)
         );
-        first.connect_fixture();
+        first.connect_fixture().unwrap();
         assert_eq!(
             handoff.accept_fixture(&first, "z9hG4bK-first", true),
             Err(HandoffError::SessionInvalid)
         );
-        let current = first.connect_fixture();
+        let current = first.connect_fixture().unwrap();
         let mut next =
             FixtureRegisterSecurityHandoff::new_fixture(&first, current, "z9hG4bK-next").unwrap();
         first.disconnect();
@@ -137,7 +137,7 @@ mod tests {
     #[test]
     fn rejects_invalid_branch_at_creation() {
         let mut owner = OfflineTransportSessionOwner::new_fixture(14).unwrap();
-        let session = owner.connect_fixture();
+        let session = owner.connect_fixture().unwrap();
         assert_eq!(
             FixtureRegisterSecurityHandoff::new_fixture(&owner, session, "z9hG4bK\r\nInjected")
                 .err(),
