@@ -2,6 +2,10 @@
 
 **Original-source tranche 2026-10-22. Research only.** First-party **[MS-TURN] v20250520, revision 21.0, 2025-05-20**, owner-supplied PDF and extracted text; directly inspected §§2.1–2.2.3, 3.1.8–3.1.12, 3.2.2–3.2.6, 3.3.2–3.3.5.1, original PDF pp21–44. Manifest official PDF URL [Microsoft original MS-TURN PDF](https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-TURN/%5BMS-TURN%5D.pdf), SHA256 `9548b9d59916b50569e685afd43e0f8e9ada9c965c7c06decd665411b795743e`. [Microsoft Learn message-header clause](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-turn/8177788b-1f38-47a5-8a6f-348e89717922). Source explicitly delegates much state to **IETFDRAFT-TURN-08 and IETFDRAFT-STUN-02**, which remain an **unresolved archival prerequisite**. Official [RFC8656 (Feb 2020)](https://www.rfc-editor.org/rfc/rfc8656) **obsoletes RFC5766 and RFC6156**; it is *not automatically* wire-compatible with these historic Microsoft draft-defined extensions.
 
+## Source erratum / draft identification correction (2026-10-22)
+
+Earlier status said `IETFDRAFT-TURN-08` required archival retrieval. **That draft has now been located and verified: `draft-rosenberg-midcom-turn-08`, Sept 9 2005**, archived at https://datatracker.ietf.org/doc/html/draft-rosenberg-midcom-turn-08. **It is NOT the different `draft-ietf-behave-turn-08` from June 2008.** Also found `IETFDRAFT-STUN-02` = `draft-ietf-behave-rfc3489bis-02` (July 17 2005). The correct original §8.8 includes 3s Ta/transition state; **MS-TURN 21.0 §§3.2.4.3 and 3.2.5.3 explicitly SHOULD NOT implement that transition computer**. Updated primary detailed ledger: [2005 TURN and STUN draft closure](ms-turn21-ietf-2005-original-draft-reference-closure-2026-10-22.md). Status now **found, selected sections audited, full behavior pending**. Any stale text below suggesting these historical source files are 'unavailable' is superseded by this correction.
+
 ## 1. Exact client vs relay roles
 
 | ID | Original clause | Verifiable requirement | Evidence limit |
