@@ -25,14 +25,24 @@ Every transition must have a failure/timeout/disconnect edge, a bounded input co
 | Desktop session | `apps/commscraft/src/main.rs` | demo only | Production session coordinator and truthful user-facing state |
 | Provisioning, presence and messaging | `commscraft-core` offline feature modules | previews and parsers | Server-negotiated policy, subscriptions, contacts and live operations |
 
-## Ordered implementation plan (security-first)
+## Documentation-first clean-room implementation plan (owner testing policy, 2026-10-22)
 
-1. **State/ownership contract:** add a single typed, fail-closed sign-in coordinator interface that owns the connection generation, registration transaction and security context. Unit-test disconnect, reconnect, timeout, duplicate, cross-session and replay. No live sign-in flag.
-2. **Outbound transport under explicit authorization:** implement bounded SIP-over-TLS writes and framing only after domain/SAN identity authorization. No TLS bypass, no plaintext downgrade; integration tests with a local deterministic TLS fixture.
-3. **Complete REGISTER/challenge exchange:** connect `RegisterFlow`, transaction router and challenge parsing; each 401/407/423 requires a new transaction and deadline. Negative tests for unexpected server and wrong transaction.
-4. **Authenticated security negotiation:** bind Windows SSPI/GSS context or an independently derived TLS-DSK server key to the validated TLS service identity and same connection generation. Verify signed outgoing requests and server MIC/replay before any registration decision.
-5. **Post-registration provisioning:** consume only validated policy and separately marked untrusted Presence-State/GRUU metadata. Verify refresh, sign-out, failure and recovery.
-6. **Authorized interoperability:** test with explicitly authorized Skype for Business Server versions and sanitized captures; compare against the exact Microsoft specification revision. Keep sign-in disabled until the full matrix is independently verified.
+**Instruction from the project owner:** implement the actual protocols and complete client behavior from public RFCs and Microsoft Open Specifications, **not an offline-only product or an endless sequence of negative fixture tests**. The owner exclusively performs testing against real servers. Automated local/CI checks are development quality gates and do not confer interoperability status. No unsolicited server connections, credentials, or live test traffic.
+
+**Pinned normative document baselines for new protocol work (record specific revision and section per change):** [MS-SIPAE] published revision **11.0, May 20 2025**, [official document](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/ba3e9821-fa85-4e0f-a80c-5a4c720a00bd); [MS-SIPREGE] published revision **17.1, August 19 2025**, [official document](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/21acf797-984c-48ce-97e3-c7df5c776b3d). Validate exact PDF/DOCX revision-specific clauses and applicable errata before claiming support. RFC 3261 (June 2002), RFC 3263 (June 2002), RFC 5922 (June 2010), RFC 2743 (January 2000), RFC 4120 (July 2005) remain normative anchors. A documentation landing page alone is not a substitute for section-level verification.
+
+Implement connected **vertical protocol slices**, not more artificial milestone APIs:
+
+1. **SIP client transaction and message engine:** bounded streaming parser/serializer, connection management, outbound request generation, transaction timers, correlation and compliant retransmission/recovery; map RFC 3261 §§7–8, 10, 17–20 and RFC 3263 §§4–7 to production source. Keep a strict distinction between parser restrictions and generally legal SIP syntax.
+2. **REGISTER and authentication exchange:** implement REGISTER 401/407/423 retry chains and challenge selection for MS-SIPAE §§3.2.1, 3.2.5.1–3.2.5.2 and MS-SIPREGE registration exchanges. Correlate each leg with newly generated branch, required CSeq handling, stable identity, and server response. Replace `prepare_fixture` as the functional driver; its synthetic TLS, security and challenge events must never substitute for implemented protocol operations.
+3. **Security contexts and signed requests:** implement per-target SA acquisition, challenge token processing, Windows SSPI/Kerberos/NTLM adapters and explicitly specified TLS-DSK mechanics, client signature generation, server MIC/replay verification and cryptographic binding to the actual validated peer. Follow MS-SIPAE, RFC 2743, RFC 4120 and relevant MS-KILE/MS-NLMP specifications; never invent cryptographic semantics or weaken verification.
+4. **Registration acceptance and provisioning:** implement the MS-SIPREGE binding, in-band provisioning, policy handling, subscription/refresh/unregister and terminal disconnect/recovery; untrusted Contact/GRUU or metadata must not silently become an authentication grant.
+5. **Feature parity after sign-in:** trace and implement required messaging, presence, contacts, meetings and media protocols separately, including error and policy cases. The project is not protocol-complete until every required Windows Full Client capability is mapped and implemented.
+6. **Evidence and ownership:** every substantial feature records exact document version, URL, section, production implementation path, deterministic checks and GitHub CI SHA. Only the project owner performs real-server tests and supplies sanitized evidence. Label code `source-implemented`, `CI-checked`, or `owner-verified-interoperability` truthfully; leave real sign-in success and release claims disabled until owner evidence exists.
+
+## Concrete next implementation gap
+
+The existing `crates/commscraft-transport/src/owned_offline_register_attempt.rs` bundles synthetic states but is **not the final protocol client**. Production work must replace caller-originated synthetic completion events with real message-driven transitions, beginning with REGISTER challenge/retry orchestration and the authorized outbound SIP/TLS API. Ensure any prototype can be compiled and tested without contacting servers. That the code is testable locally is not a restriction to an offline-only architecture.
 
 ## Normative traceability anchors
 
