@@ -138,4 +138,8 @@ sequenceDiagram
 
 The trace uses optional subsequent INFO for async result and depicts the MCU internal interaction only conceptually; **not all branches are simultaneous mandatory packets**. The exact server-side C3P command implementation and authorization callback are outside this source. Additional proof blockers: complete conference-control type schemas, `requestId` validation and replay integrity, concurrent commands, lock state notifications and RFC2976→RFC6086 SIP INFO usage/edition compatibility.
 
+## G. RFC2976 obsolescence check (RFC6086, January 2011)
+
+Original first-party [RFC6086](https://www.rfc-editor.org/rfc/rfc6086) §§1,3,4: **explicitly obsoletes RFC2976**, but preserves backward-compatible **legacy INFO usage**. A UA **MUST NOT** insert an `Info-Package` header for legacy INFO. New INFO usages require an INFO Package, and both modes can coexist without mixing semantics. **Microsoft MS-CONFBAS v20250520 and MS-XMLMC v20250520 explicitly cite RFC2976**, so this is a **client-edition conformance gate**, not proof that old C3P or XML picture_freeze INFO packets need a modern `Info-Package` header. Exact type/media compatibility and alternative Microsoft product behavior remain OPEN.
+
 **Research gate remains CLOSED for implementation.** Source sections verified with original PDF text and RFC Editor; entire Microsoft corpus and related RFCs, UI behaviors and security conformance NOT COMPLETE. No new protocol code, genuine server tests, merge or release.
