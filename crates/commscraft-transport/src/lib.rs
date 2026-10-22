@@ -16,6 +16,7 @@ pub mod offline_register_security_handoff;
 pub mod offline_register_transaction;
 pub mod offline_session_identity;
 pub mod offline_sign_in_binding;
+pub mod owned_offline_register_attempt;
 mod sip_certificate;
 use commscraft_core::inbound::{ReceiveError, ReceiveEvent, SipInbound};
 use native_tls::{TlsConnector, TlsStream};
