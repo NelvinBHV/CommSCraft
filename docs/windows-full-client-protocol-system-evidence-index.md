@@ -241,4 +241,26 @@ This subsection **supersedes the earlier generic 'contacts partially checked' de
 
 **Next blockers:** obtain IETFDRAFT-ICENAT-19/STUN-02/TURN-08/ICETCP-07 originals; validate MS-ICE vs MS-ICE2 / RTCP mux / full ICE-state matrix; MS-TURN byte serialization and nonce/auth; MS-SSRTP; RFC4568/3711 suite contradiction errata; MS-CONFAV full MCU media SDP; product-specific time/version gates and network-loss recovery. **No code until full research.**
 
+## IX. Media-plane encryption, TURN relay and ICE consent, with unresolved SHA profile conflict (2026-10-22)
+
+**Primary cross-system research:**
+- [MS-ICE2 19.0 original candidate checks/nomination/consent/RFC-profile](ms-ice2-19-original-checks-nomination-consent-rfc-profile-2026-10-22.md) — §3.1.4–3.1.6, selected MS STUN behaviors incl per-stream and forked SDP checklists, 80-pair limit, 10s gathering and check windows, 5s check-reset, 19s keepalive, 30s consent validity and recommendation to terminate after expiry; compare historic IETFDRAFT-ICENAT-19 with RFC5245→8445 and 5389→8489. **Not** blanket media session rules.
+- [MS-SDPEXT 16.0, MS-SRTP 14.0 and MS-AVEDGEA 12.0](ms-sdpext16-srtp14-avedgea12-security-negotiation-conflict-2026-10-22.md) — separate SDP negotiated a=crypto/a=cryptoscale keys, per-SSRC replay contexts, optional encryption, relay-credential SIP SERVICE and 430/415/501 error profiles.
+- [Blocking SRTP cryptographic hash edition conflict with historical 2015 Microsoft PDF](srtp-crypto-hash-edition-conflict-2015-2025-evidence-2026-10-22.md) — **MS-SDPEXT May 2025** advertises RFC4568 `AES_CM_128_HMAC_SHA1_80`; **MS-SRTP May 2025** explicitly states **HMAC-SHA256**; **MS-SSRTP September 2025** specifies SHA1; **MS-SRTP September 2015 rev5.0** also SHA1. This is a primary-source contradiction with no proven client runtime resolution. **CRYPTO PROFILE GATE: BLOCKED** pending intervening revisions/errata/product behavior; never infer a chosen digest.
+- [MS-TURN 21.0 original legacy relay/allocations/negotiated integrity, RFC8656 comparison](ms-turn21-legacy-framing-hmac-allocation-rfc8656-2026-10-22.md) — 20-byte legacy TURN header with 16-byte Transaction ID and *attribute* Magic Cookie `0x72c64bc6`; Allocate authentication challenge, 650ms/9 attempts, per-MS-Version SHA1/SHA256 HMAC selection, 0xFF10 multiplexed data and relay capability gates. Distinct from RFC8489 header layout and modern TURN/ICE families.
+
+**Cross-protocol failure/state matrix — original clauses vs open synthesis:**
+
+| Event | Proven local transition | Important unknown (no implementation inference) |
+|---|---|---|
+| MS-AVEDGEA relay token expires | Server-side token lifetime provisioned in minutes, separate credentials | Client refresh scheduling and clock skew, server pool failover |
+| TURN 401 challenge | Allocate resend with Realm/Nonce/Username and integrity, MS-TURN §3.2.5.2 | Historic draft TURN-08 errata and all nonce/update failures |
+| TURN permission/allocation fails | Relayed candidate unusable; distinguished from media SRTP failure | ICE checklist restart or re-INVITE under exact Microsoft client profile |
+| ICE connectivity checklist has no valid pair | Fail call per MS-ICE2 §3.1.4.8.2.6 | Which UI/retry and focus membership cleanup sequence follows |
+| Consent expires after 30 s | MS-ICE2 §3.1.6.5 SHOULD terminate media; ignore late consent responses | Does SIP BYE follow? Not determined by this ICE clause |
+| SRTP packet authentication fails | Receiver per-SSRC integrity/replay policy applies | Do not automatically infer SIP registration or SA failure |
+| Hash mismatch SHA1 SDP versus SHA256 SRTP text | **Document-level normative conflict** | Runtime transform, first-party correction, exact product/role variant |
+
+**Research gate remains open:** media crypto cannot be declared fully specified or ready for algorithm selection until conflict is resolved with authoritative version/profile evidence. SRTP, TURN integrity, SIPAE MIC and ICE consent all involve independent credentials and timers. No implementation plan or server testing is authorized.
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
