@@ -18,6 +18,10 @@
 | FOCUS-10 | §3.3.4.2 | `endorseUser` is **not** a regular join: Focus unauthorized endorsement → **401 Unauthorized** (distinct from join's 403); success focus responds 200 and terminates special dialog; client **SHOULD NOT** send BYE for endorse-dialog. Early CANCEL **MUST** cancel pending endorsement. | Focus / endorsing endpoint |
 | FOCUS-11 | §3.1.4.2 | Conference deactivation removes Focus instance state and may be triggered by organizer deletion, presenter/focus command or inactivity. Trigger mechanism itself is **outside this document**, and organizer deletion differs from one participant leaving. | Focus |
 
+### Endorsement identity proof and escalation guard — original MS-CONFBAS §3.3 (p89)
+
+**FOCUS-12 (direct source):** An endorsing endpoint **MUST present the endorsed endpoint's Focus dialog Call-ID, local tag and remote tag** in an `endorseUser` request. This three-part dialog identifier is treated by the source as a **shared secret indicating common trusted execution context** (e.g. endpoints on the same device); it is **not** an independent general client credential or permission to bypass Focus authorization. When policies permit, Focus may promote an endorsed attendee to presenter or admit a lobby endpoint; when not authorized, §3.3.4.2 returns **401**. **Security concern (inference):** receipt of dialog IDs must not authorize privileges outside conference policy and authenticated associated dialogs. Log source semantics rather than assuming that knowing arbitrary Call-ID/tags cryptographically proves identity.
+
 ## B. Conference subscription and lobby isolation
 
 | ID | Section and source | Proof |
@@ -53,6 +57,7 @@ sequenceDiagram
  participant C as Client attendee
  participant F as Conference Focus
  participant MCU as Conference MCU
+ participant CVP as Central Video Processor
  Note over C,F: Conference reserved separately by Focus Factory if applicable
  C->>F: INVITE To: conference URI, C3P addUser body
  F-->>C: 200 OK with addUser body, Contact and timer support
@@ -65,13 +70,13 @@ sequenceDiagram
  MCU-->>C: Response per MS-CONFIM/CONFAV/CONFAS
  F-->>C: Subsequent versioned partial/full conference-info
  Note over C,MCU: video source control is separate SIP INFO
- MCU->>C: INFO picture_freeze (where XMLMC feature supported)
+ CVP->>C: INFO picture_freeze (where XMLMC feature supported)
  Note over C,MCU: Video RTP may pause, RTCP continues
  C->>F: BYE when leaving conference
  Note over F,C: Focus subscription may be terminated with signaling dialog
 ```
 
-**Synthesis caveats:** This composes independently defined join, admission, MCU and optional XMLMC use cases; exact order of roster and MCU SIP messages can vary, some transports/hops omitted, and an INFO freeze is an independent optional event, not caused universally by admission. Microsoft §§3.4.5.2.1 and 3.4.4.2 apply per publisher/subscriber rights; a lobby attendee must not receive the full other-user or MCU roster before admission despite generic focus full-notify rules.
+**Synthesis caveats:** CVP is a logical Central Video Processor, not assumed identical to the MCU. This composes independently defined join, admission, MCU and optional XMLMC use cases; exact order of roster and MCU SIP messages can vary, some transports/hops omitted, and an INFO freeze is an independent optional event, not caused universally by admission. Microsoft §§3.4.5.2.1 and 3.4.4.2 apply per publisher/subscriber rights; a lobby attendee must not receive the full other-user or MCU roster before admission despite generic focus full-notify rules.
 
 ## D. Negative-state matrix
 
