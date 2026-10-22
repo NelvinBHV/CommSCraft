@@ -98,4 +98,44 @@ sequenceDiagram
 5. **MCU failure/per-session distinction:** MS-CONFAV, MS-CONFIM, MS-CONFAS and MS-SDPEXT / MS-ICE2 / MS-SRTP media teardown, partial MCU bootstrap and participant vs media stream capabilities.
 6. **XMLMC draft dependency:** source references `IETFDRAFT-XMLSMC-12` and older RFC2976 INFO; version/replacements and whether historical SfB Windows Full Client negotiates this control are OPEN; no claim that current web conferencing uses this scheme.
 
+## F. Newly verified asynchronous in-dialog C3P INFO control contract — MS-CONFBAS §§3.5.1–3.5.6 (2025 original pp98–104)
+
+**Critical separation from provisioning SERVICE:** During an established Focus INVITE dialog, conference-control commands use **SIP INFO** with C3P body. Unlike the Focus Factory's SERVICE transaction, **SIP 202 Accepted means still processing, not final command success**. This is also unrelated to MS-CONFIM's **MESSAGE 202** IMDN outcome, and to RFC6665's **SUBSCRIBE/NOTIFY 202** restrictions.
+
+| ID | Exact original clause | Client/focus normative processing |
+|---|---|---|
+| CTRL-01 | §3.5, §§3.5.3.1–3.5.4.1.1 | **Client** MUST have a valid focus signaling dialog **and** MCU-Conference-URI table before conference control. C3P command is SIP INFO within that dialog, valid C3P request body; start a per-command timer. |
+| CTRL-02 | §3.5.4.2.1 | **Focus** MUST verify INFO belongs to known signaling dialog **not in lobby** before processing; SHOULD parse/validate C3P and SHOULD immediately send **SIP 202 Accepted** on successful validation, then continue work. Lobby join is **not** proof that media/control authorization exists. |
+| CTRL-03 | §3.5, §3.5.5.1.1–3 | Final outcome may arrive **either** as 200 response to original INFO with C3P body **or** as subsequent **server-initiated INFO containing C3P response**; the client SHOULD send 200 to latter INFO and then process its C3P body. Initial 202 can be ignored while waiting. |
+| CTRL-04 | §3.5.1.1, §3.5.5.1.4 | **Client** uses per-command `PendingRequestTable` keyed by C3P `requestId`, not SIP CSeq alone. Unmatched/late response SHOULD be silently dropped. C3P `pending` extends timer; C3P `success|failure` ends timer and resolves command. |
+| CTRL-05 | §3.5.2.1 | Client per-command timer initial **32 s SHOULD**. Every matching C3P `pending` reply **SHOULD extend by 180 s**; without further response by deadline command **MUST be considered timed out**. |
+| CTRL-06 | §3.5.6.2 | If Focus still processing when Focus internal timer fires, Focus **SHOULD send pending C3P response** and reset Focus timer to **28 s**. These focus timers are not mandatory client retransmission periods. |
+| CTRL-07 | §3.5 | Control commands fall into **Focus-only**, **MCU-directed** and **general distributed** categories. MCU command effects may be reflected only when MCU subsequently publishes new conference state; client MUST select target MCU for MCU command. Focus–MCU control transport is explicitly **outside specification**. |
+| CTRL-08 | §3.6 | `modifyConferenceLock` is a general command; global lock is Focus's reported lock state, while MCU locks SHOULD be tracked separately. A locked conference prevents new joiners. |
+
+### Verified conceptual command trace (202 is provisional command acceptance, not semantic success)
+
+```mermaid
+sequenceDiagram
+ participant C as Client
+ participant F as Conference Focus
+ participant M as Media MCU
+ C->>F: INFO C3P command requestId=R
+ F-->>C: 202 Accepted (processing)
+ opt Command addressed to MCU
+  F->>M: Forward MCU command (mechanism unspecified)
+  M-->>F: MCU outcome (mechanism unspecified)
+ end
+ opt Long processing
+  F->>C: INFO C3P code=pending requestId=R
+  C-->>F: 200 OK
+  Note over C: Reset command timer to 180 seconds SHOULD
+ end
+ F->>C: INFO C3P code=success or failure, requestId=R
+ C-->>F: 200 OK
+ Note over C,F: Alternative: C3P final body in 200 to original client INFO
+```
+
+The trace uses optional subsequent INFO for async result and depicts the MCU internal interaction only conceptually; **not all branches are simultaneous mandatory packets**. The exact server-side C3P command implementation and authorization callback are outside this source. Additional proof blockers: complete conference-control type schemas, `requestId` validation and replay integrity, concurrent commands, lock state notifications and RFC2976→RFC6086 SIP INFO usage/edition compatibility.
+
 **Research gate remains CLOSED for implementation.** Source sections verified with original PDF text and RFC Editor; entire Microsoft corpus and related RFCs, UI behaviors and security conformance NOT COMPLETE. No new protocol code, genuine server tests, merge or release.
