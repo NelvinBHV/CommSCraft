@@ -39,7 +39,7 @@ This is the **second-level, archive-wide reference audit** on the owner-supplied
 6. Mark `MS` targets **LOCAL_PDF_PRESENT / NOT_LOCAL**; `RFC` and third-party material **not yet original-verified** by bibliography listing alone.
 7. Each record requires the source original **edition date** and reference section status; original PDFs' SHA-256 means byte identity, not correctness or completeness of the prose extraction. A second audit must manually validate unusual tables/broken PDF line wrapping.
 
-**Complete machine-readable exports (available as conversation artifacts, *not yet committed as full CSV blobs to GitHub*):** `reference_nodes_150.csv` (150 PDFs including version/date/SHA256/54 URL provenance/reference-category counts) and `reference_edges_150.csv` (all 3,060 classified source-reference edges with missing status). To avoid claiming archival closure, only this independently reviewable summary is committed in the branch at present.
+**Complete machine-readable exports now COMMITTED to this research branch:** [150 source/version/hash nodes](research-corpus/microsoft-originals-150-edition-and-source-index-2026-10-22.csv) (150 PDF physical editions with footer dates/SHA256, 54 manifest URL/revision provenance and category counts) and [3,060 exact classified reference edges](research-corpus/microsoft-originals-150-classified-reference-edges-2026-10-22.csv). Both were imported from the verified local CSV exports; GitHub commit hashes `1ba6fb9` and `751d721`. These are **bibliographic records only**, not audited client normativity or current RFC status.
 
 ## Scope guard: client roots vs wider Windows environment
 
