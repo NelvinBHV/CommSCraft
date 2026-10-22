@@ -2,7 +2,9 @@
 //! RFC 3261 (June 2002) §§10.2 and 17.1.3; RFC 5922 (June 2010) §7.3;
 //! MS-SIPAE §3.2.5.2. These fixtures never authenticate a real client.
 
-use crate::offline_register_response_pipeline::{IntegratedRegisterError, OfflineRegisterResponsePipeline};
+use crate::offline_register_response_pipeline::{
+    IntegratedRegisterError, OfflineRegisterResponsePipeline,
+};
 use crate::offline_session_identity::{OfflineTransportSessionOwner, SessionIdentityError};
 use crate::offline_sign_in_binding::{BoundSignInError, TransportBoundOfflineSignIn};
 use commscraft_core::offline_sign_in_coordinator::{OfflineSignInEvent, OfflineSignInPhase};
@@ -38,14 +40,27 @@ impl OwnedOfflineRegisterAttempt {
         let mut owner = OfflineTransportSessionOwner::new_fixture(owner_id)
             .map_err(OwnedRegisterError::Owner)?;
         let transaction_handle = owner.connect_fixture().map_err(OwnedRegisterError::Owner)?;
-        let sign_in_handle = owner.issue_fixture_handle().map_err(OwnedRegisterError::Owner)?;
+        let sign_in_handle = owner
+            .issue_fixture_handle()
+            .map_err(OwnedRegisterError::Owner)?;
         let pipeline = OfflineRegisterResponsePipeline::new_fixture(
-            &owner, transaction_handle, branch, cseq, now_ms, deadline_ms,
-        ).map_err(OwnedRegisterError::Pipeline)?;
-        let sign_in = TransportBoundOfflineSignIn::new_fixture(
-            &owner, sign_in_handle, now_ms, deadline_ms,
-        ).map_err(OwnedRegisterError::SignIn)?;
-        Ok(Self { owner, sign_in, pipeline, gate })
+            &owner,
+            transaction_handle,
+            branch,
+            cseq,
+            now_ms,
+            deadline_ms,
+        )
+        .map_err(OwnedRegisterError::Pipeline)?;
+        let sign_in =
+            TransportBoundOfflineSignIn::new_fixture(&owner, sign_in_handle, now_ms, deadline_ms)
+                .map_err(OwnedRegisterError::SignIn)?;
+        Ok(Self {
+            owner,
+            sign_in,
+            pipeline,
+            gate,
+        })
     }
 
     /// A fixture-only phase driver, not proof of DNS, TLS, SSPI or SIP writes.
@@ -74,7 +89,12 @@ impl OwnedOfflineRegisterAttempt {
         now_ms: u64,
     ) -> Result<OfflineSignInPhase, OwnedRegisterError> {
         match self.sign_in.observe_verified_register_fixture(
-            &self.owner, &mut self.pipeline, wire, &mut self.gate, verifier, now_ms,
+            &self.owner,
+            &mut self.pipeline,
+            wire,
+            &mut self.gate,
+            verifier,
+            now_ms,
         ) {
             Ok(phase) => Ok(phase),
             Err(error) => {
@@ -99,7 +119,9 @@ impl OwnedOfflineRegisterAttempt {
     /// Simulates a new TLS connection; previous attempt components are revoked.
     pub fn reconnect_fixture(&mut self) -> Result<(), OwnedRegisterError> {
         self.disconnect_fixture();
-        self.owner.connect_fixture().map_err(OwnedRegisterError::Owner)?;
+        self.owner
+            .connect_fixture()
+            .map_err(OwnedRegisterError::Owner)?;
         Ok(())
     }
 
@@ -120,7 +142,9 @@ mod tests {
 
     struct RejectMic;
     impl ServerMicVerifier for RejectMic {
-        fn verify(&self, _: &[u8], _: &[u8]) -> bool { false }
+        fn verify(&self, _: &[u8], _: &[u8]) -> bool {
+            false
+        }
     }
 
     fn gate() -> RegisterVerificationGate {
@@ -133,22 +157,26 @@ mod tests {
             from_tag: "2d0be03279".into(),
             call_id: "owned-register@example.com".into(),
         };
-        let flow = RegisterFlow::new(endpoint, 17, "z9hG4bK-owned", 3600, 0).unwrap();
-        let association = SecurityAssociation::begin(&ChallengeOffer {
-            scheme: Scheme::TlsDsk,
-            source: ChallengeSource::Registrar,
-            realm: Some("SIP Communications Service".into()),
-            targetname: Some("server.example.com".into()),
-            opaque: Some("opaque123".into()),
-            version: Some(4),
-            sts_uri: None,
-            gssapi_data: None,
-        }, 8_000_000).unwrap();
+        let flow = RegisterFlow::new(endpoint, 17, "z9hG4bK-owned-register", 3600, 0).unwrap();
+        let association = SecurityAssociation::begin(
+            &ChallengeOffer {
+                scheme: Scheme::TlsDsk,
+                source: ChallengeSource::Registrar,
+                realm: Some("SIP Communications Service".into()),
+                targetname: Some("server.example.com".into()),
+                opaque: Some("opaque123".into()),
+                version: Some(4),
+                sts_uri: None,
+                gssapi_data: None,
+            },
+            8_000_000,
+        )
+        .unwrap();
         RegisterVerificationGate::new(flow, association)
     }
 
     fn attempt() -> OwnedOfflineRegisterAttempt {
-        OwnedOfflineRegisterAttempt::new_fixture(500, "z9hG4bK-owned", 17, gate(), 0, 100).unwrap()
+        OwnedOfflineRegisterAttempt::new_fixture(500, "z9hG4bK-owned-register", 17, gate(), 0, 100).unwrap()
     }
 
     #[test]
@@ -156,7 +184,7 @@ mod tests {
         let mut attempt = attempt();
         attempt.prepare_fixture(1).unwrap();
         assert_eq!(attempt.phase(), OfflineSignInPhase::ServerMicVerification);
-        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-owned\r\nCSeq: 17 REGISTER\r\nContent-Length: 0\r\n\r\n";
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-owned-register\r\nCSeq: 17 REGISTER\r\nContent-Length: 0\r\n\r\n";
         assert!(attempt.observe_final_fixture(wire, &RejectMic, 2).is_err());
         assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
         assert_eq!(attempt.mic_gate_state(), GateState::Disconnected);
