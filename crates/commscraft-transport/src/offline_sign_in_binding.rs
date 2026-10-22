@@ -714,6 +714,60 @@ mod tests {
     }
 
     #[test]
+    fn duplicate_via_register_frame_closes_all_offline_gates() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(104).unwrap();
+        let register_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            register_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let sign_in_session = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, sign_in_session, 0, 100).unwrap();
+        let mut gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            attempt.observe_fixture(&owner, event, 1).unwrap();
+        }
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nCSeq: 17 REGISTER\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nContent-Length: 0\r\n\r\n";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::Register(
+                IntegratedRegisterError::InvalidResponse
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, wire, true, 2),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
     fn wrong_register_branch_closes_all_offline_gates() {
         let mut owner = OfflineTransportSessionOwner::new_fixture(101).unwrap();
         let register_session = owner.connect_fixture().unwrap();
