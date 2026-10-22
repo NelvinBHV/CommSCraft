@@ -176,7 +176,8 @@ mod tests {
     }
 
     fn attempt() -> OwnedOfflineRegisterAttempt {
-        OwnedOfflineRegisterAttempt::new_fixture(500, "z9hG4bK-owned-register", 17, gate(), 0, 100).unwrap()
+        OwnedOfflineRegisterAttempt::new_fixture(500, "z9hG4bK-owned-register", 17, gate(), 0, 100)
+            .unwrap()
     }
 
     #[test]
