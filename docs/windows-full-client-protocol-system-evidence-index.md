@@ -300,4 +300,14 @@ The following **new primary-source** studies address an important gap in workflo
 
 **Research status NOT COMPLETE; no protocol code, live server tests, main merge or release.**
 
+## XII. 2026-10-22 150-original-PDF reference graph — now actually committed in the draft branch
+
+The initial **54-primary** bibliography/catalog audit did **not** establish whole-archive recursive closure. [New audit: full normative/informative reference extraction from all 150 owner-supplied Microsoft PDFs](full-150-pdf-normative-informative-reference-graph-2026-10-22.md) corrects the scope. Its two permanent machine-readable research files are **[150-node source/edition/date/SHA256 catalog](research-corpus/microsoft-originals-150-edition-and-source-index-2026-10-22.csv)** and **[3,060-source-edge provenance table](research-corpus/microsoft-originals-150-classified-reference-edges-2026-10-22.csv)**, fully committed without touching protocol code.
+
+**Classification:** 138 PDFs have directly separable §1.2.1 normative and §1.2.2 informative lists; 7 system protocol overviews have **unsplit references**; 5 AD schema docs lack equivalent sections. Among **3,060 bibliography rows**, 1,816 are under normative sections, 804 informative, and 440 unclassified overview; RFC IDs mentioned total **251** across all categories (not '251 relevant RFCs'). **191 unique Microsoft IDs** referenced from full archive are not locally present, **68** of them cited normatively in infrastructure specs (not necessarily Windows SIP Full Client). **31 immediate Windows client root protocols: zero missing direct Microsoft referenced PDFs** at extracted bibliography level. This is not transitive completeness; absent references in Windows SMB/AD/RDP support documents have separate relevance and availability proof tasks.
+
+**Correction:** `MS-SIPRE-2015.pdf` footer `v20150904` now correctly extracted; prior `95/96 additional footer dates` status was extraction strictness, not genuinely absent original date. Physical 150 PDFs include one historic MS-SIPRE edition. A Microsoft PDF footer date alone is not certified revision history or the exact official URL for the 96 unindexed PDFs.
+
+**Open gate:** Every RFC/Internet-Draft original and its normative update chain, target-client product profile, all inline section references, five schema special cases, 96 missing URL/version metadata records, actual rule/role applicability, 68 off-archive **normative cited** Windows-infrastructure MS PDFs (prioritize only when client dependence shown) and explicit **SRTP SHA-1/SHA-256** contradiction remain OPEN. No implementation planning or server testing authorized.
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
