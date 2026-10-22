@@ -277,4 +277,27 @@ This subsection **supersedes the earlier generic 'contacts partially checked' de
 
 **Overall research incomplete; no protocol code, tests against live servers, merge or release.**
 
+## XI. 2026-10-22 teardown and full-client recovery across registrar, presence, dialogs, media and QoE
+
+The following **new primary-source** studies address an important gap in workflow 7 and call completion without asserting a single universal shutdown packet trace:
+
+- [MS-SIPREGE 17.1 / MS-PRES 13.0 / MS-CONMGMT 10.0 registration-loss, survivable mode and multi-device cleanup](ms-siprege17-pres13-conmgmt10-registration-loss-survivable-cleanup-2026-10-22.md): **29 section/role-qualified constraints**. On *REGISTER refresh*, a SIP 200 with `Presence-State register-action=added|fixed` **MUST be treated by client as registration failure** and prior dialogs SHOULD be considered terminated; `refreshed` differs. Binding expiry clears registrar state; status may be `fixed` or `added` depending retained endpoint identifier. Original §3.1.1.6 requires SAME TCP connection for registration refresh. Server-initiated `registration-notify` has explicit `unregistered/rejected/deactivated/preferred-registrar-change/userservices-unavailable` reasons and survivable mode variant; but on connection inactivity **MS-CONMGMT §3.4.6 forbids NOTIFY to the inactive endpoint**. On **one** endpoint logout, MS-PRES removes only that endpoint's published categories; only when **last** endpoint deregisters are user-bounded publications also removed. Other reachable subscribers may still receive NOTIFY/BENOTIFY despite missing deregister NOTIFY to inaccessible UA. RFC3261 §10.2.2 forbids treating `Contact: *; Expires:0` as equivalent to specific end-user device logout.
+- [MS-OCSPROT 9.0 / MS-QoE 12.0 original call BYE, media Edge cleanup and post-call reporting](ms-ocsprot9-qoe12-call-bye-relay-release-reporting-2026-10-22.md): **16 verified rules** based on §§2.5.15–16 and MS-QoE §§1.3,2.2,3.1–3.2. After ordinary SIP BYE, media stops and Edge allocations are removed per applicable profile; each endpoint optionally reports *independently* to QoE Monitoring Agent via SIP SERVICE `application/vq-rtcpxr+xml` or `application/ms-cqf+xml`. Monitoring agent 202 means **accepted, not necessarily processed/stored**; semantic QoE faults 400 XML, 401 identity, 413 >300KB, 415 MIME, 606 unsupported report XML. Required normative IETF draft **`draft-deason-sip-soap-00`** 2000 expired but archived at Datatracker, found; full historical draft/service profile review still open.
+
+### Recovery/effective-state cross-protocol matrix (primary clause gate)
+
+| Independent subsystem | Normal completion | Invalidated state / loss signal | Source of recovery requirement; unresolved edges |
+|---|---|---|---|
+| Network channel | Closed by user or after use | TCP/TLS break, proxy no keepalive | MS-CONMGMT §§3.4.6,3.5; discovery TLS/identity must be verified anew |
+| Registrar binding | **Specific** Contact REGISTER Expires=0 | expiry, quota/policy NOTIFY, lost flow, 200 `added|fixed` on refresh | MS-SIPREGE §§3.1–3.2; full re-sign-in ordering U |
+| SIP security association | SA disposed after validity | SA lifetime expired | MS-SIPAE §3.2.6; renewal independently of registration/route |
+| Presence publisher/categories | User/endp-scoped category expires | one endpoint leaves vs last endpoint leaves | MS-PRES §§3.2.5.5–5.1; subscriber BENOTIFY routing and aggregated result |
+| Active SIP session/dialog | BYE accepted, dialogs close | RFC4028 408/481 refresh, MS-SIPRE 430 stale dialog route | MS-SIPRE §3.7 recovery target refresh and RFC4028 §10, but a replacement connection may invalidate flows |
+| ICE/TURN/RTP media | Stop RTP, free relayed allocation | ICE consent expiry or TURN allocated address failure | MS-ICE2 §3.1.6.5, MS-TURN §§3.2; no generic REGISTER termination |
+| QoE monitoring (when enabled) | SIP SERVICE independent per endpoint, 202 accepted | bad XML, auth/body mismatch, report size, offline signaling | MS-QoE §§2.2,3.1–3.2; no mandated persistence queue/retry timer or report after abrupt crash |
+
+**Blocking version/race semantics:** do not interpret RFC3261 registration as an INVITE dialog just because MS-SIPREGE text sometimes uses "REGISTER dialog"; do not interpret 200 REGISTER success as confirmation that prior conference/IM dialog route remains. **No original audited source yet proves universal exact signout ordering** among ending conference IM, optional QoE SERVICE, media teardown, presence subscription cancellation, clearing published data and REGISTER Expires=0. Transport crash cannot by definition guarantee delivery of BYE/NOTIFY/QoE. These open issues must remain blocking for a client-wide implementation plan.
+
+**Research status NOT COMPLETE; no protocol code, live server tests, main merge or release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
