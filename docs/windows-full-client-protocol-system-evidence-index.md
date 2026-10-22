@@ -263,4 +263,18 @@ This subsection **supersedes the earlier generic 'contacts partially checked' de
 
 **Research gate remains open:** media crypto cannot be declared fully specified or ready for algorithm selection until conflict is resolved with authoritative version/profile evidence. SRTP, TURN integrity, SIPAE MIC and ICE consent all involve independent credentials and timers. No implementation plan or server testing is authorized.
 
+## X. 2026-10-22 historical media reference closure: MS-ICE vs MS-ICE2 and exact 2005 STUN/TURN draft lineage
+
+**Primary clauses and archival references newly tied together:**
+
+- [MS-ICE 11.0 vs MS-ICE2 19.0 original side-by-side compatibility ledger](ms-ice11-vs-ice2-19-historic-drafts-client-state-matrix-2026-10-22.md), both owner-provided Microsoft **v20250520**: 15 role- and version-scoped rules, including **IPv4-only MS-ICE vs dual-stack MS-ICE2**, old ICE `draft-ietf-mmusic-ice-06` vs newer `-19`, **3-second versus 5-second check timer reset**, candidate states and regular nomination differences, explicit **no ICE restarts** and lite/aggressive nomination exclusion in MS-ICE2, dual STUN wire format selected by peer **IMPLEMENTATION-VERSION**. Found original `ice-tcp-00` and `ice-tcp-07` too.
+- [Exact 2005 TURN/STUN original draft and Microsoft exception ledger](ms-turn21-ietf-2005-original-draft-reference-closure-2026-10-22.md): **MS-TURN 21.0 §1.2 refers to `draft-rosenberg-midcom-turn-08` Sept 9 2005** (not `draft-ietf-behave-turn-08` June 2008); `IETFDRAFT-STUN-02` is `draft-ietf-behave-rfc3489bis-02` July 17 2005. Both archived IETF first-party texts **FOUND**. MS-TURN bypasses 2005 draft Set Active Destination **transition-state** machine per its §§3.2.4.3 and 3.2.5.3: don't impose draft's 3s Ta/2s 439 retry as a Windows UAC MUST.
+- [Previous MS-TURN 21.0 original study, corrected](ms-turn21-legacy-framing-hmac-allocation-rfc8656-2026-10-22.md): now points to exactly matching archived historical Internet-Draft rather than an unresolved name. Distinct **MS-Version (TURN HMAC)** and **IMPLEMENTATION-VERSION (ICE2 STUN wire choice)** state variables, although both use a version threshold of 3.
+
+**Source-status update:** `draft-rosenberg-midcom-turn-08`, `draft-ietf-behave-rfc3489bis-02`, `draft-ietf-mmusic-ice-06`, `draft-ietf-mmusic-ice-tcp-00`, `draft-ietf-mmusic-ice-19`, `draft-ietf-mmusic-ice-tcp-07`: all **accessible at IETF Datatracker**. Do not mislabel as missing. Their full normative clause-by-clause applicability remains **OPEN**, and 2005 draft text is not a current IETF standard. Previous historical references to draft retrieval as blocking must be read as superseded with a new blocker: **full specific normative draft text audit and product edition profile**.
+
+**Feature matrix adjustment:** replace a generic 'ICE connected' flag with at least a variant/role/peer-format/stream/candidate-check/nomination/consent/relay-binding distinction in **research models only**; do not begin implementation planning. A SIP 200, TURN allocation, ICE nominated pair and 30s consent success are independent events. SDP must supply evidence for choosing which Microsoft ICE variant in target Windows client builds, and exact legacy TCP mux behavior requires separate comparison. The SHA1/SHA256 SRTP source conflict remains independently **BLOCKED**.
+
+**Overall research incomplete; no protocol code, tests against live servers, merge or release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
