@@ -16,6 +16,7 @@ pub enum OwnedRegisterError {
     Owner(SessionIdentityError),
     Pipeline(IntegratedRegisterError),
     SignIn(BoundSignInError),
+    MismatchedRequest,
 }
 
 /// The lifecycle, transport handle, one-shot REGISTER transaction and MIC gate
@@ -37,6 +38,18 @@ impl OwnedOfflineRegisterAttempt {
         now_ms: u64,
         deadline_ms: u64,
     ) -> Result<Self, OwnedRegisterError> {
+        // Bind the supplied MIC gate to this exact REGISTER transaction.
+        // Otherwise a caller could accidentally mix unrelated offline flows.
+        let expected_branch = format!(";branch={branch}");
+        let expected_cseq = format!("{cseq} REGISTER");
+        if !gate
+            .request()
+            .header("Via")
+            .is_some_and(|via| via.ends_with(&expected_branch))
+            || gate.request().header("CSeq") != Some(expected_cseq.as_str())
+        {
+            return Err(OwnedRegisterError::MismatchedRequest);
+        }
         let mut owner = OfflineTransportSessionOwner::new_fixture(owner_id)
             .map_err(OwnedRegisterError::Owner)?;
         let transaction_handle = owner.connect_fixture().map_err(OwnedRegisterError::Owner)?;
@@ -213,4 +226,30 @@ mod tests {
             Err(OwnedRegisterError::Pipeline(_))
         ));
     }
+    #[test]
+    fn mismatched_gate_cannot_be_bound_to_other_register_transaction() {
+        assert!(matches!(
+            OwnedOfflineRegisterAttempt::new_fixture(
+                502,
+                "z9hG4bK-foreign-register",
+                17,
+                gate(),
+                0,
+                100,
+            ),
+            Err(OwnedRegisterError::MismatchedRequest)
+        ));
+        assert!(matches!(
+            OwnedOfflineRegisterAttempt::new_fixture(
+                503,
+                "z9hG4bK-owned-register",
+                18,
+                gate(),
+                0,
+                100,
+            ),
+            Err(OwnedRegisterError::MismatchedRequest)
+        ));
+    }
+
 }
