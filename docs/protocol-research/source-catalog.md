@@ -5,6 +5,7 @@
 ## Canonical datasets
 
 - [MS overview inventory JSON](ms-ocsprot-inventory.json) and [human readable version table](ms-ocsprot-inventory.md).
+- [Twelve additional Microsoft/Windows/Exchange/SharePoint source versions](transitive-microsoft-inventory.md) and [JSON](transitive-microsoft-inventory.json) — latest published metadata verified, applicability and recursive references OPEN.
 - [Normative reference graph](normative-reference-ledger.json) — source-pinned §1.2.1 MS→target edges, reference types and edition/access flags.
 - [RFC fixed-edition source ledger](rfc-inventory.json) — direct vs seed evidence, canonical RFC Editor links, update-chain status.
 - [Phase-1 formal coverage audit](phase1-audit.md) — exact missing sources/access blockers and acceptance criteria.
@@ -193,6 +194,6 @@ RFC update, errata, obsolescence and normative-dependency closure is not complet
 
 ## Protocols and international standards outside overview lists
 
-Exact MS references **MS-H26XPF, MS-KILE, MS-NLMP, MS-OAUTH2EX, MS-OXWUMS, MS-RDPBCGR, MS-RDPEMC, MS-SDP, MS-SIP, MS-WCCE, MS-WSPOL, MS-WSTEP** appear in [source-linked normative graph](normative-reference-ledger.json); other draft/ISO, ITU, W3C and OASIS nodes are likewise listed there, with edition exactness and paywall information in [phase1-audit.md](phase1-audit.md). Treat optional / server-only exclusions only after verifying the Windows Full Client build and service policy. **No document not acquired must be marked fully analyzed.**
+Exact MS references **MS-H26XPF, MS-KILE, MS-NLMP, MS-OAUTH2EX, MS-OXWUMS, MS-RDPBCGR, MS-RDPEMC, MS-SDP, MS-SIP, MS-WCCE, MS-WSPOL, MS-WSTEP** appear in [source-linked normative graph](normative-reference-ledger.json); other draft/ISO, ITU, W3C and OASIS nodes are likewise listed there, with edition exactness and paywall information in [phase1-audit.md](phase1-audit.md). Treat optional / server-only exclusions only after verifying the Windows Full Client build and service policy. **All twelve direct out-of-overview Microsoft target IDs now have official latest published revision/date landing metadata, captured in [transitive-microsoft-inventory.json](transitive-microsoft-inventory.json). Exact client-applicable historical versions and all their normative reference lists remain OPEN. No document not acquired must be marked fully analyzed.**
 
 **No new protocol code until source acquisition and all subsequent analysis gates are complete.**
