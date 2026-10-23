@@ -184,5 +184,20 @@
     "all_second_tier_published_pdf_editions_verified": 0,
     "phase1_complete": false,
     "important": "Prior 460 original MS-OCSPROT first-tier normative edges remain unchanged. No second-tier source has been matched to exactly published revision PDF, full graph still open, no implementations/tests."
+  },
+  "follow_on_rfc_first_hop_2026_10_23": {
+    "status": "PARTIAL_RFC_ORIGINAL_REFERENCES_ONLY",
+    "rfc3261_explicit_normative_edges": 26,
+    "rfc2782_unclassified_reference_entries": 9,
+    "unique_targets": 34,
+    "new_rfc_ids_outside_seed_113": 23,
+    "rfc_seed_count_unchanged": 113,
+    "first_tier_microsoft_edges_unchanged": 460,
+    "second_tier_microsoft_edges_unchanged": 246,
+    "first_tier_html_only_unchanged": 33,
+    "complete_ms_originals_verified_unchanged": 1,
+    "rfc3261_verified_errata_search_count_not_audited": 12,
+    "p1_01_pdf_attempts": "MS-ABS and MS-SIPAE failed; download host DNS unreachable",
+    "phase_1": "INCOMPLETE"
   }
 }

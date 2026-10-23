@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "snapshot_date": "2026-10-23",
-  "status": "SELECTED_ORIGINAL_RFC_EDITOR_REVISION_METADATA_ONLY_NOT_GLOBAL_RFC_CLOSURE",
+  "status": "SELECTED_12_RFC_ORIGINAL_EDITION_RELATION_CHECKS_NOT_GLOBAL_CLOSURE",
   "purpose": "Explicitly verify dates/updates/obsoletes for high-risk RFC editions cross-referenced by Microsoft; do not replace actual cited Microsoft profile versions with successor RFC by default.",
   "documents": [
     {
@@ -184,6 +184,70 @@
       "updates": [],
       "obsoletes": [
         "RFC3548"
+      ]
+    },
+    {
+      "id": "RFC3261",
+      "original_published": "2002-06",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc3261",
+      "original_text_url": "https://www.rfc-editor.org/rfc/rfc3261.html",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "FACT_RFC_EDITOR_ORIGINAL",
+      "normative_references_fully_reviewed": false,
+      "first_hop_normative_reference_list_reviewed": true,
+      "first_hop_normative_count": 26,
+      "errata_individually_audited": false,
+      "errata_verified_count_seen": 12,
+      "client_applicability_resolved": false,
+      "obsoleted_by": [],
+      "updated_by": [
+        "RFC3265",
+        "RFC3853",
+        "RFC4320",
+        "RFC4916",
+        "RFC5393",
+        "RFC5621",
+        "RFC5626",
+        "RFC5630",
+        "RFC5922",
+        "RFC5954",
+        "RFC6026",
+        "RFC6141",
+        "RFC6665",
+        "RFC6878",
+        "RFC7462",
+        "RFC7463",
+        "RFC8217",
+        "RFC8591",
+        "RFC8760",
+        "RFC8898",
+        "RFC8996"
+      ],
+      "updates": [],
+      "obsoletes": [
+        "RFC2543"
+      ]
+    },
+    {
+      "id": "RFC2782",
+      "original_published": "2000-02",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc2782",
+      "original_text_url": "https://www.rfc-editor.org/rfc/rfc2782.html",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "FACT_RFC_EDITOR_ORIGINAL",
+      "normative_references_fully_reviewed": false,
+      "first_hop_unclassified_reference_count": 9,
+      "errata_individually_audited": false,
+      "errata_access": "RATE_LIMITED",
+      "client_applicability_resolved": false,
+      "obsoleted_by": [],
+      "updated_by": [
+        "RFC6335",
+        "RFC8553"
+      ],
+      "updates": [],
+      "obsoletes": [
+        "RFC2052"
       ]
     }
   ]

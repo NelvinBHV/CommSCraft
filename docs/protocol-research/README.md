@@ -72,3 +72,5 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 - Historical **not current** [MS-OCSPROT] PDF v20150330, revision 4.4, 73 pages (seen via PDF and page-render): https://officeprotocoldoc.z19.web.core.windows.net/files/MS-OCSPROT/%5BMS-OCSPROT%5D-150330.pdf
 
 **Access note:** The current PDF link on the Microsoft Learn landing page redirected to a host that was not accessible through the research browser on 2026-10-23. The existence of a working historical PDF **does not substitute** for a complete review of current published documents. Several Learn pages display an authorization banner despite rendering subsection text.
+
+- [RFC first-hop original bibliography audit](rfc-first-hop-audit-2026-10-23.md) / [JSON register](rfc-first-hop-reference-ledger.json): RFC 3261 §29 (26 normative) and RFC 2782 References (9 *unclassified*), 23 new RFC candidates outside unchanged 113 seeds; recursion/client applicability OPEN.

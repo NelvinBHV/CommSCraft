@@ -78,3 +78,7 @@ See [source-audited second-tier report](phase1-transitive-research-2026-10-23.md
 ## 2026-10-23 RFC Editor release relation spot check
 
 Ten original RFC-Editor publication/update/obsolescence headers were verified and recorded with exact RFC-Editor source URLs in [`rfc-version-relations-reviewed.json`](rfc-version-relations-reviewed.json): RFC 3265, 6665, 4566, 8866, 5245, 8445, 6125, 9525, 3548, 4648. [`rfc-inventory.json`](rfc-inventory.json) carries those verified relation metadata, preserving **113** initial RFC identifiers. **Full RFC normative references, errata and all other RFC update chains remain OPEN.** These status relations alone do **not** authorize substituting newer RFCs for explicitly cited older Microsoft editions.
+
+## 2026-10-23 — RFC-first-hop P1-04 follow-on
+
+See [original edition bibliography audit](rfc-first-hop-audit-2026-10-23.md) and [edge register](rfc-first-hop-reference-ledger.json): RFC 3261 §29 has 26 explicit normative edges; RFC 2782 has 9 **unclassified** distinct citations. 23 extra RFC identifiers were found outside the fixed 113 seed; no Microsoft first-/second-level reference ledgers or publication-check metrics change. MS-ABS and MS-SIPAE current release PDF attempts failed; 33 HTML-only edition comparisons and RFC normative/errata/recursion remain OPEN. **Phase 1 NOT COMPLETE, no implementation approval.**
