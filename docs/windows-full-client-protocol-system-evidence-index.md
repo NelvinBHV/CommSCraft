@@ -1,13 +1,13 @@
 # CommSCraft / classic Skype for Business Windows Full Client — research evidence master index
 
-**Last evidence update: 2026-10-22. Status: INCOMPLETE, implementation gate CLOSED.**
+**Last evidence update: 2026-10-23. Status: INCOMPLETE, implementation gate CLOSED.**
 This is a durable entry point for research under draft PR #51, **not** an assertion of complete normative/functional compliance. Its tables explicitly distinguish examined original clauses, reconstructed cross-protocol behavior and unresolved normative gaps. Nothing here authorizes new protocol code, real-server traffic, merges or releases.
 
 ## I. Evidence, roles and provenance
 
 **Evidence codes:** `P` = primary Microsoft Open Specification or RFC text directly verified at cited edition/section; `S` = cross-spec synthesis inferred from multiple `P` rules, needing full sequence proof; `U` = unverified or unavailable behavior; `H` = historical/feature-conditional deployment rule. Each rule must be independently assigned a *role* (UAC, UAS, registrar, proxy, MCU, web-service client, web-service server, media peer) and an applicability guard (client version, topology, auth scheme and negotiated extensions). Server MUST ≠ client MUST.
 
-**Corpus boundary:** provided original archive has **150 Microsoft MS-prefixed PDFs** plus one extra FIPS 197 PDF; **54 indexed primaries**, **96 additional PDF editions**, 95 of 96 additional dates extracted, one `MS-SIPRE-2015` historical-edition verification outstanding. The 54-document metadata links **145 different RFC identifiers**, whose updating/obsoleting/normative applicability is not yet independently verified. **All Microsoft references in 54-record metadata exist locally, but reference closure of all 150 original texts is NOT established.** See [primary manifest/reference audit](manifest-reference-closure-version-and-feature-gates-2026-10-22.md) and [150-PDF inventory](complete-150-microsoft-pdf-archive-version-audit-2026-10-22.md). 112 user-provided Markdown assessments are secondary and not automatically trusted as protocol proof.
+**Corpus boundary (current):** owner's archive includes **150 MS-PDF physical editions** and a separate FIPS197 original; 54 original-index primaries and 96 additional physical PDF editions, with the historical MS-SIPRE v20150904 footer now verified. Complete [150-node PDF source hashes and dates](research-corpus/microsoft-originals-150-edition-and-source-index-2026-10-22.csv) and [3060 classified reference edges](research-corpus/microsoft-originals-150-classified-reference-edges-2026-10-22.csv) are committed. **138 split normative/informative lists, 7 unsplit overviews, 5 AD schema special cases**. Whole-client *normative transitive* closure is still NOT established: 191 Microsoft IDs referenced by broad Windows+Office corpus are not local (68 from normative sections), distinct from **zero missing directly cited Microsoft PDFs within selected 31 immediate client roots**. RFC edition chains/client applicability remain open. See [full dependency audit](full-150-pdf-normative-informative-reference-graph-2026-10-22.md). 112 assessment files are secondary, not original proof.
 
 **Selected directly checked original editions** (not proof of full reading): MS-OCSPROT 9.0 (2025-05-20), MS-CONMGMT 10.0 (2025-05-20), MS-SIPAE 11.0 (2025-05-20), MS-SIPREGE 17.1 (2025-08-19), MS-SIPRE 13.0 (2025-05-20), MS-PRES 13.0 (2025-05-20), MS-SIP 8.0 (2017-06-01), MS-SIPCOMP 10.0 (2025-05-20), MS-CONFIM 11.0, MS-CONFAV 11.0, MS-CONFAS 12.0, MS-SDPEXT 16.0, MS-ICE2 19.0, MS-SRTP 14.0, MS-AVEDGEA 12.0, MS-OCPSTN 11.0, MS-EUMR 9.0, MS-EUMSDP 9.0, MS-OCEXUM 11.0, MS-E911WS 9.0, MS-RGSWS 9.0 (remaining dates 2025-05-20). For source URL, PDF SHA and section references use the ZIP inventory and linked per-protocol research. A date on original PDF is **not proof** that every target Skype for Business build implements every rule.
 
@@ -309,5 +309,50 @@ The initial **54-primary** bibliography/catalog audit did **not** establish whol
 **Correction:** `MS-SIPRE-2015.pdf` footer `v20150904` now correctly extracted; prior `95/96 additional footer dates` status was extraction strictness, not genuinely absent original date. Physical 150 PDFs include one historic MS-SIPRE edition. A Microsoft PDF footer date alone is not certified revision history or the exact official URL for the 96 unindexed PDFs.
 
 **Open gate:** Every RFC/Internet-Draft original and its normative update chain, target-client product profile, all inline section references, five schema special cases, 96 missing URL/version metadata records, actual rule/role applicability, 68 off-archive **normative cited** Windows-infrastructure MS PDFs (prioritize only when client dependence shown) and explicit **SRTP SHA-1/SHA-256** contradiction remain OPEN. No implementation planning or server testing authorized.
+
+## XIII. 2026-10-23 original security-chain investigation: discovery TLS versus SIPAE, PKI and STS
+
+**New original primary clause studies:** 
+
+- [MS-CONMGMT 10.0 outbound proxy discovery and TLS certificate identity against RFC3263/5922/8446](ms-conmgmt10-discovery-proxy-tls-identity-rfc-profiles-2026-10-23.md): **11 numbered original obligations**, plus six RFC/profile conflict findings. Four parallel DNS SRV queries, optional DHCP120 (5s timer), strict candidate ordering and DNS A/TCP failure fallback conditions. **Certificate failure is not normative evidence to downgrade to plaintext TCP**. Source server-side certificate subject FQDN rule uses RFC2459; RFC5922 §7 SIP domain SAN identity and RFC9525 newer generic service identity rules require role/edition-specific reconciliation.
+- [MS-SIPAE 11.0 SA authentication state and client/server signing, replay, expiry](ms-sipae11-ntlmk-tlsdsk-security-association-states-2026-10-23.md): **24 source-based rules** spanning §§2.2 and 3.2–3.3, NTLM SSPI, Kerberos GSS, embedded TLS-DSK handshake using SIP gssapi-data, separate client/server HMAC key PRF blocks, signature cnum/crand vs incoming snum/srand/rspauth **256-entry replay window**, auth realm/target/proxy UAS role, 8h less 5m safety margin, anonymous conference digest exception. Security association expiry, REGISTER binding lifetime and outer TLS channel lifetime are **three separate states**.
+- [MS-OCAUTHWS 11.0 Web Ticket, PKCS#10 certificate provisioning, optional TLS-DSK broker](ms-ocauthws11-webticket-certificate-tlsdsk-broker-boundaries-2026-10-23.md): **15 source-qualified requirements** for SOAP/HTTPS WS-Trust issue-ticket, GetAndPublishCert ErrorInfo not SOAP fault, Web Ticket HTTP diagnostics and optional Auth Broker V2 1.2 TLS profile. **Broker is explicitly for client lacking local TLS support**, NOT proof the classic Windows Full Client calls that endpoint. Explicit TLS 1.2 in V2 not proof of inner TLS1.3 support.
+
+### Unified sign-in causal dependencies — evidence graph, not universal packet chronology
+
+```mermaid
+flowchart TD
+  A[SIP AoR and domain] --> B[MS-CONMGMT four SRV DNS and optional DHCP120]
+  B --> C[Candidate transport connection and TLS certificate check when TLS]
+  C --> D[MS-SIPAE 401/407 choose NTLM Kerberos TLS-DSK]
+  D --> E[Establish SA per realm/target/server role, verify MIC and replay]
+  D -. TLS-DSK needs client certificate .-> F[Optional MS-OCAUTHWS ticket/certificate provisioning]
+  D -. Client lacks local TLS .-> G[Optional Auth Broker V2 TLS1.2]
+  F -. Issued certificate .-> E
+  G -. Auth challenge keys .-> E
+  E --> H[MS-SIPREGE signed REGISTER response and binding/expiry/Presence-State]
+  H --> I{Presence/user services actually available?}
+  I -->|yes| J[Provisioning contacts and other independent feature subscriptions]
+  I -->|survivable| K[Self subscription and constrained service use]
+```
+
+**Important qualification:** Web Ticket credential/service URL is not the SIP-AE SA challenge realm, and neither alone proves a user is registered. A successful TLS channel is only transport security; a successful SIP-AE SA is not SIP registrar success. Likewise successful REGISTER cannot establish presence/service availability without processing source-specific Presence-State/provisioning semantics. Do not synthesize a mandatory sequence in which all three NTLM/Kerberos/TLS-DSK mechanisms are executed; they are alternatives selected by negotiated policy.
+
+### Combined failure evidence matrix
+
+| Trigger | Source-specific action | Must not be conflated |
+|---|---|---|
+| DNS candidate lookup or all IP TCP connects fail | MS-CONMGMT §3.1.5: try next candidate as stated | Certificate mismatch (source says other failures end autodiscovery) |
+| TLS certificate trust/host identity fails | TLS authentication required for chosen TLS candidate | Automatic silent switch to unencrypted TCP (not proven) |
+| 401/407 challenge | MS-SIPAE §3.2.5.1: scheme-specific SA creation, possibly multiple rounds | Permanent invalid credentials without checking existing SA/state |
+| Signed challenge repeats despite SA-signature | MS-SIPAE: destroy existing SA and renegotiate | Blind replay of stale MIC |
+| Incoming signed response fails MIC, is missing SA, or repeats snum | Client discards message, distinct 256-window checks | Meaning of SIP status code before authenticity established |
+| Kerberos ticket expires or >5m clock skew | Reestablish SA or prompt clock sync under relevant failure | Media ICE consent or REGISTER expiration |
+| TLS-DSK inner handshake certificate rejected | TLS-DSK SA not established; obtain/validate certificate by source | Outer TLS proxy channel automatically invalid too |
+| Web Ticket IssueToken 403/28000 | Web user authenticated but not SIP-enabled under that Web Ticket service | SIP 403 from registrar or conference focus |
+| Certificate provisioning ErrorInfo | Web CSR issuance failed, different from SOAP transport success | SIP REGISTER or TLS-DSK completed |
+| Signed REGISTER 200 Presence-State added/fixed during refresh | MS-SIPREGE §3.1.1.5.1 prior dialogs SHOULD terminate and re-register | SA existence or TLS channel still valid |
+
+**Full analysis still BLOCKED** on Microsoft exact legacy Windows edition selection, cert SAN/FQDN/EKU/revocation, HTTP STS trust and token audiences, full version-4 signature byte examples, TLS1.3 inner-TLS-DSK feasibility, and specific external service discovery. No new protocol implementations, external tests or main merges.
 
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
