@@ -463,9 +463,37 @@
       "source_status": "CANDIDATE_FROM_REPO_OR_PROTOCOL_CONTEXT",
       "normatively_referenced_by": [],
       "full_original_text_reviewed": false,
-      "metadata_reviewed_for_rfc_update_chain": false,
+      "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "metadata_review_scope": "OFFICIAL_RFC_EDITOR_TOP_LEVEL_INFO_FIELDS_ONLY_NO_FULL_SUCCESSOR_CHAIN",
+      "rfc_editor_info_original_header_month": "2002-06",
+      "rfc_editor_info_catalog_publication_month": "2002-07",
+      "rfc_editor_top_level_updated_by": [
+        "RFC7984",
+        "RFC8553"
+      ],
+      "rfc_editor_top_level_obsoletes": [
+        "RFC2543"
+      ],
+      "original_normative_bibliography_reviewed": true,
+      "original_normative_bibliography_section": "§11 pp.14-15",
+      "original_normative_bibliography_target_ids": [
+        "RFC3261",
+        "RFC2782",
+        "RFC2915",
+        "RFC2119",
+        "RFC2434"
+      ],
+      "original_informative_bibliography_section": "§12 p.15",
+      "original_informative_bibliography_target_ids": [
+        "RFC2543",
+        "WIP-DDDS-PART-ONE",
+        "WIP-DDDS-PART-THREE"
+      ],
+      "original_bibliography_evidence_document": "rfc3263-rfc3264-original-reference-audit-2026-10-23.md",
+      "original_normative_subreferences_recursively_closed": false,
+      "errata_individually_reviewed": false
     },
     {
       "id": "RFC3264",
@@ -480,9 +508,40 @@
         "MS-SIPRE"
       ],
       "full_original_text_reviewed": false,
-      "metadata_reviewed_for_rfc_update_chain": false,
+      "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "metadata_review_scope": "OFFICIAL_RFC_EDITOR_TOP_LEVEL_INFO_FIELDS_ONLY_NO_FULL_SUCCESSOR_CHAIN",
+      "rfc_editor_info_original_header_month": "2002-06",
+      "rfc_editor_info_catalog_publication_month": "2002-07",
+      "rfc_editor_top_level_updated_by": [
+        "RFC6157",
+        "RFC8843",
+        "RFC9143"
+      ],
+      "rfc_editor_top_level_obsoletes": [
+        "RFC2543"
+      ],
+      "original_normative_bibliography_reviewed": true,
+      "original_normative_bibliography_section": "§14 pp.23-24",
+      "original_normative_bibliography_target_ids": [
+        "RFC2327",
+        "RFC2119",
+        "RFC3108",
+        "RFC1889",
+        "RFC1890"
+      ],
+      "original_informative_bibliography_section": "§15 p.24",
+      "original_informative_bibliography_target_ids": [
+        "RFC2974",
+        "RFC3261",
+        "RFC2326",
+        "RFC2833",
+        "RFC2543"
+      ],
+      "original_bibliography_evidence_document": "rfc3263-rfc3264-original-reference-audit-2026-10-23.md",
+      "original_normative_subreferences_recursively_closed": false,
+      "errata_individually_reviewed": false
     },
     {
       "id": "RFC3265",

@@ -244,5 +244,31 @@
     "formal_gates_passed_unchanged": 0,
     "implementation_authorization": false,
     "phase1_complete": false
+  },
+  "rfc_3263_3264_and_oauth_followup_2026_10_23": {
+    "date": "2026-10-23",
+    "baseline_draft_head": "a313c43f04bf2944b4385009096db8bfd26fb620",
+    "rfc_report": "rfc3263-rfc3264-original-reference-audit-2026-10-23.md",
+    "rfc_json": "rfc3263-rfc3264-reference-audit-2026-10-23.json",
+    "oauth_report": "ms-oauth2ex-oauth-draft-conflict-2026-10-23.md",
+    "original_rfc_bibliographies_inspected": [
+      "RFC3263 §11 normative §12 informative",
+      "RFC3264 §14 normative §15 informative"
+    ],
+    "rfc_normative_edges_separate": 10,
+    "rfc_informative_edges_separate": 8,
+    "rfc_distinct_normative_targets": 9,
+    "draft22_original_date": "2011-09-22",
+    "draft23_original_date": "2012-01-21",
+    "ms_oauth2ex_published_rev_8_original_acquired": false,
+    "ms_oauth2ex_conflict_disposition": "OPEN_INTENDED_EDITION_AMBIGUOUS",
+    "first_tier_ms_normative_edges_unchanged": 460,
+    "second_tier_ms_normative_edges_unchanged": 246,
+    "rfc_seed_unchanged": 113,
+    "first_tier_exact_release_pdf_pages_unchanged": 13,
+    "html_only_unchanged": 33,
+    "formal_phase1_passes_unchanged": 0,
+    "phase_1_complete": false,
+    "implementation_authorized": false
   }
 }

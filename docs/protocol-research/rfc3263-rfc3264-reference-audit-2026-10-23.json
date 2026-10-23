@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "audited": "2026-10-23",
+  "scope": "RFC 3263 §11/§12 and RFC 3264 §14/§15 in unchanged original source editions, not recursive RFC closure",
+  "evidence_level": "FACT_ORIGINAL_RFC_EDITOR_HTML_BIBLIOGRAPHY_SECTIONS",
+  "separate_from_existing_rfc3261_rfc2782_first_hop": true,
+  "sources": [
+    {
+      "id": "RFC3263",
+      "title": "Session Initiation Protocol (SIP): Locating SIP Servers",
+      "original_date_header": "2002-06",
+      "rfc_editor_catalog_publication_month": "2002-07",
+      "url": "https://www.rfc-editor.org/rfc/rfc3263.html",
+      "info_url": "https://www.rfc-editor.org/info/rfc3263",
+      "normative_section": "§11 pp.14-15",
+      "normative_refs": [
+        "RFC3261",
+        "RFC2782",
+        "RFC2915",
+        "RFC2119",
+        "RFC2434"
+      ],
+      "normative_count": 5,
+      "informative_section": "§12 p.15",
+      "informative_refs": [
+        "RFC2543",
+        "WIP-DDDS-PART-ONE",
+        "WIP-DDDS-PART-THREE"
+      ],
+      "informative_count": 3,
+      "updated_by": [
+        "RFC7984",
+        "RFC8553"
+      ],
+      "obsoletes": [
+        "RFC2543"
+      ],
+      "full_rfc_body_reviewed": false,
+      "errata_item_reviewed": false,
+      "client_applicability": "OPEN"
+    },
+    {
+      "id": "RFC3264",
+      "title": "An Offer/Answer Model with Session Description Protocol (SDP)",
+      "original_date_header": "2002-06",
+      "rfc_editor_catalog_publication_month": "2002-07",
+      "url": "https://www.rfc-editor.org/rfc/rfc3264.html",
+      "info_url": "https://www.rfc-editor.org/info/rfc3264",
+      "normative_section": "§14 pp.23-24",
+      "normative_refs": [
+        "RFC2327",
+        "RFC2119",
+        "RFC3108",
+        "RFC1889",
+        "RFC1890"
+      ],
+      "normative_count": 5,
+      "informative_section": "§15 p.24",
+      "informative_refs": [
+        "RFC2974",
+        "RFC3261",
+        "RFC2326",
+        "RFC2833",
+        "RFC2543"
+      ],
+      "informative_count": 5,
+      "updated_by": [
+        "RFC6157",
+        "RFC8843",
+        "RFC9143"
+      ],
+      "obsoletes": [
+        "RFC2543"
+      ],
+      "full_rfc_body_reviewed": false,
+      "errata_item_reviewed": false,
+      "client_applicability": "OPEN"
+    }
+  ],
+  "total_normative_edges": 10,
+  "total_informative_edges": 8,
+  "distinct_normative_targets": 9,
+  "illustrative_clauses": [
+    {
+      "source": "RFC3263",
+      "section": "§4.1–4.3",
+      "classification": "FACT",
+      "fact": "DNS next-hop transport/port/host selection and SRV/NAPTR are part of RFC 3263; SfB client edition/policy applicability not yet assessed"
+    },
+    {
+      "source": "RFC3264",
+      "section": "§4",
+      "classification": "FACT",
+      "fact": "Offer/answer exchange atomic; a new offer must not be generated when an existing one awaits response or rejection"
+    },
+    {
+      "source": "RFC3264",
+      "section": "§11",
+      "classification": "FACT",
+      "fact": "Signaling carrying offers and answers needs authentication, integrity and replay-aware sequencing, with body encryption as SHOULD, not MUST"
+    }
+  ],
+  "blocked": [
+    "Normative child-reference recursion not completed",
+    "RFC Editor errata endpoints not accessible through current browser",
+    "Published Microsoft source edition/client profile applicability not established"
+  ],
+  "separate_from_microsoft_first_tier_460": true,
+  "separate_from_microsoft_second_tier_246": true,
+  "phase1_complete": false,
+  "formal_gate_pass_count": 0
+}

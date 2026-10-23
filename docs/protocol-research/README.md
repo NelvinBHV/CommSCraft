@@ -78,3 +78,6 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 - [Formeller Phase-1-Abschlusscheck](phase1-closure-audit-2026-10-23.md) / [Gate-Ledger (JSON)](phase1-closure-gates-2026-10-23.json): 58 Microsoft-Einzelnachweise und 12 notwendige Bedingungen, derzeit **alle offen**. Kein Phase-1-Abschluss behauptet.
 
 - [MS-ABS edition-specific PDF audit](ms-abs-edition-audit-2026-10-23.md) / [JSON evidence](ms-abs-edition-evidence-2026-10-23.json): rev 9.0 vs 10.0 original §1.2.1, §8 and §9 inspected; current 10.1 edition remains OPEN, no additional Phase-1 gate passes.
+
+- [RFC 3263/3264 exact original normative and informative bibliographies](rfc3263-rfc3264-original-reference-audit-2026-10-23.md) / [JSON](rfc3263-rfc3264-reference-audit-2026-10-23.json): two original source sections, 10 normative + 8 informative outbound citations; child-graph and errata still OPEN.
+- [MS-OAUTH2EX historical OAuth draft -22 vs -23 source conflict](ms-oauth2ex-oauth-draft-conflict-2026-10-23.md): independent original revisions verified, Microsoft 8.0 intended edition still OPEN.
