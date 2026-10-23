@@ -93,3 +93,9 @@ Each row in [ms-ocsprot-inventory.json](ms-ocsprot-inventory.json) has `release_
 - **MS-ECREST 8.0** (2025-05-20), [current indexed original PDF](https://officeprotocoldoc.z19.web.core.windows.net/files/MS-ECREST/%5BMS-ECREST%5D.pdf), §1.2.1 PDF page 6 (zero-index 5); text AND screenshot checked; **full PDF bytes/hash unavailable**.
 
 HTML-only release edition identity remains unverified even though the landing version/date is known. See [phase1-audit.md](phase1-audit.md). The original PDF reference sections cited above were rendered in browser; complete all-sections original reading remains OPEN.
+
+## Updated source-status checkpoint — supersedes previous provisional counts
+
+**45/46** first-tier MS-OCSPROT normative §1.2.1 lists reviewed; **12** dated release-PDF reference-page texts with screenshots, **33** further unique HTML-only references, **455** normative source-target edges to **199** distinct targets. The sole first-tier gap is **MS-AVEDGEA 12.0**, whose latest 2025 official reference section could not be retrieved (older editions are not replacements). **113 RFC** entries in the original-edition/source inventory, **89** directly referenced by the 45 inspected MS normative lists. All full binary downloads and hashes remain missing; prior-release updates and **all recursive source chains are not closed**. See [formal Phase-1 audit](phase1-audit.md), [source catalog](source-catalog.md), [graph](normative-reference-ledger.json), [RFC ledger](rfc-inventory.json).
+
+**Data provenance caution:** the previous 46-source metadata inventory entries cover the MS-OCSPROT *overview* only; the full normative graph additionally includes at least 12 non-overview MS specifications and non-IETF standard editions, not yet fully edition-pinned. **Phase 1 is incomplete.**
