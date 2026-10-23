@@ -1,6 +1,6 @@
 # CommSCraft: Windows Full Client protocol research (DRAFT)
 
-**Research snapshot:** 2026-10-23. **Phase 1 check: NOT COMPLETE (46/46 MS overview metadata; 45/46 direct §1.2.1 reference lists; 12 indexed current PDF reference-page sources; 455 edges, 113 RFC seeds; 0 full released binaries/hashes; transitive closure OPEN).** **Scope:** Skype for Business 2019 classic Windows desktop Full Client, SfB Server 2019 and Subscription Edition. **Status: INCOMPLETE. No implementation authorization.**
+**Research snapshot:** 2026-10-23. **Phase 1 check: NOT COMPLETE (46/46 MS overview first-tier normative §1.2.1 lists inventoried; 12 current PDF reference page excerpts + 1 fully uploaded SHA-256-verified MS-AVEDGEA PDF; 460 normative edges, 113 RFC seeds; recursive closure and published-release edition checks OPEN).** **Scope:** Skype for Business 2019 classic Windows desktop Full Client, SfB Server 2019 and Subscription Edition. **Status: INCOMPLETE. No implementation authorization.**
 
 This is a source-driven research track, **not** a protocol conformance claim, a test report, or an assertion that the client can sign in. Existing `FEATURE_PARITY.json` (122 requirements), `WINDOWS_REFERENCE_CASES.json` (93 cases), `docs/122-feature-rfc-ms-reaudit.md` and immutable history remain the baseline inventory. Nothing here supersedes those artifacts without a separately reviewed reconciliation.
 
@@ -24,8 +24,9 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 
 - [source-catalog.md](source-catalog.md) — central versioned **46-MS / 113-RFC** primary-source index, access status and normative closure notes.
 - [ms-ocsprot-inventory.json](ms-ocsprot-inventory.json) / [ms-ocsprot-inventory.md](ms-ocsprot-inventory.md) — all 46 identifiers from the six official MS-OCSPROT system protocol tables.
+- [ms-avedgea-12-source-audit.md](ms-avedgea-12-source-audit.md) — uploaded current full PDF, SHA-256, exact five normative and five informative references, product and revision details.
 - [transitive-microsoft-inventory.json](transitive-microsoft-inventory.json) / [human-readable table](transitive-microsoft-inventory.md) — 12 direct non-overview Microsoft references with latest official publication version/date; recursive references OPEN.
-- [normative-reference-ledger.json](normative-reference-ledger.json) — 455 source-linked normative edges from 45 §1.2.1 lists (PDF-indexed and HTML); published-edition comparison OPEN.
+- [normative-reference-ledger.json](normative-reference-ledger.json) — **460** source-linked normative edges across **46** first-tier §1.2.1 lists; 12 PDF index sections, one SHA-256-verified uploaded full edition, remaining HTML release comparison OPEN.
 - [rfc-inventory.json](rfc-inventory.json) — fixed-identifier IETF seed inventory with provenance and update-chain status.
 - [phase1-audit.md](phase1-audit.md) — measurable Phase-1 coverage and explicit inaccessible / unreviewed sources.
 - [dependency-matrix.md](dependency-matrix.md) — layered adjacency/edge types, normative-reference expansion backlog.
