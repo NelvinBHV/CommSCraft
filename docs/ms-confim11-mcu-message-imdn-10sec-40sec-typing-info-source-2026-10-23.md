@@ -30,7 +30,7 @@
 | CONFIM-17 | §3.3.1.5.1 (P) | **200 OK** to client's outgoing MESSAGE ⇒ client MUST treat forwarding as success **to all MCU participants** as per source. **202** ⇒ client MUST take **Message-Id** from response, with **default 0 if missing**, and wait for correlated IMDN. |
 | CONFIM-18 | §3.3.1.6 (P) | Client **MUST maintain sendMessageTimer**, **default 10 seconds**. On 202 it MUST start timer; successful correlated IMDN before timeout stops it. If timer expires, client treats pending IMDN as per-recipient **408**. No sourced claim this 10 s equals SIP transaction Timer F. |
 | CONFIM-19 | §§3.3.1.5.1,3.3.2.5.2 (P) | Correlation key is **MCU-assigned Message-Id in 202 and later IMDN**; Message-Id fallback zero is prescribed on absent response header, but operation for multiple *simultaneous* 202 messages missing Message-Id remains **U**. Don't silently use Call-ID or CSeq instead. |
-| CONFIM-20 | §§3.3.2.1–3.3.2.2,3.3.1.3.5.2 [should be 3.1.3.5.2] (P) | MCU stores incoming messages as **first 40 seconds conference message history** to replay to newly joining clients. After 40s, history clears and **new MESSAGE not added**. The 40-second timer is **server-side** and **not persistent chatroom retention**. |
+| CONFIM-20 | §§3.3.2.1–3.3.2.2,3.1.3.5.2 (P) | MCU stores incoming messages as **first 40 seconds conference message history** to replay to newly joining clients. After 40s, history clears and **new MESSAGE not added**. The 40-second timer is **server-side** and **not persistent chatroom retention**. |
 
 ## III. Typing/idle INFO is not delivery-confirmed MESSAGE
 
@@ -88,6 +88,6 @@ sequenceDiagram
 - **CIM-X05:** MCU **40-second history** is for *conference join race only*. Persistent GroupChat [MS-XCCOSIP] and EWS history have **different retention and access control** and should not be inferred from this.
 - **CIM-X06:** **Multiple simultaneous messages**, Message-Id collision/rollover, group admission/ejection race, BENOTIFY loss on transport, duplicate IMDN and timeout interplay with SIP 202 need exact client behavior/underlying [MS-CONFBAS] state and RFC transactions.
 - **CIM-X07:** MIME `multipart/alternative`, rich-text `text/rtf`, image/gif, ink and capabilities are source-supported examples but **not universal mandatory support**. Client/server 2015/2016 edition, policies, content sanitization and partial support remain U.
-- **CIM-X08:** **76?** No: original PDF has **81 pages**, only selected §§1–4 and §6 examples/XSD reviewed, not a full field-by-field XSD audit. Recheck source edition consistency with MS-CONFBAS 2025 and historical [RFC4566] when establishing all modality sessions.
+- **CIM-X08:** Original PDF has **81 pages**; only selected §§1–4 and §6 examples/XSD were reviewed, not a full field-by-field XSD audit. Recheck source edition consistency with MS-CONFBAS 2025 and historical [RFC4566] when establishing all modality sessions.
 
 **Research status NOT COMPLETE; no protocol code, connections to actual servers, interop tests, main merges or releases.**
