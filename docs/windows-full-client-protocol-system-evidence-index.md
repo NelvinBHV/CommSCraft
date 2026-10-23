@@ -1046,4 +1046,52 @@ flowchart TD
 
 **Remaining work:** Full original OCSMP 93-page XML/JSON schema and errors, exact Windows Client product/build applicability, 34-page OCDISCWS redirect credential audience/hostname trust in [MS-OCAUTHWS], 2006 draft **IETFDRAFT-XMLSMC-12** retrieval/errata and comparison with later RFC5168/6086, stale SIP INFO/RTCP/video decoding/MCU roster races. Normative RFC graph, historic client feature catalogue and SRTP SHA1/SHA256 conflict still open. **Global research INCOMPLETE. Implementation gate CLOSED. No code, live server/interop tests, main merge or release.**
 
+## XXIV. 2026-10-23 original SIPAE 11.0 + NLMP 37.0 + KILE 49.0 + OCAUTHWS 11.0: nested authentication transports, MIC and certificate lifecycle
+
+**Research-only, no code or server tests.** Primary originals and source-control hashes documented in:
+- [Detailed SIPAE/Kerberos/NTLM challenge transport and signature audit](ms-sipae11-nlmp37-kile49-gss-ntlm-datagram-kerberos-signatures-2026-10-23.md) — MS-SIPAE **11.0 (2025-05-20)** §§3.2.1–3.2.6, MS-NLMP **37.0 (2026-03-30)** §§2.1,3.1.5.1–3.1.5.2 and MS-KILE **49.0 (2026-09-28)** §§3.1.1.3,3.2.5.5–3.2.5.8; RFC2743/4120/3261/2104/5246. Source PDF pp SIPAE19/21/27, NLMP47/48, KILE39/58 visually rendered. **NLMP/KILE editions are later than SIPAE and are not automatically active in classic 2015/2016 client builds**.
+- [MS-OCAUTHWS 11.0 original certificate provisioning, WebTicket and TLS-DSK AuthBroker analysis](ms-ocauthws11-webticket-cert-provisioning-tlsdsk-authbroker-original-2026-10-23.md) — released **2025-05-20**, original §§1.3,2.1,3.1.4.1,3.2.4.1,3.3.4; PDF pp25/34 rendered. **HTTPS SOAP GetAndPublishCert** expects PKCS#10 X509v3 CSR and uses **ErrorInfo** response for issuance errors; **IssueToken** is WS-Trust WebTicket operation and has **HTTP X-Ms-diagnostics/ SOAP faults**, not SIPAE or MS-OCER SIP messages. **AuthBroker V2** creates session/acquires SIPInstance credential (once per session) and can negotiate multiple TLS-DSK challenge tokens, with TLS1.2 support. Original MS-WCCE/MS-WSTEP transitive dependencies still not completely audited.
+- [Machine-readable actor/state/timer/failure matrix — 28 rows](research-corpus/sipae-kerberos-ntlm-tlsdsk-webticket-auth-state-crossplane-2026-10-23.csv) covering exact source editions and source-actor guards across transport, KDC/TGS, NTLM message, TLS-DSK, SOAP ticket service, REGISTER, survivable, and keepalive.
+
+### Exact protocol separation, not one monolithic “logged in” state
+
+| Independent original protocol security state | Source | Normative discriminator / requirement |
+|---|---|---|
+| **SIP first-hop transport TLS** | MS-CONMGMT rev10 §3.2 | TLS certificate/server-name verification when TLS selected; no NTLM or SRTP integrity implied |
+| **SIPAE challenge/SA** | MS-SIPAE rev11 §§3.2.5.1,3.3.5.1 | `WWW-Authenticate 401` for UAS vs `Proxy-Authenticate 407` for proxy; realm + target; server version3/4 and Date; independent SA establishment |
+| **NTLM Datagram authentication** | MS-SIPAE rev11 §3.2.5.1 / MS-NLMP rev37 §3.1.5.2 | GSS Init **Datagram+Identify+Integrity**; **initial NEGOTIATE may be empty token**, server CHALLENGE, client AUTHENTICATE; not standard 3-token connection-oriented NLMP transcript |
+| **NLMP NTLM AUTHENTICATE MIC** | MS-NLMP rev37 §3.1.5.2.1 | Conditional timestamp/channel bindings and per-NTLM message integrity; **not same MAC** as signed SIPAE Authorization envelope |
+| **Kerberos ticket/TGS GSS context** | RFC4120 §§3.1,3.3; MS-KILE rev49 §§3.1.1.3,3.2.5.5–3.2.5.8 | TGT possibly cached; `sip/targetname` service ticket requested; GSS context with Identify/Integrity. KDC FAST/modern cipher capabilities version-dependent, not SIP headers |
+| **SIPAE canonical SIP MAC** | MS-SIPAE rev11 §§3.2.4.1,3.2.5.2 | Signed UTF-8 `<field>` grammar, **per-SA cnum/crand**, **client vs server keys**, Base16 `response/rspauth` MIC, **GSS_GetMIC/VerifyMic** with NTLM SSPI fixed argument 100, signed server **snum 256-slot replay window**; malformed MAC/replay **discard** |
+| **TLS-DSK embedded TLS and MAC** | MS-SIPAE rev11 §3.2.5.1; MS-OCAUTHWS rev11 §3.3.4 | TLS handshake bytes in Base64 SIP `gssapi-data`, **not SIP transport TLS**; validate server cert, obtain client cert, derive directional HMAC keys and verify server MIC |
+| **OC certificate provisioning** | MS-OCAUTHWS rev11 §§2.1,3.1.4.1–3.1.4.1.2.3 | **HTTPS SOAP PKCS#10 CSR** certificate issuance with ErrorInfo; independent CA policy, trust chain and later SIP-DSK use |
+| **WebTicket service** | MS-OCAUTHWS rev11 §3.2.4.1 | HTTPS WS-Trust `IssueToken`, authentication faults `280xx`, HTTP `X-Ms-diagnostics`; **no SIP REGISTER completion** |
+| **REGISTER and provisioning** | MS-SIPREGE rev17.1 §3.1.1.5.1 | independent GRUU/Expires, self-presence SUBSCRIBE, contact/group SUBSCRIBE, survivable-mode original-source contradiction still U |
+| **Connection CRLF keepalive** | MS-CONMGMT rev10 §3.4.5 | per-connection `Ms-Keep-Alive` and two CRLF, not NTLM Datagram, Kerberos ticket renewal, SIPAE SA re-establishment, or ICE consent |
+
+### Conditional on-wire source synthesis (S, not a fixed packet trace)
+
+~~~mermaid
+flowchart TD
+ A[First-hop TLS trust and SIP proxy discovery] --> B[SIP 401 or 407 with realm, targetname and auth schemes]
+ B --> C{Chosen auth mechanism}
+ C -->|NTLM| D[Windows GSS NTLM Datagram no initial NEGOTIATE token required]
+ D --> E[Server NTLM CHALLENGE then Client AUTHENTICATE embedded in SIP]
+ C -->|Kerberos| F[Cached or new TGT and SIP service ticket via KDC TGS]
+ F --> G[GSS context with Identify and Integrity]
+ C -->|TLS-DSK| H[Client X509 cert possibly provisioned with OCAUTHWS HTTPS SOAP]
+ H --> I[Embedded TLS handshake in SIP gssapi-data]
+ E --> J[Established SIPAE Security Association]
+ G --> J
+ I --> J
+ J --> K[Per-SA canonical cnum/crand SIP signatures]
+ K --> L[Verify server rspauth then 256-message snum replay window]
+ L --> M[REGISTER GRUU plus independent provisioning and expiry]
+ M --> N[Separate self-presence, roster, service availability and keepalive]
+~~~
+
+**Security and validation rule:** a valid TLS transport certificate does **not** prove an HTTPS certificate provisioning service is authorized, NTLM channel binding is in use, TLS-DSK client certificate is enrolled, Kerberos service ticket targets the intended SIP principal, or SRTP session media is authenticated. Never collapse into one global authenticated flag. **MS-NLMP and MS-KILE latest 2026** contain OS-version gated flags/policy and cannot retroactively be asserted to exist in a 2015 Windows binary.
+
+**Open:** complete 2026 NLMP/KILE normative sections and service policy snapshots, all OCAUTHWS 92 pages/WSDL typed fields, MS-WCCE/MS-WSTEP certificate trust/issuance, exact NTLM channel-binding inputs, target principal alias/referral cases, TLS-DSK historical profile negotiation, and the existing MS-SIPREGE survivable and SRTP cryptographic source conflicts. **Overall research NOT COMPLETE; implementation gate CLOSED; no code, no real-server connections/interoperability testing, no merge/release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
