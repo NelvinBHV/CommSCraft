@@ -20,6 +20,7 @@
 - `rfc3261-rfc2782-clause-review.md`: selected fixed-edition RFC data, transaction diagram and timers.
 - `flows-and-states.md`: seven client-flow families with fact/inference/unknown annotations.
 - `full-client-coverage.md`: whole-client area matrix, open feature-to-clause crosswalk.
+- `full-122x93-traceability.md`: enumerates **all 122 feature IDs**, maps all **93** baseline reference cases (all referenced feature IDs resolve), flags **31** feature IDs with no direct scenario; snapshots exact baseline blob SHAs. Status is metadata only and **does not assert** 122 normatively complete.
 
 ### Blocking findings, not conjectures
 
