@@ -37,7 +37,7 @@
 
 | ID | Clause | Verified scope/response |
 |---|---|---|
-| PRE-18 | §§2.2.2.5.1–3.5.5.2 | `SERVICE Content-Type: application/msrtc-setcontainermembers+xml` changes membership with `<container id version>` and `<member action="add|delete" type="user|domain|sameEnterprise|federated|publicCloud|everyone" value?>`. **Container ID 0 MUST NOT be modified.** |
+| PRE-18 | §§2.2.2.5.1–3.5.5.2 | `SERVICE Content-Type: application/msrtc-setcontainermembers+xml` changes membership with `<container id version>` and `<member action="add|remove" type="user|domain|sameEnterprise|federated|publicCloud|everyone" value?>`. **Container ID 0 MUST NOT be modified.** |
 | PRE-19 | §§2.2.2.5.3,3.5.5.2 | Container membership has a **separate version**, and stale client update receives **409 `application/msrtc-fault+xml`** with submitted/current versions. A category publication version is **not** the container membership version. |
 | PRE-20 | §2.2.2.6.2 | Subscriber acknowledgement: `SERVICE Content-Type: application/msrtc-presence-setsubscriber+xml` with **one** `subscriber user acknowledged="true"`; server **MUST NOT support batching multiple subscribers** in one setSubscribers request. |
 | PRE-21 | §3.6.5.1 | Server acknowledges matching SubscriberEntry or **400** if absent; on success may **SHOULD remove** entry for supported category subscriptions. **MSRTC/PIDF subscription entries MUST NOT be removed** on this path because their context semantics differ. Quotas can cause **413 SHOULD**. |
