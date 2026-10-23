@@ -565,4 +565,46 @@ flowchart TD
 
 **Implementations remain BLOCKED, not merely 'SHA question under consideration'.** Require exact official erratum/diff and applicable Windows client build/MCU profile; no assistant interop tests. Full SDP §§3.1.5.19–.37 ICE variants/video bandwidth/forked responses and all MS-RTP packet extensions need further original clause audit. The total Full Client normative/functional research **NOT COMPLETE**; no protocol code, servers, tests, merges or releases.
 
+## XIX. 2026-10-23 ICE2/ICE candidate and TURN/AV Edge relay trust, recovery and RFC edition cross-check
+
+Two new owner-original full sections audits with **51 individually numbered direct-RFC/Microsoft research findings**:
+
+- [MS-ICE2 rev19.0 vs MS-ICE rev11.0: candidate limits, final selected pair, validation/nomination and STUN consent vs RFC7675](ms-ice2-19-ice11-candidate-nomination-consent-rfc7675-differences-2026-10-23.md) — **24 source and RFC comparisons** from Microsoft original §§3.1.4–3.1.6, with PDF p27 and p31 directly rendered. ICE2 **regular** default UDP (no UDP → fail), **TCP-only** default TCP (no TCP → fail); **host/reflexive/relayed** types constrained, no TCP simultaneous-open, 80 pair MUST limit, forked provisional ICE checklists separately with 20 provisional response SHOULD bound. Binding check **USERNAME/MESSAGE-INTEGRITY/FINGERPRINT + CANDIDATE-IDENTIFIER**, with old STUN message serialization; invalid request **401 STUN missing integrity**, **431 STUN MIC fails**, other malformed headers discarded. Controlling chooses highest validated pair via Regular Nomination; **MUST issue final offer with exactly selected local+remote candidate even if defaults matched**, and controlled peer validates/answers then MAY trigger **TURN Set Active Destination SHOULD** when selected relay. ICE **checks 5s timer** and **USE-CANDIDATE** nomination timer independent. **Keepalive** to preserve NAT binding on RTP component distinct from **consent freshness**: consent **30s SHOULD expiry, checks 5s SHOULD**, RFC5389 STUN with new ID for each, reset timer only on **valid response matching most recently sent consent request**; expired responses **MUST ignore**, media **SHOULD terminate**. **RFC7675 §5.1** instead has MUST cease traffic on expired 5-tuple and 4–6s jitter/default5s, but RFC7675 **not cited by MS-ICE2** as its own normative reference and must be tagged **comparative modern standard**, not automatically substituted.
+- [MS-TURN rev21.0 + MS-AVEDGEA rev12.0: separate SIP credential service, legacy TURN framing/permission and crypto/version](ms-turn21-avedgea12-legacy-relay-auth-allocation-pseudotls-security-2026-10-23.md) — **27 role/section-verified rules**. AVEDGEA authenticated SIP `SERVICE application/msrtc-media-relay-auth+xml` returns Base64 username/password with lifetime=min(requested, configured), relay host/location, request correlation and SIP status-specific errors. TURN original §2.1 supports **UDP datagram, TCP 4-byte framed, full TLS, HTTPS, and separate *pseudo-TLS* handshake mode** that mimics TLS1.0 records, **not proof of real TLS cryptographic handshake/certificate verification**. Historic **20-byte TURN header with 128-bit transaction ID** and first TLV `Magic Cookie 0x000F` (not modern RFC5389 fixed header cookie), `Allocate 0x0003`, `Send 0x0004`, `Data Indication 0x0115`, `Set Active Destination 0x0006`. Initial Allocate **MUST NOT** include MI, 401 challenge yields authenticated request. Both peer MS-Version >=3 ⇒ **TURN-control HMAC-SHA256 MUST**, otherwise SHA1; source v1=ICE, v2=ICE2, v3 SHA256, v4 IPv6, v5 multiplex UDP, v6 multiplex UDP+TCP. MS-Sequence Number with 20-byte Connection ID + 32-bit monotonic seq per authenticated request; HMAC-MI last TLV. Allocate/SetActiveDest timeout retries **650ms SHOULD**, **at most nine**. TURN relay allocation does **not** establish per-peer permission; sending TURN `Send` generates permission, and ICE nomination may use authenticated `Set Active Destination`. **New TURN-control SHA256 rule is independent of MS-SRTP media SHA1/SHA256 conflict.** Historical `IETFDRAFT-TURN-08` is not RFC5766/8656 wire compatibility proof.
+
+### Media connection/permission end-to-end state ledger
+
+| Independent protocol state | Entry evidence (actor/source) | Failure/change behavior | Never assume |
+|---|---|---|---|
+| SIP dialog, SDP media negotiation | MS-SIPRE/SDPEXT authenticated INVITE/answer | Early forks and final offer may change SDP under source | ICE or SRTP works just because SIP 200 |
+| A/V Edge TURN credentials | MS-AVEDGEA SIP SERVICE response with authorized user credentials and bounded lifetime | Token expires or auth failure; no arbitrary client reuse | Same as SIPAE SA keys or SRTP inline key |
+| TURN allocated transport address | MS-TURN authenticated Allocate response, Mapped relay address; 128-bit tx ID | 650ms retransmit, max nine, server error retry scoped | Any peer is allowed to send data via allocation |
+| TURN peer permission and route | Send request establishes permission; Set Active Destination may select peer | Peer permission/active target must be tracked independently | Allocated means nominated or all peers accepted |
+| ICE2 candidate checking | Valid STUN short-term credential check and pair states, fork-specific | STUN 401/431/430 distinct from SIP same-number errors; 5s check timer | Candidate gathered means reachable |
+| ICE2 nomination and final offer/answer | Highest validated pair nominated by controlling endpoint, final SDP pair equality checked by both peers | No valid pair, nomination deadline, mismatched selected pair → call failure | Early provisional/default media delivery guaranteed |
+| ICE NAT keepalive | MS-ICE2 §3.1.6.3 idle timer and RTP-component Binding request | NAT/relay mapping may time out | Keepalive request == response-proven consent |
+| ICE consent freshness | MS-ICE2 §3.1.6.5 5s periodic requests, 30s timer, last request response validation | Late responses ignore, SHOULD terminate media after expiry | SIP BYE/REGISTER expiry necessarily accompanies loss |
+| Media packet security | MS-SRTP/SSRTP and SDP negotiated directional keys, SSRC/replay | Hash/MKI validation failures discard media packets | ICE nomination proves SRTP integrity/confidentiality |
+| SIP/compression transport / RTC QoE | MS-CONMGMT/RTC media service and MS-QoE independent | A failed SIP TCP connection need not imply immediate media path loss; vice versa | A single global connected state |
+
+```mermaid
+flowchart TD
+ A[Authenticated SIP/SDP and client A/V relay provisioning] --> B[Get AV Edge creds via SERVICE when relay needed]
+ B --> C[TURN Allocate challenge then authenticated relay allocation]
+ C --> D[Advertise host/reflexive/relay candidates in ICE2 SDP]
+ D --> E[Authenticated STUN checks and per-fork candidate-pair validation]
+ E --> F{Regular nomination successful?}
+ F -->|No| G[Media/call failure under ICE source]
+ F -->|Yes| H[Final SDP offer/answer with exactly selected pair]
+ H --> I[If relay selected, Set Active Destination as specified]
+ I --> J[Independent RTP NAT keepalive and 30s STUN consent]
+ J --> K{Consent remains valid?}
+ K -->|Expired| L[MS-ICE2 SHOULD end media; late response ignored]
+ K -->|Yes| M[Continue media only with appropriate SRTP packet integrity]
+```
+
+**Diagram class S**, not mandatory network trace: TURN allocation, relay credentials and ICE checks may interleave with provisional SDP; P2P paths do **not** require TURN. `TURN pseudo-TLS` is not a validated TLS tunnel, and the Windows deployment policy for secure TURN transport remains a high-priority **U** security gate. RFC5389 vs legacy TURN STUN header is an exact frame incompatibility; RFC7675 vs MS-ICE2 consent text is a **normative status and timer rule comparison** where the modern RFC must not be reported as explicitly incorporated by Microsoft ICE2.
+
+**Blocking next source studies:** IETF old ICE draft19/ICETCP07/TURN08 and RFC obsolescence mappings; exact MS-TURN multiplex frame and 128-bit-ID field layout; AVEDGEA token XML and authorization; MS-ICE2 §2.2 STUN header/HMAC details and error branches; special **pseudo-TLS** trust/no downgrade from verified actual TLS; media re-INVITE/ICE restart after consent expiry; independent RTP/RTCP feedback and QoE. Overall Windows Full Client research **NOT COMPLETE**, implementation gate CLOSED; no protocol code, live-server tests, merge or release.
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
