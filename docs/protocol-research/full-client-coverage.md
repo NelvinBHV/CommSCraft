@@ -56,4 +56,4 @@ For every protocol transaction, document independently: (a) happy path, (b) malf
 5. Reviewed, source-driven **future** implementation plan; separate authorization to actually implement.
 6. User-owned interop validation (not performed by this research effort). No release gate relaxation.
 
-**No claim of complete documentation or client parity is made.**
+The fully enumerated baseline ID map is in [full-122x93-traceability.md](full-122x93-traceability.md); all 93 Windows-case feature references resolve, and 31 features have no baseline case. **No claim of complete documentation or client parity is made.**
