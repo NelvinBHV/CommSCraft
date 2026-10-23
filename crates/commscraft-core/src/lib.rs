@@ -10,6 +10,7 @@ pub mod discovery;
 pub mod im;
 pub mod offline_register_branch;
 pub mod offline_session_adapter;
+pub mod offline_sign_in_coordinator;
 pub mod presence;
 pub mod registration;
 pub mod sdp;

@@ -1,0 +1,973 @@
+//! Fixture-only bridge from transport-owned connection to sign-in lifecycle.
+//! RFC 3261 (June 2002) §17.1.2; RFC 5922 (June 2010) §7.3.
+//! Neither synthetic handles nor state transitions authorize real sign-in.
+
+use crate::offline_register_response_pipeline::{
+    IntegratedRegisterError, OfflineRegisterResponsePipeline,
+};
+use crate::offline_session_identity::{FixtureSessionHandle, OfflineTransportSessionOwner};
+use commscraft_core::offline_sign_in_coordinator::{
+    OfflineSignInCoordinator, OfflineSignInError, OfflineSignInEvent, OfflineSignInPhase,
+};
+use commscraft_core::security::ServerMicVerifier;
+use commscraft_core::session::RegisterVerificationGate;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BoundSignInError {
+    InvalidSession,
+    Lifecycle(OfflineSignInError),
+    Register(IntegratedRegisterError),
+}
+
+/// Non-cloneable owner of the original fixture handle. No caller-supplied
+/// generation is accepted for an observation, and reconnect revokes the handle.
+#[derive(Debug)]
+pub struct TransportBoundOfflineSignIn {
+    session: FixtureSessionHandle,
+    coordinator: OfflineSignInCoordinator,
+}
+
+impl TransportBoundOfflineSignIn {
+    pub fn new_fixture(
+        owner: &OfflineTransportSessionOwner,
+        session: FixtureSessionHandle,
+        now_ms: u64,
+        deadline_ms: u64,
+    ) -> Result<Self, BoundSignInError> {
+        owner
+            .check_fixture(&session)
+            .map_err(|_| BoundSignInError::InvalidSession)?;
+        // This local coordinator epoch is not a TLS identity. The transport
+        // handle is separately checked on every observation.
+        let coordinator = OfflineSignInCoordinator::new_fixture(1, now_ms, deadline_ms)
+            .map_err(BoundSignInError::Lifecycle)?;
+        Ok(Self {
+            session,
+            coordinator,
+        })
+    }
+
+    pub fn phase(&self) -> OfflineSignInPhase {
+        self.coordinator.phase()
+    }
+
+    pub fn authenticated_sign_in(&self) -> bool {
+        false
+    }
+
+    pub fn disconnect_fixture(&mut self) {
+        self.coordinator.close();
+    }
+
+    fn check_owner(
+        &mut self,
+        owner: &OfflineTransportSessionOwner,
+    ) -> Result<(), BoundSignInError> {
+        if self.coordinator.phase() == OfflineSignInPhase::Closed {
+            return Err(BoundSignInError::Lifecycle(OfflineSignInError::Closed));
+        }
+        if owner.check_fixture(&self.session).is_err() {
+            self.coordinator.close();
+            return Err(BoundSignInError::InvalidSession);
+        }
+        Ok(())
+    }
+
+    pub fn observe_fixture(
+        &mut self,
+        owner: &OfflineTransportSessionOwner,
+        event: OfflineSignInEvent,
+        now_ms: u64,
+    ) -> Result<OfflineSignInPhase, BoundSignInError> {
+        self.check_owner(owner)?;
+        if event == OfflineSignInEvent::ServerMicChecked {
+            self.coordinator.close();
+            return Err(BoundSignInError::Lifecycle(
+                OfflineSignInError::InvalidTransition,
+            ));
+        }
+        self.coordinator
+            .observe_fixture(1, event, now_ms)
+            .map_err(BoundSignInError::Lifecycle)
+    }
+
+    /// A correlated final REGISTER response and the verified MIC must both
+    /// succeed on the same transport owner before advancing this attempt.
+    /// This fixture API cannot create a real authenticated session.
+    pub fn observe_verified_register_fixture<V: ServerMicVerifier>(
+        &mut self,
+        owner: &OfflineTransportSessionOwner,
+        pipeline: &mut OfflineRegisterResponsePipeline,
+        wire: &[u8],
+        gate: &mut RegisterVerificationGate,
+        verifier: &V,
+        now_ms: u64,
+    ) -> Result<OfflineSignInPhase, BoundSignInError> {
+        if let Err(error) = self.check_owner(owner) {
+            pipeline.disconnect_fixture();
+            gate.disconnect();
+            return Err(error);
+        }
+        if self.coordinator.phase() != OfflineSignInPhase::ServerMicVerification {
+            self.coordinator.close();
+            pipeline.disconnect_fixture();
+            gate.disconnect();
+            return Err(BoundSignInError::Lifecycle(
+                OfflineSignInError::InvalidTransition,
+            ));
+        }
+        if let Err(error) =
+            pipeline.observe_verified_final_frame_fixture(owner, wire, gate, verifier, now_ms)
+        {
+            self.coordinator.close();
+            pipeline.disconnect_fixture();
+            gate.disconnect();
+            return Err(BoundSignInError::Register(error));
+        }
+        match self.coordinator.observe_mic_gate_fixture(1, gate, now_ms) {
+            Ok(phase) => Ok(phase),
+            Err(error) => {
+                pipeline.disconnect_fixture();
+                gate.disconnect();
+                Err(BoundSignInError::Lifecycle(error))
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct RejectMic;
+
+    impl ServerMicVerifier for RejectMic {
+        fn verify(&self, _message: &[u8], _token: &[u8]) -> bool {
+            false
+        }
+    }
+
+    #[test]
+    fn premature_register_response_closes_attempt_and_pipeline() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(93).unwrap();
+        let pipeline_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            pipeline_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let attempt_session = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, attempt_session, 0, 100).unwrap();
+        let mut gate = register_gate();
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nCSeq: 17 REGISTER\r\nContent-Length: 0\r\n\r\n";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::Lifecycle(
+                OfflineSignInError::InvalidTransition
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    fn register_gate() -> RegisterVerificationGate {
+        use commscraft_core::challenge::{ChallengeOffer, ChallengeSource, Scheme};
+        use commscraft_core::registration::{Endpoint, RegisterFlow};
+        use commscraft_core::security::SecurityAssociation;
+
+        let endpoint = Endpoint {
+            aor: "sip:alice@example.com".into(),
+            sent_by: "client.invalid".into(),
+            contact_uri: "sip:alice@client.invalid;transport=tls".into(),
+            instance_uuid: "b43b3d1d-9f8f-5fdc-9f74-3ca273cadb97".into(),
+            epid: "492a7ce35f".into(),
+            from_tag: "2d0be03279".into(),
+            call_id: "bound-register@example.com".into(),
+        };
+        let flow = RegisterFlow::new(endpoint, 17, "z9hG4bK-pipeline", 3600, 0).unwrap();
+        let association = SecurityAssociation::begin(
+            &ChallengeOffer {
+                scheme: Scheme::TlsDsk,
+                source: ChallengeSource::Registrar,
+                realm: Some("SIP Communications Service".into()),
+                targetname: Some("server.example.com".into()),
+                opaque: Some("opaque123".into()),
+                version: Some(4),
+                sts_uri: None,
+                gssapi_data: None,
+            },
+            8_000_000,
+        )
+        .unwrap();
+        RegisterVerificationGate::new(flow, association)
+    }
+
+    #[test]
+    fn generic_mic_event_cannot_bypass_verification_gate() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(94).unwrap();
+        let session = owner.connect_fixture().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, session, 0, 100).unwrap();
+        assert_eq!(
+            attempt.observe_fixture(&owner, OfflineSignInEvent::ServerMicChecked, 1),
+            Err(BoundSignInError::Lifecycle(
+                OfflineSignInError::InvalidTransition
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn signed_register_response_advances_only_offline_mic_milestone() {
+        use commscraft_core::security::{
+            parse_authentication_info, server_mic_buffer, TlsDskHmacSha256,
+        };
+        use commscraft_core::sip::{SipMessage, StartLine};
+        use hmac::{Hmac, Mac};
+        use sha2::Sha256;
+
+        let mut owner = OfflineTransportSessionOwner::new_fixture(95).unwrap();
+        let pipeline_handle = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            pipeline_handle,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let attempt_handle = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, attempt_handle, 0, 100).unwrap();
+        let mut gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            attempt.observe_fixture(&owner, event, 1).unwrap();
+        }
+        assert_eq!(attempt.phase(), OfflineSignInPhase::ServerMicVerification);
+        let mut reply = SipMessage {
+            start_line: StartLine::Response {
+                code: 200,
+                reason: "Synthetic".into(),
+            },
+            headers: ["Via", "Call-ID", "CSeq"]
+                .iter()
+                .map(|name| ((*name).into(), gate.request().header(name).unwrap().into()))
+                .collect(),
+            body: Vec::new(),
+        };
+        reply.headers.extend([
+            ("From".into(), "<sip:alice@example.com>;tag=2d0be03279;epid=492a7ce35f".into()),
+            ("To".into(), "<sip:alice@example.com>;tag=server".into()),
+            ("Contact".into(), "<sip:alice@client.invalid;transport=tls>;expires=3600;+sip.instance=\"<urn:uuid:b43b3d1d-9f8f-5fdc-9f74-3ca273cadb97>\"".into()),
+            ("Expires".into(), "3600".into()),
+            ("Authentication-Info".into(), "TLS-DSK realm=\"SIP Communications Service\", targetname=\"server.example.com\", opaque=\"opaque123\", qop=auth, snum=7, srand=abcdef09, version=4, rspauth=\"00\"".into()),
+        ]);
+        let info = parse_authentication_info(&reply).unwrap();
+        let signed_buffer = server_mic_buffer(&reply, &info).unwrap();
+        let mut mac = <Hmac<Sha256> as Mac>::new_from_slice(&[0x5a; 32]).unwrap();
+        mac.update(&signed_buffer);
+        let signature: String = mac
+            .finalize()
+            .into_bytes()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect();
+        for (name, value) in &mut reply.headers {
+            if name == "Authentication-Info" {
+                *value = value.replace("rspauth=\"00\"", &format!("rspauth=\"{signature}\""));
+            }
+        }
+        let mut wire = b"SIP/2.0 200 Synthetic\r\n".to_vec();
+        for (name, value) in &reply.headers {
+            wire.extend_from_slice(format!("{name}: {value}\r\n").as_bytes());
+        }
+        wire.extend_from_slice(b"Content-Length: 0\r\n\r\n");
+        // A correctly correlated frame with a real synthetic signature must
+        // still fail closed when the verifier rejects its MIC.
+        let mut rejected_owner = OfflineTransportSessionOwner::new_fixture(96).unwrap();
+        let rejected_handle = rejected_owner.connect_fixture().unwrap();
+        let mut rejected_pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &rejected_owner,
+            rejected_handle,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let rejected_attempt_handle = rejected_owner.issue_fixture_handle().unwrap();
+        let mut rejected_attempt = TransportBoundOfflineSignIn::new_fixture(
+            &rejected_owner,
+            rejected_attempt_handle,
+            0,
+            100,
+        )
+        .unwrap();
+        let mut rejected_gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            rejected_attempt
+                .observe_fixture(&rejected_owner, event, 1)
+                .unwrap();
+        }
+        assert_eq!(
+            rejected_attempt.observe_verified_register_fixture(
+                &rejected_owner,
+                &mut rejected_pipeline,
+                &wire,
+                &mut rejected_gate,
+                &RejectMic,
+                2,
+            ),
+            Err(BoundSignInError::Register(
+                IntegratedRegisterError::SecurityGateRejected
+            ))
+        );
+        assert_eq!(rejected_attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            rejected_gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            rejected_pipeline.observe_final_frame_fixture(&rejected_owner, &wire, true, 3),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!rejected_attempt.authenticated_sign_in());
+
+        let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                &wire,
+                &mut gate,
+                &verifier,
+                2,
+            ),
+            Ok(OfflineSignInPhase::RegistrationObserved)
+        );
+        assert_eq!(gate.highest_verified_server_sequence(), Some(7));
+        assert!(!attempt.authenticated_sign_in());
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                &wire,
+                &mut gate,
+                &verifier,
+                3,
+            ),
+            Err(BoundSignInError::Lifecycle(
+                OfflineSignInError::InvalidTransition
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, &wire, true, 4),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn verified_mic_then_expired_coordinator_revokes_every_gate() {
+        use commscraft_core::security::{
+            parse_authentication_info, server_mic_buffer, TlsDskHmacSha256,
+        };
+        use commscraft_core::sip::{SipMessage, StartLine};
+        use hmac::{Hmac, Mac};
+        use sha2::Sha256;
+
+        let mut owner = OfflineTransportSessionOwner::new_fixture(95).unwrap();
+        let pipeline_handle = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            pipeline_handle,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let attempt_handle = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, attempt_handle, 0, 2).unwrap();
+        let mut gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            attempt.observe_fixture(&owner, event, 1).unwrap();
+        }
+        assert_eq!(attempt.phase(), OfflineSignInPhase::ServerMicVerification);
+        let mut reply = SipMessage {
+            start_line: StartLine::Response {
+                code: 200,
+                reason: "Synthetic".into(),
+            },
+            headers: ["Via", "Call-ID", "CSeq"]
+                .iter()
+                .map(|name| ((*name).into(), gate.request().header(name).unwrap().into()))
+                .collect(),
+            body: Vec::new(),
+        };
+        reply.headers.extend([
+            ("From".into(), "<sip:alice@example.com>;tag=2d0be03279;epid=492a7ce35f".into()),
+            ("To".into(), "<sip:alice@example.com>;tag=server".into()),
+            ("Contact".into(), "<sip:alice@client.invalid;transport=tls>;expires=3600;+sip.instance=\"<urn:uuid:b43b3d1d-9f8f-5fdc-9f74-3ca273cadb97>\"".into()),
+            ("Expires".into(), "3600".into()),
+            ("Authentication-Info".into(), "TLS-DSK realm=\"SIP Communications Service\", targetname=\"server.example.com\", opaque=\"opaque123\", qop=auth, snum=7, srand=abcdef09, version=4, rspauth=\"00\"".into()),
+        ]);
+        let info = parse_authentication_info(&reply).unwrap();
+        let signed_buffer = server_mic_buffer(&reply, &info).unwrap();
+        let mut mac = <Hmac<Sha256> as Mac>::new_from_slice(&[0x5a; 32]).unwrap();
+        mac.update(&signed_buffer);
+        let signature: String = mac
+            .finalize()
+            .into_bytes()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect();
+        for (name, value) in &mut reply.headers {
+            if name == "Authentication-Info" {
+                *value = value.replace("rspauth=\"00\"", &format!("rspauth=\"{signature}\""));
+            }
+        }
+        let mut wire = b"SIP/2.0 200 Synthetic\r\n".to_vec();
+        for (name, value) in &reply.headers {
+            wire.extend_from_slice(format!("{name}: {value}\r\n").as_bytes());
+        }
+        wire.extend_from_slice(b"Content-Length: 0\r\n\r\n");
+        let verifier = TlsDskHmacSha256::from_server_authentication_key([0x5a; 32]);
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                &wire,
+                &mut gate,
+                &verifier,
+                2,
+            ),
+            Err(BoundSignInError::Lifecycle(OfflineSignInError::Expired))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(gate.highest_verified_server_sequence(), Some(7));
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, &wire, true, 3),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn lost_transport_revokes_register_pipeline_and_mic_gate() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(97).unwrap();
+        let register_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            register_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let sign_in_session = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, sign_in_session, 0, 100).unwrap();
+        let mut gate = register_gate();
+        owner.disconnect();
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nCSeq: 17 REGISTER\r\nContent-Length: 0\r\n\r\n";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::InvalidSession)
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, wire, true, 2),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn wrong_register_cseq_closes_all_offline_gates() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(99).unwrap();
+        let register_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            register_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let sign_in_session = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, sign_in_session, 0, 100).unwrap();
+        let mut gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            attempt.observe_fixture(&owner, event, 1).unwrap();
+        }
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nCSeq: 18 REGISTER\r\nContent-Length: 0\r\n\r\n";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::Register(
+                IntegratedRegisterError::Lifecycle(
+                    crate::offline_register_transaction::RegisterLifecycleError::InvalidTransaction
+                )
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, wire, true, 2),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn incomplete_register_frame_closes_all_offline_gates() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(102).unwrap();
+        let register_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            register_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let sign_in_session = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, sign_in_session, 0, 100).unwrap();
+        let mut gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            attempt.observe_fixture(&owner, event, 1).unwrap();
+        }
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nCSeq: 17 REGISTER\r\nContent-Length: 8\r\n\r\n";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::Register(
+                IntegratedRegisterError::IncompleteFrame
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, wire, true, 2),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn trailing_bytes_register_frame_closes_all_offline_gates() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(103).unwrap();
+        let register_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            register_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let sign_in_session = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, sign_in_session, 0, 100).unwrap();
+        let mut gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            attempt.observe_fixture(&owner, event, 1).unwrap();
+        }
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nCSeq: 17 REGISTER\r\nContent-Length: 0\r\n\r\nTRAIL";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::Register(
+                IntegratedRegisterError::TrailingBytes
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, wire, true, 2),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn duplicate_via_register_frame_closes_all_offline_gates() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(104).unwrap();
+        let register_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            register_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let sign_in_session = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, sign_in_session, 0, 100).unwrap();
+        let mut gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            attempt.observe_fixture(&owner, event, 1).unwrap();
+        }
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nCSeq: 17 REGISTER\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nContent-Length: 0\r\n\r\n";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::Register(
+                IntegratedRegisterError::InvalidResponse
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, wire, true, 2),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn duplicate_cseq_register_frame_closes_all_offline_gates() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(105).unwrap();
+        let register_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            register_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let sign_in_session = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, sign_in_session, 0, 100).unwrap();
+        let mut gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            attempt.observe_fixture(&owner, event, 1).unwrap();
+        }
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nCSeq: 17 REGISTER\r\nCSeq: 17 REGISTER\r\nContent-Length: 0\r\n\r\n";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::Register(
+                IntegratedRegisterError::InvalidResponse
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, wire, true, 2),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn wrong_register_branch_closes_all_offline_gates() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(101).unwrap();
+        let register_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            register_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let sign_in_session = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, sign_in_session, 0, 100).unwrap();
+        let mut gate = register_gate();
+        for event in [
+            OfflineSignInEvent::DiscoveryResolved,
+            OfflineSignInEvent::TlsPeerVerified,
+            OfflineSignInEvent::ChallengeMatched,
+            OfflineSignInEvent::SecurityContextEstablished,
+            OfflineSignInEvent::SignedRegisterPrepared,
+        ] {
+            attempt.observe_fixture(&owner, event, 1).unwrap();
+        }
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-other\r\nCSeq: 17 REGISTER\r\nContent-Length: 0\r\n\r\n";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::Register(
+                IntegratedRegisterError::Lifecycle(
+                    crate::offline_register_transaction::RegisterLifecycleError::InvalidTransaction
+                )
+            ))
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, wire, true, 2),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn reconnect_revokes_old_register_pipeline_and_mic_gate() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(98).unwrap();
+        let register_session = owner.connect_fixture().unwrap();
+        let mut pipeline = OfflineRegisterResponsePipeline::new_fixture(
+            &owner,
+            register_session,
+            "z9hG4bK-pipeline",
+            17,
+            0,
+            100,
+        )
+        .unwrap();
+        let sign_in_session = owner.issue_fixture_handle().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, sign_in_session, 0, 100).unwrap();
+        let mut gate = register_gate();
+        owner.connect_fixture().unwrap();
+        let wire = b"SIP/2.0 200 OK\r\nVia: SIP/2.0/TLS client.invalid;branch=z9hG4bK-pipeline\r\nCSeq: 17 REGISTER\r\nContent-Length: 0\r\n\r\n";
+        assert_eq!(
+            attempt.observe_verified_register_fixture(
+                &owner,
+                &mut pipeline,
+                wire,
+                &mut gate,
+                &RejectMic,
+                1,
+            ),
+            Err(BoundSignInError::InvalidSession)
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert_eq!(
+            gate.state(),
+            commscraft_core::session::GateState::Disconnected
+        );
+        assert_eq!(
+            pipeline.observe_final_frame_fixture(&owner, wire, true, 2),
+            Err(IntegratedRegisterError::Lifecycle(
+                crate::offline_register_transaction::RegisterLifecycleError::Closed
+            ))
+        );
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn connection_replacement_revokes_attempt() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(90).unwrap();
+        let handle = owner.connect_fixture().unwrap();
+        let mut attempt = TransportBoundOfflineSignIn::new_fixture(&owner, handle, 0, 100).unwrap();
+        assert_eq!(
+            attempt.observe_fixture(&owner, OfflineSignInEvent::DiscoveryResolved, 1),
+            Ok(OfflineSignInPhase::TlsPeerVerification)
+        );
+        owner.connect_fixture().unwrap();
+        assert_eq!(
+            attempt.observe_fixture(&owner, OfflineSignInEvent::TlsPeerVerified, 2),
+            Err(BoundSignInError::InvalidSession)
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        assert!(!attempt.authenticated_sign_in());
+    }
+
+    #[test]
+    fn foreign_owner_disconnect_and_timeout_are_terminal() {
+        let mut owner = OfflineTransportSessionOwner::new_fixture(91).unwrap();
+        let session = owner.connect_fixture().unwrap();
+        let mut foreign = OfflineTransportSessionOwner::new_fixture(92).unwrap();
+        foreign.connect_fixture().unwrap();
+        let mut attempt =
+            TransportBoundOfflineSignIn::new_fixture(&owner, session, 0, 100).unwrap();
+        assert_eq!(
+            attempt.observe_fixture(&foreign, OfflineSignInEvent::DiscoveryResolved, 1),
+            Err(BoundSignInError::InvalidSession)
+        );
+        assert_eq!(attempt.phase(), OfflineSignInPhase::Closed);
+        let session = owner.connect_fixture().unwrap();
+        let mut expired =
+            TransportBoundOfflineSignIn::new_fixture(&owner, session, 0, 100).unwrap();
+        assert_eq!(
+            expired.observe_fixture(&owner, OfflineSignInEvent::DiscoveryResolved, 100),
+            Err(BoundSignInError::Lifecycle(OfflineSignInError::Expired))
+        );
+        assert_eq!(expired.phase(), OfflineSignInPhase::Closed);
+        let session = owner.connect_fixture().unwrap();
+        let mut disconnected =
+            TransportBoundOfflineSignIn::new_fixture(&owner, session, 0, 100).unwrap();
+        owner.disconnect();
+        assert_eq!(
+            disconnected.observe_fixture(&owner, OfflineSignInEvent::DiscoveryResolved, 1),
+            Err(BoundSignInError::InvalidSession)
+        );
+        assert_eq!(disconnected.phase(), OfflineSignInPhase::Closed);
+    }
+}
