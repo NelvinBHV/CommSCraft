@@ -1,0 +1,2096 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-10-23",
+  "source": "transitive-reference-ledger.json UNION normative-reference-ledger.json",
+  "scope": "NEW NODES discovered by one further hop beyond 460 original overview §1.2.1 normative edges; does NOT establish mandatory support of any particular Windows client feature",
+  "status": "OPEN_NOT_NORMATIVELY_CLOSED",
+  "statistics": {
+    "new_second_level_target_ids": 146,
+    "kind_counts": {
+      "external_or_historical_draft": 43,
+      "microsoft_spec": 52,
+      "rfc": 51
+    },
+    "preexisting_first_tier_target_ids": 199,
+    "combined_first_two_layers_unique_targets": 345
+  },
+  "targets": [
+    {
+      "target": "ANSI-X9.62-2005",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "C706",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "CIMC-PP-2001",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "draft-ietf-kitten-iakerb-03",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "draft-ietf-krb-wg-kerberos-referrals-11",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "draft-ietf-oauth-json-web-token-32",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-OAUTH2EX"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "draft-ietf-oauth-pop-key-distribution-07",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "draft-ietf-oauth-v2-22_TITLE_vs_v2-23_URL",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-OAUTH2EX"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "FIPS140-2",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "FIPS186-3",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "FIPS46-2-1993",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-NLMP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "InternationalSoftware-2003",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "ITU-T122-1998",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "ITU-T123-1999",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "ITU-T124-1998",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "ITU-T125-1998",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "ITU-T128-1998",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "ITU-X224-1995",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "ITU-X509-2005",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "ITU-X660-2004",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "ITU-X680-2002",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "ITU-X690-2002",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "ITU-X691-2002",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "SCHNEIER-1996",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "SOAP-UDP-2004",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "SP800-56A",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "SSL3-1996",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "TCG-Commands",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "TCG-Commands-V2",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "TCG-Cred",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "TCG-Struct",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "TCG-Struct-V2",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "UNICODE",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "UNICODE4.0",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "WS-Policy-1.2",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "WS-PolicyAttachment-1.2",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "WSAddressing-2004",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "WSSP1.2",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "WSSUTP1.0",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSTEP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "WSTrust1.3",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSTEP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "WSTrust1.3Schema",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSTEP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "XMLNS-SecondEdition-2006",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-SIP",
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "XMLSCHEMA-2005",
+      "kind": "external_or_historical_draft",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-SIP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MC-NBFS",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MC-NBFSE",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MC-NMF",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MC-NPR",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-ADA1",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-SIP",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-ADA2",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-SIP",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-ADA3",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-SIP",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-ADSC",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-SIP",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-ADTS",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-APDS",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-NLMP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-CRTD",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-CSRA",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-CSSP",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-DCOM",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-DRSR",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-DSSP",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-DTYP",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-NLMP",
+        "MS-RDPBCGR",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-ERREF",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-NLMP",
+        "MS-RDPBCGR",
+        "MS-RDPEMC",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": false,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-ICPR",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-KKDCP",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-LSAD",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-LSAT",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-NNS",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-NRPC",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-NTHT",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-OXDSCLI",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-OXWUMS"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-OXWSCDATA",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-OXWUMS"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-OXWSCORE",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-OXWUMS"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-OXWSCVTID",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-OXWUMS"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-OXWSSRCH",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-OXWUMS"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-PAC",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-PKCA",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RDPEA",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RDPEGDI",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RDPELE",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RDPEMT",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RDPEPS",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPEMC"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": false,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RDPERP",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RDPEUDP",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RDPNSC",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RDPRFX",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RPCE",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-NLMP",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RRP",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-RTPME",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-H26XPF"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-SAMR",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-SFU",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-SMB",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-NLMP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-SNTP",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-SPNG",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-NLMP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-SPS2SAUTH",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-OAUTH2EX"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-UCODEREF",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "MS-WKST",
+      "kind": "microsoft_spec",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC1320",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-NLMP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC1964",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-SIP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2032",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-H26XPF"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2190",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-H26XPF"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2251",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2279",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2478",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2527",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2559",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2560",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2617",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2631",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2744",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-NLMP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2785",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2797",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE",
+        "MS-WSTEP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2985",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC2986",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE",
+        "MS-WSTEP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC3066",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-OXWUMS",
+        "MS-WSTEP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC3244",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC3263",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-SIP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": true,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC3447",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC3961",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC3962",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC4055",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC4262",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC4523",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC4556",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC4646",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC4648",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": true,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC4757",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE",
+        "MS-NLMP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC5280",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE",
+        "MS-WSTEP"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": true,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC5349",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC5652",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC6113",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC6455",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WSPOL"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC6749",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC6806",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC6962",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC7292",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC7515",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC7517",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC7518",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC7519",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC7638",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC793",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-OAUTH2EX"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC8009",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-KILE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC8017",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC8259",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC8446",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-RDPBCGR"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": true,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC8894",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    },
+    {
+      "target": "RFC959",
+      "kind": "rfc",
+      "discovered_in": "second_level_official_html_normative_lists",
+      "incoming_from": [
+        "MS-WCCE"
+      ],
+      "status": "NEEDS_OFFICIAL_ORIGINAL_RELEASE_AND_APPLICABILITY_REVIEW",
+      "in_existing_rfc_seed_113": false,
+      "whole_2nd_tier_list_verified": true,
+      "exact_target_edition": "NOT_RESOLVED",
+      "client_mandatory": "NOT_ESTABLISHED",
+      "next": "Discover official target version/date/references, then traverse further only if relevant or explain exclusion."
+    }
+  ]
+}
