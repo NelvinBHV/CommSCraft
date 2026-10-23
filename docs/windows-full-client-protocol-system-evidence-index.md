@@ -704,4 +704,52 @@ flowchart TD
 
 **Full client normative reconstruction remains NOT COMPLETE, implementation gate CLOSED; no code, real-server or interop tests, main merge or release.**
 
+## XXII. 2026-10-23 original cross-spec coverage: Whiteboard/PSOM, persistent Group Chat file permissions and Call Park
+
+**Three substantial first-party PDF analyses with 58 role-, edition- and clause-identified findings; source vintage materially differs by protocol:**
+
+- [MS-PSOM **rev11.0 v20250520**, complete PSOM data-session entry and selected whiteboard/PPT/download/content-object mechanics](ms-psom11-datamcu-whiteboard-ppt-auth-rpc-recovery-2026-10-23.md): **22 source-qualified findings** from original PDF SHA256 `6eee9f7f42014a0806d887448bb5837a68eb56a2a5048ebfa9fd9a4814b6e049`. [MS-OCSPROT] rev9 §2.5.20 states **Focus join/conference subscription → C3P `addUser` SIP INFO/202 + later response INFO/200 → PSOM DataMCU connection and whiteboard creation**. [MS-CONFBAS] rev15 C3P addUser returns `sAuthId`, conditional proxyHeader, `pwrpc.modes=tls|fwdtls`, destination and conditional X509 alternativeName. PSOM wire auth sends signature **0x70773200**, zero auth version, length-prefixed token, validates server signature; **ConnMgr version/addProtocol/hash/doneProtocols** on implicit channel0 before application channel2; **30s ping**; complete fresh handshake on lost connection rather than live state resumption. RPC record **Close 0x00, SetChannel 0x04, Break 0x06, RpcMessage 0x16, RPCOpen 0x37** with byte type and conditional big-endian32 lengths, proxy identifiers ± across peers. Meeting ContentManager/ContentUserManager and title reservation / contentId / active presenter; `Content.Whiteboard` delegates annotations to AnnotationContainer with stale textVersion rejection, `Content.Ppt` has presentation/slide location and encrypted file metadata; **PSOM UploadManager OC Package** is distinct from group-chat repository and personal IM file transfer. `cSetImageFileInfo` carries AES-256 key/IV and **SHA-1 plaintext hash**, not proof of trusted origin or modern authenticated cipher. Whiteboard/PPT/Poll/SharedNotes/QnA subtype support is product-conditional.
+- [MS-XCCOSIP **v20240820**, Group Chat SIP dialog, XCCOS room commands and short-lived file-repository tokens](ms-xccosip2024-persistent-chat-info-file-token-trust-2026-10-23.md): **18 source-qualified findings** from original PDF SHA256 `dedf341e7f1031453bab3bc5a196a8563ad7381895e0458eb51bf870e270077e`; MS-OCSPROT §2.5.21 confirms **INVITE/200/ACK**, client **SIP INFO cmd:getserverinfo/200**, server **SIP INFO rpl:getserverinfo/200**, then `cmd:bjoin/rpl:bjoin` in same split transaction. **SIP INFO 200 ≠ XCCOS command application 200**. Every command matches **CmdId EnvId:uint64 + SeqId:uint64** and exact reply ID with **10s client timer**, while server processing timer default **25s** can yield SIP 503 (potential race/late command discard). Room `ParticipantList` and `LastReceivedMessageId`; `GroupChatDataBlock` contains per-room ChatId, author SIP URI, timestamp, plain chat or optional RTF. `cmd:getfutok` with exactly one `ftdb channelUri/fileUrl` obtains short-lived **TokenDataBlock token+serveruri** for **Group Chat File Repository Web Service**, separate HTTPS service calls; this **does not describe HTTP file bytes transfer or personal 1:1 SIP file transfer**. Trust boundary: SIP-issued bearer token + returned server URL still needs independent HTTPS host identity/redirect and rights verification.
+- [MS-SIPAPP **v20250520**, SIP Call Park 1.0 audio dialog, 350xx failure codes, reusable orbit and auto-ringback/fallback](ms-sipapp2025-call-park-orbit-replaces-refer-ringback-original-2026-10-23.md): **18 source-qualified findings** from original PDF SHA256 `9ba105dd85f05861b528f4fb5f527da65acda466b0480e5fb67d50dd64ac428a`, [RFC3515](https://www.rfc-editor.org/rfc/rfc3515) REFER, [RFC3891](https://www.rfc-editor.org/rfc/rfc3891) Replaces, RFC3840 Contact features. Park client new **INVITE `application/ms-call-park+xml`** to provisioned Call Park Service with `park-request version=1.0`, unique request-id, **original call dialog-info** and target parkee **GRUU**. CPS allocates reusable **orbit** and unique `ms-parked-call`, sends audio-only **INVITE Replaces** with hold/MOH; success CPS 200 includes park-response XML. Park failure **415 XML**, **488 unsupported version/35008**, **500 no orbit/35002**, **408 parkee Replace/35007**. Call retrieval via orbit **INVITE** and CPS **REFER with Replaces** toward parkee; CPS INFO `unpark-notification reason=retrieval|hang-up|ringback|fallback|drop` and role-dependent BYE/orbit cleanup. **CPS control-dialog BYE MUST NOT terminate parked voice dialog**. **Per-call auto-ringback duration NOT specified**, can route back to parker AoR via privacy-sensitive `ms-sensitivity=private-no-diversion`, then fallback/drop. **Ordinary SIP Park/REFER is not a guarantee resumed RTP/ICE/SRTP**, or automatic restoration after CPS restart.
+
+### Independent control-plane/data-plane and user interface requirements matrix
+
+| Feature/process | Verified primary control protocol and necessary state | Independent plane/security check / uncovered requirement |
+|---|---|---|
+| Join live whiteboard conference | MS-CONFBAS C3P `addUser` then **MS-PSOM AuthId/proxy/TLS + interface hashes + Meeting ready** | Not H.264 or RTP screen share; PSOM reconnection rebuilds state, no in-place recovery |
+| View/create collaborative whiteboard | PSOM `ContentManager`, `Content.Whiteboard`, `AnnotationContainer`, reserved title and contentId | Permission level organizer/presenters/everyone, stale text delta, opaque image URLs and AES key integrity |
+| View/share slide presentation | PSOM `PptContent`, `PptLocation`, `UploadManager` | Content package and encrypted resources; separate [MS-WOPI] and product gates |
+| Send conference OC package | PSOM RPC **UploadStream** with incrementing packetNum and cWriteComplete, conditional HTTPS web upload | **Not** direct file transfer between SIP contacts; no inferred general attachment UI semantics |
+| Enter persistent Group Chat | MS-XCCOSIP SIP INVITE then `cmd:getserverinfo` and `cmd:join|bjoin` over INFO and matching XCCOS rpl | Two SIP INFO transaction acknowledgments vs **separate** 10s application command, per-room IDs |
+| Attach file to Group Chat room | XCCOSIP `cmd:getfutok`, short-lived channel+file token and returned repository `serveruri` | **Separate File Repository Web Service original not yet analyzed; token is not upload/download proof** |
+| Transfer file in 1:1 personal IM | **Relevant normative profile not yet identified/proven in this corpus** | **BLOCKED**: cannot substitute group-chat token or PSOM OC package |
+| Park a normal audio call | MS-SIPAPP 1.0 XML park-request dialog-info and parkee GRUU, CPS INVITE Replaces and park-response orbit | Different CPS control/parked-audio/original-dialog states and configurable auto-ringback |
+| Retrieve parked audio call | Retriever orbit INVITE, CPS REFER/Replaces to parkee, INFO reason retrieval and cleanup | RFC3515/3891 and MS-SDPEXT audio hold/MOH, renewed media ICE+SRTP state |
+| Ringback/fallback/drop | CPS per-call timer and configured fallback, `reason=ringback|fallback|drop` | Unknown timer numeric duration; privacy `ms-sensitivity`, SIP routing permissions and product settings |
+
+### Combined 3-plane dependency sketch (S, not mandated serialization or production packet capture)
+
+~~~mermaid
+flowchart TD
+ A[Signed-in user SIPAE, REGISTER and relevant user provisioning] --> B{Feature selected}
+ B -->|Conference whiteboard or PPT| C[Focus joined and conference SUBSCRIBE]
+ C --> D[C3P addUser returns PSOM DataMCU auth and endpoint]
+ D --> E[Separate PSOM TLS/fwdtls, token validation, ConnMgr hashes]
+ E --> F[Meeting ready -> Content, Annotation/PPT, UploadManager]
+ F --> G[30s PSOM ping or on loss full fresh connect]
+ B -->|Persistent chat| H[Group Chat server INVITE and XCCOS INFO commands]
+ H --> I[10s command correlation, room bjoin and message/history]
+ I --> J[Scoped getfutok token]
+ J --> K[Separate Web Repository upload/download not yet fully specified]
+ B -->|Telephone call park| L[Provisioned Call Park CPS URI, INVITE with old dialog-info]
+ L --> M[CPS parked audio Replaces, orbit and callpark XML]
+ M --> N{Retrieved or timer expiry?}
+ N -->|Retrieved| O[REFER Replaces, unpark INFO and cleanup]
+ N -->|Ringback/fallback/drop| P[REFER back to parker/fallback or BYE release]
+~~~
+
+**Notable security/edition guards:** (i) PSOM's `sAuthId` is an *independent* conference DataMCU auth token, not SIPAE SA nor HTTP Group Chat token; (ii) PSP `fwdtls` and `alternativeName` handling demand original chain/hostname trust review; (iii) Web Repository `serveruri` cannot automatically become trusted download target; (iv) 2024 XCCOSIP vs 2025 MS-OCSPROT feature support is client/build conditional; (v) Call Park orbit can be **reused**, and identity of parked episode is **`ms-parked-call`**, not orbit alone; (vi) Call Park `isCps` feature tag and 350xx diagnostics belong to CPS role, not every desktop UA.
+
+**Open research blockers:** PSOM complete 111-page marshaling appendix/encoding, PPT/WOPI and historical service product notes; persistent Group Chat HTTP File Repository WSDL and P2P personal file transfer normative RFC/MS profile discovery; full SIPAPP RFC3515 REFER/NOTIFY/Replaces and timer/transfer failure scenarios, exact deployment capabilities; original non-Windows server spec release and current 2025 edition updates. **Global Full Client analysis NOT COMPLETE, no implementation code, live-server or assistant interop tests, merge to main or release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
