@@ -47,3 +47,17 @@
 ## How to resume
 
 Start by inspecting this log, `source-catalog.md`, `README.md`, the latest branch commit history and `AGENTS.md`. Avoid redoing already cataloged Microsoft release-row checks except to confirm later updates. Close the earliest unresolved dependency per source, retain current status labels and exact edition/dates, record new confirmed references, and commit additional **documentation only** on this branch.
+
+## 2026-10-23 — Phase-1 completion request: source inventory expansion (continuation checkpoint)
+
+**Audit outcome: Phase 1 remains INCOMPLETE under the requested strict criteria.** Added:
+
+- Official published-version metadata for **46 distinct MS-OCSPROT table documents** from all six listed groups; see `ms-ocsprot-inventory.{md,json}`. Added the previously missing MS-OCDISCWS, MS-OCSMP, MS-CVWREST, MS-ECREST, MS-XCCOSIP, MS-OCGCWEB and MS-SSRTP 11.1 2025-09-16. Also MS-ABS 10.1 and MS-SIPREGE 17.1 newer than the overview.
+- Actual live normative-reference lists inspected and individually recorded for **MS-SIPREGE §1.2.1, MS-SDPEXT §1.2.1, MS-RTP §1.2.1, MS-PRES §1.2.1**. Exactly **71 direct edges** and **58 distinct targets** across these four index sections are in `normative-reference-ledger.json` (not full transitive closure). **42** first-layer §1.2.1 lists still unchecked. Non-overview Windows dependencies include MS-SIP and MS-H26XPF; others pending.
+- **71 RFC** original identifiers in `rfc-inventory.json`: **25** specifically named as normative by these four MS sections, remainder candidate seed. Selected RFC replacement/update relationships verified; the rest remain OPEN.
+- Detailed `phase1-audit.md` provides **unexamined first-layer 42-doc list**, paid ISO-3166/ISO-8601 citations and current MS-OCSPROT 2025 PDF/DOCX redirect failure. No published revision-specific MS PDFs/DOCXs were acquired/hashed, so no full edition comparison.
+- Central `source-catalog.md` rewritten from old 8-edition seed to comprehensive version/URL index (46 MS, 71 RFC; candidate/revision status distinguished).
+
+**Important reproducible block:** Current [MS-OCSPROT] PDF and DOCX links redirected to `officeprotocoldoc.z19.web.core.windows.net`, blocked by the available web reader. MS-PRES cited paid original ISO editions. Without verifiable originals, it is improper to declare Phase 1 completed. All created outputs are documentation-only; no server connections, implementation, CI, merge or release. Keep main untouched.
+
+**Next continuation:** acquire official latest MS release bytes via an approved accessible path; then traverse the exact 42 missing first-level normative lists, recursively expand Microsoft Windows and RFC references with version, section, relevance and exclusions; populate exhaustive prior-version change history. Never turn these lists into a completed finding without actual source review.
