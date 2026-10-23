@@ -6,7 +6,8 @@
     "revision": "9.0",
     "date": "2025-05-20",
     "url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/90f4bc22-eae7-480e-a6f8-74d705ed2b2c",
-    "release_content_acquired": false
+    "release_content_acquired": false,
+    "download_status": "CURRENT_PDF_AND_DOCX_DIRECT_LINKS_REDIRECT_TO_INACCESSIBLE_HOST; INDEX_SEARCH_PDF_MAY_BE_AVAILABLE_BUT_NOT_LOCATED FOR_OVERVIEW"
   },
   "source_guide": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-offprotlp/939e9850-c48d-464d-860e-78f8b281e7bd",
   "metadata_status_definition": "Official landing checked; does not imply full PDF content, versioned normative reference closure, or Windows Full Client applicability confirmed.",
@@ -25,7 +26,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-DLX",
@@ -41,7 +48,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-CONMGMT",
@@ -57,7 +70,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "PUBLISHED_PDF_INDEX_TEXT_AND_SCREENSHOT_ACCESSED_BINARY_HASH_PENDING",
+      "published_pdf_text_index_accessible": true,
+      "published_pdf_excerpt_edition_attested": true,
+      "published_pdf_page_count": 27,
+      "published_pdf_index_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-CONMGMT/%5BMS-CONMGMT%5D.pdf",
+      "normative_references_section_status": "SECTION_VERIFIED_FROM_RELEASE_PDF",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-EUMR",
@@ -73,7 +92,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-OCEXUM",
@@ -89,7 +114,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-OCPSTN",
@@ -105,7 +136,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-OCER",
@@ -121,7 +158,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-PRES",
@@ -137,7 +180,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "PUBLISHED_PDF_INDEX_TEXT_AND_SCREENSHOT_ACCESSED_BINARY_HASH_PENDING",
+      "published_pdf_text_index_accessible": true,
+      "published_pdf_excerpt_edition_attested": true,
+      "published_pdf_page_count": 257,
+      "published_pdf_index_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-PRES/%5BMS-PRES%5D.pdf",
+      "normative_references_section_status": "SECTION_VERIFIED_FROM_RELEASE_PDF",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-QoE",
@@ -153,7 +202,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-SIPCOMP",
@@ -169,7 +224,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-SIPAE",
@@ -185,7 +246,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-SIPRE",
@@ -201,7 +268,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-SIPREGE",
@@ -217,7 +290,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-RGSWS",
@@ -233,7 +312,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-PSOM",
@@ -249,7 +334,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-SIPAPP",
@@ -265,7 +356,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-OCAUTHWS",
@@ -281,7 +378,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "PUBLISHED_PDF_INDEX_TEXT_AND_SCREENSHOT_ACCESSED_BINARY_HASH_PENDING",
+      "published_pdf_text_index_accessible": true,
+      "published_pdf_excerpt_edition_attested": true,
+      "published_pdf_page_count": 92,
+      "published_pdf_index_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-OCAUTHWS/%5BMS-OCAUTHWS%5D.pdf",
+      "normative_references_section_status": "SECTION_VERIFIED_FROM_RELEASE_PDF",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-E911WS",
@@ -297,7 +400,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-XCCOSIP",
@@ -313,7 +422,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-OCGCWEB",
@@ -329,7 +444,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-CONFBAS",
@@ -345,7 +466,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "PUBLISHED_PDF_INDEX_TEXT_AND_SCREENSHOT_ACCESSED_BINARY_HASH_PENDING",
+      "published_pdf_text_index_accessible": true,
+      "published_pdf_excerpt_edition_attested": true,
+      "published_pdf_page_count": 248,
+      "published_pdf_index_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-CONFBAS/%5BMS-CONFBAS%5D.pdf",
+      "normative_references_section_status": "SECTION_VERIFIED_FROM_RELEASE_PDF",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-CONFPRO",
@@ -361,7 +488,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-CONFIM",
@@ -377,7 +510,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-CONFAV",
@@ -393,7 +532,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-CONFAS",
@@ -409,7 +554,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-XMLMC",
@@ -425,7 +576,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-OCSMP",
@@ -441,7 +598,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-OCDISCWS",
@@ -457,7 +620,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-CVWREST",
@@ -473,7 +642,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-ECREST",
@@ -489,7 +664,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-EUMSDP",
@@ -505,7 +686,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-DTMF",
@@ -521,7 +708,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-H264PF",
@@ -537,7 +730,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-RTP",
@@ -553,7 +752,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-RTPRADEX",
@@ -569,7 +774,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-RTASPF",
@@ -585,7 +796,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-RTVPF",
@@ -601,7 +818,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-SDPEXT",
@@ -617,7 +840,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-SRTP",
@@ -633,7 +862,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-SSRTP",
@@ -649,7 +884,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-AVEDGEA",
@@ -665,7 +906,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-ICE",
@@ -681,7 +928,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-ICE2",
@@ -697,7 +950,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-ICE2BWM",
@@ -713,7 +972,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-TURN",
@@ -729,7 +994,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     },
     {
       "id": "MS-TURNBWM",
@@ -745,7 +1016,13 @@
       "release_content_acquired": false,
       "release_sha256": null,
       "all_normative_refs_extracted": false,
-      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN"
+      "status": "LANDING_VERIFIED_CONTENT_AND_REFERENCES_OPEN",
+      "published_pdf_text_index_accessible": false,
+      "published_pdf_excerpt_edition_attested": false,
+      "published_pdf_page_count": null,
+      "published_pdf_index_url": null,
+      "normative_references_section_status": "NOT_YET_VERIFIED",
+      "previous_releases_compared": false
     }
   ]
 }
