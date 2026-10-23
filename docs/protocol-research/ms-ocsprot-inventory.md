@@ -81,3 +81,15 @@ Each row in [ms-ocsprot-inventory.json](ms-ocsprot-inventory.json) has `release_
 **Direct normative referrals / cross-family Microsoft:** [MS-SIP] in Windows Protocols (8.0, 2017-06-01 published row), MS-H26XPF (RTP cross-reference), MS-RDPBCGR (graphics), MS-KILE/MS-NLMP (auth), [MS-ABCH] (address book candidate from repository), and relevant Windows SSPI/cert/policy documents. Non-table Skype/Office candidates: UI/call/web client applicability, provisioning details, 3rd-party Exchange/Outlook and PowerPoint collaboration dependencies; each requires explicit inclusion/exclusion evidence. These are captured in the separate gap and reference inventory. MS-OCSPROT's six tables **do not enumerate all transitive normative references**.
 
 **Relevance rule:** do not equate 'system overview table appears' with 'required in every classic Windows client deployment'. Build-specific and policy-dependent profile must be evidenced; optional capabilities remain in scope until explicitly dispositioned.
+
+## 2026-10-23 addendum: original-indexed document reference pages and newer checks
+
+**Updated coverage: 14/46** source §1.2.1 normative lists inspected (5 original dated-PDF index texts with page screenshots; 10 only HTML); **32 remain**. Total indexed **213** direct source-target edges, **131** distinct targets. This metadata table is **NOT proof** the full current published documents were downloaded; SHA-256 unavailable for all.
+
+- **MS-CONMGMT 10.0** (2025-05-20), [current indexed original PDF](https://officeprotocoldoc.z19.web.core.windows.net/files/MS-CONMGMT/%5BMS-CONMGMT%5D.pdf), §1.2.1 PDF pp. 8 (index 7); text AND screenshot checked; **full PDF bytes/hash unavailable**.
+- **MS-CONFBAS 15.0** (2025-05-20), [current indexed original PDF](https://officeprotocoldoc.z19.web.core.windows.net/files/MS-CONFBAS/%5BMS-CONFBAS%5D.pdf), §1.2.1 PDF pp. 13–14 (indices 12–13); text AND screenshot checked; **full PDF bytes/hash unavailable**.
+- **MS-OCAUTHWS 11.0** (2025-05-20), [current indexed original PDF](https://officeprotocoldoc.z19.web.core.windows.net/files/MS-OCAUTHWS/%5BMS-OCAUTHWS%5D.pdf), §1.2.1 PDF pp. 11–13 (indices 10–12); text AND screenshot checked; **full PDF bytes/hash unavailable**.
+- **MS-PRES 13.0** (2025-05-20), [current indexed original PDF](https://officeprotocoldoc.z19.web.core.windows.net/files/MS-PRES/%5BMS-PRES%5D.pdf), §1.2.1 PDF pp. 15–16 (indices 14–15); text AND screenshot checked; **full PDF bytes/hash unavailable**.
+- **MS-ECREST 8.0** (2025-05-20), [current indexed original PDF](https://officeprotocoldoc.z19.web.core.windows.net/files/MS-ECREST/%5BMS-ECREST%5D.pdf), §1.2.1 PDF page 6 (zero-index 5); text AND screenshot checked; **full PDF bytes/hash unavailable**.
+
+HTML-only release edition identity remains unverified even though the landing version/date is known. See [phase1-audit.md](phase1-audit.md). The original PDF reference sections cited above were rendered in browser; complete all-sections original reading remains OPEN.
