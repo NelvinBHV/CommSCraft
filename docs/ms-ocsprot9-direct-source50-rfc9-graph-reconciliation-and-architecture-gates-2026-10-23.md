@@ -67,3 +67,20 @@ flowchart TD
 6. **No server traffic, no tests**, no code or design implementation until all research gates evidence CLOSED. No merge or release.
 
 **Research status: MS-OCSPROT direct bibliography completely catalogued (50+9); full transitive RFC/MS closure and Windows Full Client behavior NOT complete.**
+
+
+## 6. Normative transitive candidate graph: 183 nodes, with 65 archive gaps (new auditable file)
+
+The project already includes an **archival 150-PDF classified-reference graph**. To avoid treating direct bibliography completion as full transitive closure, the 50 exact overview Microsoft IDs were used as **depth 0 seeds** (case-insensitive normalization only, including MS-QoE / MS-QOE). **Only outgoing first-party graph edges labelled `reference_section=normative`, `reference_type=MS` were followed from these seeds.** Parent and originating seed are retained as evidence provenance, and edges from an unavailable source were **not fabricated**.
+
+The reproducible result of this **existing-graph traversal**, **not** a final proof that all client dependencies are known, is:
+- **50 depth-0** direct bibliography seeds (every source original locally present).
+- **32 depth-1** normative referenced document IDs.
+- **74 depth-2**, **20 depth-3**, **7 depth-4**; **183 unique candidate IDs in total**.
+- **118/183** have some physical PDF edition in the previously archived 150-PDF corpus; **65/183 have no archived edition**, all at depth **2 or later** (43 depth 2, 15 depth 3, 7 depth 4).
+- [183-node candidate normative graph CSV](research-corpus/ms-ocsprot9-50-seed-normative-ms-transitive-upper-bound-2026-10-23.csv) records normalized node, first discovery parent/seed and depth, source type, original copy availability, original edition date/hash/URL when available and clearly **UNREVIEWED** normative closure.
+- The broad inventory's *735* Microsoft-normative edges are just the global 150-document source graph; this 183-node traversal does **not** assert all 735 are relevant, nor that each required Windows full-client protocol has a matching PDF in these 150 files. Example missing depth-2 dependencies traverse **MS-NLMP → MS-SMB / MS-RPCE**, **MS-OCAUTHWS → MS-WCCE**, **MS-RDPBCGR → MS-RDPEGDI**, **MS-WOPI → MS-FSSHTTP**; many are **supporting Windows/Office subsystems**, not necessarily direct SIP client wire protocols.
+
+**Limits:** This is an *over-inclusive potential client-relevance frontier* but simultaneously an *under-extracted normative graph* wherever the original 150-edge classifier skipped or misparsed references. It is **not a mathematically guaranteed complete upper bound on all unseen dependencies**. A source absent from archive cannot be recursively traversed and may add further dependencies once retrieved. The fact that the graph missed **MS-OCGCWEB and RFC3265** from the overview itself establishes that original-source crosschecking is needed across *all* overviews and normative sections. **65 archived-original gaps are not synonymous with 65 unavailable publications**; public access must be verified independently from official Microsoft sources.
+
+**Next audit gate:** Prioritize those missing nodes that lie on Windows-client communication/security boundary (especially TLS/certificate, NTLM/Kerberos/RPC dependency, HTTP/Office or RDP sharing) and separately classify server-only deep infrastructure. Never convert graph reachability alone into a proposed client feature or implementation requirement.
