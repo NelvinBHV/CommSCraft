@@ -199,3 +199,11 @@ RFC update, errata, obsolescence and normative-dependency closure is not complet
 Exact MS references **MS-H26XPF, MS-KILE, MS-NLMP, MS-OAUTH2EX, MS-OXWUMS, MS-RDPBCGR, MS-RDPEMC, MS-SDP, MS-SIP, MS-WCCE, MS-WSPOL, MS-WSTEP** appear in [source-linked normative graph](normative-reference-ledger.json); other draft/ISO, ITU, W3C and OASIS nodes are likewise listed there, with edition exactness and paywall information in [phase1-audit.md](phase1-audit.md). Treat optional / server-only exclusions only after verifying the Windows Full Client build and service policy. **All twelve direct out-of-overview Microsoft target IDs now have official latest published revision/date landing metadata, captured in [transitive-microsoft-inventory.json](transitive-microsoft-inventory.json). Exact client-applicable historical versions and all their normative reference lists remain OPEN. No document not acquired must be marked fully analyzed.**
 
 **No new protocol code until source acquisition and all subsequent analysis gates are complete.**
+
+## 2026-10-23 follow-on: new source graph and RFC edition metadata
+
+- [Second-tier official Microsoft normative reference analysis](phase1-transitive-research-2026-10-23.md) and [direct source-bound graph](transitive-reference-ledger.json): 12 examined original HTML/search reference sections, **246** new *second-ring* edges to **183** targets (11 full HTML, MS-RDPEMC partial). **No dated PDF-revision comparison yet**.
+- [New unresolved target frontier](transitive-frontier.json): **146** IDs not present as targets in the existing **460 first-tier** normative graph; 52 MS/MC, 51 RFC, 43 external/drafts. First two rings have **345 unique target identifiers combined**, but recursive closure is still **OPEN**.
+- [Official RFC Editor relation checks](rfc-version-relations-reviewed.json): 10 fixed editions with Update/Obsoletes metadata verified; global RFC normative references/errata not closed.
+
+Source IDs/versions, official HTML subsection URLs and older released-PDF edition warnings are stored per row in the machine-readable ledgers; do not turn these metadata findings into universal client implementation requirements.
