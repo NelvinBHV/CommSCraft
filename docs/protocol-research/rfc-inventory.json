@@ -509,7 +509,15 @@
       "full_original_text_reviewed": false,
       "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "header_metadata_checked_date": "2026-10-23",
+      "header_metadata_evidence_source": "https://www.rfc-editor.org/info/rfc3265",
+      "obsoletes": [],
+      "updates": [
+        2543
+      ],
+      "errata_reconciled": false,
+      "rfc_normative_references_closed": false
     },
     {
       "id": "RFC3280",
@@ -667,9 +675,20 @@
         "MS-SIPRE"
       ],
       "full_original_text_reviewed": false,
-      "metadata_reviewed_for_rfc_update_chain": false,
+      "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "header_metadata_checked_date": "2026-10-23",
+      "header_metadata_evidence_source": "https://www.rfc-editor.org/info/rfc3548",
+      "obsoletes": [],
+      "obsoleted_by": [
+        4648
+      ],
+      "updates": [],
+      "updated_by": [],
+      "errata_reconciled": false,
+      "rfc_normative_references_closed": false,
+      "first_published": "2003-07"
     },
     {
       "id": "RFC3550",
@@ -1078,9 +1097,23 @@
         "MS-SIPRE"
       ],
       "full_original_text_reviewed": false,
-      "metadata_reviewed_for_rfc_update_chain": false,
+      "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "header_metadata_checked_date": "2026-10-23",
+      "header_metadata_evidence_source": "https://www.rfc-editor.org/info/rfc4566",
+      "obsoletes": [
+        2327,
+        3266
+      ],
+      "obsoleted_by": [
+        8866
+      ],
+      "updates": [],
+      "updated_by": [],
+      "errata_reconciled": false,
+      "rfc_normative_references_closed": false,
+      "first_published": "2006-07"
     },
     {
       "id": "RFC4568",
@@ -1174,9 +1207,20 @@
       "source_status": "CANDIDATE_FROM_REPO_OR_PROTOCOL_CONTEXT",
       "normatively_referenced_by": [],
       "full_original_text_reviewed": false,
-      "metadata_reviewed_for_rfc_update_chain": false,
+      "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "header_metadata_checked_date": "2026-10-23",
+      "header_metadata_evidence_source": "https://www.rfc-editor.org/info/rfc4648",
+      "obsoletes": [
+        3548
+      ],
+      "obsoleted_by": [],
+      "updates": [],
+      "updated_by": [],
+      "errata_reconciled": false,
+      "rfc_normative_references_closed": false,
+      "first_published": "2006-10"
     },
     {
       "id": "RFC4722",
@@ -1275,7 +1319,16 @@
       "full_original_text_reviewed": false,
       "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "header_metadata_checked_date": "2026-10-23",
+      "header_metadata_evidence_source": "https://www.rfc-editor.org/info/rfc5245",
+      "obsoletes": [
+        4091,
+        4092
+      ],
+      "updates": [],
+      "errata_reconciled": false,
+      "rfc_normative_references_closed": false
     },
     {
       "id": "RFC5246",
@@ -1409,9 +1462,20 @@
       "source_status": "CANDIDATE_FROM_REPO_OR_PROTOCOL_CONTEXT",
       "normatively_referenced_by": [],
       "full_original_text_reviewed": false,
-      "metadata_reviewed_for_rfc_update_chain": false,
+      "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "header_metadata_checked_date": "2026-10-23",
+      "header_metadata_evidence_source": "https://www.rfc-editor.org/info/rfc6125",
+      "obsoletes": [],
+      "obsoleted_by": [
+        9525
+      ],
+      "updates": [],
+      "updated_by": [],
+      "errata_reconciled": false,
+      "rfc_normative_references_closed": false,
+      "first_published": "2011-03"
     },
     {
       "id": "RFC6156",
@@ -1497,7 +1561,12 @@
       "full_original_text_reviewed": false,
       "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "header_metadata_checked_date": "2026-10-23",
+      "header_metadata_evidence_source": "https://www.rfc-editor.org/info/rfc6665",
+      "obsoleted_by": [],
+      "errata_reconciled": false,
+      "rfc_normative_references_closed": false
     },
     {
       "id": "RFC8174",
@@ -1527,7 +1596,13 @@
       "full_original_text_reviewed": false,
       "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "header_metadata_checked_date": "2026-10-23",
+      "header_metadata_evidence_source": "https://www.rfc-editor.org/info/rfc8445",
+      "obsoleted_by": [],
+      "updates": [],
+      "errata_reconciled": false,
+      "rfc_normative_references_closed": false
     },
     {
       "id": "RFC8446",
@@ -1598,7 +1673,14 @@
       "full_original_text_reviewed": false,
       "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "header_metadata_checked_date": "2026-10-23",
+      "header_metadata_evidence_source": "https://www.rfc-editor.org/info/rfc8866",
+      "obsoleted_by": [],
+      "updates": [],
+      "updated_by": [],
+      "errata_reconciled": false,
+      "rfc_normative_references_closed": false
     },
     {
       "id": "RFC9525",
@@ -1607,9 +1689,19 @@
       "source_status": "CANDIDATE_FROM_REPO_OR_PROTOCOL_CONTEXT",
       "normatively_referenced_by": [],
       "full_original_text_reviewed": false,
-      "metadata_reviewed_for_rfc_update_chain": false,
+      "metadata_reviewed_for_rfc_update_chain": true,
       "other_normative_references_traversed": false,
-      "client_feature_applicability": "OPEN"
+      "client_feature_applicability": "OPEN",
+      "header_metadata_checked_date": "2026-10-23",
+      "header_metadata_evidence_source": "https://www.rfc-editor.org/info/rfc9525",
+      "obsoletes": [
+        6125
+      ],
+      "obsoleted_by": [],
+      "updates": [],
+      "updated_by": [],
+      "errata_reconciled": false,
+      "rfc_normative_references_closed": false
     }
   ],
   "completeness": {
@@ -1617,6 +1709,8 @@
     "directly_normative_named": 89,
     "update_obsoletes_coverage": "ONLY_SELECTED_CONFIRMED",
     "all_rfc_normative_references_traversed": false,
-    "complete": false
+    "complete": false,
+    "selected_rfc_editor_header_relations_checked_count": 10,
+    "selected_rfc_editor_header_relation_review_file": "rfc-version-relations-reviewed.json"
   }
 }
