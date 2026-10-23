@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "snapshot_date": "2026-10-23",
-  "status": "SELECTED_12_RFC_ORIGINAL_EDITION_RELATION_CHECKS_NOT_GLOBAL_CLOSURE",
+  "status": "SELECTED_16_RFC_ORIGINAL_EDITION_RELATION_METADATA_ONLY_NOT_COMPLETE_REFERENCE_GRAPH",
   "purpose": "Explicitly verify dates/updates/obsoletes for high-risk RFC editions cross-referenced by Microsoft; do not replace actual cited Microsoft profile versions with successor RFC by default.",
   "documents": [
     {
@@ -249,6 +249,76 @@
       "obsoletes": [
         "RFC2052"
       ]
+    },
+    {
+      "id": "RFC2396",
+      "original_published": "1998-08",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc2396",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "RFC_EDITOR_INFO_OFFICIAL",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "updates": [
+        "RFC1738",
+        "RFC1808"
+      ],
+      "updated_by": [
+        "RFC2732"
+      ],
+      "obsoletes": [],
+      "obsoleted_by": [
+        "RFC3986"
+      ]
+    },
+    {
+      "id": "RFC3268",
+      "original_published": "2002-07",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc3268",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "RFC_EDITOR_OFFICIAL_INFO_CONFLICT_WITH_RFC3261_2002_06_§29_[6]_CITED_DATE",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "updates": [],
+      "updated_by": [],
+      "obsoletes": [],
+      "obsoleted_by": [
+        "RFC5246"
+      ],
+      "bibliography_month_conflict": "RFC3261 original §29 [6] states RFC3268 June 2002; RFC-Editor info RFC3268 dates publication July 2002; status OPEN"
+    },
+    {
+      "id": "RFC2234",
+      "original_published": "1997-11",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc2234",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "RFC_EDITOR_INFO_OFFICIAL",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "updates": [],
+      "updated_by": [],
+      "obsoletes": [],
+      "obsoleted_by": [
+        "RFC4234"
+      ]
+    },
+    {
+      "id": "RFC768",
+      "original_published": "1980-08",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc768",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "RFC_EDITOR_INFO_OFFICIAL",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "updates": [],
+      "updated_by": [
+        "RFC9868"
+      ],
+      "obsoletes": [],
+      "obsoleted_by": []
     }
   ]
 }

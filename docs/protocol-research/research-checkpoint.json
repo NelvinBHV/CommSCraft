@@ -199,5 +199,25 @@
     "rfc3261_verified_errata_search_count_not_audited": 12,
     "p1_01_pdf_attempts": "MS-ABS and MS-SIPAE failed; download host DNS unreachable",
     "phase_1": "INCOMPLETE"
+  },
+  "phase_1_formal_gate_review_2026_10_23": {
+    "status": "INCOMPLETE",
+    "source": "phase1-closure-gates-2026-10-23.json",
+    "report": "phase1-closure-audit-2026-10-23.md",
+    "gates_total": 12,
+    "gates_passed": 0,
+    "source_rows": 58,
+    "overview_release_section_verified": 13,
+    "overview_html_only_unmatched": 33,
+    "transitive_release_sections_verified": 0,
+    "transitive_live_html_complete": 11,
+    "transitive_search_excerpt_partial": 1,
+    "new_frontier_open": 146,
+    "original_ms_avedgea_full_pdf_historically_verified": 1,
+    "original_ms_avedgea_available_this_session": false,
+    "client_build": "UNPINNED",
+    "server_roles_and_policy": "UNPINNED",
+    "release_and_implementation_authorized": false,
+    "rfc3261_bibliography_mismatch": "RFC3261 §29 [6] cites RFC3268 June 2002; RFC-Editor RFC3268 metadata publishes July 2002; version applicability OPEN"
   }
 }
