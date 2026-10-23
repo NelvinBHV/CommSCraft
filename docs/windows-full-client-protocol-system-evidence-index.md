@@ -922,4 +922,53 @@ flowchart TD
 
 **Open proof gates:** Full 38-page E911 WSDL schema + RFC5139 + emergency-routing deployment policy, OCPSTN multipart/early SDP and trusted PAI controls, EUMR `AnsweredBy` source conflict and redirect/failover behavior, EUMSDP historic client/media version, EUM server application availability, cross-source MS-SIPRE/SRTP key-crypto conflict and all client build variants. **No protocol implementation authorized; no real servers, interoperability tests, main merge or release.**
 
+## XXVIII. 2026-10-23 role-scoped agent SOAP, Exchange voicemail SIP, Call Via Work REST and browser-based persistent chat
+
+This continuation examines **four** version-pinned Microsoft original specifications, renders representative pages, and distinguishes **native Windows SIP interoperability**, **conditional agent feature**, **third-party web service**, and **external browser hand-off**. No runtime capture, test or client edition equivalence is asserted.
+
+| Protocol | Original source, revision/date, SHA verified in 150-PDF archive | Classification for classic Windows Full Client | Technical source study |
+|---|---|---|---|
+| MS-RGSWS **9.0** / **2025-05-20**, §§2.1,3.1–3.1.4.8 | **SHA256 7f9e521f82b302d7ff98cc9af982de30847310baddf4e675cf56784903a55bdc** | **Conditional agent capability** via HTTP(S)/SOAP service. SIP REGISTER auth ≠ group-agent SignIn; 8 WSDL operations | [Original 46-page RGSWS SOAP and per-group multi-operation state study](ms-rgsws9-response-group-agent-signin-batch-soap-states-2026-10-23.md) |
+| MS-OCEXUM **11.0** / **2025-05-20**, §§2.1–3.2 | **SHA256 e478ffd207187cbaf6094b6e61c53f2d83db70ee46500ab54d5c58c01964f512** | **SIP Windows-client conditional feature** and UM/proxy separate roles; headers `Ms-Exchange-Command: skip-pin` and `Ms-Sensitivity: private-no-diversion` | [20-page OCEXUM SIP trusted transport and Play-On-Phone source study](ms-ocexum11-um-sip-skip-pin-playonphone-trust-diversion-2026-10-23.md) |
+| MS-CVWREST **7.0** / **2025-05-20**, §§2.1–2.2.6.10,3.1.1–3.1.5.9 | **SHA256 aa47469c3c968e914b64acc901815ff1eba0b0399ddf71eab23cfea2eb6899a2** | **Adjacent REST web API, not proven native Win32 SIP Full Client wire behavior**; per-resource HREF/version, invitation/call state, GET/POST statuses | [46-page CVWREST hypermedia and 201/204 status study](ms-cvwrest7-callviawork-rest-hypermedia-version-resource-states-2026-10-23.md) |
+| MS-OCGCWEB **2.0** / **2016-09-14**, §§2.1–3.1.7,5.1 | **SHA256 c8dfca11fa0921ffbd0e0aa8e211a16bd6bcb7985b78b46259fd395cddda301a** | **Conditional browser hand-off**; room create/view/edit URLs with `clientlang` and XCCOS `ma-chan://` room GUID; *not* extra SIP INFO action | [14-page OCGCWEB and missing overview graph edge research](ms-ocgcweb2-persistent-chat-room-management-browser-bridge-2026-10-23.md) |
+
+[**23-row actor/wire-state/source evidence matrix**](research-corpus/ms-rgsws9-ocexum11-cvwrest7-ocgcweb2-role-client-scope-evidence-2026-10-23.csv) classifies which protocol may affect an installed Windows client, which is web-only or service-side and which has open proof obligations.
+
+### Normative and asynchronous state hazards
+
+1. **RGSWS batch false can mean partial group success.** §3.1.4.6.2.2 / §3.1.4.8.2.2: server SHOULD report false when any requested group operation fails; new per-group truth comes from `GetGroups`. **Do not roll all groups back merely because overall response=false.** Distinct group states `SignedIn`, `SignedOut`, `Unknown`; agent `SignOut` ≠ global SIP REGISTER deregistration.
+2. **OCEXUM `skip-pin` delegates trust to authenticated SIP route and trusted transport**, §3.1. Do not treat any untrusted client-supplied header as authorizing PIN removal. Play-On-Phone event via Exchange EWS **[MS-OXWUMS]** causes **UM-origin SIP INVITE** with `private-no-diversion`; `From=To` allows ringing while `Appear Offline`, but has its **own authorization/privacy boundary**.
+3. **CVWREST `POST startPhoneAudio` = HTTP 201 + invitation resource**, not final SIP 200/ACK/RTP, and `POST stopPhoneAudio` = HTTP 204, not a guarantee of SIP BYE on that same HTTP connection. When API HREF revision not advertised, `X-MS-RequiresMinResourceVersion` must not be fabricated to force unsupported schema. Native SIP client use of this REST API remains **unproven**.
+4. **OCGCWEB provides URL composition and external web browser invocation**, no new signaling transport. If configured room-management base URL unavailable, room management feature **MUST be disabled** (§3.1.1) without assuming that the existing XCCOSIP room membership drops. HTTPS is **strongly recommended** in historical §5.1, not a source permission to bypass TLS trust. Browser web app governs room authorization independently of possession of room GUID.
+
+### Composite source-constrained flow (S = inference, not a single wire capture)
+
+~~~mermaid
+flowchart TD
+ A[Registered and provisioned Windows SIP client] --> B{Feature and client deployment enabled?}
+ B -->|RGS agent| C[Provisioned RGS HTTPS SOAP endpoint and OCAUTHWS authentication]
+ C --> D[GetGroups per-agent group permission and SignedIn state]
+ D --> E[SignInMultiple or SignOutMultiple]
+ E --> F{Overall Bool?}
+ F -->|false may mean partial| G[GetGroups reconcile group-by-group state]
+ F -->|true| H[Update groups per response]
+ B -->|Exchange UM voice mail| I[Authenticated trusted SIP INVITE skip-pin]
+ I --> J[Trusted UM conditional skip PIN, audio-only media distinct]
+ B -->|Exchange Play On Phone| K[MS-OXWUMS EWS trigger, not SIP REGISTER]
+ K --> L[UM-origin INVITE with private-no-diversion]
+ B -->|Call Via Work REST app| M[Separate REST resource URI from hypermedia]
+ M --> N[HTTP201 phoneAudioInvitation, event status, stop HTTP204]
+ B -->|Persistent chat management| O[XCCOSIP gives room URI/GUID]
+ O --> P[Configured base URL present?]
+ P -->|No| Q[Disable only browser-management feature]
+ P -->|Yes| R[Build clientlang and optional id, external browser]
+~~~
+
+### New source-closure gap and strict relevance filtering
+
+**MS-OXWUMS [Voice Mail Settings Web Service Protocol]** is *a published first-party Exchange specification* ([official Microsoft document index](https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxwums/79ace092-b793-4fa5-82b0-dd30d12c14c2), 2025 edition rev16.0), but **no corresponding original PDF exists within the current locally archived 150 first-party sources**. [MS-OCEXUM] cites it for Play-On-Phone triggering; mark it **SOURCE PUBLISHED / ARCHIVE MISSING / ORIGINAL EDITHIST + NORMATIVE REVIEW OPEN**, not “Microsoft spec inaccessible”. It may also carry additional Exchange dependencies beyond old parsed edge closure. Historical client-era EWS editions must be compared; newer source edition doesn't automatically govern the 2015 native executable.
+
+**Remaining unresolved:** RGS SOAP partial response reconciliation under network disconnect/authorization; MS-OCAUTHWS and MS-OXWUMS authenticated identity; call-via-work UCWA REST scope versus Windows SIP; browser room-management origin/URI safety; exact full Windows build/profile applicability for optional features; full RFC normative transitive closure. **No new protocol implementation plan is authorized. No real servers or tests, main merge or release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
