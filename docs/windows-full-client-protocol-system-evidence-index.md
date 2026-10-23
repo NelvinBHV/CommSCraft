@@ -401,4 +401,49 @@ flowchart TD
 
 **Open gates:** Microsoft product-specific compression enablement/first-server-packet timing, exact MPPC encoding and 6-byte framing relative to TLS records, full route URI/mic canonicalization, source edition compatibility for 430 versus registrar `added|fixed`, different server-farm credential and long-lived media refresh handling, per-version historical notes. No implementation, live-server tests, merge or release.
 
+## XV. 2026-10-23 deeper original presence, contact roaming and IM delivery (32? no — 24+19+16 individually enumerated rules)
+
+**Original studies extending prior partial presence/contact coverage, with separate server roles and source status:**
+- [MS-CONFIM rev11.0 (2025-05-20): conference IM message forwarding, 202/200 and IMDN, INFO typing, 40s MCU history](ms-confim11-conference-im-message-id-imdn-typing-history-original-2026-10-23.md): **24 section-qualified rules** (§§2.2.1–6,3.1–3.4) including `m=message 5060 sip null`, `a=accept-types`, `Supported: ms-sender`, per-conference `Message-Id`, **MCU 200** if sender sole connected participant, **202** otherwise and downstream `BENOTIFY application/ms-imdn+xml`. After 202 client waits **10s default** for matching IMDN; timeout means per-recipient **408**. MCU provides **40s temporary creation-time history**, not offline indefinite queue. A forwarded MESSAGE `From` can be conference URI; actual sender is `Ms-Sender`. Typing `INFO 202` has no IMDN; outgoing forwarding only to `ms-sender`-capable endpoints. **DOC-ERR-IM01:** in original PDF p26 §3.4.1.5.2 the heading says receiving **INFO**, but normative sentence says 200 on incoming **MESSAGE**, immediately reverting to INFO in next sentence. **Unresolved editorial inconsistency — implementation blocker** pending original errata/secondary source.
+- [MS-SIP rev8.0 (2017-06-01) and MS-PRES rev13.0 (2025-05-20) contact list / ACL / Unified Contact Store migration](ms-sip8-pres13-roaming-contacts-acl-ucs-migration-version-security-2026-10-23.md): **12 roaming contact/ACL, 7 UCS and 5 privacy rules**, with full/delta `contactList` and `contactDelta prevDeltaNum/deltaNum`, separate legacy roster ACL counters, SIP `SERVICE` SOAP setContact/group, optional `BENOTIFY` no SIP response, legacy default group 1 and group IDs 1–63, `Supported: ms-ucs-ready` migration queue, **read-only contact list while migrating**, `Supported: ms-ucs` mail-server access capabilities after migration and legacy server-side proxying. Actual UCS/error status requires MS-OCER §7.3 and target Windows/client server edition. Contact membership ≠ presence subscription ≠ privacy permission.
+- [MS-PRES rev13.0 atomic enhanced publication, visibility and error contract](ms-pres13-atomic-publish-container-visibility-error-policy-2026-10-23.md): **16 original section-qualified rules** (§§3.2.1–3.2.5.5,3.5.5). Client REGISTER advertises `msrtc-event-categories`; SERVICE `application/msrtc-category-publish+xml` requires identity From/To/publication URI equality and optimistic version per category instance, 0 for new; **entire batch atomic** and **409 rejects all** on version conflict; **488** for `expireType=endpoint` without corresponding registered endpoint; 200 self response returns current instances/versions. NOTIFY/BENOTIFY propagates to same-user endpoint and other authorized watchers. Visibility resolves per-category through user/domain/sameEnterprise/federated/publicCloud/default with highest numbered matching container; **watcher payload omits confidential internal container ID, version, expiry type and endpoint ID**. Container membership edits are separately atomic/versioned and can trigger notification even without changed category XML.
+
+### Distinct identities, versions and timers across contact/presence/IM
+
+| Dimension | First-party source | Do **not** conflate with |
+|---|---|---|
+| Legacy roster `deltaNum/prevDeltaNum` | MS-SIP §2.2.4.1, §3.7 | Category `version`, container membership version, ACL version, SIP CSeq |
+| ACL version and access control | MS-SIP §3.7 | Enhanced presence category container priority and UCS migration mode |
+| UCS `ms-ucs` vs `ms-ucs-ready` | MS-PRES §3.10 | User auth success, auto migration completed, full roster already fetched |
+| Publisher/category/instance/container/version | MS-PRES §3.2.1–.5 | User roster group ID (1–63), SIP GRUU, MCU conference Message-Id |
+| Conference MCU `Message-Id` | MS-CONFIM §2.2.4,3.3 | SIP CSeq/Call-ID or universal 1:1 IM ID |
+| Conference sender `Ms-Sender` | MS-CONFIM §2.2.3 | Routing `From` (conference URI) or spoofable legacy text prefix |
+| MCU client IMDN timeout default **10s** | MS-CONFIM §3.3.1.6 | MCU message history **40s**, conference C3P command **32s/180s** |
+| Conference INFO typing 202 | MS-CONFIM §3.4 | MS-CONFBAS Focus C3P `INFO` 202, MS-CONFIM `MESSAGE` 202, QoE `SERVICE` 202 |
+| Successful publish SERVICE 200 | MS-PRES §3.2.5 | Proof of presence delivery to unauthorized contacts, or roster sync |
+| Endpoint registration expiry | MS-PRES §3.2.5.5 | Entire user's contact list deletion, active unrelated endpoints and user-bound publications |
+
+**Cross-system research model, not mandatory packet order:**
+
+```mermaid
+flowchart TD
+ A[Authenticated REGISTER endpoint and service state] --> B[Legacy roaming contact SUBSCRIBE or UCS mode branch]
+ A --> C[Own presence SERVICE publish + correct instance/container versions]
+ B --> D[Full roster then deltas, separate ACL and privacy]
+ C --> E[Self NOTIFY/BENOTIFY and authorized category subscriber updates]
+ D --> F[Independent persistent/polling category SUBSCRIBE]
+ F --> E
+ A --> G[Conference Focus and IM MCU INVITE media setup]
+ G --> H[MESSAGE to MCU, Message-Id assignment]
+ H --> I{MCU 200 or 202?}
+ I -->|200 sender only| J[Client treats complete]
+ I -->|202 fan-out| K[IMDN pending, 10s default deadline]
+ K --> L[BENOTIFY matching Message-Id or local 408]
+ G --> M[INFO typing, MCU 202 best effort no IMDN]
+```
+
+**Source authority guard:** Microsoft legacy MS-SIP **2017** and Microsoft MS-PRES **2025** edition differences are not proof that every Windows Full Client uses the same store at every deployment. RFC3428 permits MESSAGE within established SIP dialog without MESSAGE itself creating one; MS-CONFIM specifically requires the **MCU INVITE media dialog**. Legacy RFC2976→RFC6086 INFO and RFC3265→RFC6665 SUBSCRIBE event upgrades need per-product compatibility; BENOTIFY is an independently negotiated nonresponded Microsoft method, **not RFC NOTIFY**. The source §3.4.1.5.2 INFO/MESSAGE contradiction and all 2025 original product notes remain **OPEN**.
+
+**Remaining gates:** full CONTACT SOAP schema/response/error codes; UCS mode and MS-OCER behavior; privacy subscriber list and presence aggregation; IMDN late/duplicate/Message-Id=0 and 40-second history ordering; legacy conference INFO editorial errata; actual 1:1 IM invitation, MIME and human read/delivery semantics; actual Windows and MCU editions. **Not full normative closure. No implementations, live-server or interoperability tests, merge or release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
