@@ -11,6 +11,10 @@ Inspired by the modular Rust architecture and original implementation approach
 of [storytold/wordcraft](https://github.com/storytold/wordcraft). This is an
 independent project, not affiliated with Microsoft or storytold.
 
+## Protocol research — separate draft workstream
+
+**Current evidence-based research checkpoint:** [`docs/protocol-research/CURRENT_STATUS.md`](docs/protocol-research/CURRENT_STATUS.md) and [machine-readable checkpoint](docs/protocol-research/research-checkpoint.json) on branch `draft/protocol-spec-analysis-2026-10-23`. The current research snapshot records 46/46 first-tier MS-OCSPROT reference lists; **Phase 1 as a whole remains incomplete** (published-version reconciliation and recursive normative references open). This workstream is **documentation only**: no new protocol implementations, real-server tests, merge or release. This section does **not** claim interoperability or alter the mainline source-import state.
+
 ## Source-import and validation status
 
 The complete historical v0.14.0 Rust workspace, fixtures, feature-parity inventories and unchanged RFC/Microsoft evidence ledgers were imported from the prepared source archive into [PR #8](https://github.com/NelvinBHV/CommSCraft/pull/8). The existing MS-SIPREGE `commscraft-register-events` module, its Linux/Windows-tested integration tests and its documentation were retained during the merge.
