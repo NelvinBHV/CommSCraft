@@ -492,4 +492,52 @@ flowchart TD
 
 **Status remains NOT COMPLETE; no protocol code, live-server/interoperability testing, main merge or release.**
 
+## XVII. 2026-10-23 conference creation, Focus admission/C3P and ASMCU desktop-sharing states
+
+**Two new direct original-source technical audits (46 individually scoped requirements, not client conformance claim):**
+- [MS-CONFPRO rev13.0 and MS-CONFBAS rev15.0, exact provisioning→Focus→lobby→C3P conference control](ms-confpro13-confbas15-conference-factory-focus-lobby-control-rfc4575-2026-10-23.md) — **28 numbered P/R/S requirements**, originals v20250520 §§2.2–3.5; RFC4575 conference event package and RFC4579 call control. `SERVICE application/cccp+xml` to **Focus Factory** handles `addConference`/`modifyConference`/`getConference`/`deleteConference` with requestId correlation; creation conference-key is *deprecated* even though GetEncryptionKey X509 public-certificate operation remains; optimistic conference version and static-meeting product limits. `INVITE` with `addUser` creates independent **Focus signaling dialog**; then conference `SUBSCRIBE` first full roster (piggyback 200 or NOTIFY/BENOTIFY), own lobby/admission and MCU URI table. **32s** optional first full subscription timeout; Focus lobby hides other participants and MCU details; Focus **400/403/404/603** join failures. Authorized Focus `INFO application/cccp+xml` operation receives **SIP 202 accepted** then **C3P pending/success/failure** via later Focus INFO or inline 200. Client command timeout **32s initial, 180s after C3P pending**, Focus processing timer **28s**; all distinct from SIP and media timers.
+- [MS-CONFAS rev12.0, sharer/viewer SDP roles, RDP-over-RTP conference media and permissions](ms-confas12-application-sharing-sdp-rdp-handoff-policy-2026-10-23.md) — **18 numbered clauses**, v20250520 §§2.2,3.2–3.3. ASMCU uses separate `conf-uris` purpose **applicationsharing** and modality INVITE. `m=applicationsharing` + SDP `x-applicationsharing-role:sharer|viewer` with **reversed MCU answer**; share-video direction corresponding to role, SDP 488 for malformed/no usable media or mismatched video direction, additional role m-lines individually refused `port=0` under RFC3264. Sharer↔viewer renegotiation uses ASMCU **re-INVITE**, old m-line disabled port 0 and new line created. The MCU announces **signaling connected → media-state joining → (SHOULD after RDP connected) media-state connected**. New sharer ejects previous sharing user on this **ASMCU dialog** by SIP BYE diagnostic **21000**, with roster media removal; this does **not automatically terminate Focus dialog**. Source permissions include **21001** appsharing policy, **21002** attendee sharer policy and capability **desktop|singleApplication|none**; `singleApplication` MUST NOT begin desktop-wide sharing. RDP/RTASPF framing/security remains to be audited.
+
+### Feature-by-feature independently observable evidence
+
+| Goal / user-visible event | Necessary documented protocol evidence | What does **not** prove it |
+|---|---|---|
+| Meeting successfully scheduled | Focus Factory SERVICE 200 + C3P `code=success`, conference URI and conference version, with verified requestId | SIP 200 without XML parse; Focus INVITE from another client |
+| Meeting detail changed | `modifyConference` based on current version; server increments version | Old local version, published presence category version |
+| User entered meeting | Focus INVITE `addUser` successful, own endpoint status from full roster | Factory addConference success or global registration 200 |
+| Lobby admitted | Conference subscription own endpoint `connected` full-state rather than lobby-limited state | 200 Focus INVITE by itself; visible empty roster |
+| Moderator command completed | C3P final success/failure with matching command requestId (possibly after SIP 202 and C3P pending) | SIP INFO 202 alone |
+| Application-sharing media negotiated | ASMCU SIP INVITE with correct role/media SDP, 200 SDP answer | Focus conference joining or simple C3P roster activation |
+| Viewer or sharer actually streaming | ASMCU / Focus roster media-state connected after RDP connection and separately proven ICE/RTP security | SDP 200 or `media-state=joining` |
+| Screen sharing displaced by another user | ASMCU BYE `ms-diagnostics-public:21000` and media roster updates | Account deregistration, Focus conference ended |
+| Attendee forbidden to share | Conferencing policy and role, diagnostics 21001 or 21002 under respective guards | Generic SIPAE failed authentication, unsupported local resolution |
+| Screen vs single application | Capability `supports-application-desktop-sharing:desktop|singleApplication|none` and admin permission | Declared `sharer` alone |
+| One endpoint leaves a conference | That endpoint's Focus dialog/roster state only; remaining endpoints independent | User removed globally across other endpoints |
+
+### Conference signaling subsystem synthesis (not a mandatory observed packet trace)
+
+```mermaid
+flowchart TD
+ A[Organizer has SIP identity and Focus Factory URI] --> B[Optional SERVICE addConference with C3P requestId]
+ B --> C{Final C3P success?}
+ C -->|No| Z[Conference provisioning failed or timed out, details in reason]
+ C -->|Yes| D[Conference URI and version available]
+ D --> E[Participant Focus INVITE plus addUser]
+ E --> F[Conference SUBSCRIBE, full roster, own endpoint and MCU URIs]
+ F --> G{Lobby or admitted?}
+ G -->|Lobby| H[Restricted notification, wait or terminate per lobby-capable]
+ G -->|Admitted| I[Independent IM AV Sharing MCU sessions]
+ I --> J[ASMCU INVITE with viewer or sharer SDP]
+ J --> K[SDP accepted, media-state joining]
+ K --> L{RDP session connected?}
+ L -->|Yes| M[ASMCU media-state connected notification]
+ L -->|No| N[Separate ICE/RDP/sharing failure or timeout, not Focus logout]
+ I --> O[Focus INFO C3P command]
+ O --> P[SIP 202, pending/final C3P correlated response]
+```
+
+**Critical unresolved matters:** MS-CONFAS refers to a `server-mode=13` attendee sharer gate, while MS-CONFPRO describes `server-mode` as obsolete for **MCU-type selection**; these are distinct use cases, do not claim universal conflict or ignore either without edition policy audit. MS-CONFAS prose uses both `sharing/viewing` and `sharer/viewer` token strings; formal MS-SDPEXT ABNF and original wire examples must resolve exact sent values. **Full MS-RDPBCGR, MS-RDPEMC and MS-RTASPF**, authentication and integrity of RDP-over-RTP media, policy/role mapping, end-to-end SDP/ICE/SRTP and eventual moderator/participant leave sequence all remain OPEN. These source gaps are not license to plan implementation.
+
+**Research continues, global protocol analysis NOT COMPLETE; no code, live-server or interop tests, main merge or release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
