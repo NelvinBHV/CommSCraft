@@ -607,4 +607,48 @@ flowchart TD
 
 **Blocking next source studies:** IETF old ICE draft19/ICETCP07/TURN08 and RFC obsolescence mappings; exact MS-TURN multiplex frame and 128-bit-ID field layout; AVEDGEA token XML and authorization; MS-ICE2 §2.2 STUN header/HMAC details and error branches; special **pseudo-TLS** trust/no downgrade from verified actual TLS; media re-INVITE/ICE restart after consent expiry; independent RTP/RTCP feedback and QoE. Overall Windows Full Client research **NOT COMPLETE**, implementation gate CLOSED; no protocol code, live-server tests, merge or release.
 
+## XX. 2026-10-23 original MS-RTP, QoE and OCER: feedback versus retained reports versus client diagnostics
+
+**Three new source-based original-document technical audits; 54 separate source-labelled rows:**
+- [MS-RTP rev17.0 & MS-RTPRADEX rev13.0, real-time RTCP feedback, SSRC/mixer/quality states and RFC2198 audio redundancy](ms-rtp17-rtcp-feedback-bandwidth-ssrc-timers-rtpradex13-original-2026-10-23.md) — **25 numbered requirements**. Original 2025-05-20 §§2.2,3.1–3.2 checked, PDF pp17/42/45 and RADEX p9 rendered; RFC3550/3551/2198 compared. Microsoft accepts **simple RTCP SR/RR/SDES/BYE** besides RFC3550 compound validation; RTCP SR/RR profile extension `Type16 | Length16` network-order, length-inclusive, **<=20** per report, unknown types ignored via length. SSRC **participant timeout 50s SHOULD**, dominant speaker **3s SHOULD** and > ptime MUST, SSRC change throttling **2s SHOULD and <=2s MUST**; **RTCP packet loss feedback >=200ms MUST**, video lost packet report MAY trigger encoder I/SP frame, not guaranteed. Fast bandwidth probe packet pairs **250ms SHOULD** and trains **1s SHOULD**, count **40 and 21** before normal send-rate. RTCP feedback 190ms fast and VSR 3s slow with **unresolved source's slow retransmission count 5 vs 4** discrepancy (§§3.2.2 vs 3.2.6). RTCP BYE SSRC cleanup **20s SHOULD**, not SIP BYE. MS-RTPRADEX redundant audio **symmetric dynamic payload**, **<=3 packet distance**, **max one redundant+one primary block**, both **same codec**, whereas general RFC2198 permits more/different codecs; [MS-DTMF] prohibits redundant DTMF blocks.
+- [MS-QoE rev12.0, post-call SIP SERVICE quality XML and QoE Monitoring Agent trust/response contract](ms-qoe12-postcall-service-xml-identity-202-monitoring-original-2026-10-23.md) — **14 numbered source rules** from 175-page 2025 original §§1.3–3.3 and selected XML subsections, p13/p79 visually rendered, [official release rev12](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-qoe/c1050431-f4b2-44d4-a425-63d75e99f5df). If QoE enabled, client sends **SIP SERVICE** through proxy to QoE GRUU/home pool: objective **`application/vq-rtcpxr+xml` VQReportEvent** with `VQSessionReport` (interval report defined by schema but *not used*); subjective **`application/ms-cqf+xml` CallQualityFeedbackReport** with user rating **1–5**, optional text/tokens and required CallId/FromTag/ToTag. Agent **202 Accepted ≠ committed/persisted**, errors **606 bad root, 400 schema/value, 401 body vs From/LocalPAI or anonymous focus identity, 415 wrong MIME, 413 >300KB**; **no special QoE client timers specified in §3.1**. Subjective feedback and detailed network identifiers are independent privacy/service-permission information.
+- [MS-OCER rev11.0, private/public SIP diagnostics, reportError SERVICE and error-specific recovery/UX](ms-ocer11-diagnostics-presence-version-ids-reporterror-retry-original-2026-10-23.md) — **15 numbered role-scoped rules** from 2025 207-page original §§1–3,7.3,9–10; p11/p17 rendered. Server `ms-diagnostics` (internal **ErrorId;reason;source**) can reveal enterprise topology and SHOULD be removed across enterprise boundary; `ms-diagnostics-public` **must omit source**, client **must not originate** either server diagnostic header. `reason` free text **SHOULD NOT define client error state**; number is machine-handled. Client failed-request **SIP SERVICE `application/msrtc-reporterror+xml`** includes original Call-ID/method/SIP code and optional progress diagnostics; service **200** vs **503 with Retry-After** vs **503 + diagnostic 2019 or missing diagnostics ⇒ SHOULD NOT retry this login**, **413 ⇒ SHOULD NOT retry**. MS-OCER §7.3 uniquely distinguishes stale state ids **2044 publication version, 2045 container version, 2046 contact version, 2047 permission version**; also 2014 unknown presence dialog and 2016 new subscription, 2017 registration expired, 2039 contact change denied. The 207-page full error table and client product notes remain **OPEN**.
+
+### Unified session-end, monitoring and error identity model (S, not a guaranteed mandatory Windows packet trace)
+
+```mermaid
+flowchart TD
+ A[Session has accepted SIP dialog, negotiated ICE and SRTP] --> B[Media RTP and RTCP flows]
+ B --> C[MS-RTP RTCP loss, bandwidth, speaker and SSRC feedback]
+ C --> D{Media or participant problem?}
+ D -->|Loss/adaptation| E[RTCP feedback, possible encoder refresh, independent ICE consent]
+ D -->|Participant timeout or RTCP BYE| F[SSRC participant state cleanup, not necessarily SIP BYE]
+ A --> G[Session ends via SIP BYE or error]
+ G --> H{QoE feature enabled?}
+ H -->|Yes| I[SIP SERVICE vq-rtcpxr/ms-cqf report to Monitoring Agent]
+ I --> J{Agent response}
+ J -->|202| K[Accepted for reporting, not proven persisted]
+ J -->|401/400/413/415/606| L[Report validation/origin failure, not call restart]
+ G --> M{Original SIP operation failed?}
+ M -->|Yes| N[Optional MS-OCER reportError SERVICE to server]
+ N --> O[200, 503+Retry-After, 503 ID2019/no diag, or 413]
+ C --> P[Independent RTP 50s idle, RTCP BYE 20s, ICE consent 30s]
+```
+
+### New cross-domain semantics and failure guards
+
+| Code/clock | Source and exact meaning | Forbidden false equivalence |
+|---|---|---|
+| **202 QoE** | QoE Monitoring Agent accepted XML report | Conference command C3P 202, MCU IM MESSAGE 202 and processing/storage success are all different |
+| **200 OCER reportError** | Client's error report SERVICE accepted | Session recovered, original failed INVITE succeeded, or account has re-registered |
+| **401 QoE** | SIP From not matched with XML LocalPAI/FromURI (or anonymous conference focus mismatch) | SIPAE 401/407 challenge and TURN 401 digest nonce |
+| **2044–2047 Microsoft ErrorId** | Distinct publication/container/contact/permission stale versions under MS-OCER §7.3 | SIP HTTP/STUN response code 2044 and a universal 409 retry version |
+| **503 OCER + Retry-After** | Reporting service busy, source recommends wait | 503 with no diagnostic or ErrorId 2019 — source says no retry within login session |
+| **200ms/190ms RTCP intervals** | Packet loss suppression / RTCP feedback repeat | SIP RFC3261 Timer F, ICE connectivity checks, packet replay window |
+| **50s RTP participant / 20s RTCP BYE** | Local mixer/SSRC participant lifecycle | SIP BYE/dialog termination, ICE consent 30s, TURN allocation expiry |
+| **300KB QoE limit** | XML report rejected by QoE agent with 413 | OCER report field maxima, RTP 1500-byte sharing packet cap |
+| **RFC2198 audio redundancy** | Negotiated symmetric dynamic PT, <=1 same-codec redundant block, distance<=3 | DTMF telephone-event redundancy or video loss feedback |
+
+**Research blockers:** MS-RTP source §3.2.2 VSR slow retransmission **5 vs 4** conflict, exact packet extensions / 175-page QoE XML metrics / 207-page OCER ErrorIds and per-release UI rules not yet exhaustively reviewed. **No report SERVICE implies SIP logout or media auto-restart.** IEEE RFC3550 RTP feedback, SIP RFC3261 transactions, STUN/ICE consent and TURN credentials are different protocol lifecycles. Full normative documentation and Windows profile conformance remain **NOT COMPLETE; implementation gate CLOSED; no code, genuine-server/interop testing, main merge or release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
