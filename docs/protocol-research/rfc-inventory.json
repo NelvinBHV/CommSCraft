@@ -199,7 +199,8 @@
         "MS-SIPRE",
         "MS-RTASPF",
         "MS-RGSWS",
-        "MS-H264PF"
+        "MS-H264PF",
+        "MS-AVEDGEA"
       ],
       "full_original_text_reviewed": false,
       "metadata_reviewed_for_rfc_update_chain": false,
