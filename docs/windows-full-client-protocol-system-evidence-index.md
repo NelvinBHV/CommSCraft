@@ -1210,4 +1210,42 @@ flowchart TD
 
 **S state synthesis:** client publishes per endpoint → server recomputes **different aggregation functions** and privacy-output container variants → subscriptions receive NOTIFY/BENOTIFY according to watcher authorization; simultaneously self-roamed delegate/roster/UCS and category version counters remain independent. **The server is authoritative for aggregation; reproducing internal aggregation locally may help model behavior but is not evidence that client MUST implement server transform.** Next proof tasks: full §2.2.2.7.* individual category XML, §3.8.5.2 nested capability winner conditions, §6.13 namespace erratum, delegate exact Content-Type and UCS Supported token, update old cross-document version matrix for product-build support. Research remains **INCOMPLETE**, implementation gate CLOSED, no code, server connections/interoperability tests, merges or releases.
 
+## XXXII. 2026-10-23 MS-SIPRE 13.0 endpoint GRUU, RFC3261/3428 fork/ACK and 430 route recovery; conference IM cross-check
+
+**This tranche extends, rather than reclaims, the existing §XXIX conference IM research.** New primary section study:
+- [MS-SIPRE rev13 source: MPOP, GRUU, endpoint UUID/epid, fork races and 430 recovery](ms-sipre13-rfc3261-3428-mpop-gruu-fork-430-dialog-recovery-2026-10-23.md) — Microsoft original **v20250520, rev13.0, May20 2025, original PDF SHA256 `9dc4121780f66dc958f5d9e906594cfbc8b5535410e5f18592a8331227e969ae`**. Pages 23,39,42,53,54 rendered and visually reviewed. **31 clause-labelled** ROUTE14 + REC12 + IM5 findings from §§2.2.3–2.2.19,3.2–3.4,3.6–3.7,3.9; RFC3261 §§9,12,13,16, RFC3428 §§4–7; historical [RFC6026](https://www.rfc-editor.org/rfc/rfc6026.html) 2010 Accepted state Timer M treated as edition dependent, **not assumed** to be in 2015 Windows binary.
+- [Additional IM MCU 202+IMDN/INFO comparison](ms-confim11-mcu-message-imdn-10sec-40sec-typing-info-source-2026-10-23.md) is a focused **24-rule cross-check** of already documented [larger MS-CONFIM 30-rule §XXIX study](ms-confim11-im-mcu-message-imdn-40s-history-typing-sender-rfc-original-2026-10-23.md). It separately documents **`MESSAGE 202 + Message-Id + BENOTIFY IMDN`, client 10s sendMessageTimer**, MCU 40s initial join-history window, per-recipient MIME 415, and **INFO 202 without any delivery callback**. The already known **§3.4.1.5.2 incoming INFO vs textual “incoming MESSAGE” typo** remains unresolved; this analysis does not claim to have discovered it for the first time.
+- [55-row machine-readable clause/actor/remaining-gap matrix](research-corpus/sip-dialog-mpop-route-recovery-im-mcu-55-clause-trace-2026-10-23.csv): **31** MS-SIPRE/RFC rows and **24** MS-CONFIM rows, all qualified as selected source clauses, **not exhaustive edition client support**. Versioned Microsoft 50-source root catalog now points to **MS-SIPRE new source study** and prior **MS-CONFIM original study**; their normative-closure flags remain OPEN.
+
+### Technical reconstruction and failure separation
+
+| Area | Source boundary | Strict client state and failure semantics |
+|---|---|---|
+| SIP identity | MS-SIPRE §§3.2.4.1,3.2.5.1,3.3.5 | Each endpoint has separate **epid**, `+sip.instance` UUID and GRUU; nonmatching `To;epid` on inbound request must **discard without response**; invalid REGISTER epid/UUID agreement ⇒ server **400** |
+| Multi-endpoint INVITE | MS-OCSPROT §2.5.11, RFC3261 §13.2.2.4 | Fork branches can produce **multiple distinct 2xx dialogs**, independently ACKed, even if proxy issues CANCEL to pending losers; do not choose “one successful human dialog always” |
+| 1:1 MESSAGE | RFC3428 §§4,7 and MS-OCSPROT §2.5.9 | MESSAGE can run inside IM INVITE dialog but **does not create dialog by itself**; 200 may mean final destination received, **not read**, while 202 is only upstream accepted |
+| Recoverable routed dialog | MS-SIPRE §3.7.5.1–§3.7.6.1 | `430 Flow Failed` with **`P-Dialog-Recovery-Action`** splits **registration refresh**, **target route-set UPDATE/SUBSCRIBE refresh**, or **wait for negotiated session refresh**. If no extension support, proxy SHOULD use **481**. Recovery updates Contact/Record-Route and then resends only qualifying failed request, not arbitrary loop. After same request retried twice with 430 again, SHOULD stop |
+| Conference IM delivery | MS-CONFIM §§3.3.1.5.1–.6,3.3.2.5.1–.2 | IM MCU 202+Message-Id gives **asynchronous** per-recipient outcome in BENOTIFY IMDN; **10s** sender timer; timeouts -> **408**; MCU **40s** history is only early conference join aid |
+| Conference typing | MS-CONFIM §§3.4.1.4.1–3.4.2.5.2 | MCU INFO 202 is **acceptance only**; relay only to Ms-Sender-capable endpoints and **no sender-side delivery event** |
+
+~~~mermaid
+flowchart TD
+ A[Authenticated endpoint GRUU and SIPAE context] --> B[SIP INVITE potentially forked across registered endpoints]
+ B --> C[Each distinct 200 and To-tag creates separate dialog]
+ C --> D[ACK each branch; BYE unwanted confirmed dialog]
+ D --> E[Independent per-dialog MESSAGE transaction]
+ E --> F{Response}
+ F -->|200| G[Final SIP delivery assumed, not human read]
+ F -->|202| H[Intermediate or conference-MCU acceptance; further proof varies]
+ F -->|430 with action| I{Route recovery action}
+ I -->|Registration update| J[REGISTER refresh then recover route-enabled dialogs]
+ I -->|Dialog route update| K[Target refresh UPDATE or SUBSCRIBE]
+ I -->|Wait for session update| L[Recovery timer based on negotiated session]
+ K --> M[Contact and Record-Route refresh then re-send failed request]
+ H --> N[If MS-CONFIM MCU: wait Message-Id IMDN BENOTIFY 10 seconds]
+ N --> O[Per-recipient delivery status or timeout 408]
+~~~
+
+**Source-accuracy and applicability gates:** MS-SIPRE 2025 §3.7.5.3.1 uses imprecise phrase “P-Dialog-Recovery-Action tag” instead of a named value in header §2.2.18; original errata and Windows-client implementation branch require verification. Other prior unresolved issues: SIPREGE rev17.1 survivable self-subscription deregister-vs-retry and false entry/exit, SRTP SHA1/SHA256 source conflict, historical vs newer GRUU draft/RFC, RFC3261 vs RFC6026 transaction behavior, exact MPOP race and client-specific routing script. **Global research NOT COMPLETE. Implementation gate CLOSED; no server/network interop, code, merges, releases.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
