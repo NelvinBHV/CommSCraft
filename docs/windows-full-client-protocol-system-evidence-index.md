@@ -793,4 +793,46 @@ flowchart TD
 **Open normative conflict:** MS-SIPREGE 17.1 §3.1.1.5.1 requires differentiated self-subscription state but contains simultaneous SHOULD deregister/retry and a contradictory "end of survivable mode" `Presence-Service-Available=false` marker. Official erratum needed; no arbitrary implementation branch chosen. The SRTP SHA1/SHA256 edition collision also remains unresolved.
 
 
+
+## XXIV. 2026-10-23 authentication wire, HTTP Web Tickets and historical NTLM/Kerberos edition matrix
+
+**Three original-source audits plus machine-readable 20-domain state matrix; these are selected technical clauses, not all auth cases:**
+
+1. [MS-SIPAE rev11 2025: exact challenge/response grammar, MIC canonicalization, anonymous conference Digest and GSS/TLS-DSK](ms-sipae11-auth-headers-mic-kerberos-ntlm-tlsdsk-anonymous-2026-10-23.md) — **25 numbered original requirements** from §§2.2.1–2.2.6,3.2–3.3, PDFs pp13–15,24–25,35,37–38 rendered. Microsoft challenge header `NTLM`, `Kerberos`, `TLS-DSK` and `realm,targetname,opaque,gssapi-data,version,sts-uri` extend RFC3261, and **Microsoft explicitly allows Authorization in SIP responses and Proxy-Authorization in CANCEL**, unlike the original RFC3261 restrictions. **Authentication-Info in ACK/CANCEL/other responses** is also accepted by this Microsoft profile. **Full request canonical MIC fields** in explicit angle-bracket UTF-8 order include scheme, crand, cnum, realm, targetname, Call-ID, CSeq number/method, From URI/tag, conditional To URI and asserted/preferred SIP/tel identity (version>=3), Expires, response code on responses, with `<>` only for applicable absent fields. SIPAE **256-message server snum replay** is distinct from SIP CSeq. Kerberos GSS ticket target **`sip/targetname`**, NTLM GSS datagram tokens possibly empty at beginning, **TLS-DSK embedded TLS handshake** and separate directional PRF-derived signing keys; 401 vs 407 choose distinct headers/targets. **Anonymous `@anonymous.invalid` conference GRUU** can authenticate via **Digest MD5-sess or SHA256-sess with conference-key**, not a normal signed-in enterprise SA. Relevant RFC2743/4120/3261 editions pinned.
+2. [MS-OCAUTHWS rev11 2025: PKCS#10 GetAndPublishCert, HTTPS WS-Trust IssueToken, webticket audiences, proof vs signed ticket](ms-ocauthws11-certprovision-webticket-identity-2026-10-23.md) — **20 source-qualified findings** from §§2.1,3.1.4.1,3.2–3.2.4.1.3.3, 92-page original PDF pp25–28,30–33,36–37 inspected. `GetAndPublishCert` requires `DeviceId`, `Entity` user SIP URI **without sip: prefix** and PKCS#10 Base64 CSR in WS-Trust RST X509v3; success returns X509 CN matching Entity and SHOULD SKI DeviceId, failure uses **typed ErrorInfo rather than SOAP fault**. Separately `IssueToken` supports HTTP Integrated Windows [RFC4559] vs OCS-signed client cert vs Live ID SAML vs OAuth2 actor claims, via WS-Trust RST with **UUID Context, AppliesTo farm-validated service address, KeyType SymmetricKey, Entropy**, SIP identity claim MUST match credentials. SOAP web apps get WS-Security SAML ticket, non-SOAP get `X-MS-WebTicket: opaque=...` signed token. **28032 invalid, 28033 expired, 28034 proof ticket bound to another web server**, HTTP vs SOAP faults by authentication mode; no own OCAUTHWS protocol timer. These credentials are not SIPAE `response`, SRTP master keys or TURN relay tokens.
+3. [MS-NLMP rev37 2026 / MS-KILE rev49 2026 / historic GSS RFC2743 + Kerberos RFC4120 edition guard](ms-sipae11-nlmp37-kile49-trust-and-edition-matrix-2026-10-23.md) — **19 original-section/RFC comparisons**, original NLMP PDFs pp18–25 and KILE pp30,32,35–36 rendered. Inside Base64 SIPAE token, NTLM's **`NTLMSSP\0` 8-byte signature + 4-byte little-endian message type** (1 Negotiate,2 Challenge,3 Authenticate) and negotiated UTF-16LE/OEM are *not SIP headers*. NTLM handshake MIC/conditional channel-binding and SIPAE per-message MIC have **different authenticated inputs and distinct state**. Windows client mechanism MUST reject server feature flags below its security policy. Kerberos AS→TGS→AP exchanges and `sip/` SPN require KDC/user realm and service ticket; 2026 KILE §3.1.5.2 requires AES-SHA1 and AES-SHA2 etypes but **does not prove 2015 SfB client capability**. Official Windows spec release archives list **MS-NLMP rev36 2024-04-23** and **MS-KILE rev31 2015-10-16 / rev44 2024-06-10 / rev45 2025-08-11**; those historical PDFs need original clause-by-clause comparison. Current 2026 docs are supporting dependency evidence with **H edition guard**.
+4. [20-row cross-plane authentication and fault-state CSV](research-corpus/windows-full-client-authentication-trust-and-fault-matrix-2026-10-23.csv) — roles, incoming message, precise proof, independent state, failure namespace and original edition+section for transport TLS, SIPAE realm/SAs, Kerberos/NTLM/TLS-DSK, conference anonymous Digest, X509 issuance, Web Ticket OAuth/WS-Trust and SRTP.
+
+### Authentication trust boundary diagram (S = cross-spec synthesis, NOT mandatory one-path transcript)
+
+~~~mermaid
+flowchart TD
+  A[Discover SIP DNS and validate selected TCP/TLS proxy cert MS-CONMGMT] --> B[Unprotected initial SIP request and 401/407]
+  B --> C{SIPAE auth realm/target and scheme}
+  C -->|Kerberos| D[KDC AS/TGS ticket for sip/target and GSS AP token]
+  C -->|NTLM| E[SSPI datagram NTLMSSP Negotiate/Challenge/Authenticate]
+  C -->|TLS-DSK| F[Inner TLS handshake client/server cert and directional keys]
+  C -->|Anonymous conference| G[Digest MD5-sess or SHA256-sess conference-key]
+  D --> H[SIPAE per-message MIC and replay-protected SA]
+  E --> H
+  F --> H
+  G --> I[Conference scoped anonymous access, not REGISTER identity]
+  H --> J[REGISTER GRUU binding, independent refresh and self-PRES]
+  J --> K[Separate HTTPS Web Ticket service, when feature needs token]
+  K --> L{HTTP credential source}
+  L -->|Negotiate| M[RFC4559 HTTP SPNEGO]
+  L -->|Certificate| N[OCS-signed X509 from GetAndPublishCert if provisioned]
+  L -->|Federated| O[SAML or OAuth actor with validated audience]
+  M --> P[WS-Trust IssueToken, appliesTo and service user binding]
+  N --> P
+  O --> P
+  P --> Q[Signed or proof Web Ticket to correct service host]
+  J --> R[Separate ICE/SDP SRTP packet authentication]
+  R --> S[SHA1/SHA256 normative conflict still BLOCKED]
+~~~
+
+**High-risk mistakes explicitly forbidden as unsupported source inferences:** (i) treating transport TLS peer-certificate validity as SIPAE TLS-DSK success; (ii) treating NTLMv2 transcript MIC and SIPAE request `response/rspauth` MIC as same bytes; (iii) permitting Kerberos server identity from untrusted arbitrary realm/targetname; (iv) sharing proof Web Tickets across application server origins; (v) mapping HTTP `X-Ms-diagnostics` ErrorId 28033 to SIP REGISTER 401/407/expiry or TURN MI; (vi) applying 2026 MS-KILE/NLMP crypto requirements to older Windows binaries without historical version originals; (vii) treating SIPAE Digest anonymous conference success as enterprise login.
+
+**Incompleteness gates:** Full [MS-WSTEP]/[MS-WSPOL]/[MS-WCCE]/[MS-OAUTH2EX] XML/WSDL/WSS key/fault closure, NLMP 2024 / KILE 2015–2025 historical original PDFs, Kerberos cross-forest trust and exact Windows user credentials, SIPAE v3/v4 canonical signature/identity delegation product applicability, and SRTP SHA1/SHA256 contradictory source text all OPEN. **No protocol implementation plan authorized**; no code, server connections, interoperability tests, main merge or release.
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
