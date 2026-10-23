@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-10-23",
+  "status": "SELECTED_ORIGINAL_RFC_EDITOR_REVISION_METADATA_ONLY_NOT_GLOBAL_RFC_CLOSURE",
+  "purpose": "Explicitly verify dates/updates/obsoletes for high-risk RFC editions cross-referenced by Microsoft; do not replace actual cited Microsoft profile versions with successor RFC by default.",
+  "documents": [
+    {
+      "id": "RFC3265",
+      "original_published": "2002-06",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc3265",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "ORIGINAL_RFC_EDITOR_METADATA_OR_HEADER_VISUALLY_READ",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "obsoleted_by": [
+        "RFC6665"
+      ],
+      "updated_by": [
+        "RFC5367",
+        "RFC5727",
+        "RFC6446"
+      ],
+      "updates": [
+        "RFC2543"
+      ],
+      "obsoletes": []
+    },
+    {
+      "id": "RFC6665",
+      "original_published": "2012-07",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc6665",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "ORIGINAL_RFC_EDITOR_METADATA_OR_HEADER_VISUALLY_READ",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "obsoleted_by": [],
+      "updated_by": [
+        "RFC7621"
+      ],
+      "updates": [
+        "RFC3261",
+        "RFC4660"
+      ],
+      "obsoletes": [
+        "RFC3265"
+      ]
+    },
+    {
+      "id": "RFC4566",
+      "original_published": "2006-07",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc4566",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "ORIGINAL_RFC_EDITOR_METADATA_OR_HEADER_VISUALLY_READ",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "obsoleted_by": [
+        "RFC8866"
+      ],
+      "updated_by": [],
+      "updates": [],
+      "obsoletes": [
+        "RFC2327",
+        "RFC3266"
+      ]
+    },
+    {
+      "id": "RFC8866",
+      "original_published": "2021-01",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc8866",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "ORIGINAL_RFC_EDITOR_METADATA_OR_HEADER_VISUALLY_READ",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "obsoleted_by": [],
+      "updated_by": [],
+      "updates": [],
+      "obsoletes": [
+        "RFC4566"
+      ]
+    },
+    {
+      "id": "RFC5245",
+      "original_published": "2010-04",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc5245",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "ORIGINAL_RFC_EDITOR_METADATA_OR_HEADER_VISUALLY_READ",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "obsoleted_by": [
+        "RFC8445",
+        "RFC8839"
+      ],
+      "updated_by": [
+        "RFC6336"
+      ],
+      "updates": [],
+      "obsoletes": [
+        "RFC4091",
+        "RFC4092"
+      ]
+    },
+    {
+      "id": "RFC8445",
+      "original_published": "2018-07",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc8445",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "ORIGINAL_RFC_EDITOR_METADATA_OR_HEADER_VISUALLY_READ",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "obsoleted_by": [],
+      "updated_by": [
+        "RFC8863"
+      ],
+      "updates": [],
+      "obsoletes": [
+        "RFC5245"
+      ]
+    },
+    {
+      "id": "RFC6125",
+      "original_published": "2011-03",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc6125",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "ORIGINAL_RFC_EDITOR_METADATA_OR_HEADER_VISUALLY_READ",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "obsoleted_by": [
+        "RFC9525"
+      ],
+      "updated_by": [],
+      "updates": [],
+      "obsoletes": []
+    },
+    {
+      "id": "RFC9525",
+      "original_published": null,
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc9525",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "ORIGINAL_RFC_EDITOR_METADATA_OR_HEADER_VISUALLY_READ",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "obsoleted_by": [],
+      "updated_by": [],
+      "updates": [],
+      "obsoletes": [
+        "RFC6125"
+      ]
+    },
+    {
+      "id": "RFC3548",
+      "original_published": "2003-07",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc3548",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "ORIGINAL_RFC_EDITOR_METADATA_OR_HEADER_VISUALLY_READ",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "obsoleted_by": [
+        "RFC4648"
+      ],
+      "updated_by": [],
+      "updates": [],
+      "obsoletes": []
+    },
+    {
+      "id": "RFC4648",
+      "original_published": "2006-10",
+      "official_rfc_editor_url": "https://www.rfc-editor.org/info/rfc4648",
+      "header_meta_reviewed_at": "2026-10-23",
+      "evidence": "ORIGINAL_RFC_EDITOR_METADATA_OR_HEADER_VISUALLY_READ",
+      "normative_references_fully_reviewed": false,
+      "errata_individually_audited": false,
+      "client_applicability_resolved": false,
+      "obsoleted_by": [],
+      "updated_by": [],
+      "updates": [],
+      "obsoletes": [
+        "RFC3548"
+      ]
+    }
+  ]
+}
