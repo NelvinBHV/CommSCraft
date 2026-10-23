@@ -835,4 +835,44 @@ flowchart TD
 
 **Incompleteness gates:** Full [MS-WSTEP]/[MS-WSPOL]/[MS-WCCE]/[MS-OAUTH2EX] XML/WSDL/WSS key/fault closure, NLMP 2024 / KILE 2015–2025 historical original PDFs, Kerberos cross-forest trust and exact Windows user credentials, SIPAE v3/v4 canonical signature/identity delegation product applicability, and SRTP SHA1/SHA256 contradictory source text all OPEN. **No protocol implementation plan authorized**; no code, server connections, interoperability tests, main merge or release.
 
+## XXV. 2026-10-23 renewed original-clause audit: PSOM framing/auth, persistent chat dual timers, ASMCU SDP/roster/policy
+
+**Document-only continuation of §XXII with deeper source-specific packet, error and role comparisons**, preserving original corpus editions and not overstating previous work as newly discovered: Microsoft **MS-PSOM rev11.0 (2025-05-20), MS-XCCOSIP rev7.0 (2024-08-20), MS-CONFAS rev12.0 (2025-05-20)**. First-party PDF originals in 150-source archive; visual spot verification **PSOM page53, XCCOSIP pages35/44/45, CONFAS page19** and Microsoft Learn section crosschecking.
+
+New/expanded direct-source studies:
+- [PSOM TLS/token, binary record channel grammar, hash version handshake and PSOM whiteboard](ms-psom11-tls-auth-token-version-frames-whiteboard-2026-10-23.md). 18 role-scoped technical entries with original §§2.1,2.2.1–2.2.2.2,3.2.2–3.2.3.1.4,3.2.4.1,3.3.4.2–4,5.1. DataMCU C3P AddUser **sAuthId**, conditional `fwdtls` **proxyHeader**, separate **mandatory PSOM TLS**; binary authentication **0x70773200 + auth version0 + token length big-endian + token**, server 0x70773200 response; hash-compatible ConnMgr on channel **0** `version/addProtocol/doneProtocols`, then application `RPCOpen`/SetChannel **2**. **A hash mismatch MUST terminate PSOM even if SIP/Focus membership remains.** `Close=0x00`, `SetChannel=0x04`, `Break=0x06`, `RpcMessage=0x16`, `RPCOpen=0x37`; distributed-object signed GenericInt proxy-id negation. Both peers **30s** ConnMgr ping, different from SIP/ICE timers. PSOM's SHA-1 file hash is **not** file authentication, and AES file crypto must be qualified by key/IV security before assuming confidentiality. §3.3.4.4 browser-style upload is **PSOM RPC request → cAcceptWebUpload → HTTPS Form POST → sUploadFinished**, not a single HTTP status.
+- [MS-XCCOSIP SIP INFO command XML correlation, room cursor, 10s/25s timeouts and token name conflict](ms-xccosip7-persistentchat-sip-info-xccos-ack-timers-filetoken-2026-10-23.md). **21** clause-/actor-labelled observations §§2.1,2.2.2,3.1.1–3.1.2,3.1.5–.7,3.1.13–.19,3.2.1,3.2.4–.6. Outer **SIP INFO 200** is not inner **`xccos/rpl/resp code=200`**. Client correlates XML `commandid` **(EnvId:uint64, SeqId:uint64)** and expected reply id; invalid/unmatched/late `rpl` dropped. Client command **10-second XccosTransactionTimer**, separate GroupChatSendTimer **10s** and **server 25s** processing default; server timer expiry MUST respond **SIP 503**. **New explicit original-source defect:** §2.2.2.2.2 names download command **`cmd:getfdtok`**, whereas §3.1.19.3 mandates **`cmd:getfutok` for both download and upload**. Do not silently choose either absent edition errata.
+- [MS-CONFAS sharer/viewer SDP role and contentflow, ASMCU roster transition and original failure codes](ms-confas12-asmcu-sharing-role-sdp-488-policy-21000-21002-2026-10-23.md). **18** direct/derived clauses §§3.2.5.1–3.3.5.7 plus RFC3264/RFC4575 and MS-SDPEXT. SDP role **sharer ↔ viewer** reverses at MCU, maps roster **sendonly ↔ recvonly**. Video `applicationsharing-video` role and contentflow constraints; **488 Not Acceptable Here** on incompatible media/profile, final ICE chosen-candidate SDP required. **New literal source discrepancy:** client-oriented §3.2.5.1.2 says excess app-sharing m-lines **reject additional lines port=0**, while MCU-oriented §3.3.5.2.1 says **reject entire offer** if more than one sharing/viewing line. Reject scope **UNRESOLVED**. ASMCU sends SIP dialog connected/roster then `media-state=joining` and eventually connected, with removed media absent from roster even if user persists. Replaced sharer gets SIP BYE with **ms-diagnostics-public 21000**; attendee prohibited from sharing gets **21002** under source server-mode policy, and `supports-application-desktop-sharing=singleApplication` MUST NOT permit whole-desktop mode.
+- [25-row cross-plane requirement matrix](research-corpus/ms-psom11-xccosip7-confas12-windows-client-state-requirements-2026-10-23.csv): actor, exact source section, wire or XML data, independently stored state, failure transition, evidence class. It makes the eventual Windows Full Client feature contract navigable without claiming all codecs and conference actions documented.
+
+### Cross-plane sequence and security boundaries (S, not one observed Windows packet trace)
+
+~~~mermaid
+flowchart TD
+ A[User SIP authenticated and registered, conferencing provisioned] --> B{Feature}
+ B -->|Whiteboard| C[Focus joined + C3P AddUser grants sAuthId and DataMCU endpoint]
+ C --> D[TLS peer identity; proxyHeader if fwdtls; PSOM auth 70773200]
+ D --> E[ConnMgr hashes/doneProtocols channel0]
+ E --> F{Version hashes compatible?}
+ F -->|No| G[PSOM MUST terminate, unrelated SIP dialog may still exist]
+ F -->|Yes| H[RPCOpen/SetChannel2, Whiteboard/Meeting distributed objects]
+ H --> I[30s PSOM ping + object update and per-object generations]
+ B -->|Persistent chat| J[Separate Group Chat SIP dialog + SIP INFO XCCOS command]
+ J --> K[Pending CmdId EnvId/SeqId, client 10s timer vs server 25s]
+ K --> L{Matched inner XML reply and status 200?}
+ L -->|No| M[Timeout/ignore/error; SIP INFO 200 alone not success]
+ L -->|Yes| N[Room participants/history/chat and separate 10s send timer]
+ N --> O[Optional room+file-scoped token, download command name conflict unresolved]
+ B -->|Desktop sharing| P[ASMCU conference URI, policy and SDP role sharer/viewer]
+ P --> Q{SDP and source policy valid?}
+ Q -->|No| R[488 or 21002; duplicate media rejection source conflict]
+ Q -->|Yes| S[Reversed role SDP, ICE final pair and ASMCU roster joining]
+ S --> T[Verified RDP/RTASPF SRTP media connected separate]
+ T --> U[New sharer may SIP BYE old sharer 21000]
+~~~
+
+**Non-equivalences (all source-qualified):** Focus SIP `202` and PSOM DataMCU token accepted are different; PSOM private TLS token not SIPAE message MIC, Web Ticket or SRTP master key; XCCOS inner XML `resp=200` not SIP INFO `200` nor QoE `202`; persistent Group Chat File Repository token not PSOM AES key; ASMCU `media-state=joining` not RTP/RDP secure media flow; 30s PSOM ping ≠ 10s XCCOS client timer ≠ 25s chat server timer ≠ ICE2 5s/30s consent. **No universal media-ready boolean.**
+
+**Open normative closure:** MS-PSOM all distributed-object marshal/type schema and DataMCU sAuthId lifetime/cert special-name; MS-XCCOSIP exact file repository contract, historical command erratum, permission and room-state gaps; MS-CONFAS inconsistent rejection scope, sharing/attendee policy build conditions, complete RDP/SRTP/ICE binding and encrypted media SHA1/SHA256 conflict; **client build applicability and all original normative references remain UNFINISHED**. No code, no connection to servers, no interoperability tests, no merge or release.
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
