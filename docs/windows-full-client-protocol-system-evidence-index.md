@@ -976,4 +976,43 @@ flowchart TD
 The `catalog.zip` container has **151 PDF files**, with **54 first-party primary inventory entries**; **MS-OXWUMS.pdf and MS-OXWUMS.txt are physically present despite missing from the small primary manifest**. The existing `microsoft-originals-150-edition-and-source-index-2026-10-22.csv` already accurately records `MS-OXWUMS,manifest_primary=no,edition_date_in_pdf=20250520,SHA=f326...`. The MS-OCSPROT 50-seed normative frontier lists **MS-OXWUMS reachable at depth 1 from MS-OCEXUM with original available**, so claims “unavailable among 150” have been corrected in index and OCEXUM study. [Direct original document study](ms-oxwums16-ews-playonphone-soap-32s-call-state-source-2026-10-23.md) includes 15 P/S rules and a version-pinned Exchange call-state diagram; 107-page complete WSDL/XML review remains open. Do not confuse **32-second EWS disconnected status-retention timer** with **32-second SIP-CONMGMT unauthenticated proxy timer**. This clarification does **not change** the original 183-node/65-absent frontier figures, which already marked OXWUMS present.
 
 
+## XXIX. 2026-10-23 dedicated conference IM: Microsoft IM MCU + RFC3428 SIP MESSAGE, IMDN, Focus/MPOP
+
+**Research tranche completed as documentation only** with primary **[MS-CONFIM] rev11.0 / v20250520 (May 20 2025), SHA-256 a0ec8195aeca242aa926bce23aaaec12ffefbeb27484f43a0326db952c9e4614** and **[MS-CONFBAS] rev15.0 / v20250520 (May 20 2025), SHA-256 8ecae43533f6a7fa391358078093aa52c852b3b66c0b975d1ec06a883c285dfa**, PDF original sections and independently checked Microsoft Learn snippets. Local original MS-CONFIM PDF **81 pages** verified by hashing/visual rendering (pp13/14/17/19/21–26). Source edition listing includes historical **MS-CONFIM rev5.0 March 30 2015**, which **has not been fully compared** with rev11 and should NOT be used as proof of the 2015 installed Windows client behavior.
+
+- [30 individually sourced/role-scoped conference IM wire and state findings](ms-confim11-im-mcu-message-imdn-40s-history-typing-sender-rfc-original-2026-10-23.md), §§1.2,2.1–2.2.6,3.1–3.4.2.7, XSD/example excerpts. RFC **2045/2046/2119/2976/3261/3265/3311/3428/4028/4566** source norm references; **RFC2976** INFO and **RFC3265** SIP event refs obsolete under modern IETF **RFC6086** and **RFC6665**, but must not silently replace Microsoft's historic wire. Informative MS-CONFAV and RFC5234 distinct.
+- [30-entry machine-readable conference IM requirement and failure-state ledger](research-corpus/ms-confim11-client-mcu-normative-requirements-2026-10-23.csv) associates exact source, role, media format, message/request identity, timer, error, and evidence status. The per-call and per-conference states must not be collapsed.
+- [MS-CONFBAS rev15 Focus/MPOP policy, ejection, roster and conference disposition crosswalk](ms-confbas15-confim11-focus-roster-mpop-ejection-and-mcu-separation-2026-10-23.md): 18 additional source-scoped joining/teardown/error findings. Focus `addUser` C3P user/endpoint/role ≠ IM MCU SDP `m=message`; C3P on-behalf-of SIP header must match delegation element; authorized 200 vs **400 malformed, 403 forbidden, 404 missing conference, 603 meeting full**; Focus **MUST manage different endpoints of same participant independently**, and termination of one endpoint MUST NOT terminate others. Administrative Focus `deleteUser` tears down *all* relevant participant Focus subscriptions/dialogs and propagates eject to all MCUs; client BYE against one IM MCU is less broad. `deleteConference` from Focus does **not** permanently remove scheduled conference provisioning via Focus Factory.
+
+### Conference IM state / message proof chain
+
+~~~mermaid
+flowchart TD
+ A[MS-SIPAE authenticated REGISTER and Focus conference provisioning] --> B[MS-CONFBAS Focus INVITE C3P addUser and subscription]
+ B --> C[Get IM MCU conference URI and endpoint role]
+ C --> D[Independent IM MCU SIP INVITE m=message 5060 sip null]
+ D --> E[Supported ms-sender + SDP accept-types and roster capabilities]
+ E --> F{User sending IM or INFO?}
+ F -->|MESSAGE| G[MCU 200 if alone or SHOULD 202 if peers joined]
+ G --> H{Received 202 with Message-Id?}
+ H -->|Yes| I[10s sendMessageTimer, forwarded MESSAGEs to each joined endpoint]
+ I --> J[MCU aggregates errors 415/408 etc and sends IMDN BENOTIFY]
+ J --> K[Client matches Message-Id, reconciles per recipient and stops timer]
+ H -->|No 200| L[Client treats forwarded; no IMDN required]
+ F -->|INFO typing| M[MCU 202 for sender, forwards only to ms-sender peers]
+ M --> N[No IMDN, receiver delivery unconfirmed]
+ E --> O[IM MCU caches first 40s messages after creation for late join]
+ O --> P[40s timer clears early history, unrelated persistent chat]
+ D --> Q[IM MCU BYE closes IM modality only; Focus state separate]
+ B --> R[Focus ejects participant: all user endpoints and MCU modalities]
+~~~
+
+**Concrete wire norms:** **`m=message 5060 sip null`** for IM, receiver **MUST ignore** port; client `a=accept-types` cannot use wildcard `*`, implicit `text/plain`. Client SHOULD support `Supported: ms-sender`; MCU `Ms-Sender` is authoritative author field in MCU-relayed MESSAGE, whose `From` points to conference URI; body plain-text fallback conditional. SIP 200 MESSAGE indicates forwarded success by protocol convention, **202** yields mandatory MCU `Message-Id`, later **`BENOTIFY application/ms-imdn+xml`** with failed recipients. **Client IMDN timer 10s** ⇒ all-recipient **408** failure on expiry; **MCU 40s early message buffer** is not full chat history. SIP INFO typing receives **202** but MCU reports **no downstream delivery status**. MIME multipart/alternative body parts MUST have binary Content-Transfer-Encoding. SIP MESSAGE on existing INVITE dialog is compatible RFC3428 without letting a MESSAGE create a dialog itself.
+
+**New literal source defect CI-X1:** MS-CONFIM §3.4.1.5.2 on *incoming SIP INFO* mistakenly says client MUST send 200 OK to incoming **MESSAGE**. Original PDF **page 26 visually inspected**, contrasting title/current method. Unresolved erratum: RFC-SIP semantics make response-to-received-INFO technically likely, but no arbitrary spec rewrite or client wire behavior inferred.
+
+**New unresolved identity issue CI-X2:** MS-CONFIM §§3.3.1.5.1,3.3.2.5.1 — receiving 202 without `Message-Id` defaults **0** despite MCU being required to include monotonically increasing ID from 1. Multiple pending requests default 0 would be ambiguous. No invented Call-ID/CSeq fallback. Also note §3.4.1.5.2 editorial inconsistency vs RFC3261/2976 and §3.8.5.1 potential `NOTIFY Expires:0` vs SIP Events semantics to verify with exact 2015/2025 editions.
+
+**Strict scope:** This is personal SIP IM vs conference IM vs persistent room chat **three separate flows**, not one generic Chat service; request acceptance is not message delivery/read receipt. Full build capability, core Focus/CONFBAS 248p XSD and errors, legacy conference rev5, modern RFC equivalence, registrar and SRTP inconsistencies remain **NOT COMPLETE**, implementation gate remains CLOSED. No code, no genuine servers, no interop tests, no main merge, no release.
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
