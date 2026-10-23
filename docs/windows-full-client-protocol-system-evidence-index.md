@@ -1139,4 +1139,51 @@ flowchart TD
 
 **Open mandatory work:** MS-PRES §3.8 full aggregation, privacy container/delegates version counters and all XML schema/field rules, 2017 MS-SIP delta recovery/notification loss and UCS migration semantics, MS-ABS §5 bit-exact compression/CRC and HTTP trust, MS-DLX full ~70-page WSDL attribute/error field audit and client-era feature gating. The MS-SIPREGE survivable-mode ambiguity and MS-SRTP vs MS-SDPEXT SHA1/SHA256 original-edition collision remain **BLOCKED**. Global Full Client original-reference analysis **INCOMPLETE**, implementation gate CLOSED, no protocol code/live server/interoperability tests/main merge/release.
 
+## XXV. 2026-10-23 original MS-PRES 13.0, MS-SIP 8.0, MS-ABS 10.1, MS-DLX 13.0 — presence, contacts and GAL separation
+
+**Research-only tranche, 3 new primary-source studies + 42-item machine-readable crossprotocol requirement matrix, PDF source SHA verified.** Individual originals:
+- [MS-PRES rev13 2025-05-20 source audit](ms-pres13-category-container-lifetimes-version-conflicts-original-2026-10-23.md), §§2.2.2.1–2.2.2.7,3.2.5.1.2–3.2.5.6,3.3.5–3.6.5, original 257-page PDF pp34,35,90,93 rendered/inspected: **24 role-labelled findings**. SIP **SERVICE** `application/msrtc-category-publish+xml` with owner From/To/body identical; `categoryName/instance/container/version/expireType`, **static/endpoint/user/time** expiry types; optimistic per-instance publication version with initial **0**, all-or-nothing batch commit, `200 roaming-self+xml` acknowledgement and `409 application/msrtc-fault+xml` `WrongDelta` with **curVersion** for conflict; 400/403/413/488 special cases. **Endpoint-expiry** deletes endpoint-associated publications, **last endpoint** also deletes user-bound entries. **Self SUBSCRIBE** `vnd-microsoft-roaming-self` for **categories/containers/subscribers/delegates** and one dialog per endpoint; later same-dialog SUBSCRIBE **replaces rather than unions scope**. Category watcher subscriptions separate, **NOTIFY first version=0, subsequent may repeat/increment**, and later NOTIFY may use registration route set. Container membership uses different **version** with **no modifications to default container 0**, `setSubscribers` **does not batch multiple acknowledgements**. Server MAY decline persistent self subscription in survivable mode. **The original MS-SIPREGE survivable contradiction remains OPEN.**
+- [MS-SIP rev8.0 **2017-06-01** source audit](ms-sip8-contact-groups-roaming-synchronization-2017-original-2026-10-23.md), §§2.2.4,3.3.5,3.6,3.7, original 93-page PDF pp17,18,33 rendered: **18 role-labelled findings**. **User roster** `SUBSCRIBE Event:vnd-microsoft-roaming-contacts` + `application/vnd-microsoft-roaming-contacts+xml` `contactList deltaNum`; full initial and later **contactDelta with prevDeltaNum→deltaNum** and six add/modify/delete event types; SOAP XML in **SIP SERVICE** setContact/deleteContact/addGroup/modifyGroup/deleteGroup with current roster `deltaNum`. Source describes historic default **group #1** (ID range **1–63**) and optional contact management. **Legacy ACL** separate version, own SUBSCRIBE and ACE permission effects. Batched legacy PIDF **RLMI multipart** differs from category presence; on non-support batched SUBSCRIBE may fallback to single. **`com.microsoft.autoextend`** extension negotiates receiving NOTIFY-based subscription timer extension. Historical **2017** source **not automatically normative** for a later client/server UI variant without product edition audit.
+- [MS-ABS rev10.1 2025-08-19 + MS-DLX rev13 2025-05-20 directory source audit](ms-abs10-dlx13-offline-address-book-binary-delta-https-soap-search-2026-10-23.md), 17 findings: **ABS** is daily AD DS-derived **binary full F-XXXX.lsabs, delta D-XXXX-YYYY.lsabs, compact C-XXXX-YYYY.lsabs**, 4hex dates days since **2001-01-01 UTC**, provisioned base URL and **HTTP GET**; **`.dabs` reduced device** profile distinct. Fixed **12-byte COMPRESSED_BLOCK_HEADER CRC4, compressedSize4, decompressedSize4**, 0x10000 max compressed; ABF full/delta GUIDs, base date/version and changed attributes. **DLX** separately uses **HTTPS SOAP/WSDL** `ExpandDistributionList`, `SearchAbEntry`, conditional historic `SearchSkypeDirectory` with typed response **Succeeded/NoEntryFound/InternalError/InvalidArgumentError/DatabaseError/CorruptionEntryError**. **HTTP 2xx is not proof of found address-book match.**
+- [42-item actor/feature/wire/error/edition audit matrix](research-corpus/pres-contacts-abs-dlx-crossprotocol-requirement-evidence-2026-10-23.csv) cross-links source version/section, direct requirement vs inferred safety constraint, actor and remaining full-document/Windows applicability gap.
+
+### Distinct state, security, and version domains
+
+| Data state | Source / network carrier | Independent counter or permission constraint |
+|---|---|---|
+| User SIP registrar endpoint | **MS-SIPREGE 17.1** REGISTER and GRUU | registration Expires, endpoint +sip.instance; not category version |
+| Own published categories | **MS-PRES 13** SIP SERVICE XML | per **category/instance/container** publication version, conditional endpoint/user/time expiry |
+| Privacy container membership | **MS-PRES 13** SERVICE setContainerMembers | distinct container membership version/ACL; no overwrite from contact roster |
+| Self roaming view | **MS-PRES 13** self SUBSCRIBE/NOTIFY/BENOTIFY | scope requested for categories, containers, subscriber, delegates; own subscription lifetime |
+| Watched category presence | **MS-PRES 13** category SUBSCRIBE/NOTIFY | privacy-filtered category data, **per-dialog NOTIFY notification version** distinct from publication version |
+| Favorites/contact/group list | **MS-SIP 8** roaming-contact SUBSCRIBE and SERVICE SOAP | per-user **deltaNum/prevDeltaNum**, legacy default group and subscribed true/false |
+| Legacy permissions | **MS-SIP 8** roaming-ACL SUBSCRIBE and ACE | ACL own deltaNum; legacy permission and modern container overlap must be sourced |
+| Offline directory | **MS-ABS 10.1** HTTP GET binary ABF | per-file creation/base dates, GUID, length and CRC; **not** roster deltaNum |
+| Online GAL and distribution expansion | **MS-DLX 13** HTTPS SOAP/WSDL | typed ResponseState and HTTPS trust; independent of offline ABS file |
+
+**Partial-order model (S, not a universal mandatory client on-wire sequence):**
+
+~~~mermaid
+flowchart TD
+ A[Authenticated SIP REGISTER; separate service provisioning] --> B[Self SUBSCRIBE roaming state]
+ A --> C[Roaming-contact list SUBSCRIBE]
+ A --> D[ABS base URL / DLX HTTPS URL from provisioning]
+ B --> E[Self snapshot categories containers delegates subscribers]
+ C --> F[Full contact list and deltaNum]
+ D --> G[HTTP GET binary full/delta address book]
+ D --> H[HTTPS SOAP SearchAbEntry or ExpandDistributionList]
+ E --> I[SERVICE category publish or container member update]
+ I --> J{Atomic version check?}
+ J -->|409 or error| K[No partial publish, reconcile authoritative version]
+ J -->|200| L[Independent watcher and self NOTIFY]
+ F --> M[Remote contactDelta prevDeltaNum -> deltaNum]
+ M --> N{Matches local roster revision?}
+ N -->|No| O[Mark stale; detailed recovery policy OPEN]
+ N -->|Yes| P[Apply roster delta]
+ G --> Q[Validate file GUID/CRC and base date; update searchable local directory]
+ H --> R[Interpret typed SOAP ResponseState, not merely HTTP 200]
+~~~
+
+**Unresolved critical source/edition issues (research gate remains CLOSED):** Entire **MS-PRES §6 XSD** and §3.8 aggregate privacy filters, full MS-SIP 2017 **§9 SOAP mutation XSD**, precise version-recovery when remote `contactDelta` missed or interleaved, 2025 MS-ABS §2.2 all binary structs and §§5–6 compression/normalization algorithms, MS-DLX WSDL §6 all error fields/authentication, RFC3265 historic status vs later RFC6665, deployment of Skype public-directory service, legacy ACL versus modern presence containers, and MS-SIPREGE rev17.1 internally contradictory survivable recovery. **No code or server testing authorized; full classic Windows Full Client protocol system INCOMPLETE.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
