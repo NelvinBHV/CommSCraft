@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-10-23",
+  "language_note": "This is an evidence-based research continuation checkpoint, not an implementation plan or protocol conformance assertion.",
+  "repo": "NelvinBHV/CommSCraft",
+  "branch": "draft/protocol-spec-analysis-2026-10-23",
+  "baseline_commits": {
+    "draft_before_this_checkpoint": "d460ef52a7eeb80d4e7bc4cc1355ae490f7d6102",
+    "main_at_snapshot": "fd4e48b0b993ed170308943adf3cf8cf1ae8f6a0"
+  },
+  "status": {
+    "phase_1": "INCOMPLETE",
+    "phase_1_overview_direct_references": "ENUMERATED_NOT_ALL_RELEASE_VERIFIED",
+    "phase_2": "PARTIAL_SELECTED_CLAUSES",
+    "phase_3": "PRELIMINARY_INFERRED_MODELS",
+    "phase_4": "INCOMPLETE",
+    "new_protocol_implementation_authorized": false,
+    "live_interoperability_tests_authorized": false,
+    "merge_to_main_authorized": false,
+    "releases_authorized": false
+  },
+  "scope": {
+    "target": "Classic Skype for Business 2019 Windows Full Client, Skype for Business Server 2019 and Server Subscription Edition",
+    "exact_windows_client_build": "UNPINNED",
+    "server_role_and_policy_profile": "UNPINNED"
+  },
+  "measures": {
+    "ms_ocsprot_overview_version": "9.0",
+    "ms_ocsprot_overview_published": "2025-05-20",
+    "ms_ocsprot_overview_groups": 6,
+    "overview_ms_documents_with_latest_published_metadata": 46,
+    "overview_ms_documents_with_direct_1_2_1_lists_examined_in_some_form": 46,
+    "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 13,
+    "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 33,
+    "complete_original_pdfs_received_and_sha256_verified": 1,
+    "first_tier_normative_reference_edges": 460,
+    "first_tier_distinct_target_identifiers": 199,
+    "ms_normative_edges": 120,
+    "rfc_normative_edges": 228,
+    "historical_ietf_draft_normative_edges": 29,
+    "external_normative_edges": 83,
+    "overview_informative_edges_separately_added_for_avedgea": 5,
+    "rfc_identifiers_total_seed_plus_direct": 113,
+    "rfc_identifiers_directly_cited_in_examined_lists": 89,
+    "additional_direct_cross_library_microsoft_documents_latest_version_identified": 12,
+    "baseline_feature_ids": 122,
+    "baseline_windows_reference_cases": 93,
+    "baseline_feature_ids_without_direct_reference_case": 31
+  },
+  "source_provenance": {
+    "ms_avedgea": {
+      "id": "MS-AVEDGEA",
+      "revision": "12.0",
+      "dated_edition": "v20250520",
+      "published": "2025-05-20",
+      "original_filename": "[MS-AVEDGEA].pdf",
+      "source": "user-provided chat upload, bytes not committed to GitHub",
+      "bytes": 1562486,
+      "pages": 40,
+      "sha256": "baa3cddc1e1bfb4b0c2b0a998c71b802f80d4e5e6bb30adc0d8d42ebbbb0c8ff",
+      "normative_section": "§1.2.1 pp.7, 5 items",
+      "informative_section": "§1.2.2 p.8, 5 items",
+      "product_behavior": "§7 p.36",
+      "change_tracking": "§8 p.38",
+      "reacquire_file_next_session": true
+    },
+    "source_manifest_git_blob_shas": {
+      "ms-ocsprot-inventory.json": "f90acf6e302476febabfa459424099ebe02298f4",
+      "normative-reference-ledger.json": "203b1c35b2f2a9b2719d46e4d88fb3f7d34a6bb2",
+      "rfc-inventory.json": "f0b5654b60b37939c1e319f664f9d7ed626f81b4",
+      "transitive-microsoft-inventory.json": "eaba8be61534e499f36d659a7cd76250b760d890",
+      "full-122x93-traceability.md": "9e342f2151edec4e8e0c35506e73e5a0dd517f05"
+    }
+  },
+  "open_work": [
+    {
+      "id": "P1-01",
+      "priority": 1,
+      "task": "Reconcile all 33 HTML-only normative reference lists against exact dated published Microsoft PDF/DOCX editions; preserve mismatch/version evidence."
+    },
+    {
+      "id": "P1-02",
+      "priority": 1,
+      "task": "Acquire and provenance-check relevant current Microsoft source originals beyond the one MS-AVEDGEA binary. Verify dated release, SHA-256, prior revisions and actual changes; report inaccessible sources."
+    },
+    {
+      "id": "P1-03",
+      "priority": 1,
+      "task": "Recursively expand all relevant Microsoft normative references beyond the 46 overview docs, including 12 already identified Windows/Exchange/SharePoint target IDs; record version, relevance or explicit evidence-based exclusion."
+    },
+    {
+      "id": "P1-04",
+      "priority": 1,
+      "task": "Recursively verify RFC Editor normative references and Updates/Updated By/Obsoletes/Obsoleted By/errata, keeping Microsoft-cited historical RFCs and IETF draft revisions distinct."
+    },
+    {
+      "id": "P1-05",
+      "priority": 2,
+      "task": "Obtain/resolve historical cited external W3C, ISO, ITU, IEEE and SMPTE normative editions and access/paywall gaps; do not silently substitute modern editions."
+    },
+    {
+      "id": "P1-06",
+      "priority": 2,
+      "task": "Pin actual Windows Full Client build, SfB Server 2019/SE version, feature/policy/deployment profiles and document client applicability/exclusions."
+    },
+    {
+      "id": "P1-07",
+      "priority": 2,
+      "task": "Perform complete 46+ MS document update and change-history matrix with precise effective versions, including post-May 2025 published updates and relevant 2026 Windows editions."
+    },
+    {
+      "id": "P1-08",
+      "priority": 3,
+      "task": "Review fixed-point graph and each unresolved question with evidence, then explicitly sign off Phase 1 only when every source or justified exclusion is accounted for."
+    }
+  ],
+  "invariants": [
+    "Do not modify or add protocol implementation code.",
+    "No live connections or interoperability tests against Skype for Business servers; user alone performs them.",
+    "Do not merge into main, tag or release.",
+    "Do not infer full Phase-1 completion from the 46/46 first-tier listing; recursive normative closure and published-edition proof are missing.",
+    "Never upgrade source-only or offline-tested behavior to independently interoperable without user evidence.",
+    "Use exact document revision, publication date, section and canonical original source for each claim."
+  ],
+  "authoritative_research_files": [
+    "README.md",
+    "CURRENT_STATUS.md",
+    "research-checkpoint.json",
+    "source-catalog.md",
+    "ms-ocsprot-inventory.json",
+    "normative-reference-ledger.json",
+    "rfc-inventory.json",
+    "transitive-microsoft-inventory.json",
+    "phase1-audit.md",
+    "ms-avedgea-12-source-audit.md",
+    "full-client-coverage.md",
+    "full-122x93-traceability.md",
+    "research-log.md"
+  ],
+  "instructions_for_next_session": "First read AGENTS.md, this file, CURRENT_STATUS.md, phase1-audit.md, research-log.md and the four inventories on the draft branch. Verify branch tip and ledger counts afresh, then close next unresolved source in priority order; update catalogs, evidence, checkpoints and log. Do not treat old provisional counts as current."
+}
