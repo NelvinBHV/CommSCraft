@@ -22,6 +22,7 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 
 ## Work products (all provisional)
 
+- [rfc-version-relations-reviewed.json](rfc-version-relations-reviewed.json) — 10 official RFC Editor header Update/Obsolete relation reviews; complete RFC reference closure OPEN.
 - [phase1-transitive-research-2026-10-23.md](phase1-transitive-research-2026-10-23.md) — 12 additional Microsoft source §1.2.1 reference audits, 246 second-tier edges, unresolved edition and scope risks.
 - [transitive-reference-ledger.json](transitive-reference-ledger.json) — separate second-tier normative edge register; 11 official HTML sources and 1 search-only partial source.
 - [transitive-frontier.json](transitive-frontier.json) — 146 new reference target IDs to assess at the next graph depth.
