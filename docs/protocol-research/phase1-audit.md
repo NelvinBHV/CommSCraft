@@ -12,7 +12,7 @@
 | Original released MS §1.2.1 index/PDF reference page and visual inspection | **12** documents, matching published edition cover/date | Reference-page evidence only; no whole-PDF ingestion or binary SHA-256 |
 | Normative directed source→target edges | **455** records to **199** distinct IDs | Includes 120 MS edges, 227 RFC edges, 28 historical IETF draft edges, 80 other standards. **Not transitive closure.** |
 | RFC original fixed-edition seed/first-level references | **113** RFC IDs, of which **89** directly cited by investigated MS lists | RFC normative references, Updates/Obsoletes/Errata and dates for whole set NOT checked |
-| Transitive MS Windows/Office specs outside overview | **12** distinct immediate Microsoft target IDs identified | Their precise versions, access, all further references and client applicability OPEN |
+| Transitive MS Windows/Office specs outside overview | **12** distinct immediate Microsoft target IDs identified | All 12 latest published version/date identities now verified in [transitive-microsoft-inventory.json](transitive-microsoft-inventory.json), but precise client-applicable editions, full PDFs, their §1.2.1 transitive references and applicability remain OPEN |
 | Official current published PDF/DOCX binaries acquired and hashed | **0** | Browser-access redirects / external host and container DNS restrictions; no fabricated checksum |
 | Version comparisons of all MS documents and current Windows Client/SfB Server applicability | Only selected revisions/date rows checked | NOT complete; latest exact reference Windows client C2R build remains UNPINNED |
 
@@ -55,6 +55,8 @@ All other investigated MS first-tier reference lists came from visible Microsoft
 - **MS-WSTEP** — referenced by MS-OCAUTHWS; exact current/target published revision, normative closure and client applicability pending.
 
 Notably [MS-SIP](https://learn.microsoft.com/en-us/openspecs/windows_protocols/MS-SIP/0d72fb55-12ba-49f1-850d-f0bf3110bb1f) and [MS-H26XPF](https://learn.microsoft.com/en-us/openspecs/windows_protocols/MS-H26XPF/ebea5d4a-a184-4912-83a6-df29606aaa78) are from the Windows Open Specifications library, not MS-OCSPROT's six Office tables. RDP sharing further references MS-RDPBCGR and MS-RDPEMC. Kerberos/NTLM, OAuth/WS-Trust and certificate paths bring security dependencies beyond SIP.
+
+**Update:** Latest official publication metadata for **all twelve** non-overview Microsoft destination IDs is now in [transitive-microsoft-inventory.md](transitive-microsoft-inventory.md). Four have newer 2026 versions (MS-KILE 49.0, MS-NLMP 37.0, MS-WCCE 55.0, MS-RDPBCGR 62.0) which must not be assumed as 2025 SfB Client's exact applicable editions.
 
 ## Fixed-edition standards and access blockers
 
