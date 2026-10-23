@@ -24,6 +24,8 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 
 - [source-catalog.md](source-catalog.md) — official entry points, verified release numbers, unverified versions and inventory candidates.
 - [dependency-matrix.md](dependency-matrix.md) — layered adjacency/edge types, normative-reference expansion backlog.
+- [rfc3261-rfc2782-clause-review.md](rfc3261-rfc2782-clause-review.md) — original-edition RFC clause review and timers.
+- [full-122x93-traceability.md](full-122x93-traceability.md) — every existing Windows parity feature linked to the 93 baseline scenarios.
 - [discovery-registration-analysis.md](discovery-registration-analysis.md) — analyzed clauses, wire/decision boundaries and explicit security gaps.
 - [flows-and-states.md](flows-and-states.md) — high-level Mermaid diagrams; deliberately marks **unknown transitions**.
 - [full-client-coverage.md](full-client-coverage.md) — traceability of broad Windows Full Client areas and outstanding research.
