@@ -1094,4 +1094,49 @@ flowchart TD
 
 **Open:** complete 2026 NLMP/KILE normative sections and service policy snapshots, all OCAUTHWS 92 pages/WSDL typed fields, MS-WCCE/MS-WSTEP certificate trust/issuance, exact NTLM channel-binding inputs, target principal alias/referral cases, TLS-DSK historical profile negotiation, and the existing MS-SIPREGE survivable and SRTP cryptographic source conflicts. **Overall research NOT COMPLETE; implementation gate CLOSED; no code, no real-server connections/interoperability testing, no merge/release.**
 
+## XXV. 2026-10-23 client presence, roaming contact/group list and independent address-book directory search
+
+**Three new first-party, edition-pinned analyses, 60 clause-qualified source/cross-RFC statements, plus [34 independently versioned state/role/error edges](research-corpus/presence-roster-abs-dlx-34-crossplane-state-edges-2026-10-23.csv). All source originals from locally archived 150-PDF corpus; selected original pages rendered and visually checked.**
+
+- [MS-PRES rev13.0 (v20250520): category publication, privacy container selection, self-SUBSCRIBE, per-endpoint expiry](ms-pres13-category-versions-atomic-publish-privacy-self-subscribe-endpoint-expiry-2026-10-23.md) — 22 actor-scoped direct observations, §§2.2.2,3.2.5.1.2–3.2.6.2,3.3.5.1–.3. Original PDF pp91/94/97 rendered. SIP **SERVICE application/msrtc-category-publish+xml** validates three publisher URIs, categories/instances with independent optimistic **version**. New version 0; existing version must match; 409 **rejects entire batch** and source illustrates **MS-OCER 2044**, not partial commit. Lifecycle **static** / **endpoint** (matching +sip.instance) / **user** (last endpoint) / **time**. Ordered watcher privacy container matching: **exact user > domain > same-enterprise > federated > public-cloud > default**, choosing *highest-numbered within eligible matching user/domain set*, only where category exists; watcher **application/msrtc-event-categories+xml** must omit private `container`, `version`, `expireType`, `endpointId`, `expires`. Self **Event: vnd-microsoft-roaming-self** subscription optionally scopes categories/containers/subscribers/delegates; refresh **replaces full scope**, server returns all matching state even on refresh; successful category change generates **NOTIFY/BENOTIFY for all matching self subscriptions including publishing endpoint**. Disconnect/expiry one endpoint clears **endpoint-only** publications; last endpoint clears additionally **user-scoped**. Periodic cleanup only affects time-expired data, separate from SIP binding. Aggregate-state §3.8 remains unverified.
+- [MS-SIP rev8.0 (v20170601): personal roster XML full/delta, batched presence SUBSCRIBE, piggyback, BENOTIFY, autoextend](ms-sip8-roaming-contact-groups-deltanum-batch-notify-autoextend-2026-10-23.md) — 18 direct source/role findings, §§2.2.4.1–.2,3.3–3.6; PDF pp18/35 rendered. Contact full list is groups plus contacts; contact `subscribed` true/false independently determines whether presence subscription desired. **`contactDelta prevDeltaNum`** and **`deltaNum`** are contact roster version counters, not MS-PRES category version. `SERVICE` SOAP setContact/deleteContact/addGroup/modifyGroup/deleteGroup must carry **current deltaNum**. Server-supported **batched SUBSCRIBE** returns multipart `application/rlmi+xml` + `text/xml+msrtc.pidf` via `cid` (RFC4662 is event-list baseline). Unsupported batch may fallback to per-contact SUBSCRIBE. **Piggyback-first-NOTIFY** puts first XML notification in **200 OK**, avoiding immediate separate NOTIFY. **BENOTIFY MUST NOT be acknowledged with SIP response**, unlike standard NOTIFY. **`com.microsoft.autoextend`** negotiated per dialog can reset subscription expiry on subsequent NOTIFY. All **four optimizations are independent optional capabilities**, not one global notify mode.
+- [MS-ABS rev10.1 (v20250819) + MS-DLX rev13.0 (v20250520): address book binary compressed full/delta and HTTPS SOAP directory query](ms-abs10-dlx13-addressbook-binary-delta-https-soap-search-original-2026-10-23.md) — 20 original statements. MS-ABS §§1.3,2.2.1–.4,2.2.7–.16: **daily AD DS snapshot** downloaded using URL from in-band provisioning via **HTTP GET**; desktop `F-XXXX.lsabs`, `D-XXXX-YYYY.lsabs`, compact `C-XXXX-YYYY.lsabs`, phone-reduced `.dabs` distinct; date XXXX is four hex digits for **0-based days after 2001-01-01 UTC**. Compressed blocks **12-byte header CRC32 + compressed/decompressed lengths**, compressed size **<=65536 bytes**. File structures **little-endian**, strings **UTF-8**, contact ID 16-byte AD objectGUID with all-zero sentinel, **not SIP URI or personal roster group ID**; compact delta uses binary **ABF_CONTACT_CHANGES**, not XML `contactDelta`. MS-DLX §§1.3,2.1,3.1.4.1–.4: **SOAP over HTTPS/TCP**, endpoint learned e.g. via SIP, supports WSDL **ExpandDistributionList**, **SearchAbEntry**, conditional **SearchSkypeDirectory**, **ProvideSkypeSearchFeedback**. Response enum **NoEntryFound** != contact deletion or SIP authentication failure. The original summary conceptual three service groups vs WSDL listing four operations is **not** a contradiction; feedback is a separate operation.
+
+### Full Client independent state and dependency/error matrix (S = causal reconstruction, not mandatory observed on-wire sequence)
+
+| Plane | Client-owned token/counter or server filter | Source | Exact distinction |
+|---|---|---|---|
+| SIP endpoint REGISTER | per endpoint binding, GRUU, expiry, +sip.instance | MS-SIPREGE rev17.1 | a user with two endpoints is not two user-publication lifetimes |
+| Presence categories | `uri/name/instance/container/version` with expireType | MS-PRES rev13 | **409** for stale publication version / ErrorId **2044**, batch rollback |
+| Privacy containers / subscribers | category-specific container resolution based on user/domain/enterprise/federation/public/default; watcher subscriptions | MS-PRES rev13 | source ErrorId **2045** container, **2047** permissions vs category 2044; viewer must not receive private attributes |
+| Roaming personal contact list | full contact/group XML and `prevDeltaNum/deltaNum` | MS-SIP rev8 | stale contact ErrorId **2046**; not categories version |
+| Contact-presence subscriptions | batched RLMI or individual SUBSCRIBE; dialog expiry, piggyback, BENOTIFY/autoextend toggles | MS-SIP rev8, RFC3265/4662 | BENOTIFY **no SIP response**, piggyback `200` may itself carry first state; errors not automatic roster deletion |
+| Self-state subscriptions/MPOP | `vnd-microsoft-roaming-self` dialog scope categories, containers, subscribers, delegates | MS-PRES rev13 | all matching endpoints see updates; scope replaced on SUBSCRIBE refresh |
+| Local enterprise directory | `F-XXXX.lsabs` / `D-XXXX-YYYY.lsabs` / compressed block CRC / AD objectGUID | MS-ABS rev10.1 | full/delta **date+GUID**, not roster `deltaNum` |
+| Live directory / distribution list expansion | HTTPS SOAP `SearchAbEntry`, `ExpandDistributionList` | MS-DLX rev13 | **NoEntryFound** is search result, not presence offline |
+| Public Skype directory | optional `SearchSkypeDirectory` and feedback WSDL | MS-DLX rev13 | profile/build dependent; not a universal Windows Full Client mandatory feature |
+
+~~~mermaid
+flowchart TD
+ A[REGISTER accepted and SIPAE authenticated] --> B[Self SUBSCRIBE for user category/privacy/delegates]
+ A --> C[Roaming contacts full list with deltaNum]
+ B --> D[SERVICE category publish with per-category version]
+ D --> E{All publication versions valid?}
+ E -->|No| F[409 conflict, no partial mutation, reconciliation needed]
+ E -->|Yes| G[Self NOTIFY including originating endpoint]
+ G --> H[Per-subscriber category and privacy container selection]
+ C --> I[SERVICE contact/group edits carrying current deltaNum]
+ I --> J[Apply roster deltas with prevDeltaNum chain]
+ J --> K[Batch or individual presence SUBSCRIBE by capability]
+ K --> L[Piggyback-first state in 200 or regular NOTIFY]
+ L --> M[Optional BENOTIFY no response and autoextend expiry]
+ A --> N[Independent directory acquisition]
+ N --> O[Provisioned ABS full/delta binary HTTP GET and local search]
+ N --> P[DLX HTTPS SOAP directory search/list expansion]
+~~~
+
+**Critical source/edition guard:** Microsoft MS-PRES 2025, MS-SIP 2017 and MS-ABS 2025 can describe different deployment generations. The newer RFC6665 obsoletes RFC3265 but Microsoft's older event handling explicitly references RFC3265; user wants *classic full client*, so versioned applicability must be resolved rather than applying every later event-rule unconditionally. **A successful REGISTER does not prove roster loaded; a roster contact does not prove presence subscription; a subscribed contact does not prove visibility authorization; an ABS cache result does not prove current DLX directory membership.**
+
+**Open mandatory work:** MS-PRES §3.8 full aggregation, privacy container/delegates version counters and all XML schema/field rules, 2017 MS-SIP delta recovery/notification loss and UCS migration semantics, MS-ABS §5 bit-exact compression/CRC and HTTP trust, MS-DLX full ~70-page WSDL attribute/error field audit and client-era feature gating. The MS-SIPREGE survivable-mode ambiguity and MS-SRTP vs MS-SDPEXT SHA1/SHA256 original-edition collision remain **BLOCKED**. Global Full Client original-reference analysis **INCOMPLETE**, implementation gate CLOSED, no protocol code/live server/interoperability tests/main merge/release.
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
