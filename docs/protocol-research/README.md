@@ -22,6 +22,9 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 
 ## Work products (all provisional)
 
+- [phase1-transitive-research-2026-10-23.md](phase1-transitive-research-2026-10-23.md) — 12 additional Microsoft source §1.2.1 reference audits, 246 second-tier edges, unresolved edition and scope risks.
+- [transitive-reference-ledger.json](transitive-reference-ledger.json) — separate second-tier normative edge register; 11 official HTML sources and 1 search-only partial source.
+- [transitive-frontier.json](transitive-frontier.json) — 146 new reference target IDs to assess at the next graph depth.
 **Für die Wiederaufnahme zuerst lesen:** [CURRENT_STATUS.md](CURRENT_STATUS.md) (verbindlicher Forschungsstand, offene Nachweise und Reihenfolge) und [research-checkpoint.json](research-checkpoint.json) (maschinenlesbare Kennzahlen, Quell-Blob-SHAs und Arbeitsgrenzen). Ältere Zahlen im chronologischen Log sind historische Zwischenstände.
 
 - [CURRENT_STATUS.md](CURRENT_STATUS.md) — current handoff: 46/46 direct overview reference lists, 460 normative edges, 199 targets, still Phase 1 incomplete.
