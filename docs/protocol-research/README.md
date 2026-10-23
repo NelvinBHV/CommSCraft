@@ -24,6 +24,7 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 
 - [source-catalog.md](source-catalog.md) — central versioned **46-MS / 113-RFC** primary-source index, access status and normative closure notes.
 - [ms-ocsprot-inventory.json](ms-ocsprot-inventory.json) / [ms-ocsprot-inventory.md](ms-ocsprot-inventory.md) — all 46 identifiers from the six official MS-OCSPROT system protocol tables.
+- [transitive-microsoft-inventory.json](transitive-microsoft-inventory.json) / [human-readable table](transitive-microsoft-inventory.md) — 12 direct non-overview Microsoft references with latest official publication version/date; recursive references OPEN.
 - [normative-reference-ledger.json](normative-reference-ledger.json) — 455 source-linked normative edges from 45 §1.2.1 lists (PDF-indexed and HTML); published-edition comparison OPEN.
 - [rfc-inventory.json](rfc-inventory.json) — fixed-identifier IETF seed inventory with provenance and update-chain status.
 - [phase1-audit.md](phase1-audit.md) — measurable Phase-1 coverage and explicit inaccessible / unreviewed sources.
