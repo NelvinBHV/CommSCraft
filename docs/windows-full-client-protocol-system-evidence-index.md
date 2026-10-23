@@ -355,4 +355,50 @@ flowchart TD
 
 **Full analysis still BLOCKED** on Microsoft exact legacy Windows edition selection, cert SAN/FQDN/EKU/revocation, HTTP STS trust and token audiences, full version-4 signature byte examples, TLS1.3 inner-TLS-DSK feasibility, and specific external service discovery. No new protocol implementations, external tests or main merges.
 
+## XIV. 2026-10-23 original SIPCOMP/MPPC and SIPRE 430 route recovery/crypto state audit
+
+**New primary evidence files:**
+
+- [MS-SIPCOMP 10.0 complete negotiation/transport-state and error ledger](ms-sipcomp10-negotiate-mppc-transport-error-state-2026-10-23.md) — 21 section-qualified rules verified against May 20 2025 original PDF §2.2 and §§3.1–3.2, RFC3261 §§17.1.2 and RFC2118 §§3–4. `NEGOTIATE` SIP extension **after TLS and before regular SIP** to **first-hop proxy**, `Compression: LZ77-8K`, `Max-Forwards:0`, server receives within 5s (client Timer F SHOULD 5s vs normal RFC3261 default 32s). Non-200/timeout **declines** compression; 200 with wrong algorithm **MUST close TCP**. Post-negotiation **6-byte header**, **8KiB separate send/receive histories**, `FLUSHED 0x8`, `AT_FRONT 0x4`, `COMPRESSED 0x2`; inconsistent flag combination => **MUST close TCP**. **Server may compress first, client MUST NOT compress until receiving server compressed traffic**, authentication separate. **Not IETF SigComp RFC3320**. The 2025 document cites older **RFC4346 TLS1.1** while MS-CONMGMT TLS profile cites RFC5246 TLS1.2; historical citation mismatch requiring actual TLS mode validation rather than assuming insecure version.
+- [MS-SIPRE 13.0 route-HMAC lifetime, 430 Flow Failed/481 routing and per-dialog target-refresh recovery](ms-sipre13-dialog-route-integrity-430-recovery-2026-10-23.md) — 22 source-qualified rules (6 routing, 16 dialog recovery) under §§3.6–3.7, plus named critical conflicts. Proxy-HMAC key retention on protected Via/Record-Route/Contact route params **SHOULD >=1h** for transaction routing and **>=8h** for long-lived route-set tokens. These proxy keys are **not SIPAE SA MIC keys**. `Ms-Dialog-Route-Set-Update` Supported, `430 Flow Failed` with `P-Dialog-Recovery-Action`: **registration+dialog refresh**, **dialog-only target refresh**, or **wait for peer/session update**, versus unsupported extension **481**. When target refresh succeeds the client **MUST refresh route set and remote target** and may resend original failed request; stop repeated 430 loop after 2+ unsuccessful re-sends. Audio/video INVITE dialogs more recovery-appropriate than replaceable presence SUBSCRIBE dialogs; conference sub-dialogs can require distinct recovery actions.
+
+### Cross-system state and error matrix for signaling
+
+| State/trigger | Microsoft source action | Independent state not proven by event |
+|---|---|---|
+| Outer TLS established | Eligible to attempt `NEGOTIATE` on fresh first-hop connection | Not yet SA authenticated, REGISTER successful or SIP body compression ready |
+| `NEGOTIATE` no response after 5s | Compression declined; reject unsolicited compressed server bytes | Does not imply user account password invalid |
+| `NEGOTIATE 200` with wrong Compression header | TCP transport teardown required | Cannot treat as successful compressed transport |
+| Compression accepted, no compressed server traffic yet | Client must not send compressed bytes | Does not invalidate ordinary SIP transaction layer |
+| Compression packet `FLUSHED + COMPRESSED` | Terminate TCP connection | SIP dialog may continue only via separately proven reconnect/recovery |
+| Proxy lost old `ms-route-sig`/route HMAC context | Route can fail with 481 or 430 depending recovery capability | SA signature, end-to-end dialog and media consent have independent lifetimes |
+| SIP 430 + dialog update action | Target refresh UPDATE/SUBSCRIBE; update Contact/Record-Route before retry | Does not renew REGISTER automatically if only dialog route changed |
+| SIP 430 + combined registration & dialog action | REGISTER refresh before dialog target refresh | Re-register success not proof all conference/media dialogs restored |
+| `Presence-State added|fixed` on REGISTER refresh | **MS-SIPREGE v20250819 MUST treat registration refresh as failure**, while **MS-SIPRE v20250520 §3.7.5.3.2 SHOULD recover recovery-enabled dialogs** | **REC-X01 BLOCKED** until authoritative edition/branch precedence and product notes clarified |
+| RFC4028 session timer and dialog route recovery timer | Independently scheduled, source says recovery timer >= negotiated session timer | Media ICE consent/reconnect and QoE timers unrelated |
+
+### Combined signaling lifecycle sketch (S, not guaranteed Windows wire order)
+
+```mermaid
+flowchart TD
+ A[MS-CONMGMT discovery and TCP/TLS] --> B{Optional SIPCOMP negotiation}
+ B -->|200 matching LZ77-8K| C[Compression phase per TLS connection]
+ B -->|non-200 or 5s timer F| D[Uncompressed SIP]
+ C --> E[MS-SIPAE NTLM/Kerberos/TLS-DSK SA]
+ D --> E
+ E --> F[MS-SIPREGE REGISTER, presence/provisioning state]
+ F --> G[MS-SIPRE dialog route set, INVITE/SUBSCRIBE]
+ G --> H{Proxy route state valid?}
+ H -->|yes| I[Normal dialog requests]
+ H -->|430 and recovery allowed| J[Registration and/or dialog target refresh]
+ J --> K{Correctly refreshed route?}
+ K -->|yes| I
+ K -->|no| L[Signal failure; cleanup/replace by role]
+ C -->|Compression flag desync| M[TCP teardown; re-establish TLS and negotiated compression independently]
+```
+
+**Notable source conflict:** MS-SIPRE v20250520 §3.7.5.3.2 advises recovery-enabled dialogs on REGISTER refresh `200 + added|fixed`, whereas MS-SIPREGE v20250819 §3.1.1.5.1 says treat corresponding REGISTER refresh 200 as registration failure and previous dialogs SHOULD terminate. **No proven precedence rule**. Do not select a coding behavior or claim protocol analysis finished.
+
+**Open gates:** Microsoft product-specific compression enablement/first-server-packet timing, exact MPPC encoding and 6-byte framing relative to TLS records, full route URI/mic canonicalization, source edition compatibility for 430 versus registrar `added|fixed`, different server-farm credential and long-lived media refresh handling, per-version historical notes. No implementation, live-server tests, merge or release.
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
