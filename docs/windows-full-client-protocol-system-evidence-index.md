@@ -1015,4 +1015,35 @@ flowchart TD
 
 **Strict scope:** This is personal SIP IM vs conference IM vs persistent room chat **three separate flows**, not one generic Chat service; request acceptance is not message delivery/read receipt. Full build capability, core Focus/CONFBAS 248p XSD and errors, legacy conference rev5, modern RFC equivalence, registrar and SRTP inconsistencies remain **NOT COMPLETE**, implementation gate remains CLOSED. No code, no genuine servers, no interop tests, no main merge, no release.
 
+## XXX. 2026-10-23 source-verified web home autodiscovery, scheduled meeting REST and stateless CVP video freeze
+
+**Three pinned 2025-05-20 Microsoft originals, 52 first-party/cross-source checks and 32 actor/state requirement trace rows:** 
+- [MS-OCDISCWS rev10 — lyncdiscover Web Ticket and OAuth topology, HTTP errors and redirect controls](ms-ocdiscws10-web-home-discovery-ticket-oauth-redirect-profiles-2026-10-23.md) (16 source-labelled assertions), original 34-page PDF SHA-256 `20a89f1b3c490307558888921a5a3fc6633b17d857ed46513f5932c06bc8b099`, §§2.1–2.2.5,3.1.5–3.2.1, rendered pp8,19,21–23. From SIP domain `http[s]://lyncdiscoverinternal.<sipdomain>` then `http[s]://lyncdiscover.<sipdomain>`, **internal pair completes before external probes**, first valid result chosen; **redirect max 10 or loop detection**. Root with `sipuri` query, `AutodiscoverResponse AccessLocation`, JSON default or XML `+v=1`, unsupported Accept HTTP 406. User resource without `X-Ms-WebTicket` → **401 + X-Ms-WebTicketUrl**; OAuth no Authorization 401 vs invalid 403; authenticated unknown home 404; other home **200 Redirect**, requiring further discovery. Internal/external home URLs may be cached until error. **Distinct from MS-CONMGMT SIP SRV/DHCP discovery**.
+- [MS-OCSMP rev7 — scheduled meeting hypermedia/REST, batches, etag and policy](ms-ocsmp7-scheduled-meeting-rest-auth-batch-etag-resource-original-2026-10-23.md) (20 clause-labelled findings), original 93-page PDF SHA `a10c1ac1356aeed2d818685279362249a171a0db754a6de10fb49e5a693d48da`, §§1.3,2.1–2.2.7,3.1.1–3.1.5, rendered pp10,29,35,40,43. **Web/mobile is the cited typical scheduling client (§1.3)**; classic Windows Full Client direct use of every REST operation **UNVERIFIED**, do not assume mandatory login dependency. Server through MS-OCDISCWS and auth, application `POST` `endpointId/culture/userAgent` (200 resident, 201 new, 400 invalid). Hypermedia `href` links to per-user meeting default/eligible values (**SHOULD NOT cache**), `myOnlineMeetings POST` create (200/400), `myOnlineMeeting GET/PUT/DELETE` (DELETE 204, 404, 410), full-resource PUT preserving unknown fields and optional `If-Match` etag. **No source-defined universal HTTP 412 rule** in examined passage. `multipart/batching` each embedded `application/http` part, unordered and outer **429** rate limiting; `multipart/related` extensions with `Content-Id`; per-user lobby access, phone admission and leader policy source inputs. **Scheduled onlineMeeting is NOT Focus admission or MCU/RTP transport**.
+- [MS-XMLMC rev10 — CVP SIP INFO video pause with RTCP alive and fast-update resume](ms-xmlmc10-cvp-picture-freeze-fast-update-rtcp-sdp-original-2026-10-23.md) (16 source/actor findings), original 20-page PDF SHA `71d684c0cdcec8c6698a86b0fbdad4bca0c70943a8f799716cb5e4d348382a16`, §§1.3–1.7,2.1–2.2.1,3.1–3.2,§4, rendered pp7,10–12. CVP **SIP INFO** to OVS `media_control/vc_primitive/to_encoder/picture_freeze` is **only** for centrally processed multiparty RTP video, not P2P, audio or desktop share. OVS on well-formed freeze **SHOULD stop RTP video**, **MUST continue RTCP**, **MUST NOT error** merely because already inactive; OVS that supports freeze **MUST support picture_fast_update** for resume. Extension is **stateless** vs SDP offer/answer; **no XMLMC timer defined**. CVP may fast-update newly active source B and freeze previous source A in **either order**, `stream_id` **SHOULD NOT be included** under centralized all-stream grouping assumptions. Depends on **IETFDRAFT-XMLSMC-12**, RFC2976, RFC3264, RFC4566; historical draft XSD and RFC5168/6086 editions still need comparison.
+- [32-row web discovery/scheduling/video actor+state evidence CSV](research-corpus/ms-ocdiscws10-ocsmp7-xmlmc10-cross-plane-coverage-2026-10-23.csv), including exact original release+section, responsible actor, wire datum, derived state, forbidden equivalence and evidence class.
+
+### Independent web, conference-control and media planes (S, not a mandatory desktop capture)
+
+~~~mermaid
+flowchart TD
+ A[User SIP identity] --> B{Operation}
+ B -->|Web scheduling, if supported| C[MS-OCDISCWS Root discovery and HTTP WebTicket or OAuth]
+ C --> D[MS-OCSMP application resource / meeting hypermedia links]
+ D --> E[Scheduled meeting joinUrl, etag, lobby/policy and expiration]
+ E --> F[Separate MS-CONFPRO / CONFBAS Focus admission via SIP and C3P]
+ B -->|Join an existing conference| F
+ F --> G[AV MCU SIP INVITE / SDP, ICE candidate checks, SRTP, RTP]
+ G --> H{CVP selects currently forwarded video source}
+ H -->|Freeze source A| I[MS-XMLMC SIP INFO picture_freeze to video source A]
+ I --> J[RTP video pause SHOULD; RTCP still flows MUST]
+ H -->|Select/resume source B| K[SIP INFO picture_fast_update to source B]
+ K --> L[RTP/RTCP media resumes when encoder/transport allows]
+ J --> M[Focus membership / SDP negotiation still independently valid]
+~~~
+
+**Strict boundary:** HTTP meeting request **200/201/204** ≠ SIP REGISTER 200, Focus C3P 202 or A/V MCU 200. OAuth **401/403** and HTTP Web Ticket 401 ≠ SIPAE 401/407 or SIP/ICE media credentials. Scheduled-meeting deletion does not imply SIP BYE for ongoing conference; stateless SIP INFO video freeze does not imply SDP `a=inactive`, ICE consent failure, RTCP BYE, SSRC removal or SIP logout.
+
+**Remaining work:** Full original OCSMP 93-page XML/JSON schema and errors, exact Windows Client product/build applicability, 34-page OCDISCWS redirect credential audience/hostname trust in [MS-OCAUTHWS], 2006 draft **IETFDRAFT-XMLSMC-12** retrieval/errata and comparison with later RFC5168/6086, stale SIP INFO/RTCP/video decoding/MCU roster races. Normative RFC graph, historic client feature catalogue and SRTP SHA1/SHA256 conflict still open. **Global research INCOMPLETE. Implementation gate CLOSED. No code, live server/interop tests, main merge or release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
