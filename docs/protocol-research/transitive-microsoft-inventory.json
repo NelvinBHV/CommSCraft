@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-10-23",
+  "kind": "supplementary Microsoft specs directly referenced by examined MS-OCSPROT document §1.2.1 sections but not listed in six overview source tables",
+  "status": "METADATA_VERIFIED_REFERENCE_CLOSURE_OPEN",
+  "notes": "Latest current published version at 2026-10-23, not necessarily version required by 2025-era client; historic editions and platform applicability must be reconciled. Product/environment profile not yet fixed.",
+  "documents": [
+    {
+      "id": "MS-H26XPF",
+      "latest_published_revision": "1.3",
+      "latest_published_date": "2017-06-01",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-h26xpf/ebea5d4a-a184-4912-83a6-df29606aaa78",
+      "example_incoming_reference_from": [
+        "MS-RTP"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    },
+    {
+      "id": "MS-KILE",
+      "latest_published_revision": "49.0",
+      "latest_published_date": "2026-09-28",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-kile/",
+      "example_incoming_reference_from": [
+        "MS-SIPAE"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    },
+    {
+      "id": "MS-NLMP",
+      "latest_published_revision": "37.0",
+      "latest_published_date": "2026-03-30",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/b38c36ed-2804-4868-a9ff-8dd3182128e4",
+      "example_incoming_reference_from": [
+        "MS-SIPAE"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    },
+    {
+      "id": "MS-OAUTH2EX",
+      "latest_published_revision": "8.0",
+      "latest_published_date": "2025-05-20",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/sharepoint_protocols/ms-oauth2ex/56105233-7ca7-4b4b-821d-84bb55bfc2cf",
+      "example_incoming_reference_from": [
+        "MS-OCAUTHWS"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    },
+    {
+      "id": "MS-OXWUMS",
+      "latest_published_revision": "16.0",
+      "latest_published_date": "2025-05-20",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxwums/79ace092-b793-4fa5-82b0-dd30d12c14c2",
+      "example_incoming_reference_from": [
+        "MS-OCEXUM"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    },
+    {
+      "id": "MS-RDPBCGR",
+      "latest_published_revision": "62.0",
+      "latest_published_date": "2026-03-09",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/5073f4ed-1e93-45e1-b039-6e30c385867c",
+      "example_incoming_reference_from": [
+        "MS-RTASPF"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    },
+    {
+      "id": "MS-RDPEMC",
+      "latest_published_revision": "16.0",
+      "latest_published_date": "2024-04-23",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpemc/1c867b2b-40b8-459a-9af6-906b6e0096fc",
+      "example_incoming_reference_from": [
+        "MS-RTASPF",
+        "MS-CONFAS"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    },
+    {
+      "id": "MS-SDP",
+      "latest_published_revision": "1.0",
+      "latest_published_date": "2017-06-01",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-sdp/697845ff-5357-4eb7-8bcb-162a0bc84deb",
+      "example_incoming_reference_from": [
+        "MS-H264PF"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    },
+    {
+      "id": "MS-SIP",
+      "latest_published_revision": "8.0",
+      "latest_published_date": "2017-06-01",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/MS-SIP/0d72fb55-12ba-49f1-850d-f0bf3110bb1f",
+      "example_incoming_reference_from": [
+        "MS-SIPREGE",
+        "MS-PRES",
+        "MS-CONFBAS"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    },
+    {
+      "id": "MS-WCCE",
+      "latest_published_revision": "55.0",
+      "latest_published_date": "2026-08-24",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/",
+      "example_incoming_reference_from": [
+        "MS-OCAUTHWS"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    },
+    {
+      "id": "MS-WSPOL",
+      "latest_published_revision": "8.0",
+      "latest_published_date": "2019-03-13",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wspol/94d73e99-3a43-4133-a310-1c38be24b8ce",
+      "example_incoming_reference_from": [
+        "MS-OCAUTHWS"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    },
+    {
+      "id": "MS-WSTEP",
+      "latest_published_revision": "15.0",
+      "latest_published_date": "2024-04-23",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wstep/",
+      "example_incoming_reference_from": [
+        "MS-OCAUTHWS"
+      ],
+      "normative_reference_section_complete": false,
+      "full_published_content_acquired": false,
+      "published_binary_sha256": null,
+      "version_history_diffs_reviewed": false,
+      "client_applicability_confirmed": false,
+      "status": "OFFICIAL_PUBLISHED_METADATA_VERIFIED_RECURSIVE_REFERENCES_AND_PDF_OPEN"
+    }
+  ]
+}
