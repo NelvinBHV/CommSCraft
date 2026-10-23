@@ -50,3 +50,16 @@ For **every** MS document: read §1.2.1 normative and §1.2.2 informative lists 
 - MS-SIPREGE explicitly references **draft-ietf-sip-gruu-10** in its normative refs and in registrar processing. Do not substitute RFC 5627 wire rules uncritically.
 - In [MS-CONMGMT §3.1.5](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-conmgmt/40d79c10-2275-4e52-bb4b-67c703d092c3), TCP entries occur in discovery, but this does **not** authorize downgrading an already required trusted TLS session.
 - MS-OCSPROT 2015 PDF revision 4.4 has a substantially older system inventory. Use historical diagrams only for change comparison, never as modern proof.
+
+## MS-SIPAE deep-clause cross-reference additions (live §§3.2.5.1–3.2.5.2; published rev 11.0 edition matching OPEN)
+
+| Origin | Explicit target | Dependency and status |
+| --- | --- | --- |
+| MS-SIPAE §3.2.5.1 | MS-KILE, MS-NLMP | Kerberos/NTLM GSS context, ticket, identity flags, default Kerberos clock skew; needs full Windows release review |
+| MS-SIPAE §§3.2.5.1–3.2.5.2 | RFC 3548 §§3,6 | Base64 GSS tokens and base16 signature; historic reference vs newer RFC 4648 must be reconciled |
+| MS-SIPAE §3.2.5.1 | RFC 2246, 4346, 5246; RFC 2716 §3.5 | Legacy TLS-DSK handshake/key schedule and PRF; modern TLS security compatibility unresolved |
+| MS-SIPAE §3.2.5.2 | RFC 2743 §2.3.2, MS-NLMP §3.1.4 | GSS_VerifyMic path for Kerberos and NTLM, fixed NTLM SSPI sequence 100 in described clause |
+| MS-SIPAE §3.2.5.2 | RFC 2104 | TLS-DSK HMAC server MIC verification and SA replay guard |
+| MS-SIPAE §§3.2.5.1–3.2.5.2 | MS-SIPAE §§2.2.3, 3.2.4.1, 3.2.5.5 | Header grammar, outgoing canonicalization / cryptographic responses, Digest alternative: **still unreviewed** |
+
+Source: [§3.2.5.1](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/71b7e07d-505f-4ca6-9577-0a27bd12b0e9) and [§3.2.5.2](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/26fd795e-5567-4d33-a09b-9c501f7ff01c). Refer to [authentication clause review](sipae-authentication-clause-review.md). These are **not full source closure**.
