@@ -752,4 +752,37 @@ flowchart TD
 
 **Open research blockers:** PSOM complete 111-page marshaling appendix/encoding, PPT/WOPI and historical service product notes; persistent Group Chat HTTP File Repository WSDL and P2P personal file transfer normative RFC/MS profile discovery; full SIPAPP RFC3515 REFER/NOTIFY/Replaces and timer/transfer failure scenarios, exact deployment capabilities; original non-Windows server spec release and current 2025 edition updates. **Global Full Client analysis NOT COMPLETE, no implementation code, live-server or assistant interop tests, merge to main or release.**
 
+## XXIII. 2026-10-23 exact 50-Microsoft/9-RFC overview source audit and SIPAE/SIPREGE survivable-mode ambiguity
+
+**Direct original bibliography reconciliation + formal 21-use-case link:** The 2025-05-20 primary **[MS-OCSPROT] rev9.0 §1.2** contains exactly **50 direct Microsoft document citations and 9 RFC citations** (not 49/8). Source-verified research artifacts:
+- [Official original PDF version/hash catalog for all 50 overview-referenced Microsoft IDs](research-corpus/ms-ocsprot9-50-direct-ms-reference-edition-audit-2026-10-23.csv) — **50/50 source PDFs available** in existing 150-PDF archive with pinned release/revision/SHA; **15** entries link to selected-clause original research files and **35** currently have no selected primary-clause research link in that focused crosswalk. **ALL 50 normative section-closure statuses remain OPEN**; this is bibliographic completion only, not an assertion of full client protocol comprehension.
+- [Nine IETF RFC edition references, official RFC Editor links and legacy role](research-corpus/ms-ocsprot9-nine-direct-rfc-versions-2026-10-23.csv) — RFC2118, 3261, **3265**, 3325, 3550, 3551, 3892, 6120 and 6121. **RFC2118 = Microsoft Point-to-Point Compression, not RFC2119**, and **RFC3265** historic SIP-events document was later superseded by RFC6665; cannot replace historical source edition silently.
+- [Overview graph discrepancy and explicit client evidence gates](ms-ocsprot9-direct-source50-rfc9-graph-reconciliation-and-architecture-gates-2026-10-23.md) — the 2026-10-22 [150-PDF edge ledger](research-corpus/microsoft-originals-150-classified-reference-edges-2026-10-22.csv) records **49 MS + 8 RFC** for MS-OCSPROT, omitting exactly **MS-OCGCWEB** and **RFC3265**; also normalizes original **MS-QoE** to **MS-QOE** in edge ID. These are **two dropped edges plus one noncanonical case**, not 2 missing MS physical PDFs. 2025 overview §1.2 has a unified *References* section: **no native normative-vs-informative split**. Preserve the old reproducible 3,060-edge graph unchanged and record correction as companion evidence pending full graph regeneration.
+- [MS-OCSPROT 21 numbered §2.5 use cases](ms-ocsprot9-21-usecase-full-client-functional-protocol-trace-2026-10-23.md), [machine-readable per-use-case dependency/state CSV](research-corpus/ms-ocsprot9-21-usecase-client-coverage-trace-2026-10-23.csv), and [MS-CONMGMT rev10 DNS/TLS/keepalive original source](ms-conmgmt10-sip-discovery-tls-fqdn-keepalive-proxy-expiry-original-2026-10-23.md) integrate discovery, principal authentication, registration, provisioning, MPOP, IM, voice/video, conference Focus/media, whiteboard/chat and errors. Microsoft **§2.5.3 explicitly permits nonfixed ordering** of bootstrap requests; §2.5.17 has async conference branches. These overview flows are not complete mandatory one-line packet traces.
+
+**New direct protocol source-conflict audit:** [MS-SIPAE rev11 (May 2025) / MS-SIPREGE rev17.1 (Aug 2025) combined authentication and registration state](ms-sipae11-siprege17-security-association-survivable-mode-source-conflicts-2026-10-23.md) — **28 specifically clause-labelled AUTH/REG rules** from original MS-SIPAE §§3.2.1–3.2.5.2,3.3.2 and MS-SIPREGE §§3.1.1.4.1–3.1.1.6,3.2.1.5,3.2.2.4.1,3.3.1.4–3.3.2.4, with original PDF images for SIPAE pp19,20,24 and SIPREGE pp75–76. It separates **per realm/targetname SA establishing/established/expired** (NTLM/Kerberos/TLS-DSK, signed cnum/crand, received snum replay window **256**, 8h minus 5min+ safety buffer/credential/ticket expiry) from **REGISTER GRUU+expiry**, per-TCP flow Ms-Keep-Alive, and independent self-presence/contact-group subscriptions. SIPAE TLS-DSK uses TLS messages/derived signed headers **inside SIP challenges**, distinct from SIP TCP/TLS transport and SRTP media HMAC. 
+
+**Two previously undocumented normative ambiguities now directly proven on MS-SIPREGE 17.1 p76, §3.1.1.5.1:** 
+1. For failed **self-SUBSCRIBE**, one paragraph says client **SHOULD remove REGISTER binding with Expires/Expiry=0**; following paragraph says when **not survivable SHOULD retry self-SUBSCRIBE with random backoff**, while in survivable mode **SHOULD postpone retry**. The original does **not establish an unambiguous precedence** between removing binding and retrying. Do NOT invent exclusive branches.
+2. Presence service unavailable maps **Presence-Service-Available=false** and enables survivable mode; a later sentence says survivable mode *ends* when future REGISTER indicates this same field **false**. This is an **internal source polarity conflict**, not permission to silently change false to true. Product notes <151>–<153> mention historical OCS client support but do not resolve a universal current full-client branch; official errata/edition check required.
+
+**Client-state dependency synthesis (S, not a deterministic on-wire trace):**
+
+~~~mermaid
+flowchart TD
+ A[MS-CONMGMT discovery and selected secure transport] --> B[MS-SIPAE SA per realm/target challenge 401/407]
+ B --> C[Kerberos or NTLM or TLS-DSK and signed SIP]
+ C --> D[MS-SIPREGE REGISTER 200; GRUU and independent expiry timer]
+ D --> E[Independent self-presence SUBSCRIBE and contact/group subscriptions]
+ E --> F{Presence-Service-Available}
+ F -->|Available| G[Normal provisioning per feature]
+ F -->|Unavailable| H[Survivable mode: self-sub only]
+ E --> I{Self subscription fails?}
+ I -->|Yes| J[Original source ambiguity: deregister SHOULD and conditional retry SHOULD]
+ H --> K[Original source ambiguity: same false value used for end of mode]
+ D --> L[Per-TCP keepalive and SA expiry independent of SIP REGISTER]
+~~~
+
+**Proof gates:** Exact protocol RFC editions/errata and original §1.2 references crosswalk fully catalogued; **not fully analyzed**: all downstream normative reference chains across 50 Microsoft sources, all 21 use-case detailed message byte grammars/state/error branches, historical vs current Windows build/applicability, SIPREGE ambiguous survivable behavior, SRTP SHA1 vs SHA256, security/role boundaries and 150-PDF graph omissions. **No protocol implementation plan authorized yet** and no actual server, interop testing, merges or releases.
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
