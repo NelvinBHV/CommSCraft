@@ -22,6 +22,10 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 
 ## Work products (all provisional)
 
+**Für die Wiederaufnahme zuerst lesen:** [CURRENT_STATUS.md](CURRENT_STATUS.md) (verbindlicher Forschungsstand, offene Nachweise und Reihenfolge) und [research-checkpoint.json](research-checkpoint.json) (maschinenlesbare Kennzahlen, Quell-Blob-SHAs und Arbeitsgrenzen). Ältere Zahlen im chronologischen Log sind historische Zwischenstände.
+
+- [CURRENT_STATUS.md](CURRENT_STATUS.md) — current handoff: 46/46 direct overview reference lists, 460 normative edges, 199 targets, still Phase 1 incomplete.
+- [research-checkpoint.json](research-checkpoint.json) — machine-readable snapshot with verified source hashes and explicit blockers.
 - [source-catalog.md](source-catalog.md) — central versioned **46-MS / 113-RFC** primary-source index, access status and normative closure notes.
 - [ms-ocsprot-inventory.json](ms-ocsprot-inventory.json) / [ms-ocsprot-inventory.md](ms-ocsprot-inventory.md) — all 46 identifiers from the six official MS-OCSPROT system protocol tables.
 - [ms-avedgea-12-source-audit.md](ms-avedgea-12-source-audit.md) — uploaded current full PDF, SHA-256, exact five normative and five informative references, product and revision details.
