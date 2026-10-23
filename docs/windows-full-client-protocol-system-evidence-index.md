@@ -875,4 +875,15 @@ flowchart TD
 
 **Open normative closure:** MS-PSOM all distributed-object marshal/type schema and DataMCU sAuthId lifetime/cert special-name; MS-XCCOSIP exact file repository contract, historical command erratum, permission and room-state gaps; MS-CONFAS inconsistent rejection scope, sharing/attendee policy build conditions, complete RDP/SRTP/ICE binding and encrypted media SHA1/SHA256 conflict; **client build applicability and all original normative references remain UNFINISHED**. No code, no connection to servers, no interoperability tests, no merge or release.
 
+## XXVI. Historical release matching: official 2014 PSOM and 2013 XCCOSIP original editions (2026-10-23)
+
+[Legacy-to-current original-PDF clause comparison](ms-psom2014-xccosip2013-historic-windows-client-edition-crosscheck-2026-10-23.md) supplements modern MS-PSOM rev11.0 and MS-XCCOSIP rev7.0 with **official historically hosted PDFs**, not synthetic code/network tests:
+
+| Historic original release | Old section/field directly checked | New corresponding release | Source-backed conclusion |
+|---|---|---|---|
+| **MS-PSOM v20141019, rev3.2, 2014-10-30**, Microsoft original PDF 111pp | §§3.2.3.1.1–.4, token from C3P, `pwrpc.modes`, proxyHeader, `0x70773200/0x00000000`, ConnMgr hash/version and Channel0→2 | **rev11.0 2025-05-20** §§3.2.3.1.1–.4 | Those **specific** wire auth/version traits present in both vintages; does NOT prove 2025 object implementations run in 2015 client |
+| **MS-XCCOSIP v20131118, rev2.0, 2013-11-18**, Microsoft original PDF 94pp | §2.2.2.2.2 lists **`cmd:getfutok` upload** vs **`cmd:getfdtok` download**, §2.2.2.2.4 lists common response **`rpl:getftok`**, §3.1 procedure table ends at §3.1.18 | **rev7.0 2024-08-20** §2.2.2.2.2 and new §3.1.19.3 | **Historical distinction already in 2013**, but 2024 flow text says `cmd:getfutok` for both. Remains explicit normative conflict, not authority to pick wire behavior |
+
+Official public original links and exact pages supplied in the comparative source document; older originals are **online PDF-text checked**, not SHA-pinned in local 150 PDF archive. 2025/2024 originals *are* SHA-pinned there. Modern source correctness must not be back-projected into a 2015/2016 classic desktop binary. Need complete historical diff + official errata + exact installed build to classify particular UI capabilities. **Global research not complete; implementation gate closed.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
