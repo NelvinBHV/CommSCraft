@@ -112,6 +112,26 @@
       "id": "P1-08",
       "priority": 3,
       "task": "Review fixed-point graph and each unresolved question with evidence, then explicitly sign off Phase 1 only when every source or justified exclusion is accounted for."
+    },
+    {
+      "id": "P1-09",
+      "priority": 1,
+      "task": "Obtain exact published PDF/DOCX edition references for 12 second-tier MS specs (11 live HTML, MS-RDPEMC search excerpt only), compare and mark version-specific discrepancies."
+    },
+    {
+      "id": "P1-10",
+      "priority": 1,
+      "task": "Review and classify 146 new target IDs from second-tier ledger; follow relevant Microsoft/MC, RFC, historic drafts and external references recursively, documenting explicit justified exclusions."
+    },
+    {
+      "id": "P1-11",
+      "priority": 2,
+      "task": "Resolve MS-OAUTH2EX OAuth draft v2-22 document title vs v2-23 URL inconsistency; reconcile historical cited edition."
+    },
+    {
+      "id": "P1-12",
+      "priority": 2,
+      "task": "Finish RFC Editor normative-reference and errata review beyond 10 selected Update/Obsolete headers. Preserve original Microsoft-cited versions."
     }
   ],
   "invariants": [
@@ -135,7 +155,34 @@
     "ms-avedgea-12-source-audit.md",
     "full-client-coverage.md",
     "full-122x93-traceability.md",
-    "research-log.md"
+    "research-log.md",
+    "phase1-transitive-research-2026-10-23.md",
+    "transitive-reference-ledger.json",
+    "transitive-frontier.json",
+    "rfc-version-relations-reviewed.json"
   ],
-  "instructions_for_next_session": "First read AGENTS.md, this file, CURRENT_STATUS.md, phase1-audit.md, research-log.md and the four inventories on the draft branch. Verify branch tip and ledger counts afresh, then close next unresolved source in priority order; update catalogs, evidence, checkpoints and log. Do not treat old provisional counts as current."
+  "instructions_for_next_session": "Read AGENTS.md, CURRENT_STATUS.md, research-checkpoint.json latest_continuation, phase1-audit.md and last research-log entry; verify draft/main commit and calculate counts anew from two distinct ledgers; do not combine first-tier 460 with 246 into a false closed graph. Reconcile publication editions and recurse only relevant targets. Never code/test/merge/release.",
+  "latest_continuation": {
+    "date": "2026-10-23",
+    "research_iteration": "phase1-transitive-microsoft-specs-plus-selected-rfc-status",
+    "from_previous_git_head": "0fadffbd58237f11909c6f5f66115eb1e553a955",
+    "document": "phase1-transitive-research-2026-10-23.md",
+    "graph_file": "transitive-reference-ledger.json",
+    "open_frontier_file": "transitive-frontier.json",
+    "rfc_version_file": "rfc-version-relations-reviewed.json",
+    "transitive_microsoft_source_docs": 12,
+    "complete_official_live_html_normative_lists": 11,
+    "partial_search_only_ms_rdpemc_lists": 1,
+    "second_level_edges": 246,
+    "second_level_distinct_targets": 183,
+    "distinct_new_targets_vs_initial_first_tier": 146,
+    "distinct_new_ms_mc_targets": 52,
+    "distinct_new_rfc_targets": 51,
+    "distinct_new_other_targets": 43,
+    "combined_unique_first_plus_second_level_targets": 345,
+    "selected_rfc_editor_update_relation_headers_checked": 10,
+    "all_second_tier_published_pdf_editions_verified": 0,
+    "phase1_complete": false,
+    "important": "Prior 460 original MS-OCSPROT first-tier normative edges remain unchanged. No second-tier source has been matched to exactly published revision PDF, full graph still open, no implementations/tests."
+  }
 }
