@@ -44,7 +44,7 @@ sequenceDiagram
 
 ## Critical open questions
 
-- **OCX-U1:** [MS-OXWUMS] official original and historic client-era editions are **not in current 150-original archive**; source is **published** (not “unavailable”). Its EWS authentication and Play-On-Phone SOAP request/responses must be audited before claiming a complete call flow.
+- **OCX-U1:** [MS-OXWUMS] official original and historic client-era editions **are in the wider 150-PDF archive as a secondary source but are not indexed in the 54-item primary inventory**. The initial “missing PDF” classification was incorrect; see [MS-OXWUMS rev16 direct original study](ms-oxwums16-ews-playonphone-soap-32s-call-state-source-2026-10-23.md). Its EWS authentication and Play-On-Phone SOAP cases are partly analyzed, full 107-page normative closure remains open.
 - **OCX-U2:** Trusted path and `skip-pin` authorization, SIPAE end-to-hop authentication, TLS transport identity, UM user mapping and identity delegation are distinct. No claim of passwordless external voicemail access warranted.
 - **OCX-U3:** `Appear Offline` special-case logic must be checked against MS-PRES category privacy and user builds; not evidence generic privacy override.
 - **OCX-U4:** To establish exact classic Windows desktop supported modality, use dated client build/Exchange UM edition notes. MS-OCEXUM rev11 (2025) states protocol extension behavior, not that Exchange UM remains available in every contemporary environment.
