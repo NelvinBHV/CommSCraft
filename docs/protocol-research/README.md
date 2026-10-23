@@ -24,6 +24,7 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 
 - [source-catalog.md](source-catalog.md) — official entry points, verified release numbers, unverified versions and inventory candidates.
 - [dependency-matrix.md](dependency-matrix.md) — layered adjacency/edge types, normative-reference expansion backlog.
+- [sipae-authentication-clause-review.md](sipae-authentication-clause-review.md) — MS-SIPAE §§3.2.5.1–3.2.5.2, authentication variants, MIC canonicalization, replay and failures (edition caveat).
 - [rfc3261-rfc2782-clause-review.md](rfc3261-rfc2782-clause-review.md) — original-edition RFC clause review and timers.
 - [full-122x93-traceability.md](full-122x93-traceability.md) — every existing Windows parity feature linked to the 93 baseline scenarios.
 - [discovery-registration-analysis.md](discovery-registration-analysis.md) — analyzed clauses, wire/decision boundaries and explicit security gaps.
