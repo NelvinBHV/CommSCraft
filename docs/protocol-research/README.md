@@ -76,3 +76,5 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 - [RFC first-hop original bibliography audit](rfc-first-hop-audit-2026-10-23.md) / [JSON register](rfc-first-hop-reference-ledger.json): RFC 3261 §29 (26 normative) and RFC 2782 References (9 *unclassified*), 23 new RFC candidates outside unchanged 113 seeds; recursion/client applicability OPEN.
 
 - [Formeller Phase-1-Abschlusscheck](phase1-closure-audit-2026-10-23.md) / [Gate-Ledger (JSON)](phase1-closure-gates-2026-10-23.json): 58 Microsoft-Einzelnachweise und 12 notwendige Bedingungen, derzeit **alle offen**. Kein Phase-1-Abschluss behauptet.
+
+- [MS-ABS edition-specific PDF audit](ms-abs-edition-audit-2026-10-23.md) / [JSON evidence](ms-abs-edition-evidence-2026-10-23.json): rev 9.0 vs 10.0 original §1.2.1, §8 and §9 inspected; current 10.1 edition remains OPEN, no additional Phase-1 gate passes.

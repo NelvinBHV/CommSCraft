@@ -219,5 +219,30 @@
     "server_roles_and_policy": "UNPINNED",
     "release_and_implementation_authorized": false,
     "rfc3261_bibliography_mismatch": "RFC3261 §29 [6] cites RFC3268 June 2002; RFC-Editor RFC3268 metadata publishes July 2002; version applicability OPEN"
+  },
+  "historical_ms_abs_research_2026_10_23": {
+    "status": "HISTORICAL_PDF_SECTION_COMPARISON_ONLY_CURRENT_REV_10_1_NOT_VERIFIED",
+    "evidence_document": "ms-abs-edition-audit-2026-10-23.md",
+    "evidence_file": "ms-abs-edition-evidence-2026-10-23.json",
+    "historical_pdf_sections_reviewed": [
+      "MS-ABS 9.0 v20240820 §1.2.1 p.9",
+      "MS-ABS 10.0 v20250520 §1.2.1 p.9"
+    ],
+    "historical_normative_targets_equal": [
+      "E164-2005",
+      "MC-RegEx",
+      "RFC2119"
+    ],
+    "latest_revision": "10.1",
+    "latest_date": "2025-08-19",
+    "latest_revision_original_pdf_verified": false,
+    "full_original_new_pdf_hashes_verified": 0,
+    "current_release_pdf_section_count_unchanged": 13,
+    "html_only_count_unchanged": 33,
+    "normative_edges_first_tier_unchanged": 460,
+    "normative_edges_second_tier_unchanged": 246,
+    "formal_gates_passed_unchanged": 0,
+    "implementation_authorization": false,
+    "phase1_complete": false
   }
 }

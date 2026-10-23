@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "audited": "2026-10-23",
+  "document_id": "MS-ABS",
+  "status": "HISTORICAL_PDF_PAGES_INSPECTED_CURRENT_RELEASE_UNVERIFIED",
+  "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-abs/ddc59abf-1f42-4935-9b72-5314665dbcff",
+  "current_published": {
+    "revision": "10.1",
+    "date": "2025-08-19",
+    "release_pdf_1_2_1_verified": false,
+    "full_binary_hash": null,
+    "download_blocker": "Published PDF redirects to inaccessible origin"
+  },
+  "historical_editions": [
+    {
+      "revision": "9.0",
+      "date": "2024-08-20",
+      "edition": "v20240820",
+      "pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-ABS/%5BMS-ABS%5D-240820.pdf",
+      "pdf_pages_total": 79,
+      "inspected_print_pages": [
+        9,
+        74,
+        76
+      ],
+      "verified_pdf_text": true,
+      "verified_rendered_pages": true,
+      "local_file_hashed": false,
+      "normative_reference_section": "§1.2.1 p.9",
+      "normative_reference_targets": [
+        "E164-2005",
+        "MC-RegEx",
+        "RFC2119"
+      ],
+      "informative_refs": [
+        "UASDC",
+        "UNICODE"
+      ],
+      "section9_changes": [
+        "§8 Product Behavior — supported products (Major)"
+      ]
+    },
+    {
+      "revision": "10.0",
+      "date": "2025-05-20",
+      "edition": "v20250520",
+      "pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-ABS/%5BMS-ABS%5D-250520.pdf",
+      "pdf_pages_total": 79,
+      "inspected_print_pages": [
+        7,
+        9,
+        74,
+        76
+      ],
+      "verified_pdf_text": true,
+      "verified_rendered_pages": true,
+      "local_file_hashed": false,
+      "normative_reference_section": "§1.2.1 p.9",
+      "normative_reference_targets": [
+        "E164-2005",
+        "MC-RegEx",
+        "RFC2119"
+      ],
+      "informative_refs": [
+        "UASDC",
+        "UNICODE"
+      ],
+      "normative_body_sections": [
+        "§1.7",
+        "§2"
+      ],
+      "product_behavior_section": "§8 p.74",
+      "product_mentions": [
+        "Skype for Business 2019",
+        "Skype for Business Server 2019",
+        "Skype for Business Server Subscription Edition"
+      ],
+      "section9_changes": [
+        "§1.1 Glossary — cryptographic hash function (Minor)",
+        "§8 Product Behavior — supported products (Major)"
+      ]
+    }
+  ],
+  "compared_historical_reference_targets_equal": true,
+  "complete_document_diff_performed": false,
+  "current_release_pdf_compared": false,
+  "ledger_current_release_proof_unchanged": true,
+  "first_tier_normative_edges_unchanged": 460,
+  "first_tier_current_release_pdf_sections_unchanged": 13,
+  "html_only_current_release_sections_unchanged": 33,
+  "phase1_gates_passed_unchanged": 0,
+  "phase1_complete": false,
+  "classification_note": "Only historical 9.0 and 10.0 published PDFs inspected. 10.1 current section and full binary hash are NOT verified."
+}
