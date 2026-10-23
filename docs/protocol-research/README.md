@@ -1,6 +1,6 @@
 # CommSCraft: Windows Full Client protocol research (DRAFT)
 
-**Research snapshot:** 2026-10-23. **Scope:** Skype for Business 2019 classic Windows desktop Full Client, SfB Server 2019 and Subscription Edition. **Status: INCOMPLETE. No implementation authorization.**
+**Research snapshot:** 2026-10-23. **Phase 1 check: NOT COMPLETE (46/46 metadata; 4/46 directly inspected normative lists; 0 published release binaries acquired).** **Scope:** Skype for Business 2019 classic Windows desktop Full Client, SfB Server 2019 and Subscription Edition. **Status: INCOMPLETE. No implementation authorization.**
 
 This is a source-driven research track, **not** a protocol conformance claim, a test report, or an assertion that the client can sign in. Existing `FEATURE_PARITY.json` (122 requirements), `WINDOWS_REFERENCE_CASES.json` (93 cases), `docs/122-feature-rfc-ms-reaudit.md` and immutable history remain the baseline inventory. Nothing here supersedes those artifacts without a separately reviewed reconciliation.
 
@@ -22,7 +22,11 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 
 ## Work products (all provisional)
 
-- [source-catalog.md](source-catalog.md) — official entry points, verified release numbers, unverified versions and inventory candidates.
+- [source-catalog.md](source-catalog.md) — central versioned **46-MS / 71-RFC** primary-source index, access status and normative closure notes.
+- [ms-ocsprot-inventory.json](ms-ocsprot-inventory.json) / [ms-ocsprot-inventory.md](ms-ocsprot-inventory.md) — all 46 identifiers from the six official MS-OCSPROT system protocol tables.
+- [normative-reference-ledger.json](normative-reference-ledger.json) — 71 exact edges from four original §1.2.1 web reference lists; published-edition comparison OPEN.
+- [rfc-inventory.json](rfc-inventory.json) — fixed-identifier IETF seed inventory with provenance and update-chain status.
+- [phase1-audit.md](phase1-audit.md) — measurable Phase-1 coverage and explicit inaccessible / unreviewed sources.
 - [dependency-matrix.md](dependency-matrix.md) — layered adjacency/edge types, normative-reference expansion backlog.
 - [sipae-authentication-clause-review.md](sipae-authentication-clause-review.md) — MS-SIPAE §§3.2.5.1–3.2.5.2, authentication variants, MIC canonicalization, replay and failures (edition caveat).
 - [rfc3261-rfc2782-clause-review.md](rfc3261-rfc2782-clause-review.md) — original-edition RFC clause review and timers.
