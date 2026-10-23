@@ -886,4 +886,40 @@ flowchart TD
 
 Official public original links and exact pages supplied in the comparative source document; older originals are **online PDF-text checked**, not SHA-pinned in local 150 PDF archive. 2025/2024 originals *are* SHA-pinned there. Modern source correctness must not be back-projected into a 2015/2016 classic desktop binary. Need complete historical diff + official errata + exact installed build to classify particular UI capabilities. **Global research not complete; implementation gate closed.**
 
+## XXVII. 2026-10-23 telephony / civic E911 / PSTN gateway / Exchange UM — original-spec deep source audit
+
+**Research-only continuation; 4 original MS documents and 26 cross-plane requirement rows added**. All originals were checked from the existing 150-PDF local archive with SHA256 matching inventory: **[MS-E911WS] rev9 (2025-05-20)** SHA `999ebc01f437d6bbe8b1141e479a94d1ecec30c61fa4491367e1c1d5f032920a`, **[MS-OCPSTN] rev11** SHA `c66e679e049fff858c4b2a988aa2d3c9f07fa9fa13622f630c138cd3f8d63f56`, **[MS-EUMR] rev9** SHA `483eea91ca631981393ff96e512620051377b1463962b93b1d5f42cbc1157ed3` and **[MS-EUMSDP] rev9** SHA `d9c8c1b658fb25530fdd4032b7a97a45fe199feb12ef9950ef0d50a07c18c3d6`; all four v20250520. Rendered original PDF E911WS17–18, OCPSTN13–14, EUMR15–16, EUMSDP10 and visually inspected selected pages. Official original MS PDF URLs supplied in each study; direct URL inaccessible in this browser session but local copies and Microsoft Learn OCPSTN original example are verifiable.
+
+- [MS-E911WS SOAP/HTTPS/GetLocations and PIDF-LO civic location audit](ms-e911ws9-location-soap-pidf-security-failures-2026-10-23.md): **15 section-scoped rules** §§1.3–1.6,2.1,2.2.3–5,3.1.1–3.1.4,5.1. Required `Entity`, optional **WAPBSSID/RSSI/MAC/LLDP ChassisID/PortID/SubnetID/IP**, separate user city search `Entity/Country/State/City`. **HTTP 2xx can contain SOAP `ReturnCode` 400/404/500**, with optional `presenceList` of **RFC3863 PIDF + RFC4119 GEOPRIV + RFC5139 civic** addresses. `method=Manual` when location cannot be trusted to match network evidence; source match order explicitly implementation-specific. No fixed LIS server timer (§3.1.2). Kerberos/NTLM/SPNEGO or certificate-based HTTP auth [MS-OCAUTHWS] is **not SIPAE** and LIS response **not PSTN PSAP call delivery**.
+- [MS-OCPSTN PSTN-SIP extension grammar and gateway/user/proxy-specific errors](ms-ocpstn11-pstn-sip-earlymedia-bypass-loop-phonecontext-2026-10-23.md): **15 clause-grounded records** §§2.2.1–9,3.1–3.9. Distinguishes **`phone-context` provisioned dial plan / `dialstring`** from civic E911, `Contact;isGateway` gateway-role-only, `Ms-Call-Source` gateway loop path UAS **605** → upstream proxy **480**, `Supported:ms-early-media` unreliable **183 with SDP answer**, `Supported:ms-bypass` *capability not selected media*, multipart `ms-accepted-content-id` matching `Content-ID`, anonymous phone URI restriction, gateway trunk identity and mediation synthetic provisional-response header. RFC3262/RFC3264/RFC3966/RFC3325 and MS-SDPEXT/MS-SIPRE profile applicability remains edition-scoped.
+- [MS-EUMR Exchange UM SIP-proxy routing, voicemail and notification XML](ms-eumr9-unifiedmessaging-proxy-redirection-notification-dialog-timers-2026-10-23.md): **17 role-scoped original findings** §§2.2.1–6,3.1.1–6,3.2.2–6. UM Request-URI uses **dial-plan user, UM FQDN:5061, transport=tls; maddr**, optional Edge GRUU via `Ms-Mras-Address`. Proxy must consume **302** (redirect only same selected UM, one authorized Contact in same user dialplan, bounded previous 302) and fail over with UM timer **<180s (5s recommended)**, **415** multipart special MS-SIPRE branch; exhausted list SHOULD emit **480**, which shares status code with *distinct* OCPSTN loop 605→480. Separate proxy↔UM **MTLS** event `INVITE` with **`m=application 9 SIP *`** and **10min idle timer**, followed by SIP INFO `application/ms-rtc-usernotification+xml` with `missed/answered/forbidden`, linked original Call-ID/From and UTC timestamp. **New probable intra-source conflict**: §2.2.3.3 requires `AnsweredBy` on `answered`, §3.2.4.2.1 directs its inclusion **only when P-Asserted-Identity exists**. No synthetic participant identity chosen.
+- [MS-EUMSDP UM audio-only SDP and ignored generic conferencing extensions](ms-eumsdp9-exchange-um-audio-only-sdp-earlyanswer-bypass-restrictions-2026-10-23.md): **10 direct/cross-source entries** §§1.3–1.4,2.1–2.2,3.1.5. UM call path **only `m=audio`**, `o=` sess-version numeric but ignored on receive; final same-fork SDP answer **cannot supersede a differing earlier 18x answer**, later differences ignored. `a=x-bypassid/x-bypass/x-mediasettings`, RTCP feedback/reduced-size and SSRC range/source labels ignored. This is **UM-specific**, not a universal rule for PSTN media bypass or A/V conferencing.
+- [26-row cross-system requirement matrix](research-corpus/ms-e911ws9-ocpstn11-eumr9-eumsdp9-telephony-state-requirements-2026-10-23.csv): original edition/section, role/actor, exact wire field and status, independently tracked state, prohibited cross-layer equivalence and evidence class. **Not a complete telephony implementation plan**.
+
+### Combined partial-order telephone / location / UM message-state graph (S, not observed packet trace)
+
+~~~mermaid
+flowchart TD
+ A[Registered SIP user and provisioned location/dial plan] --> B{Independent service feature}
+ B -->|E911 location| C[HTTPS SOAP GetLocations network identifiers, or GetLocationsInCity]
+ C --> D{HTTP TLS authenticated, XML ReturnCode=200?}
+ D -->|No| E[Transport/auth/soap 400-404-500 distinct errors]
+ D -->|Yes| F[PIDF-LO civic address and method Manual if not trusted]
+ F --> G[Separate enterprise emergency routing and PSAP not proven by LIS]
+ B -->|PSTN voice call| H[Normalize E164 or private phone-context dialstring]
+ H --> I[SIP INVITE/SDP via proxy, gateway/matched multipart offer]
+ I --> J[Optional unreliable 183 early SDP, media security and ICE independent]
+ J --> K{Final SIP dialog and media usable?}
+ K -->|No| L[Proxy route failure or gateway loop UAS 605->upstream 480]
+ K -->|Yes| M[Audio connected with RTP/SRTP path]
+ B -->|Voicemail forwarding| N[Proxy routes UM dialplan TLS:5061, bounded 302/415/timeout]
+ N --> O[UM audio-only SDP and ICE/TURN/SRTP as applicable]
+ N --> P[Separate proxy->UM MTLS event dialog]
+ P --> Q[SIP INFO missed/answered/forbidden XML, 10min idle]
+~~~
+
+**Important role separation:** An E911 location SOAP XML success code is neither SIP response success nor reliable public safety call routing. An OCPSTN **phone-context** is a dialing-profile namespace, not E911 civic location nor TURNBWM intranet/federation-site classification. **UM audio-only SDP** is *not the same as* proxy→UM **application/SIP event-notification SDP**; different purpose-specific dialogs. PSTN gateway `isGateway`, `Ms-Call-Source`, `ms-trunking-peer` are **gateway actor** rules, do not automatically belong to ordinary Windows desktop UAC. A single **480** may mean (1) OCPSTN 605 loop conversion or (2) exhausted UM server list, which must be diagnosed from context and source rather than coded as one global error.
+
+**Open proof gates:** Full 38-page E911 WSDL schema + RFC5139 + emergency-routing deployment policy, OCPSTN multipart/early SDP and trusted PAI controls, EUMR `AnsweredBy` source conflict and redirect/failover behavior, EUMSDP historic client/media version, EUM server application availability, cross-source MS-SIPRE/SRTP key-crypto conflict and all client build variants. **No protocol implementation authorized; no real servers, interoperability tests, main merge or release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
