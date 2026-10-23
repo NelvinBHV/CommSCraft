@@ -114,3 +114,17 @@ Diese Punkte beschreiben ausschließlich die **noch ausstehende Forschungs-/Doku
 - **Neue Protokollimplementierung / Merge / Release erlaubt** = **Nein**.
 
 **Der nächste Auftrag muss am belegten Stand hier anschließen und darf weder vorhandene Beleglücken stillschweigend schließen noch das vorhandene Forschungsprotokoll als Interoperabilitätsnachweis interpretieren.**
+
+
+## Forschungsfortsetzung 23.10.2026 – zweite Microsoft-Referenzebene (neuester Prüfstand)
+
+**Dieser Abschnitt ergänzt und aktualisiert den obigen historischen Snapshot, ersetzt dessen damalige Zahlen aber nicht rückwirkend.** Nach dem vorherigen Handoff wurden die **zwölf** bereits identifizierten Microsoft-Spezifikationen außerhalb der sechs MS-OCSPROT-Tabellen auf direkte §1.2.1-Referenzen untersucht: **elf vollständige offizielle HTML-Normlisten sichtbar**, **MS-RDPEMC nur als partieller offizieller Suchauszug** (Seitenabruf fehlgeschlagen). Der daraus gesondert erfasste zweite Ring enthält **246** gerichtete Normverweise zu **183** Zielkennungen. Im Vergleich zu den **199** bereits erfassten Zielkennungen des ersten Rings werden **146** neue Quellkennungen sichtbar: **52 Microsoft-/MC-**, **51 RFC-** und **43 andere Norm-/historische Draft-Kennungen**. Zusammen ergeben beide Inventare **345 verschiedene Zielkennungen**. **460 Erststufenkanten bleiben unverändert; 246 weitere Kanten sind nicht mit vollständiger Normrekursion oder clientverbindlicher Implementierung gleichzusetzen.**
+
+- **Neue Primärdokumentation:** [`phase1-transitive-research-2026-10-23.md`](phase1-transitive-research-2026-10-23.md) (offizielle Quellen, Versionskonflikte, Interpretation und Aufgaben).
+- **Maschinenlesbarer zweiter Ring:** [`transitive-reference-ledger.json`](transitive-reference-ledger.json) – 246 Kanten mit Quell-§, URL, Art, HTML-Beweisstatus und offener PDF-Versionsprüfung.
+- **Offene dritte Ebene:** [`transitive-frontier.json`](transitive-frontier.json) – die 146 gegenüber dem bisherigen MS-OCSPROT-Zielgraphen neuen Kennungen mit rückverfolgbaren eingehenden Kanten; keine vorschnelle Clientpflicht.
+- **Status der zwölf Ursprungsdokumente:** [`transitive-microsoft-inventory.json`](transitive-microsoft-inventory.json) – elf vollständige HTML-Listen, eine nur teilweise belegte Suchindexliste, keine revisionsgenau überprüfte Original-PDF-Ausgabe in dieser Etappe.
+
+**Neue dokumentierte Streitpunkte:** MS-OAUTH2EX nennt den historischen OAuth-Draft als `-22`, verweist aber per URL auf `-23`; MS-H26XPF verweist auf das zusätzliche MS-RTPME; MS-RDPEMC muss gegen die gesamte veröffentlichte Originalausgabe geprüft werden. Die neue 2026-MS-KILE-Normliste darf nicht ohne passenden Editionsnachweis als das 2019-Client-Profil ausgegeben werden. Die von MS-RDPBCGR referenzierten RDP/TLS/OAuth- und ITU-T-Standards sind vor einer Einordnung als Clientfunktion auf MS-RTASPF/MS-CONFAS und konkrete Produktvarianten zurückzuführen.
+
+**Kein Phase-1-Abschluss:** 33 erste HTML-only-Listen weiterhin ohne bestätigten Vergleich zur datierten Microsoft-PDF-Ausgabe; 12 zusätzliche Microsoft-Listen ebenfalls ohne PDF-Editionsvergleich (eine davon nur partiell); 146 weitere Knoten benötigen Quelle/Relevanz/Edition/Nachfolgeprüfung; RFC-Normverweise und Standards bleiben offen. **Keine Protokollimplementierung, keine Serververbindung, kein Interoperabilitätstest, kein Merge/Release.**
