@@ -651,4 +651,57 @@ flowchart TD
 
 **Research blockers:** MS-RTP source §3.2.2 VSR slow retransmission **5 vs 4** conflict, exact packet extensions / 175-page QoE XML metrics / 207-page OCER ErrorIds and per-release UI rules not yet exhaustively reviewed. **No report SERVICE implies SIP logout or media auto-restart.** IEEE RFC3550 RTP feedback, SIP RFC3261 transactions, STUN/ICE consent and TURN credentials are different protocol lifecycles. Full normative documentation and Windows profile conformance remain **NOT COMPLETE; implementation gate CLOSED; no code, genuine-server/interop testing, main merge or release.**
 
+## XXI. 2026-10-23 Video codec RTP, H.264 SVC and network bandwidth admission
+
+**Three new direct original-PDF analyses with 56 source/role-qualified findings**; Microsoft source editions all dated **2025-05-20**:
+- [MS-RTVPF rev11.0: proprietary RTVideo RTP payload, FEC, cached-SP frames and mixer forwarding](ms-rtvpf11-rtvideo-rtp-frame-fec-cached-sp-original-2026-10-23.md): **16 numbered first-party/standards findings** based on §§2.2.1–2.2.5,3.1.5.1–3.1.5.6, with §4 sample and rendered original PDF p11. RTVideo uses **90kHz RTP clock**, Basic mode 1–65-byte header (codec header <=63), Extended 4–68 bytes, Extended 2 8–72 bytes **MUST NOT be used as ordinary video** despite FEC's special 8-byte Extended2-derived header with S=0 E=1; FEC DV1 supports **<=31** metadata packets. Encoder fragments **<1200 bytes**, accounting for RTP/transport/IP/codec headers, same-size FEC data packets except final, **FEC metadata after data in shared RTP sequence space**. VC1 sequence header **first I-frame packet**, GOP-local frame/reference counters, synchronized cached frame and SP reference. **Server/mixer** with unrecovered uplink loss **MUST forward empty-payload RTP placeholder per lost packet**, preserving RTP sequence numbers (role-specific). Decoder incomplete reference frames may be skipped; these are not SIP failure.
+- [MS-H264PF rev16.0: H.264/SVC noninterleaved NAL, PACSI simulcast and RFC5109 FEC](ms-h264pf16-h264-svc-pacsi-simulcast-fec-rfc6184-6190-5109-original-2026-10-23.md): **18 numbered original obligations** §§2.2.1–2.2.8,3.1.5–3.2.5, original PDF p18 rendered, RFC6184/6190/5109. **MST SVC only, noninterleaved RFC6184 packetization mode1**, Single-NAL / STAP-A / FU-A only, PACSI **exactly once per layer/access unit** and first NAL, never fragmented, STAP-A starts with PACSI. Stream-layout **full PACSI must be received before data**; update PACSI only toggles *previously defined* layers and must precede changes. Missing PACSI/full layout or unannounced PRID ⇒ receiver **MUST discard** affected SSRC/timestamp packets. H.264 FEC follows data with same SSRC/timestamp/sequence space but **distinct dynamic payload type**, RFC5109 FEC header with Microsoft 16-bit SN Offset rather than SN base; XOR with one FEC and Reed-Solomon explicitly not detailed by source. **Potential editorial width mismatch:** 2-byte SN Offset field described as calculated unsigned **32-bit** difference. **One optional RTVideo simulcast** can accompany H.264 with separate SSRC and SDP payload type, not H.264 PACSI layout; **mixer MUST forward at most one stream**, preferring H.264 if available.
+- [MS-ICE2BWM rev9.0 + MS-TURNBWM rev9.0: call-admission check/commit/update, policy-validated ICE candidates and STUN 274/275](ms-ice2bwm9-turnbwm9-admission-candidate-error274-275-timers-2026-10-23.md): **22 numbered original requirements** §§2.2,3.1.4–3.1.6, PDF pages ICE2BWM14 and TURNBWM14 rendered. TURN Allocate Check/Commit/Update proprietary TLV **0x8056** action0/1/2; **0x8057 16-byte ReservationId**, **0x8058 16-byte min/max send+receive in kbps**, **0x8068 location profile** intranet/Internet/federation (not E911), optional SIP dialog/call-ID TLVs solely correlation. Admission denial of every path ⇒ **fail before initial SDP offer**; partial restrictions suppress affected candidates and prohibit ICE checks for them. **STUN Binding error 274 disables all pairs for one candidate**, **275 disables matching candidate pair**, not SIP failure codes. On successful ICE nomination Commit identified selected host/relay sites. **500ms Commit timer**, **<=19s Update** for unchanged bandwidth and **1s Update** when changed until response; successful server all-zero ReservationId ⇒ **no further BWM updates**. Different from MS-ICE2's consent freshness and MS-TURN allocation lifetime. These normative controls apply **only when bandwidth-management feature is enabled**.
+
+### Extended source/standards dependency and applicability matrix
+
+| Microsoft specification | Primary normative dependencies | Current evidence / edition guard |
+|---|---|---|
+| **MS-RTVPF rev11** | MS-RTP rev17 (2025), MS-SDPEXT rev16 (2025), RFC3550 (2003), **SMPTE VC-1** | 16 primary clause findings; **proprietary RTVC1 codec**, optional FEC profile, not universal Windows 2015 codec |
+| **MS-H264PF rev16** | MS-RTP, MS-SDP, RFC3550 (2003), **RFC6184 (2011), RFC6190 (2011), RFC5109 (2007)**, ISO/IEC 14496-10:2014 | 18 clause findings; **noninterleaved/MST/first PACSI mandatory**, only subset of RFC6184 accepted |
+| **MS-ICE2BWM rev9** | MS-ICE2 rev19 (2025), MS-TURN rev21 (2025), MS-TURNBWM rev9, IETFDRAFT-ICENAT-19 | 14 clause findings within BWM ledger; **optional bandwidth policy branch**, not every ICE profile |
+| **MS-TURNBWM rev9** | MS-TURN rev21, IETFDRAFT-STUN-02, IETFDRAFT-TURN-08, RFC3261, RFC4566 | 8 BWM wire/action findings; **not RFC8656 modern TURN packet**, historical version set |
+| **MS-SDPEXT/MS-SRTP/MS-SSRTP** | RFC3264, RFC4568, RFC3711 plus Microsoft crypto profile | **Existing SHA1/SHA256 contradiction still BLOCKED**: video packet format alone does not prove authenticated secure media |
+| **MS-RTP/RTCP feedback** | RFC3550, MS-RTP rev17 | Encoder may react to loss, MCU sender/source state separate; no guarantee of repaired video or admitted bandwidth |
+
+### Composite media health versus admission policy graph (S = synthesis, not packet capture)
+
+~~~mermaid
+flowchart TD
+  A[Authorized SIP/SDP call or conference modality] --> B[Check media codec capabilities: H264/SVC, RTVideo, others]
+  B --> C{Bandwidth-management policy enabled?}
+  C -->|Yes| D[TURNBWM check allowed host/relay site and requested kbps]
+  C -->|No| E[ICE2 candidate gathering without BWM branch]
+  D --> F{At least one approved path?}
+  F -->|No| G[Fail media offer before sending SDP]
+  F -->|Yes| E
+  E --> H[SDP codec/PT and ICE pairs, STUN authenticated checks]
+  H --> I{Nominated approved pair?}
+  I -->|No| G
+  I -->|Yes| J[Optional bandwidth Commit and periodic Update]
+  J --> K[Actual RTP video packets and FEC]
+  K --> L{Codec format}
+  L -->|H264| M[First PACSI/layout, noninterleaved NAL, optional RFC5109 FEC]
+  L -->|RTVideo| N[VC1 I/P/B/SP ref, Extended headers, optional MS FEC]
+  M --> O[RTCP feedback, receiver decoding and layer presence]
+  N --> O
+  O --> P[Independent ICE consent, RTP loss/SSRC and SRTP packet authenticity]
+~~~
+
+**Security/cross-layer constraints:** Call Admission Control (CAC) is a site-bandwidth policy, **not** a successful STUN pair or a media encryption algorithm. Its location TLV indicates site/federation topology rather than civic E911 location. A favorable bandwidth check does **not authorize** entering a protected Focus conference or sending private desktop frames. Microsoft H.264 FEC and RTVideo FEC are different packet formats; both differ from RTCP 200ms loss feedback, RFC2198 audio redundancy and RTP/DTMF. A successful SDP offer/answer and admitted kbps **do not** establish decoder-ready video until packet NAL/headers, RTP SSRC state, ICE consent and SRTP crypto valid.
+
+**Named open source conflicts / unproven fields:**
+1. **H264-SNOFFSET:** MS-H264PF §2.2.8.1.2 shows **2-byte** SN Offset but says **unsigned 32-bit** subtraction result; authoritative errata/examples needed for wrap bounds.
+2. **RTV-EXT2:** Extended2 ordinary payload MUST NOT be used (§3.1.5.1), FEC special-case header (§2.2.5) separately defined. Do not misclassify legal FEC as forbidden Extended2.
+3. **BWM-CONTROL:** Source §3.1.6.2 requires 500ms Commit vs 19s/1s Update timers, distinct from TURN ordinary transaction retransmit (650ms) and ICE consent (5s/30s). No automatic SIP BYE on BWM change without source.
+4. **RFC EDITIONS:** MS-H264PF uses RFC6184/6190/5109; Microsoft ICE/TURN policy uses draft19/draft08. RFC8445/8656 later editions cannot be blindly substituted. Need exact client/MCU/server build and feature gate.
+5. **Incomplete deep audit:** Full 36-page RTVideo header examples and FEC algorithms, complete H.264 SEI/RS codec details, complete 49-page TURNBWM site TLVs and server admission failure states and all historical deployed editions remain OPEN.
+
+**Full client normative reconstruction remains NOT COMPLETE, implementation gate CLOSED; no code, real-server or interop tests, main merge or release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
