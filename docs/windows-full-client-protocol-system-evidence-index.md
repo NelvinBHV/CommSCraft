@@ -785,4 +785,12 @@ flowchart TD
 
 **Proof gates:** Exact protocol RFC editions/errata and original §1.2 references crosswalk fully catalogued; **not fully analyzed**: all downstream normative reference chains across 50 Microsoft sources, all 21 use-case detailed message byte grammars/state/error branches, historical vs current Windows build/applicability, SIPREGE ambiguous survivable behavior, SRTP SHA1 vs SHA256, security/role boundaries and 150-PDF graph omissions. **No protocol implementation plan authorized yet** and no actual server, interop testing, merges or releases.
 
+
+### MS-OCSPROT 50-seed normative candidate dependency traversal (2026-10-23)
+
+[183-node depth/parent/archive CSV](research-corpus/ms-ocsprot9-50-seed-normative-ms-transitive-upper-bound-2026-10-23.csv), with method and confidence caveats in [§6 of reference-reconciliation study](ms-ocsprot9-direct-source50-rfc9-graph-reconciliation-and-architecture-gates-2026-10-23.md). Taking **50 original overview bibliographic IDs** as seeds and following only `normative`-typed Microsoft references **in the existing 150-original graph** yields **50 direct + 32 depth1 + 74 depth2 + 20 depth3 + 7 depth4 = 183 distinct Microsoft IDs**, of which **118** have some archived original PDF and **65** are **not in that archive** (43 depth2, 15 depth3, 7 depth4). **This is not a complete normative closure**: sources missing from the 150 archive cannot be traversed onward; graph extraction missed two overview citations, and paths through MSMQ, NTLM/RPC, Office or RDP infrastructure can be *server-side or system dependencies*, not required Windows Full Client SIP endpoints. All 65 gaps remain explicitly listed and need official source availability and applicability audit before program requirements. This evidence is **additional** to the earlier full-150 Microsoft absent-ID count (191 overall, 68 from normative sections) and does not contradict it because scope and reachability differ.
+
+**Open normative conflict:** MS-SIPREGE 17.1 §3.1.1.5.1 requires differentiated self-subscription state but contains simultaneous SHOULD deregister/retry and a contradictory "end of survivable mode" `Presence-Service-Available=false` marker. Official erratum needed; no arbitrary implementation branch chosen. The SRTP SHA1/SHA256 edition collision also remains unresolved.
+
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
