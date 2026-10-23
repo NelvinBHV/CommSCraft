@@ -446,4 +446,50 @@ flowchart TD
 
 **Remaining gates:** full CONTACT SOAP schema/response/error codes; UCS mode and MS-OCER behavior; privacy subscriber list and presence aggregation; IMDN late/duplicate/Message-Id=0 and 40-second history ordering; legacy conference INFO editorial errata; actual 1:1 IM invitation, MIME and human read/delivery semantics; actual Windows and MCU editions. **Not full normative closure. No implementations, live-server or interoperability tests, merge or release.**
 
+## XVI. 2026-10-23 telephony/PSTN, E911 civic location, Exchange UM audio and RTP DTMF
+
+**New original-document studies:**
+
+- [MS-OCPSTN 11.0 + MS-E911WS 9.0: SIP dial plan, phone-context, PSTN gateway role, E911 HTTPS/SOAP location](ms-ocpstn11-e911ws9-numbering-gateway-location-security-2026-10-23.md) — **25 numbered source-qualified rules** (13 PSTN and 12 LIS). Local dial plan may yield E.164 SIP URI or `phone-context=<location profile|dialstring|enterprise>`; **proxy** separately normalizes provisioned routing. `isGateway`, `Ms-Call-Source ms-rtc|non-ms-rtc`, **605 loop rejected by UAS → 480 by proxy**, `ms-early-media` permits gateway unreliable 183/SDP under MS-SDPEXT §3.1.5.12, optional `ms-bypass`, `ms-accepted-content-id` ties SDP answer to offered MIME part, anonymized `anonymous@...;user=phone`. **E911WS** is **HTTPS SOAP civic-location retrieval**, `GetLocations` with Entity + network identifiers, `GetLocationsInCity` with Entity/Country/State/City; client must separate HTTP 2xx from required XML `ReturnCode=200|400|404|500`. Returns **PIDF/GEOPRIV civic address**, sensitive and contingent on authenticated LIS identity; user can choose among multiple addresses. **The emergency SIP INVITE/PSAP/location conveyance remains NOT proven by this service.**
+- [MS-EUMR 9.0 + MS-EUMSDP 9.0 + MS-DTMF 15.0: voicemail routing, notification, audio-only negotiation and RTP telephone events](ms-eumr9-eumsdp9-dtmf15-voicemail-routing-media-2026-10-23.md) — **31 numbered source-qualified rules** (10 UM routes, 9 UM notifications, 5 UM SDP, 7 DTMF). SIP **proxy** for UM-enabled user routes voice mail to selected **dial-plan UM server** via TLS5061 URI and A/V Edge GRUU when configured. Proxy UM routing timer **MUST <180s, SHOULD 5s**, limited **302** in-dial-plan single Contact reroute (at most four prior redirects), multipart 415 fallback via MS-SIPRE, next-server retry and terminal **480 SHOULD**. Proxy→UM missed/answered/forbidden **INFO** uses a dedicated **m=application 9 SIP *** INVITE dialog and mutual TLS with **10-minute inactivity timer**, *not desktop UI MESSAGE*. UM SDP **only audio** and **ignores same-fork provisional-to-final SDP changes**; bypass, feedback and video/sharing attributes ignored. RTP `telephone-event` negotiated dynamically (RFC4733) supports **0–16** under Microsoft, forbids zero duration, redundant blocks or multiple event payloads per packet.
+
+### Client feature and role applicability
+
+| Full Client feature / component | Direct Microsoft source | Verified / not yet substantiated |
+|---|---|---|
+| Dial a PSTN number or enterprise extension | MS-OCPSTN §§2.2.2,3.2 and RFC3966 §5.1.5 | P: client vs proxy dial-plan translation split; **U** actual client policy/provisioned user location profile |
+| Gateway-originated call, UI gateway indicator, PSTN loop detection | MS-OCPSTN §§3.1,3.3 | P: gateway/proxy scoped, **not desktop UAC MUST generate** gateway headers |
+| Early media and bypass | MS-OCPSTN §§3.4,3.6–3.7; MS-SDPEXT §3.1.5.12 | P: capability and MIME selection; **U** media security, consent and role-specific gates |
+| Civic address retrieval and emergency feature | MS-E911WS §§2.2,3.1,5.1; MS-OCSPROT §2.5.4 | P: authenticated LIS HTTPS SOAP, PIDF/GEOPRIV privacy and XML return codes; **BLOCKED** SIP emergency call setup/routing/PSAP |
+| Voicemail deposit / UM audio media | MS-EUMR §§3.1, MS-EUMSDP §3.1.5 | P: proxy routing and audio-only SDP; **U** actual UM deployment and product edition |
+| Missed/answered/forbidden email notification | MS-EUMR §3.2 | P: proxy→UM dedicated INFO/MIME, not a desktop-originated email protocol |
+| Keypad digits during connected audio | MS-DTMF §§2–3 and RFC4733 | P: dynamically negotiated RTP telephone-event, not universal SIP INFO DTMF |
+| All phone transfer/hold/forward/E911 callbacks/IVR features | MS-SIPRE, MS-OCPSTN, MS-OCEXUM and other candidates | **U** all clauses and states NOT fully covered, therefore no implementation phase |
+
+### Composed call/contact/address/media phases (S: branch-based explanatory model)
+
+```mermaid
+flowchart TD
+ A[Authenticated SIP and optional location-aware provisioning] --> B[User chooses SIP AoR or dials numeric string]
+ B --> C{Target}
+ C -->|PSTN or extension| D[MS-OCPSTN dial plan and proxy translation]
+ C -->|Direct SIP| E[Ordinary SIP dialog and routing]
+ D --> F[Gateway INVITE, SDP optional 183 and bypass]
+ F --> G[Media via MS-SDPEXT, ICE/TURN, SRTP and RTP]
+ E --> G
+ G --> H{UM forwarding required?}
+ H -->|UM-enabled| I[MS-EUMR proxy picks eligible UM server; bounded retries]
+ I --> J[MS-EUMSDP audio-only, RTP DTMF]
+ H -->|No| K[Continue ordinary media/dialog lifecycle]
+ A --> L[Optional MS-E911WS HTTPS GetLocations]
+ L --> M{XML ReturnCode 200 and verified location?}
+ M -->|yes| N[User confirms applicable civic address]
+ M -->|no| O[No valid LIS location; fallback/PSAP path NOT specified]
+ N --> P[Separate emergency-call signaling still OPEN]
+```
+
+**Security and standards guards:** `phone-context` under RFC3966 is an identifier **scope, not a telephone-number prefix**. SIP `P-Asserted-Identity` belongs to a trusted network per RFC3325. UAS `605` with gateway `Ms-Call-Source` is not a normal client success. E911WS `ReturnCode 404` in HTTP 2xx is **application-level no match**, not SIP 404. UM SIP 302 rewrite is server-side, not a client browser redirect. RFC4733 events are RTP media data and need negotiated payload/security, not SIP MESSAGE. Microsoft EUMSDP’s provisional/final same-fork equality **overrides** generic MS-SDPEXT allowance for other peers, an **edition/role-specific** fork in media state. Full emergency SIP location conveyance, media privacy and regional E911 deployment remain research blockers; no emergency test traffic from assistant.
+
+**Status remains NOT COMPLETE; no protocol code, live-server/interoperability testing, main merge or release.**
+
 Research lives on `security/offline-register-mic-bridge-20261021` in draft PR #51. **No protocol implementation or owner live-server interoperability tests by assistant; no merge/release. Global research status: NOT COMPLETE.**
