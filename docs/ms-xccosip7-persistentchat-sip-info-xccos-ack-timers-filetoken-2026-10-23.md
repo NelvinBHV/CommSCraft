@@ -25,6 +25,7 @@
 | XCC-17 | §§2.2.2.2.2,3.1.19.3,.5 | File web-service transfer token is **scoped to a file in a specified room and short lifetime**; download/upload requests send file token fields, successful reply MUST include **nonempty token** plus **serveruri**, otherwise reply dropped. Only the provided server URI and token go to Group Chat File Repository service; this is not proof that an arbitrary returned URL should be trusted without TLS/host validation. |
 | XCC-18 | §3.1.19.3 vs §2.2.2.2.2 | **Internal primary-source inconsistency**: `cmd:getfutok` is listed for **upload** and `cmd:getfdtok` for **download** in command enum (§2.2.2.2.2); §3.1.19.3 says **`cmd:getfutok` for both upload and download**. This is **U**, not authority to silently substitute one command or assert one must work in a target 2015 client. |
 | XCC-19 | §3.2.1.5 | **Server** must validate request command XSD and supported `cmd id`, replying with `err` referencing CmdId on invalid/unsupported cases; client MUST NOT generate a fictitious `rpl:join` success when SIP INFO 200 is received before server result. |
+| XCC-21 | §§3.2.1.2,.6 | **Server** has a **25-second default** processing timer, independent of client's **10-second** XccosTransactionTimer. Server timeout **MUST yield SIP 503 for pending INFO request**. A reply after the client command has already timed out or been canceled is not allowed to revive pending application state; this is a **timer-race cross-protocol inference (S)**. |
 | XCC-20 | §2.2.2.2.9; §3.1.14.5 | **S security interpretation:** chat author and timestamp appear in submitted payload, but server-supplied `chatId`/identity and authenticated SIP channel are distinct. Do not treat client-set author/chatId=0 as authoritative audit metadata; validate server-origin message and room membership under lower SIP auth/trust rules. |
 
 ## II. Two concurrent acknowledgement layers (S)
@@ -57,7 +58,7 @@ sequenceDiagram
 |---|---|---|---|
 | SIP dialog | RFC3261 Call-ID + tags / routes | SIP timeout/BYE/re-INVITE | XCCOS command data status |
 | SIP INFO transaction | RFC3261 CSeq and SIP response | SIP INFO failure ends embedded pending command | XML `resp=200` |
-| XCCOS command | `CmdId=(EnvId,SeqId)` within room/control | 10s timeout, invalid/foreign `rpl` dropped, any non-200 inner status fails | Distinct chat MsgId confirmation |
+| XCCOS command | `CmdId=(EnvId,SeqId)` within room/control | 10s timeout, server may still have 25s processing; invalid/foreign `rpl` dropped, any non-200 inner status fails | Distinct chat MsgId confirmation |
 | Chat message | `MsgId=(EnvId,SeqId)`, server assigned chatId | 10s SendTimer → user error; origin echo matches | Room join/capability/permission |
 | Room membership | channel URI + ParticipantList + independent chatId cursor | `ntc:kick` / `ntc:part` etc server updates | Personal IM MESSAGE recipient |
 | Room file transfer | per-channel file token + URL + server URI | short token lifetime; invalid/empty token reply ignored | TURN relay or PSOM file AES key |
