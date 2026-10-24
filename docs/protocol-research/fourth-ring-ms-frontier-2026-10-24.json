@@ -111,15 +111,13 @@
       "SharePointProtocols.zip",
       "OfficeProto.zip"
     ],
-    "available_file_id_count": 85,
-    "unavailable_file_id_count": 1,
+    "available_file_id_count": 86,
+    "unavailable_file_id_count": 0,
     "windows_available": 47,
     "exchange_available": 37,
     "sharepoint_available": 1,
     "office_available_new": 0,
-    "missing": [
-      "MS-DLTM"
-    ],
+    "missing": [],
     "missing_official_reference": {
       "id": "MS-DLTM",
       "name": "Distributed Link Tracking: Central Manager Protocol",
@@ -127,7 +125,17 @@
       "published_date": "2017-06-01",
       "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-dltm/a4a88aac-3bc5-4d5a-8136-52a3bfb979ef"
     },
-    "note": "Only source-file availability verified, NOT current edition/§1.2.1 target normalization for 85. PDFs remain held by user; request the exact missing original if this dependency is needed."
+    "note": "All 86/86 MS/MC fourth-ring source DOCUMENT IDENTITIES acquired by user uploads. This does NOT verify exact edition/§1.2.1 sections for the other 85. PDFs remain with user.",
+    "direct_user_uploaded_new": 1,
+    "user_supplied_missing_original": {
+      "id": "MS-DLTM",
+      "date": "2017-06-01",
+      "revision": "9.1",
+      "filename": "[MS-DLTM]-170601(1).pdf",
+      "sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+      "bytes": 1759744,
+      "pages": 63
+    }
   },
   "standalone_user_upload_followup_2026_10_24": {
     "filename": "[MS-DLTW]-210625.pdf",
@@ -144,5 +152,25 @@
     "ms_dltw_to_dltm_reference_type": "INFORMATIVE_1_2_2",
     "source_rights": "USER_RETAINS_ORIGINAL",
     "metadata_source": "user-ms-dltw-historical-upload-2026-10-24.json"
+  },
+  "archive_acquisition_check_before_standalone_ms_dltm_upload": {
+    "available_file_id_count": 85,
+    "unavailable_file_id_count": 1,
+    "missing": [
+      "MS-DLTM"
+    ],
+    "as_of": "2026-10-24"
+  },
+  "ms_dltm_fourth_ring_pdf_audit_2026_10_24": {
+    "source": "fourth-ring-ms-dltm-original-audit-2026-10-24.json",
+    "normative_1_2_1_target_count": 10,
+    "normative_pdf_page": 9,
+    "informative_1_2_2_count": 6,
+    "normative_ledger": "fourth-ring-normative-reference-ledger.json",
+    "normative_fourth_ring_source_list_reviewed": 1,
+    "remaining_fourth_ring_source_bibliographies_to_review": 85,
+    "one_additional_raw_target_name": "MS-DLTW",
+    "existing_source_file_for_target": true,
+    "phase1_closed": false
   }
 }

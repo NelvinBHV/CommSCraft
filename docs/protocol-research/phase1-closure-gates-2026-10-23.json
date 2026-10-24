@@ -71,7 +71,7 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "All 52 discovered third-ring MS/MC PDF sources acquired and bibliographies examined: 48 explicit §1.2.1 lists add 827 direct normative source-specific edges; four schema §1.1 lists have 67 UNCLASSIFIED references. 86 previously unseen MS/MC target IDs, 62 RFC and 88 external/raw alias IDs discovered. Full recursive fixed point and client/server/policy applicability OPEN. Fourth-ring source filename lookup: 85/86 present, MS-DLTM absent; edition/current normative references of 85 not yet checked."
+      "blocker": "All 86 new fourth-ring MS/MC source document identities are now available. Only MS-DLTM 9.1 fourth-ring normative §1.2.1 was checked (10 references). The other 85 source bibliographies and applicability decisions remain open, so no recursive fixed point."
     },
     {
       "id": "P1-04",
@@ -1185,5 +1185,14 @@
       ],
       "five_year_old_ms_dltm_original_source_editions_still_to_review": true
     }
+  },
+  "ms_dltm_source_followup_2026_10_24": {
+    "received": true,
+    "sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+    "source_files_available": 86,
+    "source_files_total": 86,
+    "normative_bibliographies_verified": 1,
+    "fourth_ring_normative_edges": 10,
+    "passed_gate_count": 0
   }
 }

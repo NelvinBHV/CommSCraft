@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-24",
+  "id": "MS-DLTM",
+  "filename": "[MS-DLTM]-170601(1).pdf",
+  "title": "Distributed Link Tracking: Central Manager Protocol",
+  "revision": "9.1",
+  "published": "2017-06-01",
+  "edition": "v20170601",
+  "pages": 63,
+  "bytes": 1759744,
+  "sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+  "normative_section": "§1.2.1 p.9",
+  "normative_targets": [
+    "C706",
+    "MS-ADTS",
+    "MS-DLTW",
+    "MS-DTYP",
+    "MS-ERREF",
+    "MS-RPCE",
+    "MS-SAMR",
+    "MS-SMB",
+    "MS-SPNG",
+    "RFC2119"
+  ],
+  "informative_section": "§1.2.2 pp.9–10",
+  "informative_targets": [
+    "MS-FSCC",
+    "MSDN-FNDFSTVOL",
+    "MSDN-FNDNXTVOL",
+    "MSDN-GETDRIVETYPE",
+    "MSDN-GETVOLINFO",
+    "MSDN-SHELLLINKS"
+  ],
+  "pdf_section_screen_checked": true,
+  "user_retains_original_pdf": true,
+  "original_pdf_in_public_git": false,
+  "client_applicability": "OPEN",
+  "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-dltm/a4a88aac-3bc5-4d5a-8136-52a3bfb979ef"
+}

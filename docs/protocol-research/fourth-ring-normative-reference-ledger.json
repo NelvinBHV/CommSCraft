@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-24",
+  "layer": "FOURTH_MICROSOFT_MC",
+  "status": "PARTIAL_1_OF_86_RELEASE_SECTION_RECONCILED",
+  "bibliography_sources_reviewed": 1,
+  "bibliography_sources_identified": 86,
+  "edges": [
+    {
+      "referrer": "MS-DLTM",
+      "target": "C706",
+      "reference_type": "NORMATIVE_EXPLICIT_1_2_1",
+      "page": 9,
+      "section": "§1.2.1",
+      "source_edition": "v20170601",
+      "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+      "sequence": 1,
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-DLTM",
+      "target": "MS-ADTS",
+      "reference_type": "NORMATIVE_EXPLICIT_1_2_1",
+      "page": 9,
+      "section": "§1.2.1",
+      "source_edition": "v20170601",
+      "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+      "sequence": 2,
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-DLTM",
+      "target": "MS-DLTW",
+      "reference_type": "NORMATIVE_EXPLICIT_1_2_1",
+      "page": 9,
+      "section": "§1.2.1",
+      "source_edition": "v20170601",
+      "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+      "sequence": 3,
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-DLTM",
+      "target": "MS-DTYP",
+      "reference_type": "NORMATIVE_EXPLICIT_1_2_1",
+      "page": 9,
+      "section": "§1.2.1",
+      "source_edition": "v20170601",
+      "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+      "sequence": 4,
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-DLTM",
+      "target": "MS-ERREF",
+      "reference_type": "NORMATIVE_EXPLICIT_1_2_1",
+      "page": 9,
+      "section": "§1.2.1",
+      "source_edition": "v20170601",
+      "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+      "sequence": 5,
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-DLTM",
+      "target": "MS-RPCE",
+      "reference_type": "NORMATIVE_EXPLICIT_1_2_1",
+      "page": 9,
+      "section": "§1.2.1",
+      "source_edition": "v20170601",
+      "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+      "sequence": 6,
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-DLTM",
+      "target": "MS-SAMR",
+      "reference_type": "NORMATIVE_EXPLICIT_1_2_1",
+      "page": 9,
+      "section": "§1.2.1",
+      "source_edition": "v20170601",
+      "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+      "sequence": 7,
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-DLTM",
+      "target": "MS-SMB",
+      "reference_type": "NORMATIVE_EXPLICIT_1_2_1",
+      "page": 9,
+      "section": "§1.2.1",
+      "source_edition": "v20170601",
+      "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+      "sequence": 8,
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-DLTM",
+      "target": "MS-SPNG",
+      "reference_type": "NORMATIVE_EXPLICIT_1_2_1",
+      "page": 9,
+      "section": "§1.2.1",
+      "source_edition": "v20170601",
+      "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+      "sequence": 9,
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-DLTM",
+      "target": "RFC2119",
+      "reference_type": "NORMATIVE_EXPLICIT_1_2_1",
+      "page": 9,
+      "section": "§1.2.1",
+      "source_edition": "v20170601",
+      "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+      "sequence": 10,
+      "client_applicability": "OPEN"
+    }
+  ],
+  "normative_edges_count": 10,
+  "informative_only": [
+    "MS-FSCC",
+    "MSDN-FNDFSTVOL",
+    "MSDN-FNDNXTVOL",
+    "MSDN-GETDRIVETYPE",
+    "MSDN-GETVOLINFO",
+    "MSDN-SHELLLINKS"
+  ],
+  "new_raw_target_names_not_in_first_three_ring_union": [
+    "MS-DLTW"
+  ],
+  "new_raw_target_file_already_acquired": true,
+  "all_86_source_original_filenames_acquired": true,
+  "all_86_normative_sections_reviewed": false,
+  "legacy_first_ring_edges_unchanged": 464,
+  "legacy_second_ring_edges_unchanged": 246,
+  "legacy_third_ring_edges_unchanged": 827,
+  "phase1_complete": false
+}
