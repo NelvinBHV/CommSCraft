@@ -2,7 +2,7 @@
   "schema_version": 1,
   "snapshot_date": "2026-10-23",
   "kind": "supplementary Microsoft specs directly referenced by examined MS-OCSPROT document §1.2.1 sections but not listed in six overview source tables",
-  "status": "6_OF_12_SECOND_TIER_CURRENT_ORIGINAL_PDF_SECTION_EDITION_VERIFIED_RECURSION_OPEN",
+  "status": "ALL_12_CURRENT_SECOND_TIER_EXACT_ORIGINAL_PDF_BIBLIOGRAPHIES_RECONCILED_RECURSION_AND_SCOPE_OPEN",
   "notes": "Latest current published version at 2026-10-23, not necessarily version required by 2025-era client; historic editions and platform applicability must be reconciled. Product/environment profile not yet fixed.",
   "documents": [
     {
@@ -14,17 +14,22 @@
         "MS-RTP"
       ],
       "normative_reference_section_complete": true,
-      "full_published_content_acquired": false,
-      "published_binary_sha256": null,
+      "full_published_content_acquired": true,
+      "published_binary_sha256": "c3ec281d1b8b4c4bd74b751427c957067574c225a1f4d0256d2e49cdd4adef81",
       "version_history_diffs_reviewed": false,
       "client_applicability_confirmed": false,
-      "status": "LIVE_HTML_NORMATIVE_LIST_RECORDED_RELEASE_PDF_NOT_RECONCILED",
+      "status": "CURRENT_RELEASE_ORIGINAL_PDF_SHA256_NORMATIVE_TARGET_SET_RECONCILED",
       "live_normative_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-h26xpf/08c8711d-9d6e-44da-93a6-8712344199c3",
       "live_normative_section_last_updated": "2024-10-30",
       "live_normative_section_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
       "live_normative_reference_count": 4,
-      "published_pdf_vs_html_normative_refs_reconciled": false,
-      "recursive_references_fully_traversed": false
+      "published_pdf_vs_html_normative_refs_reconciled": true,
+      "recursive_references_fully_traversed": false,
+      "published_binary_bytes": 1129519,
+      "published_binary_pages": 26,
+      "current_edition_pdf_1_2_1_page": 6,
+      "zip_archive_source": "Windows_Protocols.tar.xz",
+      "original_pdf_committed_to_public_git": false
     },
     {
       "id": "MS-KILE",
@@ -72,7 +77,11 @@
       "recursive_references_fully_traversed": false,
       "published_binary_bytes": 3032203,
       "published_binary_pages": 99,
-      "current_edition_pdf_1_2_1_page": 12
+      "current_edition_pdf_1_2_1_page": 12,
+      "windows_archive_same_edition_new_binary_sha256": "dd8c9d6bcd3562a903ce66ed03eea51ec17645b9d293e7e37c2aceb01efc2c86",
+      "windows_archive_same_edition_new_binary_bytes": 3021682,
+      "windows_archive_previous_binary_sha256_retained": "00fe14a058134aabf6a6db1bcc1c47b8d45f0656ef7de610c03712906a945a27",
+      "windows_archive_bin_provenance_delta_status": "OPEN_REQUIRES_PRIOR_ORIGINAL_BINARY_CONTENT_DIFFERENCE_AUDIT"
     },
     {
       "id": "MS-OAUTH2EX",
@@ -140,17 +149,22 @@
         "MS-RTASPF"
       ],
       "normative_reference_section_complete": true,
-      "full_published_content_acquired": false,
-      "published_binary_sha256": null,
+      "full_published_content_acquired": true,
+      "published_binary_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
       "version_history_diffs_reviewed": false,
       "client_applicability_confirmed": false,
-      "status": "LIVE_HTML_NORMATIVE_LIST_RECORDED_RELEASE_PDF_NOT_RECONCILED",
+      "status": "CURRENT_RELEASE_ORIGINAL_PDF_SHA256_NORMATIVE_TARGET_SET_RECONCILED",
       "live_normative_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/a75b2f6b-a048-4273-95dc-2d246b2bfec8",
       "live_normative_section_last_updated": "2024-04-23",
       "live_normative_section_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
       "live_normative_reference_count": 37,
-      "published_pdf_vs_html_normative_refs_reconciled": false,
-      "recursive_references_fully_traversed": false
+      "published_pdf_vs_html_normative_refs_reconciled": true,
+      "recursive_references_fully_traversed": false,
+      "published_binary_bytes": 14529191,
+      "published_binary_pages": 444,
+      "current_edition_pdf_1_2_1_page": 20,
+      "zip_archive_source": "Windows_Protocols.tar.xz",
+      "original_pdf_committed_to_public_git": false
     },
     {
       "id": "MS-RDPEMC",
@@ -175,7 +189,11 @@
       "recursive_references_fully_traversed": false,
       "published_binary_bytes": 1698642,
       "published_binary_pages": 41,
-      "current_edition_pdf_1_2_1_page": 9
+      "current_edition_pdf_1_2_1_page": 9,
+      "windows_archive_same_edition_new_binary_sha256": "4649fa49ddb48301452c64745de56a8289f9ca76cb689f9f38dbccd28dd401b0",
+      "windows_archive_same_edition_new_binary_bytes": 1680715,
+      "windows_archive_previous_binary_sha256_retained": "17658ee28cef61d0ba11beb69be0e1fbe9e0b0f6aa7c146d5bc4100f64c0985b",
+      "windows_archive_bin_provenance_delta_status": "OPEN_REQUIRES_PRIOR_ORIGINAL_BINARY_CONTENT_DIFFERENCE_AUDIT"
     },
     {
       "id": "MS-SDP",
@@ -186,17 +204,22 @@
         "MS-H264PF"
       ],
       "normative_reference_section_complete": true,
-      "full_published_content_acquired": false,
-      "published_binary_sha256": null,
+      "full_published_content_acquired": true,
+      "published_binary_sha256": "f58d4d3d73bcdd1836670b6827dca917d8751bcc9ee33c4a3518c310012d6848",
       "version_history_diffs_reviewed": false,
       "client_applicability_confirmed": false,
-      "status": "LIVE_HTML_NORMATIVE_LIST_RECORDED_RELEASE_PDF_NOT_RECONCILED",
+      "status": "CURRENT_RELEASE_ORIGINAL_PDF_SHA256_NORMATIVE_TARGET_SET_RECONCILED",
       "live_normative_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-sdp/41a2961e-b14c-4d50-8637-84bc4b7eaedb",
       "live_normative_section_last_updated": "2024-10-30",
       "live_normative_section_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
       "live_normative_reference_count": 7,
-      "published_pdf_vs_html_normative_refs_reconciled": false,
-      "recursive_references_fully_traversed": false
+      "published_pdf_vs_html_normative_refs_reconciled": true,
+      "recursive_references_fully_traversed": false,
+      "published_binary_bytes": 1074616,
+      "published_binary_pages": 25,
+      "current_edition_pdf_1_2_1_page": 6,
+      "zip_archive_source": "Windows_Protocols.tar.xz",
+      "original_pdf_committed_to_public_git": false
     },
     {
       "id": "MS-SIP",
@@ -222,7 +245,11 @@
       "recursive_references_fully_traversed": false,
       "published_binary_bytes": 2709399,
       "published_binary_pages": 93,
-      "current_edition_pdf_1_2_1_page": 10
+      "current_edition_pdf_1_2_1_page": 10,
+      "windows_archive_same_edition_new_binary_sha256": "97d866690b82cda1df018007cd297d96eb8142d5b95f50825e2f6b8aeedb7ea5",
+      "windows_archive_same_edition_new_binary_bytes": 2809897,
+      "windows_archive_previous_binary_sha256_retained": "6ee1c16c922b7c154373572d5a3341139aaf6d91922a35468581a209f68e9e52",
+      "windows_archive_bin_provenance_delta_status": "OPEN_REQUIRES_PRIOR_ORIGINAL_BINARY_CONTENT_DIFFERENCE_AUDIT"
     },
     {
       "id": "MS-WCCE",
@@ -233,17 +260,22 @@
         "MS-OCAUTHWS"
       ],
       "normative_reference_section_complete": true,
-      "full_published_content_acquired": false,
-      "published_binary_sha256": null,
+      "full_published_content_acquired": true,
+      "published_binary_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
       "version_history_diffs_reviewed": false,
       "client_applicability_confirmed": false,
-      "status": "LIVE_HTML_NORMATIVE_LIST_RECORDED_RELEASE_PDF_NOT_RECONCILED",
+      "status": "CURRENT_RELEASE_ORIGINAL_PDF_SHA256_NORMATIVE_TARGET_SET_RECONCILED",
       "live_normative_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/6b0fd42e-d685-4169-a6dd-a230ae244e74",
       "live_normative_section_last_updated": "2024-04-23",
       "live_normative_section_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
       "live_normative_reference_count": 61,
-      "published_pdf_vs_html_normative_refs_reconciled": false,
-      "recursive_references_fully_traversed": false
+      "published_pdf_vs_html_normative_refs_reconciled": true,
+      "recursive_references_fully_traversed": false,
+      "published_binary_bytes": 6694053,
+      "published_binary_pages": 267,
+      "current_edition_pdf_1_2_1_page": 22,
+      "zip_archive_source": "Windows_Protocols.tar.xz",
+      "original_pdf_committed_to_public_git": false
     },
     {
       "id": "MS-WSPOL",
@@ -254,17 +286,22 @@
         "MS-OCAUTHWS"
       ],
       "normative_reference_section_complete": true,
-      "full_published_content_acquired": false,
-      "published_binary_sha256": null,
+      "full_published_content_acquired": true,
+      "published_binary_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
       "version_history_diffs_reviewed": false,
       "client_applicability_confirmed": false,
-      "status": "LIVE_HTML_NORMATIVE_LIST_RECORDED_RELEASE_PDF_NOT_RECONCILED",
+      "status": "CURRENT_RELEASE_ORIGINAL_PDF_SHA256_NORMATIVE_TARGET_SET_RECONCILED",
       "live_normative_section_url": "https://learn.microsoft.com/kk-kz/openspecs/windows_protocols/ms-wspol/a3a07257-01be-47ae-9a4b-2cc11957ea09",
       "live_normative_section_last_updated": "2024-10-30",
       "live_normative_section_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
       "live_normative_reference_count": 20,
-      "published_pdf_vs_html_normative_refs_reconciled": false,
-      "recursive_references_fully_traversed": false
+      "published_pdf_vs_html_normative_refs_reconciled": true,
+      "recursive_references_fully_traversed": false,
+      "published_binary_bytes": 1360651,
+      "published_binary_pages": 36,
+      "current_edition_pdf_1_2_1_page": 7,
+      "zip_archive_source": "Windows_Protocols.tar.xz",
+      "original_pdf_committed_to_public_git": false
     },
     {
       "id": "MS-WSTEP",
@@ -275,17 +312,22 @@
         "MS-OCAUTHWS"
       ],
       "normative_reference_section_complete": true,
-      "full_published_content_acquired": false,
-      "published_binary_sha256": null,
+      "full_published_content_acquired": true,
+      "published_binary_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
       "version_history_diffs_reviewed": false,
       "client_applicability_confirmed": false,
-      "status": "LIVE_HTML_NORMATIVE_LIST_RECORDED_RELEASE_PDF_NOT_RECONCILED",
+      "status": "CURRENT_RELEASE_ORIGINAL_PDF_SHA256_NORMATIVE_TARGET_SET_RECONCILED",
       "live_normative_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wstep/9d3c9a95-a923-4ad7-9c13-60485acf5cfb",
       "live_normative_section_last_updated": "2024-04-23",
       "live_normative_section_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
       "live_normative_reference_count": 16,
-      "published_pdf_vs_html_normative_refs_reconciled": false,
-      "recursive_references_fully_traversed": false
+      "published_pdf_vs_html_normative_refs_reconciled": true,
+      "recursive_references_fully_traversed": false,
+      "published_binary_bytes": 1374899,
+      "published_binary_pages": 43,
+      "current_edition_pdf_1_2_1_page": 7,
+      "zip_archive_source": "Windows_Protocols.tar.xz",
+      "original_pdf_committed_to_public_git": false
     }
   ],
   "normative_edge_inventory": "transitive-reference-ledger.json",
@@ -310,6 +352,31 @@
       "MS-WCCE",
       "MS-WSPOL",
       "MS-WSTEP"
+    ]
+  },
+  "latest_windows_tar_source_provenance": {
+    "date": "2026-10-24",
+    "archive": "Windows_Protocols.tar.xz",
+    "archive_sha256": "52f87efc17c9854f70b0b14650c877a572b1a99c7ed9df4f6c9a96387720c652",
+    "original_pdfs": 451,
+    "original_pdf_bytes": 1334078644,
+    "six_sources_revised": [
+      "MS-H26XPF",
+      "MS-RDPBCGR",
+      "MS-SDP",
+      "MS-WCCE",
+      "MS-WSPOL",
+      "MS-WSTEP"
+    ],
+    "remaining_second_tier_original_release_pdf_source_sections": 0,
+    "all_12_verified": true,
+    "normative_existing_edges_reconciled": 145,
+    "new_edges": 0,
+    "full_source_binaries_in_public_git": false,
+    "previous_original_sha_discrepancies_retained": [
+      "MS-NLMP",
+      "MS-RDPEMC",
+      "MS-SIP"
     ]
   }
 }

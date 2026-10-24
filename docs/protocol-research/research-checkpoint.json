@@ -32,7 +32,7 @@
     "overview_ms_documents_with_direct_1_2_1_lists_examined_in_some_form": 46,
     "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 46,
     "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 0,
-    "complete_original_pdfs_received_and_sha256_verified": 371,
+    "complete_original_pdfs_received_and_sha256_verified": 822,
     "first_tier_normative_reference_edges": 464,
     "first_tier_distinct_target_identifiers": 199,
     "ms_normative_edges": 120,
@@ -46,11 +46,14 @@
     "baseline_feature_ids": 122,
     "baseline_windows_reference_cases": 93,
     "baseline_feature_ids_without_direct_reference_case": 31,
-    "transitive_ms_current_release_pdf_reference_sections_verified": 6,
-    "transitive_ms_missing_release_pdf_reference_sections": 6,
+    "transitive_ms_current_release_pdf_reference_sections_verified": 12,
+    "transitive_ms_missing_release_pdf_reference_sections": 0,
     "exchange_sharepoint_uploaded_original_pdf_count": 297,
     "exchange_sharepoint_original_pdf_total_bytes": 820238729,
-    "third_ring_related_ms_original_pdf_files_located": 6
+    "third_ring_related_ms_original_pdf_files_located": 6,
+    "windows_tar_original_pdfs_hashed": 451,
+    "windows_tar_original_pdf_bytes": 1334078644,
+    "all_52_discovered_microsoft_mc_frontier_pdfs_acquired": 52
   },
   "source_provenance": {
     "ms_avedgea": {
@@ -95,12 +98,12 @@
     {
       "id": "P1-02",
       "priority": 1,
-      "task": "Resolve private rights-compliant storage of 371 source PDFs from three user-provided ZIP archives; six remaining second-layer Microsoft current originals still absent; maintain historical and conflicting hash evidence; compare prior editions; never claim full PDF public GitHub uploads."
+      "task": "Resolve rights-compliant private Git archival of 822 original PDFs from Office/Exchange/SharePoint/Windows sources (including all 451 Windows PDFs); all 58 immediate 1st+2nd MS bibliography editions have current original §1.2.1 evidence, but previous-edition changes and original-SHA conflicts OPEN."
     },
     {
       "id": "P1-03",
       "priority": 1,
-      "task": "Six of twelve second-ring exact current MS PDF §1.2.1 bibliographies confirmed; all six direct third-ring Microsoft references from MS-OAUTH2EX and MS-OXWUMS are acquired as originals but have not been normatively recursed; further frontier and applicability OPEN."
+      "task": "All 12 second-ring source original §1.2.1 bibliographies verified; original PDFs for all 52 discovered third-ring MS/MC targets acquired (46 Windows + 6 Exchange/SharePoint), now recursively investigate their normative references or evidence-based applicability exclusions to fixed point."
     },
     {
       "id": "P1-04",
@@ -175,7 +178,7 @@
     "transitive-frontier.json",
     "rfc-version-relations-reviewed.json"
   ],
-  "instructions_for_next_session": "Read AGENTS.md, CURRENT_STATUS.md, research-checkpoint.json latest_continuation, phase1-audit.md and last research-log entry; verify draft/main commit and calculate counts anew from two distinct ledgers; do not combine first-tier 460 with 246 into a false closed graph. Reconcile publication editions and recurse only relevant targets. Never code/test/merge/release. New 2026-10-24 ZIP audit: all 46 current first-tier original PDF §1.2.1 release sections now have evidence, and E911 normative edges 460→464. Complete source target normalization, 8 second-tier originals, rights-compliant private PDF storage and SHA conflict resolution remain OPEN. Do not falsely claim PDFs were committed to public GitHub.",
+  "instructions_for_next_session": "Read AGENTS.md, CURRENT_STATUS.md, research-checkpoint.json latest_continuation, phase1-audit.md and last research-log entry; verify draft/main commit and calculate counts anew from two distinct ledgers; do not combine first-tier 460 with 246 into a false closed graph. Reconcile publication editions and recurse only relevant targets. Never code/test/merge/release. New 2026-10-24 ZIP audit: all 46 current first-tier original PDF §1.2.1 release sections now have evidence, and E911 normative edges 460→464. Complete source target normalization, 8 second-tier originals, rights-compliant private PDF storage and SHA conflict resolution remain OPEN. Do not falsely claim PDFs were committed to public GitHub. Windows_Protocols.tar.xz SHA256 verified 451 original PDFs including all remaining 6 MS second-ring sources. Current PDF §1.2.1 edition coverage is 12/12 second tier; no source gaps at two direct rings, but 52 discovered MS/MC frontier PDFs need third-ring normative work, and formal gates remain 0/12. Three same-edition SHA conflicts MS-NLMP/RDPEMC/SIP preserved.",
   "latest_continuation": {
     "date": "2026-10-23",
     "research_iteration": "phase1-transitive-microsoft-specs-plus-selected-rfc-status",
@@ -411,5 +414,44 @@
     "normative_draft_oauth_v2_22_title_v2_23_url": "OPEN_ALREADY_CONFIRMED_IN_EXACT_ORIGINAL_2025_PDF",
     "formal_phase1_passed": 0,
     "phase1_complete": false
+  },
+  "windows_originals_2026_10_24": {
+    "date": "2026-10-24",
+    "report": "windows-originals-2026-10-24.md",
+    "json": "windows-originals-2026-10-24.json",
+    "tar_sha256": "52f87efc17c9854f70b0b14650c877a572b1a99c7ed9df4f6c9a96387720c652",
+    "pdf_count": 451,
+    "pdf_bytes": 1334078644,
+    "ms_count": 424,
+    "mc_count": 27,
+    "second_level_source_ids": [
+      "MS-H26XPF",
+      "MS-RDPBCGR",
+      "MS-SDP",
+      "MS-WCCE",
+      "MS-WSPOL",
+      "MS-WSTEP"
+    ],
+    "second_level_original_pdf_reference_sections_now": 12,
+    "remaining_second_level_unverified": 0,
+    "second_level_existing_normative_edges_newly_verified": 145,
+    "second_level_total_edges": 246,
+    "first_level_total_edges": 464,
+    "all_52_ms_mc_frontier_source_pdf_identities_acquired": true,
+    "archive_hash_conflicts_same_revision": [
+      "MS-NLMP37.0",
+      "MS-RDPEMC16.0",
+      "MS-SIP8.0"
+    ],
+    "all_archives_total_hashed_pdfs": 822,
+    "full_binaries_committed_to_public_github": false,
+    "formal_phase1_gates_passed": 0,
+    "phase1_complete": false,
+    "authorization": {
+      "implementation": false,
+      "live_interoperability": false,
+      "merge_main": false,
+      "release": false
+    }
   }
 }

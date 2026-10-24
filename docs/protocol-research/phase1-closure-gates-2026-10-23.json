@@ -14,16 +14,16 @@
     "first_unique_targets": 199,
     "first_informative_edges": 5,
     "second_sources": 12,
-    "second_full_html": 6,
+    "second_full_html": 0,
     "second_search_excerpt_only": 0,
-    "second_release_sections_verified": 6,
+    "second_release_sections_verified": 12,
     "second_edges": 246,
     "second_unique_targets": 183,
     "second_frontier": 146,
     "both_ms_target_union": 345,
     "rfc_seed": 113,
     "additional_rfc_first_hop": 35,
-    "immediate_58_source_originals_sha256_verified": 51,
+    "immediate_58_source_originals_sha256_verified": 57,
     "extra_ms_ocsprot_overview_original_sha256_verified": 1,
     "overview_source_ids_present_in_zip": 46,
     "zip_first_tier_current_release_pdf_files": 43,
@@ -31,9 +31,13 @@
     "zip_all_pdf_full_files_hashed": 74,
     "zip_pdf_bytes_total": 180967975,
     "first_external_edges": 87,
-    "second_current_editions_missing": 6,
+    "second_current_editions_missing": 0,
     "new_exchange_sharepoint_zip_full_pdfs_sha256": 297,
-    "new_exchange_sharepoint_zip_combined_pdf_bytes": 820238729
+    "new_exchange_sharepoint_zip_combined_pdf_bytes": 820238729,
+    "new_windows_tar_valid_pdf_files": 451,
+    "new_windows_tar_pdf_total_bytes": 1334078644,
+    "all_three_uploaded_archives_pdfs_total": 822,
+    "all_52_discovered_microsoft_mc_frontier_source_files_acquired": 52
   },
   "pass_count": 0,
   "gate_count": 12,
@@ -41,17 +45,17 @@
     {
       "id": "P1-01",
       "passed": false,
-      "blocker": "All 46 current first-tier PDF §1.2.1 sections have source-page evidence, but individual normalized target-set semantic comparisons for 22 newly supplied bibliographies are not yet independently closed; MS-E911WS omitted four normative references, now corrected. Do not certify zero remaining discrepancies without completing this audit. ZIP files not in public repo. Second ring 6/12 edition pages now verified; first-ring canonical sets and historical version deltas remain open."
+      "blocker": "All 46 first-ring and all 12 second-ring original PDF §1.2.1 current edition source sections have evidence. Full first-tier semantic/canonical reference-set re-review, previous-version diffs, client applicability and deeper recursion still OPEN; do not interpret complete section acquisition as complete Phase 1."
     },
     {
       "id": "P1-02",
       "passed": false,
-      "blocker": "Exchange (129 PDFs) and SharePoint (168 PDFs) ZIP originals additionally SHA256 checked; second MS level 6/12 exact current originals, six remain. No full copyrighted source PDF has been committed to public GitHub; source archive/rights review and historical edition diffs OPEN."
+      "blocker": "All 451 Windows PDF originals SHA256 checked in supplied tar, combined 822 PDFs across three archives; 12/12 direct second-ring original sections date/edition verified, but full source binaries not stored in PUBLIC repo due redistribution/rights gate, prior source SHA disputes and previous-edition comparisons OPEN."
     },
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "Current PDF §1.2.1 verified for MS-OAUTH2EX and MS-OXWUMS, all 23 pre-existing direct edges confirmed; six newly acquired third-ring original source binaries remain unanalyzed. Recursion frontier and client applicability OPEN."
+      "blocker": "All 52 newly discovered third-ring Microsoft/MC target ID original PDFs now present across Windows/Exchange/SharePoint archives. None of these 52 has a fully established client applicability + transitive normative closure/exclusion, so fixed-point P1-03 gate remains OPEN."
     },
     {
       "id": "P1-04",
@@ -800,12 +804,18 @@
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-h26xpf/ebea5d4a-a184-4912-83a6-df29606aaa78",
       "section": "§1.2.1",
       "live_list_complete": true,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_PUBLISHED_ORIGINAL_BIBLIOGRAPHY_VERIFIED_RECURSION_HISTORY_CLIENT_PROFILE_OPEN",
+      "full_original_pdf_sha256": "c3ec281d1b8b4c4bd74b751427c957067574c225a1f4d0256d2e49cdd4adef81",
+      "full_original_pdf_bytes": 1129519,
+      "full_original_pdf_pages": 26,
+      "section_reference_page": 6,
+      "release_pdf_references_match_ledger": true,
+      "binary_archived_in_public_github": false
     },
     {
       "id": "MS-KILE",
@@ -902,12 +912,18 @@
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/5073f4ed-1e93-45e1-b039-6e30c385867c",
       "section": "§1.2.1",
       "live_list_complete": true,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_PUBLISHED_ORIGINAL_BIBLIOGRAPHY_VERIFIED_RECURSION_HISTORY_CLIENT_PROFILE_OPEN",
+      "full_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "full_original_pdf_bytes": 14529191,
+      "full_original_pdf_pages": 444,
+      "section_reference_page": 20,
+      "release_pdf_references_match_ledger": true,
+      "binary_archived_in_public_github": false
     },
     {
       "id": "MS-RDPEMC",
@@ -937,12 +953,18 @@
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-sdp/697845ff-5357-4eb7-8bcb-162a0bc84deb",
       "section": "§1.2.1",
       "live_list_complete": true,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_PUBLISHED_ORIGINAL_BIBLIOGRAPHY_VERIFIED_RECURSION_HISTORY_CLIENT_PROFILE_OPEN",
+      "full_original_pdf_sha256": "f58d4d3d73bcdd1836670b6827dca917d8751bcc9ee33c4a3518c310012d6848",
+      "full_original_pdf_bytes": 1074616,
+      "full_original_pdf_pages": 25,
+      "section_reference_page": 6,
+      "release_pdf_references_match_ledger": true,
+      "binary_archived_in_public_github": false
     },
     {
       "id": "MS-SIP",
@@ -972,12 +994,18 @@
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/",
       "section": "§1.2.1",
       "live_list_complete": true,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_PUBLISHED_ORIGINAL_BIBLIOGRAPHY_VERIFIED_RECURSION_HISTORY_CLIENT_PROFILE_OPEN",
+      "full_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "full_original_pdf_bytes": 6694053,
+      "full_original_pdf_pages": 267,
+      "section_reference_page": 22,
+      "release_pdf_references_match_ledger": true,
+      "binary_archived_in_public_github": false
     },
     {
       "id": "MS-WSPOL",
@@ -987,12 +1015,18 @@
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wspol/94d73e99-3a43-4133-a310-1c38be24b8ce",
       "section": "§1.2.1",
       "live_list_complete": true,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_PUBLISHED_ORIGINAL_BIBLIOGRAPHY_VERIFIED_RECURSION_HISTORY_CLIENT_PROFILE_OPEN",
+      "full_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "full_original_pdf_bytes": 1360651,
+      "full_original_pdf_pages": 36,
+      "section_reference_page": 7,
+      "release_pdf_references_match_ledger": true,
+      "binary_archived_in_public_github": false
     },
     {
       "id": "MS-WSTEP",
@@ -1002,12 +1036,18 @@
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wstep/",
       "section": "§1.2.1",
       "live_list_complete": true,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_PUBLISHED_ORIGINAL_BIBLIOGRAPHY_VERIFIED_RECURSION_HISTORY_CLIENT_PROFILE_OPEN",
+      "full_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "full_original_pdf_bytes": 1374899,
+      "full_original_pdf_pages": 43,
+      "section_reference_page": 7,
+      "release_pdf_references_match_ledger": true,
+      "binary_archived_in_public_github": false
     }
   ],
   "recursion_frontier_reference": "transitive-frontier.json",
@@ -1074,5 +1114,24 @@
     "public_full_pdf_files_uploaded": 0,
     "formal_phase1_gates_passed": 0,
     "phase_1_complete": false
+  },
+  "windows_tar_originals_2026_10_24": {
+    "date": "2026-10-24",
+    "report": "windows-originals-2026-10-24.md",
+    "archive_sha256": "52f87efc17c9854f70b0b14650c877a572b1a99c7ed9df4f6c9a96387720c652",
+    "pdf_count": 451,
+    "MS_count": 424,
+    "MC_count": 27,
+    "uncompressed_pdf_bytes": 1334078644,
+    "second_level_pdf_edition_verified": 12,
+    "second_level_unverified": 0,
+    "existing_second_level_normative_edges_checked": 145,
+    "new_edges": 0,
+    "third_ring_microsoft_mc_52_file_acquisition_complete": true,
+    "third_ring_normative_closure_complete": false,
+    "public_original_pdf_files_uploaded": 0,
+    "private_archive_rights_check_pending": true,
+    "formal_phase1_gates_passed": 0,
+    "phase1_complete": false
   }
 }

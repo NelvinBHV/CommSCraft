@@ -50,9 +50,9 @@
       "original_library": "windows_protocols",
       "official_live_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-h26xpf/08c8711d-9d6e-44da-93a6-8712344199c3",
       "live_html_last_updated": "2024-10-30",
-      "exact_published_pdf_edition_correspondence": "UNVERIFIED",
-      "evidence_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "all_current_release_bytes_acquired": false,
+      "exact_published_pdf_edition_correspondence": "VERIFIED_USER_UPLOADED_CURRENT_WINDOWS_TAR_SHA256_2026_10_24",
+      "evidence_status": "CURRENT_PUBLISHED_ORIGINAL_PDF_1_2_1_TEXT_AND_SCREENSHOT_VERIFIED",
+      "all_current_release_bytes_acquired": true,
       "reviewed_normative_targets": {
         "microsoft": [
           "MS-RTPME"
@@ -64,7 +64,14 @@
         ],
         "other": []
       },
-      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED"
+      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED",
+      "current_published_revision": "1.3",
+      "current_published_date": "2017-06-01",
+      "current_original_pdf_sha256": "c3ec281d1b8b4c4bd74b751427c957067574c225a1f4d0256d2e49cdd4adef81",
+      "current_original_pdf_bytes": 1129519,
+      "current_original_pdf_page_count": 26,
+      "current_normative_reference_pdf_page": 6,
+      "full_pdf_binary_in_public_git": false
     },
     {
       "id": "MS-SDP",
@@ -72,9 +79,9 @@
       "original_library": "windows_protocols",
       "official_live_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-sdp/41a2961e-b14c-4d50-8637-84bc4b7eaedb",
       "live_html_last_updated": "2024-10-30",
-      "exact_published_pdf_edition_correspondence": "UNVERIFIED",
-      "evidence_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "all_current_release_bytes_acquired": false,
+      "exact_published_pdf_edition_correspondence": "VERIFIED_USER_UPLOADED_CURRENT_WINDOWS_TAR_SHA256_2026_10_24",
+      "evidence_status": "CURRENT_PUBLISHED_ORIGINAL_PDF_1_2_1_TEXT_AND_SCREENSHOT_VERIFIED",
+      "all_current_release_bytes_acquired": true,
       "reviewed_normative_targets": {
         "microsoft": [
           "MS-SIP"
@@ -89,7 +96,14 @@
         ],
         "other": []
       },
-      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED"
+      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED",
+      "current_published_revision": "1.0",
+      "current_published_date": "2017-06-01",
+      "current_original_pdf_sha256": "f58d4d3d73bcdd1836670b6827dca917d8751bcc9ee33c4a3518c310012d6848",
+      "current_original_pdf_bytes": 1074616,
+      "current_original_pdf_page_count": 25,
+      "current_normative_reference_pdf_page": 6,
+      "full_pdf_binary_in_public_git": false
     },
     {
       "id": "MS-KILE",
@@ -202,9 +216,9 @@
       "original_library": "windows_protocols",
       "official_live_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpbcgr/a75b2f6b-a048-4273-95dc-2d246b2bfec8",
       "live_html_last_updated": "2024-04-23",
-      "exact_published_pdf_edition_correspondence": "UNVERIFIED",
-      "evidence_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "all_current_release_bytes_acquired": false,
+      "exact_published_pdf_edition_correspondence": "VERIFIED_USER_UPLOADED_CURRENT_WINDOWS_TAR_SHA256_2026_10_24",
+      "evidence_status": "CURRENT_PUBLISHED_ORIGINAL_PDF_1_2_1_TEXT_AND_SCREENSHOT_VERIFIED",
+      "all_current_release_bytes_acquired": true,
       "reviewed_normative_targets": {
         "microsoft": [
           "MS-CSSP",
@@ -250,7 +264,14 @@
           "ITU-X224-1995"
         ]
       },
-      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED"
+      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED",
+      "current_published_revision": "62.0",
+      "current_published_date": "2026-03-09",
+      "current_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "current_original_pdf_bytes": 14529191,
+      "current_original_pdf_page_count": 444,
+      "current_normative_reference_pdf_page": 20,
+      "full_pdf_binary_in_public_git": false
     },
     {
       "id": "MS-RDPEMC",
@@ -285,9 +306,9 @@
       "original_library": "windows_protocols",
       "official_live_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wcce/6b0fd42e-d685-4169-a6dd-a230ae244e74",
       "live_html_last_updated": "2024-04-23",
-      "exact_published_pdf_edition_correspondence": "UNVERIFIED",
-      "evidence_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "all_current_release_bytes_acquired": false,
+      "exact_published_pdf_edition_correspondence": "VERIFIED_USER_UPLOADED_CURRENT_WINDOWS_TAR_SHA256_2026_10_24",
+      "evidence_status": "CURRENT_PUBLISHED_ORIGINAL_PDF_1_2_1_TEXT_AND_SCREENSHOT_VERIFIED",
+      "all_current_release_bytes_acquired": true,
       "reviewed_normative_targets": {
         "microsoft": [
           "MS-ADA1",
@@ -357,7 +378,14 @@
           "ANSI-X9.62-2005"
         ]
       },
-      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED"
+      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED",
+      "current_published_revision": "55.0",
+      "current_published_date": "2026-08-24",
+      "current_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "current_original_pdf_bytes": 6694053,
+      "current_original_pdf_page_count": 267,
+      "current_normative_reference_pdf_page": 22,
+      "full_pdf_binary_in_public_git": false
     },
     {
       "id": "MS-WSTEP",
@@ -365,9 +393,9 @@
       "original_library": "windows_protocols",
       "official_live_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-wstep/9d3c9a95-a923-4ad7-9c13-60485acf5cfb",
       "live_html_last_updated": "2024-04-23",
-      "exact_published_pdf_edition_correspondence": "UNVERIFIED",
-      "evidence_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "all_current_release_bytes_acquired": false,
+      "exact_published_pdf_edition_correspondence": "VERIFIED_USER_UPLOADED_CURRENT_WINDOWS_TAR_SHA256_2026_10_24",
+      "evidence_status": "CURRENT_PUBLISHED_ORIGINAL_PDF_1_2_1_TEXT_AND_SCREENSHOT_VERIFIED",
+      "all_current_release_bytes_acquired": true,
       "reviewed_normative_targets": {
         "microsoft": [
           "MS-WCCE"
@@ -392,7 +420,14 @@
           "XMLSCHEMA2-FirstEdition-2001"
         ]
       },
-      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED"
+      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED",
+      "current_published_revision": "15.0",
+      "current_published_date": "2024-04-23",
+      "current_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "current_original_pdf_bytes": 1374899,
+      "current_original_pdf_page_count": 43,
+      "current_normative_reference_pdf_page": 7,
+      "full_pdf_binary_in_public_git": false
     },
     {
       "id": "MS-WSPOL",
@@ -400,9 +435,9 @@
       "original_library": "windows_protocols",
       "official_live_section_url": "https://learn.microsoft.com/kk-kz/openspecs/windows_protocols/ms-wspol/a3a07257-01be-47ae-9a4b-2cc11957ea09",
       "live_html_last_updated": "2024-10-30",
-      "exact_published_pdf_edition_correspondence": "UNVERIFIED",
-      "evidence_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "all_current_release_bytes_acquired": false,
+      "exact_published_pdf_edition_correspondence": "VERIFIED_USER_UPLOADED_CURRENT_WINDOWS_TAR_SHA256_2026_10_24",
+      "evidence_status": "CURRENT_PUBLISHED_ORIGINAL_PDF_1_2_1_TEXT_AND_SCREENSHOT_VERIFIED",
+      "all_current_release_bytes_acquired": true,
       "reviewed_normative_targets": {
         "microsoft": [
           "MC-NBFSE",
@@ -431,7 +466,14 @@
           "XMLSCHEMA1-FirstEdition-2001"
         ]
       },
-      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED"
+      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED",
+      "current_published_revision": "8.0",
+      "current_published_date": "2019-03-13",
+      "current_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "current_original_pdf_bytes": 1360651,
+      "current_original_pdf_page_count": 36,
+      "current_normative_reference_pdf_page": 7,
+      "full_pdf_binary_in_public_git": false
     },
     {
       "id": "MS-OAUTH2EX",
@@ -717,8 +759,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "c3ec281d1b8b4c4bd74b751427c957067574c225a1f4d0256d2e49cdd4adef81",
+      "source_original_pdf_section_start_page": 6,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-H26XPF",
@@ -729,8 +774,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "c3ec281d1b8b4c4bd74b751427c957067574c225a1f4d0256d2e49cdd4adef81",
+      "source_original_pdf_section_start_page": 6,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-H26XPF",
@@ -741,8 +789,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "c3ec281d1b8b4c4bd74b751427c957067574c225a1f4d0256d2e49cdd4adef81",
+      "source_original_pdf_section_start_page": 6,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-H26XPF",
@@ -753,8 +804,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "c3ec281d1b8b4c4bd74b751427c957067574c225a1f4d0256d2e49cdd4adef81",
+      "source_original_pdf_section_start_page": 6,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-SDP",
@@ -765,8 +819,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "f58d4d3d73bcdd1836670b6827dca917d8751bcc9ee33c4a3518c310012d6848",
+      "source_original_pdf_section_start_page": 6,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-SDP",
@@ -777,8 +834,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "f58d4d3d73bcdd1836670b6827dca917d8751bcc9ee33c4a3518c310012d6848",
+      "source_original_pdf_section_start_page": 6,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-SDP",
@@ -789,8 +849,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "f58d4d3d73bcdd1836670b6827dca917d8751bcc9ee33c4a3518c310012d6848",
+      "source_original_pdf_section_start_page": 6,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-SDP",
@@ -801,8 +864,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "f58d4d3d73bcdd1836670b6827dca917d8751bcc9ee33c4a3518c310012d6848",
+      "source_original_pdf_section_start_page": 6,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-SDP",
@@ -813,8 +879,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "f58d4d3d73bcdd1836670b6827dca917d8751bcc9ee33c4a3518c310012d6848",
+      "source_original_pdf_section_start_page": 6,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-SDP",
@@ -825,8 +894,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "f58d4d3d73bcdd1836670b6827dca917d8751bcc9ee33c4a3518c310012d6848",
+      "source_original_pdf_section_start_page": 6,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-SDP",
@@ -837,8 +909,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "f58d4d3d73bcdd1836670b6827dca917d8751bcc9ee33c4a3518c310012d6848",
+      "source_original_pdf_section_start_page": 6,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-KILE",
@@ -1545,8 +1620,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1557,8 +1635,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1569,8 +1650,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1581,8 +1665,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1593,8 +1680,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1605,8 +1695,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1617,8 +1710,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1629,8 +1725,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1641,8 +1740,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1653,8 +1755,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1665,8 +1770,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1677,8 +1785,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1689,8 +1800,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1701,8 +1815,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1713,8 +1830,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1725,8 +1845,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1737,8 +1860,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1749,8 +1875,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1761,8 +1890,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1773,8 +1905,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1785,8 +1920,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1797,8 +1935,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1809,8 +1950,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1821,8 +1965,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1833,8 +1980,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1845,8 +1995,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1857,8 +2010,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1869,8 +2025,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1881,8 +2040,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1893,8 +2055,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1905,8 +2070,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1917,8 +2085,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1929,8 +2100,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1941,8 +2115,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1953,8 +2130,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1965,8 +2145,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPBCGR",
@@ -1977,8 +2160,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "63530e1feb089fe442387c2162eb7f7d84eea98bdd4d6bf46223aa1ed3ede0ac",
+      "source_original_pdf_section_start_page": 20,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-RDPEMC",
@@ -2037,8 +2223,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2049,8 +2238,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2061,8 +2253,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2073,8 +2268,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2085,8 +2283,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2097,8 +2298,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2109,8 +2313,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2121,8 +2328,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2133,8 +2343,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2145,8 +2358,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2157,8 +2373,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2169,8 +2388,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2181,8 +2403,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2193,8 +2418,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2205,8 +2433,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2217,8 +2448,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2229,8 +2463,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2241,8 +2478,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2253,8 +2493,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2265,8 +2508,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2277,8 +2523,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2289,8 +2538,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2301,8 +2553,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2313,8 +2568,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2325,8 +2583,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2337,8 +2598,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2349,8 +2613,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2361,8 +2628,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2373,8 +2643,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2385,8 +2658,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2397,8 +2673,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2409,8 +2688,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2421,8 +2703,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2433,8 +2718,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2445,8 +2733,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2457,8 +2748,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2469,8 +2763,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2481,8 +2778,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2493,8 +2793,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2505,8 +2808,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2517,8 +2823,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2529,8 +2838,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2541,8 +2853,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2553,8 +2868,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2565,8 +2883,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2577,8 +2898,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2589,8 +2913,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2601,8 +2928,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2613,8 +2943,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2625,8 +2958,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2637,8 +2973,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2649,8 +2988,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2661,8 +3003,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2673,8 +3018,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2685,8 +3033,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2697,8 +3048,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2709,8 +3063,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2721,8 +3078,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2733,8 +3093,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2745,8 +3108,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WCCE",
@@ -2757,8 +3123,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7cee4f03124e0682cced08f6895ad4c05eabc0729c777bb15399b5d4dfa2640b",
+      "source_original_pdf_section_start_page": 22,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2769,8 +3138,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2781,8 +3153,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2793,8 +3168,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2805,8 +3183,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2817,8 +3198,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2829,8 +3213,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2841,8 +3228,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2853,8 +3243,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2865,8 +3258,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2877,8 +3273,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2889,8 +3288,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2901,8 +3303,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2913,8 +3318,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2925,8 +3333,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2937,8 +3348,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSTEP",
@@ -2949,8 +3363,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "dd2f0a760a254c48da4d31c65c798f4156e04744ee40c4b067c24b913a64e5d5",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -2961,8 +3378,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -2973,8 +3393,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -2985,8 +3408,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -2997,8 +3423,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3009,8 +3438,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3021,8 +3453,11 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3033,8 +3468,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3045,8 +3483,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3057,8 +3498,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3069,8 +3513,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3081,8 +3528,11 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3093,8 +3543,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3105,8 +3558,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3117,8 +3573,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3129,8 +3588,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3141,8 +3603,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3153,8 +3618,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3165,8 +3633,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3177,8 +3648,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-WSPOL",
@@ -3189,8 +3663,11 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
-      "client_product_applicability": "OPEN"
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_WINDOWS_CURRENT_PDF_SHA256_2026_10_24",
+      "client_product_applicability": "OPEN",
+      "source_original_pdf_sha256": "7927d6a498e235134c6d3713abb05eaf875349e94f588307760d9d4c5a482008",
+      "source_original_pdf_section_start_page": 7,
+      "source_original_pdf_committed_to_public_git": false
     },
     {
       "referrer": "MS-OAUTH2EX",
@@ -3611,8 +4088,9 @@
       "rfc": 104,
       "external_or_historical_draft": 61
     },
-    "release_originals_sha256_and_normative_sections_verified": 6,
-    "unverified_exact_release_editions_remaining": 6
+    "release_originals_sha256_and_normative_sections_verified": 12,
+    "unverified_exact_release_editions_remaining": 0,
+    "new_source_original_normative_edges_confirmed_2026_10_24": 145
   },
   "unresolved": [
     "Verify all lists against matching revision/date PDF originals.",
@@ -3641,5 +4119,15 @@
     "new_direct_edges": 0,
     "full_pdf_binary_public_github_archived": false,
     "phase1_complete": false
+  },
+  "source_provenance_2026_10_24_windows": {
+    "archive": "Windows_Protocols.tar.xz",
+    "sha256": "52f87efc17c9854f70b0b14650c877a572b1a99c7ed9df4f6c9a96387720c652",
+    "pdfs": 451,
+    "bytes": 1334078644,
+    "second_tier_exact_current_pdf_source_sections_verified": 6,
+    "normative_existing_ledger_edges_checked": 145,
+    "new_normative_edges": 0,
+    "full_pdf_binary_archived_publicly": false
   }
 }
