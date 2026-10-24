@@ -229,69 +229,59 @@
   "instructions_for_next_session": "**NÄCHSTER PROMPT (P1-03):** Prüfe auf `draft/protocol-spec-analysis-2026-10-23` zuerst Remote-HEAD, `AGENTS.md`, `CURRENT_STATUS.md`, `NEXT_SESSION_PROMPT.md`, `research-checkpoint.json`, `fifth-stage-pccr-sharepoint-transitive-originals-audit-2026-10-24.md/.json`, `fifth-ring-ms-swn-normative-ledger.json`, beide MS/MC-Workqueues sowie `phase1-closure-gates-2026-10-23.json`. Ab HEAD `6070875822ae64f50459d30528a59b3f3a929222` weitere zehn Originale von MC-FPSEWM, MS-PCCRD, MS-PCCRR, MS-PCCRTP, MS-PCHC, MS-FSSHTTPB, MS-LISTSWS, MS-SHDACCWS, MS-VERSS, MS-WMIO neu auditiert: **+104 Norm-, +18 Informativ**, Gesamt **123/1576/438**. Ursprüngliche 88er Queue **3** regulär offen: MS-DMRP v20170601 Rev8.2, MS-ODATAJSON, MS-SQLRS. Nach aktueller 1.576-Kanten-Rekursion **25** zusätzliche transitive MS/MC-Rohkennungen, zusammen **28** roh offen; prüfe als Nächstes die PDF-Verfügbarkeit der neuen Kandidaten MS-OUTSPS, MS-PRSTFR, MS-VIEWSS, MS-WSSCAML, MS-WSSFO3, MS-WSSTS, MS-XSSK und verbleibende Originale, ohne Ausgaben zu vereinheitlichen. 67+13 ältere Schema-§1.1-Nennungen UNCLASSIFIED; Phase1 0/12. Arbeite ausschließlich dokumentarisch im bestehenden Draft-Branch; kein Binär-PDF-Git, kein Code, kein Netzwerk-Interoperabilitätstest, keine bezahlte CI, kein main-Merge/Tag/Release.\n",
   "latest_continuation": {
     "date": "2026-10-24",
-    "iteration": "P1-03-ten-new-transitive-original-bibliographies",
+    "iteration": "P1-03-10-sharepoint-federation-hcep-originals",
     "branch": "draft/protocol-spec-analysis-2026-10-23",
-    "parent_head": "6070875822ae64f50459d30528a59b3f3a929222",
+    "parent_head": "4744e4d14796ab2cfbbe3e7f9b2c0921b1a8ebe6",
     "source_ids": [
-      "MC-FPSEWM",
-      "MS-PCCRD",
-      "MS-PCCRR",
-      "MS-PCCRTP",
-      "MS-PCHC",
-      "MS-FSSHTTPB",
-      "MS-LISTSWS",
-      "MS-SHDACCWS",
-      "MS-VERSS",
-      "MS-WMIO"
-    ],
-    "source_report": "fifth-stage-pccr-sharepoint-transitive-originals-audit-2026-10-24.md",
-    "source_audit_json": "fifth-stage-pccr-sharepoint-transitive-originals-audit-2026-10-24.json",
-    "source_original_pdfs_full_sha256_verified": 10,
-    "normative_directed_edges_added": 104,
-    "separate_informative_citations_added": 18,
-    "downstream_original_bibliographies_audited_total": 123,
-    "downstream_directed_normative_edges_total": 1576,
-    "downstream_informative_citations_total": 438,
-    "original_fourth_target_raw_ms_mc_count_unchanged": 88,
-    "original_fourth_target_audited_norm_bibliographies": 84,
-    "original_ms_adls_schema_only_source_classified": 1,
-    "original_fourth_target_regular_pending": 3,
-    "original_fourth_missing_ids": [
-      "MS-DMRP",
-      "MS-ODATAJSON",
-      "MS-SQLRS"
-    ],
-    "newly_computed_additional_transitive_raw_ms_mc_target_ids": 25,
-    "combined_distinct_literal_raw_ms_mc_target_ids_pending": 28,
-    "new_raw_label_candidates": [
       "MS-OUTSPS",
       "MS-PRSTFR",
       "MS-VIEWSS",
       "MS-WSSCAML",
       "MS-WSSFO3",
       "MS-WSSTS",
-      "MS-XSSK"
+      "MS-HCEP",
+      "MS-MCI",
+      "MS-MWBE",
+      "MS-MWBF"
     ],
-    "previous_normative_ring_edge_counts_unchanged": [
+    "source_report": "fifth-stage-sharepoint-federation-hcep-originals-audit-2026-10-24.md",
+    "source_audit_json": "fifth-stage-sharepoint-federation-hcep-originals-audit-2026-10-24.json",
+    "original_pdfs_sha256_verified": 10,
+    "normative_edges_added": 132,
+    "informative_refs_added": 46,
+    "downstream_original_bibliographies": 133,
+    "downstream_normative_edges": 1708,
+    "downstream_informative_refs": 484,
+    "additional_transitive_raw_ms_mc_pending": 20,
+    "combined_raw_ms_mc_pending": 23,
+    "new_raw_targets": [
+      "MS-ADFSPIP",
+      "MS-OAPX",
+      "MS-WCCE",
+      "MS-WSSCAP",
+      "MS-WSSFO"
+    ],
+    "initial_regular_missing": [
+      "MS-DMRP",
+      "MS-ODATAJSON",
+      "MS-SQLRS"
+    ],
+    "archived_originals_available_after": 16,
+    "archived_originals_missing_after": 7,
+    "earlier_normative_ring_counts_unchanged": [
       464,
       246,
       827,
       1147
     ],
-    "old_third_schema_general_67_refs_unclassified": true,
-    "ms_adls_schema_general_13_refs_unclassified": true,
-    "ms_dmrp_original_2017_rev8_2_still_missing": true,
-    "historical_target_original_editions_reconciled": false,
-    "full_normative_reference_fixed_point_proven": false,
-    "sfb2019_full_client_build_policy_feature_server_role_applicability_proven": false,
-    "formal_phase1_gates_passed": 0,
-    "original_pdfs_kept_by_user": true,
-    "original_binary_pdf_git": false,
-    "protocol_implementation_authorized": false,
-    "live_network_tests_authorized": false,
-    "paid_ci_authorized": false,
-    "main_merge_authorized": false,
-    "release_authorized": false
+    "schema_67_and_13_unclassified": true,
+    "normative_fixed_point_proven": false,
+    "historical_target_editions_reconciled": false,
+    "sfb2019_full_client_build_feature_policy_roles_proven": false,
+    "phase1_gates_passed": 0,
+    "original_pdf_bins_in_git": false,
+    "no_code_tests_merge_release": true,
+    "next_prompt_only_in_chat": true
   },
   "follow_on_rfc_first_hop_2026_10_23": {
     "status": "PARTIAL_RFC_ORIGINAL_REFERENCES_ONLY",
@@ -2369,5 +2359,145 @@
     "additional_transitive_open": 25,
     "combined_open": 28,
     "gates_passed": 0
+  },
+  "previous_latest_continuation_before_sharepoint_federation_hcep": {
+    "date": "2026-10-24",
+    "iteration": "P1-03-ten-new-transitive-original-bibliographies",
+    "branch": "draft/protocol-spec-analysis-2026-10-23",
+    "parent_head": "6070875822ae64f50459d30528a59b3f3a929222",
+    "source_ids": [
+      "MC-FPSEWM",
+      "MS-PCCRD",
+      "MS-PCCRR",
+      "MS-PCCRTP",
+      "MS-PCHC",
+      "MS-FSSHTTPB",
+      "MS-LISTSWS",
+      "MS-SHDACCWS",
+      "MS-VERSS",
+      "MS-WMIO"
+    ],
+    "source_report": "fifth-stage-pccr-sharepoint-transitive-originals-audit-2026-10-24.md",
+    "source_audit_json": "fifth-stage-pccr-sharepoint-transitive-originals-audit-2026-10-24.json",
+    "source_original_pdfs_full_sha256_verified": 10,
+    "normative_directed_edges_added": 104,
+    "separate_informative_citations_added": 18,
+    "downstream_original_bibliographies_audited_total": 123,
+    "downstream_directed_normative_edges_total": 1576,
+    "downstream_informative_citations_total": 438,
+    "original_fourth_target_raw_ms_mc_count_unchanged": 88,
+    "original_fourth_target_audited_norm_bibliographies": 84,
+    "original_ms_adls_schema_only_source_classified": 1,
+    "original_fourth_target_regular_pending": 3,
+    "original_fourth_missing_ids": [
+      "MS-DMRP",
+      "MS-ODATAJSON",
+      "MS-SQLRS"
+    ],
+    "newly_computed_additional_transitive_raw_ms_mc_target_ids": 25,
+    "combined_distinct_literal_raw_ms_mc_target_ids_pending": 28,
+    "new_raw_label_candidates": [
+      "MS-OUTSPS",
+      "MS-PRSTFR",
+      "MS-VIEWSS",
+      "MS-WSSCAML",
+      "MS-WSSFO3",
+      "MS-WSSTS",
+      "MS-XSSK"
+    ],
+    "previous_normative_ring_edge_counts_unchanged": [
+      464,
+      246,
+      827,
+      1147
+    ],
+    "old_third_schema_general_67_refs_unclassified": true,
+    "ms_adls_schema_general_13_refs_unclassified": true,
+    "ms_dmrp_original_2017_rev8_2_still_missing": true,
+    "historical_target_original_editions_reconciled": false,
+    "full_normative_reference_fixed_point_proven": false,
+    "sfb2019_full_client_build_policy_feature_server_role_applicability_proven": false,
+    "formal_phase1_gates_passed": 0,
+    "original_pdfs_kept_by_user": true,
+    "original_binary_pdf_git": false,
+    "protocol_implementation_authorized": false,
+    "live_network_tests_authorized": false,
+    "paid_ci_authorized": false,
+    "main_merge_authorized": false,
+    "release_authorized": false
+  },
+  "p1_03_sharepoint_federation_hcep_originals_2026_10_24": {
+    "source_report": "fifth-stage-sharepoint-federation-hcep-originals-audit-2026-10-24.md",
+    "source_audit_json": "fifth-stage-sharepoint-federation-hcep-originals-audit-2026-10-24.json",
+    "source_editions_revisions_sha256": [
+      [
+        "MS-OUTSPS",
+        "v20241112",
+        "11.1",
+        "25908296a5e77dbdd0e73484dfbfe0c2e115d11de2b5000395c591901e110812"
+      ],
+      [
+        "MS-PRSTFR",
+        "v20211005",
+        "7.0",
+        "8bcaca88f2c7400f6cca89b4c73e54fa7bf92a4b0465af47ed57d332c431bb51"
+      ],
+      [
+        "MS-VIEWSS",
+        "v20240820",
+        "13.0",
+        "11c68a36d716cec5963cc01f93db33487ee6354c50d74b12a401b609b0060621"
+      ],
+      [
+        "MS-WSSCAML",
+        "v20240820",
+        "17.0",
+        "cdc0233418c51f465521719d748c1f47ab876cbdba1362807f80d39adb52ed54"
+      ],
+      [
+        "MS-WSSFO3",
+        "v20170620",
+        "4.0",
+        "d444ffcd0081f2fbdcd0b2c4844c0beedc60358265942d7cc2a2976430659d38"
+      ],
+      [
+        "MS-WSSTS",
+        "v20211005",
+        "7.0",
+        "ecbc0a5e1cfb6b15cc0923d275f0a6c901876ddc96715a9e7103598b65d693e2"
+      ],
+      [
+        "MS-HCEP",
+        "v20170601",
+        "19.0",
+        "2317126b54020ec863f77432d2be5915c0cbdad40efe95d5fbeee5b6513574fe"
+      ],
+      [
+        "MS-MCI",
+        "v20161017",
+        "7.3",
+        "58f9ba1e32800db84fd3cefead9e20facf8279fa61f5c0c4c1a4facd9887b285"
+      ],
+      [
+        "MS-MWBE",
+        "v20171201",
+        "11.0",
+        "ed6295a94322f5ce3d236e7db9a2789dcd2f820e2463eabb681c1c174f2cf966"
+      ],
+      [
+        "MS-MWBF",
+        "v20240423",
+        "16.0",
+        "1304d44e2be6281821569f19fea17150efc05300562321dad4ac32ce48fa7423"
+      ]
+    ],
+    "normative_edges_added": 132,
+    "informative_refs_added": 46,
+    "source_count_total": 133,
+    "norm_count_total": 1708,
+    "info_count_total": 484,
+    "additional_open": 20,
+    "combined_open": 23,
+    "formal_gate_pass_count": 0
   }
 }

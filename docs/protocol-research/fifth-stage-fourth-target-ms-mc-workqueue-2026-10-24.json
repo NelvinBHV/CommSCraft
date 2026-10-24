@@ -6,7 +6,7 @@
   "third_ring_source_id_inventory": "third-ring-source-inventory-2026-10-24.txt",
   "first_ring_ledger_sha": "2d1c80ebe3d087e562f6732b5cfd1abaa17ca97c",
   "second_ring_ledger_sha": "af4e27be3bbab38bd70ba50e858edeaaac4d2e66",
-  "fifth_ring_current_ledger_sha": "90a39ea8b1fa992dd978ae52b9648df2a975b502",
+  "fifth_ring_current_ledger_sha": "34045f9b635416cbc2a55ef5077f47443604b301",
   "candidate_raw_labels": 88,
   "already_audited_fifth_sources": 84,
   "schema_only_reviewed": 1,
@@ -134,7 +134,17 @@
     "MS-LISTSWS",
     "MS-SHDACCWS",
     "MS-VERSS",
-    "MS-WMIO"
+    "MS-WMIO",
+    "MS-OUTSPS",
+    "MS-PRSTFR",
+    "MS-VIEWSS",
+    "MS-WSSCAML",
+    "MS-WSSFO3",
+    "MS-WSSTS",
+    "MS-HCEP",
+    "MS-MCI",
+    "MS-MWBE",
+    "MS-MWBF"
   ],
   "raw_target_candidates": [
     {
@@ -1730,6 +1740,26 @@
     "normative_citations_added": 104,
     "informative_citations_added": 18,
     "reviewed_downstream_source_ids": 123,
+    "remaining_initial_fourth_regular_original_sources": 3,
+    "original_88_set_unchanged": true
+  },
+  "batch_2026_10_24_sharepoint_federation_hcep": {
+    "original_source_ids": [
+      "MS-OUTSPS",
+      "MS-PRSTFR",
+      "MS-VIEWSS",
+      "MS-WSSCAML",
+      "MS-WSSFO3",
+      "MS-WSSTS",
+      "MS-HCEP",
+      "MS-MCI",
+      "MS-MWBE",
+      "MS-MWBF"
+    ],
+    "source_queue": "ADDITIONAL_TRANSITIVE",
+    "normative_citations_added": 132,
+    "informative_citations_added": 46,
+    "reviewed_downstream_source_ids": 133,
     "remaining_initial_fourth_regular_original_sources": 3,
     "original_88_set_unchanged": true
   }
