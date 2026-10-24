@@ -71,7 +71,7 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "All 86 new fourth-ring MS/MC source document identities are now available. Only MS-DLTM 9.1 fourth-ring normative §1.2.1 was checked (10 references). The other 85 source bibliographies and applicability decisions remain open, so no recursive fixed point."
+      "blocker": "86 fourth-ring MS/MC identities, 5/86 original-PDF bibliography sections checked (one earlier user full-file SHA, four official web-PDF page render with SHA still open); 64 directed edges, 81 bibliographies open; four Windows versions metadata-only; no product scope or normative fixed point."
     },
     {
       "id": "P1-04",
@@ -1194,5 +1194,17 @@
     "normative_bibliographies_verified": 1,
     "fourth_ring_normative_edges": 10,
     "passed_gate_count": 0
+  },
+  "p1_03_eight_source_batch_2026_10_24": {
+    "sources_in_batch": 8,
+    "pdf_reference_sections_audited": 4,
+    "edition_metadata_only": 4,
+    "reviewed_total": 5,
+    "remaining_total": 81,
+    "added_normative_edges": 54,
+    "normative_edges_total": 64,
+    "informative_only_added": 11,
+    "new_full_file_sha256": 0,
+    "phase1_closed": false
   }
 }

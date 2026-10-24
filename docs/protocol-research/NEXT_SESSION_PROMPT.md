@@ -1,5 +1,7 @@
 # CommSCraft – Prompt zur Fortsetzung der Protokollforschung
 
+> Neuer P1-03-Fortschritt NACH Handoff 24.10.2026: [Batch-Report](fourth-ring-p1-03-batch-2026-10-24.md) – vier weitere originalv20250520 PDF-Bibliografien, jetzt 5/86 geprüft, 64 vierte Normkanten, 81 offen; vier weitere Windows-IDs nur Revisionen geprüft. Nächste genaue Originaleditionen: MS-FSCC 60.0, MS-SMB2 88.0, MS-GPOL 39.0, MS-TLSP 18.0. Alte Zahlen unten sind historischer Handoff. Gates 0/12 PASS.
+
 Setze die **CommSCraft-Protokollforschung (Phase 1, Quellenanalyse)** im GitHub-Repository `NelvinBHV/CommSCraft` auf dem **bestehenden Branch `draft/protocol-spec-analysis-2026-10-23`** fort. Nutze den tatsächlichen aktuellen Branch-HEAD, nicht blind eine alte Commit-ID.
 
 **Unbedingt zuerst lesen und abgleichen:** `AGENTS.md`, `docs/protocol-research/CURRENT_STATUS.md`, `research-checkpoint.json`, `phase1-closure-gates-2026-10-23.json`, `fourth-ring-ms-frontier-2026-10-24.json`, `fourth-ring-normative-reference-ledger.json`, `third-ring-original-bibliography-audit-2026-10-24.md`, `phase1-audit.md` und die letzten Einträge aus `research-log.md`. Prüfe den Branch-Stand, bevor Du änderst.

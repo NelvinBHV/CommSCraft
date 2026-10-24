@@ -172,5 +172,27 @@
     "one_additional_raw_target_name": "MS-DLTW",
     "existing_source_file_for_target": true,
     "phase1_closed": false
+  },
+  "p1_03_eight_source_batch_2026_10_24": {
+    "report": "fourth-ring-p1-03-batch-2026-10-24.md",
+    "data": "fourth-ring-p1-03-batch-2026-10-24.json",
+    "batch_sources": [
+      "MS-OXCMAPIHTTP",
+      "MS-OXWSSYNC",
+      "MS-OXWSXPROP",
+      "MS-OXWSMSG",
+      "MS-FSCC",
+      "MS-SMB2",
+      "MS-GPOL",
+      "MS-TLSP"
+    ],
+    "original_web_pdf_reference_sections_audited": 4,
+    "edition_metadata_only_sources": 4,
+    "fourth_ring_bibliographies_reviewed": 5,
+    "fourth_ring_bibliographies_remaining": 81,
+    "fourth_ring_edges_added": 54,
+    "fourth_ring_edges_total": 64,
+    "new_verified_binary_sha256": 0,
+    "phase1_gates_passed": 0
   }
 }

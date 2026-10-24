@@ -596,5 +596,36 @@
     "verified_last_upload": "MS-DLTM 9.1 v20170601 PDF SHA256 46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
     "artifact_status": "CURRENT_AND_COPIABLE",
     "phase1_gate_passes": 0
+  },
+  "p1_03_eight_source_batch_2026_10_24": {
+    "report": "fourth-ring-p1-03-batch-2026-10-24.md",
+    "sources": [
+      "MS-OXCMAPIHTTP",
+      "MS-OXWSSYNC",
+      "MS-OXWSXPROP",
+      "MS-OXWSMSG",
+      "MS-FSCC",
+      "MS-SMB2",
+      "MS-GPOL",
+      "MS-TLSP"
+    ],
+    "original_pdf_pages_checked": 4,
+    "edition_metadata_only": 4,
+    "fourth_ring_bibliographies_reviewed": 5,
+    "fourth_ring_bibliographies_remaining": 81,
+    "new_normative_edges": 54,
+    "fourth_ring_normative_edges_total": 64,
+    "informative_edges_separate_new": 11,
+    "original_binary_sha256_new": 0,
+    "first_second_third_normative_edges_unchanged": [
+      464,
+      246,
+      827
+    ],
+    "schema_unclassified_unchanged": 67,
+    "previous_raw_union_first_three_levels_unchanged": 581,
+    "formal_phase1_gates_passed": 0,
+    "phase1_complete": false,
+    "next_resume": "Get exact original PDF edition + SHA + §1.2.1/§1.2.2 pages for MS-FSCC rev60.0, MS-SMB2 rev88.0, MS-GPOL rev39.0, MS-TLSP rev18.0; cross-ring raw label union open."
   }
 }

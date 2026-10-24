@@ -1,0 +1,431 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "branch": "draft/protocol-spec-analysis-2026-10-23",
+  "head_before": "1868ec97ee463b19fa370aead6fb8e3b4c864d40",
+  "source_count": 8,
+  "source_ids": [
+    "MS-OXCMAPIHTTP",
+    "MS-OXWSSYNC",
+    "MS-OXWSXPROP",
+    "MS-OXWSMSG",
+    "MS-FSCC",
+    "MS-SMB2",
+    "MS-GPOL",
+    "MS-TLSP"
+  ],
+  "original_pdf_sections_verified_now": 4,
+  "publication_metadata_only": 4,
+  "fourth_ring_reviewed_total": 5,
+  "fourth_ring_remaining": 81,
+  "fourth_ring_normative_baseline": 10,
+  "fourth_ring_normative_added": 54,
+  "fourth_ring_normative_total": 64,
+  "informative_added_separately": 11,
+  "edge_types": {
+    "MS_MC": 28,
+    "RFC": 11,
+    "EXTERNAL": 15
+  },
+  "raw_targets_in_batch": [
+    "MS-DCOM",
+    "MS-DTYP",
+    "MS-LCID",
+    "MS-OAUT",
+    "MS-OXABREF",
+    "MS-OXCDATA",
+    "MS-OXCNOTIF",
+    "MS-OXCROPS",
+    "MS-OXCRPC",
+    "MS-OXDSCLI",
+    "MS-OXNSPI",
+    "MS-OXOABK",
+    "MS-OXWSADISC",
+    "MS-OXWSCDATA",
+    "MS-OXWSCONT",
+    "MS-OXWSCORE",
+    "MS-OXWSDLIST",
+    "MS-OXWSFOLD",
+    "MS-OXWSMSG",
+    "MS-OXWSMTGS",
+    "MS-OXWSPOST",
+    "MS-OXWSSRCH",
+    "MS-OXWSTASK",
+    "RFC2119",
+    "RFC2616",
+    "RFC2818",
+    "RFC3066",
+    "SOAP1.1",
+    "WSDL",
+    "WSIBASIC",
+    "XMLNS",
+    "XMLSCHEMA1",
+    "XMLSCHEMA2"
+  ],
+  "raw_union_prior_three_levels": 581,
+  "new_global_raw_union_status": "UNRECONCILED_THIRD_RING_GZIP_NOT_DECODED",
+  "sources_pdf": [
+    {
+      "id": "MS-OXCMAPIHTTP",
+      "rev": "15.0",
+      "edition": "v20250520",
+      "date": "2025-05-20",
+      "original_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXCMAPIHTTP/%5BMS-OXCMAPIHTTP%5D.pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxcmapihttp/d502edcf-0b22-42f2-8500-019f00d60245",
+      "pdf_pages": 96,
+      "sha256": null,
+      "checksum_status": "UNAVAILABLE_ORIGINAL_PDF_BYTES_NOT_READ",
+      "normative_pdf_pages": [
+        9
+      ],
+      "normative_count": 12,
+      "normative_raw_labels": [
+        "[MS-LCID]",
+        "[MS-OXABREF]",
+        "[MS-OXCDATA]",
+        "[MS-OXCNOTIF]",
+        "[MS-OXCROPS]",
+        "[MS-OXCRPC]",
+        "[MS-OXDSCLI]",
+        "[MS-OXNSPI]",
+        "[MS-OXOABK]",
+        "[RFC2119]",
+        "[RFC2616]",
+        "[RFC2818]"
+      ],
+      "informative_pdf_pages": [
+        9
+      ],
+      "informative_count": 2,
+      "informative_raw_labels": [
+        "[MS-OXPROTO]",
+        "[RFC896]"
+      ],
+      "evidence": "MICROSOFT_OFFICIAL_PDF_TEXT_AND_RENDERED_REFERENCE_PAGES",
+      "client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXWSSYNC",
+      "rev": "10.0",
+      "edition": "v20250520",
+      "date": "2025-05-20",
+      "original_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSSYNC/%5BMS-OXWSSYNC%5D.pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxwssync/9ac26095-b7fc-430e-94cf-0dc34b9a09a0",
+      "pdf_pages": 45,
+      "sha256": null,
+      "checksum_status": "UNAVAILABLE_ORIGINAL_PDF_BYTES_NOT_READ",
+      "normative_pdf_pages": [
+        7,
+        8
+      ],
+      "normative_count": 20,
+      "normative_raw_labels": [
+        "[MS-OXWSCDATA]",
+        "[MS-OXWSCONT]",
+        "[MS-OXWSCORE]",
+        "[MS-OXWSDLIST]",
+        "[MS-OXWSFOLD]",
+        "[MS-OXWSMSG]",
+        "[MS-OXWSMTGS]",
+        "[MS-OXWSPOST]",
+        "[MS-OXWSSRCH]",
+        "[MS-OXWSTASK]",
+        "[RFC2119]",
+        "[RFC2616]",
+        "[RFC2818]",
+        "[RFC3066]",
+        "[SOAP1.1]",
+        "[WSDL]",
+        "[WSIBASIC]",
+        "[XMLNS]",
+        "[XMLSCHEMA1]",
+        "[XMLSCHEMA2]"
+      ],
+      "informative_pdf_pages": [
+        8
+      ],
+      "informative_count": 3,
+      "informative_raw_labels": [
+        "[MS-OXDSCLI]",
+        "[MS-OXPROTO]",
+        "[MS-OXWSADISC]"
+      ],
+      "evidence": "MICROSOFT_OFFICIAL_PDF_TEXT_AND_RENDERED_REFERENCE_PAGES",
+      "client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXWSXPROP",
+      "rev": "13.0",
+      "edition": "v20250520",
+      "date": "2025-05-20",
+      "original_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSXPROP/%5BMS-OXWSXPROP%5D.pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxwsxprop/1e0ae5e6-c516-4ad1-ad12-c19fee04860a",
+      "pdf_pages": 24,
+      "sha256": null,
+      "checksum_status": "UNAVAILABLE_ORIGINAL_PDF_BYTES_NOT_READ",
+      "normative_pdf_pages": [
+        5,
+        6
+      ],
+      "normative_count": 9,
+      "normative_raw_labels": [
+        "[MS-DCOM]",
+        "[MS-DTYP]",
+        "[MS-OAUT]",
+        "[MS-OXWSCDATA]",
+        "[RFC2119]",
+        "[WSDL]",
+        "[XMLNS]",
+        "[XMLSCHEMA1]",
+        "[XMLSCHEMA2]"
+      ],
+      "informative_pdf_pages": [
+        6
+      ],
+      "informative_count": 4,
+      "informative_raw_labels": [
+        "[MS-OXPROTO]",
+        "[MS-OXWSCORE]",
+        "[MS-OXWSFOLD]",
+        "[MS-OXWSSRCH]"
+      ],
+      "evidence": "MICROSOFT_OFFICIAL_PDF_TEXT_AND_RENDERED_REFERENCE_PAGES",
+      "client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXWSMSG",
+      "rev": "15.0",
+      "edition": "v20250520",
+      "date": "2025-05-20",
+      "original_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSMSG/%5BMS-OXWSMSG%5D.pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxwsmsg/74051353-1b3f-4298-95c0-e3a54a8512ca",
+      "pdf_pages": 46,
+      "sha256": null,
+      "checksum_status": "UNAVAILABLE_ORIGINAL_PDF_BYTES_NOT_READ",
+      "normative_pdf_pages": [
+        7,
+        8
+      ],
+      "normative_count": 13,
+      "normative_raw_labels": [
+        "[MS-OXDSCLI]",
+        "[MS-OXWSADISC]",
+        "[MS-OXWSCDATA]",
+        "[MS-OXWSCORE]",
+        "[MS-OXWSFOLD]",
+        "[RFC2119]",
+        "[RFC2616]",
+        "[RFC2818]",
+        "[SOAP1.1]",
+        "[WSDL]",
+        "[XMLNS]",
+        "[XMLSCHEMA1]",
+        "[XMLSCHEMA2]"
+      ],
+      "informative_pdf_pages": [
+        8
+      ],
+      "informative_count": 2,
+      "informative_raw_labels": [
+        "[MS-OXPROTO]",
+        "[MS-OXWSSRCH]"
+      ],
+      "evidence": "MICROSOFT_OFFICIAL_PDF_TEXT_AND_RENDERED_REFERENCE_PAGES",
+      "client_applicability": "OPEN"
+    }
+  ],
+  "sources_metadata_only": [
+    {
+      "id": "MS-FSCC",
+      "rev": "60.0",
+      "date": "2025-11-21",
+      "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/efbfe127-73ad-4140-9967-ec6500e66d5e",
+      "section": "OPEN",
+      "original_pdf_sha256": null,
+      "pdf_page": null,
+      "client_applicability": "OPEN",
+      "why": "Published edition table confirmed; PDF references inaccessible"
+    },
+    {
+      "id": "MS-SMB2",
+      "rev": "88.0",
+      "date": "2026-09-28",
+      "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/5606ad47-5ee0-437a-817e-70c366052962",
+      "section": "OPEN",
+      "original_pdf_sha256": null,
+      "pdf_page": null,
+      "client_applicability": "OPEN",
+      "why": "Published edition table confirmed; PDF references inaccessible"
+    },
+    {
+      "id": "MS-GPOL",
+      "rev": "39.0",
+      "date": "2024-04-23",
+      "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-gpol/62d12924-6252-4052-996f-161d2b9019f4",
+      "section": "OPEN",
+      "original_pdf_sha256": null,
+      "pdf_page": null,
+      "client_applicability": "OPEN",
+      "why": "Published edition table confirmed; PDF references inaccessible"
+    },
+    {
+      "id": "MS-TLSP",
+      "rev": "18.0",
+      "date": "2026-09-28",
+      "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-tlsp/58aba05b-62b0-4cd1-b88b-dc8a24920346",
+      "section": "OPEN",
+      "original_pdf_sha256": null,
+      "pdf_page": null,
+      "client_applicability": "OPEN",
+      "why": "Published edition table confirmed; PDF references inaccessible"
+    }
+  ],
+  "informative_edges": [
+    {
+      "referrer": "MS-OXCMAPIHTTP",
+      "target": "MS-OXPROTO",
+      "raw_label": "[MS-OXPROTO]",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2",
+      "page": 9,
+      "section": "§1.2.2",
+      "source_edition": "v20250520",
+      "source_sha256": null,
+      "source_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXCMAPIHTTP/%5BMS-OXCMAPIHTTP%5D.pdf",
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-OXCMAPIHTTP",
+      "target": "RFC896",
+      "raw_label": "[RFC896]",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2",
+      "page": 9,
+      "section": "§1.2.2",
+      "source_edition": "v20250520",
+      "source_sha256": null,
+      "source_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXCMAPIHTTP/%5BMS-OXCMAPIHTTP%5D.pdf",
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-OXWSSYNC",
+      "target": "MS-OXDSCLI",
+      "raw_label": "[MS-OXDSCLI]",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2",
+      "page": 8,
+      "section": "§1.2.2",
+      "source_edition": "v20250520",
+      "source_sha256": null,
+      "source_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSSYNC/%5BMS-OXWSSYNC%5D.pdf",
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-OXWSSYNC",
+      "target": "MS-OXPROTO",
+      "raw_label": "[MS-OXPROTO]",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2",
+      "page": 8,
+      "section": "§1.2.2",
+      "source_edition": "v20250520",
+      "source_sha256": null,
+      "source_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSSYNC/%5BMS-OXWSSYNC%5D.pdf",
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-OXWSSYNC",
+      "target": "MS-OXWSADISC",
+      "raw_label": "[MS-OXWSADISC]",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2",
+      "page": 8,
+      "section": "§1.2.2",
+      "source_edition": "v20250520",
+      "source_sha256": null,
+      "source_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSSYNC/%5BMS-OXWSSYNC%5D.pdf",
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-OXWSXPROP",
+      "target": "MS-OXPROTO",
+      "raw_label": "[MS-OXPROTO]",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2",
+      "page": 6,
+      "section": "§1.2.2",
+      "source_edition": "v20250520",
+      "source_sha256": null,
+      "source_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSXPROP/%5BMS-OXWSXPROP%5D.pdf",
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-OXWSXPROP",
+      "target": "MS-OXWSCORE",
+      "raw_label": "[MS-OXWSCORE]",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2",
+      "page": 6,
+      "section": "§1.2.2",
+      "source_edition": "v20250520",
+      "source_sha256": null,
+      "source_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSXPROP/%5BMS-OXWSXPROP%5D.pdf",
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-OXWSXPROP",
+      "target": "MS-OXWSFOLD",
+      "raw_label": "[MS-OXWSFOLD]",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2",
+      "page": 6,
+      "section": "§1.2.2",
+      "source_edition": "v20250520",
+      "source_sha256": null,
+      "source_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSXPROP/%5BMS-OXWSXPROP%5D.pdf",
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-OXWSXPROP",
+      "target": "MS-OXWSSRCH",
+      "raw_label": "[MS-OXWSSRCH]",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2",
+      "page": 6,
+      "section": "§1.2.2",
+      "source_edition": "v20250520",
+      "source_sha256": null,
+      "source_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSXPROP/%5BMS-OXWSXPROP%5D.pdf",
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-OXWSMSG",
+      "target": "MS-OXPROTO",
+      "raw_label": "[MS-OXPROTO]",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2",
+      "page": 8,
+      "section": "§1.2.2",
+      "source_edition": "v20250520",
+      "source_sha256": null,
+      "source_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSMSG/%5BMS-OXWSMSG%5D.pdf",
+      "client_applicability": "OPEN"
+    },
+    {
+      "referrer": "MS-OXWSMSG",
+      "target": "MS-OXWSSRCH",
+      "raw_label": "[MS-OXWSSRCH]",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2",
+      "page": 8,
+      "section": "§1.2.2",
+      "source_edition": "v20250520",
+      "source_sha256": null,
+      "source_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSMSG/%5BMS-OXWSMSG%5D.pdf",
+      "client_applicability": "OPEN"
+    }
+  ],
+  "full_pdf_sha256_newly_verified": 0,
+  "legacy_edges_unchanged": [
+    464,
+    246,
+    827
+  ],
+  "third_ring_schema_unclassified": 67,
+  "passed_gates": 0,
+  "phase1_complete": false,
+  "protocol_implementation_authorized": false,
+  "live_tests_authorized": false,
+  "main_merge_authorized": false,
+  "release_authorized": false,
+  "user_retains_pdfs": true
+}
