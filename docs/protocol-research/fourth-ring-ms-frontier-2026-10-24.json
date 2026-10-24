@@ -230,18 +230,8 @@
     "MS-LCID",
     "MS-MQMQ",
     "MS-N2HT",
-    "MS-OAUT",
     "MS-ODATA",
-    "MS-OFBA",
-    "MS-OXABREF",
-    "MS-OXCRPC",
-    "MS-OXDISCO",
     "MS-OXPROPS",
-    "MS-OXWAVLS",
-    "MS-OXWOAB",
-    "MS-OXWOOF",
-    "MS-OXWSARCH",
-    "MS-OXWSATT",
     "MS-OXWSBTRF",
     "MS-OXWSCEXT",
     "MS-OXWSCONT",
@@ -280,9 +270,9 @@
     "MS-SAMS",
     "MS-W32T"
   ],
-  "current_p1_03_bibliography_count": 27,
-  "current_p1_03_normative_edges": 386,
-  "p1_03_current_caveat": "Fourth ring 86/86 source document identities acquired; 27/86 exact §1.2.1 normative bibliographies verified (386 directed edges) while 59 remain. Fifth ring separate MS-SWN 6 normative edges unchanged. No proven normative fixed point, no generalized client mandate.",
+  "current_p1_03_bibliography_count": 37,
+  "current_p1_03_normative_edges": 506,
+  "p1_03_current_caveat": "All 86 fourth-ring source document identities acquired; 37 original §1.2.1 source lists audited (506 directed normative references), 49 source lists open. Fifth-ring MS-SWN stays separately six edges, and no client-specific mandatory-feature or normative fixed point established.",
   "p1_03_seven_fourth_and_one_fifth_source_batch_2026_10_24": {
     "report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
     "json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
@@ -332,5 +322,28 @@
     "fourth_directed_edges_after": 386,
     "cited_target_editions_and_SfB2019_client_applicability": "OPEN",
     "source_pdfs_user_custody_not_git": true
+  },
+  "p1_03_exchange_auth_webservices_2026_10_24": {
+    "source_ids": [
+      "MS-OAUT",
+      "MS-OFBA",
+      "MS-OXCRPC",
+      "MS-OXDISCO",
+      "MS-OXWSATT",
+      "MS-OXWAVLS",
+      "MS-OXWOAB",
+      "MS-OXWOOF",
+      "MS-OXWSARCH",
+      "MS-OXABREF"
+    ],
+    "source_count": 10,
+    "new_direct_normative_edges": 120,
+    "separate_informative_mentions": 35,
+    "original_pdf_sha256_verified": 10,
+    "total_fourth_bibliographies_reviewed": 37,
+    "remaining_unreviewed": 49,
+    "total_fourth_normative_edges": 506,
+    "original_PDFs_in_user_custody": true,
+    "client_applicability": "OPEN"
   }
 }

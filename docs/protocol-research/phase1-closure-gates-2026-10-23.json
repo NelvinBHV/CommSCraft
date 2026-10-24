@@ -71,7 +71,7 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "All 86 fourth-ring MS/MC source identities acquired; exact original-PDF §1.2.1 source bibliographies now checked for 27/86 (386 directed norm edges), 59 unreviewed. Separate fifth ring MS-SWN contributes 6 direct norm edges. Exact cited target versions, feature policy/build applicability and independent recursive fixed point OPEN."
+      "blocker": "Current fourth-ring original bibliography verification 37/86, directed normative reference count 506, remaining 49. Separate fifth MS-SWN 6. Historical target versions, normative RFC/IETF/external recursive closure, client/server policy feature applicability and independent fixed-point review remain OPEN. 0/12 gates PASS."
     },
     {
       "id": "P1-04",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "27/86 fourth ring normative source bibliographies verified, 386 directed citations; separate fifth ring MS-SWN 6; raw target edition canonicalization, RFC/draft/external updates, testable client-specific feature obligations and independent review OPEN."
+      "blocker": "Current fourth-ring original bibliography verification 37/86, directed normative reference count 506, remaining 49. Separate fifth MS-SWN 6. Historical target versions, normative RFC/IETF/external recursive closure, client/server policy feature applicability and independent fixed-point review remain OPEN. 0/12 gates PASS."
     },
     {
       "id": "P1-09",
@@ -106,7 +106,7 @@
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "Fourth-tier current 386 norm bibliography edges from 27 source PDFs; 59 still unreviewed. Separate fifth tier MS-SWN with 6; the RFC/external transitive reference frontier remains open and legacy Office/Exchange/Windows historical version assignments are unverified."
+      "blocker": "Current fourth-ring original bibliography verification 37/86, directed normative reference count 506, remaining 49. Separate fifth MS-SWN 6. Historical target versions, normative RFC/IETF/external recursive closure, client/server policy feature applicability and independent fixed-point review remain OPEN. 0/12 gates PASS."
     },
     {
       "id": "P1-11",
@@ -1254,5 +1254,17 @@
     "fourth_unverified": 59,
     "phase1_passed_gates": 0,
     "source_binaries_user_retained": true
+  },
+  "p1_03_exchange_auth_webservices_originals_2026_10_24": {
+    "sources_added": 10,
+    "original_full_pdf_sha256_verified": 10,
+    "normative_edges_added": 120,
+    "informative_mentions_not_counted": 35,
+    "fourth_ring_reviewed": 37,
+    "fourth_ring_remaining": 49,
+    "fourth_ring_direct_normative_edges": 506,
+    "fifth_ring_ms_swn_direct_normative_edges": 6,
+    "PDF_originals_retained_by_user": true,
+    "formal_phase1_gates_passed": 0
   }
 }
