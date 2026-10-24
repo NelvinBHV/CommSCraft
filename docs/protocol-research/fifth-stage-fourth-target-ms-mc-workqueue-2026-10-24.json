@@ -8,9 +8,9 @@
   "second_ring_ledger_sha": "af4e27be3bbab38bd70ba50e858edeaaac4d2e66",
   "fifth_ring_current_ledger_sha": "096d03dfe1c0828b9ad721417441ef6460fa0105",
   "candidate_raw_labels": 88,
-  "already_audited_fifth_sources": 73,
+  "already_audited_fifth_sources": 78,
   "schema_only_reviewed": 1,
-  "remaining_raw_ms_mc_source_candidates": 14,
+  "remaining_raw_ms_mc_source_candidates": 9,
   "reviewed_fifth_source_ids": [
     "MS-SWN",
     "MS-OXWSADISC",
@@ -104,7 +104,17 @@
     "MS-MQMP",
     "MS-CFB",
     "MS-COM",
-    "MS-DTCLU"
+    "MS-DTCLU",
+    "MS-PAR",
+    "MS-RA",
+    "MS-RMPR",
+    "MS-WSSHP",
+    "MS-XWDCAL",
+    "MS-EVEN6",
+    "MS-GPNAP",
+    "MS-MQSD",
+    "MS-WDV",
+    "MS-TIPP"
   ],
   "raw_target_candidates": [
     {
@@ -1249,7 +1259,7 @@
           "source_sha256": "e5bb06ca3574f90cb9a0dad7ffa688b37b75323680ac0c41973048ccaf029c29"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-PCCRC",
@@ -1275,7 +1285,7 @@
           "source_sha256": "7b7510df5c0f2c1308ceb39ec230d4e8b1417d8e338120cb7b7f23a4a9c912b8"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-RDPEGT",
@@ -1301,7 +1311,7 @@
           "source_sha256": "e40d0f6f58cde506c423a0c860f739a86b263563dcf6a1a5da43957f640f45b1"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-RSVD",
@@ -1379,7 +1389,7 @@
           "source_sha256": "bde1630aff99562ae6b0e5435c114fcac7c42a7895f26872cff3e92ca422c5c1"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-XWDCAL",
@@ -1392,7 +1402,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-XWDVSEC",
@@ -1614,5 +1624,39 @@
       "MS-DTCLU"
     ],
     "full_source_pdf_sha256_verified": 10
+  },
+  "batch_2026_10_24_printer_remoteassist_rights_sharepoint_webdav_msmq": {
+    "source_ids": [
+      "MS-PAR",
+      "MS-RA",
+      "MS-RMPR",
+      "MS-WSSHP",
+      "MS-XWDCAL",
+      "MS-EVEN6",
+      "MS-GPNAP",
+      "MS-MQSD",
+      "MS-WDV",
+      "MS-TIPP"
+    ],
+    "normative_edges_added": 145,
+    "informative_added": 80,
+    "from_initial_queue": [
+      "MS-PAR",
+      "MS-RA",
+      "MS-RMPR",
+      "MS-WSSHP",
+      "MS-XWDCAL"
+    ],
+    "from_emergent_queue": [
+      "MS-EVEN6",
+      "MS-GPNAP",
+      "MS-MQSD",
+      "MS-WDV",
+      "MS-TIPP"
+    ],
+    "initial_reviewed_now": 78,
+    "initial_regular_remaining": 9,
+    "downstream_reviewed_total": 103,
+    "source_full_pdf_sha256_count": 10
   }
 }

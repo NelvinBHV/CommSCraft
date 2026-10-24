@@ -71,17 +71,17 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "Fourth ring 86/86 source IDs classified, 1147 normative directed citations; downstream 93 original normative bibliographies, 1228 directed norm edges and 304 separately informative. Initial 88 fourth MS/MC raw targets 73 sources original-audited, one MS-ADLS schema-only, 14 remaining. Separate transitive raw IDs from 1228 norm edges 13 remaining, combined 27 literal open (not historical edition normalized/fixed point). MS-MSRP original 2017 revision10.3 audited; MS-DMRP 2017 revision8.2 original still missing. Historical target editions, external RFC/ISO/IETF/ITU/W3C normative closure, independent shortest-stage and actual SfB2019 Windows Full Client feature/build/policy/role applicability OPEN. 0/12 Phase1 Gates PASS."
+      "blocker": "Fourth source-ID ring 86/86 categorized, 1147 directed norm references unchanged; downstream 103 full original §1.2.1 normative bibliographies with 1373 directed norm references and 384 separately informative citations. Initial 88 raw MS/MC fourth target pool 78 originals checked, one MS-ADLS §1.1 schema-only with 13 UNCLASSIFIED and 9 remaining. Separate additional transitive queue 21 literal pending sources, 30 combined raw pending (not historical editions normalized and not normative fixpoint). New source self-bibliography MS-RMPR p17 and MS-MQSD p8, preserve prior true self-cites. Exact historical MS-DMRP 2017 rev8.2 original missing. Client product feature/role/build/policy scope, external standard bibliographies, original target editions, independent shortest-tier and transitive fixed point remain OPEN. Formal phase1 0/12 gates PASS."
     },
     {
       "id": "P1-04",
       "passed": false,
-      "blocker": "Fourth ring 86/86 source IDs classified, 1147 normative directed citations; downstream 93 original normative bibliographies, 1228 directed norm edges and 304 separately informative. Initial 88 fourth MS/MC raw targets 73 sources original-audited, one MS-ADLS schema-only, 14 remaining. Separate transitive raw IDs from 1228 norm edges 13 remaining, combined 27 literal open (not historical edition normalized/fixed point). MS-MSRP original 2017 revision10.3 audited; MS-DMRP 2017 revision8.2 original still missing. Historical target editions, external RFC/ISO/IETF/ITU/W3C normative closure, independent shortest-stage and actual SfB2019 Windows Full Client feature/build/policy/role applicability OPEN. 0/12 Phase1 Gates PASS."
+      "blocker": "Fourth source-ID ring 86/86 categorized, 1147 directed norm references unchanged; downstream 103 full original §1.2.1 normative bibliographies with 1373 directed norm references and 384 separately informative citations. Initial 88 raw MS/MC fourth target pool 78 originals checked, one MS-ADLS §1.1 schema-only with 13 UNCLASSIFIED and 9 remaining. Separate additional transitive queue 21 literal pending sources, 30 combined raw pending (not historical editions normalized and not normative fixpoint). New source self-bibliography MS-RMPR p17 and MS-MQSD p8, preserve prior true self-cites. Exact historical MS-DMRP 2017 rev8.2 original missing. Client product feature/role/build/policy scope, external standard bibliographies, original target editions, independent shortest-tier and transitive fixed point remain OPEN. Formal phase1 0/12 gates PASS."
     },
     {
       "id": "P1-05",
       "passed": false,
-      "blocker": "Fourth ring 86/86 source IDs classified, 1147 normative directed citations; downstream 93 original normative bibliographies, 1228 directed norm edges and 304 separately informative. Initial 88 fourth MS/MC raw targets 73 sources original-audited, one MS-ADLS schema-only, 14 remaining. Separate transitive raw IDs from 1228 norm edges 13 remaining, combined 27 literal open (not historical edition normalized/fixed point). MS-MSRP original 2017 revision10.3 audited; MS-DMRP 2017 revision8.2 original still missing. Historical target editions, external RFC/ISO/IETF/ITU/W3C normative closure, independent shortest-stage and actual SfB2019 Windows Full Client feature/build/policy/role applicability OPEN. 0/12 Phase1 Gates PASS."
+      "blocker": "Fourth source-ID ring 86/86 categorized, 1147 directed norm references unchanged; downstream 103 full original §1.2.1 normative bibliographies with 1373 directed norm references and 384 separately informative citations. Initial 88 raw MS/MC fourth target pool 78 originals checked, one MS-ADLS §1.1 schema-only with 13 UNCLASSIFIED and 9 remaining. Separate additional transitive queue 21 literal pending sources, 30 combined raw pending (not historical editions normalized and not normative fixpoint). New source self-bibliography MS-RMPR p17 and MS-MQSD p8, preserve prior true self-cites. Exact historical MS-DMRP 2017 rev8.2 original missing. Client product feature/role/build/policy scope, external standard bibliographies, original target editions, independent shortest-tier and transitive fixed point remain OPEN. Formal phase1 0/12 gates PASS."
     },
     {
       "id": "P1-06",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "Fourth ring 86/86 source IDs classified, 1147 normative directed citations; downstream 93 original normative bibliographies, 1228 directed norm edges and 304 separately informative. Initial 88 fourth MS/MC raw targets 73 sources original-audited, one MS-ADLS schema-only, 14 remaining. Separate transitive raw IDs from 1228 norm edges 13 remaining, combined 27 literal open (not historical edition normalized/fixed point). MS-MSRP original 2017 revision10.3 audited; MS-DMRP 2017 revision8.2 original still missing. Historical target editions, external RFC/ISO/IETF/ITU/W3C normative closure, independent shortest-stage and actual SfB2019 Windows Full Client feature/build/policy/role applicability OPEN. 0/12 Phase1 Gates PASS."
+      "blocker": "Fourth source-ID ring 86/86 categorized, 1147 directed norm references unchanged; downstream 103 full original §1.2.1 normative bibliographies with 1373 directed norm references and 384 separately informative citations. Initial 88 raw MS/MC fourth target pool 78 originals checked, one MS-ADLS §1.1 schema-only with 13 UNCLASSIFIED and 9 remaining. Separate additional transitive queue 21 literal pending sources, 30 combined raw pending (not historical editions normalized and not normative fixpoint). New source self-bibliography MS-RMPR p17 and MS-MQSD p8, preserve prior true self-cites. Exact historical MS-DMRP 2017 rev8.2 original missing. Client product feature/role/build/policy scope, external standard bibliographies, original target editions, independent shortest-tier and transitive fixed point remain OPEN. Formal phase1 0/12 gates PASS."
     },
     {
       "id": "P1-09",
@@ -106,7 +106,7 @@
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "Fourth ring 86/86 source IDs classified, 1147 normative directed citations; downstream 93 original normative bibliographies, 1228 directed norm edges and 304 separately informative. Initial 88 fourth MS/MC raw targets 73 sources original-audited, one MS-ADLS schema-only, 14 remaining. Separate transitive raw IDs from 1228 norm edges 13 remaining, combined 27 literal open (not historical edition normalized/fixed point). MS-MSRP original 2017 revision10.3 audited; MS-DMRP 2017 revision8.2 original still missing. Historical target editions, external RFC/ISO/IETF/ITU/W3C normative closure, independent shortest-stage and actual SfB2019 Windows Full Client feature/build/policy/role applicability OPEN. 0/12 Phase1 Gates PASS."
+      "blocker": "Fourth source-ID ring 86/86 categorized, 1147 directed norm references unchanged; downstream 103 full original §1.2.1 normative bibliographies with 1373 directed norm references and 384 separately informative citations. Initial 88 raw MS/MC fourth target pool 78 originals checked, one MS-ADLS §1.1 schema-only with 13 UNCLASSIFIED and 9 remaining. Separate additional transitive queue 21 literal pending sources, 30 combined raw pending (not historical editions normalized and not normative fixpoint). New source self-bibliography MS-RMPR p17 and MS-MQSD p8, preserve prior true self-cites. Exact historical MS-DMRP 2017 rev8.2 original missing. Client product feature/role/build/policy scope, external standard bibliographies, original target editions, independent shortest-tier and transitive fixed point remain OPEN. Formal phase1 0/12 gates PASS."
     },
     {
       "id": "P1-11",
@@ -1489,5 +1489,18 @@
     "combined_literal_raw_ms_mc_pending": 27,
     "formal_phase1_gates_passed": 0,
     "original_pdf_binaries_in_git": false
+  },
+  "p1_03_print_ra_rights_webdav_msmq_2026_10_24": {
+    "original_pdf_sha256_checked": 10,
+    "new_normative_directed_refs": 145,
+    "new_informative_separate_refs": 80,
+    "downstream_original_source_count": 103,
+    "downstream_norm_refs": 1373,
+    "downstream_informative_refs": 384,
+    "initial_original_raw_queue_pending": 9,
+    "additional_transitive_raw_queue_pending": 21,
+    "combined_literal_open": 30,
+    "source_binaries_in_git": false,
+    "formal_phase1_gates_passed": 0
   }
 }

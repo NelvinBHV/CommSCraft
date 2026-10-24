@@ -1,0 +1,1432 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "branch": "draft/protocol-spec-analysis-2026-10-23",
+  "phase": "P1-03",
+  "scope": "FIVE_INITIAL_FOURTH_RAW_MS_MC_TARGETS_AND_FIVE_SEPARATE_DOWNSTREAM_TRANSITIVE_TARGETS",
+  "sources": [
+    {
+      "id": "MS-PAR",
+      "revision": "19.0",
+      "edition": "v20250811",
+      "published": "2025-08-11",
+      "pdf_pages": 129,
+      "pdf_bytes": 3508971,
+      "sha256": "3f1e313df78044bdbbd8b1c4202a7dc7064dd38708d38d238dfae035e8c0717e",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MS-PAR].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "C706",
+          "raw_label": "[C706]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-ERREF",
+          "raw_label": "[MS-ERREF]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-RPCE",
+          "raw_label": "[MS-RPCE]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-RPRN",
+          "raw_label": "[MS-RPRN]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-SPNG",
+          "raw_label": "[MS-SPNG]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC2781",
+          "raw_label": "[RFC2781]",
+          "pdf_page": 13
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "DEVMODE",
+          "raw_label": "[DEVMODE]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-EMFSPOOL",
+          "raw_label": "[MS-EMFSPOOL]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-SMB2",
+          "raw_label": "[MS-SMB2]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-WUSP",
+          "raw_label": "[MS-WUSP]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MSDN-AUTHN",
+          "raw_label": "[MSDN-AUTHN]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MSDN-CAB",
+          "raw_label": "[MSDN-CAB]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MSDN-INFS",
+          "raw_label": "[MSDN-INFS]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MSDN-MUI",
+          "raw_label": "[MSDN-MUI]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MSDN-PRNINF",
+          "raw_label": "[MSDN-PRNINF]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MSDN-SPOOL",
+          "raw_label": "[MSDN-SPOOL]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MSDN-UINF",
+          "raw_label": "[MSDN-UINF]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MSDN-XMLP",
+          "raw_label": "[MSDN-XMLP]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MSFT-CVE-2021-1678",
+          "raw_label": "[MSFT-CVE-2021-1678]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MSFT-PRPCBC",
+          "raw_label": "[MSFT-PRPCBC]",
+          "pdf_page": 14
+        }
+      ],
+      "normative_count": 8,
+      "informative_count": 14,
+      "original_pdf_complete_sha256_verified": true,
+      "normative_informative_heading_pages_rendered": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_build_policy_scope": "OPEN",
+      "pdf_binary_in_git": false
+    },
+    {
+      "id": "MS-RA",
+      "revision": "18.0",
+      "edition": "v20260113",
+      "published": "2026-01-13",
+      "pdf_pages": 90,
+      "pdf_bytes": 3761518,
+      "sha256": "03dd4aebc6c55296df3129f736cb607200f50501c5e7a2699e53e382e32347ea",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MS-RA].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-PNRP",
+          "raw_label": "[MS-PNRP]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-RAIOP",
+          "raw_label": "[MS-RAIOP]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-RAI",
+          "raw_label": "[MS-RAI]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-RDPBCGR",
+          "raw_label": "[MS-RDPBCGR]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-RDPEGDI",
+          "raw_label": "[MS-RDPEGDI]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-RDPEMC",
+          "raw_label": "[MS-RDPEMC]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC793",
+          "raw_label": "[RFC793]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC8017",
+          "raw_label": "[RFC8017]",
+          "pdf_page": 10
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MSDN-RTC",
+          "raw_label": "[MSDN-RTC]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSKB-5073379",
+          "raw_label": "[MSKB-5073379]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSKB-5073450",
+          "raw_label": "[MSKB-5073450]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSKB-5073455",
+          "raw_label": "[MSKB-5073455]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSKB-5073457",
+          "raw_label": "[MSKB-5073457]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSKB-5073695",
+          "raw_label": "[MSKB-5073695]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSKB-5073696",
+          "raw_label": "[MSKB-5073696]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSKB-5073698",
+          "raw_label": "[MSKB-5073698]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSKB-5073722",
+          "raw_label": "[MSKB-5073722]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSKB-5073723",
+          "raw_label": "[MSKB-5073723]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSKB-5073724",
+          "raw_label": "[MSKB-5073724]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSKB-5074109",
+          "raw_label": "[MSKB-5074109]",
+          "pdf_page": 11
+        }
+      ],
+      "normative_count": 10,
+      "informative_count": 12,
+      "original_pdf_complete_sha256_verified": true,
+      "normative_informative_heading_pages_rendered": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_build_policy_scope": "OPEN",
+      "pdf_binary_in_git": false
+    },
+    {
+      "id": "MS-RMPR",
+      "revision": "41.0",
+      "edition": "v20240423",
+      "published": "2024-04-23",
+      "pdf_pages": 220,
+      "pdf_bytes": 6837093,
+      "sha256": "37306e4ae6d5239924cffc8058a6fc7ad85df12323d78094c316c375c05ef060",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MS-RMPR].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "DIME",
+          "raw_label": "[DIME]",
+          "pdf_page": 16
+        },
+        {
+          "target": "FIPS180-2",
+          "raw_label": "[FIPS180-2]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-ADA1",
+          "raw_label": "[MS-ADA1]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-ADA2",
+          "raw_label": "[MS-ADA2]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-ADA3",
+          "raw_label": "[MS-ADA3]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-ADSC",
+          "raw_label": "[MS-ADSC]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-KILE",
+          "raw_label": "[MS-KILE]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-MWBE",
+          "raw_label": "[MS-MWBE]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-MWBF",
+          "raw_label": "[MS-MWBF]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-NLMP",
+          "raw_label": "[MS-NLMP]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-NTHT",
+          "raw_label": "[MS-NTHT]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-PAC",
+          "raw_label": "[MS-PAC]",
+          "pdf_page": 17
+        },
+        {
+          "target": "MS-RMPRS",
+          "raw_label": "[MS-RMPRS]",
+          "pdf_page": 17
+        },
+        {
+          "target": "MS-RMPR",
+          "raw_label": "[MS-RMPR]",
+          "pdf_page": 17
+        },
+        {
+          "target": "MS-RMSI",
+          "raw_label": "[MS-RMSI]",
+          "pdf_page": 17
+        },
+        {
+          "target": "MS-WKST",
+          "raw_label": "[MS-WKST]",
+          "pdf_page": 17
+        },
+        {
+          "target": "NTLM",
+          "raw_label": "[NTLM]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC2616",
+          "raw_label": "[RFC2616]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC2743",
+          "raw_label": "[RFC2743]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC3377",
+          "raw_label": "[RFC3377]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC4178",
+          "raw_label": "[RFC4178]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC4559",
+          "raw_label": "[RFC4559]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC8017",
+          "raw_label": "[RFC8017]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC822",
+          "raw_label": "[RFC822]",
+          "pdf_page": 17
+        },
+        {
+          "target": "SOAP1.1",
+          "raw_label": "[SOAP1.1]",
+          "pdf_page": 17
+        },
+        {
+          "target": "SOAP1.2/1",
+          "raw_label": "[SOAP1.2/1]",
+          "pdf_page": 17
+        },
+        {
+          "target": "SOAP1.2/2",
+          "raw_label": "[SOAP1.2/2]",
+          "pdf_page": 17
+        },
+        {
+          "target": "UNICODENORMFORMS",
+          "raw_label": "[UNICODENORMFORMS]",
+          "pdf_page": 17
+        },
+        {
+          "target": "WSDLExt",
+          "raw_label": "[WSDLExt]",
+          "pdf_page": 17
+        },
+        {
+          "target": "WSDL",
+          "raw_label": "[WSDL]",
+          "pdf_page": 17
+        },
+        {
+          "target": "XMLNS",
+          "raw_label": "[XMLNS]",
+          "pdf_page": 18
+        },
+        {
+          "target": "XMLSCHEMA1",
+          "raw_label": "[XMLSCHEMA1]",
+          "pdf_page": 18
+        },
+        {
+          "target": "XMLSCHEMA2",
+          "raw_label": "[XMLSCHEMA2]",
+          "pdf_page": 18
+        },
+        {
+          "target": "XRML",
+          "raw_label": "[XRML]",
+          "pdf_page": 18
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "ECMA-335",
+          "raw_label": "[ECMA-335]",
+          "pdf_page": 18
+        },
+        {
+          "target": "MS-ADTS",
+          "raw_label": "[MS-ADTS]",
+          "pdf_page": 18
+        },
+        {
+          "target": "MS-LSAT",
+          "raw_label": "[MS-LSAT]",
+          "pdf_page": 18
+        },
+        {
+          "target": "MSDN-TaskSch",
+          "raw_label": "[MSDN-TaskSch]",
+          "pdf_page": 18
+        },
+        {
+          "target": "RFC2251",
+          "raw_label": "[RFC2251]",
+          "pdf_page": 18
+        }
+      ],
+      "normative_count": 36,
+      "informative_count": 5,
+      "original_pdf_complete_sha256_verified": true,
+      "normative_informative_heading_pages_rendered": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_build_policy_scope": "OPEN",
+      "pdf_binary_in_git": false
+    },
+    {
+      "id": "MS-WSSHP",
+      "revision": "17.0",
+      "edition": "v20240820",
+      "published": "2024-08-20",
+      "pdf_pages": 33,
+      "pdf_bytes": 1297007,
+      "sha256": "c36cb2a014173a076b13f087f9136681e3b0120fedb8fbd97a8cec8ad548aff2",
+      "original_archive": "SharePointProtocols.zip",
+      "original_archive_member": "[MS-WSSHP].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-FSSHTTP",
+          "raw_label": "[MS-FSSHTTP]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-WDV",
+          "raw_label": "[MS-WDV]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-WSSFO2",
+          "raw_label": "[MS-WSSFO2]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2046",
+          "raw_label": "[RFC2046]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2183",
+          "raw_label": "[RFC2183]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2246",
+          "raw_label": "[RFC2246]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2518",
+          "raw_label": "[RFC2518]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2557",
+          "raw_label": "[RFC2557]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2616",
+          "raw_label": "[RFC2616]",
+          "pdf_page": 8
+        },
+        {
+          "target": "SOAP1.1",
+          "raw_label": "[SOAP1.1]",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MC-FPSEWM",
+          "raw_label": "[MC-FPSEWM]",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 11,
+      "informative_count": 1,
+      "original_pdf_complete_sha256_verified": true,
+      "normative_informative_heading_pages_rendered": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_build_policy_scope": "OPEN",
+      "pdf_binary_in_git": false
+    },
+    {
+      "id": "MS-XWDCAL",
+      "revision": "4.7",
+      "edition": "v20170620",
+      "published": "2017-06-20",
+      "pdf_pages": 76,
+      "pdf_bytes": 2580310,
+      "sha256": "0beeac415e5d287f4c9d729286180f8452312013f3eee9be7ed1483fff375355",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-XWDCAL].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "ISO-8601",
+          "raw_label": "[ISO-8601]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-MEETS",
+          "raw_label": "[MS-MEETS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCFOLD",
+          "raw_label": "[MS-OXCFOLD]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCFXICS",
+          "raw_label": "[MS-OXCFXICS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCICAL",
+          "raw_label": "[MS-OXCICAL]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCMAIL",
+          "raw_label": "[MS-OXCMAIL]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXOCAL",
+          "raw_label": "[MS-OXOCAL]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXOCNTC",
+          "raw_label": "[MS-OXOCNTC]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXOFLAG",
+          "raw_label": "[MS-OXOFLAG]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXORMDR",
+          "raw_label": "[MS-OXORMDR]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-WDVME",
+          "raw_label": "[MS-WDVME]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-WDVSE",
+          "raw_label": "[MS-WDVSE]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC1522",
+          "raw_label": "[RFC1522]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC2068",
+          "raw_label": "[RFC2068]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC20",
+          "raw_label": "[RFC20]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC2445",
+          "raw_label": "[RFC2445]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC2447",
+          "raw_label": "[RFC2447]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC2518",
+          "raw_label": "[RFC2518]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC2818",
+          "raw_label": "[RFC2818]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC3744",
+          "raw_label": "[RFC3744]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC822",
+          "raw_label": "[RFC822]",
+          "pdf_page": 12
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-WDV",
+          "raw_label": "[MS-WDV]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-XWDVSEC",
+          "raw_label": "[MS-XWDVSEC]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSDN-CESHU",
+          "raw_label": "[MSDN-CESHU]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC2291",
+          "raw_label": "[RFC2291]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC4791",
+          "raw_label": "[RFC4791]",
+          "pdf_page": 13
+        }
+      ],
+      "normative_count": 25,
+      "informative_count": 7,
+      "original_pdf_complete_sha256_verified": true,
+      "normative_informative_heading_pages_rendered": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_build_policy_scope": "OPEN",
+      "pdf_binary_in_git": false
+    },
+    {
+      "id": "MS-EVEN6",
+      "revision": "25.0",
+      "edition": "v20240423",
+      "published": "2024-04-23",
+      "pdf_pages": 161,
+      "pdf_bytes": 3811944,
+      "sha256": "37ba28499c3dc0b37d712ce1199a58f9e97a7e7c3f49ca5d8bcd2a99baefbb94",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MS-EVEN6].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "C706",
+          "raw_label": "[C706]",
+          "pdf_page": 10
+        },
+        {
+          "target": "ISO/IEC-8859-1",
+          "raw_label": "[ISO/IEC-8859-1]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-ERREF",
+          "raw_label": "[MS-ERREF]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-EVEN",
+          "raw_label": "[MS-EVEN]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-GPSI",
+          "raw_label": "[MS-GPSI]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-KILE",
+          "raw_label": "[MS-KILE]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-LSAD",
+          "raw_label": "[MS-LSAD]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-NLMP",
+          "raw_label": "[MS-NLMP]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-RPCE",
+          "raw_label": "[MS-RPCE]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-SPNG",
+          "raw_label": "[MS-SPNG]",
+          "pdf_page": 10
+        },
+        {
+          "target": "PRA-CreateDirectory",
+          "raw_label": "[PRA-CreateDirectory]",
+          "pdf_page": 10
+        },
+        {
+          "target": "PRA-CreateFile",
+          "raw_label": "[PRA-CreateFile]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC3986",
+          "raw_label": "[RFC3986]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC4122",
+          "raw_label": "[RFC4122]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC4234",
+          "raw_label": "[RFC4234]",
+          "pdf_page": 11
+        },
+        {
+          "target": "UNICODE",
+          "raw_label": "[UNICODE]",
+          "pdf_page": 11
+        },
+        {
+          "target": "XML10",
+          "raw_label": "[XML10]",
+          "pdf_page": 11
+        },
+        {
+          "target": "XMLSCHEMA2/2",
+          "raw_label": "[XMLSCHEMA2/2]",
+          "pdf_page": 11
+        },
+        {
+          "target": "XPATH",
+          "raw_label": "[XPATH]",
+          "pdf_page": 11
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MSDN-BNDHNDLS",
+          "raw_label": "[MSDN-BNDHNDLS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-CH",
+          "raw_label": "[MSDN-CH]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-CONSUMEVTS",
+          "raw_label": "[MSDN-CONSUMEVTS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-CreateFile",
+          "raw_label": "[MSDN-CreateFile]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-EVENTRECORD",
+          "raw_label": "[MSDN-EVENTRECORD]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-EVENTS",
+          "raw_label": "[MSDN-EVENTS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-EVENT",
+          "raw_label": "[MSDN-EVENT]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-EVENT_DESCRIPTOR",
+          "raw_label": "[MSDN-EVENT_DESCRIPTOR]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-EVENT_HEADER",
+          "raw_label": "[MSDN-EVENT_HEADER]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-EvntManifestSE",
+          "raw_label": "[MSDN-EvntManifestSE]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-EVTLGCHWINEVTLG",
+          "raw_label": "[MSDN-EVTLGCHWINEVTLG]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-EVTSCT",
+          "raw_label": "[MSDN-EVTSCT]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-EVTSST",
+          "raw_label": "[MSDN-EVTSST]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-FILEATT",
+          "raw_label": "[MSDN-FILEATT]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MSDN-FMT",
+          "raw_label": "[MSDN-FMT]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSDN-GETTHDPREUILANG",
+          "raw_label": "[MSDN-GETTHDPREUILANG]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSDN-MUIResrcMgmt",
+          "raw_label": "[MSDN-MUIResrcMgmt]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSDN-ProcessTrace",
+          "raw_label": "[MSDN-ProcessTrace]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSDN-ProvEvts",
+          "raw_label": "[MSDN-ProvEvts]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSDN-RpcAsyncCompleteCall",
+          "raw_label": "[MSDN-RpcAsyncCompleteCall]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSDN-stringTable",
+          "raw_label": "[MSDN-stringTable]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSDN-WAIM",
+          "raw_label": "[MSDN-WAIM]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSDN-WPPST",
+          "raw_label": "[MSDN-WPPST]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSFT-CVE-2021-31958",
+          "raw_label": "[MSFT-CVE-2021-31958]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSKB-113996",
+          "raw_label": "[MSKB-113996]",
+          "pdf_page": 12
+        },
+        {
+          "target": "PE-COFF",
+          "raw_label": "[PE-COFF]",
+          "pdf_page": 12
+        }
+      ],
+      "normative_count": 21,
+      "informative_count": 26,
+      "original_pdf_complete_sha256_verified": true,
+      "normative_informative_heading_pages_rendered": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_build_policy_scope": "OPEN",
+      "pdf_binary_in_git": false
+    },
+    {
+      "id": "MS-GPNAP",
+      "revision": "7.0",
+      "edition": "v20170601",
+      "published": "2017-06-01",
+      "pdf_pages": 35,
+      "pdf_bytes": 1189040,
+      "sha256": "829ace9e3e4ebdc9bf56e988f17c0c14fed5a49a4dd0cd7d52f16eb633ccb9df",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MS-GPNAP].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-DHCPN",
+          "raw_label": "[MS-DHCPN]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-GPOL",
+          "raw_label": "[MS-GPOL]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-GPREG",
+          "raw_label": "[MS-GPREG]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-HCEP",
+          "raw_label": "[MS-HCEP]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-LCID",
+          "raw_label": "[MS-LCID]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-PEAP",
+          "raw_label": "[MS-PEAP]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-TSGU",
+          "raw_label": "[MS-TSGU]",
+          "pdf_page": 9
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 9
+        },
+        {
+          "target": "RFC2616",
+          "raw_label": "[RFC2616]",
+          "pdf_page": 9
+        },
+        {
+          "target": "RFC2782",
+          "raw_label": "[RFC2782]",
+          "pdf_page": 9
+        },
+        {
+          "target": "RFC2818",
+          "raw_label": "[RFC2818]",
+          "pdf_page": 9
+        },
+        {
+          "target": "RFC2986",
+          "raw_label": "[RFC2986]",
+          "pdf_page": 9
+        },
+        {
+          "target": "RFC3174",
+          "raw_label": "[RFC3174]",
+          "pdf_page": 9
+        },
+        {
+          "target": "RFC3447",
+          "raw_label": "[RFC3447]",
+          "pdf_page": 9
+        },
+        {
+          "target": "TNC-IF-TNCCSPBSoH",
+          "raw_label": "[TNC-IF-TNCCSPBSoH]",
+          "pdf_page": 9
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-NAPOD",
+          "raw_label": "[MS-NAPOD]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MSDN-ALG",
+          "raw_label": "[MSDN-ALG]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MSDN-CSP",
+          "raw_label": "[MSDN-CSP]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MSDN-DHCP",
+          "raw_label": "[MSDN-DHCP]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MSDN-NAP",
+          "raw_label": "[MSDN-NAP]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MSDN-RAS",
+          "raw_label": "[MSDN-RAS]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MSDN-SC",
+          "raw_label": "[MSDN-SC]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MSFT-IPSEC",
+          "raw_label": "[MSFT-IPSEC]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MSFT-NAPIPSEC",
+          "raw_label": "[MSFT-NAPIPSEC]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MSFT-RDG",
+          "raw_label": "[MSFT-RDG]",
+          "pdf_page": 9
+        }
+      ],
+      "normative_count": 16,
+      "informative_count": 10,
+      "original_pdf_complete_sha256_verified": true,
+      "normative_informative_heading_pages_rendered": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_build_policy_scope": "OPEN",
+      "pdf_binary_in_git": false
+    },
+    {
+      "id": "MS-MQSD",
+      "revision": "13.0",
+      "edition": "v20170601",
+      "published": "2017-06-01",
+      "pdf_pages": 29,
+      "pdf_bytes": 1135832,
+      "sha256": "a058ed3014e6641957aeb8fc29accc09557e7c222362a3315ebc96201247835d",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MS-MQSD].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "IANAPORT",
+          "raw_label": "[IANAPORT]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-ADTS",
+          "raw_label": "[MS-ADTS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-MQDMPR",
+          "raw_label": "[MS-MQDMPR]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-MQDSSM",
+          "raw_label": "[MS-MQDSSM]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-MQDS",
+          "raw_label": "[MS-MQDS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-MQMP",
+          "raw_label": "[MS-MQMP]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-MQSD",
+          "raw_label": "[MS-MQSD]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-MQOD",
+          "raw_label": "[MS-MQOD]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MSDN-RAS3",
+          "raw_label": "[MSDN-RAS3]",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 9,
+      "informative_count": 2,
+      "original_pdf_complete_sha256_verified": true,
+      "normative_informative_heading_pages_rendered": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_build_policy_scope": "OPEN",
+      "pdf_binary_in_git": false
+    },
+    {
+      "id": "MS-WDV",
+      "revision": "21.0",
+      "edition": "v20240423",
+      "published": "2024-04-23",
+      "pdf_pages": 34,
+      "pdf_bytes": 1229299,
+      "sha256": "5841a14158967422fba507efa7a66a0a3a54295f1b5702799dbc35685d3741a2",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MS-WDV].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2246",
+          "raw_label": "[RFC2246]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2616",
+          "raw_label": "[RFC2616]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2818",
+          "raw_label": "[RFC2818]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC3986",
+          "raw_label": "[RFC3986]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC4918",
+          "raw_label": "[RFC4918]",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MSASP",
+          "raw_label": "[MSASP]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MSDN-STC",
+          "raw_label": "[MSDN-STC]",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 6,
+      "informative_count": 2,
+      "original_pdf_complete_sha256_verified": true,
+      "normative_informative_heading_pages_rendered": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_build_policy_scope": "OPEN",
+      "pdf_binary_in_git": false
+    },
+    {
+      "id": "MS-TIPP",
+      "revision": "18.0",
+      "edition": "v20240423",
+      "published": "2024-04-23",
+      "pdf_pages": 85,
+      "pdf_bytes": 2658355,
+      "sha256": "dfcd196db47592043528a48a26625163930d6dfc91f4901dfdf8c0e73bbe0058",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MS-TIPP].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-DTCO",
+          "raw_label": "[MS-DTCO]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC2371",
+          "raw_label": "[RFC2371]",
+          "pdf_page": 10
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "RFC2372",
+          "raw_label": "[RFC2372]",
+          "pdf_page": 10
+        }
+      ],
+      "normative_count": 3,
+      "informative_count": 1,
+      "original_pdf_complete_sha256_verified": true,
+      "normative_informative_heading_pages_rendered": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_build_policy_scope": "OPEN",
+      "pdf_binary_in_git": false
+    }
+  ],
+  "source_count": 10,
+  "added_normative_edges": 145,
+  "added_informative_refs_separate": 80,
+  "existing_original_downstream_sources": 93,
+  "after_original_downstream_sources": 103,
+  "existing_normative_downstream_edges": 1228,
+  "after_normative_downstream_edges": 1373,
+  "existing_informative_downstream_refs": 304,
+  "after_informative_downstream_refs": 384,
+  "initial_target_sources_audited_this_batch": 5,
+  "emergent_transitive_sources_audited_this_batch": 5,
+  "verified_pdf_binary_sha256_count": 10,
+  "source_archives": [
+    "Windows_Protocols.tar.xz",
+    "Exchange_Protocols.zip",
+    "SharePointProtocols.zip"
+  ],
+  "source_pdfs_user_custody": true,
+  "pdf_binaries_in_git": false,
+  "earlier_normative_rings_unchanged": [
+    464,
+    246,
+    827,
+    1147
+  ],
+  "normative_self_citations": [
+    {
+      "source": "MS-RMPR",
+      "target": "MS-RMPR",
+      "original_pdf_page": 17,
+      "edition": "v20240423"
+    },
+    {
+      "source": "MS-MQSD",
+      "target": "MS-MQSD",
+      "original_pdf_page": 8,
+      "edition": "v20170601"
+    }
+  ],
+  "classification_examples": [
+    {
+      "source": "MS-WSSHP",
+      "target": "MS-WDV",
+      "reference_type": "NORMATIVE",
+      "page": 8
+    },
+    {
+      "source": "MS-XWDCAL",
+      "target": "MS-WDV",
+      "reference_type": "INFORMATIVE",
+      "page": 12
+    }
+  ],
+  "next_stage_shortest_distance_proven": false,
+  "historical_target_editions_reconciled": false,
+  "external_normative_closure_proven": false,
+  "skype_for_business_2019_windows_full_client_scope_proven": false,
+  "phase1_gates_passed": 0
+}
