@@ -3,26 +3,28 @@
   "reviewed": "2026-10-23",
   "branch": "draft/protocol-spec-analysis-2026-10-23",
   "baseline_head": "8d5b9be9ac0f54d3bca0558a8de0b1367792ba06",
-  "status": "PHASE_1_INCOMPLETE",
+  "status": "PHASE_1_INCOMPLETE_WITH_NEW_ORIGINAL_EVIDENCE",
   "implementation_approval": false,
   "source_counts": {
     "overview_documents": 46,
-    "overview_exact_release_sections": 13,
-    "overview_unmatched_html": 33,
-    "overview_sha256_historically_verified": 1,
+    "overview_exact_release_sections": 16,
+    "overview_unmatched_html": 30,
+    "overview_sha256_historically_verified": 4,
     "first_normative_edges": 460,
     "first_unique_targets": 199,
     "first_informative_edges": 5,
     "second_sources": 12,
-    "second_full_html": 11,
-    "second_search_excerpt_only": 1,
-    "second_release_sections_verified": 0,
+    "second_full_html": 8,
+    "second_search_excerpt_only": 0,
+    "second_release_sections_verified": 4,
     "second_edges": 246,
     "second_unique_targets": 183,
     "second_frontier": 146,
     "both_ms_target_union": 345,
     "rfc_seed": 113,
-    "additional_rfc_first_hop": 35
+    "additional_rfc_first_hop": 35,
+    "immediate_58_source_originals_sha256_verified": 8,
+    "extra_ms_ocsprot_overview_original_sha256_verified": 1
   },
   "pass_count": 0,
   "gate_count": 12,
@@ -30,12 +32,12 @@
     {
       "id": "P1-01",
       "passed": false,
-      "blocker": "33 overview HTML lists missing published-edition §1.2.1 PDF comparison"
+      "blocker": "Remaining 30 overview exact edition PDF sections not verified (three additional PDFs now verified)"
     },
     {
       "id": "P1-02",
       "passed": false,
-      "blocker": "All required original files with hashes, revisions and diffs not acquired; only MS-AVEDGEA historically hashed"
+      "blocker": "8/58 source full originals SHA256 verified (7 new + historical MS-AVEDGEA); other 50 and version diffs missing; MS-OCSPROT overview separately hashed"
     },
     {
       "id": "P1-03",
@@ -70,7 +72,7 @@
     {
       "id": "P1-09",
       "passed": false,
-      "blocker": "0/12 second-ring Microsoft sources matched to exact release PDF; MS-RDPEMC only indexed excerpt"
+      "blocker": "4/12 additional Microsoft exact release PDF reference sections verified (MS-SIP/KILE/NLMP/RDPEMC), 8 remaining HTML-only"
     },
     {
       "id": "P1-10",
@@ -96,12 +98,17 @@
       "release_date": "2025-08-19",
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-abs/ddc59abf-1f42-4935-9b72-5314665dbcff",
       "section": "§1.2.1",
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "ORIGINAL_VERIFIED_RECURSION_AND_CLIENT_SCOPE_OPEN",
+      "full_original_pdf_sha256": "e1c0e5f791bbb803d70d1de587773d02ae8e28921e98502340beb9379132b1e4",
+      "full_original_pdf_bytes": 3010562,
+      "full_original_pdf_pages": 79,
+      "section_reference_page": 9,
+      "release_pdf_references_match_ledger": true
     },
     {
       "id": "MS-DLX",
@@ -236,12 +243,17 @@
       "release_date": "2025-05-20",
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/ba3e9821-fa85-4e0f-a80c-5a4c720a00bd",
       "section": "§1.2.1",
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "ORIGINAL_VERIFIED_RECURSION_AND_CLIENT_SCOPE_OPEN",
+      "full_original_pdf_sha256": "6f0337a593233162401f0265e5425ad38d839174d1f78b8031405c5c7de64836",
+      "full_original_pdf_bytes": 1875611,
+      "full_original_pdf_pages": 59,
+      "section_reference_page": 10,
+      "release_pdf_references_match_ledger": true
     },
     {
       "id": "MS-SIPRE",
@@ -264,12 +276,17 @@
       "release_date": "2025-08-19",
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/21acf797-984c-48ce-97e3-c7df5c776b3d",
       "section": "§1.2.1",
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "ORIGINAL_VERIFIED_RECURSION_AND_CLIENT_SCOPE_OPEN",
+      "full_original_pdf_sha256": "597a3192b46a713d23c59ccfdaaa62b2d1a2a54341eb7f4c5a5299222d699608",
+      "full_original_pdf_bytes": 3301629,
+      "full_original_pdf_pages": 134,
+      "section_reference_page": 12,
+      "release_pdf_references_match_ledger": true
     },
     {
       "id": "MS-RGSWS",
@@ -756,12 +773,17 @@
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-kile/",
       "section": "§1.2.1",
       "live_list_complete": true,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "ORIGINAL_VERIFIED_RECURSION_AND_CLIENT_SCOPE_OPEN",
+      "full_original_pdf_sha256": "8d172e6fb7b760812fba2e41b1bb591dc80fcfce441419153cc93622456e7a01",
+      "full_original_pdf_bytes": 2892199,
+      "full_original_pdf_pages": 91,
+      "section_reference_page": 12,
+      "release_pdf_references_match_ledger": true
     },
     {
       "id": "MS-NLMP",
@@ -771,12 +793,17 @@
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/b38c36ed-2804-4868-a9ff-8dd3182128e4",
       "section": "§1.2.1",
       "live_list_complete": true,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "ORIGINAL_VERIFIED_RECURSION_AND_CLIENT_SCOPE_OPEN",
+      "full_original_pdf_sha256": "00fe14a058134aabf6a6db1bcc1c47b8d45f0656ef7de610c03712906a945a27",
+      "full_original_pdf_bytes": 3032203,
+      "full_original_pdf_pages": 99,
+      "section_reference_page": 12,
+      "release_pdf_references_match_ledger": true
     },
     {
       "id": "MS-OAUTH2EX",
@@ -830,13 +857,18 @@
       "release_date": "2024-04-23",
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpemc/1c867b2b-40b8-459a-9af6-906b6e0096fc",
       "section": "§1.2.1",
-      "live_list_complete": false,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "live_list_complete": true,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "ORIGINAL_VERIFIED_RECURSION_AND_CLIENT_SCOPE_OPEN",
+      "full_original_pdf_sha256": "17658ee28cef61d0ba11beb69be0e1fbe9e0b0f6aa7c146d5bc4100f64c0985b",
+      "full_original_pdf_bytes": 1698642,
+      "full_original_pdf_pages": 41,
+      "section_reference_page": 9,
+      "release_pdf_references_match_ledger": true
     },
     {
       "id": "MS-SDP",
@@ -861,12 +893,17 @@
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/MS-SIP/0d72fb55-12ba-49f1-850d-f0bf3110bb1f",
       "section": "§1.2.1",
       "live_list_complete": true,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "ORIGINAL_VERIFIED_RECURSION_AND_CLIENT_SCOPE_OPEN",
+      "full_original_pdf_sha256": "6ee1c16c922b7c154373572d5a3341139aaf6d91922a35468581a209f68e9e52",
+      "full_original_pdf_bytes": 2709399,
+      "full_original_pdf_pages": 93,
+      "section_reference_page": 10,
+      "release_pdf_references_match_ledger": true
     },
     {
       "id": "MS-WCCE",

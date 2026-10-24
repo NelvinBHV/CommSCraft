@@ -30,9 +30,9 @@
     "ms_ocsprot_overview_groups": 6,
     "overview_ms_documents_with_latest_published_metadata": 46,
     "overview_ms_documents_with_direct_1_2_1_lists_examined_in_some_form": 46,
-    "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 13,
-    "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 33,
-    "complete_original_pdfs_received_and_sha256_verified": 1,
+    "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 16,
+    "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 30,
+    "complete_original_pdfs_received_and_sha256_verified": 9,
     "first_tier_normative_reference_edges": 460,
     "first_tier_distinct_target_identifiers": 199,
     "ms_normative_edges": 120,
@@ -45,7 +45,9 @@
     "additional_direct_cross_library_microsoft_documents_latest_version_identified": 12,
     "baseline_feature_ids": 122,
     "baseline_windows_reference_cases": 93,
-    "baseline_feature_ids_without_direct_reference_case": 31
+    "baseline_feature_ids_without_direct_reference_case": 31,
+    "transitive_ms_current_release_pdf_reference_sections_verified": 4,
+    "transitive_ms_missing_release_pdf_reference_sections": 8
   },
   "source_provenance": {
     "ms_avedgea": {
@@ -70,13 +72,22 @@
       "rfc-inventory.json": "f0b5654b60b37939c1e319f664f9d7ed626f81b4",
       "transitive-microsoft-inventory.json": "eaba8be61534e499f36d659a7cd76250b760d890",
       "full-122x93-traceability.md": "9e342f2151edec4e8e0c35506e73e5a0dd517f05"
+    },
+    "ms_ocsprot": {
+      "id": "MS-OCSPROT",
+      "revision": "9.0",
+      "published": "2025-05-20",
+      "pages": 73,
+      "bytes": 4927193,
+      "sha256": "b0380ba5606072eb071bd67ffa7561e12cd7e55ec9dbd23a6553558438524ff2",
+      "original_binary_only_current_session": true
     }
   },
   "open_work": [
     {
       "id": "P1-01",
       "priority": 1,
-      "task": "Reconcile all 33 HTML-only normative reference lists against exact dated published Microsoft PDF/DOCX editions; preserve mismatch/version evidence."
+      "task": "Reconcile remaining 30 overview current Microsoft original PDF §1.2.1 editions; three exact editions now verified from uploads."
     },
     {
       "id": "P1-02",
@@ -116,7 +127,7 @@
     {
       "id": "P1-09",
       "priority": 1,
-      "task": "Obtain exact published PDF/DOCX edition references for 12 second-tier MS specs (11 live HTML, MS-RDPEMC search excerpt only), compare and mark version-specific discrepancies."
+      "task": "Reconcile remaining eight transitive Microsoft exact release PDF §1.2.1 editions; MS-SIP/KILE/NLMP/RDPEMC now verified."
     },
     {
       "id": "P1-10",
@@ -270,5 +281,19 @@
     "formal_phase1_passes_unchanged": 0,
     "phase_1_complete": false,
     "implementation_authorized": false
+  },
+  "uploaded_pdfs_2026_10_24": {
+    "report": "uploaded-eight-ms-pdf-source-audit-2026-10-24.md",
+    "manifest": "uploaded-eight-ms-pdf-provenance-2026-10-24.json",
+    "uploaded_originals": 8,
+    "overview_pdf_sections_verified": 16,
+    "overview_remaining": 30,
+    "transitive_pdf_sections_verified": 4,
+    "transitive_remaining": 8,
+    "normative_targets_match_existing_edges": true,
+    "first_level_edges_unchanged": 460,
+    "second_level_edges_unchanged": 246,
+    "phase1_complete": false,
+    "formal_pass_gates": 0
   }
 }
