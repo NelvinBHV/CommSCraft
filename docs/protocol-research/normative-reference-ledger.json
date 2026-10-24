@@ -10,7 +10,9 @@
       "source": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/24cbca88-e618-4d70-979d-3c52d6ec5c04",
       "live_last_updated": "2025-08-19",
       "published_revision": "17.1",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "release_pdf_sha256": "597a3192b46a713d23c59ccfdaaa62b2d1a2a54341eb7f4c5a5299222d699608",
+      "exact_release_section_reconciled": true
     },
     {
       "id": "MS-SDPEXT",
@@ -46,7 +48,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "11.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "release_pdf_sha256": "6f0337a593233162401f0265e5425ad38d839174d1f78b8031405c5c7de64836",
+      "exact_release_section_reconciled": true
     },
     {
       "id": "MS-OCSMP",
@@ -82,7 +86,9 @@
       "live_last_updated": "2023-08-03",
       "published_revision": "10.1",
       "published_date": "2025-08-19",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "release_pdf_sha256": "e1c0e5f791bbb803d70d1de587773d02ae8e28921e98502340beb9379132b1e4",
+      "exact_release_section_reconciled": true
     },
     {
       "id": "MS-DLX",
@@ -321,7 +327,7 @@
       "target": "MS-ABS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -335,7 +341,7 @@
       "target": "MS-AVEDGEA",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -349,7 +355,7 @@
       "target": "MS-CONMGMT",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -363,7 +369,7 @@
       "target": "MS-DLX",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -377,7 +383,7 @@
       "target": "MS-E911WS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -391,7 +397,7 @@
       "target": "MS-OCER",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -405,7 +411,7 @@
       "target": "MS-PRES",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -419,7 +425,7 @@
       "target": "MS-QoE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -433,7 +439,7 @@
       "target": "MS-RGSWS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -447,7 +453,7 @@
       "target": "MS-SIPAE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -461,7 +467,7 @@
       "target": "MS-SIPRE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -475,7 +481,7 @@
       "target": "MS-SIP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -489,7 +495,7 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -503,7 +509,7 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -517,7 +523,7 @@
       "target": "RFC3265",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -531,7 +537,7 @@
       "target": "RFC950",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -545,7 +551,7 @@
       "target": "draft-ietf-sip-gruu-10",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2367,7 +2373,7 @@
       "target": "MS-CONFBAS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2381,7 +2387,7 @@
       "target": "MS-KILE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2395,7 +2401,7 @@
       "target": "MS-NLMP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2409,7 +2415,7 @@
       "target": "MS-OCAUTHWS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2423,7 +2429,7 @@
       "target": "MS-PRES",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2437,7 +2443,7 @@
       "target": "MS-SIPRE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2451,7 +2457,7 @@
       "target": "RFC2104",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2465,7 +2471,7 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2479,7 +2485,7 @@
       "target": "RFC2246",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2493,7 +2499,7 @@
       "target": "RFC2716",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2507,7 +2513,7 @@
       "target": "RFC2743",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2521,7 +2527,7 @@
       "target": "RFC2818",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2535,7 +2541,7 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2549,7 +2555,7 @@
       "target": "RFC3323",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2563,7 +2569,7 @@
       "target": "RFC3325",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2577,7 +2583,7 @@
       "target": "RFC3548",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2591,7 +2597,7 @@
       "target": "RFC3892",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2605,7 +2611,7 @@
       "target": "RFC4028",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2619,7 +2625,7 @@
       "target": "RFC4120",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2633,7 +2639,7 @@
       "target": "RFC4121",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2647,7 +2653,7 @@
       "target": "RFC4346",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2661,7 +2667,7 @@
       "target": "RFC5234",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2675,7 +2681,7 @@
       "target": "RFC5246",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -2689,7 +2695,7 @@
       "target": "NIST.FIPS.180-4",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -3239,7 +3245,7 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -3255,7 +3261,7 @@
       "target": "E164-2005",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -3271,7 +3277,7 @@
       "target": "MC-RegEx",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_UPLOADED_EXACT_EDITION_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
       "target_document_acquired": false
     },
@@ -7254,10 +7260,11 @@
     "normative_lists_still_not_verified": 0,
     "transitive_targets_unresolved": true,
     "full_rfc_update_obsolescence_graph_unresolved": true,
-    "release_bytes_captured_count": 1,
+    "release_bytes_captured_count": 4,
     "complete": false,
     "indexed_original_release_pdf_reference_pages_checked": 12,
-    "user_supplied_full_pdf_binaries_hashed": 1
+    "user_supplied_full_pdf_binaries_hashed": 4,
+    "notes_2026_10_24": "MS-ABS, MS-SIPAE, MS-SIPREGE full current edition original binaries now SHA256 verified; source-specific normative target sets match; still 30 overview HTML-only and incomplete transitive closure"
   },
   "normative_sections_verified_as_published_pdf_text": [
     {
@@ -7434,6 +7441,48 @@
       "all_five_informative_refs_extracted": true,
       "previous_release_binary_diff_reviewed": false,
       "status": "USER_UPLOAD_BINARY_HASHED_FULL_EDITION_SOURCE_CONFIRMED_REFERENCE_SECTIONS_REVIEWED"
+    },
+    {
+      "id": "MS-ABS",
+      "section": "§1.2.1",
+      "published_revision": "10.1",
+      "published_date": "2025-08-19",
+      "reference_pages": "PDF p. 9",
+      "pdf_page_count": 79,
+      "user_uploaded_original_pdf": true,
+      "original_sha256": "e1c0e5f791bbb803d70d1de587773d02ae8e28921e98502340beb9379132b1e4",
+      "original_bytes": 3010562,
+      "full_binary_sha256_verified": true,
+      "normative_targets_count": 3,
+      "status": "PUBLISHED_EXACT_EDITION_FULL_BINARY_AND_SECTION_VERIFIED"
+    },
+    {
+      "id": "MS-SIPAE",
+      "section": "§1.2.1",
+      "published_revision": "11.0",
+      "published_date": "2025-05-20",
+      "reference_pages": "PDF p. 10 ff.",
+      "pdf_page_count": 59,
+      "user_uploaded_original_pdf": true,
+      "original_sha256": "6f0337a593233162401f0265e5425ad38d839174d1f78b8031405c5c7de64836",
+      "original_bytes": 1875611,
+      "full_binary_sha256_verified": true,
+      "normative_targets_count": 24,
+      "status": "PUBLISHED_EXACT_EDITION_FULL_BINARY_AND_SECTION_VERIFIED"
+    },
+    {
+      "id": "MS-SIPREGE",
+      "section": "§1.2.1",
+      "published_revision": "17.1",
+      "published_date": "2025-08-19",
+      "reference_pages": "PDF p. 12 ff.",
+      "pdf_page_count": 134,
+      "user_uploaded_original_pdf": true,
+      "original_sha256": "597a3192b46a713d23c59ccfdaaa62b2d1a2a54341eb7f4c5a5299222d699608",
+      "original_bytes": 3301629,
+      "full_binary_sha256_verified": true,
+      "normative_targets_count": 17,
+      "status": "PUBLISHED_EXACT_EDITION_FULL_BINARY_AND_SECTION_VERIFIED"
     }
   ],
   "informative_edges": [
