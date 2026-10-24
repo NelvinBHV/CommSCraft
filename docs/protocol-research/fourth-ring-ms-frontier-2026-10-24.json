@@ -225,24 +225,14 @@
     "MS-CTA",
     "MS-DPSP",
     "MS-EMFPLUS",
-    "MS-FRS1",
     "MS-MQMQ",
     "MS-N2HT",
     "MS-PAN",
-    "MS-RAI",
-    "MS-RCMP",
-    "MS-RDPEAR",
-    "MS-RDPEDC",
-    "MS-RDPEDYC",
-    "MS-RDPEGFX",
-    "MS-RDPEUDP2",
-    "MS-RDPEVOR",
-    "MS-RPRN",
-    "MS-SAMS"
+    "MS-RAI"
   ],
-  "current_p1_03_bibliography_count": 67,
-  "current_p1_03_normative_edges": 932,
-  "p1_03_current_caveat": "86 fourth-ring MS/MC source identifiers: 67 explicit original §1.2.1 bibliographies audited (932 edges); 19 identities remain in pending source list including MS-ADLS (2018 schema-only §1.1 containing 13 UNCLASSIFIED references, no normative §1.2.1). Distinguish 13 from earlier third-ring 67 unclassified schema mentions. Client applicability/fixed point OPEN.",
+  "current_p1_03_bibliography_count": 77,
+  "current_p1_03_normative_edges": 1061,
+  "p1_03_current_caveat": "77 of 86 fourth-tier original normative §1.2.1 bibliographies examined, 1,061 directed normative edges. Nine identities remain, including schema-only MS-ADLS (only 13 general §1.1 citations UNCLASSIFIED). Fifth ring MS-SWN independent six edges; actual client obligations and full target-standard recursion are OPEN.",
   "p1_03_seven_fourth_and_one_fifth_source_batch_2026_10_24": {
     "report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
     "json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
@@ -391,5 +381,27 @@
     "general_references_unclassified_count": 13,
     "removed_from_pending_list": false,
     "reason": "Needs explicit schema-level review classification; cannot count as reviewed normative §1.2.1 because section is absent"
+  },
+  "p1_03_rdp_print_directory_2026_10_24": {
+    "audited_ids": [
+      "MS-FRS1",
+      "MS-RCMP",
+      "MS-RDPEAR",
+      "MS-RDPEDC",
+      "MS-RDPEDYC",
+      "MS-RDPEGFX",
+      "MS-RDPEUDP2",
+      "MS-RDPEVOR",
+      "MS-RPRN",
+      "MS-SAMS"
+    ],
+    "normative_additions": 129,
+    "informative_separate": 39,
+    "full_pdf_sha256_verified": 10,
+    "now_reviewed": 77,
+    "now_remaining": 9,
+    "now_normative_edges": 1061,
+    "raw_source_target_editions": "UNRECONCILED",
+    "schema_ms_adls_13_refs_still_unclassified": true
   }
 }

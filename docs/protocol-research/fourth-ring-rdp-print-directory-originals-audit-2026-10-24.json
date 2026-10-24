@@ -1,0 +1,1106 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "branch": "draft/protocol-spec-analysis-2026-10-23",
+  "ring": "FOURTH_MS_MC",
+  "source_count": 10,
+  "sources": [
+    {
+      "id": "MS-FRS1",
+      "revision": "29.0",
+      "edition": "v20240916",
+      "release_date": "2024-09-16",
+      "pdf_pages": 250,
+      "pdf_bytes": 5347139,
+      "sha256": "00fd7df3ae4d063d34387dcf47b514f9c552815eb8e83dfc4acfdc7ca00eab7f",
+      "archive": "Windows_Protocols.tar.xz",
+      "archive_member": "Windows_Protocols/[MS-FRS1].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "C706",
+          "raw_label": "[C706]",
+          "page": 14
+        },
+        {
+          "target": "MS-ADA1",
+          "raw_label": "[MS-ADA1]",
+          "page": 15
+        },
+        {
+          "target": "MS-ADA2",
+          "raw_label": "[MS-ADA2]",
+          "page": 15
+        },
+        {
+          "target": "MS-ADA3",
+          "raw_label": "[MS-ADA3]",
+          "page": 15
+        },
+        {
+          "target": "MS-ADLS",
+          "raw_label": "[MS-ADLS]",
+          "page": 15
+        },
+        {
+          "target": "MS-ADSC",
+          "raw_label": "[MS-ADSC]",
+          "page": 15
+        },
+        {
+          "target": "MS-ADTS",
+          "raw_label": "[MS-ADTS]",
+          "page": 15
+        },
+        {
+          "target": "MS-BKUP",
+          "raw_label": "[MS-BKUP]",
+          "page": 15
+        },
+        {
+          "target": "MS-DFSNM",
+          "raw_label": "[MS-DFSNM]",
+          "page": 15
+        },
+        {
+          "target": "MS-DFSRH",
+          "raw_label": "[MS-DFSRH]",
+          "page": 15
+        },
+        {
+          "target": "MS-DRSR",
+          "raw_label": "[MS-DRSR]",
+          "page": 15
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "page": 15
+        },
+        {
+          "target": "MS-ERREF",
+          "raw_label": "[MS-ERREF]",
+          "page": 15
+        },
+        {
+          "target": "MS-FRS2",
+          "raw_label": "[MS-FRS2]",
+          "page": 15
+        },
+        {
+          "target": "MS-FSCC",
+          "raw_label": "[MS-FSCC]",
+          "page": 15
+        },
+        {
+          "target": "MS-RPCE",
+          "raw_label": "[MS-RPCE]",
+          "page": 15
+        },
+        {
+          "target": "MS-RRP",
+          "raw_label": "[MS-RRP]",
+          "page": 15
+        },
+        {
+          "target": "MS-XCA",
+          "raw_label": "[MS-XCA]",
+          "page": 15
+        },
+        {
+          "target": "RFC1321",
+          "raw_label": "[RFC1321]",
+          "page": 15
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "page": 15
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "SPN",
+          "raw_label": "[SPN]",
+          "page": 15
+        }
+      ],
+      "normative_count": 20,
+      "informative_count": 1,
+      "complete_original_binary_sha256_checked": true,
+      "normative_section_rendered_and_compared": true,
+      "cited_target_edition_status": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "original_pdf_binary_committed": false
+    },
+    {
+      "id": "MS-RCMP",
+      "revision": "16.0",
+      "edition": "v20240423",
+      "release_date": "2024-04-23",
+      "pdf_pages": 24,
+      "pdf_bytes": 1011492,
+      "sha256": "2ece3a1047ed7d51a87eec4208eb10412115363f6ef5acdd917f48c94215d235",
+      "archive": "Windows_Protocols.tar.xz",
+      "archive_member": "Windows_Protocols/[MS-RCMP].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-ADA1",
+          "raw_label": "[MS-ADA1]",
+          "page": 7
+        },
+        {
+          "target": "MS-ADA3",
+          "raw_label": "[MS-ADA3]",
+          "page": 7
+        },
+        {
+          "target": "MS-ADTS",
+          "raw_label": "[MS-ADTS]",
+          "page": 7
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "page": 8
+        },
+        {
+          "target": "MS-ERREF",
+          "raw_label": "[MS-ERREF]",
+          "page": 8
+        },
+        {
+          "target": "MS-KILE",
+          "raw_label": "[MS-KILE]",
+          "page": 8
+        },
+        {
+          "target": "MS-NRPC",
+          "raw_label": "[MS-NRPC]",
+          "page": 8
+        },
+        {
+          "target": "MS-PAC",
+          "raw_label": "[MS-PAC]",
+          "page": 8
+        },
+        {
+          "target": "MS-UCODEREF",
+          "raw_label": "[MS-UCODEREF]",
+          "page": 8
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "page": 8
+        },
+        {
+          "target": "RFC4556",
+          "raw_label": "[RFC4556]",
+          "page": 8
+        },
+        {
+          "target": "RFC5280",
+          "raw_label": "[RFC5280]",
+          "page": 8
+        },
+        {
+          "target": "X509",
+          "raw_label": "[X509]",
+          "page": 8
+        },
+        {
+          "target": "X690",
+          "raw_label": "[X690]",
+          "page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "GUTMANN",
+          "raw_label": "[GUTMANN]",
+          "page": 8
+        },
+        {
+          "target": "MS-RPCE",
+          "raw_label": "[MS-RPCE]",
+          "page": 8
+        },
+        {
+          "target": "RFC2246",
+          "raw_label": "[RFC2246]",
+          "page": 8
+        },
+        {
+          "target": "RFC2716",
+          "raw_label": "[RFC2716]",
+          "page": 8
+        }
+      ],
+      "normative_count": 14,
+      "informative_count": 4,
+      "complete_original_binary_sha256_checked": true,
+      "normative_section_rendered_and_compared": true,
+      "cited_target_edition_status": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "original_pdf_binary_committed": false
+    },
+    {
+      "id": "MS-RDPEAR",
+      "revision": "10.0",
+      "edition": "v20240423",
+      "release_date": "2024-04-23",
+      "pdf_pages": 70,
+      "pdf_bytes": 1917568,
+      "sha256": "a4795c1eff7659fd7053e2fef93c6112793533b8320abe4b1e429feef227b16a",
+      "archive": "Windows_Protocols.tar.xz",
+      "archive_member": "Windows_Protocols/[MS-RDPEAR].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "C706",
+          "raw_label": "[C706]",
+          "page": 8
+        },
+        {
+          "target": "ITUX680",
+          "raw_label": "[ITUX680]",
+          "page": 8
+        },
+        {
+          "target": "KERB-PARAM",
+          "raw_label": "[KERB-PARAM]",
+          "page": 8
+        },
+        {
+          "target": "MIDLINF",
+          "raw_label": "[MIDLINF]",
+          "page": 8
+        },
+        {
+          "target": "MS-CSSP",
+          "raw_label": "[MS-CSSP]",
+          "page": 8
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "page": 8
+        },
+        {
+          "target": "MS-NLMP",
+          "raw_label": "[MS-NLMP]",
+          "page": 8
+        },
+        {
+          "target": "MS-PAC",
+          "raw_label": "[MS-PAC]",
+          "page": 9
+        },
+        {
+          "target": "MS-RDPEDYC",
+          "raw_label": "[MS-RDPEDYC]",
+          "page": 9
+        },
+        {
+          "target": "MS-RPCE",
+          "raw_label": "[MS-RPCE]",
+          "page": 9
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "page": 9
+        },
+        {
+          "target": "RFC3280",
+          "raw_label": "[RFC3280]",
+          "page": 9
+        },
+        {
+          "target": "RFC3961",
+          "raw_label": "[RFC3961]",
+          "page": 9
+        },
+        {
+          "target": "RFC3962",
+          "raw_label": "[RFC3962]",
+          "page": 9
+        },
+        {
+          "target": "RFC4120",
+          "raw_label": "[RFC4120]",
+          "page": 9
+        },
+        {
+          "target": "RFC4556",
+          "raw_label": "[RFC4556]",
+          "page": 9
+        },
+        {
+          "target": "RFC5349",
+          "raw_label": "[RFC5349]",
+          "page": 9
+        },
+        {
+          "target": "RFC6113",
+          "raw_label": "[RFC6113]",
+          "page": 9
+        },
+        {
+          "target": "RFC8017",
+          "raw_label": "[RFC8017]",
+          "page": 9
+        },
+        {
+          "target": "X690",
+          "raw_label": "[X690]",
+          "page": 9
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "DUBUISSON",
+          "raw_label": "[DUBUISSON]",
+          "page": 9
+        },
+        {
+          "target": "KERB-TICKET-LOGON",
+          "raw_label": "[KERB-TICKET-LOGON]",
+          "page": 9
+        },
+        {
+          "target": "MS-KILE",
+          "raw_label": "[MS-KILE]",
+          "page": 9
+        },
+        {
+          "target": "MS-RDPBCGR",
+          "raw_label": "[MS-RDPBCGR]",
+          "page": 9
+        },
+        {
+          "target": "MSDN-TSVC",
+          "raw_label": "[MSDN-TSVC]",
+          "page": 9
+        },
+        {
+          "target": "MSDOCS-CGP",
+          "raw_label": "[MSDOCS-CGP]",
+          "page": 9
+        }
+      ],
+      "normative_count": 20,
+      "informative_count": 6,
+      "complete_original_binary_sha256_checked": true,
+      "normative_section_rendered_and_compared": true,
+      "cited_target_edition_status": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "original_pdf_binary_committed": false
+    },
+    {
+      "id": "MS-RDPEDC",
+      "revision": "8.0",
+      "edition": "v20170601",
+      "release_date": "2017-06-01",
+      "pdf_pages": 35,
+      "pdf_bytes": 1375096,
+      "sha256": "35eab722ef79a702b9cb781eeed355623a5081fef818a038299d681a59bcd795",
+      "archive": "Windows_Protocols.tar.xz",
+      "archive_member": "Windows_Protocols/[MS-RDPEDC].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-RDPBCGR",
+          "raw_label": "[MS-RDPBCGR]",
+          "page": 7
+        },
+        {
+          "target": "MS-RDPEGDI",
+          "raw_label": "[MS-RDPEGDI]",
+          "page": 7
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "page": 7
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-RDPCR2",
+          "raw_label": "[MS-RDPCR2]",
+          "page": 7
+        },
+        {
+          "target": "MSDN-DWM-COMP",
+          "raw_label": "[MSDN-DWM-COMP]",
+          "page": 8
+        },
+        {
+          "target": "MSDN-DWM",
+          "raw_label": "[MSDN-DWM]",
+          "page": 8
+        }
+      ],
+      "normative_count": 3,
+      "informative_count": 3,
+      "complete_original_binary_sha256_checked": true,
+      "normative_section_rendered_and_compared": true,
+      "cited_target_edition_status": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "original_pdf_binary_committed": false
+    },
+    {
+      "id": "MS-RDPEDYC",
+      "revision": "21.0",
+      "edition": "v20240423",
+      "release_date": "2024-04-23",
+      "pdf_pages": 62,
+      "pdf_bytes": 2066778,
+      "sha256": "68a3a8a32e482c7dae7413c36158084efd2542dc171446fb54823485b67ec0c5",
+      "archive": "Windows_Protocols.tar.xz",
+      "archive_member": "Windows_Protocols/[MS-RDPEDYC].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "page": 9
+        },
+        {
+          "target": "MS-ERREF",
+          "raw_label": "[MS-ERREF]",
+          "page": 9
+        },
+        {
+          "target": "MS-RDPBCGR",
+          "raw_label": "[MS-RDPBCGR]",
+          "page": 9
+        },
+        {
+          "target": "MS-RDPEGFX",
+          "raw_label": "[MS-RDPEGFX]",
+          "page": 9
+        },
+        {
+          "target": "MS-RDPEMT",
+          "raw_label": "[MS-RDPEMT]",
+          "page": 9
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "page": 9
+        }
+      ],
+      "informative_references": [],
+      "normative_count": 6,
+      "informative_count": 0,
+      "complete_original_binary_sha256_checked": true,
+      "normative_section_rendered_and_compared": true,
+      "cited_target_edition_status": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "original_pdf_binary_committed": false
+    },
+    {
+      "id": "MS-RDPEGFX",
+      "revision": "19.0",
+      "edition": "v20260511",
+      "release_date": "2026-05-11",
+      "pdf_pages": 145,
+      "pdf_bytes": 5403806,
+      "sha256": "0acb3b2454deb101aee96619ef8586eca0143b9c06342c42919ba41c257f37c9",
+      "archive": "Windows_Protocols.tar.xz",
+      "archive_member": "Windows_Protocols/[MS-RDPEGFX].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "ITU-BT.709-5",
+          "raw_label": "[ITU-BT.709-5]",
+          "page": 9
+        },
+        {
+          "target": "ITU-H.264-201201",
+          "raw_label": "[ITU-H.264-201201]",
+          "page": 9
+        },
+        {
+          "target": "MS-RDPBCGR",
+          "raw_label": "[MS-RDPBCGR]",
+          "page": 9
+        },
+        {
+          "target": "MS-RDPEDYC",
+          "raw_label": "[MS-RDPEDYC]",
+          "page": 9
+        },
+        {
+          "target": "MS-RDPEGDI",
+          "raw_label": "[MS-RDPEGDI]",
+          "page": 9
+        },
+        {
+          "target": "MS-RDPERP",
+          "raw_label": "[MS-RDPERP]",
+          "page": 9
+        },
+        {
+          "target": "MS-RDPNSC",
+          "raw_label": "[MS-RDPNSC]",
+          "page": 9
+        },
+        {
+          "target": "MS-RDPRFX",
+          "raw_label": "[MS-RDPRFX]",
+          "page": 9
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "page": 9
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MSKB-5089570",
+          "raw_label": "[MSKB-5089570]",
+          "page": 9
+        },
+        {
+          "target": "MSKB-5089573",
+          "raw_label": "[MSKB-5089573]",
+          "page": 9
+        },
+        {
+          "target": "SAYOOD",
+          "raw_label": "[SAYOOD]",
+          "page": 9
+        }
+      ],
+      "normative_count": 9,
+      "informative_count": 3,
+      "complete_original_binary_sha256_checked": true,
+      "normative_section_rendered_and_compared": true,
+      "cited_target_edition_status": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "original_pdf_binary_committed": false
+    },
+    {
+      "id": "MS-RDPEUDP2",
+      "revision": "6.0",
+      "edition": "v20240423",
+      "release_date": "2024-04-23",
+      "pdf_pages": 37,
+      "pdf_bytes": 1329713,
+      "sha256": "09a87ff1fb8c5ed2ba0eaadae0b251e1c46a95b5ce576333a27cbe6bbea147ae",
+      "archive": "Windows_Protocols.tar.xz",
+      "archive_member": "Windows_Protocols/[MS-RDPEUDP2].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-RDPEUDP",
+          "raw_label": "[MS-RDPEUDP]",
+          "page": 6
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "page": 6
+        }
+      ],
+      "informative_references": [],
+      "normative_count": 2,
+      "informative_count": 0,
+      "complete_original_binary_sha256_checked": true,
+      "normative_section_rendered_and_compared": true,
+      "cited_target_edition_status": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "original_pdf_binary_committed": false
+    },
+    {
+      "id": "MS-RDPEVOR",
+      "revision": "14.0",
+      "edition": "v20240423",
+      "release_date": "2024-04-23",
+      "pdf_pages": 28,
+      "pdf_bytes": 1103881,
+      "sha256": "521f06c513441df83c748c4ecc2307b26f9b01f3e9a25d0c0f0577a74e10a9c3",
+      "archive": "Windows_Protocols.tar.xz",
+      "archive_member": "Windows_Protocols/[MS-RDPEVOR].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "ITU-BT601-7",
+          "raw_label": "[ITU-BT601-7]",
+          "page": 5
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "page": 5
+        },
+        {
+          "target": "MS-ERREF",
+          "raw_label": "[MS-ERREF]",
+          "page": 5
+        },
+        {
+          "target": "MS-RDPBCGR",
+          "raw_label": "[MS-RDPBCGR]",
+          "page": 5
+        },
+        {
+          "target": "MS-RDPEA",
+          "raw_label": "[MS-RDPEA]",
+          "page": 6
+        },
+        {
+          "target": "MS-RDPEDYC",
+          "raw_label": "[MS-RDPEDYC]",
+          "page": 6
+        },
+        {
+          "target": "MS-RDPEGFX",
+          "raw_label": "[MS-RDPEGFX]",
+          "page": 6
+        },
+        {
+          "target": "MS-RDPEGT",
+          "raw_label": "[MS-RDPEGT]",
+          "page": 6
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "page": 6
+        }
+      ],
+      "informative_references": [],
+      "normative_count": 9,
+      "informative_count": 0,
+      "complete_original_binary_sha256_checked": true,
+      "normative_section_rendered_and_compared": true,
+      "cited_target_edition_status": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "original_pdf_binary_committed": false
+    },
+    {
+      "id": "MS-RPRN",
+      "revision": "39.0",
+      "edition": "v20250811",
+      "release_date": "2025-08-11",
+      "pdf_pages": 449,
+      "pdf_bytes": 11836291,
+      "sha256": "e5bb06ca3574f90cb9a0dad7ffa688b37b75323680ac0c41973048ccaf029c29",
+      "archive": "Windows_Protocols.tar.xz",
+      "archive_member": "Windows_Protocols/[MS-RPRN].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "C706",
+          "raw_label": "[C706]",
+          "page": 22
+        },
+        {
+          "target": "IEEE1284",
+          "raw_label": "[IEEE1284]",
+          "page": 22
+        },
+        {
+          "target": "MS-ADA3",
+          "raw_label": "[MS-ADA3]",
+          "page": 22
+        },
+        {
+          "target": "MS-ADLS",
+          "raw_label": "[MS-ADLS]",
+          "page": 22
+        },
+        {
+          "target": "MS-ADSC",
+          "raw_label": "[MS-ADSC]",
+          "page": 22
+        },
+        {
+          "target": "MS-ADTS",
+          "raw_label": "[MS-ADTS]",
+          "page": 22
+        },
+        {
+          "target": "MS-DRSR",
+          "raw_label": "[MS-DRSR]",
+          "page": 22
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "page": 22
+        },
+        {
+          "target": "MS-ERREF",
+          "raw_label": "[MS-ERREF]",
+          "page": 22
+        },
+        {
+          "target": "MS-LCID",
+          "raw_label": "[MS-LCID]",
+          "page": 22
+        },
+        {
+          "target": "MS-PAR",
+          "raw_label": "[MS-PAR]",
+          "page": 22
+        },
+        {
+          "target": "MS-RAP",
+          "raw_label": "[MS-RAP]",
+          "page": 23
+        },
+        {
+          "target": "MS-RPCE",
+          "raw_label": "[MS-RPCE]",
+          "page": 23
+        },
+        {
+          "target": "MS-RRP",
+          "raw_label": "[MS-RRP]",
+          "page": 23
+        },
+        {
+          "target": "MS-SMB2",
+          "raw_label": "[MS-SMB2]",
+          "page": 23
+        },
+        {
+          "target": "MS-SMB",
+          "raw_label": "[MS-SMB]",
+          "page": 23
+        },
+        {
+          "target": "MSDN-MPD",
+          "raw_label": "[MSDN-MPD]",
+          "page": 23
+        },
+        {
+          "target": "RFC1001",
+          "raw_label": "[RFC1001]",
+          "page": 23
+        },
+        {
+          "target": "RFC1157",
+          "raw_label": "[RFC1157]",
+          "page": 23
+        },
+        {
+          "target": "RFC1179",
+          "raw_label": "[RFC1179]",
+          "page": 23
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "page": 23
+        },
+        {
+          "target": "RFC2251",
+          "raw_label": "[RFC2251]",
+          "page": 23
+        },
+        {
+          "target": "RFC2254",
+          "raw_label": "[RFC2254]",
+          "page": 23
+        },
+        {
+          "target": "RFC2616",
+          "raw_label": "[RFC2616]",
+          "page": 23
+        },
+        {
+          "target": "RFC2781",
+          "raw_label": "[RFC2781]",
+          "page": 23
+        },
+        {
+          "target": "RFC3986",
+          "raw_label": "[RFC3986]",
+          "page": 23
+        },
+        {
+          "target": "RFC4122",
+          "raw_label": "[RFC4122]",
+          "page": 23
+        },
+        {
+          "target": "RFC8010",
+          "raw_label": "[RFC8010]",
+          "page": 23
+        },
+        {
+          "target": "RFC8011",
+          "raw_label": "[RFC8011]",
+          "page": 23
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "DEVMODE",
+          "raw_label": "[DEVMODE]",
+          "page": 23
+        },
+        {
+          "target": "ECMA-388",
+          "raw_label": "[ECMA-388]",
+          "page": 23
+        },
+        {
+          "target": "IEEE-PWG",
+          "raw_label": "[IEEE-PWG]",
+          "page": 23
+        },
+        {
+          "target": "IEEE802.3-2008",
+          "raw_label": "[IEEE802.3-2008]",
+          "page": 24
+        },
+        {
+          "target": "MS-ADOD",
+          "raw_label": "[MS-ADOD]",
+          "page": 24
+        },
+        {
+          "target": "MS-AZOD",
+          "raw_label": "[MS-AZOD]",
+          "page": 24
+        },
+        {
+          "target": "MS-EMFSPOOL",
+          "raw_label": "[MS-EMFSPOOL]",
+          "page": 24
+        },
+        {
+          "target": "MS-EMF",
+          "raw_label": "[MS-EMF]",
+          "page": 24
+        },
+        {
+          "target": "MS-PAN",
+          "raw_label": "[MS-PAN]",
+          "page": 24
+        },
+        {
+          "target": "MSDN-ADOVRVW",
+          "raw_label": "[MSDN-ADOVRVW]",
+          "page": 24
+        },
+        {
+          "target": "MSDN-BIDI",
+          "raw_label": "[MSDN-BIDI]",
+          "page": 24
+        },
+        {
+          "target": "MSDN-CAB",
+          "raw_label": "[MSDN-CAB]",
+          "page": 24
+        },
+        {
+          "target": "MSDN-FIELD",
+          "raw_label": "[MSDN-FIELD]",
+          "page": 24
+        },
+        {
+          "target": "MSDN-GPDFiles",
+          "raw_label": "[MSDN-GPDFiles]",
+          "page": 24
+        },
+        {
+          "target": "MSDN-MUI",
+          "raw_label": "[MSDN-MUI]",
+          "page": 24
+        },
+        {
+          "target": "MSDN-SPOOL",
+          "raw_label": "[MSDN-SPOOL]",
+          "page": 24
+        },
+        {
+          "target": "MSDN-UINF",
+          "raw_label": "[MSDN-UINF]",
+          "page": 24
+        },
+        {
+          "target": "MSDN-XMLP",
+          "raw_label": "[MSDN-XMLP]",
+          "page": 24
+        },
+        {
+          "target": "MSFT-XMLPAPER",
+          "raw_label": "[MSFT-XMLPAPER]",
+          "page": 24
+        },
+        {
+          "target": "PS-PPD4.3",
+          "raw_label": "[PS-PPD4.3]",
+          "page": 24
+        },
+        {
+          "target": "RFC819",
+          "raw_label": "[RFC819]",
+          "page": 24
+        },
+        {
+          "target": "USBPRINT",
+          "raw_label": "[USBPRINT]",
+          "page": 24
+        }
+      ],
+      "normative_count": 29,
+      "informative_count": 22,
+      "complete_original_binary_sha256_checked": true,
+      "normative_section_rendered_and_compared": true,
+      "cited_target_edition_status": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "original_pdf_binary_committed": false
+    },
+    {
+      "id": "MS-SAMS",
+      "revision": "18.0",
+      "edition": "v20240729",
+      "release_date": "2024-07-29",
+      "pdf_pages": 38,
+      "pdf_bytes": 1471294,
+      "sha256": "c59a11780125a3a7314d15dff20d34074948e28094b7657cf4b815f582e59b99",
+      "archive": "Windows_Protocols.tar.xz",
+      "archive_member": "Windows_Protocols/[MS-SAMS].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-ADA1",
+          "raw_label": "[MS-ADA1]",
+          "page": 9
+        },
+        {
+          "target": "MS-ADA2",
+          "raw_label": "[MS-ADA2]",
+          "page": 9
+        },
+        {
+          "target": "MS-ADA3",
+          "raw_label": "[MS-ADA3]",
+          "page": 9
+        },
+        {
+          "target": "MS-ADSC",
+          "raw_label": "[MS-ADSC]",
+          "page": 9
+        },
+        {
+          "target": "MS-ADTS",
+          "raw_label": "[MS-ADTS]",
+          "page": 10
+        },
+        {
+          "target": "MS-DRSR",
+          "raw_label": "[MS-DRSR]",
+          "page": 10
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "page": 10
+        },
+        {
+          "target": "MS-ERREF",
+          "raw_label": "[MS-ERREF]",
+          "page": 10
+        },
+        {
+          "target": "MS-KILE",
+          "raw_label": "[MS-KILE]",
+          "page": 10
+        },
+        {
+          "target": "MS-LSAD",
+          "raw_label": "[MS-LSAD]",
+          "page": 10
+        },
+        {
+          "target": "MS-NRPC",
+          "raw_label": "[MS-NRPC]",
+          "page": 10
+        },
+        {
+          "target": "MS-PKCA",
+          "raw_label": "[MS-PKCA]",
+          "page": 10
+        },
+        {
+          "target": "MS-RPCE",
+          "raw_label": "[MS-RPCE]",
+          "page": 10
+        },
+        {
+          "target": "MS-SAMR",
+          "raw_label": "[MS-SAMR]",
+          "page": 10
+        },
+        {
+          "target": "MSKB-2641192",
+          "raw_label": "[MSKB-2641192]",
+          "page": 10
+        },
+        {
+          "target": "RFC1274",
+          "raw_label": "[RFC1274]",
+          "page": 10
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "page": 10
+        }
+      ],
+      "informative_references": [],
+      "normative_count": 17,
+      "informative_count": 0,
+      "complete_original_binary_sha256_checked": true,
+      "normative_section_rendered_and_compared": true,
+      "cited_target_edition_status": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "original_pdf_binary_committed": false
+    }
+  ],
+  "additional_normative_edges": 129,
+  "additional_informative_mentions_separate": 39,
+  "previous_sources_with_verified_normative_bibliographies": 67,
+  "new_sources_with_verified_normative_bibliographies": 77,
+  "remaining_fourth_frontier_source_ids": 9,
+  "prior_fourth_normative_edges": 932,
+  "now_fourth_normative_edges": 1061,
+  "prior_first_second_third_normative_edges": [
+    464,
+    246,
+    827
+  ],
+  "fifth_ring_ms_swn_normative_edges_unchanged": 6,
+  "ms_adls_schema_only_general_refs_remain_unclassified": 13,
+  "third_ring_67_schema_general_citations_unchanged": 67,
+  "edition_scope_note": "MS-RDPEGFX v20260511 is newer than Skype for Business 2019 baseline; requires build-specific relevance proof.",
+  "ms_dltm_and_ms_dltw_attached_in_session_but_not_members_of_86_fourth_source_frontier": true,
+  "client_feature_relevance": "NOT_YET_ESTABLISHED",
+  "phase1_gates_passed": 0,
+  "original_pdf_binaries_held_by_user": true,
+  "pdf_binaries_committed_to_repository": false
+}
