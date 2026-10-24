@@ -30,15 +30,15 @@
     "ms_ocsprot_overview_groups": 6,
     "overview_ms_documents_with_latest_published_metadata": 46,
     "overview_ms_documents_with_direct_1_2_1_lists_examined_in_some_form": 46,
-    "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 23,
-    "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 23,
-    "complete_original_pdfs_received_and_sha256_verified": 9,
-    "first_tier_normative_reference_edges": 460,
+    "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 46,
+    "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 0,
+    "complete_original_pdfs_received_and_sha256_verified": 74,
+    "first_tier_normative_reference_edges": 464,
     "first_tier_distinct_target_identifiers": 199,
     "ms_normative_edges": 120,
     "rfc_normative_edges": 228,
     "historical_ietf_draft_normative_edges": 29,
-    "external_normative_edges": 83,
+    "external_normative_edges": 87,
     "overview_informative_edges_separately_added_for_avedgea": 5,
     "rfc_identifiers_total_seed_plus_direct": 113,
     "rfc_identifiers_directly_cited_in_examined_lists": 89,
@@ -87,12 +87,12 @@
     {
       "id": "P1-01",
       "priority": 1,
-      "task": "Reconcile the remaining 23 MS-OCSPROT first-ring published-release §1.2.1 sections, and acquire full original binaries/hashes for the four additional web-PDF sources."
+      "task": "Reconcile normalized current-edition direct normtarget ID sets for 22 newly user-supplied first-tier PDFs after MS-E911WS four-omission fix; current exact PDF §1.2.1 page evidence exists for 46/46. P1-01 gate not yet formally passed."
     },
     {
       "id": "P1-02",
       "priority": 1,
-      "task": "Acquire and provenance-check relevant current Microsoft source originals beyond the one MS-AVEDGEA binary. Verify dated release, SHA-256, prior revisions and actual changes; report inaccessible sources."
+      "task": "Resolve private rights-compliant storage of 74 ZIP original PDF binaries (public GitHub full-document redistribution not licensed by current notice), retain SHA256, obtain missing eight second-tier published original PDFs and superseded 2025 newer ABS/SIPREGE/SSRTP versions; perform dated history diffs."
     },
     {
       "id": "P1-03",
@@ -172,7 +172,7 @@
     "transitive-frontier.json",
     "rfc-version-relations-reviewed.json"
   ],
-  "instructions_for_next_session": "Read AGENTS.md, CURRENT_STATUS.md, research-checkpoint.json latest_continuation, phase1-audit.md and last research-log entry; verify draft/main commit and calculate counts anew from two distinct ledgers; do not combine first-tier 460 with 246 into a false closed graph. Reconcile publication editions and recurse only relevant targets. Never code/test/merge/release.",
+  "instructions_for_next_session": "Read AGENTS.md, CURRENT_STATUS.md, research-checkpoint.json latest_continuation, phase1-audit.md and last research-log entry; verify draft/main commit and calculate counts anew from two distinct ledgers; do not combine first-tier 460 with 246 into a false closed graph. Reconcile publication editions and recurse only relevant targets. Never code/test/merge/release. New 2026-10-24 ZIP audit: all 46 current first-tier original PDF §1.2.1 release sections now have evidence, and E911 normative edges 460→464. Complete source target normalization, 8 second-tier originals, rights-compliant private PDF storage and SHA conflict resolution remain OPEN. Do not falsely claim PDFs were committed to public GitHub.",
   "latest_continuation": {
     "date": "2026-10-23",
     "research_iteration": "phase1-transitive-microsoft-specs-plus-selected-rfc-status",
@@ -344,5 +344,38 @@
     "network_tests_authorized": false,
     "merge_main_authorized": false,
     "releases_authorized": false
+  },
+  "user_zip_originals_2026_10_24": {
+    "zip_file": "OfficeProto.zip",
+    "zip_sha256": "27f31dc1020d284159a44cecef5233aee5856814271cbf20f4f7ee1b8dd452f8",
+    "research_report": "officeproto-zip-source-audit-2026-10-24.md",
+    "total_original_pdfs_full_file_sha256_checked": 74,
+    "total_uncompressed_pdf_bytes": 180967975,
+    "first_tier_identifiers_present": 46,
+    "first_tier_exact_current_editions_in_zip": 43,
+    "first_tier_historical_editions": [
+      "MS-ABS 10.0 (vs 10.1)",
+      "MS-SIPREGE 17.0 (vs 17.1)",
+      "MS-SSRTP 11.0 (vs 11.1)"
+    ],
+    "all_first_tier_current_edition_pdf_sections_any_source": 46,
+    "new_exact_edition_normlists": 23,
+    "prior_html_only_remaining": 0,
+    "first_tier_normative_edges_after_e911ws": 464,
+    "distinct_normative_targets_unchanged": 199,
+    "second_tier_editions_verified": 4,
+    "source_binary_zip_content_in_public_git": false,
+    "formal_gates_passed": 0,
+    "source_license_archiving_blocker": "PUBLIC_FULL_PDF_REDISTRIBUTION_NOT_AUTHORIZED_BY_DOCUMENT_NOTICE;_PRIVATE_ARCHIVE_PENDING",
+    "historical_same_revision_sha256_conflicts": [
+      "MS-AVEDGEA12.0",
+      "MS-SIPAE11.0",
+      "MS-OCSPROT9.0"
+    ],
+    "phase1_complete": false,
+    "implementation_allowed": false,
+    "interoperability_tests_allowed": false,
+    "main_merge_allowed": false,
+    "release_allowed": false
   }
 }

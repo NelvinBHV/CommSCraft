@@ -1,3 +1,5 @@
+> **Neuester Quellstand 2026-10-24:** Nutzer-ZIP mit 74 gehashten Original-PDFs; 46/46 erste Microsoft-§1.2.1-Ausgabeseiten belegt, 0 reine HTML-Quellen, 464 direkte Normkanten nach Korrektur der vier fehlenden MS-E911WS-W3C-Verweise; 199 Ziele, zweite Ebene 246 Kanten unverändert. **0/12 Abschlussgates**, Phase 1 offen. **Die Voll-PDFs wurden nicht im öffentlichen GitHub-Repository abgelegt;** sichere private Archivierung/Rechteklärung fehlt. Vollständiges Audit: [OfficeProto ZIP](officeproto-zip-source-audit-2026-10-24.md).
+
 # CommSCraft: Windows Full Client protocol research (DRAFT)
 
 **Research snapshot:** 2026-10-23. **Phase 1 check: NOT COMPLETE (46/46 MS overview first-tier normative §1.2.1 lists inventoried; 12 current PDF reference page excerpts + 1 fully uploaded SHA-256-verified MS-AVEDGEA PDF; 460 normative edges, 113 RFC seeds; recursive closure and published-release edition checks OPEN).** **Scope:** Skype for Business 2019 classic Windows desktop Full Client, SfB Server 2019 and Subscription Edition. **Status: INCOMPLETE. No implementation authorization.**

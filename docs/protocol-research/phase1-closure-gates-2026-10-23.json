@@ -3,14 +3,14 @@
   "reviewed": "2026-10-23",
   "branch": "draft/protocol-spec-analysis-2026-10-23",
   "baseline_head": "8d5b9be9ac0f54d3bca0558a8de0b1367792ba06",
-  "status": "PHASE_1_INCOMPLETE_WITH_NEW_ORIGINAL_EVIDENCE",
+  "status": "PHASE_1_INCOMPLETE_WITH_CURRENT_USER_ZIP_SOURCE_EVIDENCE_AND_E911_CORRECTION",
   "implementation_approval": false,
   "source_counts": {
     "overview_documents": 46,
-    "overview_exact_release_sections": 23,
-    "overview_unmatched_html": 23,
+    "overview_exact_release_sections": 46,
+    "overview_unmatched_html": 0,
     "overview_sha256_historically_verified": 4,
-    "first_normative_edges": 460,
+    "first_normative_edges": 464,
     "first_unique_targets": 199,
     "first_informative_edges": 5,
     "second_sources": 12,
@@ -23,8 +23,14 @@
     "both_ms_target_union": 345,
     "rfc_seed": 113,
     "additional_rfc_first_hop": 35,
-    "immediate_58_source_originals_sha256_verified": 8,
-    "extra_ms_ocsprot_overview_original_sha256_verified": 1
+    "immediate_58_source_originals_sha256_verified": 49,
+    "extra_ms_ocsprot_overview_original_sha256_verified": 1,
+    "overview_source_ids_present_in_zip": 46,
+    "zip_first_tier_current_release_pdf_files": 43,
+    "zip_first_tier_historical_release_pdf_files": 3,
+    "zip_all_pdf_full_files_hashed": 74,
+    "zip_pdf_bytes_total": 180967975,
+    "first_external_edges": 87
   },
   "pass_count": 0,
   "gate_count": 12,
@@ -32,12 +38,12 @@
     {
       "id": "P1-01",
       "passed": false,
-      "blocker": "23 overview current published-edition §1.2.1 originals still not PDF-reconciled; four added web-view PDF sections verified on 2026-10-24 without new SHA-256 binaries. Full revision history, normative recursion and client applicability OPEN."
+      "blocker": "All 46 current first-tier PDF §1.2.1 sections have source-page evidence, but individual normalized target-set semantic comparisons for 22 newly supplied bibliographies are not yet independently closed; MS-E911WS omitted four normative references, now corrected. Do not certify zero remaining discrepancies without completing this audit. ZIP files not in public repo."
     },
     {
       "id": "P1-02",
       "passed": false,
-      "blocker": "8/58 source full originals SHA256 verified (7 new + historical MS-AVEDGEA); other 50 and version diffs missing; MS-OCSPROT overview separately hashed"
+      "blocker": "74 original PDFs were SHA256 checked from a user-provided ZIP; 43 of 46 first-tier current revisions in the ZIP, three older revisions and eight missing cross-library current sources. Full PDF binaries not uploaded to the public GitHub repository; copyright/distribution disposition and past-version content diffs OPEN."
     },
     {
       "id": "P1-03",
@@ -1014,5 +1020,23 @@
     "new_edges": 0,
     "extra_full_original_hashes": 0,
     "phase1_gates_passed": 0
+  },
+  "post_zip_2026_10_24": {
+    "report": "officeproto-zip-source-audit-2026-10-24.md",
+    "zip_sha256": "27f31dc1020d284159a44cecef5233aee5856814271cbf20f4f7ee1b8dd452f8",
+    "zip_pdf_count": 74,
+    "zip_uncompressed_pdf_bytes": 180967975,
+    "first_ring_section_pages": 46,
+    "first_ring_html_only": 0,
+    "first_ring_edges": 464,
+    "new_e911ws_normative_edges": 4,
+    "first_ring_unique_targets": 199,
+    "second_ring_pdf_editions": 4,
+    "second_ring_edges": 246,
+    "formal_gates_passed": 0,
+    "public_repo_pdf_binaries_uploaded": 0,
+    "archive_license_and_private_repo_access": "OPEN",
+    "source_target_canonicalization": "OPEN",
+    "phase1_complete": false
   }
 }

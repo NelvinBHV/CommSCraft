@@ -63,7 +63,9 @@
       "live_last_updated": "2025-03-18",
       "published_revision": "7.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "42db4ba26bc94a858d7cb9a5bac1fdec226eb9b86475bd7c8820b1f8f9d30f6a"
     },
     {
       "id": "MS-CVWREST",
@@ -72,7 +74,9 @@
       "live_last_updated": "2025-05-20",
       "published_revision": "7.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99"
     },
     {
       "id": "MS-OCDISCWS",
@@ -81,7 +85,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "10.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d"
     },
     {
       "id": "MS-ABS",
@@ -101,7 +107,9 @@
       "live_last_updated": "2025-05-20",
       "published_revision": "13.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2"
     },
     {
       "id": "MS-ICE2",
@@ -110,7 +118,9 @@
       "live_last_updated": "2022-04-29",
       "published_revision": "19.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197"
     },
     {
       "id": "MS-CONFPRO",
@@ -119,7 +129,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "13.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "109d712c67003869ecd6d0012d2ca88edbc1e65c1408cbfc9e267410e04f65ed"
     },
     {
       "id": "MS-ICE2BWM",
@@ -128,7 +140,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "9.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "925570b9d13c54b1f9158a247abdb6f6d61f2b69dce8e53daef671702342e706"
     },
     {
       "id": "MS-EUMR",
@@ -137,7 +151,9 @@
       "live_last_updated": "2025-05-20",
       "published_revision": "9.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013"
     },
     {
       "id": "MS-CONFAS",
@@ -146,7 +162,9 @@
       "live_last_updated": "2019-09-24",
       "published_revision": "12.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9"
     },
     {
       "id": "MS-ICE",
@@ -155,7 +173,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "11.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "0afe5f2bed2b2728688a11c9a40cb89878cb66da4cd4ca659fe6d105c6ba39ad"
     },
     {
       "id": "MS-TURN",
@@ -175,7 +195,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "8.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "8e037aa6522e4ae5f94627abf2a90de430c64ba7b515b285f63237c64b612773"
     },
     {
       "id": "MS-CONFAV",
@@ -184,7 +206,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "11.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec"
     },
     {
       "id": "MS-TURNBWM",
@@ -193,7 +217,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "9.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "ee2638dd0dd8a842f88bda739c32d94193f0c2b70ad6c543a3400dc416d3dc77"
     },
     {
       "id": "MS-QoE",
@@ -202,7 +228,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "12.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690"
     },
     {
       "id": "MS-OCER",
@@ -211,7 +239,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "11.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "2684ac14a7260b10dbb9786530ac754fe92c5b33a149bb4a9f25c00576419098"
     },
     {
       "id": "MS-DTMF",
@@ -220,7 +250,9 @@
       "live_last_updated": "2024-04-16",
       "published_revision": "15.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "9daf8d6464abd00ffa277137f9e032b9920297262953ab6c3d5e30ae6171c363"
     },
     {
       "id": "MS-SRTP",
@@ -240,7 +272,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "11.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "b68c2386989a4997afb456d07ea7399a7223f9394cb7fedbe4d494cdd3581d77"
     },
     {
       "id": "MS-XCCOSIP",
@@ -249,7 +283,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "7.0",
       "published_date": "2024-08-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "6310f8c2b718ca4ba3b91fd31e6afe57bfff3251b38867ad46a34f9981000e9e"
     },
     {
       "id": "MS-XMLMC",
@@ -258,7 +294,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "10.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "7549ab1685dc96bfb2227e44ffe59bfb3a632a26a378433debd8d727ccd2f954"
     },
     {
       "id": "MS-CONFIM",
@@ -267,7 +305,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "11.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82"
     },
     {
       "id": "MS-OCPSTN",
@@ -276,7 +316,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "11.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "862611884cf77413e23a3a9ac4fa4cb7adc71a95389dfeb3d19e369eff1fae05"
     },
     {
       "id": "MS-SIPCOMP",
@@ -296,7 +338,9 @@
       "live_last_updated": "2025-03-18",
       "published_revision": "3.0",
       "published_date": "2018-04-27",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "cad12266be9e021ddd669b109f07091dc829a86b44e35d22efc81b9100c8f219"
     },
     {
       "id": "MS-EUMSDP",
@@ -316,7 +360,9 @@
       "live_last_updated": "2023-08-03",
       "published_revision": "9.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e"
     },
     {
       "id": "MS-H264PF",
@@ -2963,9 +3009,12 @@
       "target": "MS-OCDISCWS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "42db4ba26bc94a858d7cb9a5bac1fdec226eb9b86475bd7c8820b1f8f9d30f6a",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCSMP",
@@ -2977,9 +3026,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "42db4ba26bc94a858d7cb9a5bac1fdec226eb9b86475bd7c8820b1f8f9d30f6a",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCSMP",
@@ -2991,9 +3043,12 @@
       "target": "RFC2387",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "42db4ba26bc94a858d7cb9a5bac1fdec226eb9b86475bd7c8820b1f8f9d30f6a",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCSMP",
@@ -3005,9 +3060,12 @@
       "target": "RFC2616",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "42db4ba26bc94a858d7cb9a5bac1fdec226eb9b86475bd7c8820b1f8f9d30f6a",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCSMP",
@@ -3019,9 +3077,12 @@
       "target": "RFC2818",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "42db4ba26bc94a858d7cb9a5bac1fdec226eb9b86475bd7c8820b1f8f9d30f6a",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCSMP",
@@ -3033,9 +3094,12 @@
       "target": "XMLNS-ThirdEdition",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "42db4ba26bc94a858d7cb9a5bac1fdec226eb9b86475bd7c8820b1f8f9d30f6a",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCSMP",
@@ -3047,9 +3111,12 @@
       "target": "XMLSCHEMA1/2",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "42db4ba26bc94a858d7cb9a5bac1fdec226eb9b86475bd7c8820b1f8f9d30f6a",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCSMP",
@@ -3061,9 +3128,12 @@
       "target": "XMLSCHEMA2/2",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "42db4ba26bc94a858d7cb9a5bac1fdec226eb9b86475bd7c8820b1f8f9d30f6a",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CVWREST",
@@ -3075,9 +3145,12 @@
       "target": "MS-OCDISCWS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CVWREST",
@@ -3089,9 +3162,12 @@
       "target": "MS-OCSMP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CVWREST",
@@ -3103,9 +3179,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CVWREST",
@@ -3117,9 +3196,12 @@
       "target": "RFC2616",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CVWREST",
@@ -3131,9 +3213,12 @@
       "target": "RFC2818",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CVWREST",
@@ -3145,9 +3230,12 @@
       "target": "RFC3966",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CVWREST",
@@ -3159,9 +3247,12 @@
       "target": "XMLNS-ThirdEdition",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CVWREST",
@@ -3173,9 +3264,12 @@
       "target": "XMLSCHEMA1/2",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CVWREST",
@@ -3187,9 +3281,12 @@
       "target": "XMLSCHEMA2/2",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3201,9 +3298,12 @@
       "target": "MS-OCAUTHWS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3215,9 +3315,12 @@
       "target": "MS-OCSMP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3229,9 +3332,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3243,9 +3349,12 @@
       "target": "RFC2616",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3257,9 +3366,12 @@
       "target": "RFC2818",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3271,9 +3383,12 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3285,9 +3400,12 @@
       "target": "RFC3986",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3299,9 +3417,12 @@
       "target": "RFC4627",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3313,9 +3434,12 @@
       "target": "WS-MetaDataExchange-v1.1",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3327,9 +3451,12 @@
       "target": "XMLNS-ThirdEdition",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3341,9 +3468,12 @@
       "target": "XMLSCHEMA1/2",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCDISCWS",
@@ -3355,9 +3485,12 @@
       "target": "XMLSCHEMA2/2",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ECREST",
@@ -3547,9 +3680,12 @@
       "target": "MS-ABS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3563,9 +3699,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3579,9 +3718,12 @@
       "target": "RFC2616",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3595,9 +3737,12 @@
       "target": "RFC2818",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3611,9 +3756,12 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3627,9 +3775,12 @@
       "target": "SOAP1.1",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3643,9 +3794,12 @@
       "target": "SOAP1.2-1/2007",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3659,9 +3813,12 @@
       "target": "SOAP1.2-2/2007",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3675,9 +3832,12 @@
       "target": "WSDL1.1",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3691,9 +3851,12 @@
       "target": "XMLNS-ThirdEdition",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3707,9 +3870,12 @@
       "target": "XMLSCHEMA1/2",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3723,9 +3889,12 @@
       "target": "XMLSCHEMA1",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3739,9 +3908,12 @@
       "target": "XMLSCHEMA2/2",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DLX",
@@ -3755,9 +3927,12 @@
       "target": "XMLSCHEMA2",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2",
@@ -3769,9 +3944,12 @@
       "target": "MS-TURN",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2",
@@ -3783,9 +3961,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2",
@@ -3797,9 +3978,12 @@
       "target": "RFC4571",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2",
@@ -3811,9 +3995,12 @@
       "target": "RFC5389",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2",
@@ -3825,9 +4012,12 @@
       "target": "RFC5761",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2",
@@ -3839,9 +4029,12 @@
       "target": "RFC5766",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2",
@@ -3853,9 +4046,12 @@
       "target": "draft-ietf-mmusic-ice-19",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2",
@@ -3867,9 +4063,12 @@
       "target": "draft-ietf-mmusic-ice-tcp-07",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2",
@@ -3881,9 +4080,12 @@
       "target": "draft-ietf-behave-rfc3489bis-02",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFPRO",
@@ -3895,9 +4097,12 @@
       "target": "MS-CONFAV",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "109d712c67003869ecd6d0012d2ca88edbc1e65c1408cbfc9e267410e04f65ed",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFPRO",
@@ -3909,9 +4114,12 @@
       "target": "MS-CONFBAS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "109d712c67003869ecd6d0012d2ca88edbc1e65c1408cbfc9e267410e04f65ed",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFPRO",
@@ -3923,9 +4131,12 @@
       "target": "MS-SIPAE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "109d712c67003869ecd6d0012d2ca88edbc1e65c1408cbfc9e267410e04f65ed",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFPRO",
@@ -3937,9 +4148,12 @@
       "target": "MS-SIPRE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "109d712c67003869ecd6d0012d2ca88edbc1e65c1408cbfc9e267410e04f65ed",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFPRO",
@@ -3951,9 +4165,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "109d712c67003869ecd6d0012d2ca88edbc1e65c1408cbfc9e267410e04f65ed",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFPRO",
@@ -3965,9 +4182,12 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "109d712c67003869ecd6d0012d2ca88edbc1e65c1408cbfc9e267410e04f65ed",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFPRO",
@@ -3979,9 +4199,12 @@
       "target": "RFC3852",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "109d712c67003869ecd6d0012d2ca88edbc1e65c1408cbfc9e267410e04f65ed",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFPRO",
@@ -3993,9 +4216,12 @@
       "target": "XML10-ThirdEdition-2004",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "109d712c67003869ecd6d0012d2ca88edbc1e65c1408cbfc9e267410e04f65ed",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2BWM",
@@ -4007,9 +4233,12 @@
       "target": "MS-ICE2",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "925570b9d13c54b1f9158a247abdb6f6d61f2b69dce8e53daef671702342e706",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2BWM",
@@ -4021,9 +4250,12 @@
       "target": "MS-TURNBWM",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "925570b9d13c54b1f9158a247abdb6f6d61f2b69dce8e53daef671702342e706",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE2BWM",
@@ -4035,9 +4267,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "925570b9d13c54b1f9158a247abdb6f6d61f2b69dce8e53daef671702342e706",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-EUMR",
@@ -4049,9 +4284,12 @@
       "target": "MS-AVEDGEA",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-EUMR",
@@ -4063,9 +4301,12 @@
       "target": "MS-QoE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-EUMR",
@@ -4077,9 +4318,12 @@
       "target": "MS-SIPREGE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-EUMR",
@@ -4091,9 +4335,12 @@
       "target": "MS-SIPRE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-EUMR",
@@ -4105,9 +4352,12 @@
       "target": "MS-TURN",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-EUMR",
@@ -4119,9 +4369,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-EUMR",
@@ -4133,9 +4386,12 @@
       "target": "RFC2327",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-EUMR",
@@ -4147,9 +4403,12 @@
       "target": "RFC2976",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-EUMR",
@@ -4161,9 +4420,12 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-EUMR",
@@ -4175,9 +4437,12 @@
       "target": "RFC3892",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-EUMR",
@@ -4189,9 +4454,12 @@
       "target": "draft-levy-sip-diversion-08",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAS",
@@ -4203,9 +4471,12 @@
       "target": "MS-CONFBAS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAS",
@@ -4217,9 +4488,12 @@
       "target": "MS-CONFPRO",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAS",
@@ -4231,9 +4505,12 @@
       "target": "MS-ICE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAS",
@@ -4245,9 +4522,12 @@
       "target": "MS-RDPEMC",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAS",
@@ -4259,9 +4539,12 @@
       "target": "MS-SDPEXT",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAS",
@@ -4273,9 +4556,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAS",
@@ -4287,9 +4573,12 @@
       "target": "RFC3264",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAS",
@@ -4301,9 +4590,12 @@
       "target": "RFC4028",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAS",
@@ -4315,9 +4607,12 @@
       "target": "RFC4574",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAS",
@@ -4329,9 +4624,12 @@
       "target": "RFC4575",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE",
@@ -4343,9 +4641,12 @@
       "target": "MS-TURN",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "0afe5f2bed2b2728688a11c9a40cb89878cb66da4cd4ca659fe6d105c6ba39ad",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE",
@@ -4357,9 +4658,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "0afe5f2bed2b2728688a11c9a40cb89878cb66da4cd4ca659fe6d105c6ba39ad",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE",
@@ -4371,9 +4675,12 @@
       "target": "RFC4571",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "0afe5f2bed2b2728688a11c9a40cb89878cb66da4cd4ca659fe6d105c6ba39ad",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE",
@@ -4385,9 +4692,12 @@
       "target": "draft-ietf-mmusic-ice-06",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "0afe5f2bed2b2728688a11c9a40cb89878cb66da4cd4ca659fe6d105c6ba39ad",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE",
@@ -4399,9 +4709,12 @@
       "target": "draft-ietf-behave-rfc3489bis-02",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "0afe5f2bed2b2728688a11c9a40cb89878cb66da4cd4ca659fe6d105c6ba39ad",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-ICE",
@@ -4413,9 +4726,12 @@
       "target": "draft-ietf-mmusic-ice-tcp-00",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "0afe5f2bed2b2728688a11c9a40cb89878cb66da4cd4ca659fe6d105c6ba39ad",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-TURN",
@@ -4647,9 +4963,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8e037aa6522e4ae5f94627abf2a90de430c64ba7b515b285f63237c64b612773",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-SIPAPP",
@@ -4661,9 +4980,12 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8e037aa6522e4ae5f94627abf2a90de430c64ba7b515b285f63237c64b612773",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-SIPAPP",
@@ -4675,9 +4997,12 @@
       "target": "RFC3515",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8e037aa6522e4ae5f94627abf2a90de430c64ba7b515b285f63237c64b612773",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-SIPAPP",
@@ -4689,9 +5014,12 @@
       "target": "RFC3840",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8e037aa6522e4ae5f94627abf2a90de430c64ba7b515b285f63237c64b612773",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-SIPAPP",
@@ -4703,9 +5031,12 @@
       "target": "RFC3891",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8e037aa6522e4ae5f94627abf2a90de430c64ba7b515b285f63237c64b612773",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-SIPAPP",
@@ -4717,9 +5048,12 @@
       "target": "RFC4566",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8e037aa6522e4ae5f94627abf2a90de430c64ba7b515b285f63237c64b612773",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAV",
@@ -4731,9 +5065,12 @@
       "target": "MS-CONFBAS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAV",
@@ -4745,9 +5082,12 @@
       "target": "MS-CONFPRO",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAV",
@@ -4759,9 +5099,12 @@
       "target": "MS-SDPEXT",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAV",
@@ -4773,9 +5116,12 @@
       "target": "MS-SIPRE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAV",
@@ -4787,9 +5133,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAV",
@@ -4801,9 +5150,12 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAV",
@@ -4815,9 +5167,12 @@
       "target": "RFC3264",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAV",
@@ -4829,9 +5184,12 @@
       "target": "RFC4566",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAV",
@@ -4843,9 +5201,12 @@
       "target": "RFC4574",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFAV",
@@ -4857,9 +5218,12 @@
       "target": "RFC4575",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-TURNBWM",
@@ -4871,9 +5235,12 @@
       "target": "MS-TURN",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ee2638dd0dd8a842f88bda739c32d94193f0c2b70ad6c543a3400dc416d3dc77",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-TURNBWM",
@@ -4885,9 +5252,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ee2638dd0dd8a842f88bda739c32d94193f0c2b70ad6c543a3400dc416d3dc77",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-TURNBWM",
@@ -4899,9 +5269,12 @@
       "target": "draft-ietf-behave-rfc3489bis-02",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ee2638dd0dd8a842f88bda739c32d94193f0c2b70ad6c543a3400dc416d3dc77",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-TURNBWM",
@@ -4913,9 +5286,12 @@
       "target": "draft-rosenberg-midcom-turn-08",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "ee2638dd0dd8a842f88bda739c32d94193f0c2b70ad6c543a3400dc416d3dc77",
+      "referrer_original_pdf_page": 7,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-QoE",
@@ -4927,9 +5303,12 @@
       "target": "MS-RTP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-QoE",
@@ -4941,9 +5320,12 @@
       "target": "MS-SDPEXT",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-QoE",
@@ -4955,9 +5337,12 @@
       "target": "MS-TURN",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-QoE",
@@ -4969,9 +5354,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-QoE",
@@ -4983,9 +5371,12 @@
       "target": "RFC3550",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-QoE",
@@ -4997,9 +5388,12 @@
       "target": "RFC3551",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-QoE",
@@ -5011,9 +5405,12 @@
       "target": "RFC3611",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-QoE",
@@ -5025,9 +5422,12 @@
       "target": "RFC4737",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-QoE",
@@ -5039,9 +5439,12 @@
       "target": "draft-deason-sip-soap-00",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690",
+      "referrer_original_pdf_page": 10,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCER",
@@ -5053,9 +5456,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "2684ac14a7260b10dbb9786530ac754fe92c5b33a149bb4a9f25c00576419098",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCER",
@@ -5067,9 +5473,12 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "2684ac14a7260b10dbb9786530ac754fe92c5b33a149bb4a9f25c00576419098",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DTMF",
@@ -5081,9 +5490,12 @@
       "target": "MS-RTPRADEX",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9daf8d6464abd00ffa277137f9e032b9920297262953ab6c3d5e30ae6171c363",
+      "referrer_original_pdf_page": 5,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DTMF",
@@ -5095,9 +5507,12 @@
       "target": "MS-RTP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9daf8d6464abd00ffa277137f9e032b9920297262953ab6c3d5e30ae6171c363",
+      "referrer_original_pdf_page": 5,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DTMF",
@@ -5109,9 +5524,12 @@
       "target": "MS-SDPEXT",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9daf8d6464abd00ffa277137f9e032b9920297262953ab6c3d5e30ae6171c363",
+      "referrer_original_pdf_page": 5,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DTMF",
@@ -5123,9 +5541,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9daf8d6464abd00ffa277137f9e032b9920297262953ab6c3d5e30ae6171c363",
+      "referrer_original_pdf_page": 5,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-DTMF",
@@ -5137,9 +5558,12 @@
       "target": "RFC4733",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "9daf8d6464abd00ffa277137f9e032b9920297262953ab6c3d5e30ae6171c363",
+      "referrer_original_pdf_page": 5,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-SRTP",
@@ -5246,9 +5670,12 @@
       "target": "MS-EUMR",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "b68c2386989a4997afb456d07ea7399a7223f9394cb7fedbe4d494cdd3581d77",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCEXUM",
@@ -5260,9 +5687,12 @@
       "target": "MS-OXWUMS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "b68c2386989a4997afb456d07ea7399a7223f9394cb7fedbe4d494cdd3581d77",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCEXUM",
@@ -5274,9 +5704,12 @@
       "target": "MS-SIPRE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "b68c2386989a4997afb456d07ea7399a7223f9394cb7fedbe4d494cdd3581d77",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCEXUM",
@@ -5288,9 +5721,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "b68c2386989a4997afb456d07ea7399a7223f9394cb7fedbe4d494cdd3581d77",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCEXUM",
@@ -5302,9 +5738,12 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "b68c2386989a4997afb456d07ea7399a7223f9394cb7fedbe4d494cdd3581d77",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-XCCOSIP",
@@ -5316,9 +5755,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "6310f8c2b718ca4ba3b91fd31e6afe57bfff3251b38867ad46a34f9981000e9e",
+      "referrer_original_pdf_page": 11,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-XCCOSIP",
@@ -5330,9 +5772,12 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "6310f8c2b718ca4ba3b91fd31e6afe57bfff3251b38867ad46a34f9981000e9e",
+      "referrer_original_pdf_page": 11,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-XCCOSIP",
@@ -5344,9 +5789,12 @@
       "target": "ISO-8601:2004",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "6310f8c2b718ca4ba3b91fd31e6afe57bfff3251b38867ad46a34f9981000e9e",
+      "referrer_original_pdf_page": 11,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-XCCOSIP",
@@ -5358,9 +5806,12 @@
       "target": "XMLNS-ThirdEdition-2009",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "6310f8c2b718ca4ba3b91fd31e6afe57bfff3251b38867ad46a34f9981000e9e",
+      "referrer_original_pdf_page": 11,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-XCCOSIP",
@@ -5372,9 +5823,12 @@
       "target": "XMLSCHEMA1-FirstEdition-2001",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "6310f8c2b718ca4ba3b91fd31e6afe57bfff3251b38867ad46a34f9981000e9e",
+      "referrer_original_pdf_page": 11,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-XCCOSIP",
@@ -5386,9 +5840,12 @@
       "target": "XMLSCHEMA2-FirstEdition-2001",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "6310f8c2b718ca4ba3b91fd31e6afe57bfff3251b38867ad46a34f9981000e9e",
+      "referrer_original_pdf_page": 11,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-PSOM",
@@ -5724,9 +6181,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "7549ab1685dc96bfb2227e44ffe59bfb3a632a26a378433debd8d727ccd2f954",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-XMLMC",
@@ -5740,9 +6200,12 @@
       "target": "RFC2976",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "7549ab1685dc96bfb2227e44ffe59bfb3a632a26a378433debd8d727ccd2f954",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-XMLMC",
@@ -5756,9 +6219,12 @@
       "target": "RFC3264",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "7549ab1685dc96bfb2227e44ffe59bfb3a632a26a378433debd8d727ccd2f954",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-XMLMC",
@@ -5772,9 +6238,12 @@
       "target": "RFC4566",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "7549ab1685dc96bfb2227e44ffe59bfb3a632a26a378433debd8d727ccd2f954",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-XMLMC",
@@ -5788,9 +6257,12 @@
       "target": "draft-levin-mmusic-xml-media-control-12",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "7549ab1685dc96bfb2227e44ffe59bfb3a632a26a378433debd8d727ccd2f954",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFIM",
@@ -5804,9 +6276,12 @@
       "target": "MS-CONFBAS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFIM",
@@ -5820,9 +6295,12 @@
       "target": "RFC2045",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFIM",
@@ -5836,9 +6314,12 @@
       "target": "RFC2046",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFIM",
@@ -5852,9 +6333,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFIM",
@@ -5868,9 +6352,12 @@
       "target": "RFC2976",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFIM",
@@ -5884,9 +6371,12 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFIM",
@@ -5900,9 +6390,12 @@
       "target": "RFC3265",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFIM",
@@ -5916,9 +6409,12 @@
       "target": "RFC3311",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFIM",
@@ -5932,9 +6428,12 @@
       "target": "RFC3428",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFIM",
@@ -5948,9 +6447,12 @@
       "target": "RFC4028",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-CONFIM",
@@ -5964,9 +6466,12 @@
       "target": "RFC4566",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCPSTN",
@@ -5978,9 +6483,12 @@
       "target": "MS-SDPEXT",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "862611884cf77413e23a3a9ac4fa4cb7adc71a95389dfeb3d19e369eff1fae05",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCPSTN",
@@ -5992,9 +6500,12 @@
       "target": "RFC2045",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "862611884cf77413e23a3a9ac4fa4cb7adc71a95389dfeb3d19e369eff1fae05",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCPSTN",
@@ -6006,9 +6517,12 @@
       "target": "RFC2111",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "862611884cf77413e23a3a9ac4fa4cb7adc71a95389dfeb3d19e369eff1fae05",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCPSTN",
@@ -6020,9 +6534,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "862611884cf77413e23a3a9ac4fa4cb7adc71a95389dfeb3d19e369eff1fae05",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCPSTN",
@@ -6034,9 +6551,12 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "862611884cf77413e23a3a9ac4fa4cb7adc71a95389dfeb3d19e369eff1fae05",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCPSTN",
@@ -6048,9 +6568,12 @@
       "target": "RFC3966",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "862611884cf77413e23a3a9ac4fa4cb7adc71a95389dfeb3d19e369eff1fae05",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-SIPCOMP",
@@ -6182,9 +6705,12 @@
       "target": "MS-SIPREGE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cad12266be9e021ddd669b109f07091dc829a86b44e35d22efc81b9100c8f219",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCGCWEB",
@@ -6196,9 +6722,12 @@
       "target": "MS-XCCOSIP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cad12266be9e021ddd669b109f07091dc829a86b44e35d22efc81b9100c8f219",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCGCWEB",
@@ -6210,9 +6739,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cad12266be9e021ddd669b109f07091dc829a86b44e35d22efc81b9100c8f219",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCGCWEB",
@@ -6224,9 +6756,12 @@
       "target": "RFC3986",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cad12266be9e021ddd669b109f07091dc829a86b44e35d22efc81b9100c8f219",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCGCWEB",
@@ -6238,9 +6773,12 @@
       "target": "ISO-3166-1:2013",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cad12266be9e021ddd669b109f07091dc829a86b44e35d22efc81b9100c8f219",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-OCGCWEB",
@@ -6252,9 +6790,12 @@
       "target": "ISO-639-2:1998",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "cad12266be9e021ddd669b109f07091dc829a86b44e35d22efc81b9100c8f219",
+      "referrer_original_pdf_page": 6,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-SSRTP",
@@ -7211,9 +7752,12 @@
       "target": "MS-OCAUTHWS",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-RGSWS",
@@ -7227,9 +7771,12 @@
       "target": "MS-SIPREGE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-RGSWS",
@@ -7243,9 +7790,12 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-RGSWS",
@@ -7259,9 +7809,12 @@
       "target": "SOAP1.1-2000",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-RGSWS",
@@ -7275,9 +7828,12 @@
       "target": "WSDL1.1-2001",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-RGSWS",
@@ -7291,9 +7847,12 @@
       "target": "XMLNS-ThirdEdition-2009",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-RGSWS",
@@ -7307,9 +7866,12 @@
       "target": "XMLSCHEMA1-SecondEdition-2004",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-RGSWS",
@@ -7323,9 +7885,12 @@
       "target": "XMLSCHEMA1-FirstEdition-2001",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-RGSWS",
@@ -7339,9 +7904,12 @@
       "target": "XMLSCHEMA2-SecondEdition-2004",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-RGSWS",
@@ -7355,9 +7923,12 @@
       "target": "XMLSCHEMA2-FirstEdition-2001",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "referrer_original_pdf_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "referrer_original_pdf_page": 8,
+      "referrer_original_pdf_archived_in_public_repo": false
     },
     {
       "referrer": "MS-H264PF",
@@ -7634,6 +8205,82 @@
       "exact_release_pdf_correspondence": "VERIFIED_SHA256_LOCAL_PDF",
       "client_relevance": "CITED_BY_APPLICABLE_SFB_2019_AND_SE_SPEC",
       "target_document_acquired": false
+    },
+    {
+      "referrer": "MS-E911WS",
+      "referrer_published_revision": "9.0",
+      "referrer_published_date": "2025-05-20",
+      "referrer_section": "§1.2.1",
+      "referrer_official_published_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-E911WS/%5BMS-E911WS%5D.pdf",
+      "referrer_pdf_pages": "PDF p.9 (zero-based p.8), continued from p.8",
+      "target": "WSDL1.1-2001",
+      "kind": "external",
+      "reference_type": "normative",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
+      "referrer_original_pdf_sha256": "ef6ee906db885d9f7e637456ae69144066293a48d5cea64ac9d6fa2b3af63e95",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false,
+      "client_relevance": "NOT_YET_ADJUDICATED",
+      "target_document_acquired": false,
+      "source_reference_note": "WSDL, W3C Note, March 2001",
+      "added_by_source_audit": "2026-10-24 OfficeProto.zip"
+    },
+    {
+      "referrer": "MS-E911WS",
+      "referrer_published_revision": "9.0",
+      "referrer_published_date": "2025-05-20",
+      "referrer_section": "§1.2.1",
+      "referrer_official_published_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-E911WS/%5BMS-E911WS%5D.pdf",
+      "referrer_pdf_pages": "PDF p.9 (zero-based p.8), continued from p.8",
+      "target": "XMLNS-ThirdEdition-2009",
+      "kind": "external",
+      "reference_type": "normative",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
+      "referrer_original_pdf_sha256": "ef6ee906db885d9f7e637456ae69144066293a48d5cea64ac9d6fa2b3af63e95",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false,
+      "client_relevance": "NOT_YET_ADJUDICATED",
+      "target_document_acquired": false,
+      "source_reference_note": "XML Namespaces Third Edition, December 2009",
+      "added_by_source_audit": "2026-10-24 OfficeProto.zip"
+    },
+    {
+      "referrer": "MS-E911WS",
+      "referrer_published_revision": "9.0",
+      "referrer_published_date": "2025-05-20",
+      "referrer_section": "§1.2.1",
+      "referrer_official_published_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-E911WS/%5BMS-E911WS%5D.pdf",
+      "referrer_pdf_pages": "PDF p.9 (zero-based p.8), continued from p.8",
+      "target": "XMLSCHEMA1-SecondEdition-2004",
+      "kind": "external",
+      "reference_type": "normative",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
+      "referrer_original_pdf_sha256": "ef6ee906db885d9f7e637456ae69144066293a48d5cea64ac9d6fa2b3af63e95",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false,
+      "client_relevance": "NOT_YET_ADJUDICATED",
+      "target_document_acquired": false,
+      "source_reference_note": "XML Schema Part 1 second edition, October 2004",
+      "added_by_source_audit": "2026-10-24 OfficeProto.zip"
+    },
+    {
+      "referrer": "MS-E911WS",
+      "referrer_published_revision": "9.0",
+      "referrer_published_date": "2025-05-20",
+      "referrer_section": "§1.2.1",
+      "referrer_official_published_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-E911WS/%5BMS-E911WS%5D.pdf",
+      "referrer_pdf_pages": "PDF p.9 (zero-based p.8), continued from p.8",
+      "target": "XMLSCHEMA2-SecondEdition-2004",
+      "kind": "external",
+      "reference_type": "normative",
+      "exact_release_pdf_correspondence": "VERIFIED_FROM_USER_ZIP_EXACT_CURRENT_EDITION_SHA256_PDF",
+      "referrer_original_pdf_sha256": "ef6ee906db885d9f7e637456ae69144066293a48d5cea64ac9d6fa2b3af63e95",
+      "referrer_original_pdf_page": 9,
+      "referrer_original_pdf_archived_in_public_repo": false,
+      "client_relevance": "NOT_YET_ADJUDICATED",
+      "target_document_acquired": false,
+      "source_reference_note": "XML Schema Part 2 second edition, October 2004",
+      "added_by_source_audit": "2026-10-24 OfficeProto.zip"
     }
   ],
   "extra_documents": [
@@ -7706,9 +8353,12 @@
     "full_rfc_update_obsolescence_graph_unresolved": true,
     "release_bytes_captured_count": 4,
     "complete": false,
-    "indexed_original_release_pdf_reference_pages_checked": 19,
+    "indexed_original_release_pdf_reference_pages_checked": 42,
     "user_supplied_full_pdf_binaries_hashed": 4,
-    "notes_2026_10_24": "MS-SRTP 14.0, MS-SDPEXT 16.0, MS-H264PF 16.0, MS-SIPCOMP 10.0 exact published PDF §1.2.1 web text/screenshots inspected. All 49 existing normative edge IDs match. Current first-tier exact PDFs 23/46, remaining 23 HTML-only; no newly verified binary SHA; normative recursion OPEN."
+    "notes_2026_10_24": "User ZIP supplied 74 full PDF binaries; 43 current 46-source first-tier editions, 3 historical superseded (MS-ABS10.0, MS-SIPREGE17.0, MS-SSRTP11.0). Remaining 23 original §1.2.1 sections present; E911WS PDF pp.8-9 reveals four previously omitted normative refs: WSDL, XMLNS, XML Schema Part 1/2. Now 464 first-tier normative edges, 199 unique targets; 23 new source original hashes tracked but no binaries committed to public GitHub. Client scope/history/recursion and copyright redistribution remain OPEN.",
+    "user_zip_uploaded_original_pdf_files_sha256_verified": 74,
+    "first_tier_current_release_normative_sections_matched_to_pdf": 46,
+    "first_tier_full_files_in_public_git_repository": 0
   },
   "normative_sections_verified_as_published_pdf_text": [
     {
@@ -8018,6 +8668,374 @@
       "pdf_bytes_downloaded": false,
       "sha256": null,
       "status": "RELEASE_IDENTIFIED_PDF_TEXT_AND_SECTION_SCREENSHOT_VERIFIED_NOT_BINARY_PRESERVED"
+    },
+    {
+      "id": "MS-DLX",
+      "section": "§1.2.1",
+      "published_revision": "13.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-DLX/%5BMS-DLX%5D.pdf",
+      "pdf_page_count": 70,
+      "reference_pages": "PDF section begins p.9",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "ff889cbc01f4638b80215394c1344e5a1d4e96f3e0a810904a74815d8811a0e2",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-EUMR",
+      "section": "§1.2.1",
+      "published_revision": "9.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-EUMR/%5BMS-EUMR%5D.pdf",
+      "pdf_page_count": 29,
+      "reference_pages": "PDF section begins p.8",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "cc3b8e598c30c0466875f9fa2cfe132ec668c718704c2808f4d51a7ca0764013",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-OCEXUM",
+      "section": "§1.2.1",
+      "published_revision": "11.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-OCEXUM/%5BMS-OCEXUM%5D.pdf",
+      "pdf_page_count": 20,
+      "reference_pages": "PDF section begins p.6",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "b68c2386989a4997afb456d07ea7399a7223f9394cb7fedbe4d494cdd3581d77",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "b68c2386989a4997afb456d07ea7399a7223f9394cb7fedbe4d494cdd3581d77",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-OCPSTN",
+      "section": "§1.2.1",
+      "published_revision": "11.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-OCPSTN/%5BMS-OCPSTN%5D.pdf",
+      "pdf_page_count": 63,
+      "reference_pages": "PDF section begins p.9",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "862611884cf77413e23a3a9ac4fa4cb7adc71a95389dfeb3d19e369eff1fae05",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "862611884cf77413e23a3a9ac4fa4cb7adc71a95389dfeb3d19e369eff1fae05",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-OCER",
+      "section": "§1.2.1",
+      "published_revision": "11.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-OCER/%5BMS-OCER%5D.pdf",
+      "pdf_page_count": 207,
+      "reference_pages": "PDF section begins p.9",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "2684ac14a7260b10dbb9786530ac754fe92c5b33a149bb4a9f25c00576419098",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "2684ac14a7260b10dbb9786530ac754fe92c5b33a149bb4a9f25c00576419098",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-QoE",
+      "section": "§1.2.1",
+      "published_revision": "12.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-QoE/%5BMS-QoE%5D.pdf",
+      "pdf_page_count": 175,
+      "reference_pages": "PDF section begins p.10",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "abbf6db1fb140b0452699c76ac8ce6412feec1e2fe337d7669498efd4a936690",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-RGSWS",
+      "section": "§1.2.1",
+      "published_revision": "9.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RGSWS/%5BMS-RGSWS%5D.pdf",
+      "pdf_page_count": 46,
+      "reference_pages": "PDF section begins p.8",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "766d904618beec230eac7bcecc4236016b8873bf40f8e557eb0998749e6e130e",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-SIPAPP",
+      "section": "§1.2.1",
+      "published_revision": "8.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SIPAPP/%5BMS-SIPAPP%5D.pdf",
+      "pdf_page_count": 40,
+      "reference_pages": "PDF section begins p.8",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "8e037aa6522e4ae5f94627abf2a90de430c64ba7b515b285f63237c64b612773",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "8e037aa6522e4ae5f94627abf2a90de430c64ba7b515b285f63237c64b612773",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-XCCOSIP",
+      "section": "§1.2.1",
+      "published_revision": "7.0",
+      "published_date": "2024-08-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-XCCOSIP/%5BMS-XCCOSIP%5D.pdf",
+      "pdf_page_count": 91,
+      "reference_pages": "PDF section begins p.11",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "6310f8c2b718ca4ba3b91fd31e6afe57bfff3251b38867ad46a34f9981000e9e",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "6310f8c2b718ca4ba3b91fd31e6afe57bfff3251b38867ad46a34f9981000e9e",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-OCGCWEB",
+      "section": "§1.2.1",
+      "published_revision": "3.0",
+      "published_date": "2018-04-27",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-OCGCWEB/%5BMS-OCGCWEB%5D.pdf",
+      "pdf_page_count": 15,
+      "reference_pages": "PDF section begins p.6",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "cad12266be9e021ddd669b109f07091dc829a86b44e35d22efc81b9100c8f219",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "cad12266be9e021ddd669b109f07091dc829a86b44e35d22efc81b9100c8f219",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-CONFPRO",
+      "section": "§1.2.1",
+      "published_revision": "13.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-CONFPRO/%5BMS-CONFPRO%5D.pdf",
+      "pdf_page_count": 63,
+      "reference_pages": "PDF section begins p.8",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "109d712c67003869ecd6d0012d2ca88edbc1e65c1408cbfc9e267410e04f65ed",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "109d712c67003869ecd6d0012d2ca88edbc1e65c1408cbfc9e267410e04f65ed",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-CONFIM",
+      "section": "§1.2.1",
+      "published_revision": "11.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-CONFIM/%5BMS-CONFIM%5D.pdf",
+      "pdf_page_count": 81,
+      "reference_pages": "PDF section begins p.9",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "8d6662af6740130f1c8d19f652c9c589c4058ab7a94d54127508900b3e91eb82",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-CONFAV",
+      "section": "§1.2.1",
+      "published_revision": "11.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-CONFAV/%5BMS-CONFAV%5D.pdf",
+      "pdf_page_count": 108,
+      "reference_pages": "PDF section begins p.9",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "4db0c425151492d696e554a4481df42f9c960f8cb7572e8975dad6f24f0bddec",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-CONFAS",
+      "section": "§1.2.1",
+      "published_revision": "12.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-CONFAS/%5BMS-CONFAS%5D.pdf",
+      "pdf_page_count": 51,
+      "reference_pages": "PDF section begins p.7",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "9e228401500d522fb7d95c082fbe7b1d519fa6a4766b80566a1190f1dfa52db9",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-XMLMC",
+      "section": "§1.2.1",
+      "published_revision": "10.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-XMLMC/%5BMS-XMLMC%5D.pdf",
+      "pdf_page_count": 20,
+      "reference_pages": "PDF section begins p.6",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "7549ab1685dc96bfb2227e44ffe59bfb3a632a26a378433debd8d727ccd2f954",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "7549ab1685dc96bfb2227e44ffe59bfb3a632a26a378433debd8d727ccd2f954",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-OCSMP",
+      "section": "§1.2.1",
+      "published_revision": "7.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-OCSMP/%5BMS-OCSMP%5D.pdf",
+      "pdf_page_count": 93,
+      "reference_pages": "PDF section begins p.10",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "42db4ba26bc94a858d7cb9a5bac1fdec226eb9b86475bd7c8820b1f8f9d30f6a",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "42db4ba26bc94a858d7cb9a5bac1fdec226eb9b86475bd7c8820b1f8f9d30f6a",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-OCDISCWS",
+      "section": "§1.2.1",
+      "published_revision": "10.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-OCDISCWS/%5BMS-OCDISCWS%5D.pdf",
+      "pdf_page_count": 34,
+      "reference_pages": "PDF section begins p.6",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "9009666086ea0798675a0df2b21f42b9aa14a7fc14ad717906726f72439a136d",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-CVWREST",
+      "section": "§1.2.1",
+      "published_revision": "7.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-CVWREST/%5BMS-CVWREST%5D.pdf",
+      "pdf_page_count": 46,
+      "reference_pages": "PDF section begins p.7",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "f512a00d00666dd6074f3c8a91fce19926d2c8a7f98d0ed19a8290648a7d6a99",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-DTMF",
+      "section": "§1.2.1",
+      "published_revision": "15.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-DTMF/%5BMS-DTMF%5D.pdf",
+      "pdf_page_count": 18,
+      "reference_pages": "PDF section begins p.5",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "9daf8d6464abd00ffa277137f9e032b9920297262953ab6c3d5e30ae6171c363",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "9daf8d6464abd00ffa277137f9e032b9920297262953ab6c3d5e30ae6171c363",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-ICE",
+      "section": "§1.2.1",
+      "published_revision": "11.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-ICE/%5BMS-ICE%5D.pdf",
+      "pdf_page_count": 31,
+      "reference_pages": "PDF section begins p.9",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "0afe5f2bed2b2728688a11c9a40cb89878cb66da4cd4ca659fe6d105c6ba39ad",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "0afe5f2bed2b2728688a11c9a40cb89878cb66da4cd4ca659fe6d105c6ba39ad",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-ICE2",
+      "section": "§1.2.1",
+      "published_revision": "19.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-ICE2/%5BMS-ICE2%5D.pdf",
+      "pdf_page_count": 42,
+      "reference_pages": "PDF section begins p.10",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "5f0023f87f0f94e2db71517c1287374022ea93eaeb48c9ed227d97df7dfcf197",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-ICE2BWM",
+      "section": "§1.2.1",
+      "published_revision": "9.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-ICE2BWM/%5BMS-ICE2BWM%5D.pdf",
+      "pdf_page_count": 32,
+      "reference_pages": "PDF section begins p.9",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "925570b9d13c54b1f9158a247abdb6f6d61f2b69dce8e53daef671702342e706",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "925570b9d13c54b1f9158a247abdb6f6d61f2b69dce8e53daef671702342e706",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
+    },
+    {
+      "id": "MS-TURNBWM",
+      "section": "§1.2.1",
+      "published_revision": "9.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURNBWM/%5BMS-TURNBWM%5D.pdf",
+      "pdf_page_count": 49,
+      "reference_pages": "PDF section begins p.7",
+      "text_checked": true,
+      "text_checked_and_page_screenshot": false,
+      "user_supplied_zip_pdf_file_sha256": "ee2638dd0dd8a842f88bda739c32d94193f0c2b70ad6c543a3400dc416d3dc77",
+      "pdf_bytes_from_user_upload": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": "ee2638dd0dd8a842f88bda739c32d94193f0c2b70ad6c543a3400dc416d3dc77",
+      "status": "USER_ZIP_EXACT_CURRENT_RELEASE_BINARY_HASH_AND_NORMATIVE_SECTION_EXTRACTED_NOT_ARCHIVED"
     }
   ],
   "informative_edges": [
