@@ -199,7 +199,7 @@
     "transitive-frontier.json",
     "rfc-version-relations-reviewed.json"
   ],
-  "instructions_for_next_session": "AUTHORITATIVE: Read AGENTS.md, docs/protocol-research/HANDOFF_2026-10-24.md and docs/protocol-research/NEXT_SESSION_PROMPT.md. Check CURRENT_STATUS.md, fourth-ring-ms-frontier-2026-10-24.json, fourth-ring-normative-reference-ledger.json and all 12 gates. Fourth ring: 86/86 MS/MC source identities acquired, 1/86 published original §1.2.1 bibliography reviewed (MS-DLTM rev 9.1, ten edges), 85 other bibliographies OPEN; prior ring counts 464/246/827, four AD schema §1.1 unclassified lists 67, 0/12 gates. User keeps PDF originals; request only a needed specific PDF if not accessible. Next bounded batch 6–10 fourth-ring documents, cite exact edition/page/hash, separate informative, update ledgers+status+checkpoint+gates+log, commit to draft and verify. Never code, test real servers, weaken TLS, modify runner billing, merge main or release.",
+  "instructions_for_next_session": "To locate any PDF original, first read docs/protocol-research/PDF_ARCHIVE_LOOKUP.md and search pdf-archive-file-locations-2026-10-24.json or CSV for the document ID; use verified split ZIP part/member, not the current truncated full archive. AUTHORITATIVE: Read AGENTS.md, docs/protocol-research/HANDOFF_2026-10-24.md and docs/protocol-research/NEXT_SESSION_PROMPT.md. Check CURRENT_STATUS.md, fourth-ring-ms-frontier-2026-10-24.json, fourth-ring-normative-reference-ledger.json and all 12 gates. Fourth ring: 86/86 MS/MC source identities acquired, 1/86 published original §1.2.1 bibliography reviewed (MS-DLTM rev 9.1, ten edges), 85 other bibliographies OPEN; prior ring counts 464/246/827, four AD schema §1.1 unclassified lists 67, 0/12 gates. User keeps PDF originals; request only a needed specific PDF if not accessible. Next bounded batch 6–10 fourth-ring documents, cite exact edition/page/hash, separate informative, update ledgers+status+checkpoint+gates+log, commit to draft and verify. Never code, test real servers, weaken TLS, modify runner billing, merge main or release.",
   "latest_continuation": {
     "date": "2026-10-24",
     "iteration": "P1-03-fourth-ring-ms-dltm-acquisition-and-handoff",
@@ -627,5 +627,31 @@
     "formal_phase1_gates_passed": 0,
     "phase1_complete": false,
     "next_resume": "Get exact original PDF edition + SHA + §1.2.1/§1.2.2 pages for MS-FSCC rev60.0, MS-SMB2 rev88.0, MS-GPOL rev39.0, MS-TLSP rev18.0; cross-ring raw label union open."
+  },
+  "archive_file_location_manifest_2026_10_24": {
+    "index": "PDF_ARCHIVE_LOOKUP.md",
+    "file_mapping_json": "pdf-archive-file-locations-2026-10-24.json",
+    "file_mapping_csv": "pdf-archive-file-locations-2026-10-24.csv",
+    "total_pdf_instances": 824,
+    "distinct_document_ids": 823,
+    "original_archive_counts": {
+      "OfficeProto.zip": 74,
+      "Exchange_Protocols.zip": 129,
+      "SharePointProtocols.zip": 168,
+      "Windows_Protocols.tar.xz": 451,
+      "standalone_pdfs": 2
+    },
+    "split_zip_counts": {
+      "CommSCraft_Gesamtanalyse_Teil_01.zip": 263,
+      "CommSCraft_Gesamtanalyse_Teil_02.zip": 224,
+      "CommSCraft_Gesamtanalyse_Teil_03.zip": 251,
+      "CommSCraft_Gesamtanalyse_Teil_04.zip": 86
+    },
+    "split_zip_sha256_and_full_crc_validated": true,
+    "master_zip_validated": false,
+    "master_zip_status": "TRUNCATED_UNREADABLE_PRESENT_FILE_ONLY_133465902_OF_EXPECTED_1181972130_BYTES",
+    "new_normative_edges_from_this_catalog_work": 0,
+    "source_pdf_binary_files_committed_to_repo": false,
+    "formal_phase1_gate_passes_unchanged": true
   }
 }

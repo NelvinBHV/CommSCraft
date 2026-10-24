@@ -1,3 +1,5 @@
+**PDF-Archivzuordnung 24.10.2026:** [PDF_ARCHIVE_LOOKUP.md](PDF_ARCHIVE_LOOKUP.md) · [vollständige Datei-Archiv-Zuordnung (JSON)](pdf-archive-file-locations-2026-10-24.json) · [CSV](pdf-archive-file-locations-2026-10-24.csv): alle 824 PDF-Instanzen zu Originalarchiven und vier vollständig SHA-256-/CRC-geprüften Teilarchiven zugeordnet. Das große Gesamt-ZIP ist am aktuellen Speicherpfad unvollständig/nicht lesbar; stattdessen nur Teil 01–04 verwenden. Original-PDFs bleiben beim Nutzer, nicht in Git.
+
 # CommSCraft – Prompt zur Fortsetzung der Protokollforschung
 
 > Neuer P1-03-Fortschritt NACH Handoff 24.10.2026: [Batch-Report](fourth-ring-p1-03-batch-2026-10-24.md) – vier weitere originalv20250520 PDF-Bibliografien, jetzt 5/86 geprüft, 64 vierte Normkanten, 81 offen; vier weitere Windows-IDs nur Revisionen geprüft. Nächste genaue Originaleditionen: MS-FSCC 60.0, MS-SMB2 88.0, MS-GPOL 39.0, MS-TLSP 18.0. Alte Zahlen unten sind historischer Handoff. Gates 0/12 PASS.
