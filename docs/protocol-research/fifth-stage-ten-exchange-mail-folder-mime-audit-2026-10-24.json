@@ -1,0 +1,1422 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "branch": "draft/protocol-spec-analysis-2026-10-23",
+  "phase": "P1-03",
+  "source_stage": "DOWNSTREAM_RAW_MS_MC_TARGETS_FROM_FOURTH_RING",
+  "source_count": 10,
+  "sources": [
+    {
+      "id": "MS-OXBBODY",
+      "revision": "12.0",
+      "edition": "v20250520",
+      "source_release_date": "2025-05-20",
+      "pdf_pages": 18,
+      "pdf_bytes": 908479,
+      "sha256": "f04f5885d8563d64856a77d9b2c43a0c080a3a00f08449ef40c78cd01929cb97",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXBBODY].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 6
+        },
+        {
+          "target": "MS-OXCMAPIHTTP",
+          "raw_label": "[MS-OXCMAPIHTTP]",
+          "pdf_page": 6
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 6
+        },
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 6
+        },
+        {
+          "target": "MS-OXCRPC",
+          "raw_label": "[MS-OXCRPC]",
+          "pdf_page": 6
+        },
+        {
+          "target": "MS-OXORMMS",
+          "raw_label": "[MS-OXORMMS]",
+          "pdf_page": 6
+        },
+        {
+          "target": "MS-OXOSMIME",
+          "raw_label": "[MS-OXOSMIME]",
+          "pdf_page": 6
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 6
+        },
+        {
+          "target": "MS-OXRTFEX",
+          "raw_label": "[MS-OXRTFEX]",
+          "pdf_page": 6
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 6
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 6
+        }
+      ],
+      "normative_count": 10,
+      "informative_count": 1,
+      "complete_original_pdf_sha256_checked": true,
+      "normative_heading_page_rendered": true,
+      "original_pdf_binary_in_git": false,
+      "cited_target_edition": "UNRECONCILED",
+      "sfb2019_full_client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXCFOLD",
+      "revision": "25.0",
+      "edition": "v20250520",
+      "source_release_date": "2025-05-20",
+      "pdf_pages": 72,
+      "pdf_bytes": 2245887,
+      "sha256": "607a1cacc44178cdb88fb5b0ac3545d85d6ff8a3e8c2d933c87ac93b67136e10",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXCFOLD].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCFXICS",
+          "raw_label": "[MS-OXCFXICS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCNOTIF",
+          "raw_label": "[MS-OXCNOTIF]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCPERM",
+          "raw_label": "[MS-OXCPERM]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCPRPT",
+          "raw_label": "[MS-OXCPRPT]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCSTOR",
+          "raw_label": "[MS-OXCSTOR]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCTABL",
+          "raw_label": "[MS-OXCTABL]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXORULE",
+          "raw_label": "[MS-OXORULE]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXOSFLD",
+          "raw_label": "[MS-OXOSFLD]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXOSRCH",
+          "raw_label": "[MS-OXOSRCH]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 11
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXCRPC",
+          "raw_label": "[MS-OXCRPC]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 11
+        }
+      ],
+      "normative_count": 14,
+      "informative_count": 3,
+      "complete_original_pdf_sha256_checked": true,
+      "normative_heading_page_rendered": true,
+      "original_pdf_binary_in_git": false,
+      "cited_target_edition": "UNRECONCILED",
+      "sfb2019_full_client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXCICAL",
+      "revision": "15.0",
+      "edition": "v20250520",
+      "source_release_date": "2025-05-20",
+      "pdf_pages": 247,
+      "pdf_bytes": 5399363,
+      "sha256": "b7871e921240959f7f027e4ad91d6cb1d68a8e0f599cca0ec022ed65ac5c0e39",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXCICAL].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-LCID",
+          "raw_label": "[MS-LCID]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCMAIL",
+          "raw_label": "[MS-OXCMAIL]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXOABK",
+          "raw_label": "[MS-OXOABK]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXOCAL",
+          "raw_label": "[MS-OXOCAL]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXRTFCP",
+          "raw_label": "[MS-OXRTFCP]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXRTFEX",
+          "raw_label": "[MS-OXRTFEX]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC1766",
+          "raw_label": "[RFC1766]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2045",
+          "raw_label": "[RFC2045]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2368",
+          "raw_label": "[RFC2368]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2392",
+          "raw_label": "[RFC2392]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2445",
+          "raw_label": "[RFC2445]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2446",
+          "raw_label": "[RFC2446]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC3986",
+          "raw_label": "[RFC3986]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC5234",
+          "raw_label": "[RFC5234]",
+          "pdf_page": 11
+        },
+        {
+          "target": "UNICODE5.1",
+          "raw_label": "[UNICODE5.1]",
+          "pdf_page": 11
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC2447",
+          "raw_label": "[RFC2447]",
+          "pdf_page": 12
+        }
+      ],
+      "normative_count": 19,
+      "informative_count": 4,
+      "complete_original_pdf_sha256_checked": true,
+      "normative_heading_page_rendered": true,
+      "original_pdf_binary_in_git": false,
+      "cited_target_edition": "UNRECONCILED",
+      "sfb2019_full_client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXCMAIL",
+      "revision": "24.0",
+      "edition": "v20250520",
+      "source_release_date": "2025-05-20",
+      "pdf_pages": 125,
+      "pdf_bytes": 3781366,
+      "sha256": "bb2b732ae272b09275b46b340078b1af1e4eefdb9b6f286337af7c6b05a8163c",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXCMAIL].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "HTML",
+          "raw_label": "[HTML]",
+          "pdf_page": 14
+        },
+        {
+          "target": "IEEE1003.1",
+          "raw_label": "[IEEE1003.1]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MacBin",
+          "raw_label": "[MacBin]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-LCID",
+          "raw_label": "[MS-LCID]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXBBODY",
+          "raw_label": "[MS-OXBBODY]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXCFOLD",
+          "raw_label": "[MS-OXCFOLD]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXCICAL",
+          "raw_label": "[MS-OXCICAL]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXCPERM",
+          "raw_label": "[MS-OXCPERM]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXCPRPT",
+          "raw_label": "[MS-OXCPRPT]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXCSPAM",
+          "raw_label": "[MS-OXCSPAM]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOABK",
+          "raw_label": "[MS-OXOABK]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOCAL",
+          "raw_label": "[MS-OXOCAL]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOCFG",
+          "raw_label": "[MS-OXOCFG]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOCNTC",
+          "raw_label": "[MS-OXOCNTC]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOFLAG",
+          "raw_label": "[MS-OXOFLAG]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOPOST",
+          "raw_label": "[MS-OXOPOST]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOSMIME",
+          "raw_label": "[MS-OXOSMIME]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOTASK",
+          "raw_label": "[MS-OXOTASK]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXRTFCP",
+          "raw_label": "[MS-OXRTFCP]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXRTFEX",
+          "raw_label": "[MS-OXRTFEX]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXTNEF",
+          "raw_label": "[MS-OXTNEF]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXVCARD",
+          "raw_label": "[MS-OXVCARD]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-WMF",
+          "raw_label": "[MS-WMF]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MSFT-RTF",
+          "raw_label": "[MSFT-RTF]",
+          "pdf_page": 15
+        },
+        {
+          "target": "RFC1738",
+          "raw_label": "[RFC1738]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC1740",
+          "raw_label": "[RFC1740]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC1741",
+          "raw_label": "[RFC1741]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC1896",
+          "raw_label": "[RFC1896]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2045",
+          "raw_label": "[RFC2045]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2047",
+          "raw_label": "[RFC2047]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2076",
+          "raw_label": "[RFC2076]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2156",
+          "raw_label": "[RFC2156]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2369",
+          "raw_label": "[RFC2369]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2387",
+          "raw_label": "[RFC2387]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2392",
+          "raw_label": "[RFC2392]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2426",
+          "raw_label": "[RFC2426]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2445",
+          "raw_label": "[RFC2445]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2557",
+          "raw_label": "[RFC2557]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC2822",
+          "raw_label": "[RFC2822]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC3030",
+          "raw_label": "[RFC3030]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC3282",
+          "raw_label": "[RFC3282]",
+          "pdf_page": 16
+        },
+        {
+          "target": "RFC3464",
+          "raw_label": "[RFC3464]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC3516",
+          "raw_label": "[RFC3516]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC3798",
+          "raw_label": "[RFC3798]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC4646",
+          "raw_label": "[RFC4646]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC5234",
+          "raw_label": "[RFC5234]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC5751",
+          "raw_label": "[RFC5751]",
+          "pdf_page": 17
+        },
+        {
+          "target": "UNICODE5.1",
+          "raw_label": "[UNICODE5.1]",
+          "pdf_page": 17
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 17
+        },
+        {
+          "target": "MSKB2276479",
+          "raw_label": "[MSKB2276479]",
+          "pdf_page": 17
+        },
+        {
+          "target": "MSKB908027",
+          "raw_label": "[MSKB908027]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC1521",
+          "raw_label": "[RFC1521]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC2046",
+          "raw_label": "[RFC2046]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC2048",
+          "raw_label": "[RFC2048]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC2049",
+          "raw_label": "[RFC2049]",
+          "pdf_page": 17
+        },
+        {
+          "target": "RFC3463",
+          "raw_label": "[RFC3463]",
+          "pdf_page": 17
+        },
+        {
+          "target": "X25",
+          "raw_label": "[X25]",
+          "pdf_page": 17
+        }
+      ],
+      "normative_count": 55,
+      "informative_count": 9,
+      "complete_original_pdf_sha256_checked": true,
+      "normative_heading_page_rendered": true,
+      "original_pdf_binary_in_git": false,
+      "cited_target_edition": "UNRECONCILED",
+      "sfb2019_full_client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXCMSG",
+      "revision": "27.0",
+      "edition": "v20250520",
+      "source_release_date": "2025-05-20",
+      "pdf_pages": 91,
+      "pdf_bytes": 3188234,
+      "sha256": "4209a820e454e623abf47d24c2b4f374ac37762b85de03810d2b14de5244c53b",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXCMSG].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-LCID",
+          "raw_label": "[MS-LCID]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-OXBBODY",
+          "raw_label": "[MS-OXBBODY]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-OXCFXICS",
+          "raw_label": "[MS-OXCFXICS]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-OXCMAIL",
+          "raw_label": "[MS-OXCMAIL]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-OXCMAPIHTTP",
+          "raw_label": "[MS-OXCMAPIHTTP]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-OXCPERM",
+          "raw_label": "[MS-OXCPERM]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-OXCPRPT",
+          "raw_label": "[MS-OXCPRPT]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-OXCRPC",
+          "raw_label": "[MS-OXCRPC]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-OXCSTOR",
+          "raw_label": "[MS-OXCSTOR]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-OXCTABL",
+          "raw_label": "[MS-OXCTABL]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOABK",
+          "raw_label": "[MS-OXOABK]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOCAL",
+          "raw_label": "[MS-OXOCAL]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOCFG",
+          "raw_label": "[MS-OXOCFG]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOSFLD",
+          "raw_label": "[MS-OXOSFLD]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXRTFCP",
+          "raw_label": "[MS-OXRTFCP]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXRTFEX",
+          "raw_label": "[MS-OXRTFEX]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXTNEF",
+          "raw_label": "[MS-OXTNEF]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-WMF",
+          "raw_label": "[MS-WMF]",
+          "pdf_page": 15
+        },
+        {
+          "target": "RFC1521",
+          "raw_label": "[RFC1521]",
+          "pdf_page": 15
+        },
+        {
+          "target": "RFC2045",
+          "raw_label": "[RFC2045]",
+          "pdf_page": 15
+        },
+        {
+          "target": "RFC2110",
+          "raw_label": "[RFC2110]",
+          "pdf_page": 15
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 15
+        },
+        {
+          "target": "RFC2822",
+          "raw_label": "[RFC2822]",
+          "pdf_page": 15
+        },
+        {
+          "target": "RFC3282",
+          "raw_label": "[RFC3282]",
+          "pdf_page": 15
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXCFOLD",
+          "raw_label": "[MS-OXCFOLD]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOCNTC",
+          "raw_label": "[MS-OXOCNTC]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXODOC",
+          "raw_label": "[MS-OXODOC]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOJRNL",
+          "raw_label": "[MS-OXOJRNL]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXONOTE",
+          "raw_label": "[MS-OXONOTE]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOPOST",
+          "raw_label": "[MS-OXOPOST]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXORSS",
+          "raw_label": "[MS-OXORSS]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOSMIME",
+          "raw_label": "[MS-OXOSMIME]",
+          "pdf_page": 15
+        },
+        {
+          "target": "MS-OXOSMMS",
+          "raw_label": "[MS-OXOSMMS]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-OXOTASK",
+          "raw_label": "[MS-OXOTASK]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-OXOUM",
+          "raw_label": "[MS-OXOUM]",
+          "pdf_page": 16
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 16
+        }
+      ],
+      "normative_count": 28,
+      "informative_count": 12,
+      "complete_original_pdf_sha256_checked": true,
+      "normative_heading_page_rendered": true,
+      "original_pdf_binary_in_git": false,
+      "cited_target_edition": "UNRECONCILED",
+      "sfb2019_full_client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXCPRPT",
+      "revision": "19.0",
+      "edition": "v20250520",
+      "source_release_date": "2025-05-20",
+      "pdf_pages": 66,
+      "pdf_bytes": 2228058,
+      "sha256": "b0917a7bd885f818b5ea8bc672592fa220796a3f12110c8d89dc4214e9b5b7ca",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXCPRPT].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-OXCFOLD",
+          "raw_label": "[MS-OXCFOLD]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-OXCFXICS",
+          "raw_label": "[MS-OXCFXICS]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-OXCSTOR",
+          "raw_label": "[MS-OXCSTOR]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 11
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXCRPC",
+          "raw_label": "[MS-OXCRPC]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXORULE",
+          "raw_label": "[MS-OXORULE]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 11
+        }
+      ],
+      "normative_count": 8,
+      "informative_count": 3,
+      "complete_original_pdf_sha256_checked": true,
+      "normative_heading_page_rendered": true,
+      "original_pdf_binary_in_git": false,
+      "cited_target_edition": "UNRECONCILED",
+      "sfb2019_full_client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXCSPAM",
+      "revision": "12.0",
+      "edition": "v20250520",
+      "source_release_date": "2025-05-20",
+      "pdf_pages": 27,
+      "pdf_bytes": 1111906,
+      "sha256": "65c1abdf9b525925eae90f959ec6959a07f6cd509e693113ccc0dc0455977fcc",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXCSPAM].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXOABK",
+          "raw_label": "[MS-OXOABK]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXORULE",
+          "raw_label": "[MS-OXORULE]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXOSFLD",
+          "raw_label": "[MS-OXOSFLD]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXPHISH",
+          "raw_label": "[MS-OXPHISH]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXCFOLD",
+          "raw_label": "[MS-OXCFOLD]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCPRPT",
+          "raw_label": "[MS-OXCPRPT]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXORSS",
+          "raw_label": "[MS-OXORSS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 9,
+      "informative_count": 5,
+      "complete_original_pdf_sha256_checked": true,
+      "normative_heading_page_rendered": true,
+      "original_pdf_binary_in_git": false,
+      "cited_target_edition": "UNRECONCILED",
+      "sfb2019_full_client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXCTABL",
+      "revision": "23.0",
+      "edition": "v20250520",
+      "source_release_date": "2025-05-20",
+      "pdf_pages": 64,
+      "pdf_bytes": 2047785,
+      "sha256": "5acf0b1664ffc13f7e986e55d9e90a62ab6283ce142d4f35a6b18c8a36ce6a27",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXCTABL].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXCFOLD",
+          "raw_label": "[MS-OXCFOLD]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXCMAPIHTTP",
+          "raw_label": "[MS-OXCMAPIHTTP]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXCNOTIF",
+          "raw_label": "[MS-OXCNOTIF]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXCRPC",
+          "raw_label": "[MS-OXCRPC]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 9
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 9
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXCFXICS",
+          "raw_label": "[MS-OXCFXICS]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXCPERM",
+          "raw_label": "[MS-OXCPERM]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXOABK",
+          "raw_label": "[MS-OXOABK]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXORULE",
+          "raw_label": "[MS-OXORULE]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 9
+        }
+      ],
+      "normative_count": 8,
+      "informative_count": 7,
+      "complete_original_pdf_sha256_checked": true,
+      "normative_heading_page_rendered": true,
+      "original_pdf_binary_in_git": false,
+      "cited_target_edition": "UNRECONCILED",
+      "sfb2019_full_client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXOABKT",
+      "revision": "16.0",
+      "edition": "v20250520",
+      "source_release_date": "2025-05-20",
+      "pdf_pages": 53,
+      "pdf_bytes": 1786618,
+      "sha256": "b8fe871574a9da522e6e020f0b8edab4d5a910733dc5e023f52cc38ec8e584fb",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXOABKT].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-LCID",
+          "raw_label": "[MS-LCID]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-NSPI",
+          "raw_label": "[MS-NSPI]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXNSPI",
+          "raw_label": "[MS-OXNSPI]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXOABK",
+          "raw_label": "[MS-OXOABK]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 7
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXOAB",
+          "raw_label": "[MS-OXOAB]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 6,
+      "informative_count": 2,
+      "complete_original_pdf_sha256_checked": true,
+      "normative_heading_page_rendered": true,
+      "original_pdf_binary_in_git": false,
+      "cited_target_edition": "UNRECONCILED",
+      "sfb2019_full_client_applicability": "OPEN"
+    },
+    {
+      "id": "MS-OXOCFG",
+      "revision": "16.0",
+      "edition": "v20250520",
+      "source_release_date": "2025-05-20",
+      "pdf_pages": 103,
+      "pdf_bytes": 3350720,
+      "sha256": "ac5fe44d72e92048568188b856252d4242b653c750d7846077e02251679e7971",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXOCFG].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXCFOLD",
+          "raw_label": "[MS-OXCFOLD]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXCFXICS",
+          "raw_label": "[MS-OXCFXICS]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXCICAL",
+          "raw_label": "[MS-OXCICAL]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXCPERM",
+          "raw_label": "[MS-OXCPERM]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXCPRPT",
+          "raw_label": "[MS-OXCPRPT]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXCTABL",
+          "raw_label": "[MS-OXCTABL]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXOABK",
+          "raw_label": "[MS-OXOABK]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXOCAL",
+          "raw_label": "[MS-OXOCAL]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXORMDR",
+          "raw_label": "[MS-OXORMDR]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXORULE",
+          "raw_label": "[MS-OXORULE]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXOSFLD",
+          "raw_label": "[MS-OXOSFLD]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXOSRCH",
+          "raw_label": "[MS-OXOSRCH]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 13
+        },
+        {
+          "target": "XMLBase",
+          "raw_label": "[XMLBase]",
+          "pdf_page": 13
+        },
+        {
+          "target": "XMLNS",
+          "raw_label": "[XMLNS]",
+          "pdf_page": 13
+        },
+        {
+          "target": "XMLSCHEMA2",
+          "raw_label": "[XMLSCHEMA2]",
+          "pdf_page": 13
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXCMAPIHTTP",
+          "raw_label": "[MS-OXCMAPIHTTP]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-OXCRPC",
+          "raw_label": "[MS-OXCRPC]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-OXOFLAG",
+          "raw_label": "[MS-OXOFLAG]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 13
+        }
+      ],
+      "normative_count": 22,
+      "informative_count": 4,
+      "complete_original_pdf_sha256_checked": true,
+      "normative_heading_page_rendered": true,
+      "original_pdf_binary_in_git": false,
+      "cited_target_edition": "UNRECONCILED",
+      "sfb2019_full_client_applicability": "OPEN"
+    }
+  ],
+  "additional_normative_edges": 179,
+  "additional_informative_mentions_separate": 50,
+  "original_archive": "Exchange_Protocols.zip",
+  "old_fifth_sources_audited": 33,
+  "new_fifth_sources_audited": 43,
+  "old_fifth_normative_edges": 442,
+  "new_fifth_normative_edges": 621,
+  "old_fifth_informative_citations": 111,
+  "new_fifth_informative_citations": 161,
+  "initial_raw_ms_mc_targets_unchanged": 88,
+  "remaining_original_candidate_count": 44,
+  "first_second_third_normative_edges_unchanged": [
+    464,
+    246,
+    827
+  ],
+  "fourth_ring_normative_edges_unchanged": 1147,
+  "unclassified_third_ring_schema_ref_count_unchanged": 67,
+  "unclassified_ms_adls_refs_unchanged": 13,
+  "ms_dmrp_web_capture_still_separate_not_original": true,
+  "ms_dmrp_raw_candidate_remains_pending": true,
+  "shortest_path_fifth_ring_not_proven": true,
+  "transitive_normative_fixed_point_not_proven": true,
+  "client_2019_product_scope_not_proven": true,
+  "original_pdfs_remain_user_custody": true,
+  "original_pdf_binaries_committed": false,
+  "phase1_gates_passed": 0
+}

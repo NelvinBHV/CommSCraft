@@ -71,17 +71,17 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "Fourth original source identities 86/86 classified (1147 norm edges), MS-ADLS schema §1.1 references 13 UNCLASSIFIED. Downstream now 33 source bibliographies, 442 directed normative refs (including deliberate actual MS-MQRR p11 self-citation), 111 informative; initial 88 raw fourth-target queue 33 source audited, 1 schema classified, 54 regular pending. Historical editions, recursing newly found MS/MC, RFC/IETF/ISO/ITU standards, independent fixed point, actual SfB2019 Windows Full Client builds/policies/roles unproven. 0/12 gates pass."
+      "blocker": "Source-ID fourth ring 86/86 classified with 1147 normative edges; downstream 43 original §1.2.1 bibliographies/621 directed normative edges/161 separate informative. Original fourth-target raw MS/MC queue 88, 43 source original audited, 1 MS-ADLS schema-only classed, 44 pending. Additional transitive raw MS/MC target IDs 15 uncovered from downstream beyond initial list (59 combined literal pending labels, not historical-edition normalized or fixed point). MS-DMRP 2017 original still pending; RFC/IETF/ISO/ITU/W3C target editions, further recursive norm closure and SfB2019 Windows Full Client builds/features/policy/server role proof remain OPEN; Phase1 0/12 PASS."
     },
     {
       "id": "P1-04",
       "passed": false,
-      "blocker": "Fourth original source identities 86/86 classified (1147 norm edges), MS-ADLS schema §1.1 references 13 UNCLASSIFIED. Downstream now 33 source bibliographies, 442 directed normative refs (including deliberate actual MS-MQRR p11 self-citation), 111 informative; initial 88 raw fourth-target queue 33 source audited, 1 schema classified, 54 regular pending. Historical editions, recursing newly found MS/MC, RFC/IETF/ISO/ITU standards, independent fixed point, actual SfB2019 Windows Full Client builds/policies/roles unproven. 0/12 gates pass."
+      "blocker": "Source-ID fourth ring 86/86 classified with 1147 normative edges; downstream 43 original §1.2.1 bibliographies/621 directed normative edges/161 separate informative. Original fourth-target raw MS/MC queue 88, 43 source original audited, 1 MS-ADLS schema-only classed, 44 pending. Additional transitive raw MS/MC target IDs 15 uncovered from downstream beyond initial list (59 combined literal pending labels, not historical-edition normalized or fixed point). MS-DMRP 2017 original still pending; RFC/IETF/ISO/ITU/W3C target editions, further recursive norm closure and SfB2019 Windows Full Client builds/features/policy/server role proof remain OPEN; Phase1 0/12 PASS."
     },
     {
       "id": "P1-05",
       "passed": false,
-      "blocker": "Fourth original source identities 86/86 classified (1147 norm edges), MS-ADLS schema §1.1 references 13 UNCLASSIFIED. Downstream now 33 source bibliographies, 442 directed normative refs (including deliberate actual MS-MQRR p11 self-citation), 111 informative; initial 88 raw fourth-target queue 33 source audited, 1 schema classified, 54 regular pending. Historical editions, recursing newly found MS/MC, RFC/IETF/ISO/ITU standards, independent fixed point, actual SfB2019 Windows Full Client builds/policies/roles unproven. 0/12 gates pass."
+      "blocker": "Source-ID fourth ring 86/86 classified with 1147 normative edges; downstream 43 original §1.2.1 bibliographies/621 directed normative edges/161 separate informative. Original fourth-target raw MS/MC queue 88, 43 source original audited, 1 MS-ADLS schema-only classed, 44 pending. Additional transitive raw MS/MC target IDs 15 uncovered from downstream beyond initial list (59 combined literal pending labels, not historical-edition normalized or fixed point). MS-DMRP 2017 original still pending; RFC/IETF/ISO/ITU/W3C target editions, further recursive norm closure and SfB2019 Windows Full Client builds/features/policy/server role proof remain OPEN; Phase1 0/12 PASS."
     },
     {
       "id": "P1-06",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "Fourth original source identities 86/86 classified (1147 norm edges), MS-ADLS schema §1.1 references 13 UNCLASSIFIED. Downstream now 33 source bibliographies, 442 directed normative refs (including deliberate actual MS-MQRR p11 self-citation), 111 informative; initial 88 raw fourth-target queue 33 source audited, 1 schema classified, 54 regular pending. Historical editions, recursing newly found MS/MC, RFC/IETF/ISO/ITU standards, independent fixed point, actual SfB2019 Windows Full Client builds/policies/roles unproven. 0/12 gates pass."
+      "blocker": "Source-ID fourth ring 86/86 classified with 1147 normative edges; downstream 43 original §1.2.1 bibliographies/621 directed normative edges/161 separate informative. Original fourth-target raw MS/MC queue 88, 43 source original audited, 1 MS-ADLS schema-only classed, 44 pending. Additional transitive raw MS/MC target IDs 15 uncovered from downstream beyond initial list (59 combined literal pending labels, not historical-edition normalized or fixed point). MS-DMRP 2017 original still pending; RFC/IETF/ISO/ITU/W3C target editions, further recursive norm closure and SfB2019 Windows Full Client builds/features/policy/server role proof remain OPEN; Phase1 0/12 PASS."
     },
     {
       "id": "P1-09",
@@ -106,7 +106,7 @@
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "Fourth original source identities 86/86 classified (1147 norm edges), MS-ADLS schema §1.1 references 13 UNCLASSIFIED. Downstream now 33 source bibliographies, 442 directed normative refs (including deliberate actual MS-MQRR p11 self-citation), 111 informative; initial 88 raw fourth-target queue 33 source audited, 1 schema classified, 54 regular pending. Historical editions, recursing newly found MS/MC, RFC/IETF/ISO/ITU standards, independent fixed point, actual SfB2019 Windows Full Client builds/policies/roles unproven. 0/12 gates pass."
+      "blocker": "Source-ID fourth ring 86/86 classified with 1147 normative edges; downstream 43 original §1.2.1 bibliographies/621 directed normative edges/161 separate informative. Original fourth-target raw MS/MC queue 88, 43 source original audited, 1 MS-ADLS schema-only classed, 44 pending. Additional transitive raw MS/MC target IDs 15 uncovered from downstream beyond initial list (59 combined literal pending labels, not historical-edition normalized or fixed point). MS-DMRP 2017 original still pending; RFC/IETF/ISO/ITU/W3C target editions, further recursive norm closure and SfB2019 Windows Full Client builds/features/policy/server role proof remain OPEN; Phase1 0/12 PASS."
     },
     {
       "id": "P1-11",
@@ -1408,5 +1408,19 @@
     "remaining_original_pdf_source_candidates_unchanged": 54,
     "gates_passed": 0,
     "original_pdf_binary_not_committed": true
+  },
+  "p1_03_downstream_ten_exchange_mail_folder_mime_2026_10_24": {
+    "full_original_source_pdfs_sha256_checked": 10,
+    "additional_normative_edges": 179,
+    "additional_informative_refs": 50,
+    "downstream_sources_total": 43,
+    "downstream_normative_edges_total": 621,
+    "downstream_info_citations_total": 161,
+    "original_88_queue_sources_pending": 44,
+    "new_emergent_transitive_raw_ms_mc_target_ids": 15,
+    "combined_literal_pending_labels": 59,
+    "source_original_pdfs_in_git": false,
+    "ms_dmrp_original_release_verified": false,
+    "phase1_gates_passed": 0
   }
 }

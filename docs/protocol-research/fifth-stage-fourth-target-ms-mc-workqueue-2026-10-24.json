@@ -8,9 +8,9 @@
   "second_ring_ledger_sha": "af4e27be3bbab38bd70ba50e858edeaaac4d2e66",
   "fifth_ring_current_ledger_sha": "096d03dfe1c0828b9ad721417441ef6460fa0105",
   "candidate_raw_labels": 88,
-  "already_audited_fifth_sources": 33,
+  "already_audited_fifth_sources": 43,
   "schema_only_reviewed": 1,
-  "remaining_raw_ms_mc_source_candidates": 54,
+  "remaining_raw_ms_mc_source_candidates": 44,
   "reviewed_fifth_source_ids": [
     "MS-SWN",
     "MS-OXWSADISC",
@@ -44,7 +44,17 @@
     "MS-GPSCR",
     "MS-GPSI",
     "MS-MQMR",
-    "MS-MQRR"
+    "MS-MQRR",
+    "MS-OXBBODY",
+    "MS-OXCFOLD",
+    "MS-OXCICAL",
+    "MS-OXCMAIL",
+    "MS-OXCMSG",
+    "MS-OXCPRPT",
+    "MS-OXCSPAM",
+    "MS-OXCTABL",
+    "MS-OXOABKT",
+    "MS-OXOCFG"
   ],
   "raw_target_candidates": [
     {
@@ -682,7 +692,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXCEXT",
@@ -708,7 +718,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXCICAL",
@@ -721,7 +731,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXCMAIL",
@@ -734,7 +744,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXCMSG",
@@ -747,7 +757,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXCPRPT",
@@ -760,7 +770,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXCSPAM",
@@ -773,7 +783,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXCTABL",
@@ -786,7 +796,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXLDAP",
@@ -825,7 +835,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXOCFG",
@@ -838,7 +848,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXOCNTC",
@@ -1411,5 +1421,25 @@
     "remaining_now": 54,
     "raw_total": 88,
     "schema_ms_adls_still_classified_unclassified": true
+  },
+  "batch_2026_10_24_exchange_mail_folder_mime": {
+    "source_ids": [
+      "MS-OXBBODY",
+      "MS-OXCFOLD",
+      "MS-OXCICAL",
+      "MS-OXCMAIL",
+      "MS-OXCMSG",
+      "MS-OXCPRPT",
+      "MS-OXCSPAM",
+      "MS-OXCTABL",
+      "MS-OXOABKT",
+      "MS-OXOCFG"
+    ],
+    "added_normative_edges": 179,
+    "added_informative_mentions": 50,
+    "original_full_pdf_sha256_verified": 10,
+    "total_normative_source_audits": 43,
+    "remaining_raw_ms_mc_source_candidates": 44,
+    "source_audit": "fifth-stage-ten-exchange-mail-folder-mime-audit-2026-10-24.json"
   }
 }
