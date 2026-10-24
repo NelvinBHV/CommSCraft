@@ -71,17 +71,17 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "Fourth source-ID ring 86/86 categorized, 1147 directed norm references unchanged; downstream 103 full original §1.2.1 normative bibliographies with 1373 directed norm references and 384 separately informative citations. Initial 88 raw MS/MC fourth target pool 78 originals checked, one MS-ADLS §1.1 schema-only with 13 UNCLASSIFIED and 9 remaining. Separate additional transitive queue 21 literal pending sources, 30 combined raw pending (not historical editions normalized and not normative fixpoint). New source self-bibliography MS-RMPR p17 and MS-MQSD p8, preserve prior true self-cites. Exact historical MS-DMRP 2017 rev8.2 original missing. Client product feature/role/build/policy scope, external standard bibliographies, original target editions, independent shortest-tier and transitive fixed point remain OPEN. Formal phase1 0/12 gates PASS."
+      "blocker": "Fourth original source identities 86/86 classified and 1147 normative citations unchanged. Downstream 113 complete original §1.2.1 norm sources, 1472 directed normative citations, 420 separately informative refs. Initial fourth MS/MC raw target queue 88: 84 original §1.2.1 bibliographies audited, 1 MS-ADLS §1.1 schema-only 13 refs UNCLASSIFIED, three missing originals MS-DMRP MS-ODATAJSON MS-SQLRS. Separate transitive raw target workqueue currently 28 pending, combined 31 literal raw MS/MC labels. Normative fixed point, historical edition source-target reconciliation, shortest ring graph level and 2019 Skype Windows Full Client roles/policies/feature/build scope OPEN. External RFC/IETF/ISO/ITU/W3C standard edition recursive bibliography unresolved. 0/12 gates PASS."
     },
     {
       "id": "P1-04",
       "passed": false,
-      "blocker": "Fourth source-ID ring 86/86 categorized, 1147 directed norm references unchanged; downstream 103 full original §1.2.1 normative bibliographies with 1373 directed norm references and 384 separately informative citations. Initial 88 raw MS/MC fourth target pool 78 originals checked, one MS-ADLS §1.1 schema-only with 13 UNCLASSIFIED and 9 remaining. Separate additional transitive queue 21 literal pending sources, 30 combined raw pending (not historical editions normalized and not normative fixpoint). New source self-bibliography MS-RMPR p17 and MS-MQSD p8, preserve prior true self-cites. Exact historical MS-DMRP 2017 rev8.2 original missing. Client product feature/role/build/policy scope, external standard bibliographies, original target editions, independent shortest-tier and transitive fixed point remain OPEN. Formal phase1 0/12 gates PASS."
+      "blocker": "Fourth original source identities 86/86 classified and 1147 normative citations unchanged. Downstream 113 complete original §1.2.1 norm sources, 1472 directed normative citations, 420 separately informative refs. Initial fourth MS/MC raw target queue 88: 84 original §1.2.1 bibliographies audited, 1 MS-ADLS §1.1 schema-only 13 refs UNCLASSIFIED, three missing originals MS-DMRP MS-ODATAJSON MS-SQLRS. Separate transitive raw target workqueue currently 28 pending, combined 31 literal raw MS/MC labels. Normative fixed point, historical edition source-target reconciliation, shortest ring graph level and 2019 Skype Windows Full Client roles/policies/feature/build scope OPEN. External RFC/IETF/ISO/ITU/W3C standard edition recursive bibliography unresolved. 0/12 gates PASS."
     },
     {
       "id": "P1-05",
       "passed": false,
-      "blocker": "Fourth source-ID ring 86/86 categorized, 1147 directed norm references unchanged; downstream 103 full original §1.2.1 normative bibliographies with 1373 directed norm references and 384 separately informative citations. Initial 88 raw MS/MC fourth target pool 78 originals checked, one MS-ADLS §1.1 schema-only with 13 UNCLASSIFIED and 9 remaining. Separate additional transitive queue 21 literal pending sources, 30 combined raw pending (not historical editions normalized and not normative fixpoint). New source self-bibliography MS-RMPR p17 and MS-MQSD p8, preserve prior true self-cites. Exact historical MS-DMRP 2017 rev8.2 original missing. Client product feature/role/build/policy scope, external standard bibliographies, original target editions, independent shortest-tier and transitive fixed point remain OPEN. Formal phase1 0/12 gates PASS."
+      "blocker": "Fourth original source identities 86/86 classified and 1147 normative citations unchanged. Downstream 113 complete original §1.2.1 norm sources, 1472 directed normative citations, 420 separately informative refs. Initial fourth MS/MC raw target queue 88: 84 original §1.2.1 bibliographies audited, 1 MS-ADLS §1.1 schema-only 13 refs UNCLASSIFIED, three missing originals MS-DMRP MS-ODATAJSON MS-SQLRS. Separate transitive raw target workqueue currently 28 pending, combined 31 literal raw MS/MC labels. Normative fixed point, historical edition source-target reconciliation, shortest ring graph level and 2019 Skype Windows Full Client roles/policies/feature/build scope OPEN. External RFC/IETF/ISO/ITU/W3C standard edition recursive bibliography unresolved. 0/12 gates PASS."
     },
     {
       "id": "P1-06",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "Fourth source-ID ring 86/86 categorized, 1147 directed norm references unchanged; downstream 103 full original §1.2.1 normative bibliographies with 1373 directed norm references and 384 separately informative citations. Initial 88 raw MS/MC fourth target pool 78 originals checked, one MS-ADLS §1.1 schema-only with 13 UNCLASSIFIED and 9 remaining. Separate additional transitive queue 21 literal pending sources, 30 combined raw pending (not historical editions normalized and not normative fixpoint). New source self-bibliography MS-RMPR p17 and MS-MQSD p8, preserve prior true self-cites. Exact historical MS-DMRP 2017 rev8.2 original missing. Client product feature/role/build/policy scope, external standard bibliographies, original target editions, independent shortest-tier and transitive fixed point remain OPEN. Formal phase1 0/12 gates PASS."
+      "blocker": "Fourth original source identities 86/86 classified and 1147 normative citations unchanged. Downstream 113 complete original §1.2.1 norm sources, 1472 directed normative citations, 420 separately informative refs. Initial fourth MS/MC raw target queue 88: 84 original §1.2.1 bibliographies audited, 1 MS-ADLS §1.1 schema-only 13 refs UNCLASSIFIED, three missing originals MS-DMRP MS-ODATAJSON MS-SQLRS. Separate transitive raw target workqueue currently 28 pending, combined 31 literal raw MS/MC labels. Normative fixed point, historical edition source-target reconciliation, shortest ring graph level and 2019 Skype Windows Full Client roles/policies/feature/build scope OPEN. External RFC/IETF/ISO/ITU/W3C standard edition recursive bibliography unresolved. 0/12 gates PASS."
     },
     {
       "id": "P1-09",
@@ -106,7 +106,7 @@
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "Fourth source-ID ring 86/86 categorized, 1147 directed norm references unchanged; downstream 103 full original §1.2.1 normative bibliographies with 1373 directed norm references and 384 separately informative citations. Initial 88 raw MS/MC fourth target pool 78 originals checked, one MS-ADLS §1.1 schema-only with 13 UNCLASSIFIED and 9 remaining. Separate additional transitive queue 21 literal pending sources, 30 combined raw pending (not historical editions normalized and not normative fixpoint). New source self-bibliography MS-RMPR p17 and MS-MQSD p8, preserve prior true self-cites. Exact historical MS-DMRP 2017 rev8.2 original missing. Client product feature/role/build/policy scope, external standard bibliographies, original target editions, independent shortest-tier and transitive fixed point remain OPEN. Formal phase1 0/12 gates PASS."
+      "blocker": "Fourth original source identities 86/86 classified and 1147 normative citations unchanged. Downstream 113 complete original §1.2.1 norm sources, 1472 directed normative citations, 420 separately informative refs. Initial fourth MS/MC raw target queue 88: 84 original §1.2.1 bibliographies audited, 1 MS-ADLS §1.1 schema-only 13 refs UNCLASSIFIED, three missing originals MS-DMRP MS-ODATAJSON MS-SQLRS. Separate transitive raw target workqueue currently 28 pending, combined 31 literal raw MS/MC labels. Normative fixed point, historical edition source-target reconciliation, shortest ring graph level and 2019 Skype Windows Full Client roles/policies/feature/build scope OPEN. External RFC/IETF/ISO/ITU/W3C standard edition recursive bibliography unresolved. 0/12 gates PASS."
     },
     {
       "id": "P1-11",
@@ -1502,5 +1502,18 @@
     "combined_literal_open": 30,
     "source_binaries_in_git": false,
     "formal_phase1_gates_passed": 0
+  },
+  "p1_03_rdp_smb_wmi_webdav_sharepoint_originals_2026_10_24": {
+    "ten_full_original_pdfs_sha256_checked": 10,
+    "added_normative_edges": 99,
+    "added_info_refs": 36,
+    "downstream_original_sources_total": 113,
+    "downstream_normative_edges_total": 1472,
+    "downstream_informative_total": 420,
+    "initial_regular_pending": 3,
+    "transitive_raw_ms_mc_pending": 28,
+    "combined_literal_raw_ms_mc_pending": 31,
+    "source_original_pdfs_in_git": false,
+    "phase1_gates_passed": 0
   }
 }

@@ -8,9 +8,9 @@
   "second_ring_ledger_sha": "af4e27be3bbab38bd70ba50e858edeaaac4d2e66",
   "fifth_ring_current_ledger_sha": "096d03dfe1c0828b9ad721417441ef6460fa0105",
   "candidate_raw_labels": 88,
-  "already_audited_fifth_sources": 78,
+  "already_audited_fifth_sources": 84,
   "schema_only_reviewed": 1,
-  "remaining_raw_ms_mc_source_candidates": 9,
+  "remaining_raw_ms_mc_source_candidates": 3,
   "reviewed_fifth_source_ids": [
     "MS-SWN",
     "MS-OXWSADISC",
@@ -114,7 +114,17 @@
     "MS-GPNAP",
     "MS-MQSD",
     "MS-WDV",
-    "MS-TIPP"
+    "MS-TIPP",
+    "MS-PCCRC",
+    "MS-RDPEGT",
+    "MS-RSVD",
+    "MS-SMBD",
+    "MS-WMI",
+    "MS-XWDVSEC",
+    "MS-MEETS",
+    "MS-WDVSE",
+    "MS-FSSHTTP",
+    "MS-WSSFO2"
   ],
   "raw_target_candidates": [
     {
@@ -1272,7 +1282,7 @@
           "source_sha256": "fef3a06507679130a8cfdcaeaed581482d7f235435dd904f6c794f113ff04bd1"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-RA",
@@ -1298,7 +1308,7 @@
           "source_sha256": "521f06c513441df83c748c4ecc2307b26f9b01f3e9a25d0c0f0577a74e10a9c3"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-RMPR",
@@ -1324,7 +1334,7 @@
           "source_sha256": "fef3a06507679130a8cfdcaeaed581482d7f235435dd904f6c794f113ff04bd1"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-SMBD",
@@ -1337,7 +1347,7 @@
           "source_sha256": "fef3a06507679130a8cfdcaeaed581482d7f235435dd904f6c794f113ff04bd1"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-SQLRS",
@@ -1376,7 +1386,7 @@
           "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-WSSHP",
@@ -1415,7 +1425,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     }
   ],
   "scope_limitations": [
@@ -1658,5 +1668,39 @@
     "initial_regular_remaining": 9,
     "downstream_reviewed_total": 103,
     "source_full_pdf_sha256_count": 10
+  },
+  "batch_2026_10_24_rdp_smb_wmi_webdav_sharepoint": {
+    "source_ids": [
+      "MS-PCCRC",
+      "MS-RDPEGT",
+      "MS-RSVD",
+      "MS-SMBD",
+      "MS-WMI",
+      "MS-XWDVSEC",
+      "MS-MEETS",
+      "MS-WDVSE",
+      "MS-FSSHTTP",
+      "MS-WSSFO2"
+    ],
+    "normative_edges_added": 99,
+    "informative_refs_added": 36,
+    "initial_source_ids": [
+      "MS-PCCRC",
+      "MS-RDPEGT",
+      "MS-RSVD",
+      "MS-SMBD",
+      "MS-WMI",
+      "MS-XWDVSEC"
+    ],
+    "transitive_source_ids": [
+      "MS-MEETS",
+      "MS-WDVSE",
+      "MS-FSSHTTP",
+      "MS-WSSFO2"
+    ],
+    "initial_source_bibliographies_audited_total": 84,
+    "initial_regular_pending": 3,
+    "downstream_audited_original_bibliographies_total": 113,
+    "original_pdf_full_sha256_checked": 10
   }
 }
