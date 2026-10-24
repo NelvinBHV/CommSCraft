@@ -1,6 +1,8 @@
 # CommSCraft – verbindlicher Forschungsstand und Wiederaufnahmepunkt
 
-**Stand: 23.10.2026 · Repository:** [NelvinBHV/CommSCraft](https://github.com/NelvinBHV/CommSCraft) · **Arbeitsbranch:** `draft/protocol-spec-analysis-2026-10-23` · **Phase 1: NICHT ABGESCHLOSSEN**
+**NEUESTER HANDOFF (24.10.2026):** [Verbindlicher aktueller Snapshot](HANDOFF_2026-10-24.md) · [Kopierbarer Prompt zur Fortsetzung](NEXT_SESSION_PROMPT.md). Der letzte vor diesem Handoff verifizierte Git-HEAD war `973df19c916a3a1e3acd04df599e191935af279e`; nach Übergabe stets den tatsächlichen Draft-Branch-HEAD prüfen. Stand: 86/86 vierte MS/MC-Quellidentitäten vorhanden, nur 1/86 Originalnormlisten einzeln geprüft (MS-DLTM; 10 Kanten), 85 weitere Bibliografien offen, 0/12 formale Gates PASS. Original-PDFs verbleiben beim Nutzer.
+
+**Stand: 24.10.2026 · Repository:** [NelvinBHV/CommSCraft](https://github.com/NelvinBHV/CommSCraft) · **Arbeitsbranch:** `draft/protocol-spec-analysis-2026-10-23` · **Phase 1: NICHT ABGESCHLOSSEN**
 
 > **WICHTIG FÜR SPÄTERE ARBEITEN:** Dieser Text ist der Einstiegspunkt für die Fortsetzung. Er fasst den belegten Stand der Dokumentation zusammen, ersetzt aber **nicht** die verlinkten Quellenregister. Die vollständig enumerierte **erste Referenzebene (46/46)** ist **keine vollständig aufgelöste normative Abhängigkeitskette** und erst recht keine Aussage über Client-Funktionalität oder Protokollkonformität.
 

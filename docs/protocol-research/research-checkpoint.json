@@ -10,7 +10,7 @@
   },
   "status": {
     "phase_1": "INCOMPLETE",
-    "phase_1_overview_direct_references": "ENUMERATED_NOT_ALL_RELEASE_VERIFIED",
+    "phase_1_overview_direct_references": "46_OF_46_ORIGINAL_RELEASE_REFERENCE_SECTIONS_EVIDENCED_BUT_TARGET_SEMANTIC_AUDIT_OPEN",
     "phase_2": "PARTIAL_SELECTED_CLAUSES",
     "phase_3": "PRELIMINARY_INFERRED_MODELS",
     "phase_4": "INCOMPLETE",
@@ -154,7 +154,7 @@
     {
       "id": "P1-09",
       "priority": 1,
-      "task": "Reconcile remaining eight transitive Microsoft exact release PDF §1.2.1 editions; MS-SIP/KILE/NLMP/RDPEMC now verified."
+      "task": "12/12 current exact-release second-ring Microsoft §1.2.1 reference bibliographies are already verified. Revisit only for version-history changes, target-level semantic mismatches and client-specific source applicability; this is NOT a pending eight-PDF acquisition task."
     },
     {
       "id": "P1-10",
@@ -199,29 +199,33 @@
     "transitive-frontier.json",
     "rfc-version-relations-reviewed.json"
   ],
-  "instructions_for_next_session": "Read AGENTS.md, CURRENT_STATUS.md, research-checkpoint.json latest_continuation, phase1-audit.md and last research-log entry; verify draft/main commit and calculate counts anew from two distinct ledgers; do not combine first-tier 460 with 246 into a false closed graph. Reconcile publication editions and recurse only relevant targets. Never code/test/merge/release. New 2026-10-24 ZIP audit: all 46 current first-tier original PDF §1.2.1 release sections now have evidence, and E911 normative edges 460→464. Complete source target normalization, 8 second-tier originals, rights-compliant private PDF storage and SHA conflict resolution remain OPEN. Do not falsely claim PDFs were committed to public GitHub. Windows_Protocols.tar.xz SHA256 verified 451 original PDFs including all remaining 6 MS second-ring sources. Current PDF §1.2.1 edition coverage is 12/12 second tier; no source gaps at two direct rings, but 52 discovered MS/MC frontier PDFs need third-ring normative work, and formal gates remain 0/12. Three same-edition SHA conflicts MS-NLMP/RDPEMC/SIP preserved. 2026-10-24 P1-03 follow-on: third-ring 52 acquired MS/MC PDFs analyzed; 48 explicit normative bibliographies yielding 827 additional directed edges, 4 schema §1.1 general bibliographies yielding 67 separate unclassified mentions. 342 distinct third-ring raw target labels; 236 new vs prior 345, broken into 86 MS/MC, 62 RFC, 88 external/aliases; raw union 581. Git stores gzip TSV edge source+target+page and 52-source SHA inventory; PDFs remain with user on request only. Phase1 gates 0/12. Continue with 86 discovered MS/MC fourth frontier, RFC and external editions, historical diff, and actual client applicability; no code, live tests, main merge or release. 2026-10-24 standalone [MS-DLTW]-210625.pdf v20210625 rev16.0 checked, SHA256 28a8b2a3e57e2594c0d96501679cf413841c432975364cb2ad87a85a09fe8a15. This is NOT MS-DLTM; MS-DLTM 9.1 2017 original still missing (85/86). MS-DLTW cites it only INFORMATIVELY; third-ring MS-RPCE cites MS-DLTM NORMATIVELY. Newer MS-DLTW v20240423 in Windows archive must not be overwritten. User retains PDFs; request only matching MS-DLTM if necessary. 2026-10-24 exact user MS-DLTM rev9.1/v20170601 PDF SHA256 46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8 reviewed; all 86/86 fourth-ring MS/MC source document identities now available. MS-DLTM p9 §1.2.1 10 normative targets incl. MS-DLTW (new raw target already acquired); p9-10 §1.2.2 6 informative. Other 85 fourth ring original normative sections and client applicability NOT reviewed or closed. User holds originals, Git stores evidence only.",
+  "instructions_for_next_session": "AUTHORITATIVE: Read AGENTS.md, docs/protocol-research/HANDOFF_2026-10-24.md and docs/protocol-research/NEXT_SESSION_PROMPT.md. Check CURRENT_STATUS.md, fourth-ring-ms-frontier-2026-10-24.json, fourth-ring-normative-reference-ledger.json and all 12 gates. Fourth ring: 86/86 MS/MC source identities acquired, 1/86 published original §1.2.1 bibliography reviewed (MS-DLTM rev 9.1, ten edges), 85 other bibliographies OPEN; prior ring counts 464/246/827, four AD schema §1.1 unclassified lists 67, 0/12 gates. User keeps PDF originals; request only a needed specific PDF if not accessible. Next bounded batch 6–10 fourth-ring documents, cite exact edition/page/hash, separate informative, update ledgers+status+checkpoint+gates+log, commit to draft and verify. Never code, test real servers, weaken TLS, modify runner billing, merge main or release.",
   "latest_continuation": {
-    "date": "2026-10-23",
-    "research_iteration": "phase1-transitive-microsoft-specs-plus-selected-rfc-status",
-    "from_previous_git_head": "0fadffbd58237f11909c6f5f66115eb1e553a955",
-    "document": "phase1-transitive-research-2026-10-23.md",
-    "graph_file": "transitive-reference-ledger.json",
-    "open_frontier_file": "transitive-frontier.json",
-    "rfc_version_file": "rfc-version-relations-reviewed.json",
-    "transitive_microsoft_source_docs": 12,
-    "complete_official_live_html_normative_lists": 11,
-    "partial_search_only_ms_rdpemc_lists": 1,
-    "second_level_edges": 246,
-    "second_level_distinct_targets": 183,
-    "distinct_new_targets_vs_initial_first_tier": 146,
-    "distinct_new_ms_mc_targets": 52,
-    "distinct_new_rfc_targets": 51,
-    "distinct_new_other_targets": 43,
-    "combined_unique_first_plus_second_level_targets": 345,
-    "selected_rfc_editor_update_relation_headers_checked": 10,
-    "all_second_tier_published_pdf_editions_verified": 0,
-    "phase1_complete": false,
-    "important": "Prior 460 original MS-OCSPROT first-tier normative edges remain unchanged. No second-tier source has been matched to exactly published revision PDF, full graph still open, no implementations/tests."
+    "date": "2026-10-24",
+    "iteration": "P1-03-fourth-ring-ms-dltm-acquisition-and-handoff",
+    "branch": "draft/protocol-spec-analysis-2026-10-23",
+    "previous_verified_commit": "973df19c916a3a1e3acd04df599e191935af279e",
+    "authoritative_handoff": "HANDOFF_2026-10-24.md",
+    "resume_prompt": "NEXT_SESSION_PROMPT.md",
+    "current_status_file": "CURRENT_STATUS.md",
+    "fourth_ring_source_document_ids_acquired": 86,
+    "fourth_ring_source_document_ids_total": 86,
+    "fourth_ring_bibliographies_exact_section_reviewed": 1,
+    "fourth_ring_bibliographies_remaining": 85,
+    "fourth_ring_separate_normative_edges": 10,
+    "first_ring_direct_edges_unchanged": 464,
+    "second_ring_direct_edges_unchanged": 246,
+    "third_ring_explicit_direct_edges_unchanged": 827,
+    "third_ring_schema_unclassified_mentions": 67,
+    "distinct_raw_labels_first_three_rings": 581,
+    "files_sha256_verified_instances": 824,
+    "source_pdf_storage": "USER_RETAINS_ALL_PDF_ORIGINALS",
+    "new_protocol_implementation_authorized": false,
+    "live_interoperability_tests_authorized": false,
+    "main_merge_authorized": false,
+    "releases_authorized": false,
+    "formal_phase1_gates_passed": 0,
+    "phase1_complete": false
   },
   "follow_on_rfc_first_hop_2026_10_23": {
     "status": "PARTIAL_RFC_ORIGINAL_REFERENCES_ONLY",
@@ -554,5 +558,43 @@
     "source_original_retained_by_user": true,
     "phase1_closed": false,
     "phase1_gates_pass": 0
+  },
+  "previous_latest_continuation_2026_10_23": {
+    "date": "2026-10-23",
+    "research_iteration": "phase1-transitive-microsoft-specs-plus-selected-rfc-status",
+    "from_previous_git_head": "0fadffbd58237f11909c6f5f66115eb1e553a955",
+    "document": "phase1-transitive-research-2026-10-23.md",
+    "graph_file": "transitive-reference-ledger.json",
+    "open_frontier_file": "transitive-frontier.json",
+    "rfc_version_file": "rfc-version-relations-reviewed.json",
+    "transitive_microsoft_source_docs": 12,
+    "complete_official_live_html_normative_lists": 11,
+    "partial_search_only_ms_rdpemc_lists": 1,
+    "second_level_edges": 246,
+    "second_level_distinct_targets": 183,
+    "distinct_new_targets_vs_initial_first_tier": 146,
+    "distinct_new_ms_mc_targets": 52,
+    "distinct_new_rfc_targets": 51,
+    "distinct_new_other_targets": 43,
+    "combined_unique_first_plus_second_level_targets": 345,
+    "selected_rfc_editor_update_relation_headers_checked": 10,
+    "all_second_tier_published_pdf_editions_verified": 0,
+    "phase1_complete": false,
+    "important": "Prior 460 original MS-OCSPROT first-tier normative edges remain unchanged. No second-tier source has been matched to exactly published revision PDF, full graph still open, no implementations/tests."
+  },
+  "previous_resume_instructions_2026_10_24": "Read AGENTS.md, CURRENT_STATUS.md, research-checkpoint.json latest_continuation, phase1-audit.md and last research-log entry; verify draft/main commit and calculate counts anew from two distinct ledgers; do not combine first-tier 460 with 246 into a false closed graph. Reconcile publication editions and recurse only relevant targets. Never code/test/merge/release. New 2026-10-24 ZIP audit: all 46 current first-tier original PDF §1.2.1 release sections now have evidence, and E911 normative edges 460→464. Complete source target normalization, 8 second-tier originals, rights-compliant private PDF storage and SHA conflict resolution remain OPEN. Do not falsely claim PDFs were committed to public GitHub. Windows_Protocols.tar.xz SHA256 verified 451 original PDFs including all remaining 6 MS second-ring sources. Current PDF §1.2.1 edition coverage is 12/12 second tier; no source gaps at two direct rings, but 52 discovered MS/MC frontier PDFs need third-ring normative work, and formal gates remain 0/12. Three same-edition SHA conflicts MS-NLMP/RDPEMC/SIP preserved. 2026-10-24 P1-03 follow-on: third-ring 52 acquired MS/MC PDFs analyzed; 48 explicit normative bibliographies yielding 827 additional directed edges, 4 schema §1.1 general bibliographies yielding 67 separate unclassified mentions. 342 distinct third-ring raw target labels; 236 new vs prior 345, broken into 86 MS/MC, 62 RFC, 88 external/aliases; raw union 581. Git stores gzip TSV edge source+target+page and 52-source SHA inventory; PDFs remain with user on request only. Phase1 gates 0/12. Continue with 86 discovered MS/MC fourth frontier, RFC and external editions, historical diff, and actual client applicability; no code, live tests, main merge or release. 2026-10-24 standalone [MS-DLTW]-210625.pdf v20210625 rev16.0 checked, SHA256 28a8b2a3e57e2594c0d96501679cf413841c432975364cb2ad87a85a09fe8a15. This is NOT MS-DLTM; MS-DLTM 9.1 2017 original still missing (85/86). MS-DLTW cites it only INFORMATIVELY; third-ring MS-RPCE cites MS-DLTM NORMATIVELY. Newer MS-DLTW v20240423 in Windows archive must not be overwritten. User retains PDFs; request only matching MS-DLTM if necessary. 2026-10-24 exact user MS-DLTM rev9.1/v20170601 PDF SHA256 46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8 reviewed; all 86/86 fourth-ring MS/MC source document identities now available. MS-DLTM p9 §1.2.1 10 normative targets incl. MS-DLTW (new raw target already acquired); p9-10 §1.2.2 6 informative. Other 85 fourth ring original normative sections and client applicability NOT reviewed or closed. User holds originals, Git stores evidence only.",
+  "handoff_2026_10_24": {
+    "source_head_verified": "973df19c916a3a1e3acd04df599e191935af279e",
+    "handoff_document": "HANDOFF_2026-10-24.md",
+    "paste_ready_prompt": "NEXT_SESSION_PROMPT.md",
+    "tasks": {
+      "priority": "P1-03",
+      "first_batch_max_sources": 10,
+      "remaining_exact_fourth_ring_normative_bibliographies": 85,
+      "source_pdf_custody": "USER"
+    },
+    "verified_last_upload": "MS-DLTM 9.1 v20170601 PDF SHA256 46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8",
+    "artifact_status": "CURRENT_AND_COPIABLE",
+    "phase1_gate_passes": 0
   }
 }
