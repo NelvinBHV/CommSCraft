@@ -32,7 +32,7 @@
     "overview_ms_documents_with_direct_1_2_1_lists_examined_in_some_form": 46,
     "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 46,
     "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 0,
-    "complete_original_pdfs_received_and_sha256_verified": 74,
+    "complete_original_pdfs_received_and_sha256_verified": 371,
     "first_tier_normative_reference_edges": 464,
     "first_tier_distinct_target_identifiers": 199,
     "ms_normative_edges": 120,
@@ -46,8 +46,11 @@
     "baseline_feature_ids": 122,
     "baseline_windows_reference_cases": 93,
     "baseline_feature_ids_without_direct_reference_case": 31,
-    "transitive_ms_current_release_pdf_reference_sections_verified": 4,
-    "transitive_ms_missing_release_pdf_reference_sections": 8
+    "transitive_ms_current_release_pdf_reference_sections_verified": 6,
+    "transitive_ms_missing_release_pdf_reference_sections": 6,
+    "exchange_sharepoint_uploaded_original_pdf_count": 297,
+    "exchange_sharepoint_original_pdf_total_bytes": 820238729,
+    "third_ring_related_ms_original_pdf_files_located": 6
   },
   "source_provenance": {
     "ms_avedgea": {
@@ -92,12 +95,12 @@
     {
       "id": "P1-02",
       "priority": 1,
-      "task": "Resolve private rights-compliant storage of 74 ZIP original PDF binaries (public GitHub full-document redistribution not licensed by current notice), retain SHA256, obtain missing eight second-tier published original PDFs and superseded 2025 newer ABS/SIPREGE/SSRTP versions; perform dated history diffs."
+      "task": "Resolve private rights-compliant storage of 371 source PDFs from three user-provided ZIP archives; six remaining second-layer Microsoft current originals still absent; maintain historical and conflicting hash evidence; compare prior editions; never claim full PDF public GitHub uploads."
     },
     {
       "id": "P1-03",
       "priority": 1,
-      "task": "Recursively expand all relevant Microsoft normative references beyond the 46 overview docs, including 12 already identified Windows/Exchange/SharePoint target IDs; record version, relevance or explicit evidence-based exclusion."
+      "task": "Six of twelve second-ring exact current MS PDF §1.2.1 bibliographies confirmed; all six direct third-ring Microsoft references from MS-OAUTH2EX and MS-OXWUMS are acquired as originals but have not been normatively recursed; further frontier and applicability OPEN."
     },
     {
       "id": "P1-04",
@@ -377,5 +380,36 @@
     "interoperability_tests_allowed": false,
     "main_merge_allowed": false,
     "release_allowed": false
+  },
+  "exchange_sharepoint_originals_2026_10_24": {
+    "date": "2026-10-24",
+    "archives": [
+      {
+        "name": "Exchange_Protocols.zip",
+        "sha256": "e3729e5712fd11b087a2c3560d5490d54afed04f2ca80562cbeb6020373c9f88",
+        "pdfs": 129,
+        "bytes": 267997278
+      },
+      {
+        "name": "SharePointProtocols.zip",
+        "sha256": "0b3f3ccfe190a2988edc0d1d74a47cb1f81106c13e30dc9ab60bebf672974fc1",
+        "pdfs": 168,
+        "bytes": 552241451
+      }
+    ],
+    "combined_pdfs_sha256_verified": 297,
+    "combined_pdf_bytes": 820238729,
+    "report": "exchange-sharepoint-originals-audit-2026-10-24.md",
+    "source_rows_current_original_section_verified": [
+      "MS-OAUTH2EX 8.0 §1.2.1 p.5",
+      "MS-OXWUMS 16.0 §1.2.1 pp.10-11"
+    ],
+    "all_new_verified_normative_edges_preexisting": 23,
+    "second_ms_pdf_sections_now": 6,
+    "second_ms_remaining": 6,
+    "source_binaries_public_github": false,
+    "normative_draft_oauth_v2_22_title_v2_23_url": "OPEN_ALREADY_CONFIRMED_IN_EXACT_ORIGINAL_2025_PDF",
+    "formal_phase1_passed": 0,
+    "phase1_complete": false
   }
 }

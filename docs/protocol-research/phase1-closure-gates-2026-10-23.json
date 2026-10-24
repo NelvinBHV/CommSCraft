@@ -14,23 +14,26 @@
     "first_unique_targets": 199,
     "first_informative_edges": 5,
     "second_sources": 12,
-    "second_full_html": 8,
+    "second_full_html": 6,
     "second_search_excerpt_only": 0,
-    "second_release_sections_verified": 4,
+    "second_release_sections_verified": 6,
     "second_edges": 246,
     "second_unique_targets": 183,
     "second_frontier": 146,
     "both_ms_target_union": 345,
     "rfc_seed": 113,
     "additional_rfc_first_hop": 35,
-    "immediate_58_source_originals_sha256_verified": 49,
+    "immediate_58_source_originals_sha256_verified": 51,
     "extra_ms_ocsprot_overview_original_sha256_verified": 1,
     "overview_source_ids_present_in_zip": 46,
     "zip_first_tier_current_release_pdf_files": 43,
     "zip_first_tier_historical_release_pdf_files": 3,
     "zip_all_pdf_full_files_hashed": 74,
     "zip_pdf_bytes_total": 180967975,
-    "first_external_edges": 87
+    "first_external_edges": 87,
+    "second_current_editions_missing": 6,
+    "new_exchange_sharepoint_zip_full_pdfs_sha256": 297,
+    "new_exchange_sharepoint_zip_combined_pdf_bytes": 820238729
   },
   "pass_count": 0,
   "gate_count": 12,
@@ -38,17 +41,17 @@
     {
       "id": "P1-01",
       "passed": false,
-      "blocker": "All 46 current first-tier PDF §1.2.1 sections have source-page evidence, but individual normalized target-set semantic comparisons for 22 newly supplied bibliographies are not yet independently closed; MS-E911WS omitted four normative references, now corrected. Do not certify zero remaining discrepancies without completing this audit. ZIP files not in public repo."
+      "blocker": "All 46 current first-tier PDF §1.2.1 sections have source-page evidence, but individual normalized target-set semantic comparisons for 22 newly supplied bibliographies are not yet independently closed; MS-E911WS omitted four normative references, now corrected. Do not certify zero remaining discrepancies without completing this audit. ZIP files not in public repo. Second ring 6/12 edition pages now verified; first-ring canonical sets and historical version deltas remain open."
     },
     {
       "id": "P1-02",
       "passed": false,
-      "blocker": "74 original PDFs were SHA256 checked from a user-provided ZIP; 43 of 46 first-tier current revisions in the ZIP, three older revisions and eight missing cross-library current sources. Full PDF binaries not uploaded to the public GitHub repository; copyright/distribution disposition and past-version content diffs OPEN."
+      "blocker": "Exchange (129 PDFs) and SharePoint (168 PDFs) ZIP originals additionally SHA256 checked; second MS level 6/12 exact current originals, six remain. No full copyrighted source PDF has been committed to public GitHub; source archive/rights review and historical edition diffs OPEN."
     },
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "146 second-ring targets and further recursive Microsoft references not resolved or excluded"
+      "blocker": "Current PDF §1.2.1 verified for MS-OAUTH2EX and MS-OXWUMS, all 23 pre-existing direct edges confirmed; six newly acquired third-ring original source binaries remain unanalyzed. Recursion frontier and client applicability OPEN."
     },
     {
       "id": "P1-04",
@@ -88,7 +91,7 @@
     {
       "id": "P1-11",
       "passed": false,
-      "blocker": "MS-OAUTH2EX -22 versus -23 draft document title/URL conflict unresolved"
+      "blocker": "Current original MS-OAUTH2EX 8.0 §1.2.1 p.5 confirms historical OAuth draft -22 *title* but -23 URL. Edition acquired and hashed; intended normative target still ambiguous pending publisher clarification, edition-diff and actual referenced semantics."
     },
     {
       "id": "P1-12",
@@ -852,12 +855,20 @@
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/sharepoint_protocols/ms-oauth2ex/56105233-7ca7-4b4b-821d-84bb55bfc2cf",
       "section": "§1.2.1",
       "live_list_complete": true,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "ORIGINAL_VERIFIED_RECURSION_PREVIOUS_EDITION_DIFF_CLIENT_SCOPE_OPEN",
+      "full_original_pdf_sha256": "fd0c0291abb6c3d696872855243ef8b59bf8e413c55c0b9303c4644d9117cc74",
+      "full_original_pdf_bytes": 833843,
+      "full_original_pdf_pages": 19,
+      "section_reference_pages": [
+        5
+      ],
+      "release_pdf_references_match_ledger": true,
+      "binary_archived_in_public_github": false
     },
     {
       "id": "MS-OXWUMS",
@@ -867,12 +878,21 @@
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxwums/79ace092-b793-4fa5-82b0-dd30d12c14c2",
       "section": "§1.2.1",
       "live_list_complete": true,
-      "section_release_verified": false,
-      "full_original_sha256_historical": false,
-      "binary_present_in_current_session": false,
+      "section_release_verified": true,
+      "full_original_sha256_historical": true,
+      "binary_present_in_current_session": true,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "ORIGINAL_VERIFIED_RECURSION_PREVIOUS_EDITION_DIFF_CLIENT_SCOPE_OPEN",
+      "full_original_pdf_sha256": "61447ba6fdbb82a4cd11ad3d433aef369d764da286294acb7e65b92e91d54f1d",
+      "full_original_pdf_bytes": 2968912,
+      "full_original_pdf_pages": 107,
+      "section_reference_pages": [
+        10,
+        11
+      ],
+      "release_pdf_references_match_ledger": true,
+      "binary_archived_in_public_github": false
     },
     {
       "id": "MS-RDPBCGR",
@@ -1038,5 +1058,21 @@
     "archive_license_and_private_repo_access": "OPEN",
     "source_target_canonicalization": "OPEN",
     "phase1_complete": false
+  },
+  "exchange_sharepoint_archives_2026_10_24": {
+    "exchange_zip_sha256": "e3729e5712fd11b087a2c3560d5490d54afed04f2ca80562cbeb6020373c9f88",
+    "sharepoint_zip_sha256": "0b3f3ccfe190a2988edc0d1d74a47cb1f81106c13e30dc9ab60bebf672974fc1",
+    "exchange_pdf_count": 129,
+    "sharepoint_pdf_count": 168,
+    "verified_originals": 297,
+    "second_ring_original_sections_verified": 6,
+    "second_ring_missing": 6,
+    "second_ring_normative_edges_unchanged": 246,
+    "additional_direct_normative_edges_verified": 23,
+    "new_normative_edges": 0,
+    "private_archive_still_pending": true,
+    "public_full_pdf_files_uploaded": 0,
+    "formal_phase1_gates_passed": 0,
+    "phase_1_complete": false
   }
 }

@@ -12,3 +12,10 @@
 ## Disposition
 
 `P1-11 = OPEN_REFERENCE_TARGET_AMBIGUOUS`. In Datenmodellen den zusammengesetzten Konflikt-Key `draft-ietf-oauth-v2-22_TITLE_vs_v2-23_URL` **nicht** stillschweigend in `draft-ietf-oauth-v2-22`, `-23` oder RFC 6749 umbenennen. Beide Original-Draft-URLs neben dem Microsoft-Zitat pflegen; nach Abruf der passenden 8.0-Originalausgabe Versions- und Textdifferenzen prüfen. Die zwölf formalen Phase-1-Gates bleiben **0/12 PASS**.
+
+
+## 2026-10-24 – Verifikation am aktuellen MS-OAUTH2EX-8.0-Original (Quellenrevision bestätigt, Draftentscheidung bleibt offen)
+
+**FACT:** Das vollständige Nutzer-Original `SharePointProtocols.zip/[MS-OAUTH2EX].pdf` ist `v20250520` / **rev 8.0**, **19 Seiten**, **833.843 Bytes**, vollständige SHA-256 `fd0c0291abb6c3d696872855243ef8b59bf8e413c55c0b9303c4644d9117cc74`. Die veröffentlichte Revisionstabelle **PDF S.2** bestätigt 20.05.2025 / 8.0; die originalgeprüfte Referenzseite **§1.2.1 PDF S.5** führt ausdrücklich den Namen `draft-ietf-oauth-v2-22`, verlinkt jedoch auf `draft-ietf-oauth-v2-23`. Die anderen sechs direkten Normkanten stimmen mit `transitive-reference-ledger.json` überein. **Somit ist die Ausgabe-/Original-Nachweislücke geschlossen.**
+
+**OPEN:** Die widersprüchliche Draft-Zielrevision ist damit **nicht** normativ entschieden. Der Ledger-Konfliktkey `draft-ietf-oauth-v2-22_TITLE_vs_v2-23_URL` bleibt erhalten, bis Original-Draft-Versionsdiff, tatsächliche normative Verwendungsstellen und gegebenenfalls eine Microsoft-Klarstellung ausgewertet sind. Auch die Client-/Server-Anwendbarkeit bleibt ungeklärt. Kein RFC-6749-Ersatz, keine Implementierungsfreigabe. [Neuer Quellenbericht](exchange-sharepoint-originals-audit-2026-10-24.md).

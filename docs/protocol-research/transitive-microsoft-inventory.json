@@ -2,7 +2,7 @@
   "schema_version": 1,
   "snapshot_date": "2026-10-23",
   "kind": "supplementary Microsoft specs directly referenced by examined MS-OCSPROT document §1.2.1 sections but not listed in six overview source tables",
-  "status": "ALL_12_SECOND_LAYER_SECTIONS_LOCATED_11_HTML_1_PARTIAL_SEARCH_RELEASE_EDITIONS_AND_RECURSION_OPEN",
+  "status": "6_OF_12_SECOND_TIER_CURRENT_ORIGINAL_PDF_SECTION_EDITION_VERIFIED_RECURSION_OPEN",
   "notes": "Latest current published version at 2026-10-23, not necessarily version required by 2025-era client; historic editions and platform applicability must be reconciled. Product/environment profile not yet fixed.",
   "documents": [
     {
@@ -83,17 +83,24 @@
         "MS-OCAUTHWS"
       ],
       "normative_reference_section_complete": true,
-      "full_published_content_acquired": false,
-      "published_binary_sha256": null,
+      "full_published_content_acquired": true,
+      "published_binary_sha256": "fd0c0291abb6c3d696872855243ef8b59bf8e413c55c0b9303c4644d9117cc74",
       "version_history_diffs_reviewed": false,
       "client_applicability_confirmed": false,
-      "status": "LIVE_HTML_NORMATIVE_LIST_RECORDED_RELEASE_PDF_NOT_RECONCILED",
+      "status": "CURRENT_RELEASE_ORIGINAL_PDF_SHA256_AND_NORMATIVE_REFERENCES_VERIFIED",
       "live_normative_section_url": "https://learn.microsoft.com/de-de/openspecs/sharepoint_protocols/ms-oauth2ex/7d87259b-2577-4355-a64a-dacb3fc2f69c",
       "live_normative_section_last_updated": "2024-08-20",
       "live_normative_section_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
       "live_normative_reference_count": 7,
-      "published_pdf_vs_html_normative_refs_reconciled": false,
-      "recursive_references_fully_traversed": false
+      "published_pdf_vs_html_normative_refs_reconciled": true,
+      "recursive_references_fully_traversed": false,
+      "published_binary_bytes": 833843,
+      "published_binary_pages": 19,
+      "current_edition_pdf_1_2_1_pages": [
+        5
+      ],
+      "zip_archive_source": "SharePointProtocols.zip",
+      "original_pdf_committed_to_public_git": false
     },
     {
       "id": "MS-OXWUMS",
@@ -104,17 +111,25 @@
         "MS-OCEXUM"
       ],
       "normative_reference_section_complete": true,
-      "full_published_content_acquired": false,
-      "published_binary_sha256": null,
+      "full_published_content_acquired": true,
+      "published_binary_sha256": "61447ba6fdbb82a4cd11ad3d433aef369d764da286294acb7e65b92e91d54f1d",
       "version_history_diffs_reviewed": false,
       "client_applicability_confirmed": false,
-      "status": "LIVE_HTML_NORMATIVE_LIST_RECORDED_RELEASE_PDF_NOT_RECONCILED",
+      "status": "CURRENT_RELEASE_ORIGINAL_PDF_SHA256_AND_NORMATIVE_REFERENCES_VERIFIED",
       "live_normative_section_url": "https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxwums/a93a66e2-a6d9-47d5-bcb1-4aceed0a5fdc",
       "live_normative_section_last_updated": "2024-04-16",
       "live_normative_section_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
       "live_normative_reference_count": 16,
-      "published_pdf_vs_html_normative_refs_reconciled": false,
-      "recursive_references_fully_traversed": false
+      "published_pdf_vs_html_normative_refs_reconciled": true,
+      "recursive_references_fully_traversed": false,
+      "published_binary_bytes": 2968912,
+      "published_binary_pages": 107,
+      "current_edition_pdf_1_2_1_pages": [
+        10,
+        11
+      ],
+      "zip_archive_source": "Exchange_Protocols.zip",
+      "original_pdf_committed_to_public_git": false
     },
     {
       "id": "MS-RDPBCGR",
@@ -275,5 +290,26 @@
   ],
   "normative_edge_inventory": "transitive-reference-ledger.json",
   "transitive_new_node_frontier": "transitive-frontier.json",
-  "validation_scope": "Latest Microsoft published version metadata is not an authenticated assertion that live HTML content belongs to same released PDF revision."
+  "validation_scope": "Latest Microsoft published version metadata is not an authenticated assertion that live HTML content belongs to same released PDF revision.",
+  "latest_zip_provenance": {
+    "date": "2026-10-24",
+    "exchange_zip_sha256": "e3729e5712fd11b087a2c3560d5490d54afed04f2ca80562cbeb6020373c9f88",
+    "sharepoint_zip_sha256": "0b3f3ccfe190a2988edc0d1d74a47cb1f81106c13e30dc9ab60bebf672974fc1",
+    "exchange_pdfs": 129,
+    "sharepoint_pdfs": 168,
+    "public_repository_pdf_storage": false,
+    "rights_compliant_private_archiving": "OPEN",
+    "edition_pages_verified_for": [
+      "MS-OXWUMS 16.0 §1.2.1 pp.10-11",
+      "MS-OAUTH2EX 8.0 §1.2.1 p.5"
+    ],
+    "six_remaining_second_tier": [
+      "MS-H26XPF",
+      "MS-RDPBCGR",
+      "MS-SDP",
+      "MS-WCCE",
+      "MS-WSPOL",
+      "MS-WSTEP"
+    ]
+  }
 }
