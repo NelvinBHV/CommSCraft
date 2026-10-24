@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "snapshot_date": "2026-10-23",
-  "status": "TRANSITIVE_NORMATIVE_GRAPH_STILL_OPEN",
+  "status": "TRANSITIVE_NORMATIVE_GRAPH_STILL_OPEN_4_EXACT_EDITION_BINARIES_VERIFIED",
   "source_layer": "SECOND_LEVEL_DIRECT_NORMATIVE_REFERENCES_FROM_TWELVE_NON_OVERVIEW_MS_SPECS",
   "important": "This dataset intentionally does not alter the 460 first-tier MS-OCSPROT normative edges. 11 live reference lists visible, MS-RDPEMC only search excerpt, none release-PDF verified, no recursive graph closure. Only source references, not universal full-client MUST implementation requirements.",
   "documents": [
@@ -11,9 +11,9 @@
       "original_library": "windows_protocols",
       "official_live_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-sip/241bd813-787f-4b49-a5c7-e28b1270f9ea",
       "live_html_last_updated": "2024-10-30",
-      "exact_published_pdf_edition_correspondence": "UNVERIFIED",
-      "evidence_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "all_current_release_bytes_acquired": false,
+      "exact_published_pdf_edition_correspondence": "VERIFIED_EXACT_PUBLISHED_EDITION_USER_UPLOADED_PDF",
+      "evidence_status": "FULL_ORIGINAL_SHA256_AND_NORM_REFERENCES_VERIFIED",
+      "all_current_release_bytes_acquired": true,
       "reviewed_normative_targets": {
         "microsoft": [
           "MS-ADA1",
@@ -38,7 +38,11 @@
           "XMLSCHEMA-2005"
         ]
       },
-      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED"
+      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED",
+      "original_binary_sha256": "6ee1c16c922b7c154373572d5a3341139aaf6d91922a35468581a209f68e9e52",
+      "original_reference_page": 10,
+      "previous_release_diffs_completed": false,
+      "client_profile_applicability_adjudicated": false
     },
     {
       "id": "MS-H26XPF",
@@ -93,9 +97,9 @@
       "original_library": "windows_protocols",
       "official_live_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-kile/b7219d26-dbc7-4f3a-adfe-dcc31f90d92a",
       "live_html_last_updated": "2026-09-25",
-      "exact_published_pdf_edition_correspondence": "UNVERIFIED",
-      "evidence_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "all_current_release_bytes_acquired": false,
+      "exact_published_pdf_edition_correspondence": "VERIFIED_EXACT_PUBLISHED_EDITION_USER_UPLOADED_PDF",
+      "evidence_status": "FULL_ORIGINAL_SHA256_AND_NORM_REFERENCES_VERIFIED",
+      "all_current_release_bytes_acquired": true,
       "reviewed_normative_targets": {
         "microsoft": [
           "MS-ADA1",
@@ -148,7 +152,11 @@
         ]
       },
       "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED",
-      "note": "Live HTML updated in 2026; compatibility with 2019 client cannot be inferred."
+      "note": "Live HTML updated in 2026; compatibility with 2019 client cannot be inferred.",
+      "original_binary_sha256": "8d172e6fb7b760812fba2e41b1bb591dc80fcfce441419153cc93622456e7a01",
+      "original_reference_page": 12,
+      "previous_release_diffs_completed": false,
+      "client_profile_applicability_adjudicated": false
     },
     {
       "id": "MS-NLMP",
@@ -156,9 +164,9 @@
       "original_library": "windows_protocols",
       "official_live_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nlmp/3c88d453-b53a-4004-9a66-2ded619dcd27",
       "live_html_last_updated": null,
-      "exact_published_pdf_edition_correspondence": "UNVERIFIED",
-      "evidence_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "all_current_release_bytes_acquired": false,
+      "exact_published_pdf_edition_correspondence": "VERIFIED_EXACT_PUBLISHED_EDITION_USER_UPLOADED_PDF",
+      "evidence_status": "FULL_ORIGINAL_SHA256_AND_NORM_REFERENCES_VERIFIED",
+      "all_current_release_bytes_acquired": true,
       "reviewed_normative_targets": {
         "microsoft": [
           "MS-APDS",
@@ -182,7 +190,11 @@
           "FIPS46-2-1993"
         ]
       },
-      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED"
+      "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED",
+      "original_binary_sha256": "00fe14a058134aabf6a6db1bcc1c47b8d45f0656ef7de610c03712906a945a27",
+      "original_reference_page": 12,
+      "previous_release_diffs_completed": false,
+      "client_profile_applicability_adjudicated": false
     },
     {
       "id": "MS-RDPBCGR",
@@ -246,9 +258,9 @@
       "original_library": "windows_protocols",
       "official_live_section_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdpemc/90a92b56-fae6-4af8-9592-4c9bb0918582",
       "live_html_last_updated": "2024-04-23",
-      "exact_published_pdf_edition_correspondence": "UNVERIFIED",
-      "evidence_status": "SEARCH_RESULT_EXCERPT_NOT_COMPLETE_PAGE_OPEN",
-      "all_current_release_bytes_acquired": false,
+      "exact_published_pdf_edition_correspondence": "VERIFIED_EXACT_PUBLISHED_EDITION_USER_UPLOADED_PDF",
+      "evidence_status": "FULL_ORIGINAL_SHA256_AND_NORM_REFERENCES_VERIFIED",
+      "all_current_release_bytes_acquired": true,
       "reviewed_normative_targets": {
         "microsoft": [
           "MS-ERREF",
@@ -261,7 +273,11 @@
         "other": []
       },
       "scope_status": "RELEVANCE_PER_WINDOWS_FULL_CLIENT_BUILD_UNADJUDICATED",
-      "note": "Microsoft search indexed list identifies these targets; full page open returned DisabledError. Treat candidate edges as partial pending full-source verification."
+      "note": "Microsoft search indexed list identifies these targets; full page open returned DisabledError. Treat candidate edges as partial pending full-source verification.",
+      "original_binary_sha256": "17658ee28cef61d0ba11beb69be0e1fbe9e0b0f6aa7c146d5bc4100f64c0985b",
+      "original_reference_page": 9,
+      "previous_release_diffs_completed": false,
+      "client_profile_applicability_adjudicated": false
     },
     {
       "id": "MS-WCCE",
@@ -490,7 +506,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -502,7 +518,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -514,7 +530,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -526,7 +542,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -538,7 +554,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -550,7 +566,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -562,7 +578,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -574,7 +590,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -586,7 +602,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -598,7 +614,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -610,7 +626,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -622,7 +638,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -634,7 +650,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -646,7 +662,7 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -658,7 +674,7 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -670,7 +686,7 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -814,7 +830,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -826,7 +842,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -838,7 +854,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -850,7 +866,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -862,7 +878,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -874,7 +890,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -886,7 +902,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -898,7 +914,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -910,7 +926,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -922,7 +938,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -934,7 +950,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -946,7 +962,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -958,7 +974,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -970,7 +986,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -982,7 +998,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -994,7 +1010,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1006,7 +1022,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1018,7 +1034,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1030,7 +1046,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1042,7 +1058,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1054,7 +1070,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1066,7 +1082,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1078,7 +1094,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1090,7 +1106,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1102,7 +1118,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1114,7 +1130,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1126,7 +1142,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1138,7 +1154,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1150,7 +1166,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1162,7 +1178,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1174,7 +1190,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1186,7 +1202,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1198,7 +1214,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1210,7 +1226,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1222,7 +1238,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1234,7 +1250,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1246,7 +1262,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1258,7 +1274,7 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1270,7 +1286,7 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1282,7 +1298,7 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1294,7 +1310,7 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1306,7 +1322,7 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1318,7 +1334,7 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1330,7 +1346,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1342,7 +1358,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1354,7 +1370,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1366,7 +1382,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1378,7 +1394,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1390,7 +1406,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1402,7 +1418,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1414,7 +1430,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1426,7 +1442,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1438,7 +1454,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1450,7 +1466,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1462,7 +1478,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1474,7 +1490,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1486,7 +1502,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1498,7 +1514,7 @@
       "kind": "external_or_historical_draft",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "OFFICIAL_MICROSOFT_LEARN_LIVE_HTML_FULL_1_2_1_VISIBLE",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1954,7 +1970,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "SEARCH_RESULT_EXCERPT_NOT_COMPLETE_PAGE_OPEN",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1966,7 +1982,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "SEARCH_RESULT_EXCERPT_NOT_COMPLETE_PAGE_OPEN",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1978,7 +1994,7 @@
       "kind": "microsoft_spec",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "SEARCH_RESULT_EXCERPT_NOT_COMPLETE_PAGE_OPEN",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -1990,7 +2006,7 @@
       "kind": "rfc",
       "reference_type": "normative_claim_on_live_page",
       "source_status": "SEARCH_RESULT_EXCERPT_NOT_COMPLETE_PAGE_OPEN",
-      "published_release_pdf_comparison": "OPEN",
+      "published_release_pdf_comparison": "VERIFIED_USER_UPLOADED_EXACT_EDITION_PDF_2026_10_24",
       "client_product_applicability": "OPEN"
     },
     {
@@ -3444,7 +3460,9 @@
       "microsoft_spec": 81,
       "rfc": 104,
       "external_or_historical_draft": 61
-    }
+    },
+    "release_originals_sha256_and_normative_sections_verified": 4,
+    "unverified_exact_release_editions_remaining": 8
   },
   "unresolved": [
     "Verify all lists against matching revision/date PDF originals.",
