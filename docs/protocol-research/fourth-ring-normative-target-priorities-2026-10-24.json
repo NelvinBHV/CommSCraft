@@ -1,0 +1,5545 @@
+{
+  "version": 1,
+  "as_of": "2026-10-24",
+  "scope": "FOURTH_RING_NORMATIVE_EDGE_RAW_TARGET_FREQUENCY_ONLY",
+  "source_ledger": "fourth-ring-normative-reference-ledger.json",
+  "source_ledger_blob_sha": "47d8cfd3d361ba9efc9467ba6c8d992dc80488db",
+  "fourth_source_identities_classified": 86,
+  "explicit_normative_source_bibliographies": 85,
+  "schema_only_unclassified_ms_adls": 1,
+  "total_normative_edges": 1147,
+  "unique_normative_raw_targets": 355,
+  "ranked_raw_targets": [
+    {
+      "target_raw_label": "RFC2119",
+      "normative_citation_count": 85,
+      "distinct_source_count": 85,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DLTM",
+          "page": 9
+        },
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSXPROP",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 7
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2616",
+      "normative_citation_count": 37,
+      "distinct_source_count": 37,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 7
+        },
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        },
+        {
+          "source": "MS-OFBA",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "MS-DTYP",
+      "normative_citation_count": 36,
+      "distinct_source_count": 36,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DLTM",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSXPROP",
+          "page": 5
+        },
+        {
+          "source": "MS-FSCC",
+          "page": 14
+        },
+        {
+          "source": "MS-GPCAP",
+          "page": 8
+        },
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2818",
+      "normative_citation_count": 33,
+      "distinct_source_count": 33,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 8
+        },
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "XMLNS",
+      "normative_citation_count": 32,
+      "distinct_source_count": 32,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSXPROP",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWOOF",
+          "page": 8
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "WSDL",
+      "normative_citation_count": 31,
+      "distinct_source_count": 31,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSXPROP",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWAVLS",
+          "page": 8
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSCDATA",
+      "normative_citation_count": 30,
+      "distinct_source_count": 30,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSXPROP",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWAVLS",
+          "page": 8
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "SOAP1.1",
+      "normative_citation_count": 30,
+      "distinct_source_count": 30,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWAVLS",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWOOF",
+          "page": 8
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "XMLSCHEMA1",
+      "normative_citation_count": 26,
+      "distinct_source_count": 26,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSXPROP",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWAVLS",
+          "page": 8
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "XMLSCHEMA2",
+      "normative_citation_count": 26,
+      "distinct_source_count": 26,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSXPROP",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWAVLS",
+          "page": 8
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "MS-ERREF",
+      "normative_citation_count": 25,
+      "distinct_source_count": 25,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DLTM",
+          "page": 9
+        },
+        {
+          "source": "MS-FSCC",
+          "page": 14
+        },
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        },
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-CIFS",
+          "page": 23
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RPCE",
+      "normative_citation_count": 23,
+      "distinct_source_count": 23,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DLTM",
+          "page": 9
+        },
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        },
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-CIFS",
+          "page": 23
+        },
+        {
+          "source": "MS-SRVS",
+          "page": 12
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "C706",
+      "normative_citation_count": 20,
+      "distinct_source_count": 20,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DLTM",
+          "page": 9
+        },
+        {
+          "source": "MS-GPOL",
+          "page": 14
+        },
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        },
+        {
+          "source": "MS-SRVS",
+          "page": 12
+        },
+        {
+          "source": "MS-BRWSA",
+          "page": 6
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSCORE",
+      "normative_citation_count": 18,
+      "distinct_source_count": 18,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSARCH",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSBTRF",
+          "page": 6
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-ADTS",
+      "normative_citation_count": 14,
+      "distinct_source_count": 14,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DLTM",
+          "page": 9
+        },
+        {
+          "source": "MS-GPCAP",
+          "page": 8
+        },
+        {
+          "source": "MS-GPOL",
+          "page": 14
+        },
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        },
+        {
+          "source": "MS-SRPL",
+          "page": 11
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-SMB",
+      "normative_citation_count": 14,
+      "distinct_source_count": 14,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DLTM",
+          "page": 9
+        },
+        {
+          "source": "MS-FSCC",
+          "page": 14
+        },
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        },
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-DFSC",
+          "page": 11
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSFOLD",
+      "normative_citation_count": 13,
+      "distinct_source_count": 13,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSARCH",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSCONT",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSCONV",
+          "page": 6
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3066",
+      "normative_citation_count": 13,
+      "distinct_source_count": 13,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSARCH",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSBTRF",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSDLGM",
+          "page": 9
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1001",
+      "normative_citation_count": 12,
+      "distinct_source_count": 12,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        },
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-CIFS",
+          "page": 24
+        },
+        {
+          "source": "MS-SRVS",
+          "page": 12
+        },
+        {
+          "source": "MS-BRWS",
+          "page": 10
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "WSIBASIC",
+      "normative_citation_count": 12,
+      "distinct_source_count": 12,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSARCH",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSCEXT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSCONT",
+          "page": 9
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXDSCLI",
+      "normative_citation_count": 10,
+      "distinct_source_count": 10,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSMSG",
+          "page": 7
+        },
+        {
+          "source": "MS-OXCRPC",
+          "page": 10
+        },
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "XMLSCHEMA1/2",
+      "normative_citation_count": 10,
+      "distinct_source_count": 10,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSARCH",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSCEXT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSEDISC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSGNI",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSPERS",
+          "page": 7
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "MS-LSAD",
+      "normative_citation_count": 9,
+      "distinct_source_count": 9,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FSCC",
+          "page": 14
+        },
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        },
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-CIFS",
+          "page": 23
+        },
+        {
+          "source": "MS-FSA",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1002",
+      "normative_citation_count": 9,
+      "distinct_source_count": 9,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        },
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-CIFS",
+          "page": 24
+        },
+        {
+          "source": "MS-SRVS",
+          "page": 13
+        },
+        {
+          "source": "MS-BRWS",
+          "page": 10
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "XMLSCHEMA2/2",
+      "normative_citation_count": 9,
+      "distinct_source_count": 9,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWOOF",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSARCH",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSCEXT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSEDISC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSGNI",
+          "page": 7
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "MS-ADSC",
+      "normative_citation_count": 8,
+      "distinct_source_count": 8,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPCAP",
+          "page": 8
+        },
+        {
+          "source": "MS-GPOL",
+          "page": 14
+        },
+        {
+          "source": "MS-SRPL",
+          "page": 11
+        },
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        },
+        {
+          "source": "MS-RPCL",
+          "page": 12
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-NRPC",
+      "normative_citation_count": 8,
+      "distinct_source_count": 8,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        },
+        {
+          "source": "MS-DFSC",
+          "page": 11
+        },
+        {
+          "source": "MS-SRVS",
+          "page": 12
+        },
+        {
+          "source": "MS-MAIL",
+          "page": 6
+        },
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-SPNG",
+      "normative_citation_count": 8,
+      "distinct_source_count": 8,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DLTM",
+          "page": 9
+        },
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        },
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        },
+        {
+          "source": "MS-CMRP",
+          "page": 24
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSADISC",
+      "normative_citation_count": 7,
+      "distinct_source_count": 7,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSMSG",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSCEXT",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSCONV",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSPERS",
+          "page": 7
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-SMB2",
+      "normative_citation_count": 7,
+      "distinct_source_count": 7,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FSCC",
+          "page": 14
+        },
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        },
+        {
+          "source": "MS-DFSC",
+          "page": 11
+        },
+        {
+          "source": "MS-FSA",
+          "page": 10
+        },
+        {
+          "source": "MS-SRVS",
+          "page": 12
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2251",
+      "normative_citation_count": 7,
+      "distinct_source_count": 7,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPCAP",
+          "page": 8
+        },
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        },
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        },
+        {
+          "source": "MS-EFSR",
+          "page": 12
+        },
+        {
+          "source": "MS-RPCL",
+          "page": 12
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "MS-ADA3",
+      "normative_citation_count": 6,
+      "distinct_source_count": 6,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 14
+        },
+        {
+          "source": "MS-RPCL",
+          "page": 11
+        },
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        },
+        {
+          "source": "MS-RCMP",
+          "page": 7
+        },
+        {
+          "source": "MS-RPRN",
+          "page": 22
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-CIFS",
+      "normative_citation_count": 6,
+      "distinct_source_count": 6,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-DFSC",
+          "page": 10
+        },
+        {
+          "source": "MS-SRVS",
+          "page": 12
+        },
+        {
+          "source": "MS-MAIL",
+          "page": 6
+        },
+        {
+          "source": "MS-RAP",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-DRSR",
+      "normative_citation_count": 6,
+      "distinct_source_count": 6,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 14
+        },
+        {
+          "source": "MS-DFSC",
+          "page": 10
+        },
+        {
+          "source": "MS-SRPL",
+          "page": 11
+        },
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        },
+        {
+          "source": "MS-RPRN",
+          "page": 22
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSSRCH",
+      "normative_citation_count": 6,
+      "distinct_source_count": 6,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSCONV",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSEDISC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSFOLD",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSMTGS",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSXPROP",
+      "normative_citation_count": 6,
+      "distinct_source_count": 6,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSCONT",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSEDISC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSFOLD",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSMTGS",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSPERS",
+          "page": 7
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RDPBCGR",
+      "normative_citation_count": 6,
+      "distinct_source_count": 6,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FSCC",
+          "page": 14
+        },
+        {
+          "source": "MS-RDPEDC",
+          "page": 7
+        },
+        {
+          "source": "MS-RDPEDYC",
+          "page": 9
+        },
+        {
+          "source": "MS-RDPEGFX",
+          "page": 9
+        },
+        {
+          "source": "MS-RDPEVOR",
+          "page": 5
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-SAMR",
+      "normative_citation_count": 6,
+      "distinct_source_count": 6,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DLTM",
+          "page": 9
+        },
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        },
+        {
+          "source": "MS-BRWS",
+          "page": 10
+        },
+        {
+          "source": "MS-RAP",
+          "page": 10
+        },
+        {
+          "source": "MS-SAMS",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3986",
+      "normative_citation_count": 6,
+      "distinct_source_count": 6,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OFBA",
+          "page": 6
+        },
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        },
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        },
+        {
+          "source": "MS-RPRN",
+          "page": 23
+        },
+        {
+          "source": "MS-MQMQ",
+          "page": 16
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "UNICODE",
+      "normative_citation_count": 6,
+      "distinct_source_count": 6,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 21
+        },
+        {
+          "source": "MS-DFSC",
+          "page": 11
+        },
+        {
+          "source": "MS-CMRP",
+          "page": 24
+        },
+        {
+          "source": "MS-RPCL",
+          "page": 12
+        },
+        {
+          "source": "MC-NBFX",
+          "page": 7
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "MS-ADA1",
+      "normative_citation_count": 5,
+      "distinct_source_count": 5,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 14
+        },
+        {
+          "source": "MS-RPCL",
+          "page": 11
+        },
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        },
+        {
+          "source": "MS-RCMP",
+          "page": 7
+        },
+        {
+          "source": "MS-SAMS",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-ADA2",
+      "normative_citation_count": 5,
+      "distinct_source_count": 5,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPCAP",
+          "page": 8
+        },
+        {
+          "source": "MS-GPOL",
+          "page": 14
+        },
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        },
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        },
+        {
+          "source": "MS-SAMS",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-NLMP",
+      "normative_citation_count": 5,
+      "distinct_source_count": 5,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        },
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-CIFS",
+          "page": 23
+        },
+        {
+          "source": "MS-CMRP",
+          "page": 23
+        },
+        {
+          "source": "MS-RDPEAR",
+          "page": 8
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSCONT",
+      "normative_citation_count": 5,
+      "distinct_source_count": 5,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSDLIST",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSFOLD",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSRSLNM",
+          "page": 8
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSGTZ",
+      "normative_citation_count": 5,
+      "distinct_source_count": 5,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWAVLS",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSARCH",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSFOLD",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSMTGS",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-SRVS",
+      "normative_citation_count": 5,
+      "distinct_source_count": 5,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-CIFS",
+          "page": 24
+        },
+        {
+          "source": "MS-DFSC",
+          "page": 11
+        },
+        {
+          "source": "MS-BRWS",
+          "page": 10
+        },
+        {
+          "source": "MS-RAP",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2617",
+      "normative_citation_count": 5,
+      "distinct_source_count": 5,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        },
+        {
+          "source": "MS-OFBA",
+          "page": 6
+        },
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        },
+        {
+          "source": "MS-DPSP",
+          "page": 8
+        },
+        {
+          "source": "MS-N2HT",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "MS-BRWS",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CIFS",
+          "page": 23
+        },
+        {
+          "source": "MS-SRVS",
+          "page": 12
+        },
+        {
+          "source": "MS-MAIL",
+          "page": 6
+        },
+        {
+          "source": "MS-RAP",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-DFSC",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 14
+        },
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-CIFS",
+          "page": 23
+        },
+        {
+          "source": "MS-SRVS",
+          "page": 12
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-DFSNM",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CIFS",
+          "page": 23
+        },
+        {
+          "source": "MS-DFSC",
+          "page": 10
+        },
+        {
+          "source": "MS-SRVS",
+          "page": 12
+        },
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-FSCC",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-CIFS",
+          "page": 23
+        },
+        {
+          "source": "MS-FSA",
+          "page": 10
+        },
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-KILE",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        },
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-RCMP",
+          "page": 8
+        },
+        {
+          "source": "MS-SAMS",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-LCID",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWOAB",
+          "page": 6
+        },
+        {
+          "source": "MS-RPRN",
+          "page": 22
+        },
+        {
+          "source": "MS-EMFPLUS",
+          "page": 19
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OAUT",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSXPROP",
+          "page": 5
+        },
+        {
+          "source": "MS-OAUT",
+          "page": 14
+        },
+        {
+          "source": "MC-NBFX",
+          "page": 7
+        },
+        {
+          "source": "MS-RAI",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSMSG",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSFOLD",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWSMTGS",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RRP",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        },
+        {
+          "source": "MS-CMRP",
+          "page": 23
+        },
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        },
+        {
+          "source": "MS-RPRN",
+          "page": 23
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "NETBEUI",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        },
+        {
+          "source": "MS-CIFS",
+          "page": 24
+        },
+        {
+          "source": "MS-MAIL",
+          "page": 6
+        },
+        {
+          "source": "MS-RPCL",
+          "page": 12
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "RFC1035",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRVS",
+          "page": 13
+        },
+        {
+          "source": "MS-EFSR",
+          "page": 12
+        },
+        {
+          "source": "MS-CMRP",
+          "page": 24
+        },
+        {
+          "source": "MS-OXABREF",
+          "page": 7
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1321",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CIFS",
+          "page": 24
+        },
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        },
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        },
+        {
+          "source": "MS-MQMQ",
+          "page": 15
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2743",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 21
+        },
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        },
+        {
+          "source": "MS-CIFS",
+          "page": 24
+        },
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4122",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FSA",
+          "page": 11
+        },
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        },
+        {
+          "source": "MS-RPRN",
+          "page": 23
+        },
+        {
+          "source": "MC-NBFX",
+          "page": 7
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4234",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPCAP",
+          "page": 9
+        },
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        },
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        },
+        {
+          "source": "MS-OAUT",
+          "page": 14
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5234",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OFBA",
+          "page": 6
+        },
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWOAB",
+          "page": 7
+        },
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5280",
+      "normative_citation_count": 4,
+      "distinct_source_count": 4,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 21
+        },
+        {
+          "source": "MS-EFSR",
+          "page": 12
+        },
+        {
+          "source": "MS-GPEF",
+          "page": 10
+        },
+        {
+          "source": "MS-RCMP",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "MS-ADLS",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 14
+        },
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        },
+        {
+          "source": "MS-RPRN",
+          "page": 22
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-DCOM",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSXPROP",
+          "page": 5
+        },
+        {
+          "source": "MS-OAUT",
+          "page": 14
+        },
+        {
+          "source": "MS-RAI",
+          "page": 8
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-GPOL",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPCAP",
+          "page": 8
+        },
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        },
+        {
+          "source": "MS-GPEF",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCROPS",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXCRPC",
+          "page": 10
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCRPC",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXABREF",
+          "page": 6
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOABK",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXWOAB",
+          "page": 6
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSMTGS",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSFOLD",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSPOST",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSFOLD",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSTASK",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSATT",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSFOLD",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RAP",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CIFS",
+          "page": 23
+        },
+        {
+          "source": "MS-BRWS",
+          "page": 10
+        },
+        {
+          "source": "MS-RPRN",
+          "page": 23
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RDPEDYC",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEAR",
+          "page": 9
+        },
+        {
+          "source": "MS-RDPEGFX",
+          "page": 9
+        },
+        {
+          "source": "MS-RDPEVOR",
+          "page": 6
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-UCODEREF",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SCMR",
+          "page": 11
+        },
+        {
+          "source": "MS-OAUT",
+          "page": 14
+        },
+        {
+          "source": "MS-RCMP",
+          "page": 8
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2781",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPRN",
+          "page": 23
+        },
+        {
+          "source": "MC-NBFX",
+          "page": 7
+        },
+        {
+          "source": "MS-PAN",
+          "page": 12
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2822",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        },
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        },
+        {
+          "source": "MS-OXWSPOST",
+          "page": 7
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3280",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        },
+        {
+          "source": "MS-RDPEAR",
+          "page": 9
+        },
+        {
+          "source": "MS-MQMQ",
+          "page": 16
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4178",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 21
+        },
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        },
+        {
+          "source": "MS-RPCL",
+          "page": 12
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC8017",
+      "normative_citation_count": 3,
+      "distinct_source_count": 3,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        },
+        {
+          "source": "MS-RDPEAR",
+          "page": 9
+        },
+        {
+          "source": "MS-MQMQ",
+          "page": 16
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "FIPS197",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 11
+        },
+        {
+          "source": "MS-MQMQ",
+          "page": 15
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ISO-8601",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWAVLS",
+          "page": 8
+        },
+        {
+          "source": "MC-NBFX",
+          "page": 7
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ISO/IEC-8859-1",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EERR",
+          "page": 7
+        },
+        {
+          "source": "MS-EMFPLUS",
+          "page": 18
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "MS-EERR",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        },
+        {
+          "source": "MS-SRVS",
+          "page": 12
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-EFSR",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FSA",
+          "page": 10
+        },
+        {
+          "source": "MS-GPEF",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-FSA",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FSCC",
+          "page": 14
+        },
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-GPREG",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        },
+        {
+          "source": "MS-GPEF",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-MAIL",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-BRWS",
+          "page": 9
+        },
+        {
+          "source": "MS-RPCL",
+          "page": 12
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXABREF",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 32
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCDATA",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 32
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCFXICS",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCRPC",
+          "page": 10
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 32
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCNOTIF",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXCRPC",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCPERM",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWAVLS",
+          "page": 8
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCSTOR",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCRPC",
+          "page": 10
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXNSPI",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCMAPIHTTP",
+          "page": 9
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOAB",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWOAB",
+          "page": 6
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOCAL",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWAVLS",
+          "page": 8
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOMSG",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCRPC",
+          "page": 10
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXORMDR",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWAVLS",
+          "page": 8
+        },
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSDLIST",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSSYNC",
+          "page": 7
+        },
+        {
+          "source": "MS-OXWSCONT",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSEDISC",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSCONV",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSGNI",
+          "page": 6
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSURPT",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSCONV",
+          "page": 6
+        },
+        {
+          "source": "MS-OXWSFOLD",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-PAC",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RCMP",
+          "page": 8
+        },
+        {
+          "source": "MS-RDPEAR",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RDPEGDI",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEDC",
+          "page": 7
+        },
+        {
+          "source": "MS-RDPEGFX",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RDPEGFX",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEDYC",
+          "page": 9
+        },
+        {
+          "source": "MS-RDPEVOR",
+          "page": 6
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-SCMR",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        },
+        {
+          "source": "MS-CMRP",
+          "page": 24
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-WCCE",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        },
+        {
+          "source": "MS-EFSR",
+          "page": 12
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-WKST",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        },
+        {
+          "source": "MS-BRWS",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-WMF",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        },
+        {
+          "source": "MS-EMFPLUS",
+          "page": 19
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-XCA",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        },
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1034",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRVS",
+          "page": 13
+        },
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2045",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        },
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2046",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        },
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2254",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        },
+        {
+          "source": "MS-RPRN",
+          "page": 23
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3548",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        },
+        {
+          "source": "MC-NBFX",
+          "page": 7
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4120",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCL",
+          "page": 12
+        },
+        {
+          "source": "MS-RDPEAR",
+          "page": 9
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4556",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RCMP",
+          "page": 8
+        },
+        {
+          "source": "MS-RDPEAR",
+          "page": 9
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4648",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        },
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC8446",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 21
+        },
+        {
+          "source": "MS-TLSP",
+          "page": 7
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "SP800-108",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 21
+        },
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "X509",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        },
+        {
+          "source": "MS-RCMP",
+          "page": 8
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "X690",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RCMP",
+          "page": 8
+        },
+        {
+          "source": "MS-RDPEAR",
+          "page": 9
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "XML1.0",
+      "normative_citation_count": 2,
+      "distinct_source_count": 2,
+      "source_pdf_page_samples": [
+        {
+          "source": "MC-NBFX",
+          "page": 7
+        },
+        {
+          "source": "MS-PAN",
+          "page": 12
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "C705",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCL",
+          "page": 11
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "DRAFT-IETF-TLS-MLDSA-05",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 5
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "DRAFT-IETF-TLS-MLKEM-09",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ECMA-262/51",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 12
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "EXIF",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EMFPLUS",
+          "page": 18
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "FIPS140",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DPSP",
+          "page": 7
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "FIPS180",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWOAB",
+          "page": 6
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "FIPS180-2",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 15
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "FIPS180-3",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GKDI",
+          "page": 8
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "FIPS180-4",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "FIPS186",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "FIPS198-1",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "GeoJSON",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 12
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "GIF",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EMFPLUS",
+          "page": 18
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "HYBRID",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-NBTE",
+          "page": 7
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "IANA-MMT",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 12
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "IANAIMA",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 15
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "IANAPORT",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "IEC-RGB",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EMFPLUS",
+          "page": 18
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "IEEE1284",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPRN",
+          "page": 22
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "IEEE754-2008",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "IEEE802.2-1998",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CIFS",
+          "page": 23
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "IEEE854",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MC-NBFX",
+          "page": 7
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "IETFDRAFT-TLS-ECDHE-MLKEM-04",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ISO-15924",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-LCID",
+          "page": 6
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ISO-3166",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-LCID",
+          "page": 6
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ISO-639",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-LCID",
+          "page": 6
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ISO/IEC-9899",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CTA",
+          "page": 5
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ISO/IEC8802-3",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 32
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ITU-BT.709-5",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEGFX",
+          "page": 9
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ITU-BT601-7",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEVOR",
+          "page": 5
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ITU-H.264-201201",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEGFX",
+          "page": 9
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ITUX680",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEAR",
+          "page": 8
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "JFIF",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EMFPLUS",
+          "page": 19
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "KERB-PARAM",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEAR",
+          "page": 8
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "LZ4",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "MC-CSDL",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MC-EDMX",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MIDLINF",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEAR",
+          "page": 8
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "MS-BKUP",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-BRWSA",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-BRWS",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-CRTD",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EFSR",
+          "page": 12
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-CSSP",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEAR",
+          "page": 8
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-DFSRH",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-DLTW",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DLTM",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-DMRP",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CMRP",
+          "page": 23
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-DSSP",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 14
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-EMF",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EMFPLUS",
+          "page": 19
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-EVEN",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-FPSE",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OFBA",
+          "page": 6
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-FRS2",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FRS1",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-GPFR",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-GPIPSEC",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-GPSCR",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-GPSI",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-MQMR",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-MQRR",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-MSRP",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CIFS",
+          "page": 23
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-NBTE",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-BRWS",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-NTHT",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-ODATAJSON",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXBBODY",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 32
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCEXT",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 32
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCFOLD",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 32
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCICAL",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 32
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCMAIL",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCMSG",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCPRPT",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCSPAM",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXCTABL",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXLDAP",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXMSG",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOABKT",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOCFG",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOCNTC",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXODLGT",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXODOC",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOFLAG",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOJRNL",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXONOTE",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOPFFB",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOPOST",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXORMMS",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXORSS",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 33
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXORULE",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOSFLD",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOSMIME",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOSMMS",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOSRCH",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOTASK",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXOUM",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXPFOAB",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXPHISH",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXPROPS",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWAVLS",
+          "page": 8
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXPSVAL",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXRTFCP",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXRTFEX",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXSHARE",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXSHRMSG",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSMSHR",
+          "page": 7
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXTNEF",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXVCARD",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWAVLS",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSBTRF",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSMTGS",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSDLGM",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSMTGS",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSMSHR",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSEDISC",
+          "page": 8
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSNTIF",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSPSNTIF",
+          "page": 7
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSPERS",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSMTGS",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-OXWSRSLNM",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSCONT",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-PAR",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPRN",
+          "page": 22
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-PCCRC",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-PKCA",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SAMS",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RA",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RAI",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RDPEA",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEVOR",
+          "page": 6
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RDPEGT",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEVOR",
+          "page": 6
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RDPEMT",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEDYC",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RDPERP",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEGFX",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RDPEUDP",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEUDP2",
+          "page": 6
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RDPNSC",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEGFX",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RDPRFX",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEGFX",
+          "page": 9
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RMPR",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EFSR",
+          "page": 12
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RPRN",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RAP",
+          "page": 10
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-RSVD",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-SMBD",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-SQLRS",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FSCC",
+          "page": 14
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-SWN",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-WMI",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-WSSHP",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OFBA",
+          "page": 6
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-XWDCAL",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MS-XWDVSEC",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "MICROSOFT_MC_RAW"
+    },
+    {
+      "target_raw_label": "MSDN-MPD",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPRN",
+          "page": 23
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "MSKB-2641192",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SAMS",
+          "page": 10
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "NBF",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CIFS",
+          "page": 24
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "NBF2CIFS",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CIFS",
+          "page": 24
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "NSA",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPEF",
+          "page": 10
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "ODataJSON4.0",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "OGC-SFOLECOM",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "PKCS5",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 15
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "RC4",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "RFC1094",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FSCC",
+          "page": 14
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1123",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1157",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPRN",
+          "page": 23
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1179",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPRN",
+          "page": 23
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1274",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SAMS",
+          "page": 10
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1305",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-W32T",
+          "page": 9
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1319",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 15
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1320",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 15
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1510",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPSB",
+          "page": 9
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1813",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-FSCC",
+          "page": 14
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1823",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1945",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OFBA",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC1960",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2047",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2083",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EMFPLUS",
+          "page": 19
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2104",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 20
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2109",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OFBA",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2132",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-NBTE",
+          "page": 7
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2222",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DPSP",
+          "page": 7
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2246",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2252",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2268",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 15
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2279",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MC-NBFX",
+          "page": 7
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2315",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2396",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2782",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2821",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2829",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DPSP",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2831",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-DPSP",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC2849",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3023",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3110",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 15
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3268",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3302",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EMFPLUS",
+          "page": 19
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3394",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EFSR",
+          "page": 12
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3464",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3546",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3676",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3798",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXPROPS",
+          "page": 34
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3961",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEAR",
+          "page": 9
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3962",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEAR",
+          "page": 9
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC3987",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4210",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXDISCO",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4287",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4291",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4309",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 21
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4346",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4366",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4492",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4493",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 21
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4514",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 16
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4516",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 16
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4543",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 21
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4559",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-N2HT",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4627",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4681",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC4757",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-MQMQ",
+          "page": 16
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5023",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 13
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5077",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5084",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 21
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5114",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5246",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5289",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5349",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEAR",
+          "page": 9
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5487",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5646",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-LCID",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC5789",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 14
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC6113",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RDPEAR",
+          "page": 9
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC7301",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC7627",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC7748",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 6
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC792",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GPOL",
+          "page": 15
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC8010",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPRN",
+          "page": 23
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC8011",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPRN",
+          "page": 23
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC819",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-PAN",
+          "page": 12
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC821",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC8472",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-TLSP",
+          "page": 7
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC850",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSPOST",
+          "page": 8
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RFC9000",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SMB2",
+          "page": 21
+        }
+      ],
+      "category": "RFC_RAW"
+    },
+    {
+      "target_raw_label": "RYAN",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CIFS",
+          "page": 24
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "SCHNEIER",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "SHA256",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "SP800-56A",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-GKDI",
+          "page": 9
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "TIFF",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EMFPLUS",
+          "page": 19
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "UASDC",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXCRPC",
+          "page": 10
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "UNICODE4.0",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-SRPL",
+          "page": 12
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "US-ASCII",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-RPCH",
+          "page": 15
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "W3C-PNG",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-EMFPLUS",
+          "page": 19
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "W3C-XSD",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-PAN",
+          "page": 12
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "WSDLSOAP",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWSPSNTIF",
+          "page": 7
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "XML-BASE",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-ODATA",
+          "page": 14
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "XML10",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-OXWOAB",
+          "page": 7
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    },
+    {
+      "target_raw_label": "XOPEN-SMB",
+      "normative_citation_count": 1,
+      "distinct_source_count": 1,
+      "source_pdf_page_samples": [
+        {
+          "source": "MS-CIFS",
+          "page": 24
+        }
+      ],
+      "category": "EXTERNAL_OR_HISTORICAL_RAW"
+    }
+  ],
+  "limitations": [
+    "This is NOT a fifth-ring frontier and never means a target was not checked in earlier rings.",
+    "Raw labels are not canonical version-resolved document identities.",
+    "A normative citation is not a demonstrated Skype 2019 Windows Full Client mandatory feature.",
+    "Schema-only MS-ADLS §1.1 entries are not included.",
+    "RFC/ISO/ITU/W3C target editions must be independently verified before recursing."
+  ]
+}

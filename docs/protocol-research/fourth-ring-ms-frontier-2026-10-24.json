@@ -219,20 +219,10 @@
     "target_edition_canonicalization": "OPEN",
     "phase1_closed": false
   },
-  "p1_03_unverified_remaining_source_ids": [
-    "MC-NBFX",
-    "MS-ADLS",
-    "MS-CTA",
-    "MS-DPSP",
-    "MS-EMFPLUS",
-    "MS-MQMQ",
-    "MS-N2HT",
-    "MS-PAN",
-    "MS-RAI"
-  ],
-  "current_p1_03_bibliography_count": 77,
-  "current_p1_03_normative_edges": 1061,
-  "p1_03_current_caveat": "77 of 86 fourth-tier original normative §1.2.1 bibliographies examined, 1,061 directed normative edges. Nine identities remain, including schema-only MS-ADLS (only 13 general §1.1 citations UNCLASSIFIED). Fifth ring MS-SWN independent six edges; actual client obligations and full target-standard recursion are OPEN.",
+  "p1_03_unverified_remaining_source_ids": [],
+  "current_p1_03_bibliography_count": 85,
+  "current_p1_03_normative_edges": 1147,
+  "p1_03_current_caveat": "Source-identity and §1.2 bibliography classification complete for 86/86 fourth-ring sources: 85 §1.2.1 normative bibliographies with 1,147 directed edges; MS-ADLS 21.1 v20180912 schema-only §1.1 bibliography contains 13 UNCLASSIFIED references, not zero-normative schema definitions. No transitive historical target-reference fixed point or SfB2019 Full Client obligation proof.",
   "p1_03_seven_fourth_and_one_fifth_source_batch_2026_10_24": {
     "report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
     "json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
@@ -403,5 +393,58 @@
     "now_normative_edges": 1061,
     "raw_source_target_editions": "UNRECONCILED",
     "schema_ms_adls_13_refs_still_unclassified": true
+  },
+  "p1_03_source_identifiers_classified": 86,
+  "p1_03_source_identifiers_total": 86,
+  "p1_03_explicit_normative_bibliography_reviewed": 85,
+  "p1_03_schema_only_source_reviewed": 1,
+  "p1_03_schema_only_ms_adls_classification": {
+    "status": "REVIEWED_SCHEMA_ONLY_1_1_REFERENCES_UNCLASSIFIED",
+    "original_source_sha256": "aa4aee04c2084a25a26863537e67d7635f0f5d36380c32e776fe6bec4e9b8890",
+    "original_revision": "21.1",
+    "original_edition": "v20180912",
+    "section": "§1.1 References",
+    "pages": [
+      13,
+      14
+    ],
+    "raw_reference_labels": [
+      "JFIF",
+      "MS-ADOD",
+      "MS-ADTS",
+      "MS-DTYP",
+      "MSDN-ExtUserIntDirObj",
+      "MSDN-GroupType",
+      "MSFT-ADSCHEMA",
+      "RFC2251",
+      "RFC2849",
+      "RFC3280",
+      "RFC822",
+      "X121",
+      "X500"
+    ],
+    "raw_reference_count": 13,
+    "normative_section_1_2_1_exists": false,
+    "additional_normative_edges": 0,
+    "product_applicability": "OPEN"
+  },
+  "p1_03_final_eight_sources_2026_10_24": {
+    "source_ids": [
+      "MC-NBFX",
+      "MS-CTA",
+      "MS-DPSP",
+      "MS-EMFPLUS",
+      "MS-MQMQ",
+      "MS-N2HT",
+      "MS-PAN",
+      "MS-RAI"
+    ],
+    "added_normative_edges": 86,
+    "informative_refs_separate": 29,
+    "source_pdf_sha256_checked": 8,
+    "reviewed_explicit_normative_sources_after": 85,
+    "source_identities_classified_after": 86,
+    "remaining_source_ids": 0,
+    "normative_directed_fourth_edges_after": 1147
   }
 }
