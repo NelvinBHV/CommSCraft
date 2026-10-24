@@ -8,9 +8,9 @@
   "second_ring_ledger_sha": "af4e27be3bbab38bd70ba50e858edeaaac4d2e66",
   "fifth_ring_current_ledger_sha": "096d03dfe1c0828b9ad721417441ef6460fa0105",
   "candidate_raw_labels": 88,
-  "already_audited_fifth_sources": 9,
+  "already_audited_fifth_sources": 17,
   "schema_only_reviewed": 1,
-  "remaining_raw_ms_mc_source_candidates": 78,
+  "remaining_raw_ms_mc_source_candidates": 70,
   "reviewed_fifth_source_ids": [
     "MS-SWN",
     "MS-OXWSADISC",
@@ -20,7 +20,15 @@
     "MS-GPREG",
     "MS-OXCDATA",
     "MS-OXCFXICS",
-    "MS-OXCNOTIF"
+    "MS-OXCNOTIF",
+    "MS-OXCPERM",
+    "MS-OXCSTOR",
+    "MS-OXNSPI",
+    "MS-OXOAB",
+    "MS-OXOCAL",
+    "MS-OXOMSG",
+    "MS-OXORMDR",
+    "MS-WMF"
   ],
   "raw_target_candidates": [
     {
@@ -259,7 +267,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXCSTOR",
@@ -278,7 +286,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXNSPI",
@@ -297,7 +305,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXOAB",
@@ -316,7 +324,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXOCAL",
@@ -335,7 +343,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXOMSG",
@@ -354,7 +362,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXORMDR",
@@ -373,7 +381,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-WMF",
@@ -392,7 +400,7 @@
           "source_sha256": "cb9324b2746706a9f428ef141b9eae2ae92876507789b8b4021ca1ce6fcbf435"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-XCA",
@@ -1331,5 +1339,23 @@
     "Fourth-ring citations to targets already examined in earlier tiers are excluded from queue, while their exact cited historical editions remain unresolved",
     "External RFC/ISO/ITU/W3C are separate future workstream",
     "Actual Skype for Business 2019 Windows Full Client feature obligation unproven"
-  ]
+  ],
+  "updated_2026_10_24": {
+    "source_ids": [
+      "MS-OXCPERM",
+      "MS-OXCSTOR",
+      "MS-OXNSPI",
+      "MS-OXOAB",
+      "MS-OXOCAL",
+      "MS-OXOMSG",
+      "MS-OXORMDR",
+      "MS-WMF"
+    ],
+    "new_normative_edges": 137,
+    "new_informative_citations": 24,
+    "source_pdfs_sha256_verified": 8,
+    "now_fifth_audited": 17,
+    "now_fifth_normative_edges": 275,
+    "remaining_raw_target_candidates": 70
+  }
 }

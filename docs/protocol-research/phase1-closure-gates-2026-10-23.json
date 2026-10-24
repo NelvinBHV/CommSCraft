@@ -71,17 +71,17 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "Fourth-tier identity audit complete 86/86 (85 normative §1.2.1 original bibliographies; 1,147 edges; one schema-only MS-ADLS §1.1 list of 13 UNCLASSIFIED refs). Fifth-stage source audit now 9 sources including prior MS-SWN, 138 norm edges; derived raw fourth-target MS/MC queue 88 candidates, 9 audited, 1 previously reviewed schema, 78 unreviewed. Historical target-edition canonicalization, recursive MS/MC and RFC/IETF/ISO/ITU normative closure, verified fifth shortest-tier assignment, Skype for Business 2019 Full Client build/roles/policies and independent fixed-point proof all OPEN. No Phase-1 gates PASS."
+      "blocker": "Fourth source IDs 86/86 classified, 1147 directed norm references. Downstream currently 17 §1.2.1 original bibliographies with 275 directed normative and 54 separately informative refs; raw queue 88 MS/MC target labels, 17 source bibliographies audited, 1 MS-ADLS schema §1.1 unclassified, 70 remaining. Historical target edition reconciliation, shortest fifth-level proof, transitive RFC/ISO/IETF/ITU closure, SfB2019 Windows client build/policy server roles, independent fixed point remain OPEN; no phase1 PASS."
     },
     {
       "id": "P1-04",
       "passed": false,
-      "blocker": "Fourth-tier identity audit complete 86/86 (85 normative §1.2.1 original bibliographies; 1,147 edges; one schema-only MS-ADLS §1.1 list of 13 UNCLASSIFIED refs). Fifth-stage source audit now 9 sources including prior MS-SWN, 138 norm edges; derived raw fourth-target MS/MC queue 88 candidates, 9 audited, 1 previously reviewed schema, 78 unreviewed. Historical target-edition canonicalization, recursive MS/MC and RFC/IETF/ISO/ITU normative closure, verified fifth shortest-tier assignment, Skype for Business 2019 Full Client build/roles/policies and independent fixed-point proof all OPEN. No Phase-1 gates PASS."
+      "blocker": "Fourth source IDs 86/86 classified, 1147 directed norm references. Downstream currently 17 §1.2.1 original bibliographies with 275 directed normative and 54 separately informative refs; raw queue 88 MS/MC target labels, 17 source bibliographies audited, 1 MS-ADLS schema §1.1 unclassified, 70 remaining. Historical target edition reconciliation, shortest fifth-level proof, transitive RFC/ISO/IETF/ITU closure, SfB2019 Windows client build/policy server roles, independent fixed point remain OPEN; no phase1 PASS."
     },
     {
       "id": "P1-05",
       "passed": false,
-      "blocker": "Fourth-tier identity audit complete 86/86 (85 normative §1.2.1 original bibliographies; 1,147 edges; one schema-only MS-ADLS §1.1 list of 13 UNCLASSIFIED refs). Fifth-stage source audit now 9 sources including prior MS-SWN, 138 norm edges; derived raw fourth-target MS/MC queue 88 candidates, 9 audited, 1 previously reviewed schema, 78 unreviewed. Historical target-edition canonicalization, recursive MS/MC and RFC/IETF/ISO/ITU normative closure, verified fifth shortest-tier assignment, Skype for Business 2019 Full Client build/roles/policies and independent fixed-point proof all OPEN. No Phase-1 gates PASS."
+      "blocker": "Fourth source IDs 86/86 classified, 1147 directed norm references. Downstream currently 17 §1.2.1 original bibliographies with 275 directed normative and 54 separately informative refs; raw queue 88 MS/MC target labels, 17 source bibliographies audited, 1 MS-ADLS schema §1.1 unclassified, 70 remaining. Historical target edition reconciliation, shortest fifth-level proof, transitive RFC/ISO/IETF/ITU closure, SfB2019 Windows client build/policy server roles, independent fixed point remain OPEN; no phase1 PASS."
     },
     {
       "id": "P1-06",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "Fourth-tier identity audit complete 86/86 (85 normative §1.2.1 original bibliographies; 1,147 edges; one schema-only MS-ADLS §1.1 list of 13 UNCLASSIFIED refs). Fifth-stage source audit now 9 sources including prior MS-SWN, 138 norm edges; derived raw fourth-target MS/MC queue 88 candidates, 9 audited, 1 previously reviewed schema, 78 unreviewed. Historical target-edition canonicalization, recursive MS/MC and RFC/IETF/ISO/ITU normative closure, verified fifth shortest-tier assignment, Skype for Business 2019 Full Client build/roles/policies and independent fixed-point proof all OPEN. No Phase-1 gates PASS."
+      "blocker": "Fourth source IDs 86/86 classified, 1147 directed norm references. Downstream currently 17 §1.2.1 original bibliographies with 275 directed normative and 54 separately informative refs; raw queue 88 MS/MC target labels, 17 source bibliographies audited, 1 MS-ADLS schema §1.1 unclassified, 70 remaining. Historical target edition reconciliation, shortest fifth-level proof, transitive RFC/ISO/IETF/ITU closure, SfB2019 Windows client build/policy server roles, independent fixed point remain OPEN; no phase1 PASS."
     },
     {
       "id": "P1-09",
@@ -106,7 +106,7 @@
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "Fourth-tier identity audit complete 86/86 (85 normative §1.2.1 original bibliographies; 1,147 edges; one schema-only MS-ADLS §1.1 list of 13 UNCLASSIFIED refs). Fifth-stage source audit now 9 sources including prior MS-SWN, 138 norm edges; derived raw fourth-target MS/MC queue 88 candidates, 9 audited, 1 previously reviewed schema, 78 unreviewed. Historical target-edition canonicalization, recursive MS/MC and RFC/IETF/ISO/ITU normative closure, verified fifth shortest-tier assignment, Skype for Business 2019 Full Client build/roles/policies and independent fixed-point proof all OPEN. No Phase-1 gates PASS."
+      "blocker": "Fourth source IDs 86/86 classified, 1147 directed norm references. Downstream currently 17 §1.2.1 original bibliographies with 275 directed normative and 54 separately informative refs; raw queue 88 MS/MC target labels, 17 source bibliographies audited, 1 MS-ADLS schema §1.1 unclassified, 70 remaining. Historical target edition reconciliation, shortest fifth-level proof, transitive RFC/ISO/IETF/ITU closure, SfB2019 Windows client build/policy server roles, independent fixed point remain OPEN; no phase1 PASS."
     },
     {
       "id": "P1-11",
@@ -1350,5 +1350,24 @@
     "pending_regular_source_candidates": 78,
     "formal_phase1_gates_passed": 0,
     "original_binary_pdfs_user_retained": true
+  },
+  "p1_03_downstream_exchange_properties_wmf_originals_2026_10_24": {
+    "batch_sources": 8,
+    "full_pdf_sha256_verified": 8,
+    "add_normative": 137,
+    "add_informative": 24,
+    "downstream_total_audited_sources": 17,
+    "downstream_total_normative_edges": 275,
+    "downstream_total_informative_citations": 54,
+    "raw_ms_mc_target_candidates": 88,
+    "raw_target_pending_regular_sources": 70,
+    "prior_ring_normative_edges_stable": [
+      464,
+      246,
+      827,
+      1147
+    ],
+    "phase1_gates_passed": 0,
+    "pdf_binary_stored_git": false
   }
 }
