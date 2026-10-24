@@ -222,20 +222,14 @@
   "p1_03_unverified_remaining_source_ids": [
     "MC-NBFX",
     "MS-ADLS",
-    "MS-CMRP",
     "MS-CTA",
     "MS-DPSP",
     "MS-EERR",
-    "MS-EFSR",
     "MS-EMFPLUS",
     "MS-FRS1",
-    "MS-GKDI",
-    "MS-GPEF",
     "MS-LCID",
-    "MS-MAIL",
     "MS-MQMQ",
     "MS-N2HT",
-    "MS-NBTE",
     "MS-OAUT",
     "MS-ODATA",
     "MS-OFBA",
@@ -274,7 +268,6 @@
     "MS-OXWSUSRCFG",
     "MS-PAN",
     "MS-RAI",
-    "MS-RAP",
     "MS-RCMP",
     "MS-RDPEAR",
     "MS-RDPEDC",
@@ -285,12 +278,11 @@
     "MS-RPCL",
     "MS-RPRN",
     "MS-SAMS",
-    "MS-SCMR",
     "MS-W32T"
   ],
-  "current_p1_03_bibliography_count": 19,
-  "current_p1_03_normative_edges": 300,
-  "p1_03_current_caveat": "86/86 fourth-ring source identities acquired; 19/86 exact fourth-ring §1.2.1 lists reviewed (300 edges), 67 open. MS-SWN is first separately verified fifth-ring source (6 edges, MS-SMB2 upstream); do not conflate fourth/fifth ring counts or infer product mandatory features.",
+  "current_p1_03_bibliography_count": 27,
+  "current_p1_03_normative_edges": 386,
+  "p1_03_current_caveat": "Fourth ring 86/86 source document identities acquired; 27/86 exact §1.2.1 normative bibliographies verified (386 directed edges) while 59 remain. Fifth ring separate MS-SWN 6 normative edges unchanged. No proven normative fixed point, no generalized client mandate.",
   "p1_03_seven_fourth_and_one_fifth_source_batch_2026_10_24": {
     "report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
     "json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
@@ -318,5 +310,27 @@
     "client_scope": "OPEN",
     "new_normative_frontier_reachability": "MS-SMB2-v20260928 -> MS-SWN-v20260714",
     "all_user_original_pdfs_retained": true
+  },
+  "p1_03_eight_security_admin_legacy_originals_2026_10_24": {
+    "report": "fourth-ring-eight-legacy-security-admin-audit-2026-10-24.md",
+    "json": "fourth-ring-eight-legacy-security-admin-audit-2026-10-24.json",
+    "verified_source_ids": [
+      "MS-MAIL",
+      "MS-NBTE",
+      "MS-RAP",
+      "MS-GKDI",
+      "MS-EFSR",
+      "MS-SCMR",
+      "MS-GPEF",
+      "MS-CMRP"
+    ],
+    "new_normative_directed_edges": 86,
+    "new_informative_mentions_excluded": 47,
+    "full_file_original_pdf_sha256_verified": 8,
+    "fourth_source_ids_audited_after": 27,
+    "fourth_source_ids_pending_after": 59,
+    "fourth_directed_edges_after": 386,
+    "cited_target_editions_and_SfB2019_client_applicability": "OPEN",
+    "source_pdfs_user_custody_not_git": true
   }
 }

@@ -1,0 +1,802 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "phase": "P1-03",
+  "tier": "FOURTH_MICROSOFT_MC",
+  "source_count": 8,
+  "source_ids": [
+    "MS-MAIL",
+    "MS-NBTE",
+    "MS-RAP",
+    "MS-GKDI",
+    "MS-EFSR",
+    "MS-SCMR",
+    "MS-GPEF",
+    "MS-CMRP"
+  ],
+  "sources": [
+    {
+      "id": "MS-MAIL",
+      "title": "Remote Mailslot Protocol",
+      "revision": "18.0",
+      "published": "2024-07-29",
+      "edition": "v20240729",
+      "pdf_pages": 26,
+      "pdf_bytes": 1009085,
+      "sha256": "83bb6aae4914b3ed8db2cb7f5034fe49af33f6105ec7912cd96b181b209e6565",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_member": "Windows_Protocols/[MS-MAIL].pdf",
+      "original_pdf_in_repository": false,
+      "original_pdf_full_binary_sha256_verified": true,
+      "pdf_revision_summary_verified": true,
+      "reference_text_and_rendered_page_checked": true,
+      "reference_sections": [
+        "§1.2.1",
+        "§1.2.2"
+      ],
+      "normative_references": [
+        {
+          "target": "MS-BRWS",
+          "page": 6
+        },
+        {
+          "target": "MS-CIFS",
+          "page": 6
+        },
+        {
+          "target": "MS-DTYP",
+          "page": 6
+        },
+        {
+          "target": "MS-NRPC",
+          "page": 6
+        },
+        {
+          "target": "MS-SMB",
+          "page": 6
+        },
+        {
+          "target": "NETBEUI",
+          "page": 6
+        },
+        {
+          "target": "RFC1001",
+          "page": 6
+        },
+        {
+          "target": "RFC1002",
+          "page": 7
+        },
+        {
+          "target": "RFC2119",
+          "page": 7
+        }
+      ],
+      "normative_count": 9,
+      "informative_references": [
+        {
+          "target": "MSLOT",
+          "page": 7
+        },
+        {
+          "target": "PIPE",
+          "page": 7
+        }
+      ],
+      "informative_count": 2,
+      "official_document_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-mail/8ea19aa4-6e5a-4aed-b628-0b5cd75a1ab9",
+      "product_client_feature_required": "NOT_ESTABLISHED",
+      "cited_target_edition": "UNRECONCILED"
+    },
+    {
+      "id": "MS-NBTE",
+      "title": "NetBIOS over TCP (NBT) Extensions",
+      "revision": "22.0",
+      "published": "2024-04-23",
+      "edition": "v20240423",
+      "pdf_pages": 31,
+      "pdf_bytes": 1141266,
+      "sha256": "ea0309d784d119ad412d59600b6cf3f05026cef85cd2e7927fd6814939a13764",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_member": "Windows_Protocols/[MS-NBTE].pdf",
+      "original_pdf_in_repository": false,
+      "original_pdf_full_binary_sha256_verified": true,
+      "pdf_revision_summary_verified": true,
+      "reference_text_and_rendered_page_checked": true,
+      "reference_sections": [
+        "§1.2.1",
+        "§1.2.2"
+      ],
+      "normative_references": [
+        {
+          "target": "HYBRID",
+          "page": 7
+        },
+        {
+          "target": "MS-DTYP",
+          "page": 7
+        },
+        {
+          "target": "RFC1001",
+          "page": 7
+        },
+        {
+          "target": "RFC1002",
+          "page": 7
+        },
+        {
+          "target": "RFC2119",
+          "page": 7
+        },
+        {
+          "target": "RFC2132",
+          "page": 7
+        }
+      ],
+      "normative_count": 6,
+      "informative_references": [
+        {
+          "target": "MS-RAIW",
+          "page": 7
+        },
+        {
+          "target": "MS-WINSRA",
+          "page": 7
+        },
+        {
+          "target": "MSDOCS-WINS",
+          "page": 7
+        },
+        {
+          "target": "RFC1035",
+          "page": 7
+        },
+        {
+          "target": "RFC4795",
+          "page": 8
+        }
+      ],
+      "informative_count": 5,
+      "official_document_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nbte/3461cfa8-3d28-4fa3-8163-131bf1046fa3",
+      "product_client_feature_required": "NOT_ESTABLISHED",
+      "cited_target_edition": "UNRECONCILED"
+    },
+    {
+      "id": "MS-RAP",
+      "title": "Remote Administration Protocol",
+      "revision": "33.0",
+      "published": "2024-09-16",
+      "edition": "v20240916",
+      "pdf_pages": 133,
+      "pdf_bytes": 4279328,
+      "sha256": "5d6d7d789ae13a4ef145cc84180d92963692b018a42fe599d0b04d258af87607",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_member": "Windows_Protocols/[MS-RAP].pdf",
+      "original_pdf_in_repository": false,
+      "original_pdf_full_binary_sha256_verified": true,
+      "pdf_revision_summary_verified": true,
+      "reference_text_and_rendered_page_checked": true,
+      "reference_sections": [
+        "§1.2.1",
+        "§1.2.2"
+      ],
+      "normative_references": [
+        {
+          "target": "MS-BRWS",
+          "page": 10
+        },
+        {
+          "target": "MS-CIFS",
+          "page": 10
+        },
+        {
+          "target": "MS-ERREF",
+          "page": 10
+        },
+        {
+          "target": "MS-RPRN",
+          "page": 10
+        },
+        {
+          "target": "MS-SAMR",
+          "page": 10
+        },
+        {
+          "target": "MS-SMB",
+          "page": 10
+        },
+        {
+          "target": "MS-SRVS",
+          "page": 10
+        },
+        {
+          "target": "RFC1001",
+          "page": 10
+        },
+        {
+          "target": "RFC2119",
+          "page": 10
+        }
+      ],
+      "normative_count": 9,
+      "informative_references": [
+        {
+          "target": "CIFSPRINT",
+          "page": 10
+        },
+        {
+          "target": "MS-NLMP",
+          "page": 10
+        },
+        {
+          "target": "NTLM",
+          "page": 10
+        },
+        {
+          "target": "RAP",
+          "page": 10
+        },
+        {
+          "target": "RYAN",
+          "page": 10
+        }
+      ],
+      "informative_count": 5,
+      "official_document_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rap/ca5d2be3-efe8-4045-a3c8-22d80e265b62",
+      "product_client_feature_required": "NOT_ESTABLISHED",
+      "cited_target_edition": "UNRECONCILED"
+    },
+    {
+      "id": "MS-GKDI",
+      "title": "Group Key Distribution Protocol",
+      "revision": "10.0",
+      "published": "2024-04-23",
+      "edition": "v20240423",
+      "pdf_pages": 42,
+      "pdf_bytes": 1429926,
+      "sha256": "ab7911712753bfc11ec7e8b04d211f1cddbd5a69fd12dbe527bd81a35dbb766f",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_member": "Windows_Protocols/[MS-GKDI].pdf",
+      "original_pdf_in_repository": false,
+      "original_pdf_full_binary_sha256_verified": true,
+      "pdf_revision_summary_verified": true,
+      "reference_text_and_rendered_page_checked": true,
+      "reference_sections": [
+        "§1.2.1",
+        "§1.2.2"
+      ],
+      "normative_references": [
+        {
+          "target": "C706",
+          "page": 8
+        },
+        {
+          "target": "FIPS180-3",
+          "page": 8
+        },
+        {
+          "target": "FIPS186",
+          "page": 9
+        },
+        {
+          "target": "FIPS198-1",
+          "page": 9
+        },
+        {
+          "target": "MS-ADA2",
+          "page": 9
+        },
+        {
+          "target": "MS-ADSC",
+          "page": 9
+        },
+        {
+          "target": "MS-ADTS",
+          "page": 9
+        },
+        {
+          "target": "MS-DTYP",
+          "page": 9
+        },
+        {
+          "target": "MS-ERREF",
+          "page": 9
+        },
+        {
+          "target": "MS-NRPC",
+          "page": 9
+        },
+        {
+          "target": "MS-RPCE",
+          "page": 9
+        },
+        {
+          "target": "MS-SPNG",
+          "page": 9
+        },
+        {
+          "target": "RFC2119",
+          "page": 9
+        },
+        {
+          "target": "RFC2743",
+          "page": 9
+        },
+        {
+          "target": "RFC4122",
+          "page": 9
+        },
+        {
+          "target": "RFC4178",
+          "page": 9
+        },
+        {
+          "target": "RFC5114",
+          "page": 9
+        },
+        {
+          "target": "SP800-108",
+          "page": 9
+        },
+        {
+          "target": "SP800-56A",
+          "page": 9
+        }
+      ],
+      "normative_count": 19,
+      "informative_references": [
+        {
+          "target": "CRYPTO",
+          "page": 9
+        },
+        {
+          "target": "FIPS140",
+          "page": 9
+        },
+        {
+          "target": "FIPS197",
+          "page": 9
+        },
+        {
+          "target": "MS-WPO",
+          "page": 10
+        },
+        {
+          "target": "MSDN-ALG",
+          "page": 10
+        },
+        {
+          "target": "RFC3852",
+          "page": 10
+        }
+      ],
+      "informative_count": 6,
+      "official_document_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-gkdi/943dd4f6-6b80-4a66-8594-80df6d2aad0a",
+      "product_client_feature_required": "NOT_ESTABLISHED",
+      "cited_target_edition": "UNRECONCILED"
+    },
+    {
+      "id": "MS-EFSR",
+      "title": "Encrypting File System Remote (EFSRPC) Protocol",
+      "revision": "32.0",
+      "published": "2024-09-16",
+      "edition": "v20240916",
+      "pdf_pages": 94,
+      "pdf_bytes": 2778431,
+      "sha256": "e40d0f6f58cde506c423a0c860f739a86b263563dcf6a1a5da43957f640f45b1",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_member": "Windows_Protocols/[MS-EFSR].pdf",
+      "original_pdf_in_repository": false,
+      "original_pdf_full_binary_sha256_verified": true,
+      "pdf_revision_summary_verified": true,
+      "reference_text_and_rendered_page_checked": true,
+      "reference_sections": [
+        "§1.2.1",
+        "§1.2.2"
+      ],
+      "normative_references": [
+        {
+          "target": "C706",
+          "page": 12
+        },
+        {
+          "target": "MS-ADTS",
+          "page": 12
+        },
+        {
+          "target": "MS-CRTD",
+          "page": 12
+        },
+        {
+          "target": "MS-DTYP",
+          "page": 12
+        },
+        {
+          "target": "MS-ERREF",
+          "page": 12
+        },
+        {
+          "target": "MS-RMPR",
+          "page": 12
+        },
+        {
+          "target": "MS-RPCE",
+          "page": 12
+        },
+        {
+          "target": "MS-SMB2",
+          "page": 12
+        },
+        {
+          "target": "MS-SMB",
+          "page": 12
+        },
+        {
+          "target": "MS-WCCE",
+          "page": 12
+        },
+        {
+          "target": "RFC1035",
+          "page": 12
+        },
+        {
+          "target": "RFC2119",
+          "page": 12
+        },
+        {
+          "target": "RFC2251",
+          "page": 12
+        },
+        {
+          "target": "RFC3394",
+          "page": 12
+        },
+        {
+          "target": "RFC5280",
+          "page": 12
+        }
+      ],
+      "normative_count": 15,
+      "informative_references": [
+        {
+          "target": "FIPS180-4",
+          "page": 12
+        },
+        {
+          "target": "MS-ADOD",
+          "page": 12
+        },
+        {
+          "target": "MS-SFU",
+          "page": 12
+        },
+        {
+          "target": "MS-WDV",
+          "page": 12
+        },
+        {
+          "target": "MSDN-CRYPTO",
+          "page": 12
+        },
+        {
+          "target": "MSFT-CVE-2021-36942",
+          "page": 12
+        },
+        {
+          "target": "MSFT-CVE-2021-43893",
+          "page": 13
+        },
+        {
+          "target": "MSFT-CVE-2022-26925",
+          "page": 13
+        },
+        {
+          "target": "MSFT-EFS",
+          "page": 13
+        },
+        {
+          "target": "MSFT-NTFS",
+          "page": 13
+        },
+        {
+          "target": "MSFT-XPUEFS",
+          "page": 13
+        },
+        {
+          "target": "TDEA",
+          "page": 13
+        },
+        {
+          "target": "X509",
+          "page": 13
+        },
+        {
+          "target": "X690",
+          "page": 13
+        }
+      ],
+      "informative_count": 14,
+      "official_document_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-efsr",
+      "product_client_feature_required": "NOT_ESTABLISHED",
+      "cited_target_edition": "UNRECONCILED"
+    },
+    {
+      "id": "MS-SCMR",
+      "title": "Service Control Manager Remote Protocol",
+      "revision": "35.0",
+      "published": "2025-08-11",
+      "edition": "v20250811",
+      "pdf_pages": 178,
+      "pdf_bytes": 4364825,
+      "sha256": "18035f0f40837ac08cd4b725c6c7130cd013bd91eb3f96f7f697930cc688cd4c",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_member": "Windows_Protocols/[MS-SCMR].pdf",
+      "original_pdf_in_repository": false,
+      "original_pdf_full_binary_sha256_verified": true,
+      "pdf_revision_summary_verified": true,
+      "reference_text_and_rendered_page_checked": true,
+      "reference_sections": [
+        "§1.2.1",
+        "§1.2.2"
+      ],
+      "normative_references": [
+        {
+          "target": "C706",
+          "page": 11
+        },
+        {
+          "target": "MS-CIFS",
+          "page": 11
+        },
+        {
+          "target": "MS-DTYP",
+          "page": 11
+        },
+        {
+          "target": "MS-LSAD",
+          "page": 11
+        },
+        {
+          "target": "MS-RPCE",
+          "page": 11
+        },
+        {
+          "target": "MS-SMB",
+          "page": 11
+        },
+        {
+          "target": "MS-UCODEREF",
+          "page": 11
+        },
+        {
+          "target": "RFC2119",
+          "page": 11
+        }
+      ],
+      "normative_count": 8,
+      "informative_references": [
+        {
+          "target": "MS-AZOD",
+          "page": 11
+        },
+        {
+          "target": "MSDN-CtrlSvcEx",
+          "page": 11
+        },
+        {
+          "target": "MSDN-CtrlSvc",
+          "page": 11
+        },
+        {
+          "target": "MSDN-MIDL",
+          "page": 11
+        },
+        {
+          "target": "MSDN-NUMA",
+          "page": 11
+        },
+        {
+          "target": "MSDN-SetSvcStatus",
+          "page": 11
+        },
+        {
+          "target": "MSDN-STARTSERVICE",
+          "page": 11
+        },
+        {
+          "target": "MSDN-WinDriverKit",
+          "page": 11
+        },
+        {
+          "target": "MSDN-WINSVC",
+          "page": 12
+        },
+        {
+          "target": "SPNNAMES",
+          "page": 12
+        }
+      ],
+      "informative_count": 10,
+      "official_document_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/MS-SCMR/705b624a-13de-43cc-b8a2-99573da3635f",
+      "product_client_feature_required": "NOT_ESTABLISHED",
+      "cited_target_edition": "UNRECONCILED"
+    },
+    {
+      "id": "MS-GPEF",
+      "title": "Group Policy: Encrypting File System Extension",
+      "revision": "25.0",
+      "published": "2024-04-23",
+      "edition": "v20240423",
+      "pdf_pages": 37,
+      "pdf_bytes": 1296759,
+      "sha256": "2cc2dd0b8f64c351f7b0e838606e79591a3dcf1ce825831a05bdb77384398982",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_member": "Windows_Protocols/[MS-GPEF].pdf",
+      "original_pdf_in_repository": false,
+      "original_pdf_full_binary_sha256_verified": true,
+      "pdf_revision_summary_verified": true,
+      "reference_text_and_rendered_page_checked": true,
+      "reference_sections": [
+        "§1.2.1",
+        "§1.2.2"
+      ],
+      "normative_references": [
+        {
+          "target": "MS-DTYP",
+          "page": 10
+        },
+        {
+          "target": "MS-EFSR",
+          "page": 10
+        },
+        {
+          "target": "MS-GPOL",
+          "page": 10
+        },
+        {
+          "target": "MS-GPREG",
+          "page": 10
+        },
+        {
+          "target": "NSA",
+          "page": 10
+        },
+        {
+          "target": "RFC2119",
+          "page": 10
+        },
+        {
+          "target": "RFC5280",
+          "page": 10
+        }
+      ],
+      "normative_count": 7,
+      "informative_references": [
+        {
+          "target": "MS-FASOD",
+          "page": 10
+        },
+        {
+          "target": "MS-LSAD",
+          "page": 10
+        }
+      ],
+      "informative_count": 2,
+      "official_document_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/MS-GPEF/14d3fd83-7537-41a2-af39-8e52c19ef0e3",
+      "product_client_feature_required": "NOT_ESTABLISHED",
+      "cited_target_edition": "UNRECONCILED"
+    },
+    {
+      "id": "MS-CMRP",
+      "title": "Failover Cluster: Management API (ClusAPI) Protocol",
+      "revision": "44.0",
+      "published": "2025-08-11",
+      "edition": "v20250811",
+      "pdf_pages": 662,
+      "pdf_bytes": 18032155,
+      "sha256": "6406d7c7b350596da2ea3464dd487ecdcb4990f1d614c9aa2302b629698a5ee3",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_member": "Windows_Protocols/[MS-CMRP].pdf",
+      "original_pdf_in_repository": false,
+      "original_pdf_full_binary_sha256_verified": true,
+      "pdf_revision_summary_verified": true,
+      "reference_text_and_rendered_page_checked": true,
+      "reference_sections": [
+        "§1.2.1",
+        "§1.2.2"
+      ],
+      "normative_references": [
+        {
+          "target": "C706",
+          "page": 23
+        },
+        {
+          "target": "MS-DMRP",
+          "page": 23
+        },
+        {
+          "target": "MS-DTYP",
+          "page": 23
+        },
+        {
+          "target": "MS-ERREF",
+          "page": 23
+        },
+        {
+          "target": "MS-LSAD",
+          "page": 23
+        },
+        {
+          "target": "MS-NLMP",
+          "page": 23
+        },
+        {
+          "target": "MS-RPCE",
+          "page": 23
+        },
+        {
+          "target": "MS-RRP",
+          "page": 23
+        },
+        {
+          "target": "MS-SCMR",
+          "page": 24
+        },
+        {
+          "target": "MS-SPNG",
+          "page": 24
+        },
+        {
+          "target": "RFC1035",
+          "page": 24
+        },
+        {
+          "target": "RFC2119",
+          "page": 24
+        },
+        {
+          "target": "UNICODE",
+          "page": 24
+        }
+      ],
+      "normative_count": 13,
+      "informative_references": [
+        {
+          "target": "MSDN-CLUSRESTYPES",
+          "page": 24
+        },
+        {
+          "target": "MSDN-CSP",
+          "page": 24
+        },
+        {
+          "target": "SYSERR",
+          "page": 24
+        }
+      ],
+      "informative_count": 3,
+      "official_document_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cmrp/ba4117c0-530e-4e70-a085-4b4cf5bbf193",
+      "product_client_feature_required": "NOT_ESTABLISHED",
+      "cited_target_edition": "UNRECONCILED"
+    }
+  ],
+  "new_directed_normative_edges": 86,
+  "new_informative_mentions_excluded": 47,
+  "previous_fourth_normative_edges": 300,
+  "expected_fourth_normative_edges_after": 386,
+  "previous_sources_verified": 19,
+  "verified_sources_after": 27,
+  "remaining_unverified_sources": 59,
+  "prior_first_second_third_normative_edges": [
+    464,
+    246,
+    827
+  ],
+  "known_fifth_ms_swn_normative_edges_unchanged": 6,
+  "ad_schema_general_citations_unclassified_unchanged": 67,
+  "normative_fixed_point_reached": false,
+  "product_build_client_applicability_proven": false,
+  "phase1_gates_passed": 0,
+  "source_original_pdfs_owned_by_user": true,
+  "source_original_binary_git_committed": false
+}

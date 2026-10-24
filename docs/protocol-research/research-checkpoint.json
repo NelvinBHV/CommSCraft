@@ -72,21 +72,22 @@
     "fourth_ms_mc_frontier_source_pdf_filenames_missing": 0,
     "previous_four_archive_sets_pdf_instances_hashed": 822,
     "additional_standalone_pdf_originals_sha256_checked": 2,
-    "fourth_ring_current_original_pdf_normative_bibliographies_checked": 19,
-    "fourth_ring_explicit_normative_edges_recorded": 300,
+    "fourth_ring_current_original_pdf_normative_bibliographies_checked": 27,
+    "fourth_ring_explicit_normative_edges_recorded": 386,
     "fourth_ring_new_raw_target_labels": 1,
-    "fourth_ring_current_original_pdf_normative_bibliographies_remaining": 67,
+    "fourth_ring_current_original_pdf_normative_bibliographies_remaining": 59,
     "fourth_ring_new_windows_original_pdf_sources_sha256_verified": 7,
     "fourth_ring_latest_additional_directed_normative_edges": 135,
     "fourth_ring_latest_informative_citations_separately_extracted": 90,
     "fourth_ring_previous_exchange_pdf_binary_sha256_backfilled": 4,
-    "fourth_ring_latest_fourth_tier_normative_edges_added": 101,
-    "fourth_ring_latest_fourth_tier_informative_references_excluded": 84,
+    "fourth_ring_latest_fourth_tier_normative_edges_added": 86,
+    "fourth_ring_latest_fourth_tier_informative_references_excluded": 47,
     "fifth_ring_ms_swn_original_sections_reviewed": 1,
     "fifth_ring_ms_swn_directed_normative_edges": 6,
     "fifth_ring_ms_swn_informative_citations_separately_extracted": 2,
     "newly_reviewed_original_source_pdf_bibliographies_this_iteration": 8,
-    "original_full_pdf_instances_sha256_verified_in_all_user_uploads": 824
+    "original_full_pdf_instances_sha256_verified_in_all_user_uploads": 824,
+    "latest_full_original_pdfs_binary_sha256_verified": 8
   },
   "source_provenance": {
     "ms_avedgea": {
@@ -136,7 +137,7 @@
     {
       "id": "P1-03",
       "priority": 1,
-      "task": "Current exact original bibliography coverage: fourth-ring 19/86 MS/MC sources, 300 directed normative edges, 67 open. MS-SWN is a FIFTH-ring source reached normatively by MS-SMB2 v20260928, separately audited with 6 outgoing normative edges; do not add MS-SWN to fourth-ring source count. Continue current-release PDF bibliography batches and actual product-build/client/server-policy applicability at a justified reference closure."
+      "task": "Fourth ring original PDF bibliographies audited 27/86, 386 directed normative edges, 59 still OPEN. Fifth ring separate MS-SWN 6 direct normative edges unchanged. Continue next source batches plus RFC/IETF/external historical target canonicalization, SfB2019 full-client build/server-role/policy evidence and independent fixed-point verification. Keep historical/legacy administrator protocols separated from client feature requirements."
     },
     {
       "id": "P1-04",
@@ -211,47 +212,46 @@
     "transitive-frontier.json",
     "rfc-version-relations-reviewed.json"
   ],
-  "instructions_for_next_session": "Start at CURRENT_STATUS.md and fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md. Fourth ring 19/86 sources/300 edges, 67 remain; fifth ring new MS-SWN separately 1 source/6 edges reached from normative MS-SMB2->MS-SWN, MS-SWN->MS-SMB2 only INFORMATIVE. Preserve old 464/246/827, 67 schema citations UNCLASSIFIED, 0/12 Phase1 gates. User holds all PDF binaries; files located via PDF_ARCHIVE_LOOKUP.md in four split archives (large master ZIP is truncated). Prioritize remaining high cross-link IDs and actual SfB2019 build/policy relevance, avoid pretending server/directory/browser specs are mandatory client features. Only documentation on draft branch, no code/network/live tests/CI-paid/merge/release.",
+  "instructions_for_next_session": "First read CURRENT_STATUS.md, fourth-ring-eight-legacy-security-admin-audit-2026-10-24.md, fourth-ring-normative-reference-ledger.json and fourth-ring-ms-frontier-2026-10-24.json. Present fourth ring 27/86 source §1.2.1 bibliographies, 386 edges, 59 remain; prior first/second/third ring 464/246/827 unchanged. Fifth MS-SWN separate 6 edges. Next choose bounded 6–10 still-open sources from frontier, consult PDF_ARCHIVE_LOOKUP.md; original PDFs at user, not GitHub. Ground exact revision/edition/page/full-file SHA, classify normative vs informative, keep raw labels and historically exact target editions, audit application/client build and server role before imposing Windows Full Client obligations. Phase1 0/12 gates pass, no code, live tests, paid CI, main merge, tag or release.",
   "latest_continuation": {
     "date": "2026-10-24",
-    "iteration": "P1-03-seven-fourth-ring-SMB-DFS-browser-and-one-fifth-ring-SWN",
+    "iteration": "P1-03-eight-fourth-ring-legacy-auth-GPO-admin-original-PDFs",
     "branch": "draft/protocol-spec-analysis-2026-10-23",
-    "parent_head_before_iteration": "c4590113324313e525e0286d75e778d48aa847d3",
-    "source_report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
-    "source_json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
-    "fourth_source_ids_reviewed_this_iteration": [
-      "MS-CIFS",
-      "MS-DFSC",
-      "MS-FSA",
-      "MS-SRVS",
-      "MS-SRPL",
-      "MS-BRWS",
-      "MS-BRWSA"
+    "parent_head_before_iteration": "d91b54afe0652824adc3c46f04acf92f306f86ae",
+    "source_report": "fourth-ring-eight-legacy-security-admin-audit-2026-10-24.md",
+    "source_json": "fourth-ring-eight-legacy-security-admin-audit-2026-10-24.json",
+    "verified_source_ids": [
+      "MS-MAIL",
+      "MS-NBTE",
+      "MS-RAP",
+      "MS-GKDI",
+      "MS-EFSR",
+      "MS-SCMR",
+      "MS-GPEF",
+      "MS-CMRP"
     ],
-    "fifth_source_ids_reviewed_this_iteration": [
-      "MS-SWN"
-    ],
-    "fourth_source_ids_acquired": 86,
-    "fourth_current_pdf_bibliographies_reviewed": 19,
-    "fourth_open_bibliographies": 67,
-    "fourth_normative_edges": 300,
-    "fourth_normative_edges_new_this_iteration": 101,
-    "fourth_informative_refs_separate_new_this_iteration": 84,
-    "fifth_normative_edges_new_this_iteration": 6,
-    "fifth_informative_refs_separate_new_this_iteration": 2,
-    "previous_first_second_third_normative_edges": [
+    "verified_full_binary_sha256_count": 8,
+    "new_normative_edges": 86,
+    "new_informative_mentions_separately_extracted": 47,
+    "fourth_ring_sources_audited": 27,
+    "fourth_ring_sources_total": 86,
+    "fourth_ring_remaining": 59,
+    "fourth_ring_directed_normative_edges": 386,
+    "first_second_third_ring_directed_normative_edges_unchanged": [
       464,
       246,
       827
     ],
-    "third_ad_schema_general_reference_mentions_unclassified": 67,
-    "all_source_pdfs_binary_user_retained_not_git": true,
-    "full_original_pdf_sha256_verified_this_iteration": 8,
-    "full_normative_recursive_fixed_point": false,
-    "product_build_policy_scope_open": true,
-    "phase1_gate_pass_count": 0,
-    "implementation_authorized": false,
-    "live_tests_authorized": false,
+    "fifth_ring_ms_swn_edges_unchanged": 6,
+    "third_ring_schema_reference_mentions_unclassified": 67,
+    "client_build_scope_open": true,
+    "raw_cited_target_editions_unreconciled": true,
+    "full_normative_fixed_point": false,
+    "source_PDFs_user_custody": true,
+    "source_original_binary_git_committed": false,
+    "phase1_gates_passed": 0,
+    "protocol_implementation_authorized": false,
+    "live_interop_tests_authorized": false,
     "merge_main_authorized": false,
     "release_authorized": false
   },
@@ -774,5 +774,62 @@
     "third_tier": 827,
     "fourth_tier": 300,
     "fifth_tier_known_ms_swn": 6
+  },
+  "previous_latest_continuation_before_p1_03_eight_more": {
+    "date": "2026-10-24",
+    "iteration": "P1-03-seven-fourth-ring-SMB-DFS-browser-and-one-fifth-ring-SWN",
+    "branch": "draft/protocol-spec-analysis-2026-10-23",
+    "parent_head_before_iteration": "c4590113324313e525e0286d75e778d48aa847d3",
+    "source_report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
+    "source_json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
+    "fourth_source_ids_reviewed_this_iteration": [
+      "MS-CIFS",
+      "MS-DFSC",
+      "MS-FSA",
+      "MS-SRVS",
+      "MS-SRPL",
+      "MS-BRWS",
+      "MS-BRWSA"
+    ],
+    "fifth_source_ids_reviewed_this_iteration": [
+      "MS-SWN"
+    ],
+    "fourth_source_ids_acquired": 86,
+    "fourth_current_pdf_bibliographies_reviewed": 19,
+    "fourth_open_bibliographies": 67,
+    "fourth_normative_edges": 300,
+    "fourth_normative_edges_new_this_iteration": 101,
+    "fourth_informative_refs_separate_new_this_iteration": 84,
+    "fifth_normative_edges_new_this_iteration": 6,
+    "fifth_informative_refs_separate_new_this_iteration": 2,
+    "previous_first_second_third_normative_edges": [
+      464,
+      246,
+      827
+    ],
+    "third_ad_schema_general_reference_mentions_unclassified": 67,
+    "all_source_pdfs_binary_user_retained_not_git": true,
+    "full_original_pdf_sha256_verified_this_iteration": 8,
+    "full_normative_recursive_fixed_point": false,
+    "product_build_policy_scope_open": true,
+    "phase1_gate_pass_count": 0,
+    "implementation_authorized": false,
+    "live_tests_authorized": false,
+    "merge_main_authorized": false,
+    "release_authorized": false
+  },
+  "p1_03_eight_legacy_admin_2026_10_24": {
+    "report": "fourth-ring-eight-legacy-security-admin-audit-2026-10-24.md",
+    "source_json": "fourth-ring-eight-legacy-security-admin-audit-2026-10-24.json",
+    "normative_ledger": "fourth-ring-normative-reference-ledger.json",
+    "original_pdf_location_index": "PDF_ARCHIVE_LOOKUP.md",
+    "source_originals_in": "Windows_Protocols.tar.xz",
+    "source_original_sha256_checked": true,
+    "new_source_count": 8,
+    "new_normative_edges": 86,
+    "current_fourth_ring_sources": 27,
+    "current_fourth_ring_normative_edges": 386,
+    "pending_fourth_ring_sources": 59,
+    "source_pdf_binary_not_committed": true
   }
 }
