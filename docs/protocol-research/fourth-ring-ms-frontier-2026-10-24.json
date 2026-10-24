@@ -231,16 +231,6 @@
     "MS-MQMQ",
     "MS-N2HT",
     "MS-ODATA",
-    "MS-OXWSGTRM",
-    "MS-OXWSGTZ",
-    "MS-OXWSMSHR",
-    "MS-OXWSMTGS",
-    "MS-OXWSMTRK",
-    "MS-OXWSNTIF",
-    "MS-OXWSPED",
-    "MS-OXWSPERS",
-    "MS-OXWSPHOTO",
-    "MS-OXWSPOST",
     "MS-OXWSPSNTIF",
     "MS-OXWSRSLNM",
     "MS-OXWSTASK",
@@ -260,9 +250,9 @@
     "MS-SAMS",
     "MS-W32T"
   ],
-  "current_p1_03_bibliography_count": 47,
-  "current_p1_03_normative_edges": 690,
-  "p1_03_current_caveat": "Fourth ring: 86/86 source PDF identities acquired, 47/86 original §1.2.1 normative bibliographies audited, 690 directed normative edges, 39 remaining. Normative bibliography reachability not full Skype for Business 2019 Windows Full Client feature obligation; fifth ring MS-SWN separate six edges.",
+  "current_p1_03_bibliography_count": 57,
+  "current_p1_03_normative_edges": 810,
+  "p1_03_current_caveat": "Fourth tier original PDF bibliography review 57/86, 810 explicitly normative directed citations, 29 original reference sections still open. Fifth MS-SWN separate six normative edges; RFC, historical editions, external references and SfB2019 client mandatory scope still not closed.",
   "p1_03_seven_fourth_and_one_fifth_source_batch_2026_10_24": {
     "report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
     "json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
@@ -357,5 +347,27 @@
     "total_normative_edges_after": 690,
     "original_pdfs_retained_by_user": true,
     "client_applicability": "OPEN"
+  },
+  "p1_03_oxws_calendaring_notifications_2026_10_24": {
+    "source_ids": [
+      "MS-OXWSGTRM",
+      "MS-OXWSGTZ",
+      "MS-OXWSMSHR",
+      "MS-OXWSMTGS",
+      "MS-OXWSMTRK",
+      "MS-OXWSNTIF",
+      "MS-OXWSPED",
+      "MS-OXWSPERS",
+      "MS-OXWSPHOTO",
+      "MS-OXWSPOST"
+    ],
+    "source_count": 10,
+    "source_full_pdf_hashes_checked": 10,
+    "additional_normative_edges": 120,
+    "informative_mentions_excluded": 38,
+    "now_verified": 57,
+    "now_open": 29,
+    "now_directed_fourth_normative_edges": 810,
+    "source_pdfs_user_custody": true
   }
 }

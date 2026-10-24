@@ -1,0 +1,1066 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "branch": "draft/protocol-spec-analysis-2026-10-23",
+  "scope": "FOURTH_MS_MC_ORIGINAL_PDF_REFERENCE_LISTS",
+  "source_ids": [
+    "MS-OXWSGTRM",
+    "MS-OXWSGTZ",
+    "MS-OXWSMSHR",
+    "MS-OXWSMTGS",
+    "MS-OXWSMTRK",
+    "MS-OXWSNTIF",
+    "MS-OXWSPED",
+    "MS-OXWSPERS",
+    "MS-OXWSPHOTO",
+    "MS-OXWSPOST"
+  ],
+  "original_zip": "Exchange_Protocols.zip",
+  "sources": [
+    {
+      "id": "MS-OXWSGTRM",
+      "revision": "10.1",
+      "edition": "v20250819",
+      "published": "2025-08-19",
+      "pdf_pages": 33,
+      "pdf_bytes": 1223200,
+      "sha256": "211869af38050e08226da07a76042909e3fcb0f97358d03a7d7ce1a77f09bf30",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_member": "[MS-OXWSGTRM].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "raw_label": "[MS-OXWSCDATA]",
+          "target": "MS-OXWSCDATA",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2119]",
+          "target": "RFC2119",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2616]",
+          "target": "RFC2616",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2818]",
+          "target": "RFC2818",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC3066]",
+          "target": "RFC3066",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[SOAP1.1]",
+          "target": "SOAP1.1",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[WSDL]",
+          "target": "WSDL",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[XMLNS]",
+          "target": "XMLNS",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[XMLSCHEMA1]",
+          "target": "XMLSCHEMA1",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLSCHEMA2]",
+          "target": "XMLSCHEMA2",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "raw_label": "[MS-OXDSCLI]",
+          "target": "MS-OXDSCLI",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXPROTO]",
+          "target": "MS-OXPROTO",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSADISC]",
+          "target": "MS-OXWSADISC",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 10,
+      "informative_count": 3,
+      "original_binary_sha256_checked": true,
+      "original_reference_pages_rendered": true,
+      "client_feature_applicability": "OPEN",
+      "cited_target_versions": "UNRECONCILED"
+    },
+    {
+      "id": "MS-OXWSGTZ",
+      "revision": "9.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 41,
+      "pdf_bytes": 1429180,
+      "sha256": "4c0f2637270fa5e1d9d88242d73e71e75951ccaa0ebb000f4b1051c7fc0e8457",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_member": "[MS-OXWSGTZ].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "raw_label": "[MS-OXWSCDATA]",
+          "target": "MS-OXWSCDATA",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2119]",
+          "target": "RFC2119",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2616]",
+          "target": "RFC2616",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2818]",
+          "target": "RFC2818",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC3066]",
+          "target": "RFC3066",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[SOAP1.1]",
+          "target": "SOAP1.1",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[WSDL]",
+          "target": "WSDL",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLNS]",
+          "target": "XMLNS",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLSCHEMA1]",
+          "target": "XMLSCHEMA1",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLSCHEMA2]",
+          "target": "XMLSCHEMA2",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "raw_label": "[MS-OXDSCLI]",
+          "target": "MS-OXDSCLI",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXPROTO]",
+          "target": "MS-OXPROTO",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSADISC]",
+          "target": "MS-OXWSADISC",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSATT]",
+          "target": "MS-OXWSATT",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSCONT]",
+          "target": "MS-OXWSCONT",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSDLIST]",
+          "target": "MS-OXWSDLIST",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSMSG]",
+          "target": "MS-OXWSMSG",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSMTGS]",
+          "target": "MS-OXWSMTGS",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSPOST]",
+          "target": "MS-OXWSPOST",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSSRCH]",
+          "target": "MS-OXWSSRCH",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSSYNC]",
+          "target": "MS-OXWSSYNC",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSTASK]",
+          "target": "MS-OXWSTASK",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 10,
+      "informative_count": 12,
+      "original_binary_sha256_checked": true,
+      "original_reference_pages_rendered": true,
+      "client_feature_applicability": "OPEN",
+      "cited_target_versions": "UNRECONCILED"
+    },
+    {
+      "id": "MS-OXWSMSHR",
+      "revision": "13.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 44,
+      "pdf_bytes": 1516260,
+      "sha256": "58a8a24311bf826e9e5285edbcf75ff1f0c768ca3f0840128737b2431ee6b3f1",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_member": "[MS-OXWSMSHR].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "raw_label": "[MS-OXSHRMSG]",
+          "target": "MS-OXSHRMSG",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSCDATA]",
+          "target": "MS-OXWSCDATA",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSCORE]",
+          "target": "MS-OXWSCORE",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSFOLD]",
+          "target": "MS-OXWSFOLD",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2119]",
+          "target": "RFC2119",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2818]",
+          "target": "RFC2818",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[SOAP1.1]",
+          "target": "SOAP1.1",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[WSDL]",
+          "target": "WSDL",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLNS]",
+          "target": "XMLNS",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLSCHEMA1]",
+          "target": "XMLSCHEMA1",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLSCHEMA2]",
+          "target": "XMLSCHEMA2",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "raw_label": "[MS-OXPROTO]",
+          "target": "MS-OXPROTO",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSLVID]",
+          "target": "MS-OXWSLVID",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSSYNC]",
+          "target": "MS-OXWSSYNC",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 11,
+      "informative_count": 3,
+      "original_binary_sha256_checked": true,
+      "original_reference_pages_rendered": true,
+      "client_feature_applicability": "OPEN",
+      "cited_target_versions": "UNRECONCILED"
+    },
+    {
+      "id": "MS-OXWSMTGS",
+      "revision": "14.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 106,
+      "pdf_bytes": 2939242,
+      "sha256": "19f5c34887c2686b5aa1dc7d297d89b4c3566d0919373cce1a9dab1e77cb0268",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_member": "[MS-OXWSMTGS].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "raw_label": "[MS-OXWSBTRF]",
+          "target": "MS-OXWSBTRF",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXWSCDATA]",
+          "target": "MS-OXWSCDATA",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXWSCORE]",
+          "target": "MS-OXWSCORE",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXWSDLGM]",
+          "target": "MS-OXWSDLGM",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXWSFOLD]",
+          "target": "MS-OXWSFOLD",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXWSGTZ]",
+          "target": "MS-OXWSGTZ",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXWSMSG]",
+          "target": "MS-OXWSMSG",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXWSPERS]",
+          "target": "MS-OXWSPERS",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXWSSRCH]",
+          "target": "MS-OXWSSRCH",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXWSXPROP]",
+          "target": "MS-OXWSXPROP",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[RFC2119]",
+          "target": "RFC2119",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[RFC2616]",
+          "target": "RFC2616",
+          "pdf_page": 10
+        },
+        {
+          "raw_label": "[RFC2818]",
+          "target": "RFC2818",
+          "pdf_page": 10
+        },
+        {
+          "raw_label": "[SOAP1.1]",
+          "target": "SOAP1.1",
+          "pdf_page": 10
+        },
+        {
+          "raw_label": "[WSDL]",
+          "target": "WSDL",
+          "pdf_page": 10
+        },
+        {
+          "raw_label": "[XMLNS]",
+          "target": "XMLNS",
+          "pdf_page": 10
+        },
+        {
+          "raw_label": "[XMLSCHEMA1]",
+          "target": "XMLSCHEMA1",
+          "pdf_page": 10
+        },
+        {
+          "raw_label": "[XMLSCHEMA2]",
+          "target": "XMLSCHEMA2",
+          "pdf_page": 10
+        }
+      ],
+      "informative_references": [
+        {
+          "raw_label": "[MS-OXDSCLI]",
+          "target": "MS-OXDSCLI",
+          "pdf_page": 10
+        },
+        {
+          "raw_label": "[MS-OXPROTO]",
+          "target": "MS-OXPROTO",
+          "pdf_page": 10
+        },
+        {
+          "raw_label": "[MS-OXWSADISC]",
+          "target": "MS-OXWSADISC",
+          "pdf_page": 10
+        }
+      ],
+      "normative_count": 18,
+      "informative_count": 3,
+      "original_binary_sha256_checked": true,
+      "original_reference_pages_rendered": true,
+      "client_feature_applicability": "OPEN",
+      "cited_target_versions": "UNRECONCILED"
+    },
+    {
+      "id": "MS-OXWSMTRK",
+      "revision": "13.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 50,
+      "pdf_bytes": 1583044,
+      "sha256": "b11ec8472ce49d25f59775ef0c3efb9362100292616d204ae6718a74a33274eb",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_member": "[MS-OXWSMTRK].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "raw_label": "[MS-OXWSCDATA]",
+          "target": "MS-OXWSCDATA",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2119]",
+          "target": "RFC2119",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2616]",
+          "target": "RFC2616",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2818]",
+          "target": "RFC2818",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[SOAP1.1]",
+          "target": "SOAP1.1",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[WSDL]",
+          "target": "WSDL",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[XMLNS]",
+          "target": "XMLNS",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLSCHEMA1]",
+          "target": "XMLSCHEMA1",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLSCHEMA2]",
+          "target": "XMLSCHEMA2",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "raw_label": "[MS-OXDSCLI]",
+          "target": "MS-OXDSCLI",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXPROTO]",
+          "target": "MS-OXPROTO",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSADISC]",
+          "target": "MS-OXWSADISC",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 9,
+      "informative_count": 3,
+      "original_binary_sha256_checked": true,
+      "original_reference_pages_rendered": true,
+      "client_feature_applicability": "OPEN",
+      "cited_target_versions": "UNRECONCILED"
+    },
+    {
+      "id": "MS-OXWSNTIF",
+      "revision": "12.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 56,
+      "pdf_bytes": 1759318,
+      "sha256": "ed7ab47fb006b7ac30a482aeba0a96209f3933ee9932f1d30c9ff7d6f6d7c918",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_member": "[MS-OXWSNTIF].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "raw_label": "[MS-OXWSCDATA]",
+          "target": "MS-OXWSCDATA",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSCORE]",
+          "target": "MS-OXWSCORE",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSFOLD]",
+          "target": "MS-OXWSFOLD",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[RFC2119]",
+          "target": "RFC2119",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[RFC2616]",
+          "target": "RFC2616",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[RFC2818]",
+          "target": "RFC2818",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[RFC3066]",
+          "target": "RFC3066",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[SOAP1.1]",
+          "target": "SOAP1.1",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[WSDL]",
+          "target": "WSDL",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLNS]",
+          "target": "XMLNS",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLSCHEMA1]",
+          "target": "XMLSCHEMA1",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[XMLSCHEMA2]",
+          "target": "XMLSCHEMA2",
+          "pdf_page": 9
+        }
+      ],
+      "informative_references": [
+        {
+          "raw_label": "[MS-OXDSCLI]",
+          "target": "MS-OXDSCLI",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXPROTO]",
+          "target": "MS-OXPROTO",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXWSADISC]",
+          "target": "MS-OXWSADISC",
+          "pdf_page": 9
+        },
+        {
+          "raw_label": "[MS-OXWSPSNTIF]",
+          "target": "MS-OXWSPSNTIF",
+          "pdf_page": 9
+        }
+      ],
+      "normative_count": 12,
+      "informative_count": 4,
+      "original_binary_sha256_checked": true,
+      "original_reference_pages_rendered": true,
+      "client_feature_applicability": "OPEN",
+      "cited_target_versions": "UNRECONCILED"
+    },
+    {
+      "id": "MS-OXWSPED",
+      "revision": "7.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 25,
+      "pdf_bytes": 991654,
+      "sha256": "2dcfa67fa5e16d20d219aa9283db07c283a06e8e92212292d16c3b778e6d4015",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_member": "[MS-OXWSPED].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "raw_label": "[MS-OXWSCDATA]",
+          "target": "MS-OXWSCDATA",
+          "pdf_page": 6
+        },
+        {
+          "raw_label": "[RFC2119]",
+          "target": "RFC2119",
+          "pdf_page": 6
+        },
+        {
+          "raw_label": "[RFC2616]",
+          "target": "RFC2616",
+          "pdf_page": 6
+        },
+        {
+          "raw_label": "[RFC2818]",
+          "target": "RFC2818",
+          "pdf_page": 6
+        },
+        {
+          "raw_label": "[RFC3066]",
+          "target": "RFC3066",
+          "pdf_page": 6
+        },
+        {
+          "raw_label": "[SOAP1.1]",
+          "target": "SOAP1.1",
+          "pdf_page": 6
+        },
+        {
+          "raw_label": "[WSDL]",
+          "target": "WSDL",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[XMLNS]",
+          "target": "XMLNS",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[XMLSCHEMA1]",
+          "target": "XMLSCHEMA1",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[XMLSCHEMA2]",
+          "target": "XMLSCHEMA2",
+          "pdf_page": 7
+        }
+      ],
+      "informative_references": [
+        {
+          "raw_label": "[MS-OXDSCLI]",
+          "target": "MS-OXDSCLI",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXPROTO]",
+          "target": "MS-OXPROTO",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSADISC]",
+          "target": "MS-OXWSADISC",
+          "pdf_page": 7
+        }
+      ],
+      "normative_count": 10,
+      "informative_count": 3,
+      "original_binary_sha256_checked": true,
+      "original_reference_pages_rendered": true,
+      "client_feature_applicability": "OPEN",
+      "cited_target_versions": "UNRECONCILED"
+    },
+    {
+      "id": "MS-OXWSPERS",
+      "revision": "7.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 58,
+      "pdf_bytes": 1659318,
+      "sha256": "0154856d6f82c77b44aaaeea61a9cb80abc803defbdbc1ebddd32af02c13e9f4",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_member": "[MS-OXWSPERS].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "raw_label": "[MS-OXDSCLI]",
+          "target": "MS-OXDSCLI",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSADISC]",
+          "target": "MS-OXWSADISC",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSCDATA]",
+          "target": "MS-OXWSCDATA",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSCORE]",
+          "target": "MS-OXWSCORE",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSFOLD]",
+          "target": "MS-OXWSFOLD",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSSRCH]",
+          "target": "MS-OXWSSRCH",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSXPROP]",
+          "target": "MS-OXWSXPROP",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2119]",
+          "target": "RFC2119",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2616]",
+          "target": "RFC2616",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2818]",
+          "target": "RFC2818",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[SOAP1.1]",
+          "target": "SOAP1.1",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[WSDL]",
+          "target": "WSDL",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[WSIBASIC]",
+          "target": "WSIBASIC",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[XMLNS]",
+          "target": "XMLNS",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[XMLSCHEMA1/2]",
+          "target": "XMLSCHEMA1/2",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[XMLSCHEMA2/2]",
+          "target": "XMLSCHEMA2/2",
+          "pdf_page": 7
+        }
+      ],
+      "informative_references": [
+        {
+          "raw_label": "[MS-OXPROTO]",
+          "target": "MS-OXPROTO",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSCOS]",
+          "target": "MS-OXWSCOS",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSMTGS]",
+          "target": "MS-OXWSMTGS",
+          "pdf_page": 7
+        }
+      ],
+      "normative_count": 16,
+      "informative_count": 3,
+      "original_binary_sha256_checked": true,
+      "original_reference_pages_rendered": true,
+      "client_feature_applicability": "OPEN",
+      "cited_target_versions": "UNRECONCILED"
+    },
+    {
+      "id": "MS-OXWSPHOTO",
+      "revision": "11.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 15,
+      "pdf_bytes": 781846,
+      "sha256": "b4f87bc8f6ceab4e94f5bc26fba34a591a4432cb569d4444a6e851f6b236ca35",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_member": "[MS-OXWSPHOTO].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "raw_label": "[MS-OXWSADISC]",
+          "target": "MS-OXWSADISC",
+          "pdf_page": 5
+        },
+        {
+          "raw_label": "[RFC2119]",
+          "target": "RFC2119",
+          "pdf_page": 5
+        },
+        {
+          "raw_label": "[RFC2616]",
+          "target": "RFC2616",
+          "pdf_page": 5
+        },
+        {
+          "raw_label": "[RFC2818]",
+          "target": "RFC2818",
+          "pdf_page": 5
+        },
+        {
+          "raw_label": "[SOAP1.1]",
+          "target": "SOAP1.1",
+          "pdf_page": 5
+        },
+        {
+          "raw_label": "[WSDL]",
+          "target": "WSDL",
+          "pdf_page": 5
+        },
+        {
+          "raw_label": "[WSIBASIC]",
+          "target": "WSIBASIC",
+          "pdf_page": 5
+        },
+        {
+          "raw_label": "[XMLNS]",
+          "target": "XMLNS",
+          "pdf_page": 5
+        },
+        {
+          "raw_label": "[XMLSCHEMA1]",
+          "target": "XMLSCHEMA1",
+          "pdf_page": 5
+        },
+        {
+          "raw_label": "[XMLSCHEMA2]",
+          "target": "XMLSCHEMA2",
+          "pdf_page": 5
+        }
+      ],
+      "informative_references": [
+        {
+          "raw_label": "[MS-OCAUTHWS]",
+          "target": "MS-OCAUTHWS",
+          "pdf_page": 5
+        },
+        {
+          "raw_label": "[MS-OXPROTO]",
+          "target": "MS-OXPROTO",
+          "pdf_page": 5
+        }
+      ],
+      "normative_count": 10,
+      "informative_count": 2,
+      "original_binary_sha256_checked": true,
+      "original_reference_pages_rendered": true,
+      "client_feature_applicability": "OPEN",
+      "cited_target_versions": "UNRECONCILED"
+    },
+    {
+      "id": "MS-OXWSPOST",
+      "revision": "10.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 38,
+      "pdf_bytes": 1299435,
+      "sha256": "b8011011566ef29da6cda8fe231795b5d66b981cee11214aec11c553c922fb1d",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_member": "[MS-OXWSPOST].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "raw_label": "[MS-OXDSCLI]",
+          "target": "MS-OXDSCLI",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSADISC]",
+          "target": "MS-OXWSADISC",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSCDATA]",
+          "target": "MS-OXWSCDATA",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[MS-OXWSCORE]",
+          "target": "MS-OXWSCORE",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2119]",
+          "target": "RFC2119",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2616]",
+          "target": "RFC2616",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2818]",
+          "target": "RFC2818",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC2822]",
+          "target": "RFC2822",
+          "pdf_page": 7
+        },
+        {
+          "raw_label": "[RFC850]",
+          "target": "RFC850",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[SOAP1.1]",
+          "target": "SOAP1.1",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[WSDL]",
+          "target": "WSDL",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLNS]",
+          "target": "XMLNS",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLSCHEMA1]",
+          "target": "XMLSCHEMA1",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[XMLSCHEMA2]",
+          "target": "XMLSCHEMA2",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "raw_label": "[MS-OXPROTO]",
+          "target": "MS-OXPROTO",
+          "pdf_page": 8
+        },
+        {
+          "raw_label": "[MS-OXWSSRCH]",
+          "target": "MS-OXWSSRCH",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 14,
+      "informative_count": 2,
+      "original_binary_sha256_checked": true,
+      "original_reference_pages_rendered": true,
+      "client_feature_applicability": "OPEN",
+      "cited_target_versions": "UNRECONCILED"
+    }
+  ],
+  "additional_normative_edges": 120,
+  "additional_informative_mentions_separate": 38,
+  "previous_fourth_source_count": 47,
+  "fourth_source_count_after": 57,
+  "remaining_unreviewed_fourth_sources": 29,
+  "previous_fourth_edge_count": 690,
+  "fourth_edge_count_after": 810,
+  "previously_unseen_raw_normative_targets_within_fourth_ring": [
+    "MS-OXSHRMSG",
+    "MS-OXWSBTRF",
+    "MS-OXWSDLGM",
+    "MS-OXWSPERS",
+    "RFC850"
+  ],
+  "normalized_target_editions_proven": false,
+  "source_binary_pdfs_retained_by_user": true,
+  "phase1_gates_passed": 0,
+  "product_client_scope_proven": false,
+  "prior_rings": [
+    464,
+    246,
+    827
+  ],
+  "fifth_ms_swn_separate_edges": 6,
+  "ad_schema_1_1_unclassified": 67
+}
