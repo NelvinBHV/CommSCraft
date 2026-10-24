@@ -71,17 +71,17 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "Fourth source ID level 86/86 and 1147 directed norm refs unchanged. Downstream original normative bibliographies 73, norm directed 1008, informative 255. Initial 88 raw MS/MC target queue 61 reviewed original norm sources, 1 MS-ADLS schema-only §1.1, 26 pending. Newly recomputed emergent transitive raw label queue 17 still pending, combined 43 literal open, not historical-edition normalized nor full normative fixed point. MS-CMP v20240423 normative self-bibliography citation p8; older Exchange MS-OXOPFFB v20160914, MS-DMRP v20170601 rev8.2 official PDF still missing. Exact target editions, RFC/IETF/ISO/ITU/W3C recursive normative closure, independent BFS shortest tier and actual Skype 2019 Full Client builds/features/server roles/policies remain OPEN. 0/12 gates PASS."
+      "blocker": "Fourth ring 86/86 source IDs classified, 1147 normative references. Downstream 83 audited original §1.2.1 bibliographies 1122 directed norm edges, 283 informative. Initial 88 MS/MC fourth-target queue 67 originals norm-audited, one MS-ADLS schema-only §1.1 unclassified, 20 pending. Distinct transitive raw source queue 16 pending; total 36 literal raw labels not editions normalized and not closed normative fixed point. MS-OXPFOAB 2016 historical original, MS-OXOSMMS 2024; MS-DMRP 2017 rev8.2 original still missing. Historical cited editions, RFC/IETF/ISO/ITU/W3C recursive closure and actual Skype 2019 Full Client feature/build/role/policy obligations OPEN; 0/12 gates PASS."
     },
     {
       "id": "P1-04",
       "passed": false,
-      "blocker": "Fourth source ID level 86/86 and 1147 directed norm refs unchanged. Downstream original normative bibliographies 73, norm directed 1008, informative 255. Initial 88 raw MS/MC target queue 61 reviewed original norm sources, 1 MS-ADLS schema-only §1.1, 26 pending. Newly recomputed emergent transitive raw label queue 17 still pending, combined 43 literal open, not historical-edition normalized nor full normative fixed point. MS-CMP v20240423 normative self-bibliography citation p8; older Exchange MS-OXOPFFB v20160914, MS-DMRP v20170601 rev8.2 official PDF still missing. Exact target editions, RFC/IETF/ISO/ITU/W3C recursive normative closure, independent BFS shortest tier and actual Skype 2019 Full Client builds/features/server roles/policies remain OPEN. 0/12 gates PASS."
+      "blocker": "Fourth ring 86/86 source IDs classified, 1147 normative references. Downstream 83 audited original §1.2.1 bibliographies 1122 directed norm edges, 283 informative. Initial 88 MS/MC fourth-target queue 67 originals norm-audited, one MS-ADLS schema-only §1.1 unclassified, 20 pending. Distinct transitive raw source queue 16 pending; total 36 literal raw labels not editions normalized and not closed normative fixed point. MS-OXPFOAB 2016 historical original, MS-OXOSMMS 2024; MS-DMRP 2017 rev8.2 original still missing. Historical cited editions, RFC/IETF/ISO/ITU/W3C recursive closure and actual Skype 2019 Full Client feature/build/role/policy obligations OPEN; 0/12 gates PASS."
     },
     {
       "id": "P1-05",
       "passed": false,
-      "blocker": "Fourth source ID level 86/86 and 1147 directed norm refs unchanged. Downstream original normative bibliographies 73, norm directed 1008, informative 255. Initial 88 raw MS/MC target queue 61 reviewed original norm sources, 1 MS-ADLS schema-only §1.1, 26 pending. Newly recomputed emergent transitive raw label queue 17 still pending, combined 43 literal open, not historical-edition normalized nor full normative fixed point. MS-CMP v20240423 normative self-bibliography citation p8; older Exchange MS-OXOPFFB v20160914, MS-DMRP v20170601 rev8.2 official PDF still missing. Exact target editions, RFC/IETF/ISO/ITU/W3C recursive normative closure, independent BFS shortest tier and actual Skype 2019 Full Client builds/features/server roles/policies remain OPEN. 0/12 gates PASS."
+      "blocker": "Fourth ring 86/86 source IDs classified, 1147 normative references. Downstream 83 audited original §1.2.1 bibliographies 1122 directed norm edges, 283 informative. Initial 88 MS/MC fourth-target queue 67 originals norm-audited, one MS-ADLS schema-only §1.1 unclassified, 20 pending. Distinct transitive raw source queue 16 pending; total 36 literal raw labels not editions normalized and not closed normative fixed point. MS-OXPFOAB 2016 historical original, MS-OXOSMMS 2024; MS-DMRP 2017 rev8.2 original still missing. Historical cited editions, RFC/IETF/ISO/ITU/W3C recursive closure and actual Skype 2019 Full Client feature/build/role/policy obligations OPEN; 0/12 gates PASS."
     },
     {
       "id": "P1-06",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "Fourth source ID level 86/86 and 1147 directed norm refs unchanged. Downstream original normative bibliographies 73, norm directed 1008, informative 255. Initial 88 raw MS/MC target queue 61 reviewed original norm sources, 1 MS-ADLS schema-only §1.1, 26 pending. Newly recomputed emergent transitive raw label queue 17 still pending, combined 43 literal open, not historical-edition normalized nor full normative fixed point. MS-CMP v20240423 normative self-bibliography citation p8; older Exchange MS-OXOPFFB v20160914, MS-DMRP v20170601 rev8.2 official PDF still missing. Exact target editions, RFC/IETF/ISO/ITU/W3C recursive normative closure, independent BFS shortest tier and actual Skype 2019 Full Client builds/features/server roles/policies remain OPEN. 0/12 gates PASS."
+      "blocker": "Fourth ring 86/86 source IDs classified, 1147 normative references. Downstream 83 audited original §1.2.1 bibliographies 1122 directed norm edges, 283 informative. Initial 88 MS/MC fourth-target queue 67 originals norm-audited, one MS-ADLS schema-only §1.1 unclassified, 20 pending. Distinct transitive raw source queue 16 pending; total 36 literal raw labels not editions normalized and not closed normative fixed point. MS-OXPFOAB 2016 historical original, MS-OXOSMMS 2024; MS-DMRP 2017 rev8.2 original still missing. Historical cited editions, RFC/IETF/ISO/ITU/W3C recursive closure and actual Skype 2019 Full Client feature/build/role/policy obligations OPEN; 0/12 gates PASS."
     },
     {
       "id": "P1-09",
@@ -106,7 +106,7 @@
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "Fourth source ID level 86/86 and 1147 directed norm refs unchanged. Downstream original normative bibliographies 73, norm directed 1008, informative 255. Initial 88 raw MS/MC target queue 61 reviewed original norm sources, 1 MS-ADLS schema-only §1.1, 26 pending. Newly recomputed emergent transitive raw label queue 17 still pending, combined 43 literal open, not historical-edition normalized nor full normative fixed point. MS-CMP v20240423 normative self-bibliography citation p8; older Exchange MS-OXOPFFB v20160914, MS-DMRP v20170601 rev8.2 official PDF still missing. Exact target editions, RFC/IETF/ISO/ITU/W3C recursive normative closure, independent BFS shortest tier and actual Skype 2019 Full Client builds/features/server roles/policies remain OPEN. 0/12 gates PASS."
+      "blocker": "Fourth ring 86/86 source IDs classified, 1147 normative references. Downstream 83 audited original §1.2.1 bibliographies 1122 directed norm edges, 283 informative. Initial 88 MS/MC fourth-target queue 67 originals norm-audited, one MS-ADLS schema-only §1.1 unclassified, 20 pending. Distinct transitive raw source queue 16 pending; total 36 literal raw labels not editions normalized and not closed normative fixed point. MS-OXPFOAB 2016 historical original, MS-OXOSMMS 2024; MS-DMRP 2017 rev8.2 original still missing. Historical cited editions, RFC/IETF/ISO/ITU/W3C recursive closure and actual Skype 2019 Full Client feature/build/role/policy obligations OPEN; 0/12 gates PASS."
     },
     {
       "id": "P1-11",
@@ -1463,5 +1463,18 @@
     "ms_cmp_normative_self_citation_pdf_page_8": true,
     "phase1_gates_passed": 0,
     "source_binary_pdfs_in_repo": false
+  },
+  "p1_03_mms_phishing_oletx_msmq_originals_2026_10_24": {
+    "original_sha256_verified_count": 10,
+    "normative_edges_added": 114,
+    "informative_separate_added": 28,
+    "downstream_norm_source_count": 83,
+    "downstream_normative_edges": 1122,
+    "downstream_informative_refs": 283,
+    "initial_raw_source_candidates_pending": 20,
+    "emergent_raw_targets_pending": 16,
+    "combined_literal_raw_targets_pending": 36,
+    "pdf_binaries_in_git": false,
+    "phase1_gates_passed": 0
   }
 }
