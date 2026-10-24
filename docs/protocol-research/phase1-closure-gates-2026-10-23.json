@@ -51,7 +51,9 @@
     "third_ring_new_ms_mc_target_ids": 86,
     "third_ring_new_rfc_target_ids": 62,
     "third_ring_new_external_or_historical_label_ids": 88,
-    "first_three_rings_raw_target_label_union": 581
+    "first_three_rings_raw_target_label_union": 581,
+    "fourth_frontier_ms_mc_existing_user_archive_filename_count": 85,
+    "fourth_frontier_ms_mc_missing_user_archive_filenames": 1
   },
   "pass_count": 0,
   "gate_count": 12,
@@ -69,7 +71,7 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "All 52 discovered third-ring MS/MC PDF sources acquired and bibliographies examined: 48 explicit §1.2.1 lists add 827 direct normative source-specific edges; four schema §1.1 lists have 67 UNCLASSIFIED references. 86 previously unseen MS/MC target IDs, 62 RFC and 88 external/raw alias IDs discovered. Full recursive fixed point and client/server/policy applicability OPEN."
+      "blocker": "All 52 discovered third-ring MS/MC PDF sources acquired and bibliographies examined: 48 explicit §1.2.1 lists add 827 direct normative source-specific edges; four schema §1.1 lists have 67 UNCLASSIFIED references. 86 previously unseen MS/MC target IDs, 62 RFC and 88 external/raw alias IDs discovered. Full recursive fixed point and client/server/policy applicability OPEN. Fourth-ring source filename lookup: 85/86 present, MS-DLTM absent; edition/current normative references of 85 not yet checked."
     },
     {
       "id": "P1-04",
@@ -1174,6 +1176,14 @@
     "client_feature_applicability_proven": false,
     "new_protocol_code_authorized": false,
     "real_server_tests_authorized": false,
-    "phase1_passed": 0
+    "phase1_passed": 0,
+    "fourth_ms_mc_source_filename_availability": {
+      "available": 85,
+      "total": 86,
+      "missing": [
+        "MS-DLTM"
+      ],
+      "five_year_old_ms_dltm_original_source_editions_still_to_review": true
+    }
   }
 }

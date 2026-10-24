@@ -103,5 +103,30 @@
   "scope_resolution_for_all": "OPEN_NO_CLIENT_APPLICABILITY_PROVEN",
   "acquisition_for_new_ms_mc": "UNASSESSED_CHECK_USER_ARCHIVES_FIRST_BEFORE_REQUESTING_NEW_PDFS",
   "client_requirement_claim": false,
-  "phase1_gate_passed": false
+  "phase1_gate_passed": false,
+  "archive_acquisition_check_2026_10_24": {
+    "sources_checked": [
+      "Windows_Protocols.tar.xz",
+      "Exchange_Protocols.zip",
+      "SharePointProtocols.zip",
+      "OfficeProto.zip"
+    ],
+    "available_file_id_count": 85,
+    "unavailable_file_id_count": 1,
+    "windows_available": 47,
+    "exchange_available": 37,
+    "sharepoint_available": 1,
+    "office_available_new": 0,
+    "missing": [
+      "MS-DLTM"
+    ],
+    "missing_official_reference": {
+      "id": "MS-DLTM",
+      "name": "Distributed Link Tracking: Central Manager Protocol",
+      "published_revision": "9.1",
+      "published_date": "2017-06-01",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-dltm/a4a88aac-3bc5-4d5a-8136-52a3bfb979ef"
+    },
+    "note": "Only source-file availability verified, NOT current edition/§1.2.1 target normalization for 85. PDFs remain held by user; request the exact missing original if this dependency is needed."
+  }
 }

@@ -42,3 +42,7 @@ Diese Dateien enthalten keine vollständigen Microsoft-PDF-Binärbytes und keine
 6. **Formelle Phase-1-Abschlussgates:** **0/12 PASS**. Das bloße Erfassen von §1.2.1-Bibliografien ist nicht gleichbedeutend mit einem bewiesenen normativen Fixpunkt, einer unabhängigen Review oder vollständiger Windows-Client-Funktionsparität.
 
 **Keine Protokollcode-Änderungen, keine Live-/Interoperabilitätstests, keine Tests mit kostenpflichtigen CI-Runnern, kein Merge nach `main`, kein Tag und kein Release.**
+
+### Archiv-Abdeckung der nächsten 86 MS-/MC-Quellen (2026-10-24)
+
+Die Dateinamen aller **86** bisher neuen vierten-MS-/MC-Zielkennungen wurden gegen **alle vier** nutzerbereitgestellten Archivpakete abgeglichen. **85/86** Original-PDF-Dateinamen sind bereits lokal verfügbar: **47** Windows, **37** Exchange und **eine** SharePoint-Datei. **Einziger derzeit fehlender Original-PDF-Dateiname: `MS-DLTM`**. Die offizielle [Microsoft-Veröffentlichungsseite](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-dltm/a4a88aac-3bc5-4d5a-8136-52a3bfb979ef) nennt *Distributed Link Tracking: Central Manager Protocol* **Rev. 9.1, 01.06.2017** als veröffentlichte Ausgabe. Dieser Dateinamenabgleich bestätigt **nicht** Editionsaktualität oder normative §1.2.1-Verifikation der 85 vorhandenen Spezifikationen. Die fehlende PDF nur bei tatsächlichem Bedarf gezielt vom Nutzer anfordern; keine allgemeine erneute Archivlieferung erforderlich.

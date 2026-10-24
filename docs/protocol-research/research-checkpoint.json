@@ -67,7 +67,9 @@
     "third_ring_new_ms_mc_target_ids": 86,
     "third_ring_new_rfc_target_ids": 62,
     "third_ring_new_external_or_historical_label_ids": 88,
-    "first_three_rings_raw_target_label_union": 581
+    "first_three_rings_raw_target_label_union": 581,
+    "fourth_ms_mc_frontier_source_pdf_filenames_available": 85,
+    "fourth_ms_mc_frontier_source_pdf_filenames_missing": 1
   },
   "source_provenance": {
     "ms_avedgea": {
@@ -117,7 +119,7 @@
     {
       "id": "P1-03",
       "priority": 1,
-      "task": "Third-ring: 52 MS/MC PDFs bibliographically inspected; 48 §1.2.1 explicit normative, 4 general unclassified §1.1. Triage 86 new fourth-ring MS/MC IDs and 62 new RFC + 88 external or raw aliases; recursively resolve relevant dependencies to a source- and client-applicability-attested fixed point."
+      "task": "Third-ring: 52 MS/MC PDFs bibliographically inspected; 48 §1.2.1 explicit normative, 4 general unclassified §1.1. Triage 86 new fourth-ring MS/MC IDs and 62 new RFC + 88 external or raw aliases; recursively resolve relevant dependencies to a source- and client-applicability-attested fixed point. All four user archives checked: 85/86 new MS/MC fourth-level original PDF filenames available; MS-DLTM 9.1 (2017-06-01) missing, request targeted original if needed."
     },
     {
       "id": "P1-04",
@@ -496,6 +498,17 @@
     "real_server_tests_authorized": false,
     "phase1_passed": 0,
     "branch_head_before": "d75523742f12970ac2349c963626393ba43b0659",
-    "note": "N=explicit normative §1.2.1; U=unclassified §1.1 general schema references. No PDF storage requested by user; request only targeted originals if further examination is needed."
+    "note": "N=explicit normative §1.2.1; U=unclassified §1.1 general schema references. No PDF storage requested by user; request only targeted originals if further examination is needed.",
+    "fourth_ms_mc_source_filename_availability": {
+      "available": 85,
+      "total": 86,
+      "windows": 47,
+      "exchange": 37,
+      "sharepoint": 1,
+      "missing": [
+        "MS-DLTM"
+      ],
+      "edition_checks_on_85_not_yet_complete": true
+    }
   }
 }
