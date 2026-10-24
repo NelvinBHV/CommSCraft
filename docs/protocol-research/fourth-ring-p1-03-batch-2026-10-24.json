@@ -73,8 +73,8 @@
       "original_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXCMAPIHTTP/%5BMS-OXCMAPIHTTP%5D.pdf",
       "official_url": "https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxcmapihttp/d502edcf-0b22-42f2-8500-019f00d60245",
       "pdf_pages": 96,
-      "sha256": null,
-      "checksum_status": "UNAVAILABLE_ORIGINAL_PDF_BYTES_NOT_READ",
+      "sha256": "246bf51780a5ed370422e060dd98785bae76325f88587d2ec708bcbb8a2c8d70",
+      "checksum_status": "USER_EXCHANGE_ZIP_FULL_PDF_BYTES_SHA256_VERIFIED",
       "normative_pdf_pages": [
         9
       ],
@@ -101,8 +101,9 @@
         "[MS-OXPROTO]",
         "[RFC896]"
       ],
-      "evidence": "MICROSOFT_OFFICIAL_PDF_TEXT_AND_RENDERED_REFERENCE_PAGES",
-      "client_applicability": "OPEN"
+      "evidence": "MICROSOFT_PDF_SECTION_TEXT_AND_RENDERED_PAGE_PLUS_USER_EXCHANGE_ARCHIVE_COMPLETE_BINARY_SHA256",
+      "client_applicability": "OPEN",
+      "source_pdf_bytes": 3710255
     },
     {
       "id": "MS-OXWSSYNC",
@@ -112,8 +113,8 @@
       "original_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSSYNC/%5BMS-OXWSSYNC%5D.pdf",
       "official_url": "https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxwssync/9ac26095-b7fc-430e-94cf-0dc34b9a09a0",
       "pdf_pages": 45,
-      "sha256": null,
-      "checksum_status": "UNAVAILABLE_ORIGINAL_PDF_BYTES_NOT_READ",
+      "sha256": "c83791a19fdc70c733b04d0fd1bd20dd3b413bb3fc3f828f61ebbdf16f7f3311",
+      "checksum_status": "USER_EXCHANGE_ZIP_FULL_PDF_BYTES_SHA256_VERIFIED",
       "normative_pdf_pages": [
         7,
         8
@@ -150,8 +151,9 @@
         "[MS-OXPROTO]",
         "[MS-OXWSADISC]"
       ],
-      "evidence": "MICROSOFT_OFFICIAL_PDF_TEXT_AND_RENDERED_REFERENCE_PAGES",
-      "client_applicability": "OPEN"
+      "evidence": "MICROSOFT_PDF_SECTION_TEXT_AND_RENDERED_PAGE_PLUS_USER_EXCHANGE_ARCHIVE_COMPLETE_BINARY_SHA256",
+      "client_applicability": "OPEN",
+      "source_pdf_bytes": 1541305
     },
     {
       "id": "MS-OXWSXPROP",
@@ -161,8 +163,8 @@
       "original_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSXPROP/%5BMS-OXWSXPROP%5D.pdf",
       "official_url": "https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxwsxprop/1e0ae5e6-c516-4ad1-ad12-c19fee04860a",
       "pdf_pages": 24,
-      "sha256": null,
-      "checksum_status": "UNAVAILABLE_ORIGINAL_PDF_BYTES_NOT_READ",
+      "sha256": "0ea61a56ce4332871ed9543d9a799873d2b950389b76865a71667d979e69443d",
+      "checksum_status": "USER_EXCHANGE_ZIP_FULL_PDF_BYTES_SHA256_VERIFIED",
       "normative_pdf_pages": [
         5,
         6
@@ -189,8 +191,9 @@
         "[MS-OXWSFOLD]",
         "[MS-OXWSSRCH]"
       ],
-      "evidence": "MICROSOFT_OFFICIAL_PDF_TEXT_AND_RENDERED_REFERENCE_PAGES",
-      "client_applicability": "OPEN"
+      "evidence": "MICROSOFT_PDF_SECTION_TEXT_AND_RENDERED_PAGE_PLUS_USER_EXCHANGE_ARCHIVE_COMPLETE_BINARY_SHA256",
+      "client_applicability": "OPEN",
+      "source_pdf_bytes": 972029
     },
     {
       "id": "MS-OXWSMSG",
@@ -200,8 +203,8 @@
       "original_pdf_url": "https://officeprotocoldocs-f5hpbjgea6b8gneq.b02.azurefd.net/files/MS-OXWSMSG/%5BMS-OXWSMSG%5D.pdf",
       "official_url": "https://learn.microsoft.com/en-us/openspecs/exchange_server_protocols/ms-oxwsmsg/74051353-1b3f-4298-95c0-e3a54a8512ca",
       "pdf_pages": 46,
-      "sha256": null,
-      "checksum_status": "UNAVAILABLE_ORIGINAL_PDF_BYTES_NOT_READ",
+      "sha256": "e8371f4b6ea07ae0d7afbac18154a7bb96146d7b921d1cb7e6267e3e35092fc7",
+      "checksum_status": "USER_EXCHANGE_ZIP_FULL_PDF_BYTES_SHA256_VERIFIED",
       "normative_pdf_pages": [
         7,
         8
@@ -230,8 +233,9 @@
         "[MS-OXPROTO]",
         "[MS-OXWSSRCH]"
       ],
-      "evidence": "MICROSOFT_OFFICIAL_PDF_TEXT_AND_RENDERED_REFERENCE_PAGES",
-      "client_applicability": "OPEN"
+      "evidence": "MICROSOFT_PDF_SECTION_TEXT_AND_RENDERED_PAGE_PLUS_USER_EXCHANGE_ARCHIVE_COMPLETE_BINARY_SHA256",
+      "client_applicability": "OPEN",
+      "source_pdf_bytes": 1508435
     }
   ],
   "sources_metadata_only": [
@@ -414,7 +418,7 @@
       "client_applicability": "OPEN"
     }
   ],
-  "full_pdf_sha256_newly_verified": 0,
+  "full_pdf_sha256_newly_verified": 4,
   "legacy_edges_unchanged": [
     464,
     246,
@@ -427,5 +431,7 @@
   "live_tests_authorized": false,
   "main_merge_authorized": false,
   "release_authorized": false,
-  "user_retains_pdfs": true
+  "user_retains_pdfs": true,
+  "sha256_backfill_date": "2026-10-24",
+  "additional_reaudit_note": "All four Exchange exact original PDF binaries in the earlier 5/86 bibliography batch are now rehashed; 54 prior normative edges remain unchanged. Later P1-03 seven-Windows audit raises the CURRENT global total to 12/86 and 199 edges; snapshot fields in this JSON remain a record of the earlier batch."
 }

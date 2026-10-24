@@ -71,7 +71,7 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "86 fourth-ring MS/MC identities, 5/86 original-PDF bibliography sections checked (one earlier user full-file SHA, four official web-PDF page render with SHA still open); 64 directed edges, 81 bibliographies open; four Windows versions metadata-only; no product scope or normative fixed point."
+      "blocker": "86/86 fourth-ring MS/MC original document identities available; 12/86 exact §1.2.1 bibliographies reviewed on source PDF bytes (199 directed normative edges), 74 remain. Seven new Windows PDF sources have full SHA256; all four previous Exchange PDFs now have full SHA256. Client scope and recursive normative fixed point OPEN."
     },
     {
       "id": "P1-04",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "First three Microsoft/MC levels bibliographic source texts sampled/audited, but 236 new exact-label targets (86 MS/MC) plus RFC updates, external editions and product applicability not independently reviewed to fixed-point."
+      "blocker": "Fourth-ring reference source analysis 12/86, with 199 directed edges, but full exact raw-label and historical RFC/Draft/external edition normalization and client applicability remain OPEN; neither independent review nor fixed point. 0/12 PASS."
     },
     {
       "id": "P1-09",
@@ -1206,5 +1206,16 @@
     "informative_only_added": 11,
     "new_full_file_sha256": 0,
     "phase1_closed": false
+  },
+  "p1_03_seven_windows_pdf_bibliography_iteration_2026_10_24": {
+    "new_sources_original_sha256_verified": 7,
+    "previous_exchange_source_sha256_verified": 4,
+    "new_normative_edges": 135,
+    "fourth_ring_total": 199,
+    "exact_bibliographies_verified": 12,
+    "remaining": 74,
+    "informative_mentions_separately_extracted": 90,
+    "user_keeps_pdfs": true,
+    "formal_gate_passes": 0
   }
 }

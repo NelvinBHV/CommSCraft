@@ -1,5 +1,8 @@
 # CommSCraft – verbindlicher Forschungsstand und Wiederaufnahmepunkt
 
+**NEUESTER P1-03-QUELLENSTAND (24.10.2026):** [Sieben-Windows-Originalaudit](fourth-ring-seven-windows-originals-audit-2026-10-24.md) · [JSON-Einzelreferenzen](fourth-ring-seven-windows-originals-audit-2026-10-24.json) · [Viertstufen-Normledger](fourth-ring-normative-reference-ledger.json). Sieben weitere exakte PDF-§1.2.1-Quellen (MS-FSCC, MS-GPCAP, MS-GPOL, MS-GPSB, MS-RPCH, MS-SMB2, MS-TLSP), **135** zusätzliche Normkanten und **90** informative Referenzen getrennt; damit **12/86** Viertstufen-Quellen und **199** gerichtete Kanten, **74** ungeprüfte Viertstufenbibliografien. Zusätzlich alle vier vorherigen Exchange-PDF-Originaldateien vollständig SHA-256-geprüft. Frühere Ringzahlen 464/246/827 unverändert; alle **0/12** Phase-1-Gates OFFEN. MS-GKDI gehört nicht zu den 86 neu entdeckten Quellen-IDs und wird daher nicht mitgezählt. PDFs bleiben beim Nutzer.
+
+
 **PDF-Archivzuordnung 24.10.2026:** [PDF_ARCHIVE_LOOKUP.md](PDF_ARCHIVE_LOOKUP.md) · [vollständige Datei-Archiv-Zuordnung (JSON)](pdf-archive-file-locations-2026-10-24.json) · [CSV](pdf-archive-file-locations-2026-10-24.csv): alle 824 PDF-Instanzen zu Originalarchiven und vier vollständig SHA-256-/CRC-geprüften Teilarchiven zugeordnet. Das große Gesamt-ZIP ist am aktuellen Speicherpfad unvollständig/nicht lesbar; stattdessen nur Teil 01–04 verwenden. Original-PDFs bleiben beim Nutzer, nicht in Git.
 
 
