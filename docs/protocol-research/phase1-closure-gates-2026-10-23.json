@@ -1395,5 +1395,18 @@
     "explicit_normative_self_citation_ms_mqrr_page11": true,
     "phase1_gates_passed": 0,
     "pdfs_user_custody": true
+  },
+  "p1_03_msdmrp_2026_web_capture_original_source_provenance_2026_10_24": {
+    "source_id": "MS-DMRP",
+    "uploaded_export_pdf_sha256": "24c68c1946f176a2ecf257ee3887c9b12ef02343d8015c2c7c647ebcbc44eac3",
+    "web_export_created": "2026-08-14",
+    "official_listed_version": "v20170601 rev8.2",
+    "official_release_pdf_full_sha256_verified": false,
+    "six_online_normative_refs_only_provisional": true,
+    "seven_online_informative_refs_only_provisional": true,
+    "normative_ledger_edges_added": 0,
+    "remaining_original_pdf_source_candidates_unchanged": 54,
+    "gates_passed": 0,
+    "original_pdf_binary_not_committed": true
   }
 }

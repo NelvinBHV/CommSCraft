@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-10-24",
+  "subject_id": "MS-DMRP",
+  "title": "Disk Management Remote Protocol",
+  "source_class": "MICROSOFT_LEARN_MULTI_PAGE_WEB_EXPORT_NOT_UNALTERED_RELEASE_PDF",
+  "source_uploaded_filename": "openspecs-windows_protocols-ms-dmrp.pdf",
+  "source_pdf_sha256": "24c68c1946f176a2ecf257ee3887c9b12ef02343d8015c2c7c647ebcbc44eac3",
+  "source_pdf_bytes": 11726847,
+  "source_pdf_pages": 588,
+  "pdf_creator": "Microsoft Learn",
+  "pdf_producer": "Microsoft Learn PDF 1.0.26193.03",
+  "pdf_creation_utc": "2026-08-14T03:02:59Z",
+  "official_published_version_from_index": {
+    "release_date": "2017-06-01",
+    "revision": "8.2",
+    "web_export_pdf_page": 70,
+    "source_official_index": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-dmrp/19a16e20-072f-4d74-a245-ce4df2f1ecdd",
+    "official_release_pdf_link_from_microsoft_index": "https://winprotocoldoc.blob.core.windows.net/productionwindowsarchives/MS-DMRP/%5BMS-DMRP%5D.pdf",
+    "official_original_release_pdf_sha256": "NOT_AVAILABLE",
+    "not_proven_equal_to_web_export": true
+  },
+  "web_section_references": {
+    "normative": {
+      "section": "§1.2.1",
+      "web_export_pdf_page": 86,
+      "web_article_last_updated": "2020-10-30",
+      "reference_type": "NORMATIVE_EXPLICIT_1_2_1_WEB_EXPORT_UNRECONCILED_WITH_2017_ORIGINAL",
+      "count": 6,
+      "targets": [
+        {
+          "referrer": "MS-DMRP",
+          "target": "C706",
+          "raw_label": "[C706]",
+          "sequence": 1,
+          "pdf_page_in_web_export": 86,
+          "cited_target_edition": "UNRECONCILED"
+        },
+        {
+          "referrer": "MS-DMRP",
+          "target": "MS-DCOM",
+          "raw_label": "[MS-DCOM]",
+          "sequence": 2,
+          "pdf_page_in_web_export": 86,
+          "cited_target_edition": "UNRECONCILED"
+        },
+        {
+          "referrer": "MS-DMRP",
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "sequence": 3,
+          "pdf_page_in_web_export": 86,
+          "cited_target_edition": "UNRECONCILED"
+        },
+        {
+          "referrer": "MS-DMRP",
+          "target": "MS-ERREF",
+          "raw_label": "[MS-ERREF]",
+          "sequence": 4,
+          "pdf_page_in_web_export": 86,
+          "cited_target_edition": "UNRECONCILED"
+        },
+        {
+          "referrer": "MS-DMRP",
+          "target": "MS-RPCE",
+          "raw_label": "[MS-RPCE]",
+          "sequence": 5,
+          "pdf_page_in_web_export": 86,
+          "cited_target_edition": "UNRECONCILED"
+        },
+        {
+          "referrer": "MS-DMRP",
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "sequence": 6,
+          "pdf_page_in_web_export": 86,
+          "cited_target_edition": "UNRECONCILED"
+        }
+      ]
+    },
+    "informative": {
+      "section": "§1.2.2",
+      "web_export_pdf_page": 87,
+      "web_article_last_updated": "2020-10-30",
+      "reference_type": "INFORMATIVE_EXPLICIT_1_2_2_WEB_EXPORT_UNRECONCILED_WITH_2017_ORIGINAL",
+      "count": 7,
+      "targets": [
+        {
+          "referrer": "MS-DMRP",
+          "target": "MS-VDS",
+          "raw_label": "[MS-VDS]",
+          "sequence": 1,
+          "pdf_page_in_web_export": 87,
+          "cited_target_edition": "UNRECONCILED"
+        },
+        {
+          "referrer": "MS-DMRP",
+          "target": "MSDN-AccPerms",
+          "raw_label": "[MSDN-AccPerms]",
+          "sequence": 2,
+          "pdf_page_in_web_export": 87,
+          "cited_target_edition": "UNRECONCILED"
+        },
+        {
+          "referrer": "MS-DMRP",
+          "target": "MSDN-DefAccPerms",
+          "raw_label": "[MSDN-DefAccPerms]",
+          "sequence": 3,
+          "pdf_page_in_web_export": 87,
+          "cited_target_edition": "UNRECONCILED"
+        },
+        {
+          "referrer": "MS-DMRP",
+          "target": "MSDN-DISKMAN",
+          "raw_label": "[MSDN-DISKMAN]",
+          "sequence": 4,
+          "pdf_page_in_web_export": 87,
+          "cited_target_edition": "UNRECONCILED"
+        },
+        {
+          "referrer": "MS-DMRP",
+          "target": "MSDN-PARTITIONINFO",
+          "raw_label": "[MSDN-PARTITIONINFO]",
+          "sequence": 5,
+          "pdf_page_in_web_export": 87,
+          "cited_target_edition": "UNRECONCILED"
+        },
+        {
+          "referrer": "MS-DMRP",
+          "target": "MSDN-STC",
+          "raw_label": "[MSDN-STC]",
+          "sequence": 6,
+          "pdf_page_in_web_export": 87,
+          "cited_target_edition": "UNRECONCILED"
+        },
+        {
+          "referrer": "MS-DMRP",
+          "target": "MSDN-VOLMAN",
+          "raw_label": "[MSDN-VOLMAN]",
+          "sequence": 7,
+          "pdf_page_in_web_export": 87,
+          "cited_target_edition": "UNRECONCILED"
+        }
+      ]
+    }
+  },
+  "other_section_evidence": [
+    {
+      "section": "§1",
+      "pdf_page_in_web_export": 75,
+      "article_last_updated": "2019-02-14",
+      "statement": "Introduction identifies normative content in sections 1.5, 1.8, 1.9, 2 and 3; other sections/examples informative."
+    },
+    {
+      "section": "§1.4",
+      "pdf_page_in_web_export": 89,
+      "article_last_updated": "2019-02-14",
+      "statement": "MS-DMRP relies on MS-DCOM, in turn on MS-RPCE; unrelated protocol implementation duties not established."
+    },
+    {
+      "section": "§1.6",
+      "pdf_page_in_web_export": 91,
+      "article_last_updated": "2020-10-30",
+      "statement": "Applicable where an application needs remote management of disks and volumes."
+    }
+  ],
+  "incoming_fourth_normative_citation": {
+    "referrer": "MS-CMRP",
+    "referrer_edition": "v20250811",
+    "referrer_sha256": "6406d7c7b350596da2ea3464dd487ecdcb4990f1d614c9aa2302b629698a5ee3",
+    "referrer_original_pdf_page": 23,
+    "cited_target": "MS-DMRP",
+    "cited_edition": "NOT_VERIFIED"
+  },
+  "git_disposition": {
+    "source_status": "SUPPLEMENTAL_SOURCE_SECTIONS_EXAMINED_HISTORICAL_ORIGINAL_PENDING",
+    "do_not_add_to_normative_fifth_stage_ledger": true,
+    "do_not_count_as_official_original_normative_source_reviewed": true,
+    "workqueue_candidate_status_still": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
+    "source_pdf_binary_uploaded_to_git": false,
+    "impact_on_existing_counts": "NONE",
+    "fifth_stage_source_count_unchanged": 33,
+    "fifth_stage_normative_edges_unchanged": 442,
+    "fifth_stage_informative_citations_unchanged": 111,
+    "raw_target_candidates_remaining_unchanged": 54,
+    "phase1_gates_passed": 0
+  },
+  "limitations": [
+    "A generated site-wide Microsoft Learn PDF export is not a bit-identical copy of the original 2017 release PDF.",
+    "The 2017 release table and the 2020-updated online sections appear in the same 2026 export, but this does not prove bibliography equality across editions.",
+    "No official 2017 MS-DMRP release PDF hash or release PDF page number verified; 86/87 are pages inside the web export.",
+    "Do not infer Skype for Business 2019 Windows Full Client obligations from DCOM/disk-management bibliography reachability.",
+    "The user's uploaded binary remains out of Git; only reference metadata are stored."
+  ]
+}
