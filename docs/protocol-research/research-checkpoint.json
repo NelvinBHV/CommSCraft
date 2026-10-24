@@ -53,7 +53,21 @@
     "third_ring_related_ms_original_pdf_files_located": 6,
     "windows_tar_original_pdfs_hashed": 451,
     "windows_tar_original_pdf_bytes": 1334078644,
-    "all_52_discovered_microsoft_mc_frontier_pdfs_acquired": 52
+    "all_52_discovered_microsoft_mc_frontier_pdfs_acquired": 52,
+    "third_ring_sources_pdf_examined": 52,
+    "third_ring_explicit_normative_reference_sections": 48,
+    "third_ring_general_unclassified_reference_sections": 4,
+    "third_ring_explicit_normative_edges": 827,
+    "third_ring_general_unclassified_reference_mentions": 67,
+    "third_ring_normative_ms_mc_edges": 398,
+    "third_ring_normative_rfc_edges": 267,
+    "third_ring_normative_external_historical_edges": 162,
+    "third_ring_normative_unique_raw_target_ids": 342,
+    "third_ring_new_exact_label_target_ids": 236,
+    "third_ring_new_ms_mc_target_ids": 86,
+    "third_ring_new_rfc_target_ids": 62,
+    "third_ring_new_external_or_historical_label_ids": 88,
+    "first_three_rings_raw_target_label_union": 581
   },
   "source_provenance": {
     "ms_avedgea": {
@@ -98,12 +112,12 @@
     {
       "id": "P1-02",
       "priority": 1,
-      "task": "Resolve rights-compliant private Git archival of 822 original PDFs from Office/Exchange/SharePoint/Windows sources (including all 451 Windows PDFs); all 58 immediate 1st+2nd MS bibliography editions have current original §1.2.1 evidence, but previous-edition changes and original-SHA conflicts OPEN."
+      "task": "Keep original PDF binaries with the user (user preference), store only checked document edition, section/page, SHA-256, graph and research results in Git. Reconcile historic conflicting same-edition hashes, publication version deltas and actual source applicability. Request only specific PDFs if needed."
     },
     {
       "id": "P1-03",
       "priority": 1,
-      "task": "All 12 second-ring source original §1.2.1 bibliographies verified; original PDFs for all 52 discovered third-ring MS/MC targets acquired (46 Windows + 6 Exchange/SharePoint), now recursively investigate their normative references or evidence-based applicability exclusions to fixed point."
+      "task": "Third-ring: 52 MS/MC PDFs bibliographically inspected; 48 §1.2.1 explicit normative, 4 general unclassified §1.1. Triage 86 new fourth-ring MS/MC IDs and 62 new RFC + 88 external or raw aliases; recursively resolve relevant dependencies to a source- and client-applicability-attested fixed point."
     },
     {
       "id": "P1-04",
@@ -138,7 +152,7 @@
     {
       "id": "P1-10",
       "priority": 1,
-      "task": "Review and classify 146 new target IDs from second-tier ledger; follow relevant Microsoft/MC, RFC, historic drafts and external references recursively, documenting explicit justified exclusions."
+      "task": "Preserve classification of 67 schema bibliography mentions as UNCLASSIFIED, judge newly discovered 236 target raw labels by source edition and product-scope evidence; P1-10 frontier remains open."
     },
     {
       "id": "P1-11",
@@ -178,7 +192,7 @@
     "transitive-frontier.json",
     "rfc-version-relations-reviewed.json"
   ],
-  "instructions_for_next_session": "Read AGENTS.md, CURRENT_STATUS.md, research-checkpoint.json latest_continuation, phase1-audit.md and last research-log entry; verify draft/main commit and calculate counts anew from two distinct ledgers; do not combine first-tier 460 with 246 into a false closed graph. Reconcile publication editions and recurse only relevant targets. Never code/test/merge/release. New 2026-10-24 ZIP audit: all 46 current first-tier original PDF §1.2.1 release sections now have evidence, and E911 normative edges 460→464. Complete source target normalization, 8 second-tier originals, rights-compliant private PDF storage and SHA conflict resolution remain OPEN. Do not falsely claim PDFs were committed to public GitHub. Windows_Protocols.tar.xz SHA256 verified 451 original PDFs including all remaining 6 MS second-ring sources. Current PDF §1.2.1 edition coverage is 12/12 second tier; no source gaps at two direct rings, but 52 discovered MS/MC frontier PDFs need third-ring normative work, and formal gates remain 0/12. Three same-edition SHA conflicts MS-NLMP/RDPEMC/SIP preserved.",
+  "instructions_for_next_session": "Read AGENTS.md, CURRENT_STATUS.md, research-checkpoint.json latest_continuation, phase1-audit.md and last research-log entry; verify draft/main commit and calculate counts anew from two distinct ledgers; do not combine first-tier 460 with 246 into a false closed graph. Reconcile publication editions and recurse only relevant targets. Never code/test/merge/release. New 2026-10-24 ZIP audit: all 46 current first-tier original PDF §1.2.1 release sections now have evidence, and E911 normative edges 460→464. Complete source target normalization, 8 second-tier originals, rights-compliant private PDF storage and SHA conflict resolution remain OPEN. Do not falsely claim PDFs were committed to public GitHub. Windows_Protocols.tar.xz SHA256 verified 451 original PDFs including all remaining 6 MS second-ring sources. Current PDF §1.2.1 edition coverage is 12/12 second tier; no source gaps at two direct rings, but 52 discovered MS/MC frontier PDFs need third-ring normative work, and formal gates remain 0/12. Three same-edition SHA conflicts MS-NLMP/RDPEMC/SIP preserved. 2026-10-24 P1-03 follow-on: third-ring 52 acquired MS/MC PDFs analyzed; 48 explicit normative bibliographies yielding 827 additional directed edges, 4 schema §1.1 general bibliographies yielding 67 separate unclassified mentions. 342 distinct third-ring raw target labels; 236 new vs prior 345, broken into 86 MS/MC, 62 RFC, 88 external/aliases; raw union 581. Git stores gzip TSV edge source+target+page and 52-source SHA inventory; PDFs remain with user on request only. Phase1 gates 0/12. Continue with 86 discovered MS/MC fourth frontier, RFC and external editions, historical diff, and actual client applicability; no code, live tests, main merge or release.",
   "latest_continuation": {
     "date": "2026-10-23",
     "research_iteration": "phase1-transitive-microsoft-specs-plus-selected-rfc-status",
@@ -453,5 +467,35 @@
       "merge_main": false,
       "release": false
     }
+  },
+  "third_ring_original_pdf_references_2026_10_24": {
+    "review_date": "2026-10-24",
+    "report": "third-ring-original-bibliography-audit-2026-10-24.md",
+    "source_inventory": "third-ring-source-inventory-2026-10-24.txt",
+    "references_gzip": "third-ring-bibliography-edges-2026-10-24.tsv.gz",
+    "fourth_ms_mc_frontier": "fourth-ring-ms-frontier-2026-10-24.json",
+    "third_ring_sources_pdf_examined": 52,
+    "third_ring_explicit_normative_reference_sections": 48,
+    "third_ring_general_unclassified_reference_sections": 4,
+    "third_ring_explicit_normative_edges": 827,
+    "third_ring_general_unclassified_reference_mentions": 67,
+    "third_ring_normative_ms_mc_edges": 398,
+    "third_ring_normative_rfc_edges": 267,
+    "third_ring_normative_external_historical_edges": 162,
+    "third_ring_normative_unique_raw_target_ids": 342,
+    "third_ring_new_exact_label_target_ids": 236,
+    "third_ring_new_ms_mc_target_ids": 86,
+    "third_ring_new_rfc_target_ids": 62,
+    "third_ring_new_external_or_historical_label_ids": 88,
+    "first_three_rings_raw_target_label_union": 581,
+    "all_original_pdfs_retained_by_user": true,
+    "original_pdfs_not_committed_to_repo": true,
+    "full_recursive_fixed_point": false,
+    "client_feature_applicability_proven": false,
+    "new_protocol_code_authorized": false,
+    "real_server_tests_authorized": false,
+    "phase1_passed": 0,
+    "branch_head_before": "d75523742f12970ac2349c963626393ba43b0659",
+    "note": "N=explicit normative §1.2.1; U=unclassified §1.1 general schema references. No PDF storage requested by user; request only targeted originals if further examination is needed."
   }
 }

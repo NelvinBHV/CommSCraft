@@ -37,7 +37,21 @@
     "new_windows_tar_valid_pdf_files": 451,
     "new_windows_tar_pdf_total_bytes": 1334078644,
     "all_three_uploaded_archives_pdfs_total": 822,
-    "all_52_discovered_microsoft_mc_frontier_source_files_acquired": 52
+    "all_52_discovered_microsoft_mc_frontier_source_files_acquired": 52,
+    "third_ring_sources_pdf_examined": 52,
+    "third_ring_explicit_normative_reference_sections": 48,
+    "third_ring_general_unclassified_reference_sections": 4,
+    "third_ring_explicit_normative_edges": 827,
+    "third_ring_general_unclassified_reference_mentions": 67,
+    "third_ring_normative_ms_mc_edges": 398,
+    "third_ring_normative_rfc_edges": 267,
+    "third_ring_normative_external_historical_edges": 162,
+    "third_ring_normative_unique_raw_target_ids": 342,
+    "third_ring_new_exact_label_target_ids": 236,
+    "third_ring_new_ms_mc_target_ids": 86,
+    "third_ring_new_rfc_target_ids": 62,
+    "third_ring_new_external_or_historical_label_ids": 88,
+    "first_three_rings_raw_target_label_union": 581
   },
   "pass_count": 0,
   "gate_count": 12,
@@ -50,12 +64,12 @@
     {
       "id": "P1-02",
       "passed": false,
-      "blocker": "All 451 Windows PDF originals SHA256 checked in supplied tar, combined 822 PDFs across three archives; 12/12 direct second-ring original sections date/edition verified, but full source binaries not stored in PUBLIC repo due redistribution/rights gate, prior source SHA disputes and previous-edition comparisons OPEN."
+      "blocker": "Source-original PDFs are retained by the user, by explicit agreement; GitHub stores only edition/page/SHA-256 and extracted research data. This is NOT an unsatisfied requirement to upload PDF binaries. However, historical Microsoft publication diffs, conflicting historic same-edition hashes, errata and exact client profile remain OPEN."
     },
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "All 52 newly discovered third-ring Microsoft/MC target ID original PDFs now present across Windows/Exchange/SharePoint archives. None of these 52 has a fully established client applicability + transitive normative closure/exclusion, so fixed-point P1-03 gate remains OPEN."
+      "blocker": "All 52 discovered third-ring MS/MC PDF sources acquired and bibliographies examined: 48 explicit §1.2.1 lists add 827 direct normative source-specific edges; four schema §1.1 lists have 67 UNCLASSIFIED references. 86 previously unseen MS/MC target IDs, 62 RFC and 88 external/raw alias IDs discovered. Full recursive fixed point and client/server/policy applicability OPEN."
     },
     {
       "id": "P1-04",
@@ -80,17 +94,17 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "No fixed-point attestation or independent source review signoff"
+      "blocker": "First three Microsoft/MC levels bibliographic source texts sampled/audited, but 236 new exact-label targets (86 MS/MC) plus RFC updates, external editions and product applicability not independently reviewed to fixed-point."
     },
     {
       "id": "P1-09",
       "passed": false,
-      "blocker": "4/12 additional Microsoft exact release PDF reference sections verified (MS-SIP/KILE/NLMP/RDPEMC), 8 remaining HTML-only"
+      "blocker": "All 12/12 direct second-tier Microsoft PDF normative sections are now verified and same-version reference sets matched, superseding stale 4/12 blocker; release-to-release changes, target semantics and product client applicability remain unclosed."
     },
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "146 second-ring frontier nodes not scoped/documented to full fixpoint"
+      "blocker": "Original 146 second-frontier nodes: 52 MS/MC source PDFs acquired and investigated (48 normative lists, 4 general schema bibliographies), while 51 RFC and 43 external/historical remain unresolved; third tier discovers 236 new raw IDs, including 86 MS/MC. Graph not at relevant fixpoint."
     },
     {
       "id": "P1-11",
@@ -1133,5 +1147,33 @@
     "private_archive_rights_check_pending": true,
     "formal_phase1_gates_passed": 0,
     "phase1_complete": false
+  },
+  "third_ring_original_pdf_references_2026_10_24": {
+    "review_date": "2026-10-24",
+    "report": "third-ring-original-bibliography-audit-2026-10-24.md",
+    "source_inventory": "third-ring-source-inventory-2026-10-24.txt",
+    "references_gzip": "third-ring-bibliography-edges-2026-10-24.tsv.gz",
+    "fourth_ms_mc_frontier": "fourth-ring-ms-frontier-2026-10-24.json",
+    "third_ring_sources_pdf_examined": 52,
+    "third_ring_explicit_normative_reference_sections": 48,
+    "third_ring_general_unclassified_reference_sections": 4,
+    "third_ring_explicit_normative_edges": 827,
+    "third_ring_general_unclassified_reference_mentions": 67,
+    "third_ring_normative_ms_mc_edges": 398,
+    "third_ring_normative_rfc_edges": 267,
+    "third_ring_normative_external_historical_edges": 162,
+    "third_ring_normative_unique_raw_target_ids": 342,
+    "third_ring_new_exact_label_target_ids": 236,
+    "third_ring_new_ms_mc_target_ids": 86,
+    "third_ring_new_rfc_target_ids": 62,
+    "third_ring_new_external_or_historical_label_ids": 88,
+    "first_three_rings_raw_target_label_union": 581,
+    "all_original_pdfs_retained_by_user": true,
+    "original_pdfs_not_committed_to_repo": true,
+    "full_recursive_fixed_point": false,
+    "client_feature_applicability_proven": false,
+    "new_protocol_code_authorized": false,
+    "real_server_tests_authorized": false,
+    "phase1_passed": 0
   }
 }
