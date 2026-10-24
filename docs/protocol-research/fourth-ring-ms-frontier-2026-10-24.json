@@ -224,18 +224,10 @@
     "MS-ADLS",
     "MS-CTA",
     "MS-DPSP",
-    "MS-EERR",
     "MS-EMFPLUS",
     "MS-FRS1",
-    "MS-LCID",
     "MS-MQMQ",
     "MS-N2HT",
-    "MS-ODATA",
-    "MS-OXWSPSNTIF",
-    "MS-OXWSRSLNM",
-    "MS-OXWSTASK",
-    "MS-OXWSURPT",
-    "MS-OXWSUSRCFG",
     "MS-PAN",
     "MS-RAI",
     "MS-RCMP",
@@ -245,14 +237,12 @@
     "MS-RDPEGFX",
     "MS-RDPEUDP2",
     "MS-RDPEVOR",
-    "MS-RPCL",
     "MS-RPRN",
-    "MS-SAMS",
-    "MS-W32T"
+    "MS-SAMS"
   ],
-  "current_p1_03_bibliography_count": 57,
-  "current_p1_03_normative_edges": 810,
-  "p1_03_current_caveat": "Fourth tier original PDF bibliography review 57/86, 810 explicitly normative directed citations, 29 original reference sections still open. Fifth MS-SWN separate six normative edges; RFC, historical editions, external references and SfB2019 client mandatory scope still not closed.",
+  "current_p1_03_bibliography_count": 67,
+  "current_p1_03_normative_edges": 932,
+  "p1_03_current_caveat": "86 fourth-ring MS/MC source identifiers: 67 explicit original §1.2.1 bibliographies audited (932 edges); 19 identities remain in pending source list including MS-ADLS (2018 schema-only §1.1 containing 13 UNCLASSIFIED references, no normative §1.2.1). Distinguish 13 from earlier third-ring 67 unclassified schema mentions. Client applicability/fixed point OPEN.",
   "p1_03_seven_fourth_and_one_fifth_source_batch_2026_10_24": {
     "report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
     "json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
@@ -369,5 +359,37 @@
     "now_open": 29,
     "now_directed_fourth_normative_edges": 810,
     "source_pdfs_user_custody": true
+  },
+  "p1_03_mixed_oxws_windows_2026_10_24": {
+    "source_ids": [
+      "MS-OXWSPSNTIF",
+      "MS-OXWSRSLNM",
+      "MS-OXWSTASK",
+      "MS-OXWSURPT",
+      "MS-OXWSUSRCFG",
+      "MS-EERR",
+      "MS-LCID",
+      "MS-ODATA",
+      "MS-RPCL",
+      "MS-W32T"
+    ],
+    "ten_exact_normative_sources_checked": 10,
+    "new_normative_edges": 122,
+    "informative_citations_separate": 28,
+    "current_sources_with_normative_section_reviewed": 67,
+    "remaining_source_ids_including_unclassified_ms_adls": 19,
+    "current_fourth_normative_edges": 932,
+    "schema_ms_adls": "No §1.2.1; only §1.1 with 13 unclassified labels; flagged separately and left on pending list",
+    "source_pdf_binary_user_retained": true
+  },
+  "p1_03_schema_only_ms_adls_2026_10_24": {
+    "original_pdf_revision": "21.1",
+    "edition": "v20180912",
+    "sha256": "aa4aee04c2084a25a26863537e67d7635f0f5d36380c32e776fe6bec4e9b8890",
+    "original_page_span": "13–14",
+    "general_reference_section": "§1.1 References",
+    "general_references_unclassified_count": 13,
+    "removed_from_pending_list": false,
+    "reason": "Needs explicit schema-level review classification; cannot count as reviewed normative §1.2.1 because section is absent"
   }
 }

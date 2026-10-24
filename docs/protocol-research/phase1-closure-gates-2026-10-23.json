@@ -71,7 +71,7 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "Fourth-ring MS/MC exact original bibliography review reached 57/86 and 810 explicitly normative directed reference edges; 29 source sections remain open. Fifth ring MS-SWN separately six. Still no proven complete historical target versioning, external RFC/IETF/ISO recursion, Skype for Business 2019 Windows Full Client build/role/policy feature scope or independent fixed-point audit. 0/12 gates PASS."
+      "blocker": "Fourth ring original explicit §1.2.1 source bibliographies checked 67/86 with 932 directed norm edges, 19 pending source identities including MS-ADLS which has only §1.1 general schema refs (13 UNCLASSIFIED, not normative). Fifth ring MS-SWN still 6. Exact historical RFC/ISO/MC targets, independent recursive fixed point and Skype for Business 2019 Windows client-specific feature/roles/policy proof incomplete; 0/12 PASS."
     },
     {
       "id": "P1-04",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "Fourth-ring MS/MC exact original bibliography review reached 57/86 and 810 explicitly normative directed reference edges; 29 source sections remain open. Fifth ring MS-SWN separately six. Still no proven complete historical target versioning, external RFC/IETF/ISO recursion, Skype for Business 2019 Windows Full Client build/role/policy feature scope or independent fixed-point audit. 0/12 gates PASS."
+      "blocker": "Fourth ring original explicit §1.2.1 source bibliographies checked 67/86 with 932 directed norm edges, 19 pending source identities including MS-ADLS which has only §1.1 general schema refs (13 UNCLASSIFIED, not normative). Fifth ring MS-SWN still 6. Exact historical RFC/ISO/MC targets, independent recursive fixed point and Skype for Business 2019 Windows client-specific feature/roles/policy proof incomplete; 0/12 PASS."
     },
     {
       "id": "P1-09",
@@ -106,7 +106,7 @@
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "Fourth-ring MS/MC exact original bibliography review reached 57/86 and 810 explicitly normative directed reference edges; 29 source sections remain open. Fifth ring MS-SWN separately six. Still no proven complete historical target versioning, external RFC/IETF/ISO recursion, Skype for Business 2019 Windows Full Client build/role/policy feature scope or independent fixed-point audit. 0/12 gates PASS."
+      "blocker": "Fourth ring original explicit §1.2.1 source bibliographies checked 67/86 with 932 directed norm edges, 19 pending source identities including MS-ADLS which has only §1.1 general schema refs (13 UNCLASSIFIED, not normative). Fifth ring MS-SWN still 6. Exact historical RFC/ISO/MC targets, independent recursive fixed point and Skype for Business 2019 Windows client-specific feature/roles/policy proof incomplete; 0/12 PASS."
     },
     {
       "id": "P1-11",
@@ -1291,5 +1291,18 @@
     "fifth_ms_swn_normative_edges_unchanged": 6,
     "source_pdfs_held_by_user": true,
     "formal_phase1_gates_passed": 0
+  },
+  "p1_03_mixed_oxws_windows_original_bibliographies_2026_10_24": {
+    "ten_original_normative_sources": 10,
+    "full_original_sha256_verified": 11,
+    "additional_normative_edges": 122,
+    "additional_informative_mentions": 28,
+    "additional_ms_adls_general_schema_mentions_unclassified": 13,
+    "prior_third_ring_schema_unclassified_stable": 67,
+    "current_fourth_verified": 67,
+    "current_fourth_edges": 932,
+    "remaining_fourth_source_ids_including_schema": 19,
+    "formal_phase1_gates_passed": 0,
+    "original_pdfs_kept_outside_git": true
   }
 }
