@@ -1,8 +1,8 @@
 {
-  "schema_version": 8,
+  "schema_version": 9,
   "date": "2026-10-24",
-  "scope": "ALL_1472_DOWNSTREAM_NORMATIVE_CITATION_MS_MC_RAW_TARGETS_MINUS_EARLIER_RING_SOURCE_IDS_INITIAL_FOURTH_88_QUEUE_AND_CURRENTLY_AUDITED_DOWNSTREAM_SOURCE_IDS",
-  "normative_ledger_sha": "a29c4e55cbdf95e5f9ad6c6943317a63e22f627b",
+  "scope": "ALL_1576_DOWNSTREAM_NORMATIVE_CITATION_MS_MC_RAW_TARGETS_MINUS_EARLIER_RING_SOURCE_IDS_INITIAL_FOURTH_88_QUEUE_AND_CURRENTLY_AUDITED_DOWNSTREAM_SOURCE_IDS",
+  "normative_ledger_sha": "90a39ea8b1fa992dd978ae52b9648df2a975b502",
   "initial_fourth_raw_target_queue_sha": "474eaa496ceb62d5420db48acba1bf76d58fe177",
   "earlier_normative_ledger_shas": [
     "2d1c80ebe3d087e562f6732b5cfd1abaa17ca97c",
@@ -10,37 +10,28 @@
     "47d8cfd3d361ba9efc9467ba6c8d992dc80488db"
   ],
   "third_ring_source_inventory": "third-ring-source-inventory-2026-10-24.txt",
-  "downstream_original_norm_bibliographies_audited": 113,
-  "downstream_directed_normative_edges": 1472,
+  "downstream_original_norm_bibliographies_audited": 123,
+  "downstream_directed_normative_edges": 1576,
   "initial_fourth_raw_ms_mc_target_total": 88,
   "initial_fourth_original_norm_sources_audited": 84,
   "initial_fourth_ms_adls_schema_only": 1,
   "initial_fourth_regular_original_sources_pending": 3,
   "transitive_bibliographies_audited_this_batch": [
-    "MS-MEETS",
-    "MS-WDVSE",
-    "MS-FSSHTTP",
-    "MS-WSSFO2"
+    "MC-FPSEWM",
+    "MS-PCCRD",
+    "MS-PCCRR",
+    "MS-PCCRTP",
+    "MS-PCHC",
+    "MS-FSSHTTPB",
+    "MS-LISTSWS",
+    "MS-SHDACCWS",
+    "MS-VERSS",
+    "MS-WMIO"
   ],
-  "additional_transitive_raw_target_ids_pending": 28,
-  "emergent_transitive_raw_target_ids_still_pending": 28,
-  "combined_literal_distinct_pending_raw_ms_mc_source_identifiers": 31,
+  "additional_transitive_raw_target_ids_pending": 25,
+  "emergent_transitive_raw_target_ids_still_pending": 25,
+  "combined_literal_distinct_pending_raw_ms_mc_source_identifiers": 28,
   "emergent_targets": [
-    {
-      "target_raw_label": "MC-FPSEWM",
-      "incoming_normative_citations": 1,
-      "incoming_evidence": [
-        {
-          "referrer": "MS-WSSFO2",
-          "source_edition": "v20171212",
-          "original_pdf_page": 26,
-          "source_pdf_sha256": "4eb96a49d6b8f3ae16a6ac3f2eefde17302d773df06af6d40cb7e1a448701ecf"
-        }
-      ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
-      "original_target_edition": "UNRECONCILED",
-      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
-    },
     {
       "target_raw_label": "MS-DHCPN",
       "incoming_normative_citations": 1,
@@ -57,21 +48,6 @@
       "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
     },
     {
-      "target_raw_label": "MS-FSSHTTPB",
-      "incoming_normative_citations": 1,
-      "incoming_evidence": [
-        {
-          "referrer": "MS-FSSHTTP",
-          "source_edition": "v20250218",
-          "original_pdf_page": 12,
-          "source_pdf_sha256": "839b683df6e6a387f035d6d1a108d390a9745bbbd607b23b6c9547b17b8b2913"
-        }
-      ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
-      "original_target_edition": "UNRECONCILED",
-      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
-    },
-    {
       "target_raw_label": "MS-HCEP",
       "incoming_normative_citations": 1,
       "incoming_evidence": [
@@ -80,21 +56,6 @@
           "source_edition": "v20170601",
           "original_pdf_page": 8,
           "source_pdf_sha256": "829ace9e3e4ebdc9bf56e988f17c0c14fed5a49a4dd0cd7d52f16eb633ccb9df"
-        }
-      ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
-      "original_target_edition": "UNRECONCILED",
-      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
-    },
-    {
-      "target_raw_label": "MS-LISTSWS",
-      "incoming_normative_citations": 1,
-      "incoming_evidence": [
-        {
-          "referrer": "MS-FSSHTTP",
-          "source_edition": "v20250218",
-          "original_pdf_page": 12,
-          "source_pdf_sha256": "839b683df6e6a387f035d6d1a108d390a9745bbbd607b23b6c9547b17b8b2913"
         }
       ],
       "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
@@ -162,6 +123,21 @@
       "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
     },
     {
+      "target_raw_label": "MS-OUTSPS",
+      "incoming_normative_citations": 1,
+      "incoming_evidence": [
+        {
+          "referrer": "MS-LISTSWS",
+          "source_edition": "v20240820",
+          "original_pdf_page": 15,
+          "source_pdf_sha256": "1ebf0d650aed389de8253907ec3413025c3bec85fe382c18924c36f78090bd51"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
+      "original_target_edition": "UNRECONCILED",
+      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
+    },
+    {
       "target_raw_label": "MS-OWEMXML",
       "incoming_normative_citations": 1,
       "incoming_evidence": [
@@ -192,66 +168,6 @@
       "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
     },
     {
-      "target_raw_label": "MS-PCCRD",
-      "incoming_normative_citations": 1,
-      "incoming_evidence": [
-        {
-          "referrer": "MS-PCCRC",
-          "source_edition": "v20240423",
-          "original_pdf_page": 7,
-          "source_pdf_sha256": "a2107ddf2ce7fb0ab86f0b5f207ec9715755b61149810b6e2a57dfd8b3c7a030"
-        }
-      ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
-      "original_target_edition": "UNRECONCILED",
-      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
-    },
-    {
-      "target_raw_label": "MS-PCCRR",
-      "incoming_normative_citations": 1,
-      "incoming_evidence": [
-        {
-          "referrer": "MS-PCCRC",
-          "source_edition": "v20240423",
-          "original_pdf_page": 7,
-          "source_pdf_sha256": "a2107ddf2ce7fb0ab86f0b5f207ec9715755b61149810b6e2a57dfd8b3c7a030"
-        }
-      ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
-      "original_target_edition": "UNRECONCILED",
-      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
-    },
-    {
-      "target_raw_label": "MS-PCCRTP",
-      "incoming_normative_citations": 1,
-      "incoming_evidence": [
-        {
-          "referrer": "MS-PCCRC",
-          "source_edition": "v20240423",
-          "original_pdf_page": 7,
-          "source_pdf_sha256": "a2107ddf2ce7fb0ab86f0b5f207ec9715755b61149810b6e2a57dfd8b3c7a030"
-        }
-      ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
-      "original_target_edition": "UNRECONCILED",
-      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
-    },
-    {
-      "target_raw_label": "MS-PCHC",
-      "incoming_normative_citations": 1,
-      "incoming_evidence": [
-        {
-          "referrer": "MS-PCCRC",
-          "source_edition": "v20240423",
-          "original_pdf_page": 7,
-          "source_pdf_sha256": "a2107ddf2ce7fb0ab86f0b5f207ec9715755b61149810b6e2a57dfd8b3c7a030"
-        }
-      ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
-      "original_target_edition": "UNRECONCILED",
-      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
-    },
-    {
       "target_raw_label": "MS-PEAP",
       "incoming_normative_citations": 1,
       "incoming_evidence": [
@@ -275,6 +191,21 @@
           "source_edition": "v20260113",
           "original_pdf_page": 10,
           "source_pdf_sha256": "03dd4aebc6c55296df3129f736cb607200f50501c5e7a2699e53e382e32347ea"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
+      "original_target_edition": "UNRECONCILED",
+      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
+    },
+    {
+      "target_raw_label": "MS-PRSTFR",
+      "incoming_normative_citations": 1,
+      "incoming_evidence": [
+        {
+          "referrer": "MS-LISTSWS",
+          "source_edition": "v20240820",
+          "original_pdf_page": 15,
+          "source_pdf_sha256": "1ebf0d650aed389de8253907ec3413025c3bec85fe382c18924c36f78090bd51"
         }
       ],
       "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
@@ -342,21 +273,6 @@
       "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
     },
     {
-      "target_raw_label": "MS-SHDACCWS",
-      "incoming_normative_citations": 1,
-      "incoming_evidence": [
-        {
-          "referrer": "MS-FSSHTTP",
-          "source_edition": "v20250218",
-          "original_pdf_page": 12,
-          "source_pdf_sha256": "839b683df6e6a387f035d6d1a108d390a9745bbbd607b23b6c9547b17b8b2913"
-        }
-      ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
-      "original_target_edition": "UNRECONCILED",
-      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
-    },
-    {
       "target_raw_label": "MS-TDS",
       "incoming_normative_citations": 1,
       "incoming_evidence": [
@@ -387,14 +303,14 @@
       "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
     },
     {
-      "target_raw_label": "MS-VERSS",
+      "target_raw_label": "MS-VIEWSS",
       "incoming_normative_citations": 1,
       "incoming_evidence": [
         {
-          "referrer": "MS-FSSHTTP",
-          "source_edition": "v20250218",
-          "original_pdf_page": 12,
-          "source_pdf_sha256": "839b683df6e6a387f035d6d1a108d390a9745bbbd607b23b6c9547b17b8b2913"
+          "referrer": "MS-LISTSWS",
+          "source_edition": "v20240820",
+          "original_pdf_page": 15,
+          "source_pdf_sha256": "1ebf0d650aed389de8253907ec3413025c3bec85fe382c18924c36f78090bd51"
         }
       ],
       "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
@@ -417,21 +333,6 @@
       "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
     },
     {
-      "target_raw_label": "MS-WMIO",
-      "incoming_normative_citations": 1,
-      "incoming_evidence": [
-        {
-          "referrer": "MS-WMI",
-          "source_edition": "v20240423",
-          "original_pdf_page": 14,
-          "source_pdf_sha256": "0b76963cd4c456ae6de0e1500c68fbfc742b252a81f4d184dfbb5cca0e72fe9d"
-        }
-      ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
-      "original_target_edition": "UNRECONCILED",
-      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
-    },
-    {
       "target_raw_label": "MS-WSRVCAT",
       "incoming_normative_citations": 1,
       "incoming_evidence": [
@@ -440,6 +341,78 @@
           "source_edition": "v20240729",
           "original_pdf_page": 35,
           "source_pdf_sha256": "9e5c1f26e6a099b79a44e4dd8cbae5c96ee70997bb2cb25c01642d74809ba9db"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
+      "original_target_edition": "UNRECONCILED",
+      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
+    },
+    {
+      "target_raw_label": "MS-WSSCAML",
+      "incoming_normative_citations": 2,
+      "incoming_evidence": [
+        {
+          "referrer": "MS-LISTSWS",
+          "source_edition": "v20240820",
+          "original_pdf_page": 15,
+          "source_pdf_sha256": "1ebf0d650aed389de8253907ec3413025c3bec85fe382c18924c36f78090bd51"
+        },
+        {
+          "referrer": "MS-SHDACCWS",
+          "source_edition": "v20240820",
+          "original_pdf_page": 6,
+          "source_pdf_sha256": "b0965d1109f1de657dca6251778a0403591427ccab2c793526e35c2aaad6b5d6"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
+      "original_target_edition": "UNRECONCILED",
+      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
+    },
+    {
+      "target_raw_label": "MS-WSSFO3",
+      "incoming_normative_citations": 1,
+      "incoming_evidence": [
+        {
+          "referrer": "MS-LISTSWS",
+          "source_edition": "v20240820",
+          "original_pdf_page": 15,
+          "source_pdf_sha256": "1ebf0d650aed389de8253907ec3413025c3bec85fe382c18924c36f78090bd51"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
+      "original_target_edition": "UNRECONCILED",
+      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
+    },
+    {
+      "target_raw_label": "MS-WSSTS",
+      "incoming_normative_citations": 2,
+      "incoming_evidence": [
+        {
+          "referrer": "MS-LISTSWS",
+          "source_edition": "v20240820",
+          "original_pdf_page": 15,
+          "source_pdf_sha256": "1ebf0d650aed389de8253907ec3413025c3bec85fe382c18924c36f78090bd51"
+        },
+        {
+          "referrer": "MS-VERSS",
+          "source_edition": "v20220215",
+          "original_pdf_page": 8,
+          "source_pdf_sha256": "8148d9a8c4e6307b93d0112d76729d3f445aef5761301cdda64d55b3986ec8e5"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",
+      "original_target_edition": "UNRECONCILED",
+      "skype2019_full_client_build_feature_policy_role_scope": "OPEN"
+    },
+    {
+      "target_raw_label": "MS-XSSK",
+      "incoming_normative_citations": 1,
+      "incoming_evidence": [
+        {
+          "referrer": "MS-LISTSWS",
+          "source_edition": "v20240820",
+          "original_pdf_page": 15,
+          "source_pdf_sha256": "1ebf0d650aed389de8253907ec3413025c3bec85fe382c18924c36f78090bd51"
         }
       ],
       "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW",

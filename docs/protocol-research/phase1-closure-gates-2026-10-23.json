@@ -71,17 +71,17 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "Fourth original source identities 86/86 classified and 1147 normative citations unchanged. Downstream 113 complete original §1.2.1 norm sources, 1472 directed normative citations, 420 separately informative refs. Initial fourth MS/MC raw target queue 88: 84 original §1.2.1 bibliographies audited, 1 MS-ADLS §1.1 schema-only 13 refs UNCLASSIFIED, three missing originals MS-DMRP MS-ODATAJSON MS-SQLRS. Separate transitive raw target workqueue currently 28 pending, combined 31 literal raw MS/MC labels. Normative fixed point, historical edition source-target reconciliation, shortest ring graph level and 2019 Skype Windows Full Client roles/policies/feature/build scope OPEN. External RFC/IETF/ISO/ITU/W3C standard edition recursive bibliography unresolved. 0/12 gates PASS."
+      "blocker": "Downstream 123 full original §1.2.1 source bibliographies, 1576 directed normative citations and 438 strictly separate informative refs; initial 88 MS/MC raw queue 84 audited norm sources, 1 schema-only MS-ADLS with 13 UNCLASSIFIED §1.1 refs, three originals missing MS-DMRP MS-ODATAJSON MS-SQLRS. Recomputed transitive frontier 25 raw pending and combined 28 open literal IDs; normative fixed point, exact historical target editions and 2019 Skype Windows Full Client build/feature/policy/server-role applicability OPEN. 67 older §1.1 general schema refs UNCLASSIFIED. Phase1 remains 0/12 gates."
     },
     {
       "id": "P1-04",
       "passed": false,
-      "blocker": "Fourth original source identities 86/86 classified and 1147 normative citations unchanged. Downstream 113 complete original §1.2.1 norm sources, 1472 directed normative citations, 420 separately informative refs. Initial fourth MS/MC raw target queue 88: 84 original §1.2.1 bibliographies audited, 1 MS-ADLS §1.1 schema-only 13 refs UNCLASSIFIED, three missing originals MS-DMRP MS-ODATAJSON MS-SQLRS. Separate transitive raw target workqueue currently 28 pending, combined 31 literal raw MS/MC labels. Normative fixed point, historical edition source-target reconciliation, shortest ring graph level and 2019 Skype Windows Full Client roles/policies/feature/build scope OPEN. External RFC/IETF/ISO/ITU/W3C standard edition recursive bibliography unresolved. 0/12 gates PASS."
+      "blocker": "Downstream 123 full original §1.2.1 source bibliographies, 1576 directed normative citations and 438 strictly separate informative refs; initial 88 MS/MC raw queue 84 audited norm sources, 1 schema-only MS-ADLS with 13 UNCLASSIFIED §1.1 refs, three originals missing MS-DMRP MS-ODATAJSON MS-SQLRS. Recomputed transitive frontier 25 raw pending and combined 28 open literal IDs; normative fixed point, exact historical target editions and 2019 Skype Windows Full Client build/feature/policy/server-role applicability OPEN. 67 older §1.1 general schema refs UNCLASSIFIED. Phase1 remains 0/12 gates."
     },
     {
       "id": "P1-05",
       "passed": false,
-      "blocker": "Fourth original source identities 86/86 classified and 1147 normative citations unchanged. Downstream 113 complete original §1.2.1 norm sources, 1472 directed normative citations, 420 separately informative refs. Initial fourth MS/MC raw target queue 88: 84 original §1.2.1 bibliographies audited, 1 MS-ADLS §1.1 schema-only 13 refs UNCLASSIFIED, three missing originals MS-DMRP MS-ODATAJSON MS-SQLRS. Separate transitive raw target workqueue currently 28 pending, combined 31 literal raw MS/MC labels. Normative fixed point, historical edition source-target reconciliation, shortest ring graph level and 2019 Skype Windows Full Client roles/policies/feature/build scope OPEN. External RFC/IETF/ISO/ITU/W3C standard edition recursive bibliography unresolved. 0/12 gates PASS."
+      "blocker": "Downstream 123 full original §1.2.1 source bibliographies, 1576 directed normative citations and 438 strictly separate informative refs; initial 88 MS/MC raw queue 84 audited norm sources, 1 schema-only MS-ADLS with 13 UNCLASSIFIED §1.1 refs, three originals missing MS-DMRP MS-ODATAJSON MS-SQLRS. Recomputed transitive frontier 25 raw pending and combined 28 open literal IDs; normative fixed point, exact historical target editions and 2019 Skype Windows Full Client build/feature/policy/server-role applicability OPEN. 67 older §1.1 general schema refs UNCLASSIFIED. Phase1 remains 0/12 gates."
     },
     {
       "id": "P1-06",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "Fourth original source identities 86/86 classified and 1147 normative citations unchanged. Downstream 113 complete original §1.2.1 norm sources, 1472 directed normative citations, 420 separately informative refs. Initial fourth MS/MC raw target queue 88: 84 original §1.2.1 bibliographies audited, 1 MS-ADLS §1.1 schema-only 13 refs UNCLASSIFIED, three missing originals MS-DMRP MS-ODATAJSON MS-SQLRS. Separate transitive raw target workqueue currently 28 pending, combined 31 literal raw MS/MC labels. Normative fixed point, historical edition source-target reconciliation, shortest ring graph level and 2019 Skype Windows Full Client roles/policies/feature/build scope OPEN. External RFC/IETF/ISO/ITU/W3C standard edition recursive bibliography unresolved. 0/12 gates PASS."
+      "blocker": "Downstream 123 full original §1.2.1 source bibliographies, 1576 directed normative citations and 438 strictly separate informative refs; initial 88 MS/MC raw queue 84 audited norm sources, 1 schema-only MS-ADLS with 13 UNCLASSIFIED §1.1 refs, three originals missing MS-DMRP MS-ODATAJSON MS-SQLRS. Recomputed transitive frontier 25 raw pending and combined 28 open literal IDs; normative fixed point, exact historical target editions and 2019 Skype Windows Full Client build/feature/policy/server-role applicability OPEN. 67 older §1.1 general schema refs UNCLASSIFIED. Phase1 remains 0/12 gates."
     },
     {
       "id": "P1-09",
@@ -106,7 +106,7 @@
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "Fourth original source identities 86/86 classified and 1147 normative citations unchanged. Downstream 113 complete original §1.2.1 norm sources, 1472 directed normative citations, 420 separately informative refs. Initial fourth MS/MC raw target queue 88: 84 original §1.2.1 bibliographies audited, 1 MS-ADLS §1.1 schema-only 13 refs UNCLASSIFIED, three missing originals MS-DMRP MS-ODATAJSON MS-SQLRS. Separate transitive raw target workqueue currently 28 pending, combined 31 literal raw MS/MC labels. Normative fixed point, historical edition source-target reconciliation, shortest ring graph level and 2019 Skype Windows Full Client roles/policies/feature/build scope OPEN. External RFC/IETF/ISO/ITU/W3C standard edition recursive bibliography unresolved. 0/12 gates PASS."
+      "blocker": "Downstream 123 full original §1.2.1 source bibliographies, 1576 directed normative citations and 438 strictly separate informative refs; initial 88 MS/MC raw queue 84 audited norm sources, 1 schema-only MS-ADLS with 13 UNCLASSIFIED §1.1 refs, three originals missing MS-DMRP MS-ODATAJSON MS-SQLRS. Recomputed transitive frontier 25 raw pending and combined 28 open literal IDs; normative fixed point, exact historical target editions and 2019 Skype Windows Full Client build/feature/policy/server-role applicability OPEN. 67 older §1.1 general schema refs UNCLASSIFIED. Phase1 remains 0/12 gates."
     },
     {
       "id": "P1-11",
@@ -1515,5 +1515,17 @@
     "combined_literal_raw_ms_mc_pending": 31,
     "source_original_pdfs_in_git": false,
     "phase1_gates_passed": 0
+  },
+  "p1_03_pccr_sharepoint_transitive_originals_2026_10_24": {
+    "source_original_bibliographies": 10,
+    "original_full_sha256_verified": 10,
+    "directed_normative_edges_added": 104,
+    "informative_only_added": 18,
+    "downstream_source_count": 123,
+    "downstream_normative_edge_count": 1576,
+    "downstream_informative_ref_count": 438,
+    "transitive_raw_ms_mc_pending": 25,
+    "combined_raw_ms_mc_pending": 28,
+    "passed_gates": 0
   }
 }

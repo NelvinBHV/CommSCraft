@@ -6,7 +6,7 @@
   "third_ring_source_id_inventory": "third-ring-source-inventory-2026-10-24.txt",
   "first_ring_ledger_sha": "2d1c80ebe3d087e562f6732b5cfd1abaa17ca97c",
   "second_ring_ledger_sha": "af4e27be3bbab38bd70ba50e858edeaaac4d2e66",
-  "fifth_ring_current_ledger_sha": "096d03dfe1c0828b9ad721417441ef6460fa0105",
+  "fifth_ring_current_ledger_sha": "90a39ea8b1fa992dd978ae52b9648df2a975b502",
   "candidate_raw_labels": 88,
   "already_audited_fifth_sources": 84,
   "schema_only_reviewed": 1,
@@ -124,7 +124,17 @@
     "MS-MEETS",
     "MS-WDVSE",
     "MS-FSSHTTP",
-    "MS-WSSFO2"
+    "MS-WSSFO2",
+    "MC-FPSEWM",
+    "MS-PCCRD",
+    "MS-PCCRR",
+    "MS-PCCRTP",
+    "MS-PCHC",
+    "MS-FSSHTTPB",
+    "MS-LISTSWS",
+    "MS-SHDACCWS",
+    "MS-VERSS",
+    "MS-WMIO"
   ],
   "raw_target_candidates": [
     {
@@ -1702,5 +1712,25 @@
     "initial_regular_pending": 3,
     "downstream_audited_original_bibliographies_total": 113,
     "original_pdf_full_sha256_checked": 10
+  },
+  "batch_2026_10_24_pccr_sharepoint_mcp_wmio": {
+    "original_source_ids": [
+      "MC-FPSEWM",
+      "MS-PCCRD",
+      "MS-PCCRR",
+      "MS-PCCRTP",
+      "MS-PCHC",
+      "MS-FSSHTTPB",
+      "MS-LISTSWS",
+      "MS-SHDACCWS",
+      "MS-VERSS",
+      "MS-WMIO"
+    ],
+    "source_queue": "ADDITIONAL_TRANSITIVE",
+    "normative_citations_added": 104,
+    "informative_citations_added": 18,
+    "reviewed_downstream_source_ids": 123,
+    "remaining_initial_fourth_regular_original_sources": 3,
+    "original_88_set_unchanged": true
   }
 }
