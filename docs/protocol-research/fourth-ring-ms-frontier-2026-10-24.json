@@ -231,16 +231,6 @@
     "MS-MQMQ",
     "MS-N2HT",
     "MS-ODATA",
-    "MS-OXPROPS",
-    "MS-OXWSBTRF",
-    "MS-OXWSCEXT",
-    "MS-OXWSCONT",
-    "MS-OXWSCONV",
-    "MS-OXWSDLGM",
-    "MS-OXWSDLIST",
-    "MS-OXWSEDISC",
-    "MS-OXWSFOLD",
-    "MS-OXWSGNI",
     "MS-OXWSGTRM",
     "MS-OXWSGTZ",
     "MS-OXWSMSHR",
@@ -270,9 +260,9 @@
     "MS-SAMS",
     "MS-W32T"
   ],
-  "current_p1_03_bibliography_count": 37,
-  "current_p1_03_normative_edges": 506,
-  "p1_03_current_caveat": "All 86 fourth-ring source document identities acquired; 37 original §1.2.1 source lists audited (506 directed normative references), 49 source lists open. Fifth-ring MS-SWN stays separately six edges, and no client-specific mandatory-feature or normative fixed point established.",
+  "current_p1_03_bibliography_count": 47,
+  "current_p1_03_normative_edges": 690,
+  "p1_03_current_caveat": "Fourth ring: 86/86 source PDF identities acquired, 47/86 original §1.2.1 normative bibliographies audited, 690 directed normative edges, 39 remaining. Normative bibliography reachability not full Skype for Business 2019 Windows Full Client feature obligation; fifth ring MS-SWN separate six edges.",
   "p1_03_seven_fourth_and_one_fifth_source_batch_2026_10_24": {
     "report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
     "json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
@@ -344,6 +334,28 @@
     "remaining_unreviewed": 49,
     "total_fourth_normative_edges": 506,
     "original_PDFs_in_user_custody": true,
+    "client_applicability": "OPEN"
+  },
+  "p1_03_oxprops_webservices_batch_2026_10_24": {
+    "source_ids": [
+      "MS-OXPROPS",
+      "MS-OXWSBTRF",
+      "MS-OXWSCEXT",
+      "MS-OXWSCONT",
+      "MS-OXWSCONV",
+      "MS-OXWSDLGM",
+      "MS-OXWSDLIST",
+      "MS-OXWSEDISC",
+      "MS-OXWSFOLD",
+      "MS-OXWSGNI"
+    ],
+    "normative_edges_added": 184,
+    "informative_citations_separate": 31,
+    "source_count": 10,
+    "reviewed_bibliographies_after": 47,
+    "remaining_bibliographies_after": 39,
+    "total_normative_edges_after": 690,
+    "original_pdfs_retained_by_user": true,
     "client_applicability": "OPEN"
   }
 }

@@ -71,7 +71,7 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "Current fourth-ring original bibliography verification 37/86, directed normative reference count 506, remaining 49. Separate fifth MS-SWN 6. Historical target versions, normative RFC/IETF/external recursive closure, client/server policy feature applicability and independent fixed-point review remain OPEN. 0/12 gates PASS."
+      "blocker": "Original PDF §1.2.1 review has reached 47/86 fourth-ring MS/MC sources, 690 directed normative bibliographic edges, 39 source lists still unreviewed. Separate fifth-ring MS-SWN six edges. Need historical versions of cited RFC/ISO/IETF/MS documents, actual SfB2019 Windows Full Client build/server role/policy proof, and an independently reviewed normative fixed point. 0/12 gates pass."
     },
     {
       "id": "P1-04",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "Current fourth-ring original bibliography verification 37/86, directed normative reference count 506, remaining 49. Separate fifth MS-SWN 6. Historical target versions, normative RFC/IETF/external recursive closure, client/server policy feature applicability and independent fixed-point review remain OPEN. 0/12 gates PASS."
+      "blocker": "Original PDF §1.2.1 review has reached 47/86 fourth-ring MS/MC sources, 690 directed normative bibliographic edges, 39 source lists still unreviewed. Separate fifth-ring MS-SWN six edges. Need historical versions of cited RFC/ISO/IETF/MS documents, actual SfB2019 Windows Full Client build/server role/policy proof, and an independently reviewed normative fixed point. 0/12 gates pass."
     },
     {
       "id": "P1-09",
@@ -106,7 +106,7 @@
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "Current fourth-ring original bibliography verification 37/86, directed normative reference count 506, remaining 49. Separate fifth MS-SWN 6. Historical target versions, normative RFC/IETF/external recursive closure, client/server policy feature applicability and independent fixed-point review remain OPEN. 0/12 gates PASS."
+      "blocker": "Original PDF §1.2.1 review has reached 47/86 fourth-ring MS/MC sources, 690 directed normative bibliographic edges, 39 source lists still unreviewed. Separate fifth-ring MS-SWN six edges. Need historical versions of cited RFC/ISO/IETF/MS documents, actual SfB2019 Windows Full Client build/server role/policy proof, and an independently reviewed normative fixed point. 0/12 gates pass."
     },
     {
       "id": "P1-11",
@@ -1266,5 +1266,17 @@
     "fifth_ring_ms_swn_direct_normative_edges": 6,
     "PDF_originals_retained_by_user": true,
     "formal_phase1_gates_passed": 0
+  },
+  "p1_03_oxprops_webservices_source_audit_2026_10_24": {
+    "source_count": 10,
+    "verified_binary_original_sha256": 10,
+    "new_explicit_normative_edges": 184,
+    "new_informative_references_separate": 31,
+    "fourth_ring_verified_sources": 47,
+    "fourth_ring_remaining": 39,
+    "fourth_ring_normative_edges": 690,
+    "fifth_ring_ms_swn_edges_unchanged": 6,
+    "original_pdfs_held_by_user": true,
+    "phase1_gates_passed": 0
   }
 }
