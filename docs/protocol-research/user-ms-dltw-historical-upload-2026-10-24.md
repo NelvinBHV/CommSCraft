@@ -1,0 +1,11 @@
+# Zusatzquelle MS-DLTW v20210625 statt angefordertem MS-DLTM (24.10.2026)
+
+**FACT – Dateiverwechslung:** Der Nutzer hat `[MS-DLTW]-210625.pdf` hochgeladen, nicht `[MS-DLTM].pdf`. Es handelt sich um Microsoft `[MS-DLTW]`: **Distributed Link Tracking: Workstation Protocol**, veröffentlichte Edition **v20210625** (25.06.2021), Revision **16.0** laut PDF-Revisionshistorie S.4, **38 Seiten**, **1.300.722 Bytes**, SHA-256 `28a8b2a3e57e2594c0d96501679cf413841c432975364cb2ad87a85a09fe8a15`. PDF-Seite 9 (**§1.2.1/§1.2.2**) wurde zusätzlich als gerendertes Seitenbild verifiziert.
+
+**FACT – Trennung:** `§1.2.1 Normative References` auf S.9 führt neun Ziele: `C706`, `MS-DTYP`, `MS-ERREF`, `MS-FSCC`, `MS-RPCE`, `MS-SMB2`, `MS-SMB`, `RFC1088`, `RFC2119`. `§1.2.2 Informative References` nennt **`MS-DLTM` nur informativ**. Dies ist keine normative Kante `MS-DLTW → MS-DLTM` und ersetzt nicht das fehlende Original `[MS-DLTM].pdf`.
+
+**Vorhandene neuere Ausgabe:** Das bisherige `Windows_Protocols.tar.xz` enthielt `Windows_Protocols/[MS-DLTW].pdf` mit Footer **v20240423** (23.04.2024), ebenfalls 38 Seiten, 1.287.869 Bytes, SHA-256 `b00fb17a43331083d05243bb55454d41a364b27ed136f39c17dd4e3d0b40aaa7`. Dies ist eine **andere Ausgabe**; beide Quellnachweise bleiben erhalten. Kein inhaltlicher Editionsdiff wurde durchgeführt, kein alter Hash ersetzt und die 2021-Ausgabe wird nicht als aktuelles 2024-PDF etikettiert.
+
+**Weiterhin offene Anforderung:** `[MS-DLTM].pdf` (Distributed Link Tracking: Central Manager Protocol), laut bisherigem [offiziellem Quellenregister](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-dltm/a4a88aac-3bc5-4d5a-8136-52a3bfb979ef) **Revision 9.1 vom 01.06.2017**. Dieses Ziel wurde im dritten Ring aus **`MS-RPCE → MS-DLTM`** als normativ entdeckt. Der Dateinamen-Abgleich für 86 Viertstufen-Ziele bleibt unverändert **85/86 vorhanden, 1 fehlend**.
+
+**Quellhaltung und Scope:** Der Nutzer behält die PDF-Binärdateien; es werden **nur Metadaten, Hashes, exakte Referenzabschnitte und Status** im öffentlichen Forschungsbranch erfasst. Keine Norm-Graphen-Kanten automatisch aus der informativen DLTW-Zitation erzeugen. **P1-03 weiterhin OPEN, Phase 1 INCOMPLETE, 0/12 Gates PASS**, keine Implementierung, Live-Tests, `main`-Merge oder Release.

@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-24",
+  "source": "User direct PDF upload",
+  "received_filename": "[MS-DLTW]-210625.pdf",
+  "id": "MS-DLTW",
+  "document_title": "Distributed Link Tracking: Workstation Protocol",
+  "pdf_edition_footer": "v20210625",
+  "published": "2021-06-25",
+  "revision": "16.0",
+  "page_count": 38,
+  "bytes": 1300722,
+  "sha256": "28a8b2a3e57e2594c0d96501679cf413841c432975364cb2ad87a85a09fe8a15",
+  "pdf_signature_verified": true,
+  "reference_page": 9,
+  "normative_section": "§1.2.1",
+  "normative_targets": [
+    "C706",
+    "MS-DTYP",
+    "MS-ERREF",
+    "MS-FSCC",
+    "MS-RPCE",
+    "MS-SMB2",
+    "MS-SMB",
+    "RFC1088",
+    "RFC2119"
+  ],
+  "normative_targets_count": 9,
+  "informative_section": "§1.2.2",
+  "informative_targets": [
+    "MS-DLTM"
+  ],
+  "informative_targets_count": 1,
+  "own_binary_committed_to_public_repo": false,
+  "existing_windows_archive_counterpart": {
+    "id": "MS-DLTW",
+    "edition_footer": "v20240423",
+    "sha256": "b00fb17a43331083d05243bb55454d41a364b27ed136f39c17dd4e3d0b40aaa7",
+    "bytes": 1287869,
+    "pages": 38,
+    "provenance": "Windows_Protocols.tar.xz",
+    "note": "Different publication edition; SHA mismatch expected, not a same-release-content conflict."
+  },
+  "requested_missing_file": {
+    "id": "MS-DLTM",
+    "name": "Distributed Link Tracking: Central Manager Protocol",
+    "latest_catalogued_revision": "9.1",
+    "published_date": "2017-06-01",
+    "landing_page": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-dltm/a4a88aac-3bc5-4d5a-8136-52a3bfb979ef",
+    "provided_by_new_upload": false
+  },
+  "graph_disposition": {
+    "fourth_ring_ms_mc_source_files_available_before": 85,
+    "after": 85,
+    "missing_before": [
+      "MS-DLTM"
+    ],
+    "missing_after": [
+      "MS-DLTM"
+    ],
+    "new_directed_normative_edges_in_existing_current_scope": 0,
+    "dltw_dltm_citation": "INFORMATIVE_NOT_NORMATIVE",
+    "third_ring_extracted_normative_ms_rpce_to_dltm": true,
+    "source_user_retains_full_pdf": true
+  },
+  "status": "HISTORICAL_ALTERNATE_MS_DLTW_PDF_VALIDATED_NOT_MISSING_MS_DLTM_FILE",
+  "no_protocol_implementation_authorized": true
+}

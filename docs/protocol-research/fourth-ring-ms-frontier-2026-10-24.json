@@ -128,5 +128,21 @@
       "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-dltm/a4a88aac-3bc5-4d5a-8136-52a3bfb979ef"
     },
     "note": "Only source-file availability verified, NOT current edition/§1.2.1 target normalization for 85. PDFs remain held by user; request the exact missing original if this dependency is needed."
+  },
+  "standalone_user_upload_followup_2026_10_24": {
+    "filename": "[MS-DLTW]-210625.pdf",
+    "id": "MS-DLTW",
+    "version": "16.0",
+    "date": "2021-06-25",
+    "sha256": "28a8b2a3e57e2594c0d96501679cf413841c432975364cb2ad87a85a09fe8a15",
+    "not_requested_id": "MS-DLTM",
+    "not_requested_document": "Distributed Link Tracking: Central Manager Protocol",
+    "missing_original_ms_dltm_remains": true,
+    "coverage_numerator_unchanged": 85,
+    "coverage_denominator_unchanged": 86,
+    "normative_citation_original_from": "MS-RPCE",
+    "ms_dltw_to_dltm_reference_type": "INFORMATIVE_1_2_2",
+    "source_rights": "USER_RETAINS_ORIGINAL",
+    "metadata_source": "user-ms-dltw-historical-upload-2026-10-24.json"
   }
 }

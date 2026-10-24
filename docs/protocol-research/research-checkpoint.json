@@ -32,7 +32,7 @@
     "overview_ms_documents_with_direct_1_2_1_lists_examined_in_some_form": 46,
     "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 46,
     "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 0,
-    "complete_original_pdfs_received_and_sha256_verified": 822,
+    "complete_original_pdfs_received_and_sha256_verified": 823,
     "first_tier_normative_reference_edges": 464,
     "first_tier_distinct_target_identifiers": 199,
     "ms_normative_edges": 120,
@@ -69,7 +69,9 @@
     "third_ring_new_external_or_historical_label_ids": 88,
     "first_three_rings_raw_target_label_union": 581,
     "fourth_ms_mc_frontier_source_pdf_filenames_available": 85,
-    "fourth_ms_mc_frontier_source_pdf_filenames_missing": 1
+    "fourth_ms_mc_frontier_source_pdf_filenames_missing": 1,
+    "previous_four_archive_sets_pdf_instances_hashed": 822,
+    "additional_standalone_pdf_originals_sha256_checked": 1
   },
   "source_provenance": {
     "ms_avedgea": {
@@ -194,7 +196,7 @@
     "transitive-frontier.json",
     "rfc-version-relations-reviewed.json"
   ],
-  "instructions_for_next_session": "Read AGENTS.md, CURRENT_STATUS.md, research-checkpoint.json latest_continuation, phase1-audit.md and last research-log entry; verify draft/main commit and calculate counts anew from two distinct ledgers; do not combine first-tier 460 with 246 into a false closed graph. Reconcile publication editions and recurse only relevant targets. Never code/test/merge/release. New 2026-10-24 ZIP audit: all 46 current first-tier original PDF §1.2.1 release sections now have evidence, and E911 normative edges 460→464. Complete source target normalization, 8 second-tier originals, rights-compliant private PDF storage and SHA conflict resolution remain OPEN. Do not falsely claim PDFs were committed to public GitHub. Windows_Protocols.tar.xz SHA256 verified 451 original PDFs including all remaining 6 MS second-ring sources. Current PDF §1.2.1 edition coverage is 12/12 second tier; no source gaps at two direct rings, but 52 discovered MS/MC frontier PDFs need third-ring normative work, and formal gates remain 0/12. Three same-edition SHA conflicts MS-NLMP/RDPEMC/SIP preserved. 2026-10-24 P1-03 follow-on: third-ring 52 acquired MS/MC PDFs analyzed; 48 explicit normative bibliographies yielding 827 additional directed edges, 4 schema §1.1 general bibliographies yielding 67 separate unclassified mentions. 342 distinct third-ring raw target labels; 236 new vs prior 345, broken into 86 MS/MC, 62 RFC, 88 external/aliases; raw union 581. Git stores gzip TSV edge source+target+page and 52-source SHA inventory; PDFs remain with user on request only. Phase1 gates 0/12. Continue with 86 discovered MS/MC fourth frontier, RFC and external editions, historical diff, and actual client applicability; no code, live tests, main merge or release.",
+  "instructions_for_next_session": "Read AGENTS.md, CURRENT_STATUS.md, research-checkpoint.json latest_continuation, phase1-audit.md and last research-log entry; verify draft/main commit and calculate counts anew from two distinct ledgers; do not combine first-tier 460 with 246 into a false closed graph. Reconcile publication editions and recurse only relevant targets. Never code/test/merge/release. New 2026-10-24 ZIP audit: all 46 current first-tier original PDF §1.2.1 release sections now have evidence, and E911 normative edges 460→464. Complete source target normalization, 8 second-tier originals, rights-compliant private PDF storage and SHA conflict resolution remain OPEN. Do not falsely claim PDFs were committed to public GitHub. Windows_Protocols.tar.xz SHA256 verified 451 original PDFs including all remaining 6 MS second-ring sources. Current PDF §1.2.1 edition coverage is 12/12 second tier; no source gaps at two direct rings, but 52 discovered MS/MC frontier PDFs need third-ring normative work, and formal gates remain 0/12. Three same-edition SHA conflicts MS-NLMP/RDPEMC/SIP preserved. 2026-10-24 P1-03 follow-on: third-ring 52 acquired MS/MC PDFs analyzed; 48 explicit normative bibliographies yielding 827 additional directed edges, 4 schema §1.1 general bibliographies yielding 67 separate unclassified mentions. 342 distinct third-ring raw target labels; 236 new vs prior 345, broken into 86 MS/MC, 62 RFC, 88 external/aliases; raw union 581. Git stores gzip TSV edge source+target+page and 52-source SHA inventory; PDFs remain with user on request only. Phase1 gates 0/12. Continue with 86 discovered MS/MC fourth frontier, RFC and external editions, historical diff, and actual client applicability; no code, live tests, main merge or release. 2026-10-24 standalone [MS-DLTW]-210625.pdf v20210625 rev16.0 checked, SHA256 28a8b2a3e57e2594c0d96501679cf413841c432975364cb2ad87a85a09fe8a15. This is NOT MS-DLTM; MS-DLTM 9.1 2017 original still missing (85/86). MS-DLTW cites it only INFORMATIVELY; third-ring MS-RPCE cites MS-DLTM NORMATIVELY. Newer MS-DLTW v20240423 in Windows archive must not be overwritten. User retains PDFs; request only matching MS-DLTM if necessary.",
   "latest_continuation": {
     "date": "2026-10-23",
     "research_iteration": "phase1-transitive-microsoft-specs-plus-selected-rfc-status",
@@ -510,5 +512,23 @@
       ],
       "edition_checks_on_85_not_yet_complete": true
     }
+  },
+  "historical_ms_dltw_additional_source_2026_10_24": {
+    "status": "EXACT_HISTORICAL_MS_DLTW_2021_ORIGINAL_VALIDATED_NOT_MS_DLTM",
+    "report": "user-ms-dltw-historical-upload-2026-10-24.md",
+    "sha256": "28a8b2a3e57e2594c0d96501679cf413841c432975364cb2ad87a85a09fe8a15",
+    "pdf_revision": "16.0",
+    "pdf_date": "2021-06-25",
+    "pdf_pages": 38,
+    "pdf_bytes": 1300722,
+    "normative_targets": 9,
+    "informative_to_missing_ms_dltm": true,
+    "already_available_newer_dltw_2024_original_sha256": "b00fb17a43331083d05243bb55454d41a364b27ed136f39c17dd4e3d0b40aaa7",
+    "fourth_ms_mc_archive_availability_before": 85,
+    "fourth_ms_mc_archive_availability_after": 85,
+    "original_ms_dltm_still_missing": true,
+    "underlying_dltm_normatively_cited_by": "MS-RPCE",
+    "phase1_complete": false,
+    "full_pdf_git_committed": false
   }
 }
