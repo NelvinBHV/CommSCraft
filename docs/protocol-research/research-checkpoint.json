@@ -30,8 +30,8 @@
     "ms_ocsprot_overview_groups": 6,
     "overview_ms_documents_with_latest_published_metadata": 46,
     "overview_ms_documents_with_direct_1_2_1_lists_examined_in_some_form": 46,
-    "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 16,
-    "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 30,
+    "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 19,
+    "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 27,
     "complete_original_pdfs_received_and_sha256_verified": 9,
     "first_tier_normative_reference_edges": 460,
     "first_tier_distinct_target_identifiers": 199,
@@ -87,7 +87,7 @@
     {
       "id": "P1-01",
       "priority": 1,
-      "task": "Reconcile remaining 30 overview current Microsoft original PDF §1.2.1 editions; three exact editions now verified from uploads."
+      "task": "Reconcile remaining 27 overview current-edition MS PDF §1.2.1 sections; three additional sections verified as web-rendered PDFs without original hashes on 2026-10-24."
     },
     {
       "id": "P1-02",
@@ -295,5 +295,28 @@
     "second_level_edges_unchanged": 246,
     "phase1_complete": false,
     "formal_pass_gates": 0
+  },
+  "web_pdf_section_continuation_2026_10_24": {
+    "evidence_file": "published-three-ms-pdf-page-audit-2026-10-24.json",
+    "branch_head_before": "4ae93a27f2376db73fcce718f265a2d5d23a9b9a",
+    "sources": [
+      "MS-EUMSDP",
+      "MS-TURN",
+      "MS-RTP"
+    ],
+    "normative_existing_edges_confirmed": 24,
+    "new_edges": 0,
+    "overview_original_sections": 19,
+    "overview_html_only": 27,
+    "transitive_original_sections": 4,
+    "first_edges": 460,
+    "second_edges": 246,
+    "hashed_immediate_sources_unchanged": 8,
+    "hashed_ms_ocsprot_overview_unchanged": 1,
+    "formal_gates_passed": 0,
+    "phase1": "INCOMPLETE",
+    "implementation_authorized": false,
+    "live_tests_authorized": false,
+    "merge_main_authorized": false
   }
 }

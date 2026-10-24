@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-24",
+  "branch": "draft/protocol-spec-analysis-2026-10-23",
+  "evidence_level": "PUBLISHED_EDITION_PDF_WEB_TEXT_AND_PAGE_SCREENSHOT_NOT_FULL_FILE_BINARY",
+  "complete_pdf_binary_acquired": false,
+  "new_original_sha256_verified": 0,
+  "documentation_only": true,
+  "scope": "P1-01 current MS-OCSPROT first-tier Microsoft §1.2.1/§1.2.2 bibliographies",
+  "documents": [
+    {
+      "id": "MS-EUMSDP",
+      "published_revision": "9.0",
+      "published_date": "2025-05-20",
+      "edition_pdf_footer": "v20250520",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-eumsdp/c01cded2-02a3-467a-a959-5ebdc91e542b",
+      "original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-EUMSDP/%5BMS-EUMSDP%5D.pdf",
+      "official_pdf_pages": 17,
+      "normative_section": "§1.2.1",
+      "normative_pdf_pages": [
+        6
+      ],
+      "normative_target_ids": [
+        "MS-SDPEXT",
+        "RFC2119",
+        "RFC4566"
+      ],
+      "normative_count": 3,
+      "informative_section": "§1.2.2",
+      "informative_pdf_pages": [
+        6
+      ],
+      "informative_target_ids": [
+        "MS-DTMF",
+        "MS-ICE2",
+        "MS-ICE",
+        "MS-QoE",
+        "MS-RTP",
+        "MS-SIPRE",
+        "MS-SRTP",
+        "MS-TURN"
+      ],
+      "informative_count": 8,
+      "original_pdf_bytes": null,
+      "original_sha256": null,
+      "visual_reference_pages_checked": true,
+      "all_normative_ids_match_existing_ledger": true,
+      "history_diff_complete": false,
+      "client_applicability_confirmed": false
+    },
+    {
+      "id": "MS-TURN",
+      "published_revision": "21.0",
+      "published_date": "2025-05-20",
+      "edition_pdf_footer": "v20250520",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-turn/9e434b27-eb13-4249-b031-2d15c3835c8b",
+      "original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "official_pdf_pages": 61,
+      "normative_section": "§1.2.1",
+      "normative_pdf_pages": [
+        9,
+        10
+      ],
+      "normative_target_ids": [
+        "draft-ietf-behave-rfc3489bis-02",
+        "draft-rosenberg-midcom-turn-08",
+        "RFC1321",
+        "RFC2119",
+        "RFC2246",
+        "RFC2616",
+        "RFC2818",
+        "RFC3489",
+        "RFC4346",
+        "RFC5246",
+        "RFC6156"
+      ],
+      "normative_count": 11,
+      "informative_section": "§1.2.2",
+      "informative_pdf_pages": [
+        10
+      ],
+      "informative_target_ids": [
+        "MS-AVEDGEA",
+        "MS-ICE2",
+        "MS-ICE",
+        "RFC3261",
+        "RFC4566",
+        "RFC768",
+        "RFC793"
+      ],
+      "informative_count": 7,
+      "original_pdf_bytes": null,
+      "original_sha256": null,
+      "visual_reference_pages_checked": true,
+      "all_normative_ids_match_existing_ledger": true,
+      "history_diff_complete": false,
+      "client_applicability_confirmed": false
+    },
+    {
+      "id": "MS-RTP",
+      "published_revision": "17.0",
+      "published_date": "2025-05-20",
+      "edition_pdf_footer": "v20250520",
+      "official_landing_url": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtp/26dda764-6e96-456b-810b-9ae0275af564",
+      "original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "official_pdf_pages": 68,
+      "normative_section": "§1.2.1",
+      "normative_pdf_pages": [
+        9,
+        10
+      ],
+      "normative_target_ids": [
+        "MS-H264PF",
+        "MS-H26XPF",
+        "MS-SDPEXT",
+        "MSFT-H264UCConfig-v1.1-2011",
+        "RFC2119",
+        "RFC3550",
+        "RFC3551",
+        "RFC4585",
+        "RFC5285",
+        "RFC5506"
+      ],
+      "normative_count": 10,
+      "informative_section": "§1.2.2",
+      "informative_pdf_pages": [
+        10
+      ],
+      "informative_target_ids": [
+        "abs-send-time",
+        "MS-DTMF",
+        "MS-ICE2",
+        "MS-ICE",
+        "MS-RTASPF",
+        "MS-RTPRADEX",
+        "MS-RTVPF",
+        "MS-SIPRE",
+        "MS-SRTP",
+        "MS-TURNBWM",
+        "MS-TURN",
+        "RFC3389",
+        "RFC4571",
+        "RFC4733",
+        "RFC5761"
+      ],
+      "informative_count": 15,
+      "original_pdf_bytes": null,
+      "original_sha256": null,
+      "visual_reference_pages_checked": true,
+      "all_normative_ids_match_existing_ledger": true,
+      "history_diff_complete": false,
+      "client_applicability_confirmed": false
+    }
+  ],
+  "total_existing_first_tier_edges_reconciled": 24,
+  "new_normative_edges": 0,
+  "first_tier_normative_edges_total_unchanged": 460,
+  "second_tier_normative_edges_total_unchanged": 246,
+  "overview_current_pdf_section_count_before": 16,
+  "overview_current_pdf_section_count_after": 19,
+  "overview_html_only_after": 27,
+  "transitive_current_pdf_section_count_unchanged": 4,
+  "full_original_binary_hashes_new": 0,
+  "formal_phase1_gates_passed": 0,
+  "phase1_complete": false,
+  "blockers": [
+    "27 remaining overview MS published-edition reference sections",
+    "8 remaining second-tier MS published-edition reference sections",
+    "complete PDF bytes and SHA256 absent for these three web-only checks",
+    "full previous-edition diffs and recursive RFC/MS/external standards remain OPEN",
+    "2019 Windows Client exact build, Server roles, policy and applicability UNPINNED"
+  ]
+}

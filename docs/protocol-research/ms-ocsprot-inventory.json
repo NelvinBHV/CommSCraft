@@ -698,14 +698,17 @@
       "metadata_evidence": "official Microsoft Learn landing / Published Version table; checked 2026-10-23",
       "release_content_acquired": false,
       "release_sha256": null,
-      "all_normative_refs_extracted": false,
-      "status": "LIVE_1_2_1_REFERENCES_READ_PDF_EDITION_UNVERIFIED",
-      "published_pdf_text_index_accessible": false,
-      "published_pdf_excerpt_edition_attested": false,
-      "published_pdf_page_count": null,
-      "published_pdf_index_url": null,
-      "normative_references_section_status": "LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED",
-      "previous_releases_compared": false
+      "all_normative_refs_extracted": true,
+      "status": "PUBLISHED_PDF_SECTION_AND_SCREENSHOT_VERIFIED_BINARY_HASH_PENDING",
+      "published_pdf_text_index_accessible": true,
+      "published_pdf_excerpt_edition_attested": true,
+      "published_pdf_page_count": 17,
+      "published_pdf_index_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-EUMSDP/%5BMS-EUMSDP%5D.pdf",
+      "normative_references_section_status": "SECTION_VERIFIED_FROM_RELEASE_PDF",
+      "previous_releases_compared": false,
+      "reference_section_pdf_pages": [
+        6
+      ]
     },
     {
       "id": "MS-DTMF",
@@ -764,14 +767,18 @@
       "metadata_evidence": "official Microsoft Learn landing / Published Version table; checked 2026-10-23",
       "release_content_acquired": false,
       "release_sha256": null,
-      "all_normative_refs_extracted": false,
-      "status": "LIVE_1_2_1_REFERENCES_READ_PDF_EDITION_UNVERIFIED",
-      "published_pdf_text_index_accessible": false,
-      "published_pdf_excerpt_edition_attested": false,
-      "published_pdf_page_count": null,
-      "published_pdf_index_url": null,
-      "normative_references_section_status": "LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED",
-      "previous_releases_compared": false
+      "all_normative_refs_extracted": true,
+      "status": "PUBLISHED_PDF_SECTION_AND_SCREENSHOT_VERIFIED_BINARY_HASH_PENDING",
+      "published_pdf_text_index_accessible": true,
+      "published_pdf_excerpt_edition_attested": true,
+      "published_pdf_page_count": 68,
+      "published_pdf_index_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "normative_references_section_status": "SECTION_VERIFIED_FROM_RELEASE_PDF",
+      "previous_releases_compared": false,
+      "reference_section_pdf_pages": [
+        9,
+        10
+      ]
     },
     {
       "id": "MS-RTPRADEX",
@@ -1020,14 +1027,18 @@
       "metadata_evidence": "official Microsoft Learn landing / Published Version table; checked 2026-10-23",
       "release_content_acquired": false,
       "release_sha256": null,
-      "all_normative_refs_extracted": false,
-      "status": "LIVE_1_2_1_REFERENCES_READ_PDF_EDITION_UNVERIFIED",
-      "published_pdf_text_index_accessible": false,
-      "published_pdf_excerpt_edition_attested": false,
-      "published_pdf_page_count": null,
-      "published_pdf_index_url": null,
-      "normative_references_section_status": "LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED",
-      "previous_releases_compared": false
+      "all_normative_refs_extracted": true,
+      "status": "PUBLISHED_PDF_SECTION_AND_SCREENSHOT_VERIFIED_BINARY_HASH_PENDING",
+      "published_pdf_text_index_accessible": true,
+      "published_pdf_excerpt_edition_attested": true,
+      "published_pdf_page_count": 61,
+      "published_pdf_index_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "normative_references_section_status": "SECTION_VERIFIED_FROM_RELEASE_PDF",
+      "previous_releases_compared": false,
+      "reference_section_pdf_pages": [
+        9,
+        10
+      ]
     },
     {
       "id": "MS-TURNBWM",

@@ -7,8 +7,8 @@
   "implementation_approval": false,
   "source_counts": {
     "overview_documents": 46,
-    "overview_exact_release_sections": 16,
-    "overview_unmatched_html": 30,
+    "overview_exact_release_sections": 19,
+    "overview_unmatched_html": 27,
     "overview_sha256_historically_verified": 4,
     "first_normative_edges": 460,
     "first_unique_targets": 199,
@@ -32,7 +32,7 @@
     {
       "id": "P1-01",
       "passed": false,
-      "blocker": "Remaining 30 overview exact edition PDF sections not verified (three additional PDFs now verified)"
+      "blocker": "Remaining 27 overview exact current-edition PDF §1.2.1 sections not verified. Three additional current PDFs inspected by official web page text/screenshot on 2026-10-24; no new binary hashes, recursion/history/client scope OPEN."
     },
     {
       "id": "P1-02",
@@ -533,12 +533,16 @@
       "release_date": "2025-05-20",
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-eumsdp/c01cded2-02a3-467a-a959-5ebdc91e542b",
       "section": "§1.2.1",
-      "section_release_verified": false,
+      "section_release_verified": true,
       "full_original_sha256_historical": false,
       "binary_present_in_current_session": false,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_RELEASE_REFERENCE_SECTION_VERIFIED_FULL_BINARY_RECURSION_AND_SCOPE_OPEN",
+      "section_reference_pages": [
+        6
+      ],
+      "original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-EUMSDP/%5BMS-EUMSDP%5D.pdf"
     },
     {
       "id": "MS-DTMF",
@@ -575,12 +579,17 @@
       "release_date": "2025-05-20",
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtp/26dda764-6e96-456b-810b-9ae0275af564",
       "section": "§1.2.1",
-      "section_release_verified": false,
+      "section_release_verified": true,
       "full_original_sha256_historical": false,
       "binary_present_in_current_session": false,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_RELEASE_REFERENCE_SECTION_VERIFIED_FULL_BINARY_RECURSION_AND_SCOPE_OPEN",
+      "section_reference_pages": [
+        9,
+        10
+      ],
+      "original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf"
     },
     {
       "id": "MS-RTPRADEX",
@@ -729,12 +738,17 @@
       "release_date": "2025-05-20",
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-turn/9e434b27-eb13-4249-b031-2d15c3835c8b",
       "section": "§1.2.1",
-      "section_release_verified": false,
+      "section_release_verified": true,
       "full_original_sha256_historical": false,
       "binary_present_in_current_session": false,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_RELEASE_REFERENCE_SECTION_VERIFIED_FULL_BINARY_RECURSION_AND_SCOPE_OPEN",
+      "section_reference_pages": [
+        9,
+        10
+      ],
+      "original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf"
     },
     {
       "id": "MS-TURNBWM",
@@ -957,5 +971,13 @@
   "sha256_history_warning": "The single MS-AVEDGEA upload from prior conversation was not mounted or rehashed during this turn",
   "live_testing_authorized": false,
   "merge_main_authorized": false,
-  "release_authorized": false
+  "release_authorized": false,
+  "latest_web_pdf_section_review_2026_10_24": {
+    "evidence": "published-three-ms-pdf-page-audit-2026-10-24.json",
+    "overview_release_sections": 19,
+    "overview_html_only": 27,
+    "normative_existing_edges_confirmed": 24,
+    "new_hashes": 0,
+    "formal_gates_passed": 0
+  }
 }

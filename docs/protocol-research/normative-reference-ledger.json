@@ -28,7 +28,9 @@
       "source": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtp/9258c646-3fa5-4702-a9cf-86b30029ca7a",
       "live_last_updated": "2024-04-16",
       "published_revision": "17.0",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": null
     },
     {
       "id": "MS-PRES",
@@ -160,7 +162,9 @@
       "live_last_updated": "2024-04-16",
       "published_revision": "21.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": null
     },
     {
       "id": "MS-SIPAPP",
@@ -295,7 +299,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "9.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": null
     },
     {
       "id": "MS-RGSWS",
@@ -985,9 +991,15 @@
       "target": "MS-H264PF",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-RTP",
@@ -999,9 +1011,15 @@
       "target": "MS-H26XPF",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-RTP",
@@ -1013,9 +1031,15 @@
       "target": "MS-SDPEXT",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-RTP",
@@ -1027,9 +1051,15 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-RTP",
@@ -1041,9 +1071,15 @@
       "target": "RFC3550",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-RTP",
@@ -1055,9 +1091,15 @@
       "target": "RFC3551",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-RTP",
@@ -1069,9 +1111,15 @@
       "target": "RFC4585",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-RTP",
@@ -1083,9 +1131,15 @@
       "target": "RFC5285",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-RTP",
@@ -1097,9 +1151,15 @@
       "target": "RFC5506",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-RTP",
@@ -1111,9 +1171,15 @@
       "target": "MSFT-H264UCConfig-v1.1-2011",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-PRES",
@@ -4173,9 +4239,15 @@
       "target": "RFC1321",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-TURN",
@@ -4187,9 +4259,15 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-TURN",
@@ -4201,9 +4279,15 @@
       "target": "RFC2246",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-TURN",
@@ -4215,9 +4299,15 @@
       "target": "RFC2616",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-TURN",
@@ -4229,9 +4319,15 @@
       "target": "RFC2818",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-TURN",
@@ -4243,9 +4339,15 @@
       "target": "RFC3489",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-TURN",
@@ -4257,9 +4359,15 @@
       "target": "RFC4346",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-TURN",
@@ -4271,9 +4379,15 @@
       "target": "RFC5246",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-TURN",
@@ -4285,9 +4399,15 @@
       "target": "RFC6156",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-TURN",
@@ -4299,9 +4419,15 @@
       "target": "draft-ietf-behave-rfc3489bis-02",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-TURN",
@@ -4313,9 +4439,15 @@
       "target": "draft-rosenberg-midcom-turn-08",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        9,
+        10
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SIPAPP",
@@ -5983,9 +6115,14 @@
       "target": "MS-SDPEXT",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-EUMSDP/%5BMS-EUMSDP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        6
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-EUMSDP",
@@ -5999,9 +6136,14 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-EUMSDP/%5BMS-EUMSDP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        6
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-EUMSDP",
@@ -6015,9 +6157,14 @@
       "target": "RFC4566",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-EUMSDP/%5BMS-EUMSDP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        6
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SIPRE",
@@ -7262,9 +7409,9 @@
     "full_rfc_update_obsolescence_graph_unresolved": true,
     "release_bytes_captured_count": 4,
     "complete": false,
-    "indexed_original_release_pdf_reference_pages_checked": 12,
+    "indexed_original_release_pdf_reference_pages_checked": 15,
     "user_supplied_full_pdf_binaries_hashed": 4,
-    "notes_2026_10_24": "MS-ABS, MS-SIPAE, MS-SIPREGE full current edition original binaries now SHA256 verified; source-specific normative target sets match; still 30 overview HTML-only and incomplete transitive closure"
+    "notes_2026_10_24": "MS-EUMSDP 9.0, MS-TURN 21.0, MS-RTP 17.0 published PDF §1.2.1 web text and screenshots inspected; 24 existing edges matched. 19/46 current-release first tier PDF sections, 27 HTML-only; full PDF binary SHA256 count unchanged; recursion OPEN."
   },
   "normative_sections_verified_as_published_pdf_text": [
     {
@@ -7483,6 +7630,45 @@
       "full_binary_sha256_verified": true,
       "normative_targets_count": 17,
       "status": "PUBLISHED_EXACT_EDITION_FULL_BINARY_AND_SECTION_VERIFIED"
+    },
+    {
+      "id": "MS-EUMSDP",
+      "section": "§1.2.1",
+      "published_revision": "9.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-EUMSDP/%5BMS-EUMSDP%5D.pdf",
+      "pdf_page_count": 17,
+      "reference_pages": "PDF pp. 6 (zero-based 5)",
+      "text_checked_and_page_screenshot": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": null,
+      "status": "RELEASE_IDENTIFIED_PDF_TEXT_AND_SECTION_SCREENSHOT_VERIFIED_NOT_BINARY_PRESERVED"
+    },
+    {
+      "id": "MS-TURN",
+      "section": "§1.2.1",
+      "published_revision": "21.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-TURN/%5BMS-TURN%5D.pdf",
+      "pdf_page_count": 61,
+      "reference_pages": "PDF pp. 9–10 (zero-based 8–9)",
+      "text_checked_and_page_screenshot": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": null,
+      "status": "RELEASE_IDENTIFIED_PDF_TEXT_AND_SECTION_SCREENSHOT_VERIFIED_NOT_BINARY_PRESERVED"
+    },
+    {
+      "id": "MS-RTP",
+      "section": "§1.2.1",
+      "published_revision": "17.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
+      "pdf_page_count": 68,
+      "reference_pages": "PDF pp. 9–10 (zero-based 8–9)",
+      "text_checked_and_page_screenshot": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": null,
+      "status": "RELEASE_IDENTIFIED_PDF_TEXT_AND_SECTION_SCREENSHOT_VERIFIED_NOT_BINARY_PRESERVED"
     }
   ],
   "informative_edges": [

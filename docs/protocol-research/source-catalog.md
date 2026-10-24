@@ -1,6 +1,6 @@
 # Official Microsoft and RFC protocol document catalog — dated Phase-1 inventory
 
-**Snapshot 2026-10-23. Phase 1 NOT COMPLETE.** Reference source of truth: [MS-OCSPROT](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/90f4bc22-eae7-480e-a6f8-74d705ed2b2c) **rev 9.0, 2025-05-20**, across **six** protocol tables. Every MS row links to its official versioned Microsoft Learn landing. This inventory captures **46** published source identities, with **46** §1.2.1 first-layer normative lists read, **12** supported by dated original-PDF reference page inspection and **1 fully uploaded original PDF with verified SHA-256**, **460** exact normative edges to **199** targets, **113** RFC seed IDs (of which **89** directly cited). **No** first-layer MS §1.2.1 list remains unexamined; recursive closure and release-edition reconciliation remain open. One user-provided MS-AVEDGEA published PDF was SHA-256-verified, but not committed to the repository.
+**Initial snapshot 2026-10-23; latest evidence update 2026-10-24. Phase 1 NOT COMPLETE.** [MS-OCSPROT rev 9.0 (2025-05-20)](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/90f4bc22-eae7-480e-a6f8-74d705ed2b2c): six protocol families, 46 direct sources. Current **19/46** original current-edition PDF §1.2.1 sections reviewed, **27 HTML-only**; first ring **460 normative edges/199 targets**; **113** initial RFC identifiers. Second ring: 12 additional MS documents, **4/12** current-PDF bibliographies reviewed, 246 further edges. Eight direct Microsoft-source PDF binaries historically/recently SHA-256 verified, plus one distinct MS-OCSPROT overview PDF. New 2026-10-24 web page checks have **no** full-binary hash. No normative recursion closure, client implementation/interop proof or Phase-1 completion.
 
 ## Canonical datasets
 
@@ -46,10 +46,10 @@
 | MS-OCDISCWS | http §2.2.2.3 | 10.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocdiscws/95554ed7-530a-4a27-beee-b353ea9f7e95) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
 | MS-CVWREST | http §2.2.2.3 | 7.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-cvwrest/62436ec9-e9c9-4e72-9a3f-3081a8f92f67) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
 | MS-ECREST | http §2.2.2.3 | 8.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ecrest/4454be95-159a-4c99-a75a-5c260609343a) | SECTION_VERIFIED_FROM_RELEASE_PDF |
-| MS-EUMSDP | media §2.2.3.1 | 9.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-eumsdp/c01cded2-02a3-467a-a959-5ebdc91e542b) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
+| MS-EUMSDP | media §2.2.3.1 | 9.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-eumsdp/c01cded2-02a3-467a-a959-5ebdc91e542b) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-DTMF | media §2.2.3.1 | 15.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-dtmf/7a2c80c0-5fa7-4b8c-9216-c33804f0e0d4) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
 | MS-H264PF | media §2.2.3.1 | 16.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-h264pf/f3024858-350e-49b0-9866-99c4fd2b912d) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
-| MS-RTP | media §2.2.3.1 | 17.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtp/26dda764-6e96-456b-810b-9ae0275af564) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
+| MS-RTP | media §2.2.3.1 | 17.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtp/26dda764-6e96-456b-810b-9ae0275af564) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-RTPRADEX | media §2.2.3.1 | 13.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtpradex/c28f4661-9e7c-4319-b6e5-58d0dba6b823) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-RTASPF | media §2.2.3.1 | 10.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtaspf/42824cea-064e-45b3-a81b-24584449d2eb) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-RTVPF | media §2.2.3.1 | 11.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtvpf/3f37858b-c991-41c4-bbbd-df10fcffc89e) | SECTION_VERIFIED_FROM_RELEASE_PDF |
@@ -60,7 +60,7 @@
 | MS-ICE | ice §2.2.3.2 | 11.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ice/4feb9bf6-dbe8-4713-a228-e7e697c57eae) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
 | MS-ICE2 | ice §2.2.3.2 | 19.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ice2/8cd2fe91-1aa6-49e1-b482-f92b5c40b7e2) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
 | MS-ICE2BWM | ice §2.2.3.2 | 9.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ice2bwm/9da023f3-da10-430d-825b-1d9d7b2ac5ca) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
-| MS-TURN | ice §2.2.3.2 | 21.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-turn/9e434b27-eb13-4249-b031-2d15c3835c8b) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
+| MS-TURN | ice §2.2.3.2 | 21.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-turn/9e434b27-eb13-4249-b031-2d15c3835c8b) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-TURNBWM | ice §2.2.3.2 | 9.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-turnbwm/7fd11bbc-3e10-476c-80be-9d62b1b35b1a) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
 
 **Known May 2025 overview versus newer releases:** MS-ABS rev 10.1 (2025-08-19), MS-SIPREGE rev 17.1 (2025-08-19), MS-SSRTP rev 11.1 (2025-09-16). Change details and historical revision comparison NOT yet read for all editions. Source landing metadata does not prove release PDF normative text has been parsed.
@@ -207,3 +207,7 @@ Exact MS references **MS-H26XPF, MS-KILE, MS-NLMP, MS-OAUTH2EX, MS-OXWUMS, MS-RD
 - [Official RFC Editor relation checks](rfc-version-relations-reviewed.json): 10 fixed editions with Update/Obsoletes metadata verified; global RFC normative references/errata not closed.
 
 Source IDs/versions, official HTML subsection URLs and older released-PDF edition warnings are stored per row in the machine-readable ledgers; do not turn these metadata findings into universal client implementation requirements.
+
+## 2026-10-24 P1-01 current-edition PDF section reconciliation
+
+[Three-source original section audit](published-three-ms-pdf-page-audit-2026-10-24.md): MS-EUMSDP rev 9.0 (§1.2.1 p.6), MS-TURN rev 21.0 (§1.2.1 pp.9–10), MS-RTP rev 17.0 (§1.2.1 pp.9–10), each published 2025-05-20; official PDF text and page screenshots verified, full-file SHA-256 **not** available. Exactly 24 pre-existing normative edges matched. Historic counts elsewhere in this file reflect earlier snapshots. Current overview 19/46 PDF sections and 27 HTML-only, phase 1 OPEN.
