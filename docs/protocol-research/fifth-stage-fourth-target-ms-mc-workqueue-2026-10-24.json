@@ -8,9 +8,9 @@
   "second_ring_ledger_sha": "af4e27be3bbab38bd70ba50e858edeaaac4d2e66",
   "fifth_ring_current_ledger_sha": "096d03dfe1c0828b9ad721417441ef6460fa0105",
   "candidate_raw_labels": 88,
-  "already_audited_fifth_sources": 25,
+  "already_audited_fifth_sources": 33,
   "schema_only_reviewed": 1,
-  "remaining_raw_ms_mc_source_candidates": 62,
+  "remaining_raw_ms_mc_source_candidates": 54,
   "reviewed_fifth_source_ids": [
     "MS-SWN",
     "MS-OXWSADISC",
@@ -36,7 +36,15 @@
     "MS-DFSRH",
     "MS-DLTW",
     "MS-EMF",
-    "MS-EVEN"
+    "MS-EVEN",
+    "MS-FPSE",
+    "MS-FRS2",
+    "MS-GPFR",
+    "MS-GPIPSEC",
+    "MS-GPSCR",
+    "MS-GPSI",
+    "MS-MQMR",
+    "MS-MQRR"
   ],
   "raw_target_candidates": [
     {
@@ -544,7 +552,7 @@
           "source_sha256": "bde1630aff99562ae6b0e5435c114fcac7c42a7895f26872cff3e92ca422c5c1"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-FRS2",
@@ -557,7 +565,7 @@
           "source_sha256": "00fd7df3ae4d063d34387dcf47b514f9c552815eb8e83dfc4acfdc7ca00eab7f"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-GPFR",
@@ -570,7 +578,7 @@
           "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-GPIPSEC",
@@ -583,7 +591,7 @@
           "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-GPSCR",
@@ -596,7 +604,7 @@
           "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-GPSI",
@@ -609,7 +617,7 @@
           "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-MQMR",
@@ -622,7 +630,7 @@
           "source_sha256": "0060b8c8fd2ed1a4c85af1b41b61445d2265cc1b96819b694c60e50dad5b482d"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-MQRR",
@@ -635,7 +643,7 @@
           "source_sha256": "0060b8c8fd2ed1a4c85af1b41b61445d2265cc1b96819b694c60e50dad5b482d"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-MSRP",
@@ -1384,5 +1392,24 @@
     "missing_archive_candidate_left_pending": "MS-DMRP",
     "source_pdf_hashes_verified": 8,
     "additional_historical_dltw_original_hash_verified": true
+  },
+  "batch_2026_10_24_group_policy_frsmq_frontpage": {
+    "source_ids": [
+      "MS-FPSE",
+      "MS-FRS2",
+      "MS-GPFR",
+      "MS-GPIPSEC",
+      "MS-GPSCR",
+      "MS-GPSI",
+      "MS-MQMR",
+      "MS-MQRR"
+    ],
+    "added_normative_edges": 95,
+    "added_informative_mentions": 27,
+    "source_pdf_sha256_verified": 8,
+    "reviewed_now": 33,
+    "remaining_now": 54,
+    "raw_total": 88,
+    "schema_ms_adls_still_classified_unclassified": true
   }
 }
