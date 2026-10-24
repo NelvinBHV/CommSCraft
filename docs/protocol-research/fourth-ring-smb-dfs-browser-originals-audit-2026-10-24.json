@@ -1,0 +1,1033 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "branch": "draft/protocol-spec-analysis-2026-10-23",
+  "tier": "MIXED_SEVEN_FOURTH_AND_ONE_FIFTH_RING_SOURCE",
+  "scope": "SMB_DFS_BROWSER_SERVER_SERVICE_PLUS_ONE_FIFTH_RING_SERVICE_WITNESS_AND_AD_SMTP_REPLICATION",
+  "source_count": 8,
+  "sources": [
+    {
+      "id": "MS-CIFS",
+      "revision": "31.0",
+      "published": "2025-11-21",
+      "edition_footer": "v20251121",
+      "pdf_pages": 722,
+      "pdf_bytes": 23425075,
+      "sha256": "2a9687ef4f1ece05f854e2f797ccab9358f4087d7d3b65673006faf2b770b14e",
+      "source_archive": "Windows_Protocols.tar.xz",
+      "source_member": "Windows_Protocols/[MS-CIFS].pdf",
+      "bundle": "CommSCraft_Gesamtanalyse_Teil_02.zip",
+      "bundle_member": "PDFs/Windows/[MS-CIFS].pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cifs/d416ff7c-c536-406e-a951-4f04b2fd1d2b",
+      "original_pdf_text_and_rendered_reference_pages_verified": true,
+      "original_pdf_binary_in_repo": false,
+      "normative_count": 23,
+      "normative_section": "§1.2.1",
+      "normative_refs": [
+        {
+          "target": "IEEE802.2-1998",
+          "page": 23
+        },
+        {
+          "target": "MS-BRWS",
+          "page": 23
+        },
+        {
+          "target": "MS-DFSC",
+          "page": 23
+        },
+        {
+          "target": "MS-DFSNM",
+          "page": 23
+        },
+        {
+          "target": "MS-DTYP",
+          "page": 23
+        },
+        {
+          "target": "MS-ERREF",
+          "page": 23
+        },
+        {
+          "target": "MS-FSCC",
+          "page": 23
+        },
+        {
+          "target": "MS-LSAD",
+          "page": 23
+        },
+        {
+          "target": "MS-MSRP",
+          "page": 23
+        },
+        {
+          "target": "MS-NLMP",
+          "page": 23
+        },
+        {
+          "target": "MS-RAP",
+          "page": 23
+        },
+        {
+          "target": "MS-RPCE",
+          "page": 23
+        },
+        {
+          "target": "MS-SRVS",
+          "page": 24
+        },
+        {
+          "target": "NBF2CIFS",
+          "page": 24
+        },
+        {
+          "target": "NBF",
+          "page": 24
+        },
+        {
+          "target": "NETBEUI",
+          "page": 24
+        },
+        {
+          "target": "RFC1001",
+          "page": 24
+        },
+        {
+          "target": "RFC1002",
+          "page": 24
+        },
+        {
+          "target": "RFC1321",
+          "page": 24
+        },
+        {
+          "target": "RFC2119",
+          "page": 24
+        },
+        {
+          "target": "RFC2743",
+          "page": 24
+        },
+        {
+          "target": "RYAN",
+          "page": 24
+        },
+        {
+          "target": "XOPEN-SMB",
+          "page": 24
+        }
+      ],
+      "informative_count": 54,
+      "informative_section": "§1.2.2",
+      "informative_refs": [
+        {
+          "target": "CIFS",
+          "page": 24
+        },
+        {
+          "target": "ENSIGN",
+          "page": 24
+        },
+        {
+          "target": "FSBO",
+          "page": 24
+        },
+        {
+          "target": "IBM-SMB",
+          "page": 24
+        },
+        {
+          "target": "IMPCIFS",
+          "page": 24
+        },
+        {
+          "target": "KB102067",
+          "page": 24
+        },
+        {
+          "target": "KB129202",
+          "page": 25
+        },
+        {
+          "target": "KB143474",
+          "page": 25
+        },
+        {
+          "target": "KB297684",
+          "page": 25
+        },
+        {
+          "target": "KB301673",
+          "page": 25
+        },
+        {
+          "target": "KB887429",
+          "page": 25
+        },
+        {
+          "target": "MD5Collision",
+          "page": 25
+        },
+        {
+          "target": "MS-FSA",
+          "page": 25
+        },
+        {
+          "target": "MS-MAIL",
+          "page": 25
+        },
+        {
+          "target": "MS-NBTE",
+          "page": 25
+        },
+        {
+          "target": "MS-SMB2",
+          "page": 25
+        },
+        {
+          "target": "MS-SMB",
+          "page": 25
+        },
+        {
+          "target": "MS-WPO",
+          "page": 25
+        },
+        {
+          "target": "MSDFS",
+          "page": 25
+        },
+        {
+          "target": "MSDN-CallNmdPipe",
+          "page": 25
+        },
+        {
+          "target": "MSDN-CreateFile",
+          "page": 25
+        },
+        {
+          "target": "MSDN-DiscntEndpoint",
+          "page": 25
+        },
+        {
+          "target": "MSDN-ENPLAINTXT",
+          "page": 25
+        },
+        {
+          "target": "MSDN-GetNmdPipeHndState",
+          "page": 25
+        },
+        {
+          "target": "MSDN-GetNmdPipeInfo",
+          "page": 25
+        },
+        {
+          "target": "MSDN-IMPERS",
+          "page": 25
+        },
+        {
+          "target": "MSDN-IoCreateFile",
+          "page": 25
+        },
+        {
+          "target": "MSDN-MakeEndpoint",
+          "page": 26
+        },
+        {
+          "target": "MSDN-PkNmdPipe",
+          "page": 26
+        },
+        {
+          "target": "MSDN-RecErrorNotif",
+          "page": 26
+        },
+        {
+          "target": "MSDN-SDCTRLREQSTS",
+          "page": 26
+        },
+        {
+          "target": "MSDN-SetNmdPipeHndState",
+          "page": 26
+        },
+        {
+          "target": "MSDN-TDIDeviceObj",
+          "page": 26
+        },
+        {
+          "target": "MSDN-TrnsactNmdPipe",
+          "page": 26
+        },
+        {
+          "target": "MSDN-TrnspDrvIntfc",
+          "page": 26
+        },
+        {
+          "target": "MSDN-WaitNmdPipe",
+          "page": 26
+        },
+        {
+          "target": "MSDOCS-OBJ_ATTRIBS",
+          "page": 26
+        },
+        {
+          "target": "MSFT-IPXWAN",
+          "page": 26
+        },
+        {
+          "target": "MSFT-NBNWLINK",
+          "page": 26
+        },
+        {
+          "target": "MSFT-SecurityWatch",
+          "page": 26
+        },
+        {
+          "target": "MSFT-XEXTNP",
+          "page": 26
+        },
+        {
+          "target": "MSKB-235717",
+          "page": 26
+        },
+        {
+          "target": "MSKB-239869",
+          "page": 26
+        },
+        {
+          "target": "MSKB-288358",
+          "page": 26
+        },
+        {
+          "target": "MSKB-320829",
+          "page": 26
+        },
+        {
+          "target": "MSLOT",
+          "page": 26
+        },
+        {
+          "target": "NWLINK",
+          "page": 27
+        },
+        {
+          "target": "RAP",
+          "page": 27
+        },
+        {
+          "target": "SMB-CORE",
+          "page": 27
+        },
+        {
+          "target": "SMB-LM12",
+          "page": 27
+        },
+        {
+          "target": "SMB-LM1X",
+          "page": 27
+        },
+        {
+          "target": "SMB-LM20",
+          "page": 27
+        },
+        {
+          "target": "SMB-LM21",
+          "page": 27
+        },
+        {
+          "target": "SNIA",
+          "page": 27
+        }
+      ],
+      "client_applicability": "OPEN",
+      "source_data_provenance": "ORIGINAL_USER_ZIP_PDF_FULL_BINARY_SHA256_2026_10_24"
+    },
+    {
+      "id": "MS-DFSC",
+      "revision": "31.0",
+      "published": "2024-09-16",
+      "edition_footer": "v20240916",
+      "pdf_pages": 77,
+      "pdf_bytes": 2515613,
+      "sha256": "4fee3b402418014582def6e805f22764965e283bd7c51c318af1e73aac0d8560",
+      "source_archive": "Windows_Protocols.tar.xz",
+      "source_member": "Windows_Protocols/[MS-DFSC].pdf",
+      "bundle": "CommSCraft_Gesamtanalyse_Teil_02.zip",
+      "bundle_member": "PDFs/Windows/[MS-DFSC].pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-dfsc/3109f4be-2dbb-42c9-9b8e-0b34f7a2135e",
+      "original_pdf_text_and_rendered_reference_pages_verified": true,
+      "original_pdf_binary_in_repo": false,
+      "normative_count": 10,
+      "normative_section": "§1.2.1",
+      "normative_refs": [
+        {
+          "target": "MS-CIFS",
+          "page": 10
+        },
+        {
+          "target": "MS-DFSNM",
+          "page": 10
+        },
+        {
+          "target": "MS-DRSR",
+          "page": 10
+        },
+        {
+          "target": "MS-ERREF",
+          "page": 11
+        },
+        {
+          "target": "MS-NRPC",
+          "page": 11
+        },
+        {
+          "target": "MS-SMB2",
+          "page": 11
+        },
+        {
+          "target": "MS-SMB",
+          "page": 11
+        },
+        {
+          "target": "MS-SRVS",
+          "page": 11
+        },
+        {
+          "target": "RFC2119",
+          "page": 11
+        },
+        {
+          "target": "UNICODE",
+          "page": 11
+        }
+      ],
+      "informative_count": 4,
+      "informative_section": "§1.2.2",
+      "informative_refs": [
+        {
+          "target": "KB831201",
+          "page": 11
+        },
+        {
+          "target": "MSDFS",
+          "page": 11
+        },
+        {
+          "target": "NOVELL",
+          "page": 11
+        },
+        {
+          "target": "RFC3530",
+          "page": 11
+        }
+      ],
+      "client_applicability": "OPEN",
+      "source_data_provenance": "ORIGINAL_USER_ZIP_PDF_FULL_BINARY_SHA256_2026_10_24"
+    },
+    {
+      "id": "MS-FSA",
+      "revision": "42.0",
+      "published": "2025-09-09",
+      "edition_footer": "v20250909",
+      "pdf_pages": 287,
+      "pdf_bytes": 4596036,
+      "sha256": "a4d9d2b2b0835bc2d2ad63893c1da9733507e4c17718b4dfb76553ff9b48cfc9",
+      "source_archive": "Windows_Protocols.tar.xz",
+      "source_member": "Windows_Protocols/[MS-FSA].pdf",
+      "bundle": "CommSCraft_Gesamtanalyse_Teil_03.zip",
+      "bundle_member": "PDFs/Windows/[MS-FSA].pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/860b1516-c452-47b4-bdbc-625d344e2041",
+      "original_pdf_text_and_rendered_reference_pages_verified": true,
+      "original_pdf_binary_in_repo": false,
+      "normative_count": 8,
+      "normative_section": "§1.2.1",
+      "normative_refs": [
+        {
+          "target": "MS-DTYP",
+          "page": 10
+        },
+        {
+          "target": "MS-EFSR",
+          "page": 10
+        },
+        {
+          "target": "MS-ERREF",
+          "page": 10
+        },
+        {
+          "target": "MS-FSCC",
+          "page": 10
+        },
+        {
+          "target": "MS-LSAD",
+          "page": 10
+        },
+        {
+          "target": "MS-SMB2",
+          "page": 10
+        },
+        {
+          "target": "RFC2119",
+          "page": 11
+        },
+        {
+          "target": "RFC4122",
+          "page": 11
+        }
+      ],
+      "informative_count": 12,
+      "informative_section": "§1.2.2",
+      "informative_refs": [
+        {
+          "target": "FSBO",
+          "page": 11
+        },
+        {
+          "target": "INCITS-T10/11-059",
+          "page": 11
+        },
+        {
+          "target": "MS-AUTHSOD",
+          "page": 11
+        },
+        {
+          "target": "MS-CIFS",
+          "page": 11
+        },
+        {
+          "target": "MS-SMB",
+          "page": 11
+        },
+        {
+          "target": "MSKB-5014019",
+          "page": 11
+        },
+        {
+          "target": "MSKB-5014021",
+          "page": 11
+        },
+        {
+          "target": "MSKB-5014022",
+          "page": 11
+        },
+        {
+          "target": "MSKB-5014023",
+          "page": 11
+        },
+        {
+          "target": "MSKB-5014702",
+          "page": 11
+        },
+        {
+          "target": "MSKB-5014710",
+          "page": 11
+        },
+        {
+          "target": "PIPE",
+          "page": 11
+        }
+      ],
+      "client_applicability": "OPEN",
+      "source_data_provenance": "ORIGINAL_USER_ZIP_PDF_FULL_BINARY_SHA256_2026_10_24"
+    },
+    {
+      "id": "MS-SRVS",
+      "revision": "39.0",
+      "published": "2024-09-16",
+      "edition_footer": "v20240916",
+      "pdf_pages": 233,
+      "pdf_bytes": 5570483,
+      "sha256": "e3415c7e86819137124529447fecf5d28c8cf5220fbd0a7e25ccdee2aab7aef7",
+      "source_archive": "Windows_Protocols.tar.xz",
+      "source_member": "Windows_Protocols/[MS-SRVS].pdf",
+      "bundle": "CommSCraft_Gesamtanalyse_Teil_03.zip",
+      "bundle_member": "PDFs/Windows/[MS-SRVS].pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-srvs/accf23b0-0f57-441c-9185-43041f1b0ee9",
+      "original_pdf_text_and_rendered_reference_pages_verified": true,
+      "original_pdf_binary_in_repo": false,
+      "normative_count": 17,
+      "normative_section": "§1.2.1",
+      "normative_refs": [
+        {
+          "target": "C706",
+          "page": 12
+        },
+        {
+          "target": "MS-BRWS",
+          "page": 12
+        },
+        {
+          "target": "MS-CIFS",
+          "page": 12
+        },
+        {
+          "target": "MS-DFSC",
+          "page": 12
+        },
+        {
+          "target": "MS-DFSNM",
+          "page": 12
+        },
+        {
+          "target": "MS-DTYP",
+          "page": 12
+        },
+        {
+          "target": "MS-EERR",
+          "page": 12
+        },
+        {
+          "target": "MS-ERREF",
+          "page": 12
+        },
+        {
+          "target": "MS-NRPC",
+          "page": 12
+        },
+        {
+          "target": "MS-RPCE",
+          "page": 12
+        },
+        {
+          "target": "MS-SMB2",
+          "page": 12
+        },
+        {
+          "target": "MS-SMB",
+          "page": 12
+        },
+        {
+          "target": "RFC1001",
+          "page": 12
+        },
+        {
+          "target": "RFC1002",
+          "page": 13
+        },
+        {
+          "target": "RFC1034",
+          "page": 13
+        },
+        {
+          "target": "RFC1035",
+          "page": 13
+        },
+        {
+          "target": "RFC2119",
+          "page": 13
+        }
+      ],
+      "informative_count": 5,
+      "informative_section": "§1.2.2",
+      "informative_refs": [
+        {
+          "target": "MSDFS",
+          "page": 13
+        },
+        {
+          "target": "MSDN-CoCreateGuid",
+          "page": 13
+        },
+        {
+          "target": "NWLINK",
+          "page": 13
+        },
+        {
+          "target": "OFFLINE",
+          "page": 13
+        },
+        {
+          "target": "PIPE",
+          "page": 13
+        }
+      ],
+      "client_applicability": "OPEN",
+      "source_data_provenance": "ORIGINAL_USER_ZIP_PDF_FULL_BINARY_SHA256_2026_10_24"
+    },
+    {
+      "id": "MS-SWN",
+      "revision": "15.0",
+      "published": "2026-07-14",
+      "edition_footer": "v20260714",
+      "pdf_pages": 47,
+      "pdf_bytes": 1458609,
+      "sha256": "5b9ead37bca8323260095fd7ac618c7a64b865ffc839bea18d1983db534d89fb",
+      "source_archive": "Windows_Protocols.tar.xz",
+      "source_member": "Windows_Protocols/[MS-SWN].pdf",
+      "bundle": "CommSCraft_Gesamtanalyse_Teil_04.zip",
+      "bundle_member": "PDFs/Windows/[MS-SWN].pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-swn/1c404bcb-4a19-4152-a465-ec9a27cb717d",
+      "original_pdf_text_and_rendered_reference_pages_verified": true,
+      "original_pdf_binary_in_repo": false,
+      "normative_count": 6,
+      "normative_section": "§1.2.1",
+      "normative_refs": [
+        {
+          "target": "C706",
+          "page": 6
+        },
+        {
+          "target": "MS-DTYP",
+          "page": 6
+        },
+        {
+          "target": "MS-ERREF",
+          "page": 6
+        },
+        {
+          "target": "MS-RPCE",
+          "page": 6
+        },
+        {
+          "target": "MS-SRVS",
+          "page": 6
+        },
+        {
+          "target": "RFC2119",
+          "page": 6
+        }
+      ],
+      "informative_count": 2,
+      "informative_section": "§1.2.2",
+      "informative_refs": [
+        {
+          "target": "MS-SMB2",
+          "page": 6
+        },
+        {
+          "target": "SPNNAMES",
+          "page": 6
+        }
+      ],
+      "client_applicability": "OPEN",
+      "source_data_provenance": "ORIGINAL_USER_ZIP_PDF_FULL_BINARY_SHA256_2026_10_24"
+    },
+    {
+      "id": "MS-SRPL",
+      "revision": "14.0",
+      "published": "2025-11-21",
+      "edition_footer": "v20251121",
+      "pdf_pages": 48,
+      "pdf_bytes": 1589809,
+      "sha256": "a2dca1a40d0e5700822d3af25397096bd637b6214e01707a243a3d742ff7a663",
+      "source_archive": "Windows_Protocols.tar.xz",
+      "source_member": "Windows_Protocols/[MS-SRPL].pdf",
+      "bundle": "CommSCraft_Gesamtanalyse_Teil_03.zip",
+      "bundle_member": "PDFs/Windows/[MS-SRPL].pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-srpl/ec69eea5-0d5e-428a-b5bc-66732aaeb866",
+      "original_pdf_text_and_rendered_reference_pages_verified": true,
+      "original_pdf_binary_in_repo": false,
+      "normative_count": 23,
+      "normative_section": "§1.2.1",
+      "normative_refs": [
+        {
+          "target": "FIPS197",
+          "page": 11
+        },
+        {
+          "target": "MS-ADSC",
+          "page": 11
+        },
+        {
+          "target": "MS-ADTS",
+          "page": 11
+        },
+        {
+          "target": "MS-DRSR",
+          "page": 11
+        },
+        {
+          "target": "MS-DTYP",
+          "page": 12
+        },
+        {
+          "target": "MS-RPCE",
+          "page": 12
+        },
+        {
+          "target": "MS-WCCE",
+          "page": 12
+        },
+        {
+          "target": "RC4",
+          "page": 12
+        },
+        {
+          "target": "RFC1321",
+          "page": 12
+        },
+        {
+          "target": "RFC2045",
+          "page": 12
+        },
+        {
+          "target": "RFC2046",
+          "page": 12
+        },
+        {
+          "target": "RFC2047",
+          "page": 12
+        },
+        {
+          "target": "RFC2119",
+          "page": 12
+        },
+        {
+          "target": "RFC2315",
+          "page": 12
+        },
+        {
+          "target": "RFC2821",
+          "page": 12
+        },
+        {
+          "target": "RFC2822",
+          "page": 12
+        },
+        {
+          "target": "RFC3280",
+          "page": 12
+        },
+        {
+          "target": "RFC8017",
+          "page": 12
+        },
+        {
+          "target": "RFC821",
+          "page": 12
+        },
+        {
+          "target": "SCHNEIER",
+          "page": 12
+        },
+        {
+          "target": "SHA256",
+          "page": 12
+        },
+        {
+          "target": "UNICODE4.0",
+          "page": 12
+        },
+        {
+          "target": "X509",
+          "page": 12
+        }
+      ],
+      "informative_count": 4,
+      "informative_section": "§1.2.2",
+      "informative_refs": [
+        {
+          "target": "DUBUISSON",
+          "page": 13
+        },
+        {
+          "target": "MSADRTTR",
+          "page": 13
+        },
+        {
+          "target": "MSFT-TEMPLATES",
+          "page": 13
+        },
+        {
+          "target": "MSSS",
+          "page": 13
+        }
+      ],
+      "client_applicability": "OPEN",
+      "source_data_provenance": "ORIGINAL_USER_ZIP_PDF_FULL_BINARY_SHA256_2026_10_24"
+    },
+    {
+      "id": "MS-BRWS",
+      "revision": "27.0",
+      "published": "2024-09-16",
+      "edition_footer": "v20240916",
+      "pdf_pages": 67,
+      "pdf_bytes": 2257837,
+      "sha256": "b71a1417dffa7b58cb8e9c81e254b51c8cf8ab0eebe0db905cf7b77446ee58ef",
+      "source_archive": "Windows_Protocols.tar.xz",
+      "source_member": "Windows_Protocols/[MS-BRWS].pdf",
+      "bundle": "CommSCraft_Gesamtanalyse_Teil_02.zip",
+      "bundle_member": "PDFs/Windows/[MS-BRWS].pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-brws/d2d83b29-4b62-479e-b427-9b750303387b",
+      "original_pdf_text_and_rendered_reference_pages_verified": true,
+      "original_pdf_binary_in_repo": false,
+      "normative_count": 13,
+      "normative_section": "§1.2.1",
+      "normative_refs": [
+        {
+          "target": "MS-BRWSA",
+          "page": 9
+        },
+        {
+          "target": "MS-ERREF",
+          "page": 9
+        },
+        {
+          "target": "MS-LSAD",
+          "page": 9
+        },
+        {
+          "target": "MS-MAIL",
+          "page": 9
+        },
+        {
+          "target": "MS-NBTE",
+          "page": 10
+        },
+        {
+          "target": "MS-RAP",
+          "page": 10
+        },
+        {
+          "target": "MS-SAMR",
+          "page": 10
+        },
+        {
+          "target": "MS-SMB",
+          "page": 10
+        },
+        {
+          "target": "MS-SRVS",
+          "page": 10
+        },
+        {
+          "target": "MS-WKST",
+          "page": 10
+        },
+        {
+          "target": "RFC1001",
+          "page": 10
+        },
+        {
+          "target": "RFC1002",
+          "page": 10
+        },
+        {
+          "target": "RFC2119",
+          "page": 10
+        }
+      ],
+      "informative_count": 2,
+      "informative_section": "§1.2.2",
+      "informative_refs": [
+        {
+          "target": "MS-ADOD",
+          "page": 10
+        },
+        {
+          "target": "MS-ADTS",
+          "page": 10
+        }
+      ],
+      "client_applicability": "OPEN",
+      "source_data_provenance": "ORIGINAL_USER_ZIP_PDF_FULL_BINARY_SHA256_2026_10_24"
+    },
+    {
+      "id": "MS-BRWSA",
+      "revision": "15.0",
+      "published": "2024-04-23",
+      "edition_footer": "v20240423",
+      "pdf_pages": 25,
+      "pdf_bytes": 1001331,
+      "sha256": "42a73187ce810b41ae3b8003b0ceaacb8a427f4e2485f7f781f48530eaf39600",
+      "source_archive": "Windows_Protocols.tar.xz",
+      "source_member": "Windows_Protocols/[MS-BRWSA].pdf",
+      "bundle": "CommSCraft_Gesamtanalyse_Teil_02.zip",
+      "bundle_member": "PDFs/Windows/[MS-BRWSA].pdf",
+      "official_url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-brwsa",
+      "original_pdf_text_and_rendered_reference_pages_verified": true,
+      "original_pdf_binary_in_repo": false,
+      "normative_count": 7,
+      "normative_section": "§1.2.1",
+      "normative_refs": [
+        {
+          "target": "C706",
+          "page": 6
+        },
+        {
+          "target": "MS-DTYP",
+          "page": 6
+        },
+        {
+          "target": "MS-RPCE",
+          "page": 6
+        },
+        {
+          "target": "MS-SMB",
+          "page": 6
+        },
+        {
+          "target": "RFC1001",
+          "page": 6
+        },
+        {
+          "target": "RFC1002",
+          "page": 7
+        },
+        {
+          "target": "RFC2119",
+          "page": 7
+        }
+      ],
+      "informative_count": 3,
+      "informative_section": "§1.2.2",
+      "informative_refs": [
+        {
+          "target": "MS-BRWS",
+          "page": 7
+        },
+        {
+          "target": "MS-WKST",
+          "page": 7
+        },
+        {
+          "target": "PIPE",
+          "page": 7
+        }
+      ],
+      "client_applicability": "OPEN",
+      "source_data_provenance": "ORIGINAL_USER_ZIP_PDF_FULL_BINARY_SHA256_2026_10_24"
+    }
+  ],
+  "previous_fourth_sources": 12,
+  "new_fourth_sources": 19,
+  "previous_fourth_normative_edges": 199,
+  "new_fourth_normative_edges": 300,
+  "legacy_first_second_third_ring_edges": [
+    464,
+    246,
+    827
+  ],
+  "schema_general_reference_mentions_unclassified": 67,
+  "source_citation_level_not_equal_client_requirement": true,
+  "MS_SWN_to_MS_SMB2": "INFORMATIVE_ONLY",
+  "MS_SRPL_scope": "DOMAIN_CONTROLLER_ACTIVE_DIRECTORY_SMTP_REPLICATION_PRODUCT_APPLICABILITY_OPEN",
+  "source_originals_remain_with_user": true,
+  "formal_phase1_pass_count": 0,
+  "formal_phase1_complete": false,
+  "fourth_ring_source_ids": [
+    "MS-CIFS",
+    "MS-DFSC",
+    "MS-FSA",
+    "MS-SRVS",
+    "MS-SRPL",
+    "MS-BRWS",
+    "MS-BRWSA"
+  ],
+  "fifth_ring_source_ids": [
+    "MS-SWN"
+  ],
+  "fourth_normative_edges_added": 101,
+  "fourth_informative_mentions_separate": 84,
+  "fifth_normative_edges_added": 6,
+  "fifth_informative_mentions_separate": 2,
+  "remaining_fourth_bibliographies": 67,
+  "normative_edges_added_all_sources": 107,
+  "informative_mentions_all_sources": 86,
+  "reviewed_fifth_bibliographies": 1,
+  "fifth_ring_source_entry_point": {
+    "referrer": "MS-SMB2",
+    "source_edition": "v20260928",
+    "normative_page": 20,
+    "referenced_target": "MS-SWN",
+    "kind": "NORMATIVE"
+  }
+}

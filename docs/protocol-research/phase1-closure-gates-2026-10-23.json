@@ -71,7 +71,7 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "86/86 fourth-ring MS/MC original document identities available; 12/86 exact §1.2.1 bibliographies reviewed on source PDF bytes (199 directed normative edges), 74 remain. Seven new Windows PDF sources have full SHA256; all four previous Exchange PDFs now have full SHA256. Client scope and recursive normative fixed point OPEN."
+      "blocker": "Fourth ring 86/86 MS/MC source identities acquired, 19/86 original-release §1.2.1 bibliographies actually verified (300 directed normative edges), 67 source bibliographies still unreviewed. In addition fifth-ring MS-SWN v20260714 separately verified with 6 outgoing edges via MS-SMB2->MS-SWN; cited historical editions/client applicability and recursive fixed point still OPEN."
     },
     {
       "id": "P1-04",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "Fourth-ring reference source analysis 12/86, with 199 directed edges, but full exact raw-label and historical RFC/Draft/external edition normalization and client applicability remain OPEN; neither independent review nor fixed point. 0/12 PASS."
+      "blocker": "Fourth-ring 19/86 bibliography sources audited, 300 directed edges; first fifth-ring MS-SWN bibliography contributes separately 6 edges. Reference label normalization, RFC/draft/external historical editions, build-specific client applicability and independent second-person fixed-point review remain OPEN."
     },
     {
       "id": "P1-09",
@@ -106,7 +106,7 @@
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "Original 146 second-frontier nodes: 52 MS/MC source PDFs acquired and investigated (48 normative lists, 4 general schema bibliographies), while 51 RFC and 43 external/historical remain unresolved; third tier discovers 236 new raw IDs, including 86 MS/MC. Graph not at relevant fixpoint."
+      "blocker": "First three rings 464+246+827 kept separate; 67 AD schema general references remain unclassified. Fourth-ring currently 300 edges from 19 sources, and first fifth-ring source MS-SWN contributes separately 6. Neither complete MS/MC frontier nor RFC/external transitive recursion has been closed."
     },
     {
       "id": "P1-11",
@@ -1217,5 +1217,21 @@
     "informative_mentions_separately_extracted": 90,
     "user_keeps_pdfs": true,
     "formal_gate_passes": 0
+  },
+  "p1_03_smb_dfs_browser_iteration_2026_10_24": {
+    "exact_fourth_new_pdf_sources": 7,
+    "fifth_new_pdf_sources": 1,
+    "total_originals_verified": 8,
+    "new_fourth_normative_edges": 101,
+    "new_fifth_normative_edges": 6,
+    "new_informative_fourth_refs": 84,
+    "new_informative_fifth_refs": 2,
+    "current_fourth_reviewed": 19,
+    "current_fourth_total": 86,
+    "current_fourth_unreviewed": 67,
+    "current_fourth_direct_normative_edges": 300,
+    "fifth_known_direct_normative_edges": 6,
+    "all_binaries_held_by_user": true,
+    "phase1_gate_count_passed": 0
   }
 }

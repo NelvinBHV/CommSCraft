@@ -222,18 +222,13 @@
   "p1_03_unverified_remaining_source_ids": [
     "MC-NBFX",
     "MS-ADLS",
-    "MS-BRWS",
-    "MS-BRWSA",
-    "MS-CIFS",
     "MS-CMRP",
     "MS-CTA",
-    "MS-DFSC",
     "MS-DPSP",
     "MS-EERR",
     "MS-EFSR",
     "MS-EMFPLUS",
     "MS-FRS1",
-    "MS-FSA",
     "MS-GKDI",
     "MS-GPEF",
     "MS-LCID",
@@ -291,11 +286,37 @@
     "MS-RPRN",
     "MS-SAMS",
     "MS-SCMR",
-    "MS-SRPL",
-    "MS-SRVS",
     "MS-W32T"
   ],
-  "current_p1_03_bibliography_count": 12,
-  "current_p1_03_normative_edges": 199,
-  "p1_03_current_caveat": "All 86/86 original file identities acquired; 12/86 exact normative bibliography sections now verified. Only extracted source citations, not deployment or client requirements."
+  "current_p1_03_bibliography_count": 19,
+  "current_p1_03_normative_edges": 300,
+  "p1_03_current_caveat": "86/86 fourth-ring source identities acquired; 19/86 exact fourth-ring §1.2.1 lists reviewed (300 edges), 67 open. MS-SWN is first separately verified fifth-ring source (6 edges, MS-SMB2 upstream); do not conflate fourth/fifth ring counts or infer product mandatory features.",
+  "p1_03_seven_fourth_and_one_fifth_source_batch_2026_10_24": {
+    "report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
+    "json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
+    "fourth_ring_source_ids": [
+      "MS-CIFS",
+      "MS-DFSC",
+      "MS-FSA",
+      "MS-SRVS",
+      "MS-SRPL",
+      "MS-BRWS",
+      "MS-BRWSA"
+    ],
+    "source_count": 7,
+    "fourth_ring_normative_edges_added": 101,
+    "informative_references_excluded": 84,
+    "fifth_ring_source_ids": [
+      "MS-SWN"
+    ],
+    "fifth_ring_new_normative_edges_in_separate_ledger": 6,
+    "fifth_ring_separate_informative_references": 2,
+    "source_original_full_binary_sha256_verified": 8,
+    "fourth_total_bibliographies_checked": 19,
+    "fourth_source_lists_remaining": 67,
+    "fourth_direct_normative_edges_total": 300,
+    "client_scope": "OPEN",
+    "new_normative_frontier_reachability": "MS-SMB2-v20260928 -> MS-SWN-v20260714",
+    "all_user_original_pdfs_retained": true
+  }
 }

@@ -72,14 +72,21 @@
     "fourth_ms_mc_frontier_source_pdf_filenames_missing": 0,
     "previous_four_archive_sets_pdf_instances_hashed": 822,
     "additional_standalone_pdf_originals_sha256_checked": 2,
-    "fourth_ring_current_original_pdf_normative_bibliographies_checked": 12,
-    "fourth_ring_explicit_normative_edges_recorded": 199,
+    "fourth_ring_current_original_pdf_normative_bibliographies_checked": 19,
+    "fourth_ring_explicit_normative_edges_recorded": 300,
     "fourth_ring_new_raw_target_labels": 1,
-    "fourth_ring_current_original_pdf_normative_bibliographies_remaining": 74,
+    "fourth_ring_current_original_pdf_normative_bibliographies_remaining": 67,
     "fourth_ring_new_windows_original_pdf_sources_sha256_verified": 7,
     "fourth_ring_latest_additional_directed_normative_edges": 135,
     "fourth_ring_latest_informative_citations_separately_extracted": 90,
-    "fourth_ring_previous_exchange_pdf_binary_sha256_backfilled": 4
+    "fourth_ring_previous_exchange_pdf_binary_sha256_backfilled": 4,
+    "fourth_ring_latest_fourth_tier_normative_edges_added": 101,
+    "fourth_ring_latest_fourth_tier_informative_references_excluded": 84,
+    "fifth_ring_ms_swn_original_sections_reviewed": 1,
+    "fifth_ring_ms_swn_directed_normative_edges": 6,
+    "fifth_ring_ms_swn_informative_citations_separately_extracted": 2,
+    "newly_reviewed_original_source_pdf_bibliographies_this_iteration": 8,
+    "original_full_pdf_instances_sha256_verified_in_all_user_uploads": 824
   },
   "source_provenance": {
     "ms_avedgea": {
@@ -129,7 +136,7 @@
     {
       "id": "P1-03",
       "priority": 1,
-      "task": "Fourth ring: 86/86 Microsoft/MC document identities acquired; exact current original §1.2.1 for 12/86 (199 directed edges) and 74 source bibliographies OPEN. Seven new Windows original PDF source bibliographies and four older Exchange full-file hashes verified. Continue batches with edition-stable target classification, reference recursion, client/server-policy applicability to an independently justified fixed point."
+      "task": "Current exact original bibliography coverage: fourth-ring 19/86 MS/MC sources, 300 directed normative edges, 67 open. MS-SWN is a FIFTH-ring source reached normatively by MS-SMB2 v20260928, separately audited with 6 outgoing normative edges; do not add MS-SWN to fourth-ring source count. Continue current-release PDF bibliography batches and actual product-build/client/server-policy applicability at a justified reference closure."
     },
     {
       "id": "P1-04",
@@ -204,33 +211,49 @@
     "transitive-frontier.json",
     "rfc-version-relations-reviewed.json"
   ],
-  "instructions_for_next_session": "Read CURRENT_STATUS.md and fourth-ring-seven-windows-originals-audit-2026-10-24.md first; preserve earlier snapshots. Current: 12/86 exact fourth-ring source bibliographies examined, 199 directed edges, 74 source bibliographies remain; prior first/second/third rings 464/246/827 unchanged; MS-ADA1/2/3/ADSC 67 general references UNCLASSIFIED. PDF locations in PDF_ARCHIVE_LOOKUP.md, user owns original bytes, never publish originals to Git. Cross-check raw aliases/cited historical editions, client applicability from actual Skype for Business 2019 Windows Full Client build/server policy rather than extrapolation. Keep TLS safeguards. Phase1 gates 0/12; no code, live tests, paid runners, main merge, release.",
+  "instructions_for_next_session": "Start at CURRENT_STATUS.md and fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md. Fourth ring 19/86 sources/300 edges, 67 remain; fifth ring new MS-SWN separately 1 source/6 edges reached from normative MS-SMB2->MS-SWN, MS-SWN->MS-SMB2 only INFORMATIVE. Preserve old 464/246/827, 67 schema citations UNCLASSIFIED, 0/12 Phase1 gates. User holds all PDF binaries; files located via PDF_ARCHIVE_LOOKUP.md in four split archives (large master ZIP is truncated). Prioritize remaining high cross-link IDs and actual SfB2019 build/policy relevance, avoid pretending server/directory/browser specs are mandatory client features. Only documentation on draft branch, no code/network/live tests/CI-paid/merge/release.",
   "latest_continuation": {
     "date": "2026-10-24",
-    "iteration": "P1-03-seven-Windows-originals-plus-four-Exchange-checksums",
+    "iteration": "P1-03-seven-fourth-ring-SMB-DFS-browser-and-one-fifth-ring-SWN",
     "branch": "draft/protocol-spec-analysis-2026-10-23",
-    "parent_head_before_iteration": "94fbc104d2ae2ba9669e6e75b42f0ae7e3156f2a",
-    "report": "fourth-ring-seven-windows-originals-audit-2026-10-24.md",
-    "details_json": "fourth-ring-seven-windows-originals-audit-2026-10-24.json",
-    "fourth_ms_mc_source_identifiers_acquired": 86,
-    "exact_current_fourth_ring_source_bibliographies_reviewed": 12,
-    "remaining": 74,
-    "fourth_directed_normative_edges": 199,
-    "new_edges": 135,
-    "new_informative_citations_excluded": 90,
-    "previous_exchange_full_original_hashes_filled": 4,
-    "legacy_first_ring_edges": 464,
-    "legacy_second_ring_edges": 246,
-    "legacy_third_ring_explicit_normative_edges": 827,
-    "third_ring_schema_general_unclassified_mentions": 67,
-    "client_product_applicability_closed": false,
-    "full_recursive_fixed_point": false,
-    "original_pdf_files_held_by_user_not_committed": true,
-    "phase1_formal_gates_passed": 0,
-    "protocol_implementation_allowed": false,
-    "live_tests_allowed": false,
-    "merge_main_allowed": false,
-    "release_allowed": false
+    "parent_head_before_iteration": "c4590113324313e525e0286d75e778d48aa847d3",
+    "source_report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
+    "source_json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
+    "fourth_source_ids_reviewed_this_iteration": [
+      "MS-CIFS",
+      "MS-DFSC",
+      "MS-FSA",
+      "MS-SRVS",
+      "MS-SRPL",
+      "MS-BRWS",
+      "MS-BRWSA"
+    ],
+    "fifth_source_ids_reviewed_this_iteration": [
+      "MS-SWN"
+    ],
+    "fourth_source_ids_acquired": 86,
+    "fourth_current_pdf_bibliographies_reviewed": 19,
+    "fourth_open_bibliographies": 67,
+    "fourth_normative_edges": 300,
+    "fourth_normative_edges_new_this_iteration": 101,
+    "fourth_informative_refs_separate_new_this_iteration": 84,
+    "fifth_normative_edges_new_this_iteration": 6,
+    "fifth_informative_refs_separate_new_this_iteration": 2,
+    "previous_first_second_third_normative_edges": [
+      464,
+      246,
+      827
+    ],
+    "third_ad_schema_general_reference_mentions_unclassified": 67,
+    "all_source_pdfs_binary_user_retained_not_git": true,
+    "full_original_pdf_sha256_verified_this_iteration": 8,
+    "full_normative_recursive_fixed_point": false,
+    "product_build_policy_scope_open": true,
+    "phase1_gate_pass_count": 0,
+    "implementation_authorized": false,
+    "live_tests_authorized": false,
+    "merge_main_authorized": false,
+    "release_authorized": false
   },
   "follow_on_rfc_first_hop_2026_10_23": {
     "status": "PARTIAL_RFC_ORIGINAL_REFERENCES_ONLY",
@@ -706,5 +729,50 @@
     "remaining": 74,
     "source_pdfs_committed": false,
     "all_gates_still_incomplete": true
+  },
+  "previous_latest_continuation_before_p1_03_smb_dfs": {
+    "date": "2026-10-24",
+    "iteration": "P1-03-seven-Windows-originals-plus-four-Exchange-checksums",
+    "branch": "draft/protocol-spec-analysis-2026-10-23",
+    "parent_head_before_iteration": "94fbc104d2ae2ba9669e6e75b42f0ae7e3156f2a",
+    "report": "fourth-ring-seven-windows-originals-audit-2026-10-24.md",
+    "details_json": "fourth-ring-seven-windows-originals-audit-2026-10-24.json",
+    "fourth_ms_mc_source_identifiers_acquired": 86,
+    "exact_current_fourth_ring_source_bibliographies_reviewed": 12,
+    "remaining": 74,
+    "fourth_directed_normative_edges": 199,
+    "new_edges": 135,
+    "new_informative_citations_excluded": 90,
+    "previous_exchange_full_original_hashes_filled": 4,
+    "legacy_first_ring_edges": 464,
+    "legacy_second_ring_edges": 246,
+    "legacy_third_ring_explicit_normative_edges": 827,
+    "third_ring_schema_general_unclassified_mentions": 67,
+    "client_product_applicability_closed": false,
+    "full_recursive_fixed_point": false,
+    "original_pdf_files_held_by_user_not_committed": true,
+    "phase1_formal_gates_passed": 0,
+    "protocol_implementation_allowed": false,
+    "live_tests_allowed": false,
+    "merge_main_allowed": false,
+    "release_allowed": false
+  },
+  "p1_03_smb_dfs_browser_2026_10_24": {
+    "report": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.md",
+    "json": "fourth-ring-smb-dfs-browser-originals-audit-2026-10-24.json",
+    "fourth_ledger": "fourth-ring-normative-reference-ledger.json",
+    "fifth_ledger": "fifth-ring-ms-swn-normative-ledger.json",
+    "original_pdf_archive_lookup": "PDF_ARCHIVE_LOOKUP.md",
+    "source_origins": [
+      "CommSCraft_Gesamtanalyse_Teil_02.zip",
+      "CommSCraft_Gesamtanalyse_Teil_03.zip",
+      "CommSCraft_Gesamtanalyse_Teil_04.zip"
+    ],
+    "source_pdf_binaries_committed": false,
+    "first_tier": 464,
+    "second_tier": 246,
+    "third_tier": 827,
+    "fourth_tier": 300,
+    "fifth_tier_known_ms_swn": 6
   }
 }
