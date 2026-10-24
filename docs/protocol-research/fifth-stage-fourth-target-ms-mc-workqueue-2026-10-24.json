@@ -8,9 +8,9 @@
   "second_ring_ledger_sha": "af4e27be3bbab38bd70ba50e858edeaaac4d2e66",
   "fifth_ring_current_ledger_sha": "096d03dfe1c0828b9ad721417441ef6460fa0105",
   "candidate_raw_labels": 88,
-  "already_audited_fifth_sources": 17,
+  "already_audited_fifth_sources": 25,
   "schema_only_reviewed": 1,
-  "remaining_raw_ms_mc_source_candidates": 70,
+  "remaining_raw_ms_mc_source_candidates": 62,
   "reviewed_fifth_source_ids": [
     "MS-SWN",
     "MS-OXWSADISC",
@@ -28,7 +28,15 @@
     "MS-OXOCAL",
     "MS-OXOMSG",
     "MS-OXORMDR",
-    "MS-WMF"
+    "MS-WMF",
+    "MS-XCA",
+    "MC-CSDL",
+    "MC-EDMX",
+    "MS-BKUP",
+    "MS-DFSRH",
+    "MS-DLTW",
+    "MS-EMF",
+    "MS-EVEN"
   ],
   "raw_target_candidates": [
     {
@@ -419,7 +427,7 @@
           "source_sha256": "00fd7df3ae4d063d34387dcf47b514f9c552815eb8e83dfc4acfdc7ca00eab7f"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MC-CSDL",
@@ -432,7 +440,7 @@
           "source_sha256": "e8c1e07d0a86b6d323bec48d69c8c950aa25dc32a0af7e660b54341f35615b48"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MC-EDMX",
@@ -445,7 +453,7 @@
           "source_sha256": "e8c1e07d0a86b6d323bec48d69c8c950aa25dc32a0af7e660b54341f35615b48"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-BKUP",
@@ -458,7 +466,7 @@
           "source_sha256": "00fd7df3ae4d063d34387dcf47b514f9c552815eb8e83dfc4acfdc7ca00eab7f"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-DFSRH",
@@ -471,7 +479,7 @@
           "source_sha256": "00fd7df3ae4d063d34387dcf47b514f9c552815eb8e83dfc4acfdc7ca00eab7f"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-DLTW",
@@ -484,7 +492,7 @@
           "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-DMRP",
@@ -510,7 +518,7 @@
           "source_sha256": "cb9324b2746706a9f428ef141b9eae2ae92876507789b8b4021ca1ce6fcbf435"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-EVEN",
@@ -523,7 +531,7 @@
           "source_sha256": "e48d5e2744153e4c9d6d84a614c9803a637784dfdfc3de16bb58b6542c8e59c0"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-FPSE",
@@ -1357,5 +1365,24 @@
     "now_fifth_audited": 17,
     "now_fifth_normative_edges": 275,
     "remaining_raw_target_candidates": 70
+  },
+  "batch_2026_10_24_data_services_dfs_dltw": {
+    "source_ids": [
+      "MS-XCA",
+      "MC-CSDL",
+      "MC-EDMX",
+      "MS-BKUP",
+      "MS-DFSRH",
+      "MS-DLTW",
+      "MS-EMF",
+      "MS-EVEN"
+    ],
+    "added_normative_edges": 72,
+    "added_informative_mentions": 30,
+    "now_audited": 25,
+    "now_pending": 62,
+    "missing_archive_candidate_left_pending": "MS-DMRP",
+    "source_pdf_hashes_verified": 8,
+    "additional_historical_dltw_original_hash_verified": true
   }
 }
