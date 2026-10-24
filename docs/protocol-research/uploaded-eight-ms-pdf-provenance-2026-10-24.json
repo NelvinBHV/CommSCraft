@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "repo": "NelvinBHV/CommSCraft",
+  "branch": "draft/protocol-spec-analysis-2026-10-23",
+  "hash_algorithm": "SHA-256",
+  "full_files_in_git": false,
+  "full_files_available_current_conversation_only": true,
+  "files": [
+    {
+      "id": "MS-OCSPROT",
+      "revision": "9.0",
+      "published": "2025-05-20",
+      "pages": 73,
+      "bytes": 4927193,
+      "sha256": "b0380ba5606072eb071bd67ffa7561e12cd7e55ec9dbd23a6553558438524ff2",
+      "reference_page": null,
+      "normative_refs": 0,
+      "informative_refs": 0,
+      "original_filename": "[MS-OCSPROT].pdf"
+    },
+    {
+      "id": "MS-SIPAE",
+      "revision": "11.0",
+      "published": "2025-05-20",
+      "pages": 59,
+      "bytes": 1875611,
+      "sha256": "6f0337a593233162401f0265e5425ad38d839174d1f78b8031405c5c7de64836",
+      "reference_page": 10,
+      "normative_refs": 24,
+      "informative_refs": 1,
+      "original_filename": "[MS-SIPAE].pdf"
+    },
+    {
+      "id": "MS-SIPREGE",
+      "revision": "17.1",
+      "published": "2025-08-19",
+      "pages": 134,
+      "bytes": 3301629,
+      "sha256": "597a3192b46a713d23c59ccfdaaa62b2d1a2a54341eb7f4c5a5299222d699608",
+      "reference_page": 12,
+      "normative_refs": 17,
+      "informative_refs": 1,
+      "original_filename": "[MS-SIPREGE].pdf"
+    },
+    {
+      "id": "MS-ABS",
+      "revision": "10.1",
+      "published": "2025-08-19",
+      "pages": 79,
+      "bytes": 3010562,
+      "sha256": "e1c0e5f791bbb803d70d1de587773d02ae8e28921e98502340beb9379132b1e4",
+      "reference_page": 9,
+      "normative_refs": 3,
+      "informative_refs": 2,
+      "original_filename": "[MS-ABS].pdf"
+    },
+    {
+      "id": "MS-SIP",
+      "revision": "8.0",
+      "published": "2017-06-01",
+      "pages": 93,
+      "bytes": 2709399,
+      "sha256": "6ee1c16c922b7c154373572d5a3341139aaf6d91922a35468581a209f68e9e52",
+      "reference_page": 10,
+      "normative_refs": 16,
+      "informative_refs": 4,
+      "original_filename": "[MS-SIP].pdf"
+    },
+    {
+      "id": "MS-KILE",
+      "revision": "49.0",
+      "published": "2026-09-28",
+      "pages": 91,
+      "bytes": 2892199,
+      "sha256": "8d172e6fb7b760812fba2e41b1bb591dc80fcfce441419153cc93622456e7a01",
+      "reference_page": 12,
+      "normative_refs": 43,
+      "informative_refs": 18,
+      "original_filename": "[MS-KILE].pdf"
+    },
+    {
+      "id": "MS-NLMP",
+      "revision": "37.0",
+      "published": "2026-03-30",
+      "pages": 99,
+      "bytes": 3032203,
+      "sha256": "00fe14a058134aabf6a6db1bcc1c47b8d45f0656ef7de610c03712906a945a27",
+      "reference_page": 12,
+      "normative_refs": 15,
+      "informative_refs": 9,
+      "original_filename": "[MS-NLMP].pdf"
+    },
+    {
+      "id": "MS-RDPEMC",
+      "revision": "16.0",
+      "published": "2024-04-23",
+      "pages": 41,
+      "bytes": 1698642,
+      "sha256": "17658ee28cef61d0ba11beb69be0e1fbe9e0b0f6aa7c146d5bc4100f64c0985b",
+      "reference_page": 9,
+      "normative_refs": 4,
+      "informative_refs": 0,
+      "original_filename": "[MS-RDPEMC].pdf"
+    }
+  ],
+  "reference_sets_match_existing_ledgers": true,
+  "normative_reference_records_checked": 122,
+  "remaining_overview_release_section_gaps": 30,
+  "remaining_transitive_release_section_gaps": 8,
+  "phase1_complete": false,
+  "passed_phase1_gates": 0
+}
