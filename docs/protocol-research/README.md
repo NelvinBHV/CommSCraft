@@ -81,3 +81,6 @@ Suggested requirement record: `ID | role | trigger | wire shape | MUST/SHOULD/MA
 
 - [RFC 3263/3264 exact original normative and informative bibliographies](rfc3263-rfc3264-original-reference-audit-2026-10-23.md) / [JSON](rfc3263-rfc3264-reference-audit-2026-10-23.json): two original source sections, 10 normative + 8 informative outbound citations; child-graph and errata still OPEN.
 - [MS-OAUTH2EX historical OAuth draft -22 vs -23 source conflict](ms-oauth2ex-oauth-draft-conflict-2026-10-23.md): independent original revisions verified, Microsoft 8.0 intended edition still OPEN.
+
+
+- [Eight user-uploaded original Microsoft PDF source audit (2026-10-24)](uploaded-eight-ms-pdf-source-audit-2026-10-24.md) / [SHA-256 manifest](uploaded-eight-ms-pdf-provenance-2026-10-24.json): eight full release originals verified, seven exact reference sections reconciled; 16/46 first-tier and 4/12 second-tier edition sections now evidenced, Phase 1 still incomplete.
