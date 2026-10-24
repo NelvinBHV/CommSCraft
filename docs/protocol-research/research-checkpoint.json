@@ -30,8 +30,8 @@
     "ms_ocsprot_overview_groups": 6,
     "overview_ms_documents_with_latest_published_metadata": 46,
     "overview_ms_documents_with_direct_1_2_1_lists_examined_in_some_form": 46,
-    "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 19,
-    "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 27,
+    "overview_ms_documents_with_exact_release_pdf_reference_sections_inspected": 23,
+    "overview_ms_documents_with_only_unmatched_current_html_1_2_1": 23,
     "complete_original_pdfs_received_and_sha256_verified": 9,
     "first_tier_normative_reference_edges": 460,
     "first_tier_distinct_target_identifiers": 199,
@@ -87,7 +87,7 @@
     {
       "id": "P1-01",
       "priority": 1,
-      "task": "Reconcile remaining 27 overview current-edition MS PDF §1.2.1 sections; three additional sections verified as web-rendered PDFs without original hashes on 2026-10-24."
+      "task": "Reconcile the remaining 23 MS-OCSPROT first-ring published-release §1.2.1 sections, and acquire full original binaries/hashes for the four additional web-PDF sources."
     },
     {
       "id": "P1-02",
@@ -318,5 +318,31 @@
     "implementation_authorized": false,
     "live_tests_authorized": false,
     "merge_main_authorized": false
+  },
+  "web_pdf_section_followup_2026_10_24": {
+    "status": "PARTIAL_RELEASE_PDF_SECTION_EVIDENCE_NOT_BINARY",
+    "evidence_file": "published-four-ms-pdf-section-audit-2026-10-24.json",
+    "branch_head_before": "049920a8ca7e7faab35a674c64e6da70aa221efe",
+    "documents": [
+      "MS-SRTP",
+      "MS-SDPEXT",
+      "MS-H264PF",
+      "MS-SIPCOMP"
+    ],
+    "normative_existing_edges_verified": 49,
+    "first_normative_edges_unchanged": 460,
+    "second_normative_edges_unchanged": 246,
+    "first_release_pdf_sections": 23,
+    "first_html_only": 23,
+    "second_release_pdf_sections_unchanged": 4,
+    "immediate_full_original_file_hashes_unchanged": 8,
+    "additional_overview_sha256_unchanged": 1,
+    "new_hashed_binaries": 0,
+    "formal_gates_passed": 0,
+    "phase1_complete": false,
+    "new_protocol_code_authorized": false,
+    "network_tests_authorized": false,
+    "merge_main_authorized": false,
+    "releases_authorized": false
   }
 }

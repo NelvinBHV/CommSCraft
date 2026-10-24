@@ -7,8 +7,8 @@
   "implementation_approval": false,
   "source_counts": {
     "overview_documents": 46,
-    "overview_exact_release_sections": 19,
-    "overview_unmatched_html": 27,
+    "overview_exact_release_sections": 23,
+    "overview_unmatched_html": 23,
     "overview_sha256_historically_verified": 4,
     "first_normative_edges": 460,
     "first_unique_targets": 199,
@@ -32,7 +32,7 @@
     {
       "id": "P1-01",
       "passed": false,
-      "blocker": "Remaining 27 overview exact current-edition PDF §1.2.1 sections not verified. Three additional current PDFs inspected by official web page text/screenshot on 2026-10-24; no new binary hashes, recursion/history/client scope OPEN."
+      "blocker": "23 overview current published-edition §1.2.1 originals still not PDF-reconciled; four added web-view PDF sections verified on 2026-10-24 without new SHA-256 binaries. Full revision history, normative recursion and client applicability OPEN."
     },
     {
       "id": "P1-02",
@@ -229,12 +229,17 @@
       "release_date": "2025-05-20",
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipcomp/eaf7bc25-7128-454a-841e-539dfca2207d",
       "section": "§1.2.1",
-      "section_release_verified": false,
+      "section_release_verified": true,
       "full_original_sha256_historical": false,
       "binary_present_in_current_session": false,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_RELEASE_REFERENCE_SECTION_VERIFIED_FULL_BINARY_RECURSION_AND_SCOPE_OPEN",
+      "section_reference_pages": [
+        6,
+        7
+      ],
+      "original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SIPCOMP/%5BMS-SIPCOMP%5D.pdf"
     },
     {
       "id": "MS-SIPAE",
@@ -565,12 +570,17 @@
       "release_date": "2025-05-20",
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-h264pf/f3024858-350e-49b0-9866-99c4fd2b912d",
       "section": "§1.2.1",
-      "section_release_verified": false,
+      "section_release_verified": true,
       "full_original_sha256_historical": false,
       "binary_present_in_current_session": false,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_RELEASE_REFERENCE_SECTION_VERIFIED_FULL_BINARY_RECURSION_AND_SCOPE_OPEN",
+      "section_reference_pages": [
+        7,
+        8
+      ],
+      "original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-H264PF/%5BMS-H264PF%5D.pdf"
     },
     {
       "id": "MS-RTP",
@@ -640,12 +650,17 @@
       "release_date": "2025-05-20",
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/cd17a549-b948-42a6-aa6b-fa707710faac",
       "section": "§1.2.1",
-      "section_release_verified": false,
+      "section_release_verified": true,
       "full_original_sha256_historical": false,
       "binary_present_in_current_session": false,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_RELEASE_REFERENCE_SECTION_VERIFIED_FULL_BINARY_RECURSION_AND_SCOPE_OPEN",
+      "section_reference_pages": [
+        12,
+        13
+      ],
+      "original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf"
     },
     {
       "id": "MS-SRTP",
@@ -654,12 +669,16 @@
       "release_date": "2025-05-20",
       "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-srtp/d9641c95-b152-4cc7-8311-d178f3241f1f",
       "section": "§1.2.1",
-      "section_release_verified": false,
+      "section_release_verified": true,
       "full_original_sha256_historical": false,
       "binary_present_in_current_session": false,
       "revision_diffs_reviewed": false,
       "client_applicability_closed": false,
-      "closure": "OPEN"
+      "closure": "EXACT_RELEASE_REFERENCE_SECTION_VERIFIED_FULL_BINARY_RECURSION_AND_SCOPE_OPEN",
+      "section_reference_pages": [
+        7
+      ],
+      "original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SRTP/%5BMS-SRTP%5D.pdf"
     },
     {
       "id": "MS-SSRTP",
@@ -979,5 +998,21 @@
     "normative_existing_edges_confirmed": 24,
     "new_hashes": 0,
     "formal_gates_passed": 0
+  },
+  "web_pdf_continuation_2026_10_24_second": {
+    "source": "published-four-ms-pdf-section-audit-2026-10-24.json",
+    "docs": [
+      "MS-SRTP",
+      "MS-SDPEXT",
+      "MS-H264PF",
+      "MS-SIPCOMP"
+    ],
+    "previous_release_sections": 19,
+    "now_release_sections": 23,
+    "remaining_html_only": 23,
+    "existing_edges_checked": 49,
+    "new_edges": 0,
+    "extra_full_original_hashes": 0,
+    "phase1_gates_passed": 0
   }
 }

@@ -1,6 +1,6 @@
 # Official Microsoft and RFC protocol document catalog — dated Phase-1 inventory
 
-**Initial snapshot 2026-10-23; latest evidence update 2026-10-24. Phase 1 NOT COMPLETE.** [MS-OCSPROT rev 9.0 (2025-05-20)](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/90f4bc22-eae7-480e-a6f8-74d705ed2b2c): six protocol families, 46 direct sources. Current **19/46** original current-edition PDF §1.2.1 sections reviewed, **27 HTML-only**; first ring **460 normative edges/199 targets**; **113** initial RFC identifiers. Second ring: 12 additional MS documents, **4/12** current-PDF bibliographies reviewed, 246 further edges. Eight direct Microsoft-source PDF binaries historically/recently SHA-256 verified, plus one distinct MS-OCSPROT overview PDF. New 2026-10-24 web page checks have **no** full-binary hash. No normative recursion closure, client implementation/interop proof or Phase-1 completion.
+**Initial snapshot: 2026-10-23; latest evidence 2026-10-24. Phase 1 NOT COMPLETE.** [MS-OCSPROT rev 9.0 (2025-05-20)](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocsprot/90f4bc22-eae7-480e-a6f8-74d705ed2b2c): six groups, 46 directly listed MS specs. **23/46** now checked against current published original PDF §1.2.1 page/edition, **23 HTML-only**; 460 first-ring normative edges to 199 target IDs and 113 RFC initial seed IDs. Second Microsoft ring **4/12** current-edition PDF reference sections, 246 additional edges. Full original SHA-256 provenance unchanged (eight immediate MS source PDFs historically/recently verified and one separate MS-OCSPROT overview PDF); the latest four sources only have official web PDF page/text/screenshot verification. No recursive closure, product applicability completion or implementation permission.
 
 ## Canonical datasets
 
@@ -25,7 +25,7 @@
 | MS-OCER | sip §2.2.2.1 | 11.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ocer/8b2b5ee5-6051-4f66-b51e-71102ef7782f) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
 | MS-PRES | sip §2.2.2.1 | 13.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-pres/741d682d-590b-4600-916e-8deeee426a5c) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-QoE | sip §2.2.2.1 | 12.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-qoe/c1050431-f4b2-44d4-a425-63d75e99f5df) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
-| MS-SIPCOMP | sip §2.2.2.1 | 10.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipcomp/eaf7bc25-7128-454a-841e-539dfca2207d) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
+| MS-SIPCOMP | sip §2.2.2.1 | 10.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipcomp/eaf7bc25-7128-454a-841e-539dfca2207d) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-SIPAE | sip §2.2.2.1 | 11.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipae/ba3e9821-fa85-4e0f-a80c-5a4c720a00bd) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
 | MS-SIPRE | sip §2.2.2.1 | 13.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipre/ab4ab249-3796-4ed1-8cec-f496d81a1a83) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-SIPREGE | sip §2.2.2.1 | 17.1 | 2025-08-19 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-siprege/21acf797-984c-48ce-97e3-c7df5c776b3d) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
@@ -48,13 +48,13 @@
 | MS-ECREST | http §2.2.2.3 | 8.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ecrest/4454be95-159a-4c99-a75a-5c260609343a) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-EUMSDP | media §2.2.3.1 | 9.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-eumsdp/c01cded2-02a3-467a-a959-5ebdc91e542b) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-DTMF | media §2.2.3.1 | 15.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-dtmf/7a2c80c0-5fa7-4b8c-9216-c33804f0e0d4) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
-| MS-H264PF | media §2.2.3.1 | 16.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-h264pf/f3024858-350e-49b0-9866-99c4fd2b912d) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
+| MS-H264PF | media §2.2.3.1 | 16.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-h264pf/f3024858-350e-49b0-9866-99c4fd2b912d) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-RTP | media §2.2.3.1 | 17.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtp/26dda764-6e96-456b-810b-9ae0275af564) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-RTPRADEX | media §2.2.3.1 | 13.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtpradex/c28f4661-9e7c-4319-b6e5-58d0dba6b823) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-RTASPF | media §2.2.3.1 | 10.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtaspf/42824cea-064e-45b3-a81b-24584449d2eb) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-RTVPF | media §2.2.3.1 | 11.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-rtvpf/3f37858b-c991-41c4-bbbd-df10fcffc89e) | SECTION_VERIFIED_FROM_RELEASE_PDF |
-| MS-SDPEXT | media §2.2.3.1 | 16.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/cd17a549-b948-42a6-aa6b-fa707710faac) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
-| MS-SRTP | media §2.2.3.1 | 14.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-srtp/d9641c95-b152-4cc7-8311-d178f3241f1f) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
+| MS-SDPEXT | media §2.2.3.1 | 16.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/cd17a549-b948-42a6-aa6b-fa707710faac) | SECTION_VERIFIED_FROM_RELEASE_PDF |
+| MS-SRTP | media §2.2.3.1 | 14.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-srtp/d9641c95-b152-4cc7-8311-d178f3241f1f) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-SSRTP | media §2.2.3.1 | 11.1 | 2025-09-16 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ssrtp/980fc2b6-ba83-4313-9f5a-cad50449e98e) | SECTION_VERIFIED_FROM_RELEASE_PDF |
 | MS-AVEDGEA | ice §2.2.3.2 | 12.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-avedgea/56860f6a-2fcf-4cad-8ee5-466d8f382a45) | VERIFIED_FROM_USER_SUPPLIED_RELEASE_PDF_SHA256 |
 | MS-ICE | ice §2.2.3.2 | 11.0 | 2025-05-20 | [official](https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-ice/4feb9bf6-dbe8-4713-a228-e7e697c57eae) | LIVE_HTML_SECTION_READ_RELEASE_EDITION_UNVERIFIED |
@@ -211,3 +211,7 @@ Source IDs/versions, official HTML subsection URLs and older released-PDF editio
 ## 2026-10-24 P1-01 current-edition PDF section reconciliation
 
 [Three-source original section audit](published-three-ms-pdf-page-audit-2026-10-24.md): MS-EUMSDP rev 9.0 (§1.2.1 p.6), MS-TURN rev 21.0 (§1.2.1 pp.9–10), MS-RTP rev 17.0 (§1.2.1 pp.9–10), each published 2025-05-20; official PDF text and page screenshots verified, full-file SHA-256 **not** available. Exactly 24 pre-existing normative edges matched. Historic counts elsewhere in this file reflect earlier snapshots. Current overview 19/46 PDF sections and 27 HTML-only, phase 1 OPEN.
+
+## 2026-10-24 – Additional current original-PDF bibliography audit
+
+[Four-source P1-01 edition audit](published-four-ms-pdf-section-audit-2026-10-24.md): MS-SRTP rev 14.0 (§1.2.1 p.7), MS-SDPEXT rev 16.0 (§1.2.1 pp.12–13), MS-H264PF rev 16.0 (§1.2.1 pp.7–8), MS-SIPCOMP rev 10.0 (§1.2.1 pp.6–7), each published 2025-05-20. 49 pre-existing normative edges verified on original web PDF page screenshots, **no full-file binary hashes** or editions-diff closures. Original earlier figures in the detailed historic narrative refer to previous snapshots; latest 23/46 with current-PDF sections and 23 HTML-only. Phase 1 OPEN.

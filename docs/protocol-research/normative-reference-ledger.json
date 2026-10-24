@@ -20,7 +20,9 @@
       "source": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/be2f02ae-6687-444c-b21b-64553bb00ed5",
       "live_last_updated": "2024-04-16",
       "published_revision": "16.0",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": null
     },
     {
       "id": "MS-RTP",
@@ -227,7 +229,9 @@
       "live_last_updated": "2025-05-20",
       "published_revision": "14.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": null
     },
     {
       "id": "MS-OCEXUM",
@@ -281,7 +285,9 @@
       "live_last_updated": "2024-08-20",
       "published_revision": "10.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": null
     },
     {
       "id": "MS-OCGCWEB",
@@ -319,7 +325,9 @@
       "live_last_updated": "2024-04-16",
       "published_revision": "16.0",
       "published_date": "2025-05-20",
-      "release_pdf_checked": false
+      "release_pdf_checked": true,
+      "exact_release_section_reconciled": true,
+      "release_pdf_sha256": null
     }
   ],
   "edges": [
@@ -571,9 +579,15 @@
       "target": "MS-DTMF",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -585,9 +599,15 @@
       "target": "MS-ICE2",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -599,9 +619,15 @@
       "target": "MS-OCER",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -613,9 +639,15 @@
       "target": "MS-OCPSTN",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -627,9 +659,15 @@
       "target": "MS-RTPRADEX",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -641,9 +679,15 @@
       "target": "MS-RTP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -655,9 +699,15 @@
       "target": "MS-SIPRE",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -669,9 +719,15 @@
       "target": "MS-SRTP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -683,9 +739,15 @@
       "target": "MS-SSRTP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -697,9 +759,15 @@
       "target": "RFC1521",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -711,9 +779,15 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -725,9 +799,15 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -739,9 +819,15 @@
       "target": "RFC3262",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -753,9 +839,15 @@
       "target": "RFC3264",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -767,9 +859,15 @@
       "target": "RFC3389",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -781,9 +879,15 @@
       "target": "RFC3551",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -795,9 +899,15 @@
       "target": "RFC3605",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -809,9 +919,15 @@
       "target": "RFC4145",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -823,9 +939,15 @@
       "target": "RFC4235",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -837,9 +959,15 @@
       "target": "RFC4566",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -851,9 +979,15 @@
       "target": "RFC4568",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -865,9 +999,15 @@
       "target": "RFC4571",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -879,9 +1019,15 @@
       "target": "RFC4574",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -893,9 +1039,15 @@
       "target": "RFC4585",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -907,9 +1059,15 @@
       "target": "RFC5761",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -921,9 +1079,15 @@
       "target": "draft-ietf-mmusic-ice-06",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -935,9 +1099,15 @@
       "target": "draft-ietf-mmusic-ice-19",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -949,9 +1119,15 @@
       "target": "draft-ietf-mmusic-ice-tcp-07",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -963,9 +1139,15 @@
       "target": "draft-ietf-sipping-sip-offeranswer-08",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SDPEXT",
@@ -977,9 +1159,15 @@
       "target": "draft-ietf-sip-199-01",
       "kind": "ietf_draft",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        12,
+        13
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-RTP",
@@ -4963,9 +5151,14 @@
       "target": "MS-RTP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SRTP/%5BMS-SRTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SRTP",
@@ -4977,9 +5170,14 @@
       "target": "RFC2104",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SRTP/%5BMS-SRTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SRTP",
@@ -4991,9 +5189,14 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SRTP/%5BMS-SRTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SRTP",
@@ -5005,9 +5208,14 @@
       "target": "RFC3711",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SRTP/%5BMS-SRTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SRTP",
@@ -5019,9 +5227,14 @@
       "target": "NIST.FIPS.180-4",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SRTP/%5BMS-SRTP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-OCEXUM",
@@ -5849,9 +6062,15 @@
       "target": "MS-CONMGMT",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SIPCOMP/%5BMS-SIPCOMP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        6,
+        7
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SIPCOMP",
@@ -5863,9 +6082,15 @@
       "target": "RFC2118",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SIPCOMP/%5BMS-SIPCOMP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        6,
+        7
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SIPCOMP",
@@ -5877,9 +6102,15 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SIPCOMP/%5BMS-SIPCOMP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        6,
+        7
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SIPCOMP",
@@ -5891,9 +6122,15 @@
       "target": "RFC3261",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SIPCOMP/%5BMS-SIPCOMP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        6,
+        7
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SIPCOMP",
@@ -5905,9 +6142,15 @@
       "target": "RFC4346",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SIPCOMP/%5BMS-SIPCOMP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        6,
+        7
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-SIPCOMP",
@@ -5919,9 +6162,15 @@
       "target": "RFC5234",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SIPCOMP/%5BMS-SIPCOMP%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        6,
+        7
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-OCGCWEB",
@@ -7122,9 +7371,15 @@
       "target": "MS-RTP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-H264PF/%5BMS-H264PF%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7,
+        8
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-H264PF",
@@ -7138,9 +7393,15 @@
       "target": "MS-SDP",
       "kind": "microsoft_spec",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-H264PF/%5BMS-H264PF%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7,
+        8
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-H264PF",
@@ -7154,9 +7415,15 @@
       "target": "RFC2119",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-H264PF/%5BMS-H264PF%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7,
+        8
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-H264PF",
@@ -7170,9 +7437,15 @@
       "target": "RFC3550",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-H264PF/%5BMS-H264PF%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7,
+        8
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-H264PF",
@@ -7186,9 +7459,15 @@
       "target": "RFC5109",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-H264PF/%5BMS-H264PF%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7,
+        8
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-H264PF",
@@ -7202,9 +7481,15 @@
       "target": "RFC6184",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-H264PF/%5BMS-H264PF%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7,
+        8
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-H264PF",
@@ -7218,9 +7503,15 @@
       "target": "RFC6190",
       "kind": "rfc",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-H264PF/%5BMS-H264PF%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7,
+        8
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-H264PF",
@@ -7234,9 +7525,15 @@
       "target": "ISO-IEC-14496-10:2014",
       "kind": "external",
       "reference_type": "normative",
-      "exact_release_pdf_correspondence": "UNVERIFIED",
+      "exact_release_pdf_correspondence": "VERIFIED_BY_INDEXED_ORIGINAL_PDF",
       "client_relevance": "NOT_YET_ADJUDICATED",
-      "target_document_acquired": false
+      "target_document_acquired": false,
+      "exact_release_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-H264PF/%5BMS-H264PF%5D.pdf",
+      "exact_release_pdf_reference_pages": [
+        7,
+        8
+      ],
+      "full_original_sha256_verified": false
     },
     {
       "referrer": "MS-AVEDGEA",
@@ -7409,9 +7706,9 @@
     "full_rfc_update_obsolescence_graph_unresolved": true,
     "release_bytes_captured_count": 4,
     "complete": false,
-    "indexed_original_release_pdf_reference_pages_checked": 15,
+    "indexed_original_release_pdf_reference_pages_checked": 19,
     "user_supplied_full_pdf_binaries_hashed": 4,
-    "notes_2026_10_24": "MS-EUMSDP 9.0, MS-TURN 21.0, MS-RTP 17.0 published PDF §1.2.1 web text and screenshots inspected; 24 existing edges matched. 19/46 current-release first tier PDF sections, 27 HTML-only; full PDF binary SHA256 count unchanged; recursion OPEN."
+    "notes_2026_10_24": "MS-SRTP 14.0, MS-SDPEXT 16.0, MS-H264PF 16.0, MS-SIPCOMP 10.0 exact published PDF §1.2.1 web text/screenshots inspected. All 49 existing normative edge IDs match. Current first-tier exact PDFs 23/46, remaining 23 HTML-only; no newly verified binary SHA; normative recursion OPEN."
   },
   "normative_sections_verified_as_published_pdf_text": [
     {
@@ -7665,6 +7962,58 @@
       "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-RTP/%5BMS-RTP%5D.pdf",
       "pdf_page_count": 68,
       "reference_pages": "PDF pp. 9–10 (zero-based 8–9)",
+      "text_checked_and_page_screenshot": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": null,
+      "status": "RELEASE_IDENTIFIED_PDF_TEXT_AND_SECTION_SCREENSHOT_VERIFIED_NOT_BINARY_PRESERVED"
+    },
+    {
+      "id": "MS-SRTP",
+      "section": "§1.2.1",
+      "published_revision": "14.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SRTP/%5BMS-SRTP%5D.pdf",
+      "pdf_page_count": 19,
+      "reference_pages": "PDF pp. 7 (zero-based 6)",
+      "text_checked_and_page_screenshot": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": null,
+      "status": "RELEASE_IDENTIFIED_PDF_TEXT_AND_SECTION_SCREENSHOT_VERIFIED_NOT_BINARY_PRESERVED"
+    },
+    {
+      "id": "MS-SDPEXT",
+      "section": "§1.2.1",
+      "published_revision": "16.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "pdf_page_count": 82,
+      "reference_pages": "PDF pp. 12–13 (zero-based 11–12)",
+      "text_checked_and_page_screenshot": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": null,
+      "status": "RELEASE_IDENTIFIED_PDF_TEXT_AND_SECTION_SCREENSHOT_VERIFIED_NOT_BINARY_PRESERVED"
+    },
+    {
+      "id": "MS-H264PF",
+      "section": "§1.2.1",
+      "published_revision": "16.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-H264PF/%5BMS-H264PF%5D.pdf",
+      "pdf_page_count": 33,
+      "reference_pages": "PDF pp. 7–8 (zero-based 6–7)",
+      "text_checked_and_page_screenshot": true,
+      "pdf_bytes_downloaded": false,
+      "sha256": null,
+      "status": "RELEASE_IDENTIFIED_PDF_TEXT_AND_SECTION_SCREENSHOT_VERIFIED_NOT_BINARY_PRESERVED"
+    },
+    {
+      "id": "MS-SIPCOMP",
+      "section": "§1.2.1",
+      "published_revision": "10.0",
+      "published_date": "2025-05-20",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SIPCOMP/%5BMS-SIPCOMP%5D.pdf",
+      "pdf_page_count": 24,
+      "reference_pages": "PDF pp. 6–7 (zero-based 5–6)",
       "text_checked_and_page_screenshot": true,
       "pdf_bytes_downloaded": false,
       "sha256": null,

@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-24",
+  "repo": "NelvinBHV/CommSCraft",
+  "branch": "draft/protocol-spec-analysis-2026-10-23",
+  "evidence_class": "EXACT_PUBLISHED_EDITION_PDF_WEB_TEXT_AND_VISUAL_REFERENCE_PAGE_NO_FULL_BINARY",
+  "source_priority": "P1-01",
+  "all_reviews_use_official_original_pdf_page_screenshots": true,
+  "full_originals_downloaded": 0,
+  "sha256_verified_new": 0,
+  "documents": [
+    {
+      "id": "MS-SRTP",
+      "revision": "14.0",
+      "published": "2025-05-20",
+      "edition_footer": "v20250520",
+      "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-srtp/d9641c95-b152-4cc7-8311-d178f3241f1f",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SRTP/%5BMS-SRTP%5D.pdf",
+      "total_pages": 19,
+      "normative_section": "§1.2.1",
+      "normative_pdf_pages": [
+        7
+      ],
+      "normative_target_ids": [
+        "MS-RTP",
+        "NIST.FIPS.180-4",
+        "RFC2104",
+        "RFC2119",
+        "RFC3711"
+      ],
+      "normative_count": 5,
+      "informative_section": "§1.2.2",
+      "informative_pdf_pages": [
+        7
+      ],
+      "informative_target_ids": [
+        "MS-DTMF",
+        "MS-SDPEXT"
+      ],
+      "informative_count": 2,
+      "normative_targets_match_existing_ledger": true,
+      "normative_edges_added": 0,
+      "full_original_sha256": null,
+      "full_original_bytes": null,
+      "history_diffs_complete": false,
+      "client_applicability_confirmed": false
+    },
+    {
+      "id": "MS-SDPEXT",
+      "revision": "16.0",
+      "published": "2025-05-20",
+      "edition_footer": "v20250520",
+      "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sdpext/cd17a549-b948-42a6-aa6b-fa707710faac",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SDPEXT/%5BMS-SDPEXT%5D.pdf",
+      "total_pages": 82,
+      "normative_section": "§1.2.1",
+      "normative_pdf_pages": [
+        12,
+        13
+      ],
+      "normative_target_ids": [
+        "draft-ietf-mmusic-ice-06",
+        "draft-ietf-mmusic-ice-19",
+        "draft-ietf-mmusic-ice-tcp-07",
+        "draft-ietf-sipping-sip-offeranswer-08",
+        "draft-ietf-sip-199-01",
+        "MS-DTMF",
+        "MS-ICE2",
+        "MS-OCER",
+        "MS-OCPSTN",
+        "MS-RTPRADEX",
+        "MS-RTP",
+        "MS-SIPRE",
+        "MS-SRTP",
+        "MS-SSRTP",
+        "RFC1521",
+        "RFC2119",
+        "RFC3261",
+        "RFC3262",
+        "RFC3264",
+        "RFC3389",
+        "RFC3551",
+        "RFC3605",
+        "RFC4145",
+        "RFC4235",
+        "RFC4566",
+        "RFC4568",
+        "RFC4571",
+        "RFC4574",
+        "RFC4585",
+        "RFC5761"
+      ],
+      "normative_count": 30,
+      "informative_section": "§1.2.2",
+      "informative_pdf_pages": [
+        13
+      ],
+      "informative_target_ids": [
+        "MS-H264PF",
+        "MS-ICE",
+        "RFC5234"
+      ],
+      "informative_count": 3,
+      "normative_targets_match_existing_ledger": true,
+      "normative_edges_added": 0,
+      "full_original_sha256": null,
+      "full_original_bytes": null,
+      "history_diffs_complete": false,
+      "client_applicability_confirmed": false
+    },
+    {
+      "id": "MS-H264PF",
+      "revision": "16.0",
+      "published": "2025-05-20",
+      "edition_footer": "v20250520",
+      "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-h264pf/f3024858-350e-49b0-9866-99c4fd2b912d",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-H264PF/%5BMS-H264PF%5D.pdf",
+      "total_pages": 33,
+      "normative_section": "§1.2.1",
+      "normative_pdf_pages": [
+        7,
+        8
+      ],
+      "normative_target_ids": [
+        "ISO-IEC-14496-10:2014",
+        "MS-RTP",
+        "MS-SDP",
+        "RFC2119",
+        "RFC3550",
+        "RFC5109",
+        "RFC6184",
+        "RFC6190"
+      ],
+      "normative_count": 8,
+      "informative_section": "§1.2.2",
+      "informative_pdf_pages": [
+        8
+      ],
+      "informative_target_ids": [],
+      "informative_count": 0,
+      "normative_targets_match_existing_ledger": true,
+      "normative_edges_added": 0,
+      "full_original_sha256": null,
+      "full_original_bytes": null,
+      "history_diffs_complete": false,
+      "client_applicability_confirmed": false
+    },
+    {
+      "id": "MS-SIPCOMP",
+      "revision": "10.0",
+      "published": "2025-05-20",
+      "edition_footer": "v20250520",
+      "official_landing": "https://learn.microsoft.com/en-us/openspecs/office_protocols/ms-sipcomp/eaf7bc25-7128-454a-841e-539dfca2207d",
+      "official_original_pdf_url": "https://officeprotocoldoc.z19.web.core.windows.net/files/MS-SIPCOMP/%5BMS-SIPCOMP%5D.pdf",
+      "total_pages": 24,
+      "normative_section": "§1.2.1",
+      "normative_pdf_pages": [
+        6,
+        7
+      ],
+      "normative_target_ids": [
+        "MS-CONMGMT",
+        "RFC2118",
+        "RFC2119",
+        "RFC3261",
+        "RFC4346",
+        "RFC5234"
+      ],
+      "normative_count": 6,
+      "informative_section": "§1.2.2",
+      "informative_pdf_pages": [
+        7
+      ],
+      "informative_target_ids": [
+        "MS-SIPAE"
+      ],
+      "informative_count": 1,
+      "normative_targets_match_existing_ledger": true,
+      "normative_edges_added": 0,
+      "full_original_sha256": null,
+      "full_original_bytes": null,
+      "history_diffs_complete": false,
+      "client_applicability_confirmed": false
+    }
+  ],
+  "overview_current_release_sections_before": 19,
+  "overview_current_release_sections_after": 23,
+  "overview_html_only_remaining": 23,
+  "second_level_current_release_sections_unchanged": 4,
+  "normative_existing_edges_checked": 49,
+  "new_normative_edges": 0,
+  "first_ring_normative_edges_total": 460,
+  "second_ring_normative_edges_total": 246,
+  "full_file_hashes_unchanged": true,
+  "formal_phase1_gates_passed": 0,
+  "phase1_complete": false,
+  "scope_or_security_notes": [
+    "RFC4346 TLS 1.1 normative citation in MS-SIPCOMP 10.0 bibliography is historical; it cannot authorize TLS version downgrade or insecure configuration.",
+    "MS-SDPEXT 16.0 §1.2.1 cites two different ICE draft revisions as distinct normative source versions; MS-ICE is §1.2.2 informative, while MS-ICE2 is §1.2.1 normative.",
+    "MS-H264PF 16.0 normatively cites the specifically editioned ISO/IEC 14496-10:2014, original remains an external standards-acquisition and applicability blocker.",
+    "The complete SHA256 PDF bytes for these four are not available; only official web PDF text/screenshot pages were reviewed.",
+    "No real server tests, code changes, CI runner changes, main merge, tag or release."
+  ]
+}
