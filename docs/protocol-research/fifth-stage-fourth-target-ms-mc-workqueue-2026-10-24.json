@@ -1,0 +1,1335 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-24",
+  "scope": "RAW_MS_MC_TARGET_IDS_FROM_FOURTH_NORMATIVE_EDGE_TARGETS_AFTER_SUBTRACTING_AUDITED_SOURCE_IDS_FROM_RINGS_1_TO_4",
+  "fourth_ring_ledger_sha": "47d8cfd3d361ba9efc9467ba6c8d992dc80488db",
+  "third_ring_source_id_inventory": "third-ring-source-inventory-2026-10-24.txt",
+  "first_ring_ledger_sha": "2d1c80ebe3d087e562f6732b5cfd1abaa17ca97c",
+  "second_ring_ledger_sha": "af4e27be3bbab38bd70ba50e858edeaaac4d2e66",
+  "fifth_ring_current_ledger_sha": "096d03dfe1c0828b9ad721417441ef6460fa0105",
+  "candidate_raw_labels": 88,
+  "already_audited_fifth_sources": 9,
+  "schema_only_reviewed": 1,
+  "remaining_raw_ms_mc_source_candidates": 78,
+  "reviewed_fifth_source_ids": [
+    "MS-SWN",
+    "MS-OXWSADISC",
+    "MS-DFSNM",
+    "MS-OXCROPS",
+    "MS-OXOABK",
+    "MS-GPREG",
+    "MS-OXCDATA",
+    "MS-OXCFXICS",
+    "MS-OXCNOTIF"
+  ],
+  "raw_target_candidates": [
+    {
+      "id": "MS-OXWSADISC",
+      "incoming_normative_edges_from_fourth": 7,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXWSMSG",
+          "source_pdf_page": 7,
+          "source_edition": "v20250520",
+          "source_sha256": "e8371f4b6ea07ae0d7afbac18154a7bb96146d7b921d1cb7e6267e3e35092fc7"
+        },
+        {
+          "referrer": "MS-OXWSATT",
+          "source_pdf_page": 8,
+          "source_edition": "v20250520",
+          "source_sha256": "82a8c19cbc5b25aa518faaee7eb72aef7ac49639376907c0d3f34b9c8a5143fd"
+        },
+        {
+          "referrer": "MS-OXWSCEXT",
+          "source_pdf_page": 7,
+          "source_edition": "v20250520",
+          "source_sha256": "34365ed085b52eda0d2152f8f174ae66fb99c1259e9a4c1b3819e398b7255ff3"
+        },
+        {
+          "referrer": "MS-OXWSCONV",
+          "source_pdf_page": 6,
+          "source_edition": "v20250520",
+          "source_sha256": "63d1fe3cfdc50b5e22681df6cd0ecfca266ed7c4575bdff374cd2e71dd7985df"
+        },
+        {
+          "referrer": "MS-OXWSPERS",
+          "source_pdf_page": 7,
+          "source_edition": "v20250520",
+          "source_sha256": "0154856d6f82c77b44aaaeea61a9cb80abc803defbdbc1ebddd32af02c13e9f4"
+        }
+      ],
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
+    },
+    {
+      "id": "MS-DFSNM",
+      "incoming_normative_edges_from_fourth": 4,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-CIFS",
+          "source_pdf_page": 23,
+          "source_edition": "v20251121",
+          "source_sha256": "2a9687ef4f1ece05f854e2f797ccab9358f4087d7d3b65673006faf2b770b14e"
+        },
+        {
+          "referrer": "MS-DFSC",
+          "source_pdf_page": 10,
+          "source_edition": "v20240916",
+          "source_sha256": "4fee3b402418014582def6e805f22764965e283bd7c51c318af1e73aac0d8560"
+        },
+        {
+          "referrer": "MS-SRVS",
+          "source_pdf_page": 12,
+          "source_edition": "v20240916",
+          "source_sha256": "e3415c7e86819137124529447fecf5d28c8cf5220fbd0a7e25ccdee2aab7aef7"
+        },
+        {
+          "referrer": "MS-FRS1",
+          "source_pdf_page": 15,
+          "source_edition": "v20240916",
+          "source_sha256": "00fd7df3ae4d063d34387dcf47b514f9c552815eb8e83dfc4acfdc7ca00eab7f"
+        }
+      ],
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
+    },
+    {
+      "id": "MS-ADLS",
+      "incoming_normative_edges_from_fourth": 3,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-GPOL",
+          "source_pdf_page": 14,
+          "source_edition": "v20240423",
+          "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
+        },
+        {
+          "referrer": "MS-FRS1",
+          "source_pdf_page": 15,
+          "source_edition": "v20240916",
+          "source_sha256": "00fd7df3ae4d063d34387dcf47b514f9c552815eb8e83dfc4acfdc7ca00eab7f"
+        },
+        {
+          "referrer": "MS-RPRN",
+          "source_pdf_page": 22,
+          "source_edition": "v20250811",
+          "source_sha256": "e5bb06ca3574f90cb9a0dad7ffa688b37b75323680ac0c41973048ccaf029c29"
+        }
+      ],
+      "source_status": "SCHEMA_ONLY_GENERAL_1_1_BIBLIOGRAPHY_REVIEWED_UNCLASSIFIED"
+    },
+    {
+      "id": "MS-OXCROPS",
+      "incoming_normative_edges_from_fourth": 3,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXCMAPIHTTP",
+          "source_pdf_page": 9,
+          "source_edition": "v20250520",
+          "source_sha256": "246bf51780a5ed370422e060dd98785bae76325f88587d2ec708bcbb8a2c8d70"
+        },
+        {
+          "referrer": "MS-OXCRPC",
+          "source_pdf_page": 10,
+          "source_edition": "v20250520",
+          "source_sha256": "d6149dcd57c9aa12e03438b92052fe279d4e032e53065fcec141e14cf19c4aed"
+        },
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
+    },
+    {
+      "id": "MS-OXOABK",
+      "incoming_normative_edges_from_fourth": 3,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXCMAPIHTTP",
+          "source_pdf_page": 9,
+          "source_edition": "v20250520",
+          "source_sha256": "246bf51780a5ed370422e060dd98785bae76325f88587d2ec708bcbb8a2c8d70"
+        },
+        {
+          "referrer": "MS-OXWOAB",
+          "source_pdf_page": 6,
+          "source_edition": "v20250520",
+          "source_sha256": "dd5cf73f65bed8fde38fbb19bbc0133bd66066155ed4afaad35d375e79d4308c"
+        },
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
+    },
+    {
+      "id": "MS-GPREG",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-GPOL",
+          "source_pdf_page": 15,
+          "source_edition": "v20240423",
+          "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
+        },
+        {
+          "referrer": "MS-GPEF",
+          "source_pdf_page": 10,
+          "source_edition": "v20240423",
+          "source_sha256": "2cc2dd0b8f64c351f7b0e838606e79591a3dcf1ce825831a05bdb77384398982"
+        }
+      ],
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
+    },
+    {
+      "id": "MS-OXCDATA",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXCMAPIHTTP",
+          "source_pdf_page": 9,
+          "source_edition": "v20250520",
+          "source_sha256": "246bf51780a5ed370422e060dd98785bae76325f88587d2ec708bcbb8a2c8d70"
+        },
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 32,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
+    },
+    {
+      "id": "MS-OXCFXICS",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXCRPC",
+          "source_pdf_page": 10,
+          "source_edition": "v20250520",
+          "source_sha256": "d6149dcd57c9aa12e03438b92052fe279d4e032e53065fcec141e14cf19c4aed"
+        },
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 32,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
+    },
+    {
+      "id": "MS-OXCNOTIF",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXCMAPIHTTP",
+          "source_pdf_page": 9,
+          "source_edition": "v20250520",
+          "source_sha256": "246bf51780a5ed370422e060dd98785bae76325f88587d2ec708bcbb8a2c8d70"
+        },
+        {
+          "referrer": "MS-OXCRPC",
+          "source_pdf_page": 10,
+          "source_edition": "v20250520",
+          "source_sha256": "d6149dcd57c9aa12e03438b92052fe279d4e032e53065fcec141e14cf19c4aed"
+        }
+      ],
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
+    },
+    {
+      "id": "MS-OXCPERM",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXWAVLS",
+          "source_pdf_page": 8,
+          "source_edition": "v20250520",
+          "source_sha256": "6f57dd83f9c3db4a60069660dcee6086b57ce16ca58c15bf93ec665849b98b53"
+        },
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXCSTOR",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXCRPC",
+          "source_pdf_page": 10,
+          "source_edition": "v20250520",
+          "source_sha256": "d6149dcd57c9aa12e03438b92052fe279d4e032e53065fcec141e14cf19c4aed"
+        },
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXNSPI",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXCMAPIHTTP",
+          "source_pdf_page": 9,
+          "source_edition": "v20250520",
+          "source_sha256": "246bf51780a5ed370422e060dd98785bae76325f88587d2ec708bcbb8a2c8d70"
+        },
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOAB",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXWOAB",
+          "source_pdf_page": 6,
+          "source_edition": "v20250520",
+          "source_sha256": "dd5cf73f65bed8fde38fbb19bbc0133bd66066155ed4afaad35d375e79d4308c"
+        },
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOCAL",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXWAVLS",
+          "source_pdf_page": 8,
+          "source_edition": "v20250520",
+          "source_sha256": "6f57dd83f9c3db4a60069660dcee6086b57ce16ca58c15bf93ec665849b98b53"
+        },
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOMSG",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXCRPC",
+          "source_pdf_page": 10,
+          "source_edition": "v20250520",
+          "source_sha256": "d6149dcd57c9aa12e03438b92052fe279d4e032e53065fcec141e14cf19c4aed"
+        },
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXORMDR",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXWAVLS",
+          "source_pdf_page": 8,
+          "source_edition": "v20250520",
+          "source_sha256": "6f57dd83f9c3db4a60069660dcee6086b57ce16ca58c15bf93ec665849b98b53"
+        },
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-WMF",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        },
+        {
+          "referrer": "MS-EMFPLUS",
+          "source_pdf_page": 19,
+          "source_edition": "v20240423",
+          "source_sha256": "cb9324b2746706a9f428ef141b9eae2ae92876507789b8b4021ca1ce6fcbf435"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-XCA",
+      "incoming_normative_edges_from_fourth": 2,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-SMB2",
+          "source_pdf_page": 20,
+          "source_edition": "v20260928",
+          "source_sha256": "fef3a06507679130a8cfdcaeaed581482d7f235435dd904f6c794f113ff04bd1"
+        },
+        {
+          "referrer": "MS-FRS1",
+          "source_pdf_page": 15,
+          "source_edition": "v20240916",
+          "source_sha256": "00fd7df3ae4d063d34387dcf47b514f9c552815eb8e83dfc4acfdc7ca00eab7f"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MC-CSDL",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-ODATA",
+          "source_pdf_page": 13,
+          "source_edition": "v20190313",
+          "source_sha256": "e8c1e07d0a86b6d323bec48d69c8c950aa25dc32a0af7e660b54341f35615b48"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MC-EDMX",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-ODATA",
+          "source_pdf_page": 13,
+          "source_edition": "v20190313",
+          "source_sha256": "e8c1e07d0a86b6d323bec48d69c8c950aa25dc32a0af7e660b54341f35615b48"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-BKUP",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-FRS1",
+          "source_pdf_page": 15,
+          "source_edition": "v20240916",
+          "source_sha256": "00fd7df3ae4d063d34387dcf47b514f9c552815eb8e83dfc4acfdc7ca00eab7f"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-DFSRH",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-FRS1",
+          "source_pdf_page": 15,
+          "source_edition": "v20240916",
+          "source_sha256": "00fd7df3ae4d063d34387dcf47b514f9c552815eb8e83dfc4acfdc7ca00eab7f"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-DLTW",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-DLTM",
+          "source_pdf_page": 9,
+          "source_edition": "v20170601",
+          "source_sha256": "46c0c9acb95e710beb2a8b61f6a0c635ae91b41456e919ad1c92b1e754db90f8"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-DMRP",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-CMRP",
+          "source_pdf_page": 23,
+          "source_edition": "v20250811",
+          "source_sha256": "6406d7c7b350596da2ea3464dd487ecdcb4990f1d614c9aa2302b629698a5ee3"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-EMF",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-EMFPLUS",
+          "source_pdf_page": 19,
+          "source_edition": "v20240423",
+          "source_sha256": "cb9324b2746706a9f428ef141b9eae2ae92876507789b8b4021ca1ce6fcbf435"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-EVEN",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-GPSB",
+          "source_pdf_page": 9,
+          "source_edition": "v20240423",
+          "source_sha256": "e48d5e2744153e4c9d6d84a614c9803a637784dfdfc3de16bb58b6542c8e59c0"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-FPSE",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OFBA",
+          "source_pdf_page": 6,
+          "source_edition": "v20240820",
+          "source_sha256": "bde1630aff99562ae6b0e5435c114fcac7c42a7895f26872cff3e92ca422c5c1"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-FRS2",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-FRS1",
+          "source_pdf_page": 15,
+          "source_edition": "v20240916",
+          "source_sha256": "00fd7df3ae4d063d34387dcf47b514f9c552815eb8e83dfc4acfdc7ca00eab7f"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-GPFR",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-GPOL",
+          "source_pdf_page": 15,
+          "source_edition": "v20240423",
+          "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-GPIPSEC",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-GPOL",
+          "source_pdf_page": 15,
+          "source_edition": "v20240423",
+          "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-GPSCR",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-GPOL",
+          "source_pdf_page": 15,
+          "source_edition": "v20240423",
+          "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-GPSI",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-GPOL",
+          "source_pdf_page": 15,
+          "source_edition": "v20240423",
+          "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-MQMR",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-MQMQ",
+          "source_pdf_page": 15,
+          "source_edition": "v20240423",
+          "source_sha256": "0060b8c8fd2ed1a4c85af1b41b61445d2265cc1b96819b694c60e50dad5b482d"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-MQRR",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-MQMQ",
+          "source_pdf_page": 15,
+          "source_edition": "v20240423",
+          "source_sha256": "0060b8c8fd2ed1a4c85af1b41b61445d2265cc1b96819b694c60e50dad5b482d"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-MSRP",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-CIFS",
+          "source_pdf_page": 23,
+          "source_edition": "v20251121",
+          "source_sha256": "2a9687ef4f1ece05f854e2f797ccab9358f4087d7d3b65673006faf2b770b14e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-ODATAJSON",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-ODATA",
+          "source_pdf_page": 13,
+          "source_edition": "v20190313",
+          "source_sha256": "e8c1e07d0a86b6d323bec48d69c8c950aa25dc32a0af7e660b54341f35615b48"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXBBODY",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 32,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXCEXT",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 32,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXCFOLD",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 32,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXCICAL",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 32,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXCMAIL",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXCMSG",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXCPRPT",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXCSPAM",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXCTABL",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXLDAP",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXMSG",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOABKT",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOCFG",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOCNTC",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXODLGT",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXODOC",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOFLAG",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOJRNL",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXONOTE",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOPFFB",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOPOST",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXORMMS",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXORSS",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 33,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXORULE",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOSFLD",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOSMIME",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOSMMS",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOSRCH",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOTASK",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXOUM",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXPFOAB",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXPHISH",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXPSVAL",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXRTFCP",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXRTFEX",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXSHARE",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXSHRMSG",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXWSMSHR",
+          "source_pdf_page": 7,
+          "source_edition": "v20250520",
+          "source_sha256": "58a8a24311bf826e9e5285edbcf75ff1f0c768ca3f0840128737b2431ee6b3f1"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXTNEF",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-OXVCARD",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-PAR",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-RPRN",
+          "source_pdf_page": 22,
+          "source_edition": "v20250811",
+          "source_sha256": "e5bb06ca3574f90cb9a0dad7ffa688b37b75323680ac0c41973048ccaf029c29"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-PCCRC",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-SMB2",
+          "source_pdf_page": 20,
+          "source_edition": "v20260928",
+          "source_sha256": "fef3a06507679130a8cfdcaeaed581482d7f235435dd904f6c794f113ff04bd1"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-RA",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-RAI",
+          "source_pdf_page": 9,
+          "source_edition": "v20240423",
+          "source_sha256": "7b7510df5c0f2c1308ceb39ec230d4e8b1417d8e338120cb7b7f23a4a9c912b8"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-RDPEGT",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-RDPEVOR",
+          "source_pdf_page": 6,
+          "source_edition": "v20240423",
+          "source_sha256": "521f06c513441df83c748c4ecc2307b26f9b01f3e9a25d0c0f0577a74e10a9c3"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-RMPR",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-EFSR",
+          "source_pdf_page": 12,
+          "source_edition": "v20240916",
+          "source_sha256": "e40d0f6f58cde506c423a0c860f739a86b263563dcf6a1a5da43957f640f45b1"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-RSVD",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-SMB2",
+          "source_pdf_page": 20,
+          "source_edition": "v20260928",
+          "source_sha256": "fef3a06507679130a8cfdcaeaed581482d7f235435dd904f6c794f113ff04bd1"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-SMBD",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-SMB2",
+          "source_pdf_page": 20,
+          "source_edition": "v20260928",
+          "source_sha256": "fef3a06507679130a8cfdcaeaed581482d7f235435dd904f6c794f113ff04bd1"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-SQLRS",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-FSCC",
+          "source_pdf_page": 14,
+          "source_edition": "v20251121",
+          "source_sha256": "0828799f05cce35c95dc972bce1c29548602ca4ff171d4aa8c0ff93018491704"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-SWN",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-SMB2",
+          "source_pdf_page": 20,
+          "source_edition": "v20260928",
+          "source_sha256": "fef3a06507679130a8cfdcaeaed581482d7f235435dd904f6c794f113ff04bd1"
+        }
+      ],
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
+    },
+    {
+      "id": "MS-WMI",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-GPOL",
+          "source_pdf_page": 15,
+          "source_edition": "v20240423",
+          "source_sha256": "c1151ad9b40abff7bf4ec60340459024d2b86acd8de05115ec554c248983a176"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-WSSHP",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OFBA",
+          "source_pdf_page": 6,
+          "source_edition": "v20240820",
+          "source_sha256": "bde1630aff99562ae6b0e5435c114fcac7c42a7895f26872cff3e92ca422c5c1"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-XWDCAL",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    },
+    {
+      "id": "MS-XWDVSEC",
+      "incoming_normative_edges_from_fourth": 1,
+      "sample_source_evidence": [
+        {
+          "referrer": "MS-OXPROPS",
+          "source_pdf_page": 34,
+          "source_edition": "v20250520",
+          "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
+        }
+      ],
+      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+    }
+  ],
+  "scope_limitations": [
+    "This is a raw target work queue, not proof of exact shortest-distance fifth ring",
+    "MS-SWN is included as previously audited fifth source; not counted twice",
+    "MS-ADLS only general §1.1 citations, unclassified, not synthetic normative edges",
+    "Fourth-ring citations to targets already examined in earlier tiers are excluded from queue, while their exact cited historical editions remain unresolved",
+    "External RFC/ISO/ITU/W3C are separate future workstream",
+    "Actual Skype for Business 2019 Windows Full Client feature obligation unproven"
+  ]
+}
