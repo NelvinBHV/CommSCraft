@@ -1,0 +1,1243 @@
+{
+  "schema_version": 1,
+  "as_of": "2026-10-24",
+  "phase": "P1-03",
+  "scope": "DOWNSTREAM_FOURTH_MS_MC_RAW_TARGETS_AND_NEWLY_EMERGENT_TRANSITIVE_MS_MC_TARGETS",
+  "branch": "draft/protocol-spec-analysis-2026-10-23",
+  "sources": [
+    {
+      "id": "MS-OXOCNTC",
+      "revision": "21.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 74,
+      "pdf_bytes": 2412092,
+      "sha256": "7c5f2a564b7c48706e688b5ed88c965776cf16ebc69f8838cbc2fbafaabee496",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXOCNTC].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "ISO/IEC8802-3",
+          "raw_label": "[ISO/IEC8802-3]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCFOLD",
+          "raw_label": "[MS-OXCFOLD]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCICAL",
+          "raw_label": "[MS-OXCICAL]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCPRPT",
+          "raw_label": "[MS-OXCPRPT]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXOABK",
+          "raw_label": "[MS-OXOABK]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXOCAL",
+          "raw_label": "[MS-OXOCAL]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXOCNTC",
+          "raw_label": "[MS-OXOCNTC]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2247",
+          "raw_label": "[RFC2247]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC5321",
+          "raw_label": "[RFC5321]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC959",
+          "raw_label": "[RFC959]",
+          "pdf_page": 11
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-OXWSCOS",
+          "raw_label": "[MS-OXWSCOS]",
+          "pdf_page": 11
+        }
+      ],
+      "normative_count": 16,
+      "informative_count": 2,
+      "source_original_pdf_full_sha256_verified": true,
+      "source_pdf_reference_heading_rendered_and_checked": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "source_binary_pdf_in_repo": false
+    },
+    {
+      "id": "MS-OXODOC",
+      "revision": "13.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 24,
+      "pdf_bytes": 1095339,
+      "sha256": "082f9a15774d1971f51dbdeb90e52823bfb5c2421fd2eed38bb6ffb2ae3f5573",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXODOC].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXCFOLD",
+          "raw_label": "[MS-OXCFOLD]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXCPRPT",
+          "raw_label": "[MS-OXCPRPT]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 7
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 7
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 7
+        }
+      ],
+      "normative_count": 6,
+      "informative_count": 2,
+      "source_original_pdf_full_sha256_verified": true,
+      "source_pdf_reference_heading_rendered_and_checked": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "source_binary_pdf_in_repo": false
+    },
+    {
+      "id": "MS-OXOFLAG",
+      "revision": "15.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 41,
+      "pdf_bytes": 1624887,
+      "sha256": "b4aab19824d81a18ae6cbd45976e4a198de1d47a41960dd650526d4131289123",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXOFLAG].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCPRPT",
+          "raw_label": "[MS-OXCPRPT]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCSTOR",
+          "raw_label": "[MS-OXCSTOR]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXOCAL",
+          "raw_label": "[MS-OXOCAL]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXORMDR",
+          "raw_label": "[MS-OXORMDR]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXOTASK",
+          "raw_label": "[MS-OXOTASK]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 11,
+      "informative_count": 1,
+      "source_original_pdf_full_sha256_verified": true,
+      "source_pdf_reference_heading_rendered_and_checked": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "source_binary_pdf_in_repo": false
+    },
+    {
+      "id": "MS-OXOSMIME",
+      "revision": "15.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 23,
+      "pdf_bytes": 963994,
+      "sha256": "93962010c6ffb4fd0b3247bad479144b95f849c2f51a6b1764281512f2d69274",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXOSMIME].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-OXCMAIL",
+          "raw_label": "[MS-OXCMAIL]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 7
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC1847",
+          "raw_label": "[RFC1847]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2045",
+          "raw_label": "[RFC2045]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2183",
+          "raw_label": "[RFC2183]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC3852",
+          "raw_label": "[RFC3852]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC5751",
+          "raw_label": "[RFC5751]",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2046",
+          "raw_label": "[RFC2046]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2047",
+          "raw_label": "[RFC2047]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2048",
+          "raw_label": "[RFC2048]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2049",
+          "raw_label": "[RFC2049]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2311",
+          "raw_label": "[RFC2311]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2822",
+          "raw_label": "[RFC2822]",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 10,
+      "informative_count": 7,
+      "source_original_pdf_full_sha256_verified": true,
+      "source_pdf_reference_heading_rendered_and_checked": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "source_binary_pdf_in_repo": false
+    },
+    {
+      "id": "MS-OXTNEF",
+      "revision": "15.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 51,
+      "pdf_bytes": 1671007,
+      "sha256": "1011dece1c231d3d5cdb4b3e952a3e3105d9c7af1e53811cf289d8489e86c3e2",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXTNEF].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCMAIL",
+          "raw_label": "[MS-OXCMAIL]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCPRPT",
+          "raw_label": "[MS-OXCPRPT]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXOCAL",
+          "raw_label": "[MS-OXOCAL]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC5234",
+          "raw_label": "[RFC5234]",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXCFOLD",
+          "raw_label": "[MS-OXCFOLD]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCSPAM",
+          "raw_label": "[MS-OXCSPAM]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXORMDR",
+          "raw_label": "[MS-OXORMDR]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXOTASK",
+          "raw_label": "[MS-OXOTASK]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-WMF",
+          "raw_label": "[MS-WMF]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MSDN-UAF",
+          "raw_label": "[MSDN-UAF]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2045",
+          "raw_label": "[RFC2045]",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 10,
+      "informative_count": 8,
+      "source_original_pdf_full_sha256_verified": true,
+      "source_pdf_reference_heading_rendered_and_checked": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "source_binary_pdf_in_repo": false
+    },
+    {
+      "id": "MS-OXOTASK",
+      "revision": "16.0",
+      "edition": "v20250520",
+      "published": "2025-05-20",
+      "pdf_pages": 40,
+      "pdf_bytes": 1646486,
+      "sha256": "232bde17edc3cd95f325c54b7c1deb0adfc61cf002d74fe6dbfa0597ae94595c",
+      "original_archive": "Exchange_Protocols.zip",
+      "original_archive_member": "[MS-OXOTASK].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCMSG",
+          "raw_label": "[MS-OXCMSG]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCPERM",
+          "raw_label": "[MS-OXCPERM]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCPRPT",
+          "raw_label": "[MS-OXCPRPT]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCROPS",
+          "raw_label": "[MS-OXCROPS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCTABL",
+          "raw_label": "[MS-OXCTABL]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXOCAL",
+          "raw_label": "[MS-OXOCAL]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXODLGT",
+          "raw_label": "[MS-OXODLGT]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXOMSG",
+          "raw_label": "[MS-OXOMSG]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXORMDR",
+          "raw_label": "[MS-OXORMDR]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 8
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-OXCFOLD",
+          "raw_label": "[MS-OXCFOLD]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXCFXICS",
+          "raw_label": "[MS-OXCFXICS]",
+          "pdf_page": 8
+        },
+        {
+          "target": "MS-OXPROTO",
+          "raw_label": "[MS-OXPROTO]",
+          "pdf_page": 8
+        }
+      ],
+      "normative_count": 12,
+      "informative_count": 3,
+      "source_original_pdf_full_sha256_verified": true,
+      "source_pdf_reference_heading_rendered_and_checked": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "source_binary_pdf_in_repo": false
+    },
+    {
+      "id": "MS-NSPI",
+      "revision": "16.0",
+      "edition": "v20240423",
+      "published": "2024-04-23",
+      "pdf_pages": 103,
+      "pdf_bytes": 2583370,
+      "sha256": "cfd80777a37a1134ed8d1f2e0722dbec4aaee6043e7378fd3eddcd448c0927b9",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MS-NSPI].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "C706",
+          "raw_label": "[C706]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-KILE",
+          "raw_label": "[MS-KILE]",
+          "pdf_page": 9
+        },
+        {
+          "target": "MS-NLMP",
+          "raw_label": "[MS-NLMP]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-OXCDATA",
+          "raw_label": "[MS-OXCDATA]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-OXOABKT",
+          "raw_label": "[MS-OXOABKT]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-OXOABK",
+          "raw_label": "[MS-OXOABK]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-OXPROPS",
+          "raw_label": "[MS-OXPROPS]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-RPCE",
+          "raw_label": "[MS-RPCE]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-UCODEREF",
+          "raw_label": "[MS-UCODEREF]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC1510",
+          "raw_label": "[RFC1510]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 10
+        },
+        {
+          "target": "RFC4120",
+          "raw_label": "[RFC4120]",
+          "pdf_page": 10
+        }
+      ],
+      "informative_references": [],
+      "normative_count": 12,
+      "informative_count": 0,
+      "source_original_pdf_full_sha256_verified": true,
+      "source_pdf_reference_heading_rendered_and_checked": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "source_binary_pdf_in_repo": false
+    },
+    {
+      "id": "MS-MQDMPR",
+      "revision": "32.0",
+      "edition": "v20240423",
+      "published": "2024-04-23",
+      "pdf_pages": 138,
+      "pdf_bytes": 3002146,
+      "sha256": "66513c84b868d3ae179413eaacbbd41d7c99875b9cedd48c0a3f69c57da5c956",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MS-MQDMPR].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "FIPS180-2",
+          "raw_label": "[FIPS180-2]",
+          "pdf_page": 12
+        },
+        {
+          "target": "FIPS186",
+          "raw_label": "[FIPS186]",
+          "pdf_page": 13
+        },
+        {
+          "target": "FIPS197",
+          "raw_label": "[FIPS197]",
+          "pdf_page": 13
+        },
+        {
+          "target": "FIPS46-3",
+          "raw_label": "[FIPS46-3]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MC-MQSRM",
+          "raw_label": "[MC-MQSRM]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-ADA3",
+          "raw_label": "[MS-ADA3]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-ADTS",
+          "raw_label": "[MS-ADTS]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-DTCO",
+          "raw_label": "[MS-DTCO]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-ERREF",
+          "raw_label": "[MS-ERREF]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-LSAD",
+          "raw_label": "[MS-LSAD]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-MQCN",
+          "raw_label": "[MS-MQCN]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-MQDSSM",
+          "raw_label": "[MS-MQDSSM]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-MQDS",
+          "raw_label": "[MS-MQDS]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-MQMQ",
+          "raw_label": "[MS-MQMQ]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-MQSD",
+          "raw_label": "[MS-MQSD]",
+          "pdf_page": 13
+        },
+        {
+          "target": "MS-SAMR",
+          "raw_label": "[MS-SAMR]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC1035",
+          "raw_label": "[RFC1035]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC1319",
+          "raw_label": "[RFC1319]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC1320",
+          "raw_label": "[RFC1320]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC1321",
+          "raw_label": "[RFC1321]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC2268",
+          "raw_label": "[RFC2268]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC3110",
+          "raw_label": "[RFC3110]",
+          "pdf_page": 13
+        },
+        {
+          "target": "RFC3280",
+          "raw_label": "[RFC3280]",
+          "pdf_page": 14
+        },
+        {
+          "target": "RFC4757",
+          "raw_label": "[RFC4757]",
+          "pdf_page": 14
+        },
+        {
+          "target": "RFC8017",
+          "raw_label": "[RFC8017]",
+          "pdf_page": 14
+        },
+        {
+          "target": "SEAL-SPRINGER",
+          "raw_label": "[SEAL-SPRINGER]",
+          "pdf_page": 14
+        },
+        {
+          "target": "UML",
+          "raw_label": "[UML]",
+          "pdf_page": 14
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "CRYPTO",
+          "raw_label": "[CRYPTO]",
+          "pdf_page": 14
+        },
+        {
+          "target": "MS-MQQB",
+          "raw_label": "[MS-MQQB]",
+          "pdf_page": 14
+        },
+        {
+          "target": "X9.31",
+          "raw_label": "[X9.31]",
+          "pdf_page": 14
+        }
+      ],
+      "normative_count": 29,
+      "informative_count": 3,
+      "source_original_pdf_full_sha256_verified": true,
+      "source_pdf_reference_heading_rendered_and_checked": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "source_binary_pdf_in_repo": false
+    },
+    {
+      "id": "MS-MQQB",
+      "revision": "33.0",
+      "edition": "v20240423",
+      "published": "2024-04-23",
+      "pdf_pages": 139,
+      "pdf_bytes": 3610620,
+      "sha256": "2f95df5b5eb5db5c96c6f4eef75dd239aca8dc57af0e66f8dde3efa5228a4a7c",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MS-MQQB].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "FIPS180-2",
+          "raw_label": "[FIPS180-2]",
+          "pdf_page": 11
+        },
+        {
+          "target": "FIPS197",
+          "raw_label": "[FIPS197]",
+          "pdf_page": 11
+        },
+        {
+          "target": "IANAPORT",
+          "raw_label": "[IANAPORT]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-ADTS",
+          "raw_label": "[MS-ADTS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-LSAT",
+          "raw_label": "[MS-LSAT]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-MQBR",
+          "raw_label": "[MS-MQBR]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-MQDMPR",
+          "raw_label": "[MS-MQDMPR]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-MQDSSM",
+          "raw_label": "[MS-MQDSSM]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-MQDS",
+          "raw_label": "[MS-MQDS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-MQMQ",
+          "raw_label": "[MS-MQMQ]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-PAC",
+          "raw_label": "[MS-PAC]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-SFU",
+          "raw_label": "[MS-SFU]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC1319",
+          "raw_label": "[RFC1319]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC1320",
+          "raw_label": "[RFC1320]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC1321",
+          "raw_label": "[RFC1321]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2212",
+          "raw_label": "[RFC2212]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2268",
+          "raw_label": "[RFC2268]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC3110",
+          "raw_label": "[RFC3110]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC3986",
+          "raw_label": "[RFC3986]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC4757",
+          "raw_label": "[RFC4757]",
+          "pdf_page": 12
+        },
+        {
+          "target": "RFC8017",
+          "raw_label": "[RFC8017]",
+          "pdf_page": 12
+        },
+        {
+          "target": "SP800-38A",
+          "raw_label": "[SP800-38A]",
+          "pdf_page": 12
+        },
+        {
+          "target": "X509",
+          "raw_label": "[X509]",
+          "pdf_page": 12
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "LDAP",
+          "raw_label": "[LDAP]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MS-MQOD",
+          "raw_label": "[MS-MQOD]",
+          "pdf_page": 12
+        }
+      ],
+      "normative_count": 25,
+      "informative_count": 2,
+      "source_original_pdf_full_sha256_verified": true,
+      "source_pdf_reference_heading_rendered_and_checked": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "source_binary_pdf_in_repo": false
+    },
+    {
+      "id": "MC-MQSRM",
+      "revision": "24.0",
+      "edition": "v20240423",
+      "published": "2024-04-23",
+      "pdf_pages": 109,
+      "pdf_bytes": 2724732,
+      "sha256": "1d53db156d2ef581dd9d2efcf942dc07e5fcc9af0523216f1d0477c0c05e6dbe",
+      "original_archive": "Windows_Protocols.tar.xz",
+      "original_archive_member": "Windows_Protocols/[MC-MQSRM].pdf",
+      "normative_section": "§1.2.1",
+      "informative_section": "§1.2.2",
+      "normative_references": [
+        {
+          "target": "FIPS186",
+          "raw_label": "[FIPS186]",
+          "pdf_page": 10
+        },
+        {
+          "target": "ISO-8601",
+          "raw_label": "[ISO-8601]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-ADTS",
+          "raw_label": "[MS-ADTS]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-DTYP",
+          "raw_label": "[MS-DTYP]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-LSAT",
+          "raw_label": "[MS-LSAT]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-MQDMPR",
+          "raw_label": "[MS-MQDMPR]",
+          "pdf_page": 10
+        },
+        {
+          "target": "MS-MQDSSM",
+          "raw_label": "[MS-MQDSSM]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-MQDS",
+          "raw_label": "[MS-MQDS]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-MQMQ",
+          "raw_label": "[MS-MQMQ]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-MQQB",
+          "raw_label": "[MS-MQQB]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-MQRR",
+          "raw_label": "[MS-MQRR]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-PAC",
+          "raw_label": "[MS-PAC]",
+          "pdf_page": 11
+        },
+        {
+          "target": "MS-SFU",
+          "raw_label": "[MS-SFU]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC1321",
+          "raw_label": "[RFC1321]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2045",
+          "raw_label": "[RFC2045]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2046",
+          "raw_label": "[RFC2046]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2119",
+          "raw_label": "[RFC2119]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2246",
+          "raw_label": "[RFC2246]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2387",
+          "raw_label": "[RFC2387]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2616",
+          "raw_label": "[RFC2616]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC2818",
+          "raw_label": "[RFC2818]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC3174",
+          "raw_label": "[RFC3174]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC3208",
+          "raw_label": "[RFC3208]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC3548",
+          "raw_label": "[RFC3548]",
+          "pdf_page": 11
+        },
+        {
+          "target": "RFC4122",
+          "raw_label": "[RFC4122]",
+          "pdf_page": 11
+        },
+        {
+          "target": "SOAP1.1",
+          "raw_label": "[SOAP1.1]",
+          "pdf_page": 11
+        },
+        {
+          "target": "W3C-XSD",
+          "raw_label": "[W3C-XSD]",
+          "pdf_page": 12
+        },
+        {
+          "target": "XML1.0",
+          "raw_label": "[XML1.0]",
+          "pdf_page": 12
+        },
+        {
+          "target": "XMLDSig",
+          "raw_label": "[XMLDSig]",
+          "pdf_page": 12
+        }
+      ],
+      "informative_references": [
+        {
+          "target": "MS-MQOD",
+          "raw_label": "[MS-MQOD]",
+          "pdf_page": 12
+        },
+        {
+          "target": "MSDN-WSROUTING",
+          "raw_label": "[MSDN-WSROUTING]",
+          "pdf_page": 12
+        }
+      ],
+      "normative_count": 29,
+      "informative_count": 2,
+      "source_original_pdf_full_sha256_verified": true,
+      "source_pdf_reference_heading_rendered_and_checked": true,
+      "cited_target_edition": "UNRECONCILED",
+      "client_applicability": "OPEN",
+      "source_binary_pdf_in_repo": false
+    }
+  ],
+  "source_count": 10,
+  "added_normative_edges": 160,
+  "added_informative_references_separate": 30,
+  "source_original_archives": [
+    "Exchange_Protocols.zip",
+    "Windows_Protocols.tar.xz"
+  ],
+  "existing_downstream_original_sources": 43,
+  "new_downstream_original_sources": 53,
+  "old_downstream_normative_edges": 621,
+  "new_downstream_normative_edges": 781,
+  "old_downstream_informative_refs": 161,
+  "new_downstream_informative_refs": 191,
+  "initial_fourth_raw_target_pool_constant": 88,
+  "initial_queue_sources_newly_audited": 6,
+  "previous_initial_queue_pending": 44,
+  "after_initial_queue_pending": 38,
+  "previous_emergent_transitive_pending": 15,
+  "newly_audited_emergent_transitive_sources": 4,
+  "previous_emergent_list_pending_after_audits_before_new_discovery": 11,
+  "source_note": "MS-OXOCNTC §1.2.1 p11 explicitly cites [MS-OXOCNTC], distinct from a PDF footer token which is excluded.",
+  "normative_self_citations": [
+    {
+      "source": "MS-OXOCNTC",
+      "target": "MS-OXOCNTC",
+      "page": 11,
+      "section": "§1.2.1",
+      "edition": "v20250520"
+    }
+  ],
+  "ms_nspi_informative_section_none": true,
+  "client_build_server_role_policy_scope_proven": false,
+  "target_cited_editions_reconciled": false,
+  "shortest_fifth_tier_proven": false,
+  "phase1_gates_passed": 0,
+  "original_pdfs_held_by_user": true,
+  "original_pdf_binary_committed": false,
+  "earlier_ring_counts_stable": [
+    464,
+    246,
+    827,
+    1147
+  ],
+  "ms_adls_13_and_third_67_schema_citations_unclassified": true,
+  "ms_dmrp_original_2017_rev8_2_pending": true
+}

@@ -8,9 +8,9 @@
   "second_ring_ledger_sha": "af4e27be3bbab38bd70ba50e858edeaaac4d2e66",
   "fifth_ring_current_ledger_sha": "096d03dfe1c0828b9ad721417441ef6460fa0105",
   "candidate_raw_labels": 88,
-  "already_audited_fifth_sources": 43,
+  "already_audited_fifth_sources": 49,
   "schema_only_reviewed": 1,
-  "remaining_raw_ms_mc_source_candidates": 44,
+  "remaining_raw_ms_mc_source_candidates": 38,
   "reviewed_fifth_source_ids": [
     "MS-SWN",
     "MS-OXWSADISC",
@@ -54,7 +54,17 @@
     "MS-OXCSPAM",
     "MS-OXCTABL",
     "MS-OXOABKT",
-    "MS-OXOCFG"
+    "MS-OXOCFG",
+    "MS-OXOCNTC",
+    "MS-OXODOC",
+    "MS-OXOFLAG",
+    "MS-OXOSMIME",
+    "MS-OXTNEF",
+    "MS-OXOTASK",
+    "MS-NSPI",
+    "MS-MQDMPR",
+    "MS-MQQB",
+    "MC-MQSRM"
   ],
   "raw_target_candidates": [
     {
@@ -861,7 +871,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXODLGT",
@@ -887,7 +897,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXOFLAG",
@@ -900,7 +910,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXOJRNL",
@@ -1017,7 +1027,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXOSMMS",
@@ -1056,7 +1066,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXOUM",
@@ -1173,7 +1183,7 @@
           "source_sha256": "8b8c308ada6bb961f49182707932762f1a97486301e355d9c23f6f7b27cc3a0e"
         }
       ],
-      "source_status": "PENDING_ORIGINAL_NORMATIVE_BIBLIOGRAPHY_REVIEW"
+      "source_status": "ORIGINAL_NORMATIVE_BIBLIOGRAPHY_AUDITED"
     },
     {
       "id": "MS-OXVCARD",
@@ -1441,5 +1451,28 @@
     "total_normative_source_audits": 43,
     "remaining_raw_ms_mc_source_candidates": 44,
     "source_audit": "fifth-stage-ten-exchange-mail-folder-mime-audit-2026-10-24.json"
+  },
+  "batch_2026_10_24_six_exchange_four_transitive": {
+    "original_fourth_target_queued_source_ids_audited": [
+      "MS-OXOCNTC",
+      "MS-OXODOC",
+      "MS-OXOFLAG",
+      "MS-OXOSMIME",
+      "MS-OXTNEF",
+      "MS-OXOTASK"
+    ],
+    "additional_transitive_sources_audited": [
+      "MS-NSPI",
+      "MS-MQDMPR",
+      "MS-MQQB",
+      "MC-MQSRM"
+    ],
+    "source_full_pdf_sha256_verified": 10,
+    "normative_edges_added": 160,
+    "informative_separate_added": 30,
+    "downstream_audited_total": 53,
+    "initial_queue_audited": 49,
+    "initial_queue_remaining": 38,
+    "other_transitive_workqueue": "fifth-stage-additional-transitive-ms-mc-targets-2026-10-24.json"
   }
 }

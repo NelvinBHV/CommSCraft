@@ -71,17 +71,17 @@
     {
       "id": "P1-03",
       "passed": false,
-      "blocker": "Source-ID fourth ring 86/86 classified with 1147 normative edges; downstream 43 original §1.2.1 bibliographies/621 directed normative edges/161 separate informative. Original fourth-target raw MS/MC queue 88, 43 source original audited, 1 MS-ADLS schema-only classed, 44 pending. Additional transitive raw MS/MC target IDs 15 uncovered from downstream beyond initial list (59 combined literal pending labels, not historical-edition normalized or fixed point). MS-DMRP 2017 original still pending; RFC/IETF/ISO/ITU/W3C target editions, further recursive norm closure and SfB2019 Windows Full Client builds/features/policy/server role proof remain OPEN; Phase1 0/12 PASS."
+      "blocker": "Fourth source-ID level 86/86 classified, 1,147 norm edges. Downstream now 53 audited original §1.2.1 bibliographies, 781 normative directed edges and 191 separately informative. Initial fourth-target queue 88 raw labels, 49 original norm sources audited, MS-ADLS schema §1.1 unclassified, 38 pending; separate freshly recomputed transitive queue 15 raw target candidates pending, combined literal 53. Genuine MS-OXOCNTC normative self-citation on original p11 distinguished from footer. MS-DMRP rev8.2 historical original still pending. Product SfB2019 Full Client build/policy/roles, historical cited-target editions, recursive RFC/IETF/ISO/ITU/W3C full closure, independent fixed point all OPEN. Formal gates remain 0/12 PASS."
     },
     {
       "id": "P1-04",
       "passed": false,
-      "blocker": "Source-ID fourth ring 86/86 classified with 1147 normative edges; downstream 43 original §1.2.1 bibliographies/621 directed normative edges/161 separate informative. Original fourth-target raw MS/MC queue 88, 43 source original audited, 1 MS-ADLS schema-only classed, 44 pending. Additional transitive raw MS/MC target IDs 15 uncovered from downstream beyond initial list (59 combined literal pending labels, not historical-edition normalized or fixed point). MS-DMRP 2017 original still pending; RFC/IETF/ISO/ITU/W3C target editions, further recursive norm closure and SfB2019 Windows Full Client builds/features/policy/server role proof remain OPEN; Phase1 0/12 PASS."
+      "blocker": "Fourth source-ID level 86/86 classified, 1,147 norm edges. Downstream now 53 audited original §1.2.1 bibliographies, 781 normative directed edges and 191 separately informative. Initial fourth-target queue 88 raw labels, 49 original norm sources audited, MS-ADLS schema §1.1 unclassified, 38 pending; separate freshly recomputed transitive queue 15 raw target candidates pending, combined literal 53. Genuine MS-OXOCNTC normative self-citation on original p11 distinguished from footer. MS-DMRP rev8.2 historical original still pending. Product SfB2019 Full Client build/policy/roles, historical cited-target editions, recursive RFC/IETF/ISO/ITU/W3C full closure, independent fixed point all OPEN. Formal gates remain 0/12 PASS."
     },
     {
       "id": "P1-05",
       "passed": false,
-      "blocker": "Source-ID fourth ring 86/86 classified with 1147 normative edges; downstream 43 original §1.2.1 bibliographies/621 directed normative edges/161 separate informative. Original fourth-target raw MS/MC queue 88, 43 source original audited, 1 MS-ADLS schema-only classed, 44 pending. Additional transitive raw MS/MC target IDs 15 uncovered from downstream beyond initial list (59 combined literal pending labels, not historical-edition normalized or fixed point). MS-DMRP 2017 original still pending; RFC/IETF/ISO/ITU/W3C target editions, further recursive norm closure and SfB2019 Windows Full Client builds/features/policy/server role proof remain OPEN; Phase1 0/12 PASS."
+      "blocker": "Fourth source-ID level 86/86 classified, 1,147 norm edges. Downstream now 53 audited original §1.2.1 bibliographies, 781 normative directed edges and 191 separately informative. Initial fourth-target queue 88 raw labels, 49 original norm sources audited, MS-ADLS schema §1.1 unclassified, 38 pending; separate freshly recomputed transitive queue 15 raw target candidates pending, combined literal 53. Genuine MS-OXOCNTC normative self-citation on original p11 distinguished from footer. MS-DMRP rev8.2 historical original still pending. Product SfB2019 Full Client build/policy/roles, historical cited-target editions, recursive RFC/IETF/ISO/ITU/W3C full closure, independent fixed point all OPEN. Formal gates remain 0/12 PASS."
     },
     {
       "id": "P1-06",
@@ -96,7 +96,7 @@
     {
       "id": "P1-08",
       "passed": false,
-      "blocker": "Source-ID fourth ring 86/86 classified with 1147 normative edges; downstream 43 original §1.2.1 bibliographies/621 directed normative edges/161 separate informative. Original fourth-target raw MS/MC queue 88, 43 source original audited, 1 MS-ADLS schema-only classed, 44 pending. Additional transitive raw MS/MC target IDs 15 uncovered from downstream beyond initial list (59 combined literal pending labels, not historical-edition normalized or fixed point). MS-DMRP 2017 original still pending; RFC/IETF/ISO/ITU/W3C target editions, further recursive norm closure and SfB2019 Windows Full Client builds/features/policy/server role proof remain OPEN; Phase1 0/12 PASS."
+      "blocker": "Fourth source-ID level 86/86 classified, 1,147 norm edges. Downstream now 53 audited original §1.2.1 bibliographies, 781 normative directed edges and 191 separately informative. Initial fourth-target queue 88 raw labels, 49 original norm sources audited, MS-ADLS schema §1.1 unclassified, 38 pending; separate freshly recomputed transitive queue 15 raw target candidates pending, combined literal 53. Genuine MS-OXOCNTC normative self-citation on original p11 distinguished from footer. MS-DMRP rev8.2 historical original still pending. Product SfB2019 Full Client build/policy/roles, historical cited-target editions, recursive RFC/IETF/ISO/ITU/W3C full closure, independent fixed point all OPEN. Formal gates remain 0/12 PASS."
     },
     {
       "id": "P1-09",
@@ -106,7 +106,7 @@
     {
       "id": "P1-10",
       "passed": false,
-      "blocker": "Source-ID fourth ring 86/86 classified with 1147 normative edges; downstream 43 original §1.2.1 bibliographies/621 directed normative edges/161 separate informative. Original fourth-target raw MS/MC queue 88, 43 source original audited, 1 MS-ADLS schema-only classed, 44 pending. Additional transitive raw MS/MC target IDs 15 uncovered from downstream beyond initial list (59 combined literal pending labels, not historical-edition normalized or fixed point). MS-DMRP 2017 original still pending; RFC/IETF/ISO/ITU/W3C target editions, further recursive norm closure and SfB2019 Windows Full Client builds/features/policy/server role proof remain OPEN; Phase1 0/12 PASS."
+      "blocker": "Fourth source-ID level 86/86 classified, 1,147 norm edges. Downstream now 53 audited original §1.2.1 bibliographies, 781 normative directed edges and 191 separately informative. Initial fourth-target queue 88 raw labels, 49 original norm sources audited, MS-ADLS schema §1.1 unclassified, 38 pending; separate freshly recomputed transitive queue 15 raw target candidates pending, combined literal 53. Genuine MS-OXOCNTC normative self-citation on original p11 distinguished from footer. MS-DMRP rev8.2 historical original still pending. Product SfB2019 Full Client build/policy/roles, historical cited-target editions, recursive RFC/IETF/ISO/ITU/W3C full closure, independent fixed point all OPEN. Formal gates remain 0/12 PASS."
     },
     {
       "id": "P1-11",
@@ -1422,5 +1422,19 @@
     "source_original_pdfs_in_git": false,
     "ms_dmrp_original_release_verified": false,
     "phase1_gates_passed": 0
+  },
+  "p1_03_downstream_six_exchange_four_transitive_originals_2026_10_24": {
+    "original_pdfs_complete_sha256_verified": 10,
+    "normative_edges_added": 160,
+    "informative_refs_added": 30,
+    "downstream_source_bibliographies_reviewed": 53,
+    "downstream_normative_edges": 781,
+    "downstream_informative_citations": 191,
+    "initial_raw_88_queue_pending": 38,
+    "separate_transitive_raw_targets_pending": 15,
+    "combined_literal_raw_ms_mc_target_ids_pending": 53,
+    "genuine_ms_oxocntc_normative_self_reference_verified": true,
+    "phase1_gates_passed": 0,
+    "original_pdf_binaries_not_in_git": true
   }
 }
