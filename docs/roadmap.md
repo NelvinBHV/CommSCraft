@@ -9,8 +9,8 @@ authorized server.
 
 ## Current focus (M0 – foundations)
 
-1. **Owner decisions** D-01 … D-08 in [`decisions.md`](decisions.md) (licence, documentation
-   language, dependency policy, codecs, what of the analysis is published).
+1. **Owner decision D-08** in [`decisions.md`](decisions.md): the interop test environment
+   (D-01 … D-07 are taken).
 2. **Import the protocol analysis** into `docs/protocol/`: one evidence file per protocol with
    requirement IDs (e.g. `AE-24`, `IC-14`), the function matrix, the conflict/gap/open-point list and
    the source registers (document, edition, SHA-256; no PDFs).

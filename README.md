@@ -8,7 +8,7 @@ application, a ranked work list, and nothing copied from Microsoft products.
 
 > **Stage: planning.** There is no program code yet. The first milestone imports the protocol
 > analysis (every client function mapped to the specification sections that define it) and fixes
-> the owner decisions listed in [`docs/decisions.md`](docs/decisions.md). Read
+> the remaining owner decision in [`docs/decisions.md`](docs/decisions.md). Read
 > [`ROADMAP.md`](ROADMAP.md) for where the project stands.
 
 CommSCraft is not affiliated with, endorsed by or sponsored by Microsoft. "Skype for Business",
@@ -58,5 +58,5 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 
 ## License
 
-Not decided yet (see [`docs/decisions.md`](docs/decisions.md), D-01). Until a licence is added, no
-rights beyond those GitHub's terms grant are given.
+CommSCraft is dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
+Copyright (c) 2026 the CommSCraft contributors.
