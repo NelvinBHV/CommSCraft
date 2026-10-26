@@ -1,0 +1,81 @@
+# CommSCraft parity with the Skype for Business client
+
+> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** major (first version)
+
+The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
+[`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
+
+## What we measure against
+
+- **Target client:** Skype for Business 2016/2019/LTSC desktop client for Windows (the "full
+  client"), connected to an on-premises Skype for Business Server 2015, 2019 or Subscription
+  Edition.
+- **Sources:** Microsoft Open Specifications (Office and Windows protocols, editions up to 2025),
+  IETF RFCs and Internet-Drafts, ITU-T Recommendations; official Microsoft documentation where the
+  specifications are silent. The client binaries are never inspected.
+- **Not in scope:** Skype for Business Online (retired by Microsoft), Microsoft Teams, the consumer
+  Skype service.
+
+## Functions and evidence status (2026-10-26)
+
+Evidence status comes from the protocol analysis (to be imported in M0): **B** fully documented,
+**B\*** documented with conflicts/gaps needing a decision or interop check, **T** partly documented,
+**N** not documented or not implementable without a licence. Implementation status is "–" for all
+rows: no code exists yet.
+
+| # | Function | Main specifications | Evidence | Implemented |
+|---|---|---|---|---|
+| 1 | Server discovery | MS-OCDISCWS, MS-CONMGMT | B | – |
+| 2 | TLS connection, keep-alive | MS-CONMGMT | B | – |
+| 3 | SIP compression (optional) | MS-SIPCOMP | B\* | – |
+| 4 | Sign-in with NTLM | MS-SIPAE, MS-NLMP | B\* | – |
+| 5 | Sign-in with Kerberos | MS-SIPAE, MS-KILE | B | – |
+| 6 | Sign-in with TLS-DSK and client certificate | MS-SIPAE, MS-OCAUTHWS | B\* | – |
+| 7 | Registration, GRUU, endpoint ID | MS-SIPREGE, MS-SIPRE | B | – |
+| 8 | In-band provisioning | MS-SIPREGE | B\* | – |
+| 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | – |
+| 10 | Contact list (server) | MS-SIP, MS-PRES | B | – |
+| 11 | Contact list (Exchange unified contact store) | MS-PRES, MS-OXWSCOS, MS-OXWSPERS | B\* | – |
+| 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | – |
+| 13 | Offline address book | MS-ABS | B\* | – |
+| 14 | Address book and distribution list search | MS-DLX | B\* | – |
+| 15 | Contact photos | MS-OXWSPHOTO | B | – |
+| 16 | Calendar and out-of-office state | MS-PRES (format) | T | – |
+| 17 | Instant messaging 1:1 | MS-SIPRE, MS-OCSPROT | B | – |
+| 18 | Typing indicator | MS-CONFIM | T | – |
+| 19 | Group IM (IM conference) | MS-CONFBAS, MS-CONFIM | B\* | – |
+| 20 | Persistent chat | MS-XCCOSIP, MS-OCGCWEB | T | – |
+| 21 | Media relay access | MS-AVEDGEA, MS-TURN | B | – |
+| 22 | ICE connectivity | MS-ICE2, MS-ICE | B\* | – |
+| 23 | Media negotiation (SDP) | MS-SDPEXT, MS-SIPRE | B\* | – |
+| 24 | Media encryption | MS-SRTP, MS-SSRTP | B | – |
+| 25 | RTP/RTCP, bandwidth, video source requests | MS-RTP | B | – |
+| 26 | Audio codecs G.711, G.722 | MS-RTP, MS-SDPEXT | B | – |
+| 27 | Audio codecs RTAudio, Siren, G.722.1 | MS-SDPEXT, MS-RTP, ITU-T G.722.1 | T | – |
+| 28 | Video H.264 UC/SVC | MS-H264PF, MS-SDPEXT | B | – |
+| 29 | Video RTVideo | MS-RTVPF | N | not planned |
+| 30 | DTMF, redundancy | MS-DTMF, MS-RTPRADEX | B | – |
+| 31 | Picture control (freeze/refresh) | MS-XMLMC | B | – |
+| 32 | Bandwidth management (call admission control) | MS-ICE2BWM, MS-TURNBWM | B | – |
+| 33 | PSTN telephony | MS-OCPSTN, MS-SIPRE | B | – |
+| 34 | Forwarding, simultaneous ring, team and delegate calls | MS-SIPRE, MS-PRES | B | – |
+| 35 | Hold, music on hold | MS-SDPEXT, MS-SIPRE | B | – |
+| 36 | Call transfer | MS-SIPAE, MS-SIPRE | B\* | – |
+| 37 | Call park | MS-SIPAPP | B\* | – |
+| 38 | Voicemail | MS-OCEXUM, MS-EUMSDP | T | – |
+| 39 | Emergency calls with location | MS-E911WS, MS-SIPRE | B\* | – |
+| 40 | Schedule meetings | MS-CONFPRO | B\* | – |
+| 41 | Join meetings, lobby, roles | MS-CONFBAS | B\* | – |
+| 42 | A/V conferences, muting | MS-CONFAV | B\* | – |
+| 43 | Desktop and application sharing | MS-CONFAS, MS-RTASPF, MS-RDPBCGR, MS-RDPEMC | T | – |
+| 44 | Whiteboard, PowerPoint, polls | MS-PSOM | T | – |
+| 45 | Quality reports and call rating | MS-QoE | B\* | – |
+| 46 | Error diagnostics and display | MS-OCER | B | – |
+| 47 | Response group agent | MS-RGSWS | B | – |
+| 48 | UCWA web services | MS-CVWREST, MS-ECREST, MS-OCSMP | B | – |
+| 49 | Conversation history in Exchange | MS-OXWSCDATA, MS-OXWSSRCH | T | – |
+| 50 | Sign-out | MS-SIPREGE, MS-CONFBAS | B | – |
+| 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
+| 52 | File transfer 1:1 | none public | N | needs captures |
+
+**Totals:** B 24 · B\* 17 · T 9 · N 2 · implemented 0 / 52.

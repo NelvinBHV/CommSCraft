@@ -1,0 +1,9 @@
+# Local planning notes (never committed)
+/plan/
+# Rust build output
+/target/
+# Never commit specification documents or captures
+*.pdf
+*.pcap
+*.pcapng
+*.etl

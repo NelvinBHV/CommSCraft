@@ -1,0 +1,52 @@
+# CommSCraft roadmap: milestones and what's next
+
+> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** major (first version)
+
+Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
+[`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
+A milestone is done when its gate passes; "verified" always means an interop run by the owner on an
+authorized server.
+
+## Current focus (M0 – foundations)
+
+1. **Owner decisions** D-01 … D-08 in [`decisions.md`](decisions.md) (licence, documentation
+   language, dependency policy, codecs, what of the analysis is published).
+2. **Import the protocol analysis** into `docs/protocol/`: one evidence file per protocol with
+   requirement IDs (e.g. `AE-24`, `IC-14`), the function matrix, the conflict/gap/open-point list and
+   the source registers (document, edition, SHA-256; no PDFs).
+3. **Workspace skeleton**: empty Rust workspace with the crate layout from
+   [`architecture.md`](architecture.md), lint settings from [`AGENTS.md`](../AGENTS.md), CI on
+   `ubuntu-latest`.
+4. **Test vectors as tests**: MS-NLMP NTLMv2 vectors, the SIP NTLM signature recomputation, MS-SRTP
+   key derivation, MS-ICE2 priority values and CRC table — the parts already recomputed in the
+   analysis become the first automated tests.
+
+## Milestones
+
+| ID | Milestone | Functions (target-app-parity #) | Gate |
+|---|---|---|---|
+| M0 | Foundations | – | Decisions taken; analysis imported; workspace builds; test-vector tests green |
+| M1 | Sign-in and registration | 1–8, 50 | Discovery → TLS → NTLM/Kerberos/TLS-DSK → REGISTER → provisioning → sign-out, offline against recorded fixtures; then verified |
+| M2 | Presence, contacts, IM | 9–15, 17–19, 46 | Publish/subscribe presence, contact list, address book search, 1:1 and group IM; verified |
+| M3 | Audio 1:1 | 21–26, 30, 32, 35 | Call with G.711/G.722 over ICE/TURN with SRTP, hold/resume, DTMF; verified incl. relay through the Edge |
+| M4 | Conferences and telephony | 40–42, 33–34, 36–37, 39, 45 | Schedule/join/lobby/mute; transfer, forwarding, park, PSTN, E911, QoE report; verified |
+| M5 | Video | 28, 31 | H.264 UC send/receive in 1:1 and conference; verified |
+| M6 | Viewing shared screens | 43 | View a desktop/application share (RDP over RTP); verified |
+| M7 | Exchange and extras | 16, 20, 38, 44, 47–49, 51 | Calendar state, OOF note, conversation history, voicemail, persistent chat, PSOM content; verified where documented |
+
+Functions 27 (G.722.1 only, after licence clearance), 29 (RTVideo — not planned) and 52 (file
+transfer — needs captures) stay outside the milestones until the matching decisions are taken.
+
+## Alpha gate (core workflows)
+
+What a typical Skype for Business user does every day, end to end on Linux against an on-premises
+server. Status: **not started**.
+
+| Core workflow | Works end to end? |
+|---|---|
+| Sign in automatically (discovery, authentication, registration) and sign out | no |
+| See colleagues' presence and set your own | no |
+| Chat 1:1 and in a group | no |
+| Call a colleague with audio (incl. through the Edge server) | no |
+| Join a scheduled meeting with audio and see who is speaking | no |
+| Watch a colleague's shared screen | no |
