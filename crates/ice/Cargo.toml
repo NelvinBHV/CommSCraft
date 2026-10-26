@@ -1,0 +1,11 @@
+[package]
+name = "commscraft-ice"
+description = "MS-ICE2 helpers: candidate priorities and STUN FINGERPRINT including the MS-ICE2 duplicate variant"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

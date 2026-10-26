@@ -1,0 +1,29 @@
+[workspace]
+resolver = "2"
+members = ["crates/ntlm", "crates/ice", "crates/srtp", "crates/sip-identity"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/NelvinBHV/CommSCraft"
+publish = false
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+unimplemented = "deny"
+todo = "deny"
+unreachable = "deny"
+indexing_slicing = "deny"
+
+[workspace.dependencies]
+md4 = "0.10.2"
+md-5 = "0.10.6"
+hmac = "0.12.1"
+sha1 = "0.10.6"
+aes = "0.8.4"

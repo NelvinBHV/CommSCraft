@@ -17,6 +17,17 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
   numbers and padding, MS-ICE2 duplicate check with the misprinted CRC table, NTLM sequence number
   100, SHA-1 in the endpoint ID derivation), the variant is a named, tested code path.
 
+## Crates that exist (2026-10-26)
+
+| Crate | Layer | Job | Evidence |
+|---|---|---|---|
+| `commscraft-sip-identity` | L0 | EPID → `+sip.instance` (SHA-1, K-RE-1) | RE-02, RE-06, RE-07 |
+| `commscraft-ntlm` | L1 | NTLMv2 keys, ESS signatures, connectionless SIP signing (seq 100) | NL-01…NL-05, AE-30 |
+| `commscraft-ice` | L1 | CRC-32/FINGERPRINT incl. the MS-ICE2 duplicate variant, candidate priorities | IC-12, IC-14, IE-03…IE-05, OB-09 |
+| `commscraft-srtp` | L1 | RFC 3711 key derivation, SSRTP packet transform | SR-*, SS-01…SS-05, IE-09 |
+
+Dependencies (decision D-03, pure Rust): RustCrypto `md4`, `md-5`, `hmac`, `sha1`, `aes`.
+
 ## Layers (proposal)
 
 A crate may only depend on crates in lower layers.

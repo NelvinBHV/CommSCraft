@@ -1,0 +1,16 @@
+[package]
+name = "commscraft-ntlm"
+description = "NTLMv2 and connectionless NTLM message signing as used by Skype for Business SIP (MS-NLMP, MS-SIPAE)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+md4.workspace = true
+md-5.workspace = true
+hmac.workspace = true
+
+[lints]
+workspace = true
