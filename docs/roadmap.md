@@ -4,13 +4,13 @@
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
-A milestone is done when its gate passes; "verified" always means an interop run by the owner on an
-authorized server.
+A milestone is done when its gate passes offline; "verified" always means an interop run by the
+owner on an authorized server and is deferred until such an environment exists (D-08).
 
 ## Current focus (M0 – foundations)
 
-1. **Owner decision D-08** in [`decisions.md`](decisions.md): the interop test environment
-   (D-01 … D-07 are taken).
+1. **Offline first** (decision D-08): there is no interop test environment yet, so every gate below
+   ends at `tested-offline`; "verified" rows wait until the owner provides an environment.
 2. **Import the protocol analysis** into `docs/protocol/`: one evidence file per protocol with
    requirement IDs (e.g. `AE-24`, `IC-14`), the function matrix, the conflict/gap/open-point list and
    the source registers (document, edition, SHA-256; no PDFs).

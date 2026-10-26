@@ -64,9 +64,12 @@ sockets, the OS or the UI; transport and OS adapters are separate crates.
 ## Quality gates and CI
 - Before every commit (once code exists): `cargo fmt --check`, `cargo clippy -- -D warnings`,
   `cargo test`.
-- GitHub Actions may run only on standard GitHub-hosted runners (`ubuntu-latest`,
-  `windows-latest`). No paid, larger, custom or self-hosted runners and no paid external CI without
-  explicit owner approval.
+- **Never use runners or services that cause costs** (decision D-09): only standard GitHub-hosted
+  runners (`ubuntu-latest`, `windows-latest`) in this public repository. No larger, custom or
+  self-hosted runners, no paid external CI. If the repository becomes private, run no workflow
+  without new owner approval.
+- There is no interop test environment (decision D-08): never connect to real servers; work offline
+  with specification test vectors, specification examples and self-built fixtures.
 - Work on branches and open pull requests; never push to `main` directly, never merge without the
   owner.
 

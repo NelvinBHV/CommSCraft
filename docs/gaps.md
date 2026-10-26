@@ -14,7 +14,7 @@ and the first milestones, followed by the open points found in the analysis.
 
 | # | Gap | Evidence / tracking | Milestone |
 |---|---|---|---|
-| 1 | Owner decision D-08 (interop test environment) not taken; D-01 … D-07 taken | [`decisions.md`](decisions.md) | M0 |
+| 1 | No interop test environment (D-08): nothing can be verified against a real server; open points needing captures stay open | [`decisions.md`](decisions.md) | after M0 |
 | 2 | Protocol analysis not yet in the repository | analysis outside the repo (52 functions, 39 conflicts, 18 gaps, 22 open points) | M0 |
 | 3 | No workspace, no CI, no tests | – | M0 |
 | 4 | Sign-in stack: discovery, TLS, NTLM/Kerberos/TLS-DSK, registration, provisioning | functions 1–8 | M1 |

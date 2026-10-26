@@ -7,8 +7,8 @@ It follows the conventions of the [storytold Crafting Apps](https://github.com/s
 application, a ranked work list, and nothing copied from Microsoft products.
 
 > **Stage: planning.** There is no program code yet. The first milestone imports the protocol
-> analysis (every client function mapped to the specification sections that define it) and fixes
-> the remaining owner decision in [`docs/decisions.md`](docs/decisions.md). Read
+> analysis (every client function mapped to the specification sections that define it) under the owner
+> decisions in [`docs/decisions.md`](docs/decisions.md). Read
 > [`ROADMAP.md`](ROADMAP.md) for where the project stands.
 
 CommSCraft is not affiliated with, endorsed by or sponsored by Microsoft. "Skype for Business",
@@ -54,7 +54,7 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
   implementations are read only to confirm behaviour and are cited as secondary evidence; their code
   is not copied.
 - Interoperability tests against real servers are run only by the project owner on authorized
-  systems.
+  systems; there is no such test environment yet, so all work is verified offline.
 
 ## License
 

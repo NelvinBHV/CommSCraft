@@ -1,6 +1,6 @@
 # Decisions
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** major (D-01 … D-07 taken; D-08 open)
+> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** major (all decisions D-01 … D-08 taken)
 
 Decisions that belong to the project owner. Agents propose, the owner decides; a decision is
 recorded here with date and reason before work depends on it.
@@ -9,7 +9,7 @@ recorded here with date and reason before work depends on it.
 
 | ID | Question | Proposal | Why it matters |
 |---|---|---|---|
-| D-08 | Interop test environment | Owner-run lab server; captures sanitized before they are committed | Only source of `verified-interoperable` |
+| – | – | – | – |
 
 ## Taken
 
@@ -22,6 +22,8 @@ recorded here with date and reason before work depends on it.
 | D-05 | 2026-10-26 | Codecs: G.711, G.722, H.264 UC (licensed or system H.264 implementation). No RTAudio, no RTVideo. G.722.1 and SILK only after legal clearance | Patent and licence risk |
 | D-06 | 2026-10-26 | Target servers: Skype for Business Server 2015, 2019 and Subscription Edition, on-premises; Lync Server 2013 best effort | Test matrix |
 | D-07 | 2026-10-26 | User interface toolkit: egui | Consistency with the Crafting Apps |
+| D-08 | 2026-10-26 | No interop test environment for now. Work proceeds offline only: specification test vectors, specification examples and self-built fixtures. No status can reach `verified-interoperable` until the owner provides an environment; milestone gates end at `tested-offline` | Owner decision |
+| D-09 | 2026-10-26 | CI only on runners that cause no costs: standard GitHub-hosted runners in this public repository. No larger, custom or self-hosted runners, no paid external CI services. If the repository ever becomes private, no workflow runs without new owner approval (private repositories consume paid minutes) | Owner rule |
 | T-01 | 2026-10-26 | Repository restarted; the previous history is archived outside the repository | Owner decision |
 | T-02 | 2026-10-26 | Work on branches and pull requests; no direct pushes or merges to `main` by agents | Owner rule |
 | T-03 | 2026-10-26 | Interop tests against real servers are run only by the owner | Owner rule |
