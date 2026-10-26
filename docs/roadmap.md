@@ -11,9 +11,8 @@ owner on an authorized server and is deferred until such an environment exists (
 
 1. **Offline first** (decision D-08): there is no interop test environment yet, so every gate below
    ends at `tested-offline`; "verified" rows wait until the owner provides an environment.
-2. **Import the protocol analysis** into `docs/protocol/`: one evidence file per protocol with
-   requirement IDs (e.g. `AE-24`, `IC-14`), the function matrix, the conflict/gap/open-point list and
-   the source registers (document, edition, SHA-256; no PDFs).
+2. ~~Import the protocol analysis~~ – done: [`protocol/`](protocol/) (39 evidence files, function
+   matrix, conflict/gap/open-point list, source registers; English, no PDFs, no patent notes).
 3. **Workspace skeleton**: empty Rust workspace with the crate layout from
    [`architecture.md`](architecture.md), lint settings from [`AGENTS.md`](../AGENTS.md), CI on
    `ubuntu-latest`.

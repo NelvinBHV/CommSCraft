@@ -1,0 +1,37 @@
+# Evidence: bandwidth management (call admission control) – MS-ICE2BWM, MS-TURNBWM
+
+Sources: [MS-ICE2BWM] "ICE Extensions 2.0: Bandwidth Management Extensions", edition 20250520, 32 pp.; [MS-TURNBWM] "TURN Bandwidth Management Extensions", edition 20250520, 49 pp. They extend MS-ICE2 (file 13) and MS-TURN (file 12).
+
+## ICE side (MS-ICE2BWM)
+
+| ID | Requirement | Evidence |
+|---|---|---|
+| BW-01 | The bandwidth-managing endpoint is usually the **callee** (knows the peer's candidates); for ICE→non-ICE the caller; independent per media stream; the application can configure "report only" | §1.3, pp. 11–12; §3.1.4, p. 15 |
+| BW-02 | Check during candidate gathering: LSA = one local host candidate, RSA = one host candidate of the peer, RRA = relay candidate of the peer; with IPv4+IPv6 use IPv4; send to the UDP and TCP policy servers, the first valid response counts | §3.1.4.8.1.1, p. 17 |
+| BW-03 | All paths blocked ⇒ the session fails (no offer/answer); local relay blocked ⇒ do not offer the relay candidate; do not check blocked pairs | §3.1.4.1–3.1.4.2, pp. 15–16; §3.1.4.8.2.1, p. 18 |
+| BW-04 | New STUN error codes: **274 Disable Candidate** (all pairs of the local candidate ⇒ Failed), **275 Disable Candidate Pair** (this pair ⇒ Failed); the remote candidate is identified via CANDIDATE-IDENTIFIER | §2.2.2, p. 14; §3.1.5.2.1–3.1.5.2.2, pp. 19–20 |
+| BW-05 | After the checks a **commit** (timer 500 ms until the response; LSA/LRA/RSA/RRA according to the chosen pair), then an **update** every ≤19 s (on bandwidth change every second until a response); the UDP policy server is preferred unless media run over a TCP relay; reservation ID null ⇒ no further messages | §3.1.4.8.2–3.1.4.8.2.3, pp. 17–18; §3.1.5.1.2, p. 19; §3.1.6.1–3.1.6.2, p. 20 |
+| BW-06 | Messages ≤ 1500 bytes | §2.1, p. 14 |
+
+## TURN side (MS-TURNBWM)
+
+| ID | Requirement | Evidence |
+|---|---|---|
+| BW-10 | All BAC attributes in **authenticated Allocate requests/responses** (MS-TURN), SHOULD in the first authenticated Allocate | §3.1, p. 25 |
+| BW-11 | Attributes (TLV): 0x8056 BAC Message (reserved 2 B + type: 0 check, 1 commit, 2 update); 0x8057 Reservation Id (16 B; all 0 ⇒ not managed); 0x8058 Reservation Amount (4×4 B kbit/s: min/max send, min/max receive); 0x8059 Remote Site, 0x805A Remote Relay Site, 0x805B Local Site, 0x805C Local Relay Site (reserved, family 1/2, X-Port, X-IP); 0x805D–0x8060 responses (V flag, for site responses additionally F = PSTN failover; max. send/receive); 0x8061 SIP Dialog Id, 0x8062 SIP Call Id (≤256 B); 0x8068 Location Profile (peer, self: 0 unknown/1 internet/2 intranet; federation 0/1/2) | §2.2.1–2.2.14, pp. 13–24 |
+| BW-12 | X-Port = port XOR top 16 bits of the transaction ID; X-IP IPv4 = address XOR top 32 bits; IPv6 XOR the 128-bit transaction ID | §2.2.4, pp. 15–16 |
+| BW-13 | Check: BAC=Check, RSA, RRA if any, LRA if any (only if already allocated), LSA, Amount, SHOULD MS-Service-Quality (otherwise audio), SHOULD SIP Call Id, MUST Location Profile | §3.2.4.1, p. 26 |
+| BW-14 | Commit: BAC=Commit, RSA, LSA, RRA/LRA only with a used relay, Amount, SHOULD Service-Quality and SIP Dialog Id, MUST Location Profile; update: BAC=Update, Reservation Id, Amount on change (0 ⇒ cancel) | §3.2.4.2–3.2.4.3, pp. 26–27; §2.2.3, p. 14 |
+| BW-15 | Evaluation: path LSA↔RSA only if both V=1; F=1 ⇒ PSTN rerouting allowed; relay paths analogously; do not use invalid paths | §3.2.5.1, p. 28 |
+| BW-16 | Client update timer: update at least every **60 s** (otherwise the server discards the reservation) | §3.2.2, pp. 25–26; §3.3.2, p. 29 |
+
+### Recomputed
+The XOR examples of §2.2.4 (pp. 15–16) are correct: 0x1122⊕0x4455 = 0x5577; 0x11223344⊕0xaabbccdd = 0xbb99ff99; IPv6 example = 0x31233efc444444cccccccc44444444cc ✓.
+
+## Conflicts / gaps
+- K-BW-1 (not a real contradiction): ICE2BWM requires updates ≤19 s, TURNBWM only ≤60 s – implementation: 19 s.
+- K-BW-2: Example ICE2BWM §4 (p. 27): the answer to the final offer contains `m=audio 52714 5 RTP/SAVP` and `a=remote-candidates:1 101.0.57 52732` – the example is wrong; in addition the profile changes from RTP/AVP to RTP/SAVP between initial and final offer.
+- O-BW-1: How the client learns address/port of the bandwidth policy server is described only abstractly ("configured", ICE2BWM §1.5, p. 12). Only the switches `enableBWPolicyCheck` (ServerConfiguration, MS-SIPREGE, file 04) and `enableBWPolicyOverride` (ucPolicy) are documented.
+
+## Later finding (file 39)
+- O-BW-1 **closed** (OB-10, MS-TURNBWM §1.3, pp. 9–10): the bandwidth check runs in the Allocate request to the client's own TURN server ⇒ the policy server is the TURN server obtained via MRAS.

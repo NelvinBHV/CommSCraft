@@ -1,0 +1,26 @@
+# Evidence: MS-CONFPRO – conference scheduling (focus factory)
+
+Source: [MS-CONFPRO] "Centralized Conference Control Protocol: Provisioning", edition 20250520, 64 pp. Schemas in MS-CONFBAS §6.2/§6.3. Product list p. 57 up to SfB LTSC 2024.
+
+| ID | Requirement | Evidence |
+|---|---|---|
+| PV-01 | Focus factory URI from in-band provisioning (MS-SIPREGE §2.2.2/§3.3, see file 04); form in examples `sip:<organizer>;gruu;opaque=app:conf:focusfactory` | §1.5, p. 9; examples §4, pp. 41 ff. |
+| PV-02 | Carrier **SIP SERVICE** over TCP/TLS; Request-URI = To = focus factory URI; From = organizer (or delegate with `p-session-on-behalf-of: <organizer>`); `Content-Type: application/cccp+xml`; **no** Require header; request always with a body | §2.1–2.2, p. 11; delegation §4.9, p. 54 |
+| PV-03 | C3P request: namespace `urn:ietf:params:xml:ns:cccp`, attributes requestId, from (= organizer), to (= To header), C3PVersion="1", exactly one child element; extensions in `http://schemas.microsoft.com/rtc/2005/08/confinfoextensions` (responses also `…/2008/12/confinfoextensions`, `…/2005/08/cccpextensions`) | §2.2.2, p. 19; §2.2.3, p. 22 |
+| PV-04 | Data model conference-info (entity empty before creation, version from 1 and +1 per change), conference-description: subject, conference-id (8–32 alphanumeric, unique per organizer), expiry-time, admission-policy, organizer-roaming-data / notification-data (own XML, ≥4 KB), join-url, pstn-access, autopromote, pstn-lobby-bypass …; conference-state/locked; users (roles; organizer implicit); conference-view with an entity-view per MCU type + entity-settings (≥2048 bytes) | §2.2.1–2.2.1.5, pp. 12–19 |
+| PV-05 | entity-settings: audio-video `…/2005/08/avconfinfoextensions` (audio, video), meeting `…/dataconfinfoextensions` (app-viewing-behavior: disabled / enableWithoutSharingControl / enableWithSharingOfOnlyASingleApplication / enableWithFullSharing; conferencing-type presentation/collaboration), phone-conf `…/acpconfinfoextensions` (phone numbers, PINs, robotCallerIds); chat without settings | §2.2.1.5, pp. 17–19 |
+| PV-06 | Commands: addConference (also static `static="true"`, max. 1 per user), modifyConference (version = current), deleteConference (`conferenceKeys msci:conference-id`, static if needed), getConference (optional `encryption-key/x509-certificate` Base64), getConferences (optional static), getEncryptionKey, getAvailableMcuTypes, getConferencingCapabilities | §2.2.2.1–2.2.2.8, pp. 19–22 |
+| PV-07 | Response: code success/failure, `reason` values (incl. conferenceExistsAlready, invalidVersion, maxConferencesExceeded, mcuTypeNotAvailable, anonymousUsersNotAllowed, conferenceDoesNotExist, staticFlagDoesntMatch, invalidEncryptionKey, otherFailure); addConference success ⇒ conference-info entity = **conference URI** (state partial, version 1) | §2.2.3.1–2.2.3.5, pp. 22–26 |
+| PV-08 | getConferencingCapabilities response: mcu-types, anonymous-scheduling, default-admission-policy, schedule-locked, recording-allowed, autopromote-allowed/default-autopromote, pstn-bridging (dial-in numbers per region/language), static-meeting-limit, default-meeting-static, custom-invite, endorse-allowed, im-mute-allowed, questions-and-answers-allowed … | §2.2.3.8, pp. 28–31; example pp. 52–54 |
+| PV-09 | Client flows: create = generate a unique conference ID + addConference; static = getConferences static → getConference or addConference static; modify = first getConference, compare version, then modifyConference | §3.1.4.1–3.1.4.3, pp. 32–33 |
+| PV-10 | Details with the conference key: send a **self-signed certificate** (public key only, CMS RFC 3852), decrypt the encrypted key with the own private key | §3.1.4.5, p. 33; §3.1.5.6, p. 35; §3.1.7.3, p. 37 |
+| PV-11 | Request timer 32 s per requestId (ORQ); 200 OK ⇒ body mandatory; other codes ⇒ error, body optional | §3.1, p. 32; §3.1.5.1–3.1.5.2, pp. 34–35; §3.1.6 p. 36 |
+
+## Conflicts / gaps
+- K-PV-1: §3.1.5.3 (p. 35) says the conference URI is in the entity attribute of the **addConference** element; §2.2.3.1 (p. 24) and the example (pp. 41–42) show it in the **conference-info** child element. Implementation: read conference-info/@entity.
+- K-PV-2: §2.2.3.7/§2.2.3.8 "the list MUST NOT contain `meeting`"; examples pp. 50–51 contain `meeting` and the spelling `audiovideo`. Parse tolerantly.
+- K-PV-3: Example §4.1 request requestId 68537848, response requestId 1 (p. 41) – example error.
+- O-PV-3: The encryption format of the conference key (CMS EnvelopedData?) is only hinted at by a reference to RFC 3852, not specified.
+
+## Later finding (file 39)
+- O-PV-3 **closed** (OB-24): `conference-key` is "deprecated" and "SHOULD NOT be specified anymore" in the current edition (§2.2.1.2, p. 14; §2.2.2.1, p. 19). The 2012 edition (Wayback Machine) describes `cms-data` as a Base64-encoded CMS message. PV-10 is therefore only relevant for old servers.

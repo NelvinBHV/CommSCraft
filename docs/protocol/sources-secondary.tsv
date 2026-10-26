@@ -1,0 +1,25 @@
+key	title	kind	url_or_location	sha256	retrieved
+LYNC-SDK	Lync 2013 SDK documentation (MicrosoftDocs/office-developer-lync-evergreen-docs, branch live)	official	https://github.com/MicrosoftDocs/office-developer-lync-evergreen-docs	fcd8f8e6ef1cfab3d62739281e60f8032c8819da64acee55bc97345fee168d3b	2026-10-26
+SFB-DNS	Advanced Edge Server DNS planning for Skype for Business Server (Microsoft Learn)	official	https://learn.microsoft.com/en-us/skypeforbusiness/plan-your-deployment/network-requirements/advanced-edge-server-dns	– (web page)	2026-10-26
+ITU-G7221	ITU-T G.722.1 (05/2005) incl. Annex C, freely available	official (ITU-T)	https://www.itu.int/rec/T-REC-G.722.1-200505-I	– (not downloaded)	2026-10-26
+SIPE	pidgin-sipe 1.25.0 (GPL)	secondary	https://sourceforge.net/projects/sipe/	738b121b11f2b3f1744150c00cb381222eb6cf67161a7742797eb4f03e64a2ba	2026-10-26
+LIBNICE	libnice 0.1.22	secondary	https://gitlab.freedesktop.org/libnice/libnice/-/archive/0.1.22/libnice-0.1.22.tar.gz	3048b847fd89f43474c1a77257c875a85e4d85c879d12743f3ce2947125eb8de	2026-10-26
+ISTYPING	Columbia University: istyping (note)	secondary	https://www.cs.columbia.edu/sip/drafts/istyping.txt	2d628e6bb4cc0ef5e126e3807332ce307dd46cdded524cfcb17770c6f12d5eb6	2026-10-26
+LYNC10-EWS	Retrieving Lync-Archived Conversation History with Exchange Web Services (Lync 2010 SDK)	official	https://learn.microsoft.com/en-us/previous-versions/office/developer/lync-2010/hh243707(v=office.14)	– (web page)	2026-10-26
+UCMA-XFER	Transferring a call (UCMA, Lync 2013)	official	MicrosoftDocs/office-developer-lync-evergreen-docs (ucma-sdk/transferring-a-call.md)	see LYNC-SDK	2026-10-26
+CONFPRO-2012	[MS-CONFPRO] v20120122 (Wayback Machine)	normative (older edition)	http://web.archive.org/web/2025id_/https://msopenspecs.microsoft.com/files/MS-CONFPRO/%5BMS-CONFPRO%5D-120120.pdf	1415823668bda85e97c7a49e61cc40b1171027326b357bc7197a7e5b47c0d208	2026-10-26
+CONFPRO-2015	[MS-CONFPRO] v20150330 (Wayback Machine)	normative (older edition)	kept outside the repository	21dd2db28a672b1a726992aa0dffbd12e1e4baa3e6d6ff0a22b087a98f8938cb	2026-10-26
+RTA-OVW	Overview of the Microsoft RTAudio Speech Codec (Download Center ID 7515, v1.1)	official	https://www.microsoft.com/en-us/download/details.aspx?id=7515	e64e66672109db954e628266d415529a00c82f49cf5e9064ed3035f6ef463ebd	2026-10-26
+ITU-G7221-SW	ITU-T G.722.1 (05/2005) software package incl. recommendation + Cor. 1	official (ITU-T)	kept outside the repository	1b0b5c32495af09249b30fdae68c20a1f2397bf8c69cfef332fac984f2b62580	2026-10-26
+ITU-P562	ITU-T P.562 (05/2004)	official (ITU-T)	kept outside the repository	42dfa015afaf31e75ff55c481152939c831c80d6922b23289ecfa073f3372d67	2026-10-26
+ITU-P8001	ITU-T P.800.1 (07/2016)	official (ITU-T)	kept outside the repository	39d36f258be89ae5a29a3f3bb02d24e5891a2c561d9a799a680d1daf5a2d6d77	2026-10-26
+LWA-BLOG	Forcing Use of Lync Web App to Join a Conference (archived Microsoft blog, 2012)	official (blog)	https://learn.microsoft.com/en-us/archive/blogs/messaging_with_communications/forcing-use-of-lync-web-app-to-join-a-conference	– (web page)	2026-10-26
+LCJ	kakash1hatake/lync-conf-join (HEAD)	secondary	https://github.com/kakash1hatake/lync-conf-join	e937b7540348a8fdaf0be95ed33460350f66ddc7039746c66b981717666843f8	2026-10-26
+LIBSIREN	kakaroto/libsiren (HEAD, LGPL-2.1)	secondary	https://github.com/kakaroto/libsiren	39a084df19254a7f3ec6571d26d09b7c0042207949b734492a18392b0bf229fd	2026-10-26
+LIBG7221	timando/g722_1 (mirror libg722_1)	secondary	https://github.com/timando/g722_1	2defb4a930256776b3eb57d150af613e8ac611fcc6a09c55eb47c9141ce7f28d	2026-10-26
+SIREN7DEC	vhsven/siren7-decoder (viewed only)	secondary	https://github.com/vhsven/siren7-decoder	f0593f96b1e3c60d3689f7418ffc551f6b68906a00e413f6be05d9a93269a5f3	2026-10-26
+SFBCLI	igads3d/sfb-cli (GitLab)	secondary	https://gitlab.com/igads3d/sfb-cli	e2acd48e6abc88b0b3cfb25c23fc5044cff9b4bb13968e50ddea287d6c9ba6d9	2026-10-26
+KAMGW	havfo/Skype-Kamailio-PSTN-gateway	secondary	https://github.com/havfo/Skype-Kamailio-PSTN-gateway	1326546872d50f3416c1a0665c124d53fb0ac29e0594b0261d222249a5c70123	2026-10-26
+FRDP-3669	FreeRDP Pull Request 3669	secondary	https://github.com/FreeRDP/FreeRDP/pull/3669	– (web page)	2026-10-26
+WS-STUN	Wireshark epan/dissectors/packet-stun.c (master)	secondary	https://gitlab.com/wireshark/wireshark/-/raw/master/epan/dissectors/packet-stun.c	ed18b2cef92a99c2c0cd60d96999b0a95a21f7aefc441ca3fac4806ad2dc7d70	2026-10-26
+FFMPEG-VC1	FFmpeg libavcodec/vc1.c (tag n7.1)	secondary	https://raw.githubusercontent.com/FFmpeg/FFmpeg/n7.1/libavcodec/vc1.c	c9eae6e3db527bcf1a186a1afb5a94abb7f23e5888261eb68dc7c322457529a2	2026-10-26
