@@ -22,7 +22,7 @@ Crafting Apps (WordCraft, GridCraft, DeckCraft).
 - Source ranking: (1) Microsoft Open Specifications, IETF, ITU-T; (2) official Microsoft
   documentation (Microsoft Learn, archived SDK docs); (3) secondary sources (open-source
   implementations, observation notes) — confirm only, never copy; (4) patents — understanding only,
-  never evidence.
+  never evidence, and patent notes are not committed (decision D-04).
 - Every normative requirement maps to source path, test fixture and executed test result.
   Published test vectors (MS-NLMP, MS-SRTP, …) become automated tests.
 - Distinguish `source-only`, `tested-offline` and `verified-interoperable` status. Only the owner's
