@@ -1,6 +1,6 @@
 # Interop test cases for the owner
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (IT-14 … IT-17 from the M1 implementation)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (IT-18, IT-19 and how to run the CLI)
 
 After the fourth search ([`protocol/evidence/39-evidence-for-open-points.md`](protocol/evidence/39-evidence-for-open-points.md),
 OB-39 … OB-51) no open point needs more document research. What is left is the observable behaviour
@@ -42,7 +42,22 @@ non-blocking.
 | IT-15 | RG-08, RG-50 | Version filter answers 403 + Warning 310/311 (MS-SIPREGE §3.4.2.5) | Does the server's client version policy accept the User-Agent `CommSCraft/<version>`? Which rule matches? | Report `VersionBlocked` to the user | M1 |
 | IT-16 | AD-10, D-10 | The Domain resource needs no authentication and contains SipAccess "if present" (MS-OCDISCWS §3.1.5.4) | Does the unauthenticated Domain resource of the server contain `SipClientInternalAccess`/`SipClientExternalAccess`? Does `https://lyncdiscover[internal].<domain>` answer with a valid certificate? | Fall back to DNS SRV | M1 |
 | IT-17 | O-RG-1 | Generic SIP redirect (RFC 3261); SIPE handles a 301 to REGISTER (secondary) | Does a pool that is not the user's home pool answer the authenticated REGISTER with 301 and a Contact `sip:host:port;transport=tls`, signed? | Follow only a signed TLS redirect; ask for foreign domains | M1 |
+| IT-18 | TLS ([SFB-TLS], evidence 02) | TLS 1.2 from SfB 2015 CU9 / 2019 CU1; ECDHE + AES-GCM suites in the supported order | Does the TLS handshake with your pool succeed (version and suite)? `commscraft-cli` prints the version | No TLS 1.0/1.1, no fallback | M1 |
+| IT-19 | Whole M1 flow | Everything in IT-07, IT-14 … IT-18 | `commscraft-cli sign-in … --authorized`: registration, keep-alive, provisioning summary, sign-out | – | M1 |
 | IT-13 | O-EX-3 (optional) | Folder and item type of the conversation history (OB-22) | Body layout written by the Windows client, so that both clients' entries look alike | Own layout | optional |
+
+## Running the command-line tool (IT-19)
+
+```
+cargo build --release -p commscraft-cli
+./target/release/commscraft-cli sign-in --aor sip:alice@contoso.com --user alice --domain CONTOSO \
+    --server pool1.contoso.com:5061 [--ca-file enterprise-root.pem] [--verbose] --authorized
+```
+
+The password is asked without echo. `--verbose` prints the SIP messages with every
+authentication header and all bodies redacted; review the output before sharing it anyway (host
+names, user names and IP addresses remain). The EPID is kept in `~/.config/commscraft/epid`
+(mode 0600). Without `--authorized` the tool refuses to connect.
 
 ## Not a test case
 

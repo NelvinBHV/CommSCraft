@@ -1,0 +1,20 @@
+[package]
+name = "commscraft-cli"
+description = "Command-line tool for the owner's interop runs: sign in, provisioning summary, sign out"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-net = { path = "../../crates/net" }
+commscraft-register = { path = "../../crates/register" }
+commscraft-provisioning = { path = "../../crates/provisioning" }
+commscraft-discovery = { path = "../../crates/discovery" }
+commscraft-sip-msg = { path = "../../crates/sip-msg" }
+commscraft-sipae = { path = "../../crates/sipae" }
+zeroize.workspace = true
+
+[lints]
+workspace = true
