@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-27 | Presence of contacts on other pools: `resubscribe` answers are followed to the pool GRUU (`poolFqdn`) or asked one by one (MS-PRES §3.4.5.1.3.1). |
 | 2026-10-27 | SIP dialogs (RFC 3261 §12: route set, in-dialog requests, peer requests) in `sip-msg`; the contact list is now fetched with a real subscription (piggyback or NOTIFY) and the subscription is ended again. |
 | 2026-10-27 | M2 started: `presence` crate (contact list, one-time batch presence queries, own state publication scoped to the endpoint, 409 retry), CLI command `presence` with signed request/answer handling; REGISTER announces `msrtc-event-categories` and `adhoclist`. New conflict K-PR-1. |
 | 2026-10-27 | Fix: MS-SIPAE version 4 – the request with the final NTLM token is now signed (§3.2.5.1 step 6.8, `cnum` 1); answered version capped at 4; test registrar enforces it. |

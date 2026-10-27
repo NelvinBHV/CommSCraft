@@ -268,6 +268,21 @@ pub fn batch_headers(m: &mut Message, polling: bool) {
     m.push_header("Content-Type", "application/msrtc-adrl-categorylist+xml");
 }
 
+/// Headers of a single category SUBSCRIBE to one contact (Request-URI = To = contact; no
+/// `Require`; §3.4.5.1.3.1, example §4.6, pp. 180–181). With `polling`, a one-time query.
+pub fn single_headers(m: &mut Message, polling: bool) {
+    m.push_header("Event", "presence");
+    m.push_header(
+        "Accept",
+        "application/msrtc-event-categories+xml, application/rlmi+xml, multipart/related",
+    );
+    m.push_header("Supported", "ms-piggyback-first-notify");
+    if polling {
+        m.push_header("Expires", "0");
+    }
+    m.push_header("Content-Type", "application/msrtc-adrl-categorylist+xml");
+}
+
 /// Adds the headers of the contact list SUBSCRIBE (SIP-07; §4.14.3.2, p. 200). No `ms-ucs`: the
 /// server then proxies a contact list kept in Exchange (PR-51).
 pub fn contacts_headers(m: &mut Message, polling: bool) {
@@ -453,6 +468,9 @@ pub struct ResourceState {
     pub uri: String,
     pub state: String,
     pub reason: Option<String>,
+    /// For `resubscribe`: the GRUU of the pool that hosts the contact (§3.4.5.1.3.1, p. 102),
+    /// checked; absent for contacts of other deployments (then a single SUBSCRIBE, §4.6).
+    pub pool_fqdn: Option<String>,
 }
 
 /// Parses the `application/rlmi+xml` part.
@@ -469,6 +487,7 @@ pub fn parse_rlmi(xml: &str) -> Result<Vec<ResourceState>, Error> {
                 uri: printable(uri),
                 state: printable(i.attr("state").unwrap_or("")),
                 reason: i.attr("reason").map(printable),
+                pool_fqdn: i.attr("poolFqdn").and_then(|p| checked_sip_uri(p).ok()),
             });
         }
     }
