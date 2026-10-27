@@ -57,6 +57,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "commscraft-provisioning"
+version = "0.0.1"
+dependencies = [
+ "commscraft-sip-msg",
+ "commscraft-xml",
+]
+
+[[package]]
 name = "commscraft-psom"
 version = "0.0.1"
 
@@ -107,6 +115,10 @@ dependencies = [
 
 [[package]]
 name = "commscraft-turn-bwm"
+version = "0.0.1"
+
+[[package]]
+name = "commscraft-xml"
 version = "0.0.1"
 
 [[package]]

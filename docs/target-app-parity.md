@@ -32,7 +32,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 5 | Sign-in with Kerberos | MS-SIPAE, MS-KILE | B | – |
 | 6 | Sign-in with TLS-DSK and client certificate | MS-SIPAE, MS-OCAUTHWS | B\* | – |
 | 7 | Registration, GRUU, endpoint ID | MS-SIPREGE, MS-SIPRE | B | parts tested-offline (REGISTER flow, GRUU, refresh: `register`, `sip-identity`) |
-| 8 | In-band provisioning | MS-SIPREGE | B\* | – |
+| 8 | In-band provisioning | MS-SIPREGE | B\* | parts tested-offline (SUBSCRIBE, provisionGroupList, validated ServerConfiguration: `provisioning`, `xml`) |
 | 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | – |
 | 10 | Contact list (server) | MS-SIP, MS-PRES | B | – |
 | 11 | Contact list (Exchange unified contact store) | MS-PRES, MS-OXWSCOS, MS-OXWSPERS | B\* | – |

@@ -26,9 +26,10 @@ owner on an authorized server and is deferred until such an environment exists (
    self-built fixtures. Done: SIP message parser and stream framing (`sip-msg`), MS-SIPAE signing
    and verification with NTLM (`sipae`), NTLM CHALLENGE/AUTHENTICATE messages (`ntlm::messages`,
    example §4.2.4.3 byte for byte), the REGISTER flow as a sans-I/O state machine (`register`,
-   offline sign-in against a test registrar). Next: in-band provisioning (SUBSCRIBE
-   `vnd-microsoft-provisioning-v2`, bounded XML reader), deregistration NOTIFY, then discovery and
-   the TLS adapter.
+   offline sign-in against a test registrar). In-band provisioning (`provisioning`,
+   bounded `xml` reader) and the deregister NOTIFY are done. Next: discovery (Lync Autodiscover
+   and DNS SRV order, OB-06) with redirect validation, then the TLS/TCP adapter and a
+   `commscraft-cli` that signs in against a server only when the owner runs it.
 
 ## Milestones
 

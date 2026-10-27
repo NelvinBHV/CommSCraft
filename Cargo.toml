@@ -12,6 +12,8 @@ members = [
     "crates/sip-msg",
     "crates/sipae",
     "crates/register",
+    "crates/xml",
+    "crates/provisioning",
 ]
 
 [workspace.package]

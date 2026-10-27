@@ -598,3 +598,150 @@ fn client_version_block_is_reported() {
         vec![Event::Failed(Failure::VersionBlocked(311))]
     );
 }
+
+/// A NOTIFY from the registrar in the registration dialog, signed with the server keys
+/// (layout of MS-SIPREGE §4.1.3–4.1.5, pp. 96–97, with a well-formed To header: K-RG-4).
+fn registrar_notify(
+    server: &mut Server,
+    reg_request: &Message,
+    body: &str,
+    extra: &[(&str, &str)],
+) -> Message {
+    let mut n = Message::request("NOTIFY", "sip:192.0.2.1:4320;transport=tls");
+    n.push_header(
+        "Via",
+        "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKD948963B.BFDD97BF",
+    );
+    n.push_header("Max-Forwards", "70");
+    n.push_header(
+        "From",
+        "<sip:alice@contoso.com>;tag=25498F391570ACE435E286F873E6AACC",
+    );
+    let tag = reg_request
+        .from()
+        .unwrap()
+        .unwrap()
+        .param("tag")
+        .unwrap()
+        .to_string();
+    n.push_header(
+        "To",
+        &format!("<sip:alice@contoso.com>;tag={tag};epid=8248ca9ebb"),
+    );
+    n.push_header("Call-ID", reg_request.call_id().unwrap().unwrap());
+    n.push_header("CSeq", "1 NOTIFY");
+    n.push_header("Content-Type", "text/registration-event");
+    n.push_header("Event", "registration-notify");
+    n.push_header("subscription-state", "terminated;expires=0");
+    for (k, v) in extra {
+        n.push_header(k, v);
+    }
+    n.body = body.as_bytes().to_vec();
+    server.sign(n)
+}
+
+fn registered() -> (Registrar<Counter>, Server, Message) {
+    let mut reg = registrar();
+    let mut server = Server::new();
+    let r1 = reg.start(NOW);
+    let r2 = only_send(reg.on_message(&server.handle(&r1), NOW));
+    let r3 = only_send(reg.on_message(&server.handle(&r2), NOW));
+    assert!(matches!(
+        reg.on_message(&server.handle(&r3), NOW).as_slice(),
+        [Event::Registered(_)]
+    ));
+    (reg, server, r3)
+}
+
+#[test]
+fn deregister_notify_ends_the_registration() {
+    let (mut reg, mut server, r3) = registered();
+    let n = registrar_notify(
+        &mut server,
+        &r3,
+        "deregistered;event=rejected",
+        &[("ms-diagnostics-public", "4141;reason=\"User disabled\"")],
+    );
+    let events = reg.on_message(&n, NOW + 10);
+    assert_eq!(events.len(), 2);
+    match &events[0] {
+        Event::Send(ok) => {
+            assert_eq!(ok.status_code(), Some(200));
+            assert_eq!(ok.cseq().unwrap().unwrap().method, "NOTIFY");
+            assert!(
+                ok.single("Authorization").unwrap().is_some(),
+                "answer is signed"
+            );
+        }
+        other => panic!("{other:?}"),
+    }
+    assert_eq!(events[1], Event::Deregistered(Deregistration::Rejected));
+    assert!(!reg.is_registered());
+}
+
+#[test]
+fn survivable_mode_keeps_the_registration() {
+    let (mut reg, mut server, r3) = registered();
+    let n = registrar_notify(
+        &mut server,
+        &r3,
+        "  registered;event=userservices-unavailable\r\n",
+        &[],
+    );
+    let events = reg.on_message(&n, NOW + 10);
+    assert_eq!(events.last(), Some(&Event::SurvivableMode));
+    assert!(reg.is_registered());
+}
+
+#[test]
+fn preferred_registrar_is_reported_validated() {
+    let (mut reg, mut server, r3) = registered();
+    let n = registrar_notify(
+        &mut server,
+        &r3,
+        "deregistered;event=preferred-registrar-change",
+        &[(
+            "P-Preferred-Registrar",
+            "<sip:server1.contoso.com:5061;transport=tls>",
+        )],
+    );
+    assert_eq!(
+        reg.on_message(&n, NOW + 10).last(),
+        Some(&Event::Deregistered(
+            Deregistration::PreferredRegistrarChange(Some(
+                "sip:server1.contoso.com:5061;transport=tls".into()
+            ))
+        ))
+    );
+}
+
+#[test]
+fn forged_or_foreign_notifies_are_dropped() {
+    let (mut reg, mut server, r3) = registered();
+    // Unsigned.
+    let mut n = registrar_notify(&mut server, &r3, "deregistered;event=rejected", &[]);
+    n.headers.retain(|h| h.name != "Authentication-Info");
+    assert!(reg.on_message(&n, NOW).is_empty());
+    // Wrong dialog: other Call-ID.
+    let mut n = registrar_notify(&mut server, &r3, "deregistered;event=rejected", &[]);
+    for h in n.headers.iter_mut().filter(|h| h.name == "Call-ID") {
+        h.value = "other".into();
+    }
+    assert!(reg.on_message(&n, NOW).is_empty());
+    // Wrong event package.
+    let mut n = registrar_notify(&mut server, &r3, "deregistered;event=rejected", &[]);
+    for h in n.headers.iter_mut().filter(|h| h.name == "Event") {
+        h.value = "presence".into();
+    }
+    assert!(reg.on_message(&n, NOW).is_empty());
+    // The example form "To: sip:alice@fabrikam.com>" (K-RG-4) is malformed and dropped.
+    let mut n = registrar_notify(&mut server, &r3, "deregistered;event=rejected", &[]);
+    for h in n.headers.iter_mut().filter(|h| h.name == "To") {
+        h.value = h.value.replacen('<', "", 1);
+    }
+    assert!(reg.on_message(&n, NOW).is_empty());
+    // Unknown body.
+    let n = registrar_notify(&mut server, &r3, "deregistered;event=whatever", &[]);
+    assert!(reg.on_message(&n, NOW).is_empty());
+    assert!(reg.is_registered());
+}

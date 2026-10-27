@@ -16,8 +16,11 @@
 //!   challenge; Kerberos and TLS-DSK challenges are ignored until their adapters exist;
 //! - all random values come from the caller's CSPRNG ([`Random`]).
 //!
-//! Not yet covered: provisioning SUBSCRIBE, server-initiated deregistration NOTIFY (RG-30), the
-//! keep-alive negotiation (RG-22) and redirection to another registrar (RG-32).
+//! Server-initiated deregistration and survivable mode NOTIFYs (RG-30 … RG-32) are accepted only
+//! inside the registration dialog and only with a valid signature.
+//!
+//! Not yet covered: the keep-alive negotiation (RG-22); following a preferred registrar (RG-32) is
+//! reported to the caller, which decides after its own domain check.
 
 use commscraft_ntlm::messages as ntlm;
 use commscraft_sip_msg::{parse_name_addr, read_quoted, Message};
@@ -125,11 +128,30 @@ pub struct Registration {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Event {
-    /// Send this request on the registrar connection.
+    /// Send this message (request, or the answer to a NOTIFY) on the registrar connection.
     Send(Message),
     Registered(Registration),
     Unregistered,
     Failed(Failure),
+    /// The registrar removed the binding (deregister NOTIFY, RG-30/RG-31). The registration is over.
+    Deregistered(Deregistration),
+    /// The presence service is unavailable; the registration stays (survivable mode, RG-31).
+    SurvivableMode,
+}
+
+/// Reason of a deregister NOTIFY (MS-SIPREGE §2.2.1.13, pp. 18–19).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Deregistration {
+    /// 4140: unregistered by policy (e.g. endpoint quota).
+    Unregistered,
+    /// 4141: user disabled.
+    Rejected,
+    /// 4142: service temporarily unavailable (user move).
+    Deactivated,
+    /// 4165: presence service unavailable, no survivable mode.
+    UserServicesUnavailable,
+    /// 4166/4167: register with the preferred registrar (validated `sip:` URI, if present; RG-32).
+    PreferredRegistrarChange(Option<String>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -383,6 +405,12 @@ impl<R: Random> Registrar<R> {
     /// Feeds a received message. Messages that do not belong to the current transaction, and
     /// responses whose signature does not verify, are dropped (no event).
     pub fn on_message(&mut self, msg: &Message, now: u64) -> Vec<Event> {
+        if msg
+            .method()
+            .is_some_and(|m| m.eq_ignore_ascii_case("NOTIFY"))
+        {
+            return self.on_notify(msg);
+        }
         if !self.belongs_to_us(msg) {
             return Vec::new();
         }
@@ -405,6 +433,81 @@ impl<R: Random> Registrar<R> {
             Phase::Unregistering => self.on_unregister(msg, code),
             Phase::Idle | Phase::Registered { .. } | Phase::Done => Vec::new(),
         }
+    }
+
+    /// Deregister and survivable mode NOTIFY (RG-30, RG-31; MS-SIPREGE §2.2.1.11–2.2.1.13,
+    /// §3.2.2.4.1): same Call-ID as the REGISTER, our From tag as To tag, `Event:
+    /// registration-notify`, `Content-Type: text/registration-event`, valid MS-SIPAE signature.
+    /// Anything else is dropped without an answer.
+    fn on_notify(&mut self, msg: &Message) -> Vec<Event> {
+        if !matches!(self.phase, Phase::Registered { .. } | Phase::Refreshing) {
+            return Vec::new();
+        }
+        let in_dialog = || -> Result<bool, commscraft_sip_msg::Error> {
+            Ok(msg.call_id()? == Some(self.call_id.as_str())
+                && msg
+                    .to()?
+                    .is_some_and(|t| t.param("tag") == Some(self.from_tag.as_str()))
+                && msg.from()?.is_some_and(|f| f.param("tag").is_some()))
+        };
+        let header_is = |name: &'static str, value: &str| {
+            msg.single(name).ok().flatten().is_some_and(|v| {
+                v.split(';')
+                    .next()
+                    .is_some_and(|x| x.trim().eq_ignore_ascii_case(value))
+            })
+        };
+        if !in_dialog().unwrap_or(false)
+            || !header_is("Event", "registration-notify")
+            || !header_is("Content-Type", "text/registration-event")
+        {
+            return Vec::new();
+        }
+        if self.verified(msg).is_none() {
+            return Vec::new();
+        }
+        let Ok(body) = std::str::from_utf8(&msg.body) else {
+            return Vec::new();
+        };
+        let event = match body.trim().to_ascii_lowercase().as_str() {
+            "registered;event=userservices-unavailable" => Event::SurvivableMode,
+            "deregistered;event=unregistered" => Event::Deregistered(Deregistration::Unregistered),
+            "deregistered;event=rejected" => Event::Deregistered(Deregistration::Rejected),
+            "deregistered;event=deactivated" => Event::Deregistered(Deregistration::Deactivated),
+            "deregistered;event=userservices-unavailable" => {
+                Event::Deregistered(Deregistration::UserServicesUnavailable)
+            }
+            "deregistered;event=preferred-registrar-change" => {
+                let target = msg
+                    .name_addrs("P-Preferred-Registrar")
+                    .ok()
+                    .and_then(|v| v.into_iter().next())
+                    .map(|a| a.uri)
+                    .filter(|u| {
+                        u.get(..4).is_some_and(|s| s.eq_ignore_ascii_case("sip:"))
+                            && safe_token(u.get(4..).unwrap_or(""), "@.-_:;=")
+                    });
+                Event::Deregistered(Deregistration::PreferredRegistrarChange(target))
+            }
+            _ => return Vec::new(),
+        };
+        let mut ok = Message::response(200, "OK");
+        for name in ["Via", "From", "To", "Call-ID", "CSeq"] {
+            for v in msg.header_values(name) {
+                ok.push_header(name, v);
+            }
+        }
+        let mut out = Vec::new();
+        if self.sign(&mut ok).is_ok() {
+            out.push(Event::Send(ok));
+        }
+        if matches!(event, Event::Deregistered(_)) {
+            self.phase = Phase::Done;
+            self.sa = None;
+            self.deadline = None;
+        }
+        out.push(event);
+        out
     }
 
     fn challenges(&self, msg: &Message, code: u16) -> Vec<Challenge> {
