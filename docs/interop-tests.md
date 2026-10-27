@@ -1,6 +1,6 @@
 # Interop test cases for the owner
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (discovery in the CLI, `--discover-only`)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (trust model for servers in another domain)
 
 After the fourth search ([`protocol/evidence/39-evidence-for-open-points.md`](protocol/evidence/39-evidence-for-open-points.md),
 OB-39 … OB-51) no open point needs more document research. What is left is the observable behaviour
@@ -12,6 +12,11 @@ question. Until a case is run, the client follows the **default** column. That k
 non-blocking.
 
 ## How to hand in a result
+
+Results of interop runs (Autodiscover answers, host names, captures) and credentials are **never**
+committed or written into issues or pull requests. They stay with the owner; agents keep notes only
+in the local, git-ignored `plan/` directory and turn them into generic evidence without any data
+of the tested deployment.
 
 - Capture with the client's own debug log or a TLS key log on your own machine. Do not commit
   captures made by Microsoft software unless you made them on an authorized system and sanitized
@@ -60,8 +65,10 @@ cargo build --release -p commscraft-cli
 Discovery order (OB-06, D-10): `https://lyncdiscoverinternal.<domain>`, then
 `https://lyncdiscover.<domain>` (Root → Domain resource, no credentials), then DNS SRV
 `_sipinternaltls._tcp` and `_sip._tls` via the name servers in `/etc/resolv.conf`, then
-`sipinternal`, `sip`, `sipexternal.<domain>:443`. Every step is printed. Targets outside the SIP
-domain are skipped with a note; pass them with `--server` if you trust them. If Autodiscover uses a
+`sipinternal`, `sip`, `sipexternal.<domain>:443`. Every step is printed. A target that Autodiscover names outside
+your SIP domain (hosted deployments) is used only after you trust its domain – interactively (the
+answer is remembered in `~/.config/commscraft/trusted-domains`) or with `--trust-domain DOMAIN`,
+like `TrustModelData` of the Windows client. DNS SRV targets outside the SIP domain are never used. If Autodiscover uses a
 certificate from an enterprise CA that is not in the system trust store, add `--ca-file`.
 
 The password is asked without echo. `--verbose` prints the SIP messages with every

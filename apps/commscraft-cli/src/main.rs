@@ -21,7 +21,7 @@ use commscraft_sipae::Policy;
 
 const USAGE: &str =
     "usage: commscraft-cli sign-in --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
-[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] --authorized
+[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] --authorized
 
 Signs in once, fetches provisioning, prints a summary and signs out.
 --authorized  confirms that you are allowed to test against this server (required).
@@ -29,6 +29,9 @@ Signs in once, fetches provisioning, prints a summary and signs out.
               (lyncdiscoverinternal, lyncdiscover), then DNS SRV (_sipinternaltls._tcp, _sip._tls),
               then sipinternal/sip/sipexternal.<domain>:443 (MS-OCDISCWS, MS-CONMGMT).
 --discover-only  run only the discovery and print the result; no password, no sign-in.
+--trust-domain   trust SIP servers in DOMAIN although it differs from your SIP domain (like
+              TrustModelData of the Windows client); only for servers named by Autodiscover.
+              A yes on the interactive question is remembered in ~/.config/commscraft/trusted-domains.
 The password is read from the terminal without echo, or as the first line of standard input.";
 
 struct Args {
@@ -41,6 +44,7 @@ struct Args {
     verbose: bool,
     authorized: bool,
     discover_only: bool,
+    trust_domains: Vec<String>,
 }
 
 fn parse_args() -> Result<Args, String> {
@@ -57,6 +61,7 @@ fn parse_args() -> Result<Args, String> {
         epid: None,
         verbose: false,
         discover_only: false,
+        trust_domains: Vec::new(),
         authorized: false,
     };
     while let Some(flag) = it.next() {
@@ -80,6 +85,7 @@ fn parse_args() -> Result<Args, String> {
             "--epid" => a.epid = Some(value()?),
             "--verbose" => a.verbose = true,
             "--discover-only" => a.discover_only = true,
+            "--trust-domain" => a.trust_domains.push(value()?),
             "--authorized" => a.authorized = true,
             "-h" | "--help" => return Err(USAGE.into()),
             other => return Err(format!("unknown argument {other}\n\n{USAGE}")),
@@ -238,11 +244,92 @@ fn print_provisioning(p: &prov::Provisioning, user_domain: &str) {
 
 /// Server discovery (OB-06): Autodiscover over HTTPS first (D-10), then DNS SRV and the fallback
 /// host names. Targets outside the user's SIP domain are not used automatically.
+/// Server domains the user trusts for this SIP domain (like `TrustModelData` of the Windows client,
+/// Microsoft KB 2531068): from `--trust-domain` and from `~/.config/commscraft/trusted-domains`.
+struct Trust {
+    domains: Vec<String>,
+    file: Option<PathBuf>,
+}
+
+fn config_dir() -> Option<PathBuf> {
+    std::env::var_os("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))
+        .map(|b| b.join("commscraft"))
+}
+
+impl Trust {
+    fn load(extra: &[String]) -> Self {
+        let file = config_dir().map(|d| d.join("trusted-domains"));
+        let mut domains: Vec<String> = file
+            .as_ref()
+            .and_then(|f| std::fs::read_to_string(f).ok())
+            .map(|s| s.lines().filter_map(commscraft_url::dns_host).collect())
+            .unwrap_or_default();
+        domains.extend(extra.iter().filter_map(|d| commscraft_url::dns_host(d)));
+        Self { domains, file }
+    }
+
+    fn trusts(&self, host: &str) -> bool {
+        self.domains
+            .iter()
+            .any(|d| commscraft_url::in_domain(host, d))
+    }
+
+    /// Asks on the terminal (never when stdin is not a terminal) and remembers a yes.
+    fn ask(&mut self, host: &str, user_domain: &str, named_by: &str) -> bool {
+        // Offer the parent domain of the host (sip.hoster.example -> hoster.example).
+        let domain = host
+            .split_once('.')
+            .map(|(_, d)| d)
+            .filter(|d| d.contains('.'))
+            .unwrap_or(host)
+            .to_string();
+        if !std::io::stdin().is_terminal() {
+            eprintln!("  {host} is outside your SIP domain {user_domain}; to trust it, add --trust-domain {domain}");
+            return false;
+        }
+        eprint!(
+            "The server {host} is not in your SIP domain {user_domain}.\n\
+             It was named by {named_by} over a verified HTTPS connection.\n\
+             Trust servers in {domain} for signing in (your password goes there)? [y/N] "
+        );
+        let _ = std::io::stderr().flush();
+        let mut line = String::new();
+        if std::io::stdin().lock().read_line(&mut line).is_err()
+            || !line.trim().eq_ignore_ascii_case("y")
+        {
+            return false;
+        }
+        self.domains.push(domain.clone());
+        if let Some(f) = &self.file {
+            use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
+            if let Some(dir) = f.parent() {
+                let _ = std::fs::DirBuilder::new()
+                    .recursive(true)
+                    .mode(0o700)
+                    .create(dir);
+            }
+            if let Ok(mut file) = std::fs::OpenOptions::new()
+                .append(true)
+                .create(true)
+                .mode(0o600)
+                .open(f)
+            {
+                let _ = writeln!(file, "{domain}");
+                eprintln!("  remembered in {}", f.display());
+            }
+        }
+        true
+    }
+}
+
 fn discover(
     tls: &TlsClient,
     aor: &str,
     user_domain: &str,
     verbose: bool,
+    trust: &mut Trust,
 ) -> Result<Vec<(String, u16)>, String> {
     use commscraft_discovery as d;
     let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
@@ -309,6 +396,8 @@ fn discover(
                         t.port,
                         if t.in_user_domain {
                             ""
+                        } else if trust.trusts(&t.host) {
+                            " (outside your domain, trusted)"
                         } else {
                             " (outside your domain)"
                         }
@@ -344,6 +433,12 @@ fn discover(
         ) {
             Ok(r) => {
                 eprintln!("dns: {name}: {} record(s)", r.len());
+                for s in &r {
+                    eprintln!(
+                        "  priority {} weight {} -> {}:{}",
+                        s.priority, s.weight, s.target, s.port
+                    );
+                }
                 r.into_iter()
                     .map(|s| d::SrvRecord {
                         priority: s.priority,
@@ -367,12 +462,18 @@ fn discover(
         d::srv_targets(user_domain, &internal, &external),
     );
     let mut out = Vec::new();
+    let named_by = format!("lyncdiscover[internal].{user_domain}");
     for t in all {
-        if t.in_user_domain {
+        // Only Autodiscover targets can be trusted across domains: they were named by a host of
+        // the user's domain over verified TLS. Foreign DNS SRV targets are already dropped (CON-16).
+        if t.in_user_domain
+            || trust.trusts(&t.host)
+            || (t.source == d::Source::Autodiscover && trust.ask(&t.host, user_domain, &named_by))
+        {
             out.push((t.host, t.port));
         } else {
             eprintln!(
-                "skipping {}:{} outside your SIP domain; pass it with --server if you trust it",
+                "skipping {}:{} (outside your SIP domain, not trusted)",
                 t.host, t.port
             );
         }
@@ -418,9 +519,10 @@ fn run(a: Args) -> Result<(), String> {
         None => None,
     };
     let tls = TlsClient::new(ca.as_deref()).map_err(|e| e.to_string())?;
+    let mut trust = Trust::load(&a.trust_domains);
     let targets: Vec<(String, u16)> = match &a.server {
         Some(s) => vec![s.clone()],
-        None => discover(&tls, &a.aor, &user_domain, a.verbose)?,
+        None => discover(&tls, &a.aor, &user_domain, a.verbose, &mut trust)?,
     };
     if a.discover_only {
         println!("discovery result (in order):");
@@ -560,7 +662,7 @@ fn run(a: Args) -> Result<(), String> {
                     }
                 }
                 Event::Redirected(t) => {
-                    let note = if t.in_user_domain {
+                    let note = if t.in_user_domain || trust.trusts(&t.host) {
                         ""
                     } else {
                         " (outside your domain: not followed automatically)"
