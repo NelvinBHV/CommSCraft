@@ -210,3 +210,75 @@ fn certificate_problems_fail_closed() {
     assert!(conn.recv().unwrap().is_some());
     drop(h);
 }
+
+/// HTTPS GET as used for Autodiscover: request line and headers, chunked answer.
+#[test]
+fn https_get_for_autodiscover() {
+    let Some(dir) = make_certs("http") else {
+        eprintln!("openssl not available; skipping");
+        return;
+    };
+    let certs: Vec<CertificateDer<'static>> = CertificateDer::pem_file_iter(dir.join("leaf.pem"))
+        .unwrap()
+        .map(|c| c.unwrap())
+        .collect();
+    let key = PrivateKeyDer::from_pem_file(dir.join("leaf.key")).unwrap();
+    let config = rustls::ServerConfig::builder_with_provider(Arc::new(
+        rustls::crypto::ring::default_provider(),
+    ))
+    .with_safe_default_protocol_versions()
+    .unwrap()
+    .with_no_client_auth()
+    .with_single_cert(certs, key)
+    .unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let handle = std::thread::spawn(move || {
+        let (tcp, _) = listener.accept().unwrap();
+        let conn = rustls::ServerConnection::new(Arc::new(config)).unwrap();
+        let mut tls = rustls::StreamOwned::new(conn, tcp);
+        let mut req = Vec::new();
+        let mut b = [0u8; 1];
+        while !req.ends_with(b"\r\n\r\n") {
+            tls.read_exact(&mut b).unwrap();
+            req.push(b[0]);
+        }
+        let body =
+            "<AutodiscoverResponse AccessLocation=\"internal\"><Domain/></AutodiscoverResponse>";
+        let resp = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.microsoft.rtc.autodiscover+xml; v=1\r\nTransfer-Encoding: chunked\r\n\r\n{:x}\r\n{body}\r\n0\r\n\r\n",
+            body.len()
+        );
+        tls.write_all(resp.as_bytes()).unwrap();
+        tls.conn.send_close_notify();
+        let _ = tls.flush();
+        String::from_utf8(req).unwrap()
+    });
+    let client = TlsClient::with_roots(roots(&dir)).unwrap();
+    let url = commscraft_url::parse_https(&format!(
+        "https://{NAME}:{}/?sipuri=john@contoso.test",
+        addr.port()
+    ))
+    .unwrap();
+    let r = commscraft_net::http::get_at(
+        &client,
+        addr,
+        &url,
+        "application/vnd.microsoft.rtc.autodiscover+xml;v=1",
+        "CommSCraft/test",
+        Duration::from_secs(5),
+    )
+    .unwrap();
+    assert_eq!(r.status, 200);
+    assert!(String::from_utf8(r.body)
+        .unwrap()
+        .starts_with("<AutodiscoverResponse"));
+    let req = handle.join().unwrap();
+    assert!(
+        req.starts_with("GET /?sipuri=john@contoso.test HTTP/1.1\r\n"),
+        "{req}"
+    );
+    assert!(req.contains(&format!("Host: {NAME}:{}\r\n", addr.port())));
+    assert!(req.contains("Accept: application/vnd.microsoft.rtc.autodiscover+xml;v=1\r\n"));
+    assert!(req.contains("Connection: close\r\n"));
+}

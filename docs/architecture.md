@@ -33,8 +33,8 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 | `commscraft-register` | L2 | Sign-in state machine: REGISTER → NTLM handshake → signed 200 OK → GRUU/expiry → refresh → sign-out; client version block (RG-50); deregister/survivable mode NOTIFY; signed home pool redirect (O-RG-1); keep-alive negotiation (CON-30…CON-35) | AE-20…AE-33, RG-03…RG-32, RG-50, RE-03, RE-06, K-RG-4 |
 | `commscraft-url` | L0 | Checked DNS host names and HTTPS URLs, user-domain test | docs/security.md |
 | `commscraft-discovery` | L2 | Autodiscover (HTTPS only, Domain resource, redirect limits) and DNS SRV/fallback ordering (TLS only, domain filter) | AD-02…AD-13, CON-10…CON-18, OB-06, K-AD-1 |
-| `commscraft-net` | adapter | TLS client (rustls + ring, system trust store, optional enterprise CA), blocking SIP connection over the bounded decoder, OS random source | CON-01…CON-04, [SFB-TLS] |
-| `commscraft-cli` | app | Owner's interop tool: sign in, keep-alive, provisioning summary, sign out (`--authorized` required) | IT-19 |
+| `commscraft-net` | adapter | TLS client (rustls + ring, system trust store, optional enterprise CA), blocking SIP connection over the bounded decoder, OS random source, HTTPS GET for Autodiscover, DNS SRV client | CON-01…CON-04, CON-11, AD-02…AD-04, [SFB-TLS] |
+| `commscraft-cli` | app | Owner's interop tool: discovery (Autodiscover, DNS SRV), sign in, keep-alive, provisioning summary, sign out; `--discover-only`; `--authorized` required | IT-16, IT-19 |
 | `commscraft-xml` | L0 | Bounded XML reader without DTD/entities, namespaces, explicit stack | docs/security.md |
 | `commscraft-provisioning` | L3 | Provisioning SUBSCRIBE, `provisionGroupList` parser, validated ServerConfiguration (HTTPS URLs with domain check, SIP URIs, port ranges) | RG-40…RG-44, K-RG-4 |
 | `commscraft-psom` | L3 | PSOM GenericInt, String, RPC frame | PO-04, PO-05, K-PO-2, K-PO-3 |
