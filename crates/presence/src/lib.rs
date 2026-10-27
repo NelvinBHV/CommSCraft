@@ -182,6 +182,78 @@ pub fn publish_state_body(
     Ok(b)
 }
 
+/// Instance IDs of this endpoint's device and machineState publications. The specification fixes
+/// no values (the examples show endpoint-specific 32-bit numbers, §4.3.2.1, pp. 151–152); they
+/// are derived from the endpoint ID so they stay the same across sign-ins (inference).
+pub fn endpoint_instances(endpoint_id: &str) -> (u32, u32) {
+    // FNV-1a over the normalised endpoint ID; only stability matters, not secrecy.
+    let mut h: u32 = 0x811c_9dc5;
+    for b in endpoint_id
+        .to_ascii_lowercase()
+        .bytes()
+        .filter(|b| *b != b'-')
+    {
+        h ^= u32::from(b);
+        h = h.wrapping_mul(0x0100_0193);
+    }
+    // Keep the two top bits clear (MS-PRES uses them as flags in some instance IDs).
+    let device = h & 0x3fff_ffff;
+    (device, device ^ 0x0000_5a5a)
+}
+
+/// Body of the SERVICE that publishes this endpoint's `device` category (capabilities: text) and
+/// its `machineState` into container 2 (PR-31, PR-33; §3.8.5.2.1, p. 126; §2.2.2.7.2, pp. 53–54),
+/// both with `expireType="endpoint"`. `availability` is 3500 for an active endpoint (§4.3).
+pub fn publish_endpoint_body(
+    aor: &str,
+    endpoint_id: &str,
+    machine_name: &str,
+    availability: u32,
+    versions: [u32; 2],
+) -> Result<String, Error> {
+    let aor = checked_sip_uri(aor)?;
+    if endpoint_id.is_empty()
+        || !endpoint_id
+            .chars()
+            .all(|c| c.is_ascii_hexdigit() || c == '-')
+    {
+        return Err(Error::UnsafeUri);
+    }
+    let (device_instance, state_instance) = endpoint_instances(endpoint_id);
+    let machine = escape(&printable(machine_name));
+    let a = escape(&aor);
+    Ok(format!(
+        "<publish xmlns=\"{NS_PUBLISH}\"><publications uri=\"{a}\">\
+<publication categoryName=\"device\" instance=\"{device_instance}\" container=\"2\" version=\"{}\" expireType=\"endpoint\" endpointId=\"{endpoint_id}\">\
+<device xmlns=\"http://schemas.microsoft.com/2006/09/sip/device\" endpointId=\"{endpoint_id}\">\
+<capabilities preferred=\"false\" uri=\"{a}\"><text capture=\"true\" render=\"true\" publish=\"false\"/></capabilities>\
+<machineName>{machine}</machineName></device></publication>\
+<publication categoryName=\"state\" instance=\"{state_instance}\" container=\"2\" version=\"{}\" expireType=\"endpoint\" endpointId=\"{endpoint_id}\">\
+<state xmlns=\"{NS_STATE}\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" manual=\"false\" xsi:type=\"machineState\">\
+<availability>{availability}</availability><endpointLocation/></state></publication>\
+</publications></publish>",
+        versions[0], versions[1]
+    ))
+}
+
+/// Kind of a roaming contacts document.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ContactDocument {
+    /// `contactList`: the complete list.
+    Full,
+    /// `contactDelta` ([MS-SIP] §3.7.5.2): a change; the client fetches the full list again.
+    Delta,
+    Other,
+}
+
+pub fn contact_document_kind(xml: &str) -> ContactDocument {
+    match commscraft_xml::parse(xml, &Limits::default()) {
+        Ok(r) if r.name == "contactList" => ContactDocument::Full,
+        Ok(r) if r.name == "contactDelta" => ContactDocument::Delta,
+        _ => ContactDocument::Other,
+    }
+}
+
 /// One failed operation of a 409 `application/msrtc-fault+xml` (PR-05; example §4.2.1, p. 138).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VersionConflict {

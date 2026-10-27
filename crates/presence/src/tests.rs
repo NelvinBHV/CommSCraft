@@ -268,3 +268,45 @@ fn rlmi_rejections() {
     single_headers(&mut m, true);
     assert_eq!(m.single("Require").unwrap(), None);
 }
+
+/// PR-31/PR-33: device + machineState into container 2, endpoint-scoped.
+#[test]
+fn endpoint_publication() {
+    let id = "221EF77E-3A68-5570-86ED-6EA5BD4B7FF8";
+    let b =
+        publish_endpoint_body("sip:bob@contoso.com", id, "linux\u{1b}box<", 3500, [0, 2]).unwrap();
+    let root = commscraft_xml::parse(&b, &Limits::default()).unwrap();
+    let pubs: Vec<&Element> = root
+        .child("publications")
+        .unwrap()
+        .children_named("publication")
+        .collect();
+    assert_eq!(pubs.len(), 2);
+    assert_eq!(pubs[0].attr("categoryName"), Some("device"));
+    assert_eq!(pubs[0].attr("container"), Some("2"));
+    assert_eq!(pubs[1].attr("version"), Some("2"));
+    assert!(pubs
+        .iter()
+        .all(|p| p.attr("expireType") == Some("endpoint") && p.attr("endpointId") == Some(id)));
+    let dev = pubs[0].child("device").unwrap();
+    assert_eq!(dev.child("machineName").unwrap().text(), "linuxbox<");
+    assert!(dev.child("capabilities").unwrap().child("text").is_some());
+    assert_eq!(
+        pubs[1].child("state").unwrap().attr("xsi:type"),
+        Some("machineState")
+    );
+    assert_eq!(
+        endpoint_instances(id),
+        endpoint_instances(&id.to_lowercase()),
+        "stable"
+    );
+    assert!(publish_endpoint_body("sip:bob@contoso.com", "x\"/>", "m", 3500, [0, 0]).is_err());
+    assert_eq!(
+        contact_document_kind("<contactDelta deltaNum=\"2\" prevDeltaNum=\"1\"/>"),
+        ContactDocument::Delta
+    );
+    assert_eq!(
+        contact_document_kind("<contactList deltaNum=\"2\"/>"),
+        ContactDocument::Full
+    );
+}

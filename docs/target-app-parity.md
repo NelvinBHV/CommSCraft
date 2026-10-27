@@ -33,7 +33,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 6 | Sign-in with TLS-DSK and client certificate | MS-SIPAE, MS-OCAUTHWS | B\* | – |
 | 7 | Registration, GRUU, endpoint ID | MS-SIPREGE, MS-SIPRE | B | parts tested-offline (REGISTER flow, GRUU, refresh: `register`, `sip-identity`) |
 | 8 | In-band provisioning | MS-SIPREGE | B\* | parts tested-offline (SUBSCRIBE, provisionGroupList, validated ServerConfiguration: `provisioning`, `xml`) |
-| 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | parts tested-offline (publish own state, one-time batch queries: `presence`) |
+| 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | tested-offline (endpoint and own state publication, long-lived batch subscriptions with NOTIFY, refresh and pool resubscribe: `presence`, `session`) |
 | 10 | Contact list (server) | MS-SIP, MS-PRES | B | parts tested-offline (read: `presence`) |
 | 11 | Contact list (Exchange unified contact store) | MS-PRES, MS-OXWSCOS, MS-OXWSPERS | B\* | – |
 | 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | – |
@@ -41,7 +41,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 14 | Address book and distribution list search | MS-DLX | B\* | – |
 | 15 | Contact photos | MS-OXWSPHOTO | B | – |
 | 16 | Calendar and out-of-office state | MS-PRES (format) | T | – |
-| 17 | Instant messaging 1:1 | MS-SIPRE, MS-OCSPROT | B | parts tested-offline (outgoing session, MESSAGE, BYE: `im`) |
+| 17 | Instant messaging 1:1 | MS-SIPRE, MS-OCSPROT | B | tested-offline (incoming and outgoing sessions, queued text, delivery state: `im`, `session`) |
 | 18 | Typing indicator | MS-CONFIM | T | parts tested-offline (INFO KeyboardActivity, secondary format: `im`) |
 | 19 | Group IM (IM conference) | MS-CONFBAS, MS-CONFIM | B\* | – |
 | 20 | Persistent chat | MS-XCCOSIP, MS-OCGCWEB | T | – |

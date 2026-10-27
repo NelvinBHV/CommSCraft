@@ -362,6 +362,12 @@ impl<R: Random> Registrar<R> {
         &self.instance
     }
 
+    /// Random bytes from the registrar's CSPRNG, for tags, Call-IDs and branches of the other
+    /// requests of this endpoint.
+    pub fn fill_random(&mut self, buf: &mut [u8]) {
+        self.rng.fill(buf);
+    }
+
     /// Non-secret facts about the last NTLM handshake (for `--verbose` diagnostics).
     pub fn ntlm_info(&self) -> Option<&NtlmInfo> {
         self.ntlm_info.as_ref()
@@ -963,5 +969,7 @@ impl<R: Random> Registrar<R> {
     }
 }
 
+#[cfg(any(test, feature = "testing"))]
+pub mod testing;
 #[cfg(test)]
 mod tests;
