@@ -21,7 +21,7 @@ use commscraft_sipae::Policy;
 
 const USAGE: &str =
     "usage: commscraft-cli sign-in --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
-[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] --authorized
+[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--ntlm-legacy] --authorized
 
 Signs in once, fetches provisioning, prints a summary and signs out.
 --authorized  confirms that you are allowed to test against this server (required).
@@ -32,6 +32,8 @@ Signs in once, fetches provisioning, prints a summary and signs out.
 --trust-domain   trust SIP servers in DOMAIN although it differs from your SIP domain (like
               TrustModelData of the Windows client); only for servers named by Autodiscover.
               A yes on the interactive question is remembered in ~/.config/commscraft/trusted-domains.
+--ntlm-legacy    diagnostic: NTLMv2 without the optional MIC/channel-binding additions, with LMv2.
+--verbose     also prints the non-secret NTLM facts (offered/chosen flags, domain names).
 The password is read from the terminal without echo, or as the first line of standard input.";
 
 struct Args {
@@ -45,6 +47,7 @@ struct Args {
     authorized: bool,
     discover_only: bool,
     trust_domains: Vec<String>,
+    ntlm_legacy: bool,
 }
 
 fn parse_args() -> Result<Args, String> {
@@ -62,6 +65,7 @@ fn parse_args() -> Result<Args, String> {
         verbose: false,
         discover_only: false,
         trust_domains: Vec::new(),
+        ntlm_legacy: false,
         authorized: false,
     };
     while let Some(flag) = it.next() {
@@ -85,6 +89,7 @@ fn parse_args() -> Result<Args, String> {
             "--epid" => a.epid = Some(value()?),
             "--verbose" => a.verbose = true,
             "--discover-only" => a.discover_only = true,
+            "--ntlm-legacy" => a.ntlm_legacy = true,
             "--trust-domain" => a.trust_domains.push(value()?),
             "--authorized" => a.authorized = true,
             "-h" | "--help" => return Err(USAGE.into()),
@@ -172,6 +177,51 @@ fn load_or_create_epid(rng: &mut OsRandom) -> Result<String, String> {
     Ok(epid)
 }
 
+/// Keeps the non-secret parameters of an authentication header (realm, targetname, version,
+/// opaque, qop, cnum, snum, …) and replaces the tokens and signatures.
+fn redact_auth(value: &str) -> String {
+    const SECRET_PARAMS: [&str; 4] = ["gssapi-data", "response", "rspauth", "nonce"];
+    match commscraft_sipae::parse_auth_params(value) {
+        Ok((scheme, params)) => {
+            let shown: Vec<String> = params
+                .iter()
+                .map(|(k, v)| {
+                    if SECRET_PARAMS.contains(&k.as_str()) {
+                        format!("{k}=<{} chars redacted>", v.len())
+                    } else {
+                        format!("{k}=\"{v}\"")
+                    }
+                })
+                .collect();
+            format!("{scheme} {}", shown.join(", "))
+        }
+        Err(_) => format!(
+            "{} <redacted>",
+            value.split_whitespace().next().unwrap_or("")
+        ),
+    }
+}
+
+fn print_ntlm_info(i: &commscraft_register::NtlmInfo) {
+    use commscraft_register::NtlmInfo;
+    eprintln!("ntlm: MS-SIPAE version {:?}", i.sipae_version);
+    eprintln!(
+        "ntlm: server offers {}",
+        NtlmInfo::flag_names(i.offered_flags).join(" ")
+    );
+    if let Some(c) = i.chosen_flags {
+        eprintln!("ntlm: client chose  {}", NtlmInfo::flag_names(c).join(" "));
+    }
+    for (k, v) in &i.names {
+        eprintln!("ntlm: {k}: {v}");
+    }
+    eprintln!(
+        "ntlm: timestamp in challenge: {}; MIC/channel bindings sent: {}",
+        i.has_timestamp,
+        i.modern && i.has_timestamp
+    );
+}
+
 /// Prints a message with all authentication data replaced.
 fn show(prefix: &str, m: &Message) {
     const SECRET: [&str; 6] = [
@@ -185,8 +235,7 @@ fn show(prefix: &str, m: &Message) {
     let mut copy = m.clone();
     for h in &mut copy.headers {
         if SECRET.iter().any(|s| h.name.eq_ignore_ascii_case(s)) {
-            let scheme = h.value.split_whitespace().next().unwrap_or("").to_string();
-            h.value = format!("{scheme} <redacted>");
+            h.value = redact_auth(&h.value);
         }
     }
     if !copy.body.is_empty() {
@@ -563,6 +612,7 @@ fn run(a: Args) -> Result<(), String> {
         workstation: "COMMSCRAFT".into(),
         subnet: None,
         policy: Policy::default(),
+        ntlm_legacy: a.ntlm_legacy,
     };
     let mut reg =
         Registrar::new(cfg, password, rng).map_err(|e| format!("configuration: {e:?}"))?;
@@ -620,7 +670,17 @@ fn run(a: Args) -> Result<(), String> {
         }
         for e in events {
             match e {
-                Event::Send(m) => s.send(&m)?,
+                Event::Send(m) => {
+                    let is_authenticate = m
+                        .header_values("Authorization")
+                        .any(|v| v.contains("gssapi-data") && !v.contains("gssapi-data=\"\""));
+                    if a.verbose && is_authenticate {
+                        if let Some(i) = reg.ntlm_info() {
+                            print_ntlm_info(i);
+                        }
+                    }
+                    s.send(&m)?
+                }
                 Event::Registered(r) => {
                     println!(
                         "registered: expires {} s, GRUU {}",

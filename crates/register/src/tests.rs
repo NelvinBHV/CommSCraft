@@ -34,6 +34,7 @@ fn config() -> Config {
         workstation: "LINUX".into(),
         subnet: Some("192.0.2.0".into()),
         policy: Policy::default(),
+        ntlm_legacy: false,
     }
 }
 
@@ -801,4 +802,38 @@ fn signed_redirect_to_home_pool() {
             in_user_domain: true
         })]
     );
+}
+
+#[test]
+fn ntlm_diagnostics_and_legacy_mode() {
+    for legacy in [false, true] {
+        let mut cfg = config();
+        cfg.ntlm_legacy = legacy;
+        let mut reg = Registrar::new(cfg, Password::new("Password".into()), Counter(1)).unwrap();
+        let mut server = Server::new();
+        let r1 = reg.start(NOW);
+        let r2 = only_send(reg.on_message(&server.handle(&r1), NOW));
+        let r3 = only_send(reg.on_message(&server.handle(&r2), NOW));
+        let info = reg.ntlm_info().unwrap().clone();
+        assert_eq!(info.sipae_version, Some(3));
+        assert!(info.has_timestamp);
+        assert_eq!(info.modern, !legacy);
+        assert!(info
+            .names
+            .contains(&("NetBIOS domain", "Domain".to_string())));
+        assert!(NtlmInfo::flag_names(info.chosen_flags.unwrap()).contains(&"DATAGRAM"));
+        // Both variants are accepted by the test registrar.
+        assert!(
+            matches!(
+                reg.on_message(&server.handle(&r3), NOW).as_slice(),
+                [Event::Registered(_)]
+            ),
+            "legacy={legacy}"
+        );
+        let a3 = r3.single("Authorization").unwrap().unwrap().to_string();
+        let (_, p) = parse_auth_params(&a3).unwrap();
+        let token = base64::decode(&p.iter().find(|(k, _)| k == "gssapi-data").unwrap().1).unwrap();
+        let lm_len = u16::from_le_bytes([token[12], token[13]]);
+        assert_eq!(lm_len, if legacy { 24 } else { 0 });
+    }
 }
