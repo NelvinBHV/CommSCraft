@@ -17,10 +17,15 @@ Source: [MS-SIPCOMP] "Session Initiation Protocol (SIP) Compression Protocol", e
 
 Consistency check: the example tuple <16,15> → `1111010000` (offset 16, class <64) + `110111` (length 15, class 8–15) = `1111010000110111` – matches the table (p. 15).
 
+## Conflicts
+- K-CP-1 (documented, found 2026-10-27): §3.2.5.1 (p. 14) encodes offsets 64–319 as `1110` + "the lower 8 bits of the offset value" and 320–8191 as `110` + "the lower 13 bits of the offset value". RFC 2118 §4.2.1, which MS-SIPCOMP cites for the encoding, and [MS-RDPBCGR] 20260309 §3.1.8.4.1.2.1 (p. 267, RDP 4.0 bulk compression with the same 8 KiB MPPC) subtract 64 and 320 first; their examples (128 → `1110 01000000`, 1024 → `110 0001011000000`) only work with the subtraction. Authoritative: RFC 2118 / MS-RDPBCGR.
+
 ## Open
 - O-CP-1: The byte order of the 16-bit "Uncompressed size" field and the bit position of flags/type in the first byte are not stated explicitly in the text (bit diagram only, p. 10). Interop test required.
 - O-CP-2: Literal coding is adopted only by reference to RFC 2118 §4.1.
+- O-CP-3 (found 2026-10-27): The order of the bits within a byte is not stated in MS-SIPCOMP, RFC 2118 or MS-RDPBCGR. Inference: most significant bit first, as the bit strings of the examples are written; the last byte is padded with zero bits. Every token is at least 8 bits long, so a decoder can stop when fewer than 8 bits remain.
 
 ## Later findings (file 39)
 - O-CP-2 **closed** (OB-01, RFC 2118 §4.1: literal < 0x80 as 8 bits, ≥ 0x80 as `10` + low 7 bits).
 - O-CP-1 **partly** (OB-02): flags in the high nibble is an inference from the diagram convention; the byte order of the length stays open. No public implementation or archived older edition found (OB-30).
+- Recomputed in `crates/sipcomp` (2026-10-27): RFC 2118 / MS-RDPBCGR examples for literals (0x56, 0xE7), offsets (3, 128, 1024) and lengths (3, 15, 120, 4097); the tuple <16,15> → `1111010000110111`; the token sequence of the "for whom the bell tolls" example; stream round trips with PACKET_AT_FRONT and PACKET_FLUSHED. The 6-byte header stays out of the code until O-CP-1 is settled.

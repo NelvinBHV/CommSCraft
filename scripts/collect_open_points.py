@@ -29,7 +29,7 @@ STATUS = {
     "O-SIP-1": "closed (OB-03, normative)", "O-PR-1": "closed (OB-04, normative)",
     "O-AD-1": "closed (OB-06, official)", "O-AD-2": "closed (OB-07, official)",
     "O-AW-1": "secondary evidence (OB-08)", "O-CP-1": "partly (OB-02); byte order open (OB-30)",
-    "O-CP-2": "closed (OB-01, RFC 2118)", "O-IC-1": "secondary evidence (OB-09)",
+    "O-CP-2": "closed (OB-01, RFC 2118)", "O-CP-3": "inference (MSB first); interop", "O-IC-1": "secondary evidence (OB-09)",
     "O-CB-1": "secondary evidence (OB-33)", "O-PV-3": "closed (OB-24, element deprecated)",
     "O-BW-1": "closed (OB-10, normative)", "O-QE-1": "partly (OB-28, ITU basics obtained)",
     "O-DL-1": "secondary evidence (OB-12)", "O-NL-1": "documented for OCS 2007 R2, recomputed (OB-11)",

@@ -1,6 +1,15 @@
 [workspace]
 resolver = "2"
-members = ["crates/ntlm", "crates/ice", "crates/srtp", "crates/sip-identity"]
+members = [
+    "crates/ntlm",
+    "crates/ice",
+    "crates/srtp",
+    "crates/sip-identity",
+    "crates/abs",
+    "crates/psom",
+    "crates/sipcomp",
+    "crates/turn-bwm",
+]
 
 [workspace.package]
 version = "0.0.1"

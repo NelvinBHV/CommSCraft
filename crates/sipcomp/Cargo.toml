@@ -1,0 +1,11 @@
+[package]
+name = "commscraft-sipcomp"
+description = "MS-SIPCOMP SIP compression: MPPC (RFC 2118) with an 8 KiB history and the packet flags"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

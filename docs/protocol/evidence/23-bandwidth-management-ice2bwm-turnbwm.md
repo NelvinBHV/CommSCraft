@@ -35,3 +35,4 @@ The XOR examples of §2.2.4 (pp. 15–16) are correct: 0x1122⊕0x4455 = 0x5577;
 
 ## Later finding (file 39)
 - O-BW-1 **closed** (OB-10, MS-TURNBWM §1.3, pp. 9–10): the bandwidth check runs in the Allocate request to the client's own TURN server ⇒ the policy server is the TURN server obtained via MRAS.
+- The three XOR examples of MS-TURNBWM §2.2.4 (p. 16) are automated tests in `crates/turn-bwm` (2026-10-27).
