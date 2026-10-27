@@ -404,7 +404,9 @@ impl<R: Random> Registrar<R> {
             ),
         );
         m.push_header("User-Agent", &c.user_agent);
-        m.push_header("Supported", "gruu-10");
+        // PR-10: enhanced presence needs msrtc-event-categories (together with gruu-10, RG-27);
+        // adhoclist for batch subscriptions (RG-03, example MS-SIPREGE §4.1.1).
+        m.push_header("Supported", "gruu-10, adhoclist, msrtc-event-categories");
         // CON-30: hop-by-hop keep-alive negotiation on the REGISTER (MS-CONMGMT §4.1).
         m.push_header("ms-keep-alive", keepalive::REQUEST_VALUE);
         if let Some(s) = &c.subnet {

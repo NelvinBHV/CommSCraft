@@ -61,9 +61,12 @@ Source: [MS-PRES] "Presence Protocol", edition 20250520, rev. 13.0, 257 pp. Appl
 
 ## Open points / follow-up checks
 
+- K-PR-1 (found 2026-10-27): §3.2.5.1.2/§2.2.2.2.3 name the fault code `Client.BadCall.WrongDelta`; the 409 example §4.2.1 (p. 138) prints `Protocol client.BadCall.WrongDelta` (evidently a global replacement of "client" in the document). The example's batch answer §4.5 (p. 179) also lacks the multipart close delimiter, and the contact list example §4.14.1 (p. 197) has a space inside a SIP URI (`+14252057570@ contoso.com`). Decision: accept any fault code ending in `BadCall.WrongDelta`; tolerate a missing close delimiter at the end of a Content-Length-framed body; skip contact entries with unusable URIs (`crates/presence`).
+
 - O-PR-1: Which Exchange interface the client uses for UCS contacts (EWS `GetImItemList`/`AddImContactToGroup` or similar) is not described in MS-PRES → check the Exchange documents.
 - PR-60 (checked): The example manifest in MS-SIPREGE §4.2.2 (pp. 99–112) defines containers 0, 100, 200, 300, 400, 32000; role `buddy` ⇒ visible containers, default 100 or 200 (`moveToDefaultContainer`); role `delegate` ⇒ only 300; types user/domain/sameEnterprise/federated/publicCloud in **32000** (with `removeFromContainer`). Hence 32000 is the blocking container (inference from the rule structure, no explicit text). The UI names were not documented in the specifications (O-PR-2).
 
 ## Later findings (file 39)
 - O-PR-1 **closed** (OB-04, normative: MS-OXWSCOS, evidence file 37).
 - O-PR-2 **closed** (OB-05, official: Lync 2013 SDK schema reference). Container 0 Default, 1 Self, 2/3 Aggregation, 100 External Contacts, 200 Colleagues, 300 Workgroup, 400 Friends and Family, 32000 Blocked Contacts.
+- Implementation (2026-10-27, `crates/presence`): one-time batch presence queries (PR-14/PR-17, `Expires: 0`), contact list query (SIP-07), publishing the manual userState into containers 2 and 3 (PR-11/PR-31) with `expireType="endpoint"` so it ends with the session, 409 retry with `curVersion` (PR-05). The userState instance 603979776 (0x24000000) is taken from example §4.3.1.1 (p. 143; inference – the specification fixes no value). REGISTER now carries `Supported: gruu-10, adhoclist, msrtc-event-categories` (PR-10, RG-03).

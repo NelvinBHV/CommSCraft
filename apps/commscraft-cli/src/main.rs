@@ -20,10 +20,14 @@ use commscraft_sip_msg::Message;
 use commscraft_sipae::Policy;
 
 const USAGE: &str =
-    "usage: commscraft-cli sign-in --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
-[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--ntlm-legacy] --authorized
+    "usage: commscraft-cli sign-in|presence --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
+[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--ntlm-legacy] \
+[--set-status online|busy|dnd|away] [--max-contacts N] --authorized
 
-Signs in once, fetches provisioning, prints a summary and signs out.
+sign-in   signs in once, fetches provisioning, prints a summary and signs out.
+presence  signs in, reads the contact list, queries the presence of up to N contacts (default 50)
+          once, optionally sets the own state for the time of the session (--set-status), signs out.
+
 --authorized  confirms that you are allowed to test against this server (required).
 --server      SIP server; without it the server is discovered: Lync Autodiscover over HTTPS
               (lyncdiscoverinternal, lyncdiscover), then DNS SRV (_sipinternaltls._tcp, _sip._tls),
@@ -48,13 +52,24 @@ struct Args {
     discover_only: bool,
     trust_domains: Vec<String>,
     ntlm_legacy: bool,
+    command: Command,
+    set_status: Option<commscraft_presence::UserStatus>,
+    max_contacts: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Command {
+    SignIn,
+    Presence,
 }
 
 fn parse_args() -> Result<Args, String> {
     let mut it = std::env::args().skip(1);
-    if it.next().as_deref() != Some("sign-in") {
-        return Err(USAGE.into());
-    }
+    let command = match it.next().as_deref() {
+        Some("sign-in") => Command::SignIn,
+        Some("presence") => Command::Presence,
+        _ => return Err(USAGE.into()),
+    };
     let mut a = Args {
         aor: String::new(),
         user: String::new(),
@@ -66,6 +81,9 @@ fn parse_args() -> Result<Args, String> {
         discover_only: false,
         trust_domains: Vec::new(),
         ntlm_legacy: false,
+        command,
+        set_status: None,
+        max_contacts: 50,
         authorized: false,
     };
     while let Some(flag) = it.next() {
@@ -90,6 +108,18 @@ fn parse_args() -> Result<Args, String> {
             "--verbose" => a.verbose = true,
             "--discover-only" => a.discover_only = true,
             "--ntlm-legacy" => a.ntlm_legacy = true,
+            "--set-status" => {
+                let v = value()?;
+                a.set_status = Some(
+                    commscraft_presence::UserStatus::parse(&v)
+                        .ok_or("--set-status: online, busy, dnd or away")?,
+                );
+            }
+            "--max-contacts" => {
+                a.max_contacts = value()?
+                    .parse()
+                    .map_err(|_| "--max-contacts needs a number")?
+            }
             "--trust-domain" => a.trust_domains.push(value()?),
             "--authorized" => a.authorized = true,
             "-h" | "--help" => return Err(USAGE.into()),
@@ -541,6 +571,19 @@ struct Session {
     conn: SipConnection,
     keepalive: Option<KeepAlive>,
     verbose: bool,
+    aor: String,
+    epid: String,
+    gruu: String,
+    via_host: String,
+    rng: OsRandom,
+}
+
+enum Pumped {
+    Nothing,
+    Registered,
+    Done,
+    /// A message that is not for the registrar (a response to one of our own requests).
+    Message(Message),
 }
 
 impl Session {
@@ -553,6 +596,162 @@ impl Session {
             k.on_data_sent(now());
         }
         Ok(())
+    }
+
+    fn hex(&mut self, n: usize) -> String {
+        hex(&mut self.rng, n)
+    }
+
+    fn via(&mut self) -> String {
+        let branch = self.hex(8);
+        format!("SIP/2.0/TLS {};branch=z9hG4bK{branch}", self.via_host)
+    }
+
+    /// A new out-of-dialog request from this endpoint (RE-03: epid in From; GRUU as Contact).
+    fn request(&mut self, method: &str, uri: &str) -> Message {
+        let mut m = Message::request(method, uri);
+        let via = self.via();
+        m.push_header("Via", &via);
+        m.push_header("Max-Forwards", "70");
+        let tag = self.hex(5);
+        m.push_header(
+            "From",
+            &format!("<{}>;tag={tag};epid={}", self.aor, self.epid),
+        );
+        m.push_header("To", &format!("<{uri}>"));
+        let call_id = self.hex(16);
+        m.push_header("Call-ID", &call_id);
+        m.push_header("CSeq", &format!("1 {method}"));
+        m.push_header("Contact", &format!("<{}>", self.gruu));
+        m.push_header("User-Agent", &user_agent());
+        m
+    }
+
+    /// Receives one message (or a timeout) and lets the registrar handle what is its business.
+    fn pump(&mut self, reg: &mut Registrar<OsRandom>, verbose: bool) -> Result<Pumped, String> {
+        let msg = self.conn.recv().map_err(|e| e.to_string())?;
+        let events = match &msg {
+            Some(m) => {
+                if verbose {
+                    show("<<<", m);
+                }
+                reg.on_message(m, now())
+            }
+            None => reg.on_tick(now()),
+        };
+        if let Some(k) = &mut self.keepalive {
+            if let Some(bytes) = k.on_tick(now()) {
+                self.conn.send_raw(bytes).map_err(|e| e.to_string())?;
+            }
+        }
+        let mut result = Pumped::Nothing;
+        let handled = !events.is_empty();
+        for e in events {
+            match e {
+                Event::Send(m) => {
+                    let is_authenticate = m
+                        .header_values("Authorization")
+                        .any(|v| v.contains("gssapi-data") && !v.contains("gssapi-data=\"\""));
+                    if verbose && is_authenticate {
+                        if let Some(i) = reg.ntlm_info() {
+                            print_ntlm_info(i);
+                        }
+                    }
+                    self.send(&m)?
+                }
+                Event::Registered(r) => {
+                    println!(
+                        "registered: expires {} s, GRUU {}",
+                        r.expires,
+                        r.gruu.as_deref().unwrap_or("-")
+                    );
+                    if let Some(g) = &r.gruu {
+                        self.gruu = g.clone();
+                    }
+                    if self.keepalive.is_none() {
+                        match r.keepalive_timeout {
+                            Some(t) => {
+                                println!("keep-alive: every {} s", t * 2 / 3);
+                                self.keepalive = Some(KeepAlive::new(t, now()));
+                            }
+                            None => println!("keep-alive: not negotiated"),
+                        }
+                    }
+                    result = Pumped::Registered;
+                }
+                Event::Redirected(t) => {
+                    println!(
+                        "redirected to home pool {}:{}; run again with --server {}:{}",
+                        t.host, t.port, t.host, t.port
+                    );
+                    result = Pumped::Done;
+                }
+                Event::Unregistered => {
+                    println!("signed out");
+                    result = Pumped::Done;
+                }
+                Event::Deregistered(d) => {
+                    println!("deregistered by the server: {d:?}");
+                    result = Pumped::Done;
+                }
+                Event::SurvivableMode => println!("server reports survivable mode"),
+                Event::Failed(f) => return Err(format!("sign-in failed: {f:?}")),
+            }
+        }
+        if !handled {
+            if let Some(m) = msg {
+                return Ok(Pumped::Message(m));
+            }
+        }
+        Ok(result)
+    }
+
+    /// Sends a signed request and waits for its final answer, which must carry a valid signature
+    /// (AE-32); provisional answers are skipped, other traffic goes to the registrar.
+    fn transact(
+        &mut self,
+        reg: &mut Registrar<OsRandom>,
+        req: &Message,
+    ) -> Result<Message, String> {
+        self.send(req)?;
+        let call_id = req.call_id().ok().flatten().unwrap_or("").to_string();
+        let cseq = req
+            .cseq()
+            .ok()
+            .flatten()
+            .map(|c| (c.number, c.method.to_string()));
+        let started = now();
+        loop {
+            if now().saturating_sub(started) > 32 {
+                return Err(format!(
+                    "no answer to {}",
+                    req.method().unwrap_or("request")
+                ));
+            }
+            match self.pump(reg, self.verbose)? {
+                Pumped::Message(m) => {
+                    let ours = m.is_response()
+                        && m.call_id().ok().flatten() == Some(call_id.as_str())
+                        && m.cseq()
+                            .ok()
+                            .flatten()
+                            .map(|c| (c.number, c.method.to_string()))
+                            == cseq;
+                    if !ours || m.status_code().is_some_and(|c| c < 200) {
+                        continue;
+                    }
+                    if !reg.verify_message(&m) {
+                        return Err(format!(
+                            "answer {} without a valid signature - not trusted",
+                            m.status_code().unwrap_or(0)
+                        ));
+                    }
+                    return Ok(m);
+                }
+                Pumped::Done => return Err("the registration ended".into()),
+                Pumped::Nothing | Pumped::Registered => {}
+            }
+        }
     }
 }
 
@@ -627,137 +826,207 @@ fn run(a: Args) -> Result<(), String> {
         conn,
         keepalive: None,
         verbose: a.verbose,
+        aor: a.aor.clone(),
+        epid: epid.clone(),
+        gruu: a.aor.clone(),
+        via_host: format!("{host}:{}", local.port()),
+        rng: OsRandom::new().map_err(|e| e.to_string())?,
     };
     s.conn
         .set_timeout(Duration::from_secs(1))
         .map_err(|e| e.to_string())?;
     s.send(&reg.start(now()))?;
 
-    let mut prov_call_id: Option<String> = None;
-    let mut done_provisioning = false;
-    let mut signing_out = false;
+    // Phase 1: sign in.
     let started = now();
     loop {
         if now().saturating_sub(started) > 120 {
             return Err("gave up after 120 s".into());
         }
-        let msg = s.conn.recv().map_err(|e| e.to_string())?;
-        let mut events = Vec::new();
-        match msg {
-            Some(m) => {
-                if a.verbose {
-                    show("<<<", &m);
-                }
-                if prov_call_id.is_some()
-                    && m.call_id().ok().flatten() == prov_call_id.as_deref()
-                    && m.is_response()
-                {
-                    if m.status_code().is_some_and(|c| c >= 200) {
-                        if !reg.verify_message(&m) {
-                            eprintln!("provisioning answer not correctly signed - ignored");
-                        } else {
-                            match prov::from_message(&m) {
-                                Ok(Some(p)) => print_provisioning(&p, &user_domain),
-                                Ok(None) => println!("provisioning: no piggybacked document (NOTIFY not handled yet)"),
-                                Err(e) => println!("provisioning: unusable document ({e:?})"),
-                            }
-                        }
-                        done_provisioning = true;
-                    }
-                } else {
-                    events = reg.on_message(&m, now());
-                }
-            }
-            None => events = reg.on_tick(now()),
-        }
-        if let Some(k) = &mut s.keepalive {
-            if let Some(bytes) = k.on_tick(now()) {
-                s.conn.send_raw(bytes).map_err(|e| e.to_string())?;
-            }
-        }
-        for e in events {
-            match e {
-                Event::Send(m) => {
-                    let is_authenticate = m
-                        .header_values("Authorization")
-                        .any(|v| v.contains("gssapi-data") && !v.contains("gssapi-data=\"\""));
-                    if a.verbose && is_authenticate {
-                        if let Some(i) = reg.ntlm_info() {
-                            print_ntlm_info(i);
-                        }
-                    }
-                    s.send(&m)?
-                }
-                Event::Registered(r) => {
-                    println!(
-                        "registered: expires {} s, GRUU {}",
-                        r.expires,
-                        r.gruu.as_deref().unwrap_or("-")
-                    );
-                    match r.keepalive_timeout {
-                        Some(t) => {
-                            println!("keep-alive: every {} s", t * 2 / 3);
-                            s.keepalive = Some(KeepAlive::new(t, now()));
-                        }
-                        None => println!("keep-alive: not negotiated"),
-                    }
-                    if prov_call_id.is_none() {
-                        let mut r2 = OsRandom::new().map_err(|e| e.to_string())?;
-                        let call_id = hex(&mut r2, 16);
-                        let gruu = r.gruu.clone().unwrap_or_else(|| a.aor.clone());
-                        let via = format!(
-                            "SIP/2.0/TLS {host}:{};branch=z9hG4bK{}",
-                            local.port(),
-                            hex(&mut r2, 8)
-                        );
-                        let tag = hex(&mut r2, 5);
-                        let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
-                        let mut sub = prov::subscribe(&prov::Request {
-                            aor: &a.aor,
-                            gruu: &gruu,
-                            epid: &epid,
-                            from_tag: &tag,
-                            call_id: &call_id,
-                            cseq: 1,
-                            via: &via,
-                            user_agent: &ua,
-                            subnet: None,
-                        });
-                        reg.sign_request(&mut sub).map_err(|e| format!("{e:?}"))?;
-                        s.send(&sub)?;
-                        prov_call_id = Some(call_id);
-                    }
-                }
-                Event::Redirected(t) => {
-                    let note = if t.in_user_domain || trust.trusts(&t.host) {
-                        ""
-                    } else {
-                        " (outside your domain: not followed automatically)"
-                    };
-                    println!(
-                        "redirected to home pool {}:{}{note}; run again with --server {}:{}",
-                        t.host, t.port, t.host, t.port
-                    );
-                    return Ok(());
-                }
-                Event::Unregistered => {
-                    println!("signed out");
-                    return Ok(());
-                }
-                Event::Deregistered(d) => {
-                    println!("deregistered by the server: {d:?}");
-                    return Ok(());
-                }
-                Event::SurvivableMode => println!("server reports survivable mode"),
-                Event::Failed(f) => return Err(format!("sign-in failed: {f:?}")),
-            }
-        }
-        if done_provisioning && !signing_out {
-            signing_out = true;
-            let m = reg.unregister(now()).map_err(|e| format!("{e:?}"))?;
-            s.send(&m)?;
+        match s.pump(&mut reg, a.verbose)? {
+            Pumped::Registered => break,
+            Pumped::Done => return Ok(()),
+            Pumped::Nothing | Pumped::Message(_) => {}
         }
     }
+
+    // Phase 2: the requested actions, each as a signed request with a verified answer.
+    match a.command {
+        Command::SignIn => {
+            let mut sub = prov::subscribe(&prov::Request {
+                aor: &a.aor,
+                gruu: &s.gruu.clone(),
+                epid: &epid,
+                from_tag: &s.hex(5),
+                call_id: &s.hex(16),
+                cseq: 1,
+                via: &s.via(),
+                user_agent: &user_agent(),
+                subnet: None,
+            });
+            reg.sign_request(&mut sub).map_err(|e| format!("{e:?}"))?;
+            let answer = s.transact(&mut reg, &sub)?;
+            match prov::from_message(&answer) {
+                Ok(Some(p)) => print_provisioning(&p, &user_domain),
+                Ok(None) => {
+                    println!("provisioning: no piggybacked document (NOTIFY not handled yet)")
+                }
+                Err(e) => println!("provisioning: unusable document ({e:?})"),
+            }
+        }
+        Command::Presence => presence_actions(&mut s, &mut reg, &a)?,
+    }
+
+    // Phase 3: sign out.
+    let m = reg.unregister(now()).map_err(|e| format!("{e:?}"))?;
+    s.send(&m)?;
+    let started = now();
+    loop {
+        if now().saturating_sub(started) > 40 {
+            return Err("no answer to the sign-out".into());
+        }
+        if let Pumped::Done = s.pump(&mut reg, a.verbose)? {
+            return Ok(());
+        }
+    }
+}
+
+fn user_agent() -> String {
+    format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"))
+}
+
+/// `presence`: contact list, presence of the contacts, optionally the own state (M2).
+fn presence_actions(
+    s: &mut Session,
+    reg: &mut Registrar<OsRandom>,
+    a: &Args,
+) -> Result<(), String> {
+    use commscraft_presence as pres;
+    // Contact list (SIP-07), as a one-time query.
+    let mut req = s.request("SUBSCRIBE", &a.aor.clone());
+    pres::contacts_headers(&mut req, true);
+    reg.sign_request(&mut req).map_err(|e| format!("{e:?}"))?;
+    let answer = s.transact(reg, &req)?;
+    let list = if answer.status_code() == Some(200) && !answer.body.is_empty() {
+        let body = std::str::from_utf8(&answer.body).map_err(|_| "contact list is not UTF-8")?;
+        pres::parse_contact_list(body).map_err(|e| format!("contact list: {e:?}"))?
+    } else {
+        println!(
+            "contact list: answer {} without document",
+            answer.status_code().unwrap_or(0)
+        );
+        pres::ContactList::default()
+    };
+    println!(
+        "contact list: {} contacts in {} groups{}",
+        list.contacts.len(),
+        list.groups.len(),
+        list.ucs_mode
+            .as_deref()
+            .map(|m| format!(" (unified contact store: {m})"))
+            .unwrap_or_default()
+    );
+    if !list.skipped.is_empty() {
+        println!(
+            "  skipped {} entries with unusable URIs",
+            list.skipped.len()
+        );
+    }
+
+    // Presence of the contacts (PR-14, PR-17): one-time batch queries of at most MAX_BATCH.
+    let uris: Vec<String> = list
+        .contacts
+        .iter()
+        .map(|c| c.uri.clone())
+        .take(a.max_contacts)
+        .collect();
+    for chunk in uris.chunks(pres::MAX_BATCH) {
+        let mut req = s.request("SUBSCRIBE", &a.aor.clone());
+        pres::batch_headers(&mut req, true);
+        let mut id = [0u8; 4];
+        s.rng.fill(&mut id);
+        req.body = pres::batch_body(&a.aor, chunk, u32::from_be_bytes(id) & 0x7fff_ffff)
+            .map_err(|e| format!("{e:?}"))?
+            .into_bytes();
+        reg.sign_request(&mut req).map_err(|e| format!("{e:?}"))?;
+        let answer = s.transact(reg, &req)?;
+        if answer.status_code() != Some(200) {
+            println!(
+                "presence query: answer {}",
+                answer.status_code().unwrap_or(0)
+            );
+            continue;
+        }
+        match pres::parse_batch(&answer) {
+            Ok((states, contacts)) => {
+                for c in &contacts {
+                    let name = list
+                        .contacts
+                        .iter()
+                        .find(|x| x.uri.eq_ignore_ascii_case(&c.uri))
+                        .map(|x| x.name.clone())
+                        .filter(|n| !n.is_empty())
+                        .or_else(|| c.display_name.clone())
+                        .unwrap_or_default();
+                    println!(
+                        "  {:<14} {:<40} {}{}",
+                        format!("{:?}", c.class()),
+                        c.uri,
+                        name,
+                        c.note
+                            .as_deref()
+                            .map(|n| format!("  \"{n}\""))
+                            .unwrap_or_default()
+                    );
+                }
+                for st in states.iter().filter(|st| st.state != "active") {
+                    println!(
+                        "  {:<14} {:<40} ({})",
+                        st.state,
+                        st.uri,
+                        st.reason.as_deref().unwrap_or("")
+                    );
+                }
+            }
+            Err(e) => println!("presence query: unusable answer ({e:?})"),
+        }
+    }
+
+    // Own state (PR-11), only on request and scoped to this endpoint (PR-02).
+    if let Some(status) = a.set_status {
+        let endpoint = reg.instance().to_string();
+        let mut versions = [0u32, 0u32];
+        for attempt in 0..2 {
+            let mut req = s.request("SERVICE", &a.aor.clone());
+            req.push_header("Content-Type", "application/msrtc-category-publish+xml");
+            req.body = pres::publish_state_body(&a.aor, status, versions, Some(&endpoint))
+                .map_err(|e| format!("{e:?}"))?
+                .into_bytes();
+            reg.sign_request(&mut req).map_err(|e| format!("{e:?}"))?;
+            let answer = s.transact(reg, &req)?;
+            match answer.status_code() {
+                Some(200) => {
+                    println!("own state set to {status:?} (until this client signs out)");
+                    break;
+                }
+                // PR-05: version conflict, retry once with the server's versions.
+                Some(409) if attempt == 0 => {
+                    let body = std::str::from_utf8(&answer.body).unwrap_or("");
+                    let conflicts = pres::parse_fault(body).map_err(|e| format!("409: {e:?}"))?;
+                    for c in conflicts {
+                        if let Some(v) = versions.get_mut((c.index as usize).saturating_sub(1)) {
+                            *v = c.cur_version;
+                        }
+                    }
+                }
+                other => {
+                    println!("publishing the state failed: {}", other.unwrap_or(0));
+                    break;
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 fn main() {
