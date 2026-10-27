@@ -25,7 +25,10 @@ owner on an authorized server and is deferred until such an environment exists (
 6. **M1 in progress** – sign-in and registration, offline against specification examples and
    self-built fixtures. Done: SIP message parser and stream framing (`sip-msg`), MS-SIPAE signing
    and verification with NTLM (`sipae`), NTLM CHALLENGE/AUTHENTICATE messages (`ntlm::messages`,
-   example §4.2.4.3 byte for byte). Next: the REGISTER flow as a sans-I/O state machine (AE-20…AE-28, MS-SIPREGE), then provisioning.
+   example §4.2.4.3 byte for byte), the REGISTER flow as a sans-I/O state machine (`register`,
+   offline sign-in against a test registrar). Next: in-band provisioning (SUBSCRIBE
+   `vnd-microsoft-provisioning-v2`, bounded XML reader), deregistration NOTIFY, then discovery and
+   the TLS adapter.
 
 ## Milestones
 

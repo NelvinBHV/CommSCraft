@@ -1,6 +1,6 @@
 # Interop test cases for the owner
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** major (catalogue created from the closed gap list)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (IT-14, IT-15 from the M1 implementation)
 
 After the fourth search ([`protocol/evidence/39-evidence-for-open-points.md`](protocol/evidence/39-evidence-for-open-points.md),
 OB-39 … OB-51) no open point needs more document research. What is left is the observable behaviour
@@ -38,6 +38,8 @@ non-blocking.
 | IT-10 | K-E9-1 | The schema defines `urn:schema:Microsoft.Rtc.WebComponent.Lis.2010`, the examples omit it | Does the location service accept requests with the schema namespace? | Schema namespace | M4 |
 | IT-11 | K-CK-1 | The schema and the park response use `http://schemas.microsoft.com/rtc/2008/12/callpark`, the request example omits it | Does the call park service accept requests with the namespace? | Schema namespace | M4 |
 | IT-12 | O-CP-1 (optional) | Compression is negotiated only by the client (MS-SIPCOMP §3.1.5, p. 11); MPPC is tested offline | Byte order of the 16-bit "Uncompressed size" and bit order of the MPPC stream | Compression off; never negotiated | optional |
+| IT-14 | O-NL-1 design (OB-43) | MS-NLMP defines all variants; the MS-SIPREGE example (p. 94) shows NTLMv1 without ESS from OCS 2007 times | Do current servers offer EXTENDED_SESSIONSECURITY, 128-bit and KEY_EXCH in the SIP NTLM CHALLENGE (flags of the base64 `gssapi-data`)? | Refuse weaker offers (fail closed) | M1 |
+| IT-15 | RG-08, RG-50 | Version filter answers 403 + Warning 310/311 (MS-SIPREGE §3.4.2.5) | Does the server's client version policy accept the User-Agent `CommSCraft/<version>`? Which rule matches? | Report `VersionBlocked` to the user | M1 |
 | IT-13 | O-EX-3 (optional) | Folder and item type of the conversation history (OB-22) | Body layout written by the Windows client, so that both clients' entries look alike | Own layout | optional |
 
 ## Not a test case

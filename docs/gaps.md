@@ -14,10 +14,10 @@ and the first milestones, followed by the open points found in the analysis.
 
 | # | Gap | Evidence / tracking | Milestone |
 |---|---|---|---|
-| 1 | No interop test environment (D-08): nothing can be verified against a real server; the remaining questions are owner test cases IT-01 … IT-13 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | after M0 |
+| 1 | No interop test environment (D-08): nothing can be verified against a real server; the remaining questions are owner test cases IT-01 … IT-15 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | after M0 |
 | 2 | ~~Protocol analysis not yet in the repository~~ – imported | [`protocol/`](protocol/) | done |
 | 3 | ~~Remaining M0 test vectors (SIPCOMP/MPPC, ABS, PSOM, TURNBWM XOR)~~ – done | [`roadmap.md`](roadmap.md) | done |
-| 4 | Sign-in stack: discovery, TLS, NTLM/Kerberos/TLS-DSK, registration, provisioning. Done offline: SIP parser/framing, MS-SIPAE signing and verification (NTLM), NTLM handshake messages. Missing: REGISTER flow, provisioning, Kerberos/TLS-DSK, discovery, TLS adapter | functions 1–8 | M1 |
+| 4 | Sign-in stack: discovery, TLS, NTLM/Kerberos/TLS-DSK, registration, provisioning. Done offline: SIP parser/framing, MS-SIPAE signing and verification (NTLM), NTLM handshake messages, REGISTER flow (sign-in, refresh, sign-out). Missing: provisioning, deregistration NOTIFY, Kerberos/TLS-DSK, discovery, TLS adapter | functions 1–8 | M1 |
 | 5 | Presence and IM | functions 9–19 | M2 |
 | 6 | Media stack: MS-ICE2/MS-TURN, SRTP, RTP/RTCP, G.711/G.722 | functions 21–26 | M3 |
 | 7 | Conferences (C3P/CCCP, focus, MCUs) | functions 40–42 | M4 |
@@ -31,7 +31,7 @@ evidence of the closing pass: [`protocol/evidence/39-evidence-for-open-points.md
 
 No point needs more document research. Of 23 open points, 21 are closed by a normative source, by
 design or as not needed; of 18 gaps, 15 are closed or no evidence problem. What remains is server or
-Windows-client behaviour that only a capture can show. These are the 13 owner test cases in
+Windows-client behaviour that only a capture can show. These are the owner test cases in
 [`interop-tests.md`](interop-tests.md). Each one has a default, so none blocks offline work.
 
 | Closed how | Points |
@@ -51,6 +51,8 @@ Windows-client behaviour that only a capture can show. These are the 13 owner te
 | IT-06 | L-13 SfB transfer headers | RFC flow plus documented MS headers |
 | IT-07 … IT-11 | Conflicts K-RE-1, K-CA-1, K-CS-2, K-E9-1, K-CK-1 | Decision recorded in the conflict |
 | IT-12, IT-13 | O-CP-1 (optional), O-EX-3 (optional) | Compression off; own layout |
+| IT-14 | NTLM flags offered by current servers (OB-43) | Refuse weaker offers |
+| IT-15 | Client version policy and the CommSCraft User-Agent (RG-50) | Report the block to the user |
 
 ## Not planned without an owner decision
 

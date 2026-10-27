@@ -18,9 +18,9 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
 | Documented conflicts between specification passages | **43** | measured (analysis) |
 | Missing sources (all IETF/ITU gaps closed or narrowed) | **18** listed, 9 closed | measured (analysis) |
-| Open points still needing an interop capture | **2** of 23 (plus 3 of 18 gaps and 5 conflicts: 13 owner test cases, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured (analysis) |
+| Open points still needing an interop capture | **2** of 23 (plus 3 of 18 gaps and 5 conflicts) and 2 design checks from M1: 15 owner test cases, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured (analysis) |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 192 RFCs, 20 Internet-Drafts, ITU-T G.722.1/P.562/P.800.1 | measured |
-| Program code | 10 crates, 82 tests (specification test vectors, examples, hostile-input tests), no network code | measured |
+| Program code | 11 crates, 96 tests (specification test vectors, examples, hostile-input tests, offline sign-in), no network code | measured |
 | Owner decisions | **all taken** (D-01 … D-09; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **none** (D-08): all work is `tested-offline` at best | measured |
 
@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-27 | Offline sign-in: `register` state machine (REGISTER → NTLM → signed 200 OK → GRUU → refresh → sign-out) against a test registrar; strict base64; client version block (RG-50). Findings: the MS-SIPAE signature does not cover Contact/GRUU; the MS-SIPREGE example uses NTLMv1. New interop tests IT-14, IT-15. |
 | 2026-10-27 | NTLM handshake messages: CHALLENGE parsing with bounds checks, AUTHENTICATE construction (reproduces MS-NLMP §4.2.4.3 byte for byte), MIC/channel bindings/no LM response per §3.1.5.2.1, flag policy that refuses anything weaker than NTLMv2 + ESS + 128-bit + key exchange. |
 | 2026-10-27 | M1 started: `sip-msg` (bounded SIP parser, stream framing, injection-safe serializer, mutation test) and `sipae` (MS-SIPAE signature buffers recomputed from the examples §4.1/§4.2, NTLM signing/verification with seq 100, replay window of 256, version ≥ 3 policy). New conflict K-AE-4 (version 4 example). Security rules in `docs/security.md`. |
 | 2026-10-27 | Open-point list closed: a fourth pass over all 865 specifications found normative answers for O-AW-1, O-TU-1, O-IC-1, O-NL-1, O-DL-1, O-RD-2, O-QE-1, O-EX-1/2/4/5 and L-15 (OB-39 … OB-51); compression is not needed (client-initiated only); the rest are 13 owner test cases with defaults (`docs/interop-tests.md`). |
