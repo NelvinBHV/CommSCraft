@@ -469,7 +469,7 @@ fn sign_out_ends_everything() {
     let (mut e, mut server, out) = signed_in();
     let contacts_sub = sends(&out)
         .into_iter()
-        .find(|m| m.method() == Some("SUBSCRIBE"))
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-roaming-contacts"))
         .unwrap();
     e.on_message(
         &answer(
@@ -497,4 +497,40 @@ fn sign_out_ends_everything() {
     let out = e.on_message(&server.handle(reg), NOW);
     assert_eq!(events(&out), vec![Event::SignedOut]);
     assert!(!e.is_registered());
+}
+
+/// RG-40/RG-41: provisioning is fetched at bootstrap; the piggybacked document is checked and
+/// web service URLs outside the user's domain are marked.
+#[test]
+fn provisioning_at_bootstrap() {
+    let (mut e, mut server, out) = signed_in();
+    let sub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    assert_eq!(sub.expires().unwrap(), Some("0"), "piggyback");
+    assert!(server.verify_client(&sub));
+    let doc = r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="ServerConfiguration"><absInternalServerUrl>https://pool.contoso.com/abs/int/handler</absInternalServerUrl><dlxInternalUrl>https://pool.contoso.com/groupexpansion/service.svc</dlxInternalUrl><abwqExternalURL>https://evil.example/x</abwqExternalURL></provisionGroup></provisionGroupList>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            doc,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+    let ev = events(&out);
+    let Some(Event::Provisioned(c)) = ev.first() else {
+        panic!("{ev:?}")
+    };
+    let dlx = c.dlx_internal.as_ref().unwrap();
+    assert_eq!(
+        dlx.url,
+        "https://pool.contoso.com/groupexpansion/service.svc"
+    );
+    assert!(dlx.in_user_domain);
+    assert!(!c.abwq_external.as_ref().unwrap().in_user_domain);
 }

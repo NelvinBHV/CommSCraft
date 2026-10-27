@@ -63,8 +63,10 @@ name = "commscraft-cli"
 version = "0.0.1"
 dependencies = [
  "commscraft-discovery",
+ "commscraft-dlx",
  "commscraft-im",
  "commscraft-net",
+ "commscraft-ntlm",
  "commscraft-presence",
  "commscraft-provisioning",
  "commscraft-register",
@@ -80,6 +82,13 @@ name = "commscraft-discovery"
 version = "0.0.1"
 dependencies = [
  "commscraft-url",
+ "commscraft-xml",
+]
+
+[[package]]
+name = "commscraft-dlx"
+version = "0.0.1"
+dependencies = [
  "commscraft-xml",
 ]
 
@@ -156,6 +165,7 @@ version = "0.0.1"
 dependencies = [
  "commscraft-im",
  "commscraft-presence",
+ "commscraft-provisioning",
  "commscraft-register",
  "commscraft-sip-msg",
 ]

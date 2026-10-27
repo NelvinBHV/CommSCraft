@@ -362,6 +362,43 @@ impl<R: Random> Registrar<R> {
         &self.instance
     }
 
+    /// The AUTHENTICATE_MESSAGE for connection-oriented NTLM over HTTP (MS-NTHT; web services
+    /// such as MS-DLX) with the account's credentials, which never leave the registrar.
+    /// `negotiate` is the NEGOTIATE_MESSAGE sent first, `challenge` the server's CHALLENGE.
+    pub fn http_ntlm(
+        &mut self,
+        negotiate: &[u8],
+        challenge: &[u8],
+        now: u64,
+    ) -> Result<Vec<u8>, Failure> {
+        let ch = ntlm::Challenge::parse(challenge).map_err(Failure::Ntlm)?;
+        let flags = ntlm::choose_flags_http(ch.flags).map_err(Failure::Ntlm)?;
+        let mut client_challenge = [0u8; 8];
+        self.rng.fill(&mut client_challenge);
+        let mut random_session_key = [0u8; 16];
+        self.rng.fill(&mut random_session_key);
+        let result = ntlm::authenticate(
+            &ch,
+            &ntlm::AuthenticateInput {
+                user: &self.cfg.user,
+                domain: &self.cfg.domain,
+                password: &self.password.0,
+                workstation: &self.cfg.workstation,
+                flags,
+                version: [0; 8],
+                client_challenge,
+                random_session_key,
+                now_filetime: now
+                    .saturating_add(FILETIME_UNIX_OFFSET)
+                    .saturating_mul(10_000_000),
+                modern: true,
+                negotiate: Some(negotiate),
+            },
+        );
+        random_session_key.zeroize();
+        result.map(|(token, _key)| token).map_err(Failure::Ntlm)
+    }
+
     /// Random bytes from the registrar's CSPRNG, for tags, Call-IDs and branches of the other
     /// requests of this endpoint.
     pub fn fill_random(&mut self, buf: &mut [u8]) {
@@ -751,6 +788,7 @@ impl<R: Random> Registrar<R> {
                     .saturating_add(FILETIME_UNIX_OFFSET)
                     .saturating_mul(10_000_000),
                 modern: !self.cfg.ntlm_legacy,
+                negotiate: None,
             },
         );
         random_session_key.zeroize();
