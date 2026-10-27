@@ -41,8 +41,8 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 14 | Address book and distribution list search | MS-DLX | B\* | – |
 | 15 | Contact photos | MS-OXWSPHOTO | B | – |
 | 16 | Calendar and out-of-office state | MS-PRES (format) | T | – |
-| 17 | Instant messaging 1:1 | MS-SIPRE, MS-OCSPROT | B | – |
-| 18 | Typing indicator | MS-CONFIM | T | – |
+| 17 | Instant messaging 1:1 | MS-SIPRE, MS-OCSPROT | B | parts tested-offline (outgoing session, MESSAGE, BYE: `im`) |
+| 18 | Typing indicator | MS-CONFIM | T | parts tested-offline (INFO KeyboardActivity, secondary format: `im`) |
 | 19 | Group IM (IM conference) | MS-CONFBAS, MS-CONFIM | B\* | – |
 | 20 | Persistent chat | MS-XCCOSIP, MS-OCGCWEB | T | – |
 | 21 | Media relay access | MS-AVEDGEA, MS-TURN | B | – |
