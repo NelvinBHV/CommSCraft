@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (open-point list closed)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M1 started)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -22,8 +22,10 @@ owner on an authorized server and is deferred until such an environment exists (
    the MS-TURNBWM XOR examples (`turn-bwm`).
 5. ~~Close the open-point list~~ – done: normative answers or defaults for every point; the
    remaining server behaviour is the owner's test catalogue [`interop-tests.md`](interop-tests.md).
-6. **Next:** M1 – sign-in and registration, offline against self-built fixtures (SIP message
-   parser, MS-SIPAE NTLM signing of SIP messages, REGISTER flow as a sans-I/O state machine).
+6. **M1 in progress** – sign-in and registration, offline against specification examples and
+   self-built fixtures. Done: SIP message parser and stream framing (`sip-msg`), MS-SIPAE signing
+   and verification with NTLM (`sipae`). Next: NTLM AUTHENTICATE_MESSAGE from a CHALLENGE (MS-NLMP),
+   the REGISTER flow as a sans-I/O state machine (AE-20…AE-28, MS-SIPREGE), then provisioning.
 
 ## Milestones
 

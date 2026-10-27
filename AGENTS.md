@@ -42,6 +42,9 @@ Crafting Apps (WordCraft, GridCraft, DeckCraft).
   legal clearance.
 
 ## Security
+Security by design: threat model and the binding rules per crate are in
+[`docs/security.md`](docs/security.md); every new parser or protocol state machine follows them.
+
 - Treat all SIP, SDP, XML, HTTP, STUN/TURN, RTP and RDP input as hostile: bound memory and
   recursion, checked arithmetic, fail closed. XML parsers never resolve external entities.
 - Never disable TLS certificate validation, never accept a silent plaintext downgrade, never log

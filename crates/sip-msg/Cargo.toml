@@ -1,0 +1,11 @@
+[package]
+name = "commscraft-sip-msg"
+description = "SIP message parsing, stream framing and serialization, bounded and safe on hostile input (RFC 3261)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
