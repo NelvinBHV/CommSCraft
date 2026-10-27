@@ -223,53 +223,13 @@ pub struct ServiceUrl {
 }
 
 /// Accepts only `https://host[:port]/path` with a DNS host name (inference/design: MS-SIPREGE
-/// says these URLs SHOULD or MUST be HTTPS).
+/// says these URLs SHOULD or MUST be HTTPS). The checks live in `commscraft-url`.
 pub fn service_url(value: &str, user_domain: &str) -> Option<ServiceUrl> {
-    let rest = value.strip_prefix("https://")?;
-    if value.len() > 2048
-        || value
-            .chars()
-            .any(|c| c.is_control() || " \"<>\\^`{|}".contains(c))
-    {
-        return None;
-    }
-    let authority_end = rest.find(['/', '?', '#']).unwrap_or(rest.len());
-    let authority = rest.get(..authority_end)?;
-    if authority.contains('@') {
-        return None;
-    }
-    let (host, port) = match authority.rsplit_once(':') {
-        Some((h, p)) => (h, Some(p)),
-        None => (authority, None),
-    };
-    if let Some(p) = port {
-        let n: u32 = p.parse().ok()?;
-        if !(1..=65535).contains(&n) || p.starts_with('0') {
-            return None;
-        }
-    }
-    let host = host.to_ascii_lowercase();
-    let label_ok = |l: &str| {
-        !l.is_empty()
-            && l.len() <= 63
-            && !l.starts_with('-')
-            && !l.ends_with('-')
-            && l.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
-    };
-    // IP literals are refused: they cannot be matched against the user's domain (design).
-    let numeric_tld = host
-        .rsplit('.')
-        .next()
-        .is_some_and(|l| l.chars().all(|c| c.is_ascii_digit()));
-    if host.len() > 253 || !host.contains('.') || numeric_tld || !host.split('.').all(label_ok) {
-        return None;
-    }
-    let domain = user_domain.to_ascii_lowercase();
-    let in_user_domain = host == domain || host.ends_with(&format!(".{domain}"));
+    let u = commscraft_url::parse_https(value)?;
     Some(ServiceUrl {
-        url: value.to_string(),
-        host,
-        in_user_domain,
+        in_user_domain: commscraft_url::in_domain(&u.host, user_domain),
+        url: u.url,
+        host: u.host,
     })
 }
 

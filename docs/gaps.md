@@ -14,10 +14,10 @@ and the first milestones, followed by the open points found in the analysis.
 
 | # | Gap | Evidence / tracking | Milestone |
 |---|---|---|---|
-| 1 | No interop test environment (D-08): nothing can be verified against a real server; the remaining questions are owner test cases IT-01 … IT-15 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | after M0 |
+| 1 | No interop test environment (D-08): nothing can be verified against a real server; the remaining questions are owner test cases IT-01 … IT-17 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | after M0 |
 | 2 | ~~Protocol analysis not yet in the repository~~ – imported | [`protocol/`](protocol/) | done |
 | 3 | ~~Remaining M0 test vectors (SIPCOMP/MPPC, ABS, PSOM, TURNBWM XOR)~~ – done | [`roadmap.md`](roadmap.md) | done |
-| 4 | Sign-in stack: discovery, TLS, NTLM/Kerberos/TLS-DSK, registration, provisioning. Done offline: SIP parser/framing, MS-SIPAE signing and verification (NTLM), NTLM handshake messages, REGISTER flow (sign-in, refresh, sign-out, deregister NOTIFY), in-band provisioning. Missing: Kerberos/TLS-DSK, discovery, TLS adapter | functions 1–8 | M1 |
+| 4 | Sign-in stack: discovery, TLS, NTLM/Kerberos/TLS-DSK, registration, provisioning. Done offline: SIP parser/framing, MS-SIPAE signing and verification (NTLM), NTLM handshake messages, REGISTER flow (sign-in, refresh, sign-out, deregister NOTIFY), in-band provisioning, discovery (Autodiscover HTTPS-only, DNS SRV), registrar redirect. Missing: Kerberos/TLS-DSK, discovery, TLS adapter | functions 1–8 | M1 |
 | 5 | Presence and IM | functions 9–19 | M2 |
 | 6 | Media stack: MS-ICE2/MS-TURN, SRTP, RTP/RTCP, G.711/G.722 | functions 21–26 | M3 |
 | 7 | Conferences (C3P/CCCP, focus, MCUs) | functions 40–42 | M4 |
@@ -53,6 +53,8 @@ Windows-client behaviour that only a capture can show. These are the owner test 
 | IT-12, IT-13 | O-CP-1 (optional), O-EX-3 (optional) | Compression off; own layout |
 | IT-14 | NTLM flags offered by current servers (OB-43) | Refuse weaker offers |
 | IT-15 | Client version policy and the CommSCraft User-Agent (RG-50) | Report the block to the user |
+| IT-16 | SIP access points in the unauthenticated Autodiscover Domain resource; HTTPS on lyncdiscover (D-10) | DNS SRV |
+| IT-17 | Registrar redirect to the home pool (O-RG-1) | Signed TLS redirect only |
 
 ## Not planned without an owner decision
 

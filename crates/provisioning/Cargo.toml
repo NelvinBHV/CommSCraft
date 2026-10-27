@@ -10,6 +10,7 @@ publish.workspace = true
 [dependencies]
 commscraft-sip-msg = { path = "../sip-msg" }
 commscraft-xml = { path = "../xml" }
+commscraft-url = { path = "../url" }
 
 [lints]
 workspace = true

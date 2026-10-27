@@ -745,3 +745,50 @@ fn forged_or_foreign_notifies_are_dropped() {
     assert!(reg.on_message(&n, NOW).is_empty());
     assert!(reg.is_registered());
 }
+
+/// O-RG-1: a signed 301 after the handshake sends the client to its home pool.
+#[test]
+fn signed_redirect_to_home_pool() {
+    let mut reg = registrar();
+    let mut server = Server::new();
+    let r1 = reg.start(NOW);
+    let r2 = only_send(reg.on_message(&server.handle(&r1), NOW));
+    let r3 = only_send(reg.on_message(&server.handle(&r2), NOW));
+    assert!(
+        matches!(server.handle(&r3).status_code(), Some(200)),
+        "server learns the key"
+    );
+    let redirect = |contact: &str, server: &mut Server| {
+        let mut r = Server::reply(&r3, 301, "Moved Permanently");
+        r.push_header("Contact", contact);
+        server.sign(r)
+    };
+    // Unsigned: dropped.
+    let mut unsigned = redirect("<sip:pool2.contoso.com:5061;transport=tls>", &mut server);
+    unsigned.headers.retain(|h| h.name != "Authentication-Info");
+    assert!(reg.on_message(&unsigned, NOW).is_empty());
+    // Plain TCP target: refused.
+    let mut reg2 = registrar();
+    let mut s2 = Server::new();
+    let a = reg2.start(NOW);
+    let b = only_send(reg2.on_message(&s2.handle(&a), NOW));
+    let c = only_send(reg2.on_message(&s2.handle(&b), NOW));
+    let _ = s2.handle(&c);
+    let mut tcp = Server::reply(&c, 301, "Moved Permanently");
+    tcp.push_header("Contact", "<sip:pool2.contoso.com:5060;transport=tcp>");
+    let tcp = s2.sign(tcp);
+    assert_eq!(
+        reg2.on_message(&tcp, NOW),
+        vec![Event::Failed(Failure::BadResponse("unusable redirect"))]
+    );
+    // Signed, TLS, in the domain.
+    let ok = redirect("<sip:pool2.contoso.com:5061;transport=tls>", &mut server);
+    assert_eq!(
+        reg.on_message(&ok, NOW),
+        vec![Event::Redirected(RedirectTarget {
+            host: "pool2.contoso.com".into(),
+            port: 5061,
+            in_user_domain: true
+        })]
+    );
+}
