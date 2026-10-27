@@ -22,7 +22,7 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 | Crate | Layer | Job | Evidence |
 |---|---|---|---|
 | `commscraft-sip-identity` | L0 | EPID → `+sip.instance` (SHA-1, K-RE-1) | RE-02, RE-06, RE-07 |
-| `commscraft-ntlm` | L1 | NTLMv2 keys, ESS signatures, connectionless SIP signing (seq 100) | NL-01…NL-05, AE-30 |
+| `commscraft-ntlm` | L1 | NTLMv2 keys, ESS signatures, connectionless SIP signing (seq 100); CHALLENGE parsing and AUTHENTICATE construction with MIC, flag policy (NTLMv2 + ESS + 128 + KEY_EXCH required) | NL-01…NL-05, AE-24, AE-30, OB-43 |
 | `commscraft-ice` | L1 | CRC-32/FINGERPRINT incl. the MS-ICE2 duplicate variant, candidate priorities | IC-12, IC-14, IE-03…IE-05, OB-09 |
 | `commscraft-srtp` | L1 | RFC 3711 key derivation, SSRTP packet transform | SR-*, SS-01…SS-05, IE-09 |
 | `commscraft-turn-bwm` | L1 | MS-TURNBWM attribute types, XOR site addresses | BW-11, BW-12 |

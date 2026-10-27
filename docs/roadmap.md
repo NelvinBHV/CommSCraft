@@ -24,8 +24,8 @@ owner on an authorized server and is deferred until such an environment exists (
    remaining server behaviour is the owner's test catalogue [`interop-tests.md`](interop-tests.md).
 6. **M1 in progress** – sign-in and registration, offline against specification examples and
    self-built fixtures. Done: SIP message parser and stream framing (`sip-msg`), MS-SIPAE signing
-   and verification with NTLM (`sipae`). Next: NTLM AUTHENTICATE_MESSAGE from a CHALLENGE (MS-NLMP),
-   the REGISTER flow as a sans-I/O state machine (AE-20…AE-28, MS-SIPREGE), then provisioning.
+   and verification with NTLM (`sipae`), NTLM CHALLENGE/AUTHENTICATE messages (`ntlm::messages`,
+   example §4.2.4.3 byte for byte). Next: the REGISTER flow as a sans-I/O state machine (AE-20…AE-28, MS-SIPREGE), then provisioning.
 
 ## Milestones
 
