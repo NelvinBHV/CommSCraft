@@ -11,6 +11,8 @@
 //! Header values are kept exactly as received (after unfolding of continuation lines), because the
 //! MS-SIPAE signature buffer uses them "with the same syntax and case" (AE-29, AE-32).
 
+pub mod dialog;
+
 /// Size limits. The defaults are a design choice (inference): they are far above the SIP messages
 /// shown in the specifications and keep a hostile peer from making the client buffer without end.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
