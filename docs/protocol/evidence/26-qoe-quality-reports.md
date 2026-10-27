@@ -16,3 +16,4 @@ Source: [MS-QoE] "Quality of Experience Monitoring Server Protocol", edition 202
 
 ## Later finding (file 39)
 - O-QE-1 **partly** (OB-28): ITU-T P.562 and P.800.1 obtained; the SfB-specific MOS method remains undocumented.
+- O-QE-1 **closed** (OB-47, normative): `QualityEstimates` and the MOS elements are optional (§2.2.1.10.1, p. 33; p. 61); the client sends network metrics only.

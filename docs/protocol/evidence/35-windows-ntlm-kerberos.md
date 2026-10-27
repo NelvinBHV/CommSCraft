@@ -34,3 +34,4 @@ Test vectors §4.2.4 (pp. 80–83): NTOWFv2 `0c868a40…2e3f` ✓, NTProofStr `6
 ## Later findings (files 38, 39)
 - L-18 **closed**: RFC 4120/4121/3961/4757/2743/4559 obtained.
 - O-NL-1 **documented for OCS 2007 R2** (OB-11): a capture from the SIPE test suite was recomputed with our own code. It uses ESS and KEY_EXCH. The signatures match only with SealKey per message = MD5(SealKey ‖ 100). This confirms NL-05; the identical last 4 bytes (`…64000000` = SeqNum 100) are explained.
+- O-NL-1 **closed** (OB-43, normative): connectionless NTLM lets the client choose from the server's offer (MS-NLMP §2.2.1.3, p. 29) and every combination is specified; CommSCraft requires NTLMv2 + ESS and fails closed otherwise (design).

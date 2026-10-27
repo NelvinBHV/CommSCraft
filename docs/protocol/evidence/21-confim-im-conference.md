@@ -21,3 +21,4 @@ Source: [MS-CONFIM] "Centralized Conference Control Protocol: Instant Messaging 
 
 ## Later finding (file 39)
 - L-11 **secondary evidence** (OB-16): INFO, `application/xml`, `<KeyboardActivity><status status="type|idle"/></KeyboardActivity>`; two independent secondary sources.
+- L-11 narrowed (OB-50): the MCU forwards typing INFO without interpreting the body (§3.4.1.4.1, p. 26); the body format for receiving clients is interop test IT-04.

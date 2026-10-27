@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M0 test vectors complete)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (open-point list closed)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -20,7 +20,9 @@ owner on an authorized server and is deferred until such an environment exists (
    and the SfB candidate priorities (IE-05), MPPC per RFC 2118/MS-RDPBCGR (`sipcomp`), the
    compressed MS-ABS example and file-name dates (`abs`), the MS-PSOM ConnMgr frames (`psom`) and
    the MS-TURNBWM XOR examples (`turn-bwm`).
-5. **Next:** M1 – sign-in and registration, offline against self-built fixtures (SIP message
+5. ~~Close the open-point list~~ – done: normative answers or defaults for every point; the
+   remaining server behaviour is the owner's test catalogue [`interop-tests.md`](interop-tests.md).
+6. **Next:** M1 – sign-in and registration, offline against self-built fixtures (SIP message
    parser, MS-SIPAE NTLM signing of SIP messages, REGISTER flow as a sans-I/O state machine).
 
 ## Milestones

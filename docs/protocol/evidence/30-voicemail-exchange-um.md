@@ -20,3 +20,4 @@ Sources: [MS-OCEXUM] "Call Control for Exchange Unified Messaging Protocol Exten
 
 ## Later finding (file 39)
 - L-15 **narrowed** (OB-23): voicemail message classes `IPM.Note.Microsoft.Voicemail.UM(.CA)` (MS-OXOUM §2.2.2.1, p. 10); MS-OXWUMS only covers playing on the phone.
+- L-15 **closed** (OB-48): the voicemail list is an EWS FindItem on the documented message class (MS-OXOUM, OB-23) at the Autodiscover `EwsUrl`.

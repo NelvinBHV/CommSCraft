@@ -19,3 +19,4 @@ Sources: [MS-XCCOSIP] "Extensible Chat Control Over Session Initiation Protocol 
 
 ## Later finding (file 39)
 - L-16 **secondary evidence** (OB-17): INVITE to `ocschat@<domain>` or the pool URI with an IM SDP; XCCOS in INFO with `Content-Type: text/plain`.
+- L-16 stays secondary evidence (OB-17); interop test IT-05.

@@ -67,3 +67,4 @@ Source: [MS-CONFBAS] "Centralized Conference Control Protocol: Basic Architectur
 ## Later findings (files 38, 39)
 - L-09 **closed**: RFC 4353/4575/4579/3265/4028/3311/2976 and draft-deason-sip-soap-00 (SERVICE method, IE-06) obtained.
 - O-CB-1: `?SL=1` on the meet URL forces the Lync Web App (OB-32, official blog). **Secondary evidence** (OB-33): fetch the meet URL via HTTP GET and take the focus URI `conf:sip:…` from the HTML (if needed via `domainOwnerJoinLauncherUrl`); browser schemes `lync:`/`lync15:confjoin?url=`, `conf:sip:`.
+- O-CB-1 reduced to one question: the in-band request and the XML response are normative (CB-41, §2.2.6, p. 55); whether the Join Manager answers a non-Windows `User-Agent` is interop test IT-01.
