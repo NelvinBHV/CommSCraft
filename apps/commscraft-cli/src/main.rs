@@ -21,13 +21,16 @@ use commscraft_sip_msg::Message;
 use commscraft_sipae::Policy;
 
 const USAGE: &str =
-    "usage: commscraft-cli sign-in|presence|im --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
+    "usage: commscraft-cli sign-in|presence|im|interactive --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
 [--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--ntlm-legacy] \
 [--set-status online|busy|dnd|away] [--max-contacts N] [--to sip:URI --text TEXT [--wait S]] --authorized
 
 sign-in   signs in once, fetches provisioning, prints a summary and signs out.
 presence  signs in, reads the contact list, queries the presence of up to N contacts (default 50)
           once, optionally sets the own state for the time of the session (--set-status), signs out.
+interactive  signs in and stays signed in: contacts with live presence, own state, several
+          conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
+          /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
           --wait seconds (default 20), ends the conversation and signs out. Plain text only.
 
@@ -68,6 +71,7 @@ enum Command {
     SignIn,
     Presence,
     Im,
+    Interactive,
 }
 
 fn parse_args() -> Result<Args, String> {
@@ -76,6 +80,7 @@ fn parse_args() -> Result<Args, String> {
         Some("sign-in") => Command::SignIn,
         Some("presence") => Command::Presence,
         Some("im") => Command::Im,
+        Some("interactive") => Command::Interactive,
         _ => return Err(USAGE.into()),
     };
     let mut a = Args {
@@ -909,8 +914,19 @@ fn run(a: Args) -> Result<(), String> {
         policy: Policy::default(),
         ntlm_legacy: a.ntlm_legacy,
     };
-    let mut reg =
-        Registrar::new(cfg, password, rng).map_err(|e| format!("configuration: {e:?}"))?;
+    let reg = Registrar::new(cfg, password, rng).map_err(|e| format!("configuration: {e:?}"))?;
+    if a.command == Command::Interactive {
+        let ecfg = commscraft_session::Config {
+            aor: a.aor.clone(),
+            epid: epid.clone(),
+            via_host: format!("{host}:{}", local.port()),
+            local_ip: local.ip(),
+            user_agent: user_agent(),
+            machine_name: "CommSCraft".into(),
+        };
+        return interactive(conn, commscraft_session::Engine::new(ecfg, reg), a.verbose);
+    }
+    let mut reg = reg;
     let mut s = Session {
         conn,
         keepalive: None,
@@ -965,6 +981,8 @@ fn run(a: Args) -> Result<(), String> {
         }
         Command::Presence => presence_actions(&mut s, &mut reg, &a)?,
         Command::Im => im_actions(&mut s, &mut reg, &a, local.ip())?,
+        // Handled above, before the phases.
+        Command::Interactive => {}
     }
 
     // Phase 3: sign out.
@@ -1068,6 +1086,224 @@ fn im_actions(
         Err(e) => eprintln!("ending the conversation: {e}"),
     }
     Ok(())
+}
+
+/// The interactive mode on top of the session engine. Lines from the terminal arrive through a
+/// thread and a channel; network input and the clock are handled in this loop. Everything shown
+/// comes from the engine's checked events (control characters already removed).
+fn interactive(
+    conn: SipConnection,
+    mut engine: commscraft_session::Engine<OsRandom>,
+    verbose: bool,
+) -> Result<(), String> {
+    use commscraft_session::{Command as C, Event as E, Output};
+    use std::collections::BTreeMap;
+    use std::sync::mpsc;
+
+    let mut conn = conn;
+    conn.set_timeout(Duration::from_millis(250))
+        .map_err(|e| e.to_string())?;
+    let (tx, rx) = mpsc::channel::<String>();
+    std::thread::spawn(move || {
+        let stdin = std::io::stdin();
+        let mut line = String::new();
+        loop {
+            line.clear();
+            match stdin.lock().read_line(&mut line) {
+                Ok(0) | Err(_) => {
+                    let _ = tx.send("/quit".into());
+                    break;
+                }
+                Ok(_) => {
+                    if tx
+                        .send(line.trim_end_matches(['\r', '\n']).to_string())
+                        .is_err()
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    let mut presence: BTreeMap<String, (String, String)> = BTreeMap::new(); // uri -> (name, state)
+    let mut peers: BTreeMap<u32, String> = BTreeMap::new();
+    let mut current: Option<u32> = None;
+    let mut quitting = false;
+    let mut outputs = engine.start(now());
+    loop {
+        for o in outputs.drain(..) {
+            match o {
+                Output::Send(m) => {
+                    if verbose {
+                        show(">>>", &m);
+                    }
+                    conn.send(&m).map_err(|e| e.to_string())?;
+                }
+                Output::SendRaw(b) => conn.send_raw(b).map_err(|e| e.to_string())?,
+                Output::Event(ev) => match ev {
+                    E::Registered(r) => {
+                        println!("* signed in (registration valid {} s)", r.expires)
+                    }
+                    E::SignedOut => {
+                        println!("* signed out");
+                        return Ok(());
+                    }
+                    E::RegistrationEnded(why) => return Err(format!("registration ended: {why}")),
+                    E::ContactList(l) => {
+                        for c in &l.contacts {
+                            presence
+                                .entry(c.uri.clone())
+                                .or_insert_with(|| (c.name.clone(), "?".into()));
+                        }
+                        println!("* {} contacts", l.contacts.len());
+                    }
+                    E::Presence(p) => {
+                        let state = format!("{:?}", p.class());
+                        let entry = presence
+                            .entry(p.uri.clone())
+                            .or_insert_with(|| (String::new(), String::new()));
+                        if entry.0.is_empty() {
+                            entry.0 = p.display_name.clone().unwrap_or_default();
+                        }
+                        if entry.1 != state && entry.1 != "?" {
+                            println!(
+                                "* {} is now {state}",
+                                if entry.0.is_empty() { &p.uri } else { &entry.0 }
+                            );
+                        }
+                        entry.1 = state;
+                    }
+                    E::PresenceUnavailable { uri, state } => {
+                        if let Some(e) = presence.get_mut(&uri) {
+                            e.1 = state;
+                        }
+                    }
+                    E::OwnStatus(s) => println!("* your state: {s:?} (until you sign out)"),
+                    E::OwnStatusFailed(c) => println!("* setting your state failed ({c})"),
+                    E::ConversationStarted {
+                        conversation,
+                        peer,
+                        incoming,
+                    } => {
+                        println!(
+                            "* [{conversation}] {} {peer}",
+                            if incoming {
+                                "conversation from"
+                            } else {
+                                "connected with"
+                            }
+                        );
+                        peers.insert(conversation, peer);
+                        current = Some(conversation);
+                    }
+                    E::ConversationFailed {
+                        conversation,
+                        status,
+                    } => {
+                        println!("* [{conversation}] not accepted ({status})");
+                        peers.remove(&conversation);
+                    }
+                    E::Text { conversation, text } => {
+                        let who = peers.get(&conversation).cloned().unwrap_or_default();
+                        println!("[{conversation}] {who}: {text}");
+                    }
+                    E::Typing {
+                        conversation,
+                        typing,
+                    } => {
+                        if typing {
+                            println!("[{conversation}] (typing)");
+                        }
+                    }
+                    E::Delivered { .. } => {}
+                    E::NotDelivered {
+                        conversation,
+                        status,
+                    } => println!("* [{conversation}] message not delivered ({status})"),
+                    E::ConversationEnded { conversation } => {
+                        println!("* [{conversation}] ended");
+                        peers.remove(&conversation);
+                        if current == Some(conversation) {
+                            current = peers.keys().next().copied();
+                        }
+                    }
+                    E::Notice(n) => println!("* {n}"),
+                },
+            }
+        }
+        let t = now();
+        match conn.recv() {
+            Ok(Some(m)) => {
+                if verbose {
+                    show("<<<", &m);
+                }
+                outputs.extend(engine.on_message(&m, t));
+            }
+            Ok(None) => {}
+            Err(e) => return Err(e.to_string()),
+        }
+        outputs.extend(engine.on_tick(t));
+        while let Ok(line) = rx.try_recv() {
+            let line = line.trim().to_string();
+            let mut words = line.splitn(2, ' ');
+            let cmd = words.next().unwrap_or("");
+            let arg = words.next().unwrap_or("").trim().to_string();
+            let command = match cmd {
+                "" => None,
+                "/quit" => {
+                    if quitting {
+                        return Ok(());
+                    }
+                    quitting = true;
+                    Some(C::SignOut)
+                }
+                "/contacts" => {
+                    for (uri, (name, state)) in &presence {
+                        println!("  {state:<14} {uri:<40} {name}");
+                    }
+                    None
+                }
+                "/status" => match commscraft_presence::UserStatus::parse(&arg) {
+                    Some(s) => Some(C::SetStatus(s)),
+                    None => {
+                        println!("* /status online|busy|dnd|away");
+                        None
+                    }
+                },
+                "/chat" => Some(C::StartConversation { to: arg }),
+                "/to" => {
+                    match arg.parse::<u32>().ok().filter(|n| peers.contains_key(n)) {
+                        Some(n) => current = Some(n),
+                        None => println!("* no such conversation"),
+                    }
+                    None
+                }
+                "/end" => arg
+                    .parse::<u32>()
+                    .ok()
+                    .or(current)
+                    .map(|c| C::EndConversation { conversation: c }),
+                c if c.starts_with('/') => {
+                    println!("* unknown command");
+                    None
+                }
+                _ => match current {
+                    Some(c) => Some(C::SendText {
+                        conversation: c,
+                        text: line.clone(),
+                    }),
+                    None => {
+                        println!("* no conversation – start one with /chat sip:user@domain");
+                        None
+                    }
+                },
+            };
+            if let Some(c) = command {
+                outputs.extend(engine.command(c, now()));
+            }
+        }
+    }
 }
 
 /// One one-time presence query (PR-17). `target` is the Request-URI: the own AOR or a pool
