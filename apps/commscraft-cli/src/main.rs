@@ -30,7 +30,8 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
           once, optionally sets the own state for the time of the session (--set-status), signs out.
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
-          /search TEXT (address book)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
+          /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
+          /join N (accept invitation N)  /search TEXT (address book)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
           --wait seconds (default 20), ends the conversation and signs out. Plain text only.
 
@@ -1234,6 +1235,7 @@ fn interactive(
     let mut presence: BTreeMap<String, (String, String)> = BTreeMap::new(); // uri -> (name, state)
     let mut peers: BTreeMap<u32, String> = BTreeMap::new();
     let mut current: Option<u32> = None;
+    let mut invitations: Vec<String> = Vec::new();
     let mut quitting = false;
     let mut services: Option<Box<commscraft_provisioning::ServerConfiguration>> = None;
     let mut outputs = engine.start(now());
@@ -1311,10 +1313,54 @@ fn interactive(
                         println!("* [{conversation}] not accepted ({status})");
                         peers.remove(&conversation);
                     }
-                    E::Text { conversation, text } => {
-                        let who = peers.get(&conversation).cloned().unwrap_or_default();
+                    E::Text {
+                        conversation,
+                        sender,
+                        text,
+                    } => {
+                        let who = sender
+                            .map(|s| {
+                                presence
+                                    .get(&s)
+                                    .map(|(n, _)| n.clone())
+                                    .filter(|n| !n.is_empty())
+                                    .unwrap_or(s)
+                            })
+                            .or_else(|| peers.get(&conversation).cloned())
+                            .unwrap_or_default();
                         println!("[{conversation}] {who}: {text}");
                     }
+                    E::Participants {
+                        conversation,
+                        participants,
+                    } => {
+                        let names: Vec<String> = participants
+                            .iter()
+                            .filter(|p| p.in_chat())
+                            .map(|p| p.name.clone().unwrap_or_else(|| p.uri.clone()))
+                            .collect();
+                        println!(
+                            "* [{conversation}] in the conversation: {}",
+                            names.join(", ")
+                        );
+                    }
+                    E::ConferenceInvitation { from, invitation } => {
+                        invitations.push(invitation.focus.clone());
+                        println!(
+                            "* invitation {} from {from}{} – join with /join {}",
+                            invitations.len(),
+                            invitation
+                                .subject
+                                .map(|s| format!(" ({s})"))
+                                .unwrap_or_default(),
+                            invitations.len()
+                        );
+                    }
+                    E::NotDeliveredTo {
+                        conversation,
+                        recipient,
+                        status,
+                    } => println!("* [{conversation}] not delivered to {recipient} ({status})"),
                     E::Typing {
                         conversation,
                         typing,
@@ -1379,6 +1425,31 @@ fn interactive(
                     }
                 },
                 "/chat" => Some(C::StartConversation { to: arg }),
+                "/group" => Some(C::StartGroup {
+                    invite: arg.split_whitespace().map(str::to_string).collect(),
+                }),
+                "/invite" => match current {
+                    Some(c) => Some(C::InviteToGroup {
+                        conversation: c,
+                        to: arg,
+                    }),
+                    None => {
+                        println!("* no conversation");
+                        None
+                    }
+                },
+                "/join" => match arg
+                    .parse::<usize>()
+                    .ok()
+                    .and_then(|n| n.checked_sub(1))
+                    .and_then(|i| invitations.get(i))
+                {
+                    Some(f) => Some(C::JoinConference { focus: f.clone() }),
+                    None => {
+                        println!("* no such invitation");
+                        None
+                    }
+                },
                 "/search" => {
                     match search(&mut engine, tls, trust, services.as_deref(), &arg, verbose) {
                         Ok(found) if found.is_empty() => println!("* nothing found"),

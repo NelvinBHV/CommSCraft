@@ -34,8 +34,8 @@ owner on an authorized server and is deferred until such an environment exists (
 7. **M2 in progress** – presence and IM. Done offline: contact list, one-time batch presence
    queries, own state publication scoped to the endpoint (`presence`, CLI `presence`), 1:1 IM
    (`im`), the session engine with long-lived subscriptions and conversations (`session`), the
-   interactive CLI mode, address book search (`dlx`, NTLM over HTTP).
-   Next: group IM (MS-CONFIM), then M3.
+   interactive CLI mode, address book search (`dlx`, NTLM over HTTP), group IM (`conf`).
+   Next: M3 (audio).
 
 ## Milestones
 

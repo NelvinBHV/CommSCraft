@@ -286,6 +286,7 @@ fn incoming_conversation() {
         events(&out),
         vec![Event::Text {
             conversation,
+            sender: None,
             text: "Hallo Alice".into()
         }]
     );
@@ -533,4 +534,350 @@ fn provisioning_at_bootstrap() {
     );
     assert!(dlx.in_user_domain);
     assert!(!c.abwq_external.as_ref().unwrap().in_user_domain);
+}
+
+const FOCUS: &str =
+    "sip:alice@contoso.com;gruu;opaque=app:conf:focus:id:FC275ECD12493E4E9C27C894FE91E104";
+const CHAT: &str =
+    "sip:alice@contoso.com;gruu;opaque=app:conf:chat:id:FC275ECD12493E4E9C27C894FE91E104";
+
+fn provisioned(e: &mut Engine<Counter>, server: &mut Server, out: &[Output]) {
+    let sub = sends(out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    let doc = r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="ServerConfiguration"><focusFactoryUri>sip:alice@contoso.com;gruu;opaque=app:conf:focusfactory</focusFactoryUri></provisionGroup></provisionGroupList>"#;
+    e.on_message(
+        &answer(
+            server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            doc,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+}
+
+fn find(out: &[Output], method: &str) -> Message {
+    sends(out)
+        .into_iter()
+        .find(|m| m.method() == Some(method))
+        .unwrap_or_else(|| panic!("no {method}"))
+}
+
+fn roster(version: u32, state: &str, users: &str) -> String {
+    format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="{state}" version="{version}"><conference-description><conf-uris><entry><uri>{CHAT}</uri><purpose>chat</purpose></entry></conf-uris></conference-description><users>{users}</users></conference-info>"#
+    )
+}
+
+/// [MS-CONFIM] §4.1.1/§4.1.2/§4.2: create, join focus and IM MCU, invite by dial-out, send with
+/// 202 + IMDN, receive with Ms-Sender, refresh the focus dialog, leave.
+#[test]
+fn group_conversation_flow() {
+    let (mut e, mut server, out) = signed_in();
+    provisioned(&mut e, &mut server, &out);
+    let out = e.command(
+        Command::StartGroup {
+            invite: vec!["sip:bob@contoso.com".into(), "bad\"uri".into()],
+        },
+        NOW,
+    );
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("not a usable"))));
+    let service = find(&out, "SERVICE");
+    assert_eq!(
+        Engine::<Counter>::request_uri(&service),
+        Some("sip:alice@contoso.com;gruu;opaque=app:conf:focusfactory")
+    );
+    assert!(server.verify_client(&service));
+    let body = String::from_utf8(service.body.clone()).unwrap();
+    assert!(body.contains("<addConference>") && body.contains("entity=\"chat\""));
+    let created = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" C3PVersion="1" requestId="1" code="success"><addConference><conference-info xmlns="urn:ietf:params:xml:ns:conference-info" entity="{FOCUS}" state="partial" version="1"/></addConference></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &service,
+            200,
+            Some("application/cccp+xml"),
+            &created,
+            &[],
+        ),
+        NOW,
+    );
+    let focus_invite = find(&out, "INVITE");
+    assert_eq!(Engine::<Counter>::request_uri(&focus_invite), Some(FOCUS));
+    assert!(String::from_utf8_lossy(&focus_invite.body).contains("<ci:entry>presenter</ci:entry>"));
+
+    let granted = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" xmlns:ci="urn:ietf:params:xml:ns:conference-info" requestId="2" C3PVersion="1" code="success"><addUser><conferenceKeys confEntity="{FOCUS}"/><ci:user entity="sip:alice@contoso.com"><ci:roles><ci:entry>presenter</ci:entry></ci:roles></ci:user></addUser></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &focus_invite,
+            200,
+            Some("application/cccp+xml"),
+            &granted,
+            &[
+                ("Session-Expires", "7200;refresher=uac"),
+                ("Require", "timer"),
+            ],
+        ),
+        NOW,
+    );
+    assert_eq!(
+        find(&out, "ACK").call_id().unwrap(),
+        focus_invite.call_id().unwrap()
+    );
+    let roster_sub = find(&out, "SUBSCRIBE");
+    assert_eq!(roster_sub.single("Event").unwrap(), Some("conference"));
+
+    let users = r#"<user entity="sip:alice@contoso.com" state="full"><display-text>Alice</display-text><endpoint entity="{A}" msci:session-type="focus"/></user>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &roster_sub,
+            200,
+            Some("application/conference-info+xml"),
+            &roster(1, "full", users),
+            &[("Expires", "3348")],
+        ),
+        NOW,
+    );
+    assert!(events(&out).iter().any(
+        |ev| matches!(ev, Event::Participants { participants, .. } if participants.len() == 1)
+    ));
+    let chat_invite = find(&out, "INVITE");
+    assert_eq!(Engine::<Counter>::request_uri(&chat_invite), Some(CHAT));
+    assert!(chat_invite
+        .header_values("Supported")
+        .any(|v| v == "ms-sender"));
+
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &chat_invite,
+            200,
+            Some("application/sdp"),
+            "v=0\r\nm=message 5060 sip null\r\na=accept-types:*\r\n",
+            &[],
+        ),
+        NOW,
+    );
+    let Some(Event::ConversationStarted {
+        conversation, peer, ..
+    }) = events(&out).into_iter().next()
+    else {
+        panic!()
+    };
+    assert_eq!(peer, FOCUS);
+    let dial_out = find(&out, "INFO");
+    assert_eq!(
+        dial_out.call_id().unwrap(),
+        focus_invite.call_id().unwrap(),
+        "in the focus dialog"
+    );
+    let b = String::from_utf8(dial_out.body.clone()).unwrap();
+    assert!(b.contains("sip:bob@contoso.com") && b.contains("dialed-out") && b.contains(CHAT));
+    assert!(
+        events(&e.on_message(&answer(&mut server, &dial_out, 202, None, "", &[]), NOW)).is_empty()
+    );
+    // The final C3P answer as INFO of the focus: failure is reported.
+    let fail = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" xmlns:ci="urn:ietf:params:xml:ns:conference-info" requestId="3" C3PVersion="1" code="failure" reason="userDoesntExist"><addUser><ci:user entity="sip:bob@contoso.com"/></addUser></response>"#;
+    let info = peer_request(
+        &mut server,
+        &focus_invite,
+        "INFO",
+        7,
+        Some("application/cccp+xml"),
+        fail,
+        &[],
+    );
+    let out = e.on_message(&info, NOW);
+    assert_eq!(sends(&out)[0].status_code(), Some(200));
+    assert!(matches!(&events(&out)[0], Event::Notice(n) if n.contains("userDoesntExist")));
+
+    // Send: 202 with Message-Id, then the IMDN with one failed recipient.
+    let out = e.command(
+        Command::SendText {
+            conversation,
+            text: "Hallo".into(),
+        },
+        NOW,
+    );
+    let msg = find(&out, "MESSAGE");
+    assert!(e
+        .on_message(
+            &answer(&mut server, &msg, 202, None, "", &[("Message-Id", "2")]),
+            NOW
+        )
+        .is_empty());
+    let imdn = r#"<imdn xmlns="http://schemas.microsoft.com/rtc/2005/08/imdn"><message-id>2</message-id><recipient uri="&lt;sip:bob@contoso.com;gruu&gt;"><status>408</status></recipient></imdn>"#;
+    let benotify = peer_request(
+        &mut server,
+        &chat_invite,
+        "BENOTIFY",
+        1,
+        Some("application/ms-imdn+xml"),
+        imdn,
+        &[],
+    );
+    let out = e.on_message(&benotify, NOW);
+    assert!(sends(&out).is_empty(), "BENOTIFY is never answered");
+    assert_eq!(
+        events(&out),
+        vec![Event::NotDeliveredTo {
+            conversation,
+            recipient: "sip:bob@contoso.com".into(),
+            status: 408
+        }]
+    );
+    // A second message without IMDN: 408 after 10 s (CI-05).
+    let out = e.command(
+        Command::SendText {
+            conversation,
+            text: "Noch da?".into(),
+        },
+        NOW,
+    );
+    let msg = find(&out, "MESSAGE");
+    e.on_message(
+        &answer(&mut server, &msg, 202, None, "", &[("Message-Id", "3")]),
+        NOW,
+    );
+    let out = e.on_tick(NOW + 11);
+    assert!(events(&out).contains(&Event::NotDelivered {
+        conversation,
+        status: 408
+    }));
+
+    // Receive: the sender comes from Ms-Sender.
+    let fwd = peer_request(
+        &mut server,
+        &chat_invite,
+        "MESSAGE",
+        2,
+        Some("text/plain; charset=UTF-8;msgr=WAAtAE0A"),
+        "Hi all",
+        &[(
+            "Ms-Sender",
+            "\"Bob\"<sip:bob@contoso.com;opaque=user:epid:x;gruu>",
+        )],
+    );
+    let out = e.on_message(&fwd, NOW);
+    assert_eq!(
+        events(&out),
+        vec![Event::Text {
+            conversation,
+            sender: Some("sip:bob@contoso.com".into()),
+            text: "Hi all".into()
+        }]
+    );
+
+    // Session refresh of the focus dialog after half of 7200 s.
+    let out = e.on_tick(NOW + 3601);
+    let update = find(&out, "UPDATE");
+    assert_eq!(update.call_id().unwrap(), focus_invite.call_id().unwrap());
+
+    // Leave: BYE to the IM MCU, unsubscribe, BYE to the focus.
+    let out = e.command(Command::EndConversation { conversation }, NOW + 3602);
+    let s = sends(&out);
+    let byes: Vec<_> = s.iter().filter(|m| m.method() == Some("BYE")).collect();
+    assert_eq!(byes.len(), 2);
+    assert!(s
+        .iter()
+        .any(|m| m.method() == Some("SUBSCRIBE") && m.expires().unwrap() == Some("0")));
+    assert!(events(&out).contains(&Event::ConversationEnded { conversation }));
+}
+
+/// CI-01: the IM MCU calls us (dial-out) with Ms-Focus-Uri and a session timer we refresh;
+/// an invitation (secondary evidence) is only reported, joining is a command.
+#[test]
+fn dialed_out_to_us_and_invitation() {
+    let (mut e, mut server, _) = signed_in();
+    let mut invite = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    invite.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKmcu");
+    invite.push_header("From", &format!("<{CHAT}>;tag=d52f12304d"));
+    invite.push_header("To", "<sip:alice@contoso.com>;epid=8248ca9ebb");
+    invite.push_header("Call-ID", "mcu1");
+    invite.push_header("CSeq", "5 INVITE");
+    invite.push_header("Contact", "<sip:pool.contoso.com:5062;transport=tls>");
+    invite.push_header("Referred-By", "<sip:bob@contoso.com>");
+    invite.push_header("Ms-Focus-Uri", &format!("<{FOCUS}>"));
+    invite.push_header("Supported", "timer");
+    invite.push_header("Session-Expires", "600;refresher=uas");
+    invite.push_header("Content-Type", "application/sdp");
+    invite.body = b"v=0\r\no=- 0 0 IN IP4 0.0.0.0\r\ns=session\r\nc=IN IP4 0.0.0.0\r\nt=0 0\r\nm=message 5060 sip null\r\na=accept-types:*\r\n".to_vec();
+    let out = e.on_message(&server.sign(invite), NOW);
+    let ok = sends(&out).pop().unwrap();
+    assert_eq!(ok.status_code(), Some(200));
+    assert_eq!(
+        ok.single("Session-Expires").unwrap(),
+        Some("600;refresher=uas")
+    );
+    assert!(ok.header_values("Supported").any(|v| v == "ms-sender"));
+    let Some(Event::ConversationStarted {
+        conversation,
+        peer,
+        incoming: true,
+    }) = events(&out).pop()
+    else {
+        panic!()
+    };
+    assert_eq!(peer, FOCUS);
+    let update = find(&e.on_tick(NOW + 300), "UPDATE");
+    assert_eq!(update.call_id().unwrap(), Some("mcu1"));
+    // No focus dialog: no invitations from here.
+    let out = e.command(
+        Command::InviteToGroup {
+            conversation,
+            to: "sip:carol@contoso.com".into(),
+        },
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+
+    let mut inv = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    inv.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKci");
+    inv.push_header("From", "<sip:bob@contoso.com>;tag=b1");
+    inv.push_header("To", "<sip:alice@contoso.com>");
+    inv.push_header("Call-ID", "ci1");
+    inv.push_header("CSeq", "1 INVITE");
+    inv.push_header("Content-Type", "application/ms-conf-invite+xml");
+    inv.body = format!("<Conferencing version=\"2.0\"><focus-uri>{FOCUS}</focus-uri><subject>Plan</subject><im available=\"true\"><first-im/></im></Conferencing>").into_bytes();
+    let out = e.on_message(&server.sign(inv), NOW);
+    assert_eq!(sends(&out)[0].status_code(), Some(200));
+    let Some(Event::ConferenceInvitation { from, invitation }) = events(&out).pop() else {
+        panic!()
+    };
+    assert_eq!(
+        (from.as_str(), invitation.focus.as_str()),
+        ("sip:bob@contoso.com", FOCUS)
+    );
+    let out = e.command(
+        Command::JoinConference {
+            focus: invitation.focus,
+        },
+        NOW,
+    );
+    let join = find(&out, "INVITE");
+    assert_eq!(Engine::<Counter>::request_uri(&join), Some(FOCUS));
+    assert!(String::from_utf8_lossy(&join.body).contains("<ci:entry>attendee</ci:entry>"));
+    // A hostile invitation is refused.
+    let mut bad = Message::request("INVITE", "sip:alice@contoso.com");
+    bad.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKbad");
+    bad.push_header("From", "<sip:bob@contoso.com>;tag=b2");
+    bad.push_header("To", "<sip:alice@contoso.com>");
+    bad.push_header("Call-ID", "ci2");
+    bad.push_header("CSeq", "1 INVITE");
+    bad.push_header("Content-Type", "application/ms-conf-invite+xml");
+    bad.body = b"<!DOCTYPE x><Conferencing/>".to_vec();
+    let out = e.on_message(&server.sign(bad), NOW);
+    assert_eq!(sends(&out)[0].status_code(), Some(488));
 }

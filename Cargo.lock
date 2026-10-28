@@ -78,6 +78,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "commscraft-conf"
+version = "0.0.1"
+dependencies = [
+ "commscraft-presence",
+ "commscraft-sip-msg",
+ "commscraft-xml",
+]
+
+[[package]]
 name = "commscraft-discovery"
 version = "0.0.1"
 dependencies = [
@@ -163,6 +172,7 @@ dependencies = [
 name = "commscraft-session"
 version = "0.0.1"
 dependencies = [
+ "commscraft-conf",
  "commscraft-im",
  "commscraft-presence",
  "commscraft-provisioning",

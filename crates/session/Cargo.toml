@@ -13,6 +13,7 @@ commscraft-register = { path = "../register" }
 commscraft-presence = { path = "../presence" }
 commscraft-im = { path = "../im" }
 commscraft-provisioning = { path = "../provisioning" }
+commscraft-conf = { path = "../conf" }
 
 [dev-dependencies]
 commscraft-register = { path = "../register", features = ["testing"] }
