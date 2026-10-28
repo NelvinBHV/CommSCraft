@@ -24,6 +24,7 @@ const USAGE: &str =
     "usage: commscraft-cli sign-in|presence|im|interactive --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
 [--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--ntlm-legacy] \
 [--set-status online|busy|dnd|away] [--max-contacts N] [--to sip:URI --text TEXT [--wait S]] --authorized
+       commscraft-cli audio-check [--device ALSA_DEVICE] [--codec g722|pcma]   (local, no network)
 
 sign-in   signs in once, fetches provisioning, prints a summary and signs out.
 presence  signs in, reads the contact list, queries the presence of up to N contacts (default 50)
@@ -1773,7 +1774,101 @@ fn presence_actions(
     Ok(())
 }
 
+/// `audio-check`: local test of microphone and speaker through the codecs, no network.
+/// Plays a 1020 Hz tone for one second, records for three seconds and plays the recording back;
+/// all audio goes through encoder and decoder of the chosen codec.
+fn audio_check() -> Result<(), String> {
+    use commscraft_audio_alsa::{Capture, Config, Playback};
+    let mut it = std::env::args().skip(2);
+    let mut cfg = Config::default();
+    let mut g711 = false;
+    while let Some(flag) = it.next() {
+        match flag.as_str() {
+            "--device" => cfg.device = it.next().ok_or("--device needs a name")?,
+            "--codec" => match it.next().as_deref() {
+                Some("g722") => g711 = false,
+                Some("pcma") => g711 = true,
+                _ => return Err("--codec g722 or pcma".into()),
+            },
+            other => return Err(format!("unknown argument {other}\n\n{USAGE}")),
+        }
+    }
+    if g711 {
+        cfg.rate = 8000;
+    }
+    let codec_round_trip = |pcm: &[i16],
+                            out: &mut Vec<i16>,
+                            enc: &mut commscraft_g722::Encoder,
+                            dec: &mut commscraft_g722::Decoder| {
+        let mut payload = Vec::new();
+        if g711 {
+            commscraft_g711::Law::Alaw.encode(pcm, &mut payload);
+            commscraft_g711::Law::Alaw.decode(&payload, out);
+        } else {
+            enc.encode(pcm, &mut payload);
+            dec.decode(&payload, out);
+        }
+    };
+    let (mut enc, mut dec) = (
+        commscraft_g722::Encoder::new(),
+        commscraft_g722::Decoder::new(),
+    );
+    let frame = cfg.frame_samples();
+    let frames_per_second = (1000 / cfg.frame_ms) as usize;
+    println!(
+        "audio device {} at {} Hz, codec {}",
+        cfg.device,
+        cfg.rate,
+        if g711 { "PCMA (G.711)" } else { "G.722" }
+    );
+    let mut speaker = Playback::open(&cfg).map_err(|e| e.to_string())?;
+    println!("1/3 tone (1 s) …");
+    let mut out = Vec::new();
+    for f in 0..frames_per_second {
+        let pcm: Vec<i16> = (0..frame)
+            .map(|i| {
+                let t = (f * frame + i) as f64 / f64::from(cfg.rate);
+                (6000.0 * (2.0 * std::f64::consts::PI * 1020.0 * t).sin()) as i16
+            })
+            .collect();
+        out.clear();
+        codec_round_trip(&pcm, &mut out, &mut enc, &mut dec);
+        speaker.write(&out).map_err(|e| e.to_string())?;
+    }
+    speaker.drain().map_err(|e| e.to_string())?;
+    println!("2/3 speak now (3 s) …");
+    let mut mic = Capture::open(&cfg).map_err(|e| e.to_string())?;
+    let mut recording = Vec::new();
+    let mut buf = Vec::new();
+    let mut peak = 0i16;
+    for _ in 0..frames_per_second * 3 {
+        mic.read_frame(&mut buf).map_err(|e| e.to_string())?;
+        peak = buf.iter().fold(peak, |p, s| p.max(s.saturating_abs()));
+        codec_round_trip(&buf, &mut recording, &mut enc, &mut dec);
+    }
+    drop(mic);
+    println!(
+        "   input peak {:.1} dBFS",
+        20.0 * (f64::from(peak.max(1)) / 32768.0).log10()
+    );
+    println!("3/3 playback (3 s) …");
+    speaker.write(&recording).map_err(|e| e.to_string())?;
+    speaker.drain().map_err(|e| e.to_string())?;
+    println!("done");
+    Ok(())
+}
+
 fn main() {
+    if std::env::args().nth(1).as_deref() == Some("audio-check") {
+        let code = match audio_check() {
+            Ok(()) => 0,
+            Err(e) => {
+                eprintln!("{e}");
+                2
+            }
+        };
+        std::process::exit(code);
+    }
     let code = match parse_args().and_then(run) {
         Ok(()) => 0,
         Err(e) => {

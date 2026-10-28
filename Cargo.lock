@@ -14,6 +14,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "alsa"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed7572b7ba83a31e20d1b48970ee402d2e3e0537dcfe0a3ff4d6eb7508617d43"
+dependencies = [
+ "alsa-sys",
+ "bitflags",
+ "cfg-if",
+ "libc",
+]
+
+[[package]]
+name = "alsa-sys"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db8fee663d06c4e303404ef5f40488a53e062f89ba8bfed81f42325aafad1527"
+dependencies = [
+ "libc",
+ "pkg-config",
+]
+
+[[package]]
 name = "bitflags"
 version = "2.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -59,11 +81,21 @@ name = "commscraft-abs"
 version = "0.0.1"
 
 [[package]]
+name = "commscraft-audio-alsa"
+version = "0.0.1"
+dependencies = [
+ "alsa",
+]
+
+[[package]]
 name = "commscraft-cli"
 version = "0.0.1"
 dependencies = [
+ "commscraft-audio-alsa",
  "commscraft-discovery",
  "commscraft-dlx",
+ "commscraft-g711",
+ "commscraft-g722",
  "commscraft-im",
  "commscraft-net",
  "commscraft-ntlm",
@@ -373,6 +405,12 @@ name = "openssl-probe"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
+
+[[package]]
+name = "pkg-config"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 
 [[package]]
 name = "r-efi"
