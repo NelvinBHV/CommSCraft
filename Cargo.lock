@@ -213,6 +213,14 @@ name = "commscraft-rtp"
 version = "0.0.1"
 
 [[package]]
+name = "commscraft-sdp"
+version = "0.0.1"
+dependencies = [
+ "commscraft-sipae",
+ "zeroize",
+]
+
+[[package]]
 name = "commscraft-session"
 version = "0.0.1"
 dependencies = [

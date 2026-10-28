@@ -37,8 +37,7 @@ owner on an authorized server and is deferred until such an environment exists (
    interactive CLI mode, address book search (`dlx`, NTLM over HTTP), group IM (`conf`).
 8. **M3 in progress** – audio 1:1. Done offline: codecs G.711 (`g711`) and G.722 (`g722`, bit-exact
    against the ITU test sequences), audio devices (`audio-alsa`, D-11), RTP/RTCP and DTMF (`rtp`),
-   SRTP/SRTCP contexts (`srtp`). Next: SDP audio
-   offer/answer (MS-SDPEXT), STUN/ICE (MS-ICE2) and TURN (MS-TURN, MS-AVEDGEA), call signalling,
+   SRTP/SRTCP contexts (`srtp`), SDP audio offer/answer (`sdp`). Next: STUN/ICE (MS-ICE2) and TURN (MS-TURN, MS-AVEDGEA), call signalling,
    audio device adapter.
 
 ## Milestones

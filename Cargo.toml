@@ -23,6 +23,7 @@ members = [
     "crates/g722",
     "crates/audio-alsa",
     "crates/rtp",
+    "crates/sdp",
     "crates/url",
     "crates/discovery",
     "crates/net",
