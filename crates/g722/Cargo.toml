@@ -1,0 +1,11 @@
+[package]
+name = "commscraft-g722"
+description = "ITU-T G.722 SB-ADPCM at 64 kbit/s, checked against the ITU digital test sequences"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

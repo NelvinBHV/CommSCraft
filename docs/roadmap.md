@@ -35,7 +35,10 @@ owner on an authorized server and is deferred until such an environment exists (
    queries, own state publication scoped to the endpoint (`presence`, CLI `presence`), 1:1 IM
    (`im`), the session engine with long-lived subscriptions and conversations (`session`), the
    interactive CLI mode, address book search (`dlx`, NTLM over HTTP), group IM (`conf`).
-   Next: M3 (audio).
+8. **M3 in progress** – audio 1:1. Done offline: codecs G.711 (`g711`) and G.722 (`g722`, bit-exact
+   against the ITU test sequences). Next: RTP/RTCP and SRTP (RFC 3711 / MS-SRTP), SDP audio
+   offer/answer (MS-SDPEXT), STUN/ICE (MS-ICE2) and TURN (MS-TURN, MS-AVEDGEA), call signalling,
+   audio device adapter.
 
 ## Milestones
 
