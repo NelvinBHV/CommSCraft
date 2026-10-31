@@ -9,6 +9,8 @@ members = [
     "crates/psom",
     "crates/sipcomp",
     "crates/turn-bwm",
+    "crates/sip-msg",
+    "crates/sipae",
 ]
 
 [workspace.package]
@@ -36,3 +38,5 @@ md-5 = "0.10.6"
 hmac = "0.12.1"
 sha1 = "0.10.6"
 aes = "0.8.4"
+subtle = "2.6.1"
+zeroize = "1.9.1"

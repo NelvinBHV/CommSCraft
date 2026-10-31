@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** major (first version)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (first M1 building blocks)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -20,15 +20,15 @@ The assessment of how close CommSCraft is to the Skype for Business desktop clie
 
 Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`](protocol/function-matrix.md)): **B** fully documented,
 **B\*** documented with conflicts/gaps needing a decision or interop check, **T** partly documented,
-**N** not documented or not implementable without a licence. Implementation status is "–" for all
-rows: no code exists yet.
+**N** not documented or not implementable without a licence. Implementation status: "–" no code;
+"parts tested-offline" = building blocks exist and pass offline tests, the function as a whole does not.
 
 | # | Function | Main specifications | Evidence | Implemented |
 |---|---|---|---|---|
 | 1 | Server discovery | MS-OCDISCWS, MS-CONMGMT | B | – |
-| 2 | TLS connection, keep-alive | MS-CONMGMT | B | – |
+| 2 | TLS connection, keep-alive | MS-CONMGMT | B | parts tested-offline (SIP stream framing, CRLF keep-alive: `sip-msg`) |
 | 3 | SIP compression (optional) | MS-SIPCOMP | B\* | – |
-| 4 | Sign-in with NTLM | MS-SIPAE, MS-NLMP | B\* | – |
+| 4 | Sign-in with NTLM | MS-SIPAE, MS-NLMP | B\* | parts tested-offline (NTLMv2 keys, SIP signing and verification: `ntlm`, `sipae`) |
 | 5 | Sign-in with Kerberos | MS-SIPAE, MS-KILE | B | – |
 | 6 | Sign-in with TLS-DSK and client certificate | MS-SIPAE, MS-OCAUTHWS | B\* | – |
 | 7 | Registration, GRUU, endpoint ID | MS-SIPREGE, MS-SIPRE | B | – |

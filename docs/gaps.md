@@ -1,6 +1,6 @@
 # Where CommSCraft falls short of the Skype for Business client
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** major (open-point list closed; interop test catalogue)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M1 building blocks)
 
 The work list, ranked by how much each item blocks the alpha gate in
 [`roadmap.md`](roadmap.md#alpha-gate-core-workflows) (**A** = blocks alpha). Each entry says what is
@@ -17,7 +17,7 @@ and the first milestones, followed by the open points found in the analysis.
 | 1 | No interop test environment (D-08): nothing can be verified against a real server; the remaining questions are owner test cases IT-01 … IT-13 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | after M0 |
 | 2 | ~~Protocol analysis not yet in the repository~~ – imported | [`protocol/`](protocol/) | done |
 | 3 | ~~Remaining M0 test vectors (SIPCOMP/MPPC, ABS, PSOM, TURNBWM XOR)~~ – done | [`roadmap.md`](roadmap.md) | done |
-| 4 | Sign-in stack: discovery, TLS, NTLM/Kerberos/TLS-DSK, registration, provisioning | functions 1–8 | M1 |
+| 4 | Sign-in stack: discovery, TLS, NTLM/Kerberos/TLS-DSK, registration, provisioning. Done offline: SIP parser/framing, MS-SIPAE signing and verification (NTLM). Missing: NTLM handshake messages, REGISTER flow, provisioning, Kerberos/TLS-DSK, discovery, TLS adapter | functions 1–8 | M1 |
 | 5 | Presence and IM | functions 9–19 | M2 |
 | 6 | Media stack: MS-ICE2/MS-TURN, SRTP, RTP/RTCP, G.711/G.722 | functions 21–26 | M3 |
 | 7 | Conferences (C3P/CCCP, focus, MCUs) | functions 40–42 | M4 |
