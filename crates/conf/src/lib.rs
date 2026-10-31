@@ -30,6 +30,7 @@ pub const NS_MSCP: &str = "http://schemas.microsoft.com/rtc/2005/08/cccpextensio
 pub const NS_IMDN: &str = "http://schemas.microsoft.com/rtc/2005/08/imdn";
 pub const NS_MSCI_2008: &str = "http://schemas.microsoft.com/rtc/2008/12/confinfoextensions";
 pub const NS_SEPARATOR: &str = "urn:ietf:params:xml:ns:conference-info-separator";
+pub const NS_MSAV: &str = "http://schemas.microsoft.com/rtc/2005/08/avconfinfoextensions";
 pub const NS_OCSMEET: &str = "http://schemas.microsoft.com/rtc/2009/05/simplejoinconfdoc";
 /// The join manager's meeting document for clients (CB-41).
 pub const MEETING_ACCEPT: &str = "Application/vnd.microsoft.lync.meeting+xml;ver=15.0";
@@ -221,6 +222,123 @@ pub fn modify_endpoint_media(
     )
 }
 
+/// setLobbyAccess (CB-35; [MS-CONFBAS] §2.2.3.21, example §4.4.8): admit (`granted`) or turn
+/// away (`denied`) users waiting in the lobby; one or more userEntity elements.
+pub fn set_lobby_access(
+    request_id: u32,
+    from: &str,
+    focus: &str,
+    users: &[String],
+    grant: bool,
+) -> Result<String, Error> {
+    let focus_c = uri(focus)?;
+    if users.is_empty() || users.len() > MAX_PARTICIPANTS {
+        return Err(Error::BadValue("users"));
+    }
+    let mut entities = String::new();
+    for u in users {
+        entities.push_str(&format!("<userEntity>{}</userEntity>", escape(&uri(u)?)));
+    }
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<setLobbyAccess><conferenceKeys confEntity=\"{}\"/>{entities}<access>{}</access></setLobbyAccess>",
+            escape(&focus_c),
+            if grant { "granted" } else { "denied" }
+        ),
+    )
+}
+
+/// modifyUserRoles ([MS-CONFBAS] §2.2.3.7 with its example): exactly one role.
+pub fn modify_user_roles(
+    request_id: u32,
+    from: &str,
+    focus: &str,
+    user: &str,
+    role: Role,
+) -> Result<String, Error> {
+    let focus_c = uri(focus)?;
+    let user = uri(user)?;
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<modifyUserRoles><userKeys confEntity=\"{}\" userEntity=\"{}\"/><user-roles><entry>{}</entry></user-roles></modifyUserRoles>",
+            escape(&focus_c),
+            escape(&user),
+            role.as_str()
+        ),
+    )
+}
+
+/// modifyConferenceLock ([MS-CONFBAS] §2.2.3.9, first example): only the lock state.
+pub fn modify_conference_lock(
+    request_id: u32,
+    from: &str,
+    focus: &str,
+    locked: bool,
+) -> Result<String, Error> {
+    let focus_c = uri(focus)?;
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<modifyConferenceLock><conferenceKeys confEntity=\"{}\"/><locked>{locked}</locked></modifyConferenceLock>",
+            escape(&focus_c)
+        ),
+    )
+}
+
+/// deleteUser ([MS-CONFBAS] §2.2.3.11 with its example): remove a participant.
+pub fn delete_user(request_id: u32, from: &str, focus: &str, user: &str) -> Result<String, Error> {
+    let focus_c = uri(focus)?;
+    let user = uri(user)?;
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<deleteUser><userKeys confEntity=\"{}\" userEntity=\"{}\"/></deleteUser>",
+            escape(&focus_c),
+            escape(&user)
+        ),
+    )
+}
+
+/// modifyConference to the A/V MCU with audio mediaFiltersRules (CA-22; [MS-CONFAV]
+/// §3.2.5.6.1, example §4.5): `true` mutes the audience – presenters stay unmuted and may unmute
+/// themselves, attendees (role `default`) are blocked and may not; `false` restores the defaults
+/// of §3.2.3.1.1.2.2 (everyone unblocked, may modify).
+pub fn mute_audience(
+    request_id: u32,
+    from: &str,
+    focus: &str,
+    av_mcu: &str,
+    mute: bool,
+) -> Result<String, Error> {
+    let focus_c = uri(focus)?;
+    let mcu = uri(av_mcu)?;
+    let (may, filter) = if mute {
+        ("false", "block")
+    } else {
+        ("true", "unblock")
+    };
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<modifyConference mscp:mcuUri=\"{mcu}\"><conference-info xmlns=\"{NS_CI}\" entity=\"{focus_e}\" state=\"partial\"><msci:conference-view xmlns:msci=\"{NS_MSCI}\" xmlns:msav=\"{NS_MSAV}\" xmlns:ci=\"{NS_CI}\" ci:state=\"partial\"><msci:entity-view ci:state=\"partial\" entity=\"{mcu}\"><msci:entity-state><msci:mediaFiltersRules><msci:mayModifyOwnFilters><msci:role>presenter</msci:role><msci:value>true</msci:value></msci:mayModifyOwnFilters><msci:mayModifyOwnFilters><msci:role>default</msci:role><msci:value>{may}</msci:value></msci:mayModifyOwnFilters><msci:initialFilters><msci:role>presenter</msci:role><msci:ingressFilter>unblock</msci:ingressFilter></msci:initialFilters><msci:initialFilters><msci:role>default</msci:role><msci:ingressFilter>{filter}</msci:ingressFilter></msci:initialFilters><msav:type>audio</msav:type></msci:mediaFiltersRules></msci:entity-state></msci:entity-view></msci:conference-view></conference-info></modifyConference>",
+            mcu = escape(&mcu),
+            focus_e = escape(&focus_c),
+        ),
+    )
+}
+
 /// Endpoint GUIDs and media IDs from the roster: short, printable, no XML specials.
 fn safe_token(s: &str) -> bool {
     !s.is_empty()
@@ -354,6 +472,13 @@ impl Participant {
     /// `session-type="chat"`, CB-24).
     pub fn in_chat(&self) -> bool {
         self.endpoints.iter().any(|e| e.kind == "chat")
+    }
+
+    /// The participant waits in the lobby (focus endpoint on-hold, CB-23).
+    pub fn waiting(&self) -> bool {
+        self.endpoints
+            .iter()
+            .any(|e| e.kind == "focus" && e.status == "on-hold")
     }
 
     /// The participant's audio in the A/V MCU: `Some(muted)`.
@@ -554,6 +679,35 @@ impl Roster {
             endpoint: e.entity.clone(),
             media_id: e.audio.as_ref()?.0.clone(),
         })
+    }
+
+    /// The keys of another participant's audio (to mute them, CA-20).
+    pub fn audio_of(&self, user: &str) -> Option<AudioKeys> {
+        let p = self.own(user)?;
+        let e = p
+            .endpoints
+            .iter()
+            .find(|e| e.kind == "audio-video" && e.audio.is_some())?;
+        Some(AudioKeys {
+            user: p.uri.clone(),
+            endpoint: e.entity.clone(),
+            media_id: e.audio.as_ref()?.0.clone(),
+        })
+    }
+
+    /// Participants waiting in the lobby (focus endpoint on-hold, CB-23).
+    pub fn lobby(&self) -> Vec<String> {
+        self.participants
+            .iter()
+            .filter(|p| self.in_lobby(&p.uri))
+            .map(|p| p.uri.clone())
+            .collect()
+    }
+
+    /// Whether `user` holds the presenter role (CB-33: control commands are for presenters).
+    pub fn is_presenter(&self, user: &str) -> bool {
+        self.own(user)
+            .is_some_and(|p| p.roles.iter().any(|r| r == "presenter"))
     }
 
     fn own(&self, own: &str) -> Option<&Participant> {

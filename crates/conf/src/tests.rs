@@ -362,3 +362,69 @@ fn meeting_document() {
     .is_err());
     assert!(parse_meeting("<html/>").is_err());
 }
+
+/// Presenter commands with the bodies of the specification examples: setLobbyAccess (§4.4.8),
+/// modifyUserRoles (§2.2.3.7), modifyConferenceLock (§2.2.3.9), deleteUser (§2.2.3.11) and the
+/// audience mute of [MS-CONFAV] §4.5; unsafe URIs refused.
+#[test]
+fn presenter_commands() {
+    let me = "sip:alice@contoso.com";
+    let users = vec![
+        "sip:bob@fabrikam.com".to_string(),
+        "sip:carol@fabrikam.com".to_string(),
+    ];
+    let b = set_lobby_access(5, me, FOCUS, &users, true).unwrap();
+    assert!(b.contains(&format!("<setLobbyAccess><conferenceKeys confEntity=\"{FOCUS}\"/><userEntity>sip:bob@fabrikam.com</userEntity><userEntity>sip:carol@fabrikam.com</userEntity><access>granted</access></setLobbyAccess>")), "{b}");
+    assert!(set_lobby_access(5, me, FOCUS, &users, false)
+        .unwrap()
+        .contains("<access>denied</access>"));
+    assert!(set_lobby_access(5, me, FOCUS, &[], true).is_err());
+    assert!(set_lobby_access(5, me, FOCUS, &["sip:x@y.z><a/>".to_string()], true).is_err());
+    let b = modify_user_roles(6, me, FOCUS, "sip:cathy@fabrikam.com", Role::Presenter).unwrap();
+    assert!(b.contains(&format!("<modifyUserRoles><userKeys confEntity=\"{FOCUS}\" userEntity=\"sip:cathy@fabrikam.com\"/><user-roles><entry>presenter</entry></user-roles></modifyUserRoles>")));
+    let b = modify_conference_lock(7, me, FOCUS, true).unwrap();
+    assert!(b.contains(&format!("<modifyConferenceLock><conferenceKeys confEntity=\"{FOCUS}\"/><locked>true</locked></modifyConferenceLock>")));
+    let b = delete_user(8, me, FOCUS, "sip:cathy@fabrikam.com").unwrap();
+    assert!(b.contains(&format!("<deleteUser><userKeys confEntity=\"{FOCUS}\" userEntity=\"sip:cathy@fabrikam.com\"/></deleteUser>")));
+    let b = mute_audience(9, me, FOCUS, AV, true).unwrap();
+    assert!(b.contains(&format!("<modifyConference mscp:mcuUri=\"{AV}\">")));
+    assert!(b.contains("<msci:role>default</msci:role><msci:value>false</msci:value>"));
+    assert!(
+        b.contains("<msci:role>default</msci:role><msci:ingressFilter>block</msci:ingressFilter>")
+    );
+    assert!(b.contains("<msav:type>audio</msav:type>"));
+    for body in [
+        &b,
+        &modify_user_roles(6, me, FOCUS, "sip:c@d.e", Role::Attendee).unwrap(),
+    ] {
+        assert!(
+            commscraft_xml::parse(body, &limits()).is_ok(),
+            "well-formed"
+        );
+    }
+    let b = mute_audience(9, me, FOCUS, AV, false).unwrap();
+    assert!(b.contains("<msci:value>true</msci:value></msci:mayModifyOwnFilters><msci:initialFilters><msci:role>presenter</msci:role>"));
+    assert!(b.contains(
+        "<msci:role>default</msci:role><msci:ingressFilter>unblock</msci:ingressFilter>"
+    ));
+}
+
+/// Lobby list, presenter role and another participant's audio keys from the roster.
+#[test]
+fn roster_queries() {
+    let doc = format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="full" version="4"><users>
+<user entity="sip:alice@contoso.com" state="full"><roles><entry>presenter</entry></roles><endpoint entity="{{A}}" msci:session-type="focus"><status>connected</status></endpoint></user>
+<user entity="sip:bob@fabrikam.com" state="full"><roles><entry>attendee</entry></roles><endpoint entity="{{B}}" msci:session-type="focus"><status>on-hold</status></endpoint></user>
+<user entity="sip:carol@fabrikam.com" state="full"><roles><entry>attendee</entry></roles><endpoint entity="{{C}}" msci:session-type="focus"><status>connected</status></endpoint><endpoint entity="{{CAV}}" msci:session-type="audio-video"><status>connected</status><media id="1"><type>audio</type><status>sendrecv</status></media></endpoint></user>
+</users></conference-info>"#
+    );
+    let mut r = Roster::default();
+    r.apply(&doc, FOCUS).unwrap();
+    assert_eq!(r.lobby(), vec!["sip:bob@fabrikam.com".to_string()]);
+    assert!(r.is_presenter("sip:alice@contoso.com"));
+    assert!(!r.is_presenter("sip:carol@fabrikam.com"));
+    let k = r.audio_of("sip:carol@fabrikam.com").unwrap();
+    assert_eq!((k.endpoint.as_str(), k.media_id.as_str()), ("{CAV}", "1"));
+    assert!(r.audio_of("sip:bob@fabrikam.com").is_none());
+}

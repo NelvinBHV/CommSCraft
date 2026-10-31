@@ -56,6 +56,32 @@ pub struct Config {
 
 pub type ConversationId = u32;
 
+/// Presenter commands (CB-35, CA-20, CA-22).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConferenceAction {
+    /// Admit (`true`) or turn away users waiting in the lobby; empty = everyone waiting.
+    Lobby {
+        users: Vec<String>,
+        admit: bool,
+    },
+    /// Make a participant presenter (`true`) or attendee.
+    Role {
+        user: String,
+        presenter: bool,
+    },
+    Lock(bool),
+    Remove {
+        user: String,
+    },
+    /// Mute or unmute another participant's audio.
+    MuteUser {
+        user: String,
+        mute: bool,
+    },
+    /// Mute or unmute the audience (attendees) in the A/V MCU.
+    MuteAudience(bool),
+}
+
 /// What the user asks for.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
@@ -92,6 +118,11 @@ pub enum Command {
         conversation: ConversationId,
         local: Box<sdp::Local>,
         policy: sdp::Encryption,
+    },
+    /// A presenter command in a conference (CB-33, CB-35, CA-20, CA-22).
+    ConferenceControl {
+        conversation: ConversationId,
+        action: ConferenceAction,
     },
     /// Mute or unmute ourselves in the A/V MCU (modifyEndpointMedia, CA-20).
     ConferenceMute {
@@ -1198,6 +1229,10 @@ impl<R: Random> Engine<R> {
                 local,
                 policy,
             } => self.join_conference_audio(conversation, *local, policy, now, &mut out),
+            Command::ConferenceControl {
+                conversation,
+                action,
+            } => self.conference_control(conversation, action, now, &mut out),
             Command::ConferenceMute { conversation, mute } => {
                 self.conference_mute(conversation, mute, now, &mut out)
             }
