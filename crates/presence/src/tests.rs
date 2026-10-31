@@ -310,3 +310,68 @@ fn endpoint_publication() {
         ContactDocument::Full
     );
 }
+
+/// [MS-SIPRE] §4.7.2/§4.7.3 (pp. 84–85): simultaneous ring with forwarding on no answer, and
+/// immediate forwarding, in the structure of the examples; checked targets and wait bound.
+#[test]
+fn routing_preambles() {
+    let sim = Forwarding {
+        forward_to: Some("sip:+14255550199@contoso.com;user=phone".into()),
+        immediate: false,
+        simultaneous_ring: Some("sip:+14255550100@contoso.com;user=phone".into()),
+        ring_seconds: Some(18),
+    };
+    let p = sim.preamble().unwrap();
+    assert_eq!(
+        p,
+        "<routing xmlns=\"http://schemas.microsoft.com/02/2006/sip/routing\" name=\"rtcdefault\" version=\"1\"><preamble><list name=\"forwardto\"><target uri=\"sip:+14255550199@contoso.com;user=phone\"/></list><list name=\"simultaneous_ring\"><target uri=\"sip:+14255550100@contoso.com;user=phone\"/></list><flags name=\"clientflags\" value=\"enablecf simultaneous_ring\"/><wait name=\"total\" seconds=\"18\"/></preamble></routing>"
+    );
+    let immediate = Forwarding {
+        forward_to: Some("sip:+14255550199@contoso.com;user=phone".into()),
+        immediate: true,
+        ..Forwarding::default()
+    };
+    assert!(immediate
+        .preamble()
+        .unwrap()
+        .contains("value=\"enablecf forward_immediate\""));
+    let voicemail = Forwarding {
+        immediate: true,
+        ..Forwarding::default()
+    };
+    assert!(
+        voicemail
+            .preamble()
+            .unwrap()
+            .contains("value=\"forward_immediate\""),
+        "to voice mail"
+    );
+    assert!(
+        Forwarding::default()
+            .preamble()
+            .unwrap()
+            .contains("value=\"\"/><wait name=\"total\" seconds=\"20\""),
+        "off"
+    );
+    assert_eq!(
+        Forwarding {
+            forward_to: Some("sip:x@y\"/><evil".into()),
+            ..Forwarding::default()
+        }
+        .preamble(),
+        Err(Error::UnsafeUri)
+    );
+    assert_eq!(
+        Forwarding {
+            ring_seconds: Some(1201),
+            ..Forwarding::default()
+        }
+        .preamble(),
+        Err(Error::OutOfRange)
+    );
+    let body = publish_routing_body("sip:alice@contoso.com", &sim, [0, 1, 2, 3, 4]).unwrap();
+    for (c, v) in ROUTING_CONTAINERS.iter().zip(0..) {
+        assert!(body.contains(&format!("categoryName=\"routing\" instance=\"0\" container=\"{c}\" version=\"{v}\" expireType=\"static\"")));
+    }
+    assert!(commscraft_xml::parse(&body, &commscraft_xml::Limits::default()).is_ok());
+}

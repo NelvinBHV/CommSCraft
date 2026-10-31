@@ -57,6 +57,8 @@ Example §4.2 (p. 81): epid `01010101` → `4b1682a8-f968-5701-83fc-7c6741dc6697
 | RE-53 | `Ms-Sensitivity: normal|private|normal-no-diversion|private-no-diversion` controls diversion | §2.2.10, p. 28; §3.9.5.2.1, pp. 61–62 |
 | RE-54 | `History-Info` with `ms-retarget-reason` (forwarding/team-call/delegation), `ms-line-type=private`, `ms-target-phone` to display "forwarded from" | §2.2.17, p. 30; §3.9.5.10, pp. 65–67 |
 
+- **K-RE-2 (conflict, documented):** The official Lync 2013 SDK reference "routing category instance value element" names the namespace `http://schemas.microsoft.com/2006/09/sip/routing` in its syntax block but uses `http://schemas.microsoft.com/02/2006/sip/routing` in its examples; [MS-SIPRE] §6 (targetNamespace, p. 96 ff.) and all §4.7 examples use `…/02/2006/sip/routing`. Authoritative: MS-SIPRE. The same SDK page (secondary, official) is the only source for container and instance of the publication: instance 0 in containers 0, 100, 200, 300, 400; `block` in container 32000.
+
 ## Other client-relevant extensions
 
 | ID | Requirement | Evidence |
@@ -75,3 +77,5 @@ Example §4.2 (p. 81): epid `01010101` → `4b1682a8-f968-5701-83fc-7c6741dc6697
 ## Implementation (2026-10-31, `crates/session` call module)
 Outgoing INVITE with a 2-level `multipart/alternative` whose last part is the ICE-19 SDP (§3.15.4.1, RE-65; CommSCraft offers no ICE-06 part because it does not implement MS-ICE – the structure rule of §3.15.4.1 is met with the ICE-19 part alone); incoming INVITEs: the last `application/sdp` part with `m=audio` is the offer (§3.15.5.1), also inside a 3-level `multipart/mixed`. Not implemented: the 415 retry with an ICE-06 single part (§3.15.5.2) – a peer that refuses multipart cannot be reached (inference: only OCS 2007 endpoints, endnote <73>). Status: tested-offline.
 
+## Implementation (2026-10-31, call forwarding and simultaneous ring)
+`presence::Forwarding` builds the version-1 `rtcdefault` preamble (RE-50/RE-51, structure of the §4.7.2/§4.7.3 examples): `forwardto` + `enablecf`, `forward_immediate` (without a target: voice mail), `simultaneous_ring`, `wait total` 0 … 1200 s; targets are checked SIP URIs (phone numbers via the dial plan, PS-01). Published with SERVICE to the routing category, instance 0, containers 0/100/200/300/400 (K-RE-2), static, versions per container with the PR-05 conflict retry. "Off" is a preamble without flags (registered endpoints ring, then voice mail, §3.9.3). Not implemented: team and delegate ringing (version 2, `team_ring`/`delegate_ring`), working-hours-only (`work_hours` needs calendarData), blocking per container 32000, reading back the published rules at sign-in. Status: tested-offline.

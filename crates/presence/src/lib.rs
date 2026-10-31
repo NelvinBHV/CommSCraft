@@ -45,6 +45,8 @@ pub enum Error {
     /// A URI that is not safe to put into a request.
     UnsafeUri,
     TooManyResources,
+    /// A value outside its allowed range (e.g. a routing wait above 1200 s).
+    OutOfRange,
 }
 
 impl From<commscraft_xml::Error> for Error {
@@ -176,6 +178,84 @@ pub fn publish_state_body(
              <state xmlns=\"{NS_STATE}\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" manual=\"true\" xsi:type=\"userState\">\
              <availability>{}</availability></state></publication>",
             status.availability()
+        ));
+    }
+    b.push_str("</publications></publish>");
+    Ok(b)
+}
+
+/// Routing preamble namespace ([MS-SIPRE] §6 targetNamespace).
+pub const NS_ROUTING: &str = "http://schemas.microsoft.com/02/2006/sip/routing";
+/// Containers that get the general routing rules, instance 0 (the official Lync 2013 SDK
+/// reference "routing category instance value element"; secondary, official).
+pub const ROUTING_CONTAINERS: [u32; 5] = [0, 100, 200, 300, 400];
+
+/// Call forwarding and simultaneous ring ([MS-SIPRE] §2.2.9, §3.9.5.1; RE-50, RE-51).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Forwarding {
+    /// Forward to this address (`forwardto`, flag `enablecf`); without it, unanswered or
+    /// immediately forwarded calls go to voice mail.
+    pub forward_to: Option<String>,
+    /// Forward at once without ringing (`forward_immediate`).
+    pub immediate: bool,
+    /// Ring this device too (`simultaneous_ring`).
+    pub simultaneous_ring: Option<String>,
+    /// Seconds the registered endpoints ring (`wait total`, 0 … 1200; the server's default is 20).
+    pub ring_seconds: Option<u32>,
+}
+
+impl Forwarding {
+    /// The `routing` preamble, version 1 (`rtcdefault`, §3.9.5.1.1), with checked targets.
+    pub fn preamble(&self) -> Result<String, Error> {
+        let mut flags = Vec::new();
+        let mut lists = String::new();
+        if let Some(t) = &self.forward_to {
+            let t = checked_sip_uri(t)?;
+            lists.push_str(&format!(
+                "<list name=\"forwardto\"><target uri=\"{}\"/></list>",
+                escape(&t)
+            ));
+            flags.push("enablecf");
+        }
+        if self.immediate {
+            flags.push("forward_immediate");
+        }
+        if let Some(t) = &self.simultaneous_ring {
+            let t = checked_sip_uri(t)?;
+            lists.push_str(&format!(
+                "<list name=\"simultaneous_ring\"><target uri=\"{}\"/></list>",
+                escape(&t)
+            ));
+            flags.push("simultaneous_ring");
+        }
+        let seconds = self.ring_seconds.unwrap_or(20);
+        if seconds > 1200 {
+            return Err(Error::OutOfRange);
+        }
+        Ok(format!(
+            "<routing xmlns=\"{NS_ROUTING}\" name=\"rtcdefault\" version=\"1\"><preamble>{lists}<flags name=\"clientflags\" value=\"{}\"/><wait name=\"total\" seconds=\"{seconds}\"/></preamble></routing>",
+            flags.join(" ")
+        ))
+    }
+}
+
+/// SERVICE body publishing the routing preamble to [`ROUTING_CONTAINERS`], instance 0, static
+/// ([MS-PRES] §2.2.2.7.7: a private category; `versions` per container as for other
+/// publications, PR-05).
+pub fn publish_routing_body(
+    aor: &str,
+    rules: &Forwarding,
+    versions: [u32; 5],
+) -> Result<String, Error> {
+    let aor = checked_sip_uri(aor)?;
+    let preamble = rules.preamble()?;
+    let mut b = format!(
+        "<publish xmlns=\"{NS_PUBLISH}\"><publications uri=\"{}\">",
+        escape(&aor)
+    );
+    for (container, version) in ROUTING_CONTAINERS.iter().zip(versions) {
+        b.push_str(&format!(
+            "<publication categoryName=\"routing\" instance=\"0\" container=\"{container}\" version=\"{version}\" expireType=\"static\">{preamble}</publication>"
         ));
     }
     b.push_str("</publications></publish>");
