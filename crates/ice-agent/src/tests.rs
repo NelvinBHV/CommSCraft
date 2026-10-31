@@ -30,6 +30,7 @@ fn remote_of(l: &Local) -> Remote {
     Remote {
         foundation: l.foundation.clone(),
         component: l.component,
+        kind: l.kind,
         transport: l.transport,
         address: l.address,
         priority: l.priority,
@@ -335,6 +336,7 @@ fn bounds() {
         .map(|i| Remote {
             foundation: format!("r{i}"),
             component: 1,
+            kind: Kind::Host,
             transport: Transport::Udp,
             address: format!("10.0.2.{i}:7000").parse().unwrap(),
             priority: 1,
@@ -356,6 +358,7 @@ fn bounds() {
         vec![Remote {
             foundation: "z".into(),
             component: 1,
+            kind: Kind::Host,
             transport: Transport::Udp,
             address: "0.0.0.0:1".parse().unwrap(),
             priority: 1,
@@ -385,6 +388,7 @@ fn tcp_pairing_rules() {
     let remote = |t: Transport, port: u16| Remote {
         foundation: format!("r{port}"),
         component: 1,
+        kind: Kind::Host,
         transport: t,
         address: format!("10.0.0.2:{port}").parse().unwrap(),
         priority: 1,
@@ -426,6 +430,7 @@ fn loopback_and_link_local_remotes_ignored() {
     let remote = |addr: &str| Remote {
         foundation: addr.into(),
         component: 1,
+        kind: Kind::Host,
         transport: Transport::Udp,
         address: addr.parse().unwrap(),
         priority: 1,
@@ -442,4 +447,62 @@ fn loopback_and_link_local_remotes_ignored() {
         0,
     );
     assert_eq!(a.pairs.len(), 1, "only the routable candidate is paired");
+}
+
+/// [MS-ICE2BWM] §3.1.4.8.2.1, §3.1.5.2 (BW-03, BW-04): the bandwidth-managing callee refuses the
+/// caller's site: it checks nothing, answers the caller's checks with 274, the caller fails
+/// those pairs; no pair is selected and both sides fail.
+#[test]
+fn bandwidth_policy_274() {
+    let (mut a, mut b) = pair_of_agents();
+    b.set_restrictions(Restrictions {
+        remote_site: true,
+        ..Restrictions::default()
+    });
+    assert!(b.pairs.iter().all(|p| p.state == State::Failed));
+    let saw_274 = std::cell::Cell::new(false);
+    let watch = |t: &Transmit| {
+        if let Ok(m) = Message::decode(&t.data) {
+            if m.kind == BINDING_ERROR
+                && m.get(stun::ERROR_CODE)
+                    .and_then(|v| stun::decode_error(v).ok())
+                    .map(|(c, _)| c)
+                    == Some(274)
+            {
+                saw_274.set(true);
+            }
+        }
+        false
+    };
+    let (ea, eb) = run(&mut a, &mut b, 40_000, &watch);
+    assert!(saw_274.get(), "274 Disable Candidate sent");
+    assert!(a.pairs.iter().all(|p| p.state == State::Failed));
+    assert!(ea.iter().any(|e| matches!(e, Event::Failed(_))), "{ea:?}");
+    assert!(!eb.iter().any(|e| matches!(e, Event::Selected { .. })));
+}
+
+/// 275: our own candidate is refused, the peer's is not – only that pair fails at the peer.
+#[test]
+fn bandwidth_policy_275() {
+    let (mut a, mut b) = pair_of_agents();
+    b.set_restrictions(Restrictions {
+        local_site: true,
+        ..Restrictions::default()
+    });
+    let codes = std::cell::RefCell::new(Vec::new());
+    let watch = |t: &Transmit| {
+        if let Ok(m) = Message::decode(&t.data) {
+            if let Some((c, _)) = m
+                .get(stun::ERROR_CODE)
+                .and_then(|v| stun::decode_error(v).ok())
+            {
+                codes.borrow_mut().push(c);
+            }
+        }
+        false
+    };
+    run(&mut a, &mut b, 40_000, &watch);
+    assert!(codes.borrow().contains(&275));
+    assert!(!codes.borrow().contains(&274));
+    assert!(a.pairs.iter().all(|p| p.state == State::Failed));
 }

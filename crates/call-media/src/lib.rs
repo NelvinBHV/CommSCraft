@@ -535,6 +535,11 @@ impl CallMedia {
                     .map(|c| ice::Remote {
                         foundation: c.foundation.clone(),
                         component: c.component,
+                        kind: match c.kind {
+                            sdp::CandidateType::Host => ice::Kind::Host,
+                            sdp::CandidateType::ServerReflexive => ice::Kind::ServerReflexive,
+                            sdp::CandidateType::Relay => ice::Kind::Relayed,
+                        },
                         transport: match c.transport {
                             sdp::Transport::Udp => ice::Transport::Udp,
                             sdp::Transport::TcpActive => ice::Transport::TcpActive,

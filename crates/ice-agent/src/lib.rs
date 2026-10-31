@@ -17,6 +17,12 @@
 //! matched by transaction ID and by the exact address pair, and must verify with the peer's
 //! password and carry a usable XOR-MAPPED-ADDRESS (§3.1.5.3.1); at most 40 local + 40 remote
 //! candidates and 80 pairs (IC-10); retransmissions and all phases are bounded by timers.
+//!
+//! Bandwidth policy ([MS-ICE2BWM] 20250520 §3.1.4.8.2.1, §3.1.5.1.1, §3.1.5.2, pp. 18–20;
+//! BW-03, BW-04): candidates of a site the policy server refused are never checked; a request
+//! on them is answered with 274 Disable Candidate (the peer's candidate is refused) or 275
+//! Disable Candidate Pair (ours is); 274/275 from the peer fail the candidate's pairs or the
+//! pair.
 
 use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};
@@ -83,6 +89,8 @@ pub struct Local {
 pub struct Remote {
     pub foundation: String,
     pub component: u8,
+    /// Candidate type (for the bandwidth policy: relayed or not).
+    pub kind: Kind,
     pub transport: Transport,
     pub address: SocketAddr,
     pub priority: u32,
@@ -106,6 +114,16 @@ impl Transport {
                 | (Transport::TcpPassive, Transport::TcpActive)
         )
     }
+}
+
+/// Sites refused by the bandwidth policy server ([MS-ICE2BWM] §3.1.5.1.1): the site covers
+/// host, server-reflexive and peer-derived candidates, the relay site the relayed ones.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Restrictions {
+    pub local_site: bool,
+    pub local_relay: bool,
+    pub remote_site: bool,
+    pub remote_relay: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -198,6 +216,7 @@ pub struct Agent {
     consent_deadline: Option<u64>,
     random: Random,
     done: bool,
+    restrictions: Restrictions,
 }
 
 impl std::fmt::Debug for Agent {
@@ -250,6 +269,7 @@ impl Agent {
             consent_deadline: None,
             random,
             done: false,
+            restrictions: Restrictions::default(),
         }
     }
 
@@ -303,6 +323,48 @@ impl Agent {
         }
     }
 
+    fn blocked_local(&self, li: usize) -> bool {
+        self.locals.get(li).is_some_and(|l| {
+            if l.kind == Kind::Relayed {
+                self.restrictions.local_relay
+            } else {
+                self.restrictions.local_site
+            }
+        })
+    }
+
+    fn blocked_remote(&self, ri: usize) -> bool {
+        self.remotes.get(ri).is_some_and(|r| {
+            if r.kind == Kind::Relayed {
+                self.restrictions.remote_relay
+            } else {
+                self.restrictions.remote_site
+            }
+        })
+    }
+
+    /// The bandwidth policy (BW-03): pairs with a refused candidate are failed and never checked.
+    pub fn set_restrictions(&mut self, r: Restrictions) {
+        self.restrictions = r;
+        self.apply_restrictions();
+    }
+
+    fn apply_restrictions(&mut self) {
+        let blocked: Vec<bool> = self
+            .pairs
+            .iter()
+            .map(|p| self.blocked_local(p.local) || self.blocked_remote(p.remote))
+            .collect();
+        for (p, b) in self.pairs.iter_mut().zip(&blocked) {
+            if *b && p.state != State::Succeeded {
+                p.state = State::Failed;
+            }
+        }
+        let pairs = &self.pairs;
+        self.triggered
+            .retain(|&i| pairs.get(i).is_some_and(|p| p.state != State::Failed));
+    }
+
     fn form_pairs(&mut self) {
         for (li, l) in self.locals.iter().enumerate() {
             // Server-reflexive candidates send from their base: the host pair covers them
@@ -347,6 +409,7 @@ impl Agent {
                 seen.push(f);
             }
         }
+        self.apply_restrictions();
     }
 
     /// A fresh transaction ID; IDs still in use (also by their low 96 bits, which identify the
@@ -794,6 +857,41 @@ impl Agent {
             }
             return;
         }
+        // [MS-ICE2BWM] §3.1.5.2.1: requests on refused candidates get 274/275. A sender not yet
+        // known is peer-reflexive and belongs to the peer's site.
+        let component = self.locals.get(local).map_or(1, |l| l.component);
+        let remote_blocked = match self
+            .remotes
+            .iter()
+            .position(|r| r.address == from && r.component == component)
+        {
+            Some(ri) => self.blocked_remote(ri),
+            None => self.restrictions.remote_site,
+        };
+        let policy_error = if remote_blocked {
+            Some((274, "Disable Candidate"))
+        } else if self.blocked_local(local) {
+            Some((275, "Disable Candidate Pair"))
+        } else {
+            None
+        };
+        if let Some((code, reason)) = policy_error {
+            let mut e = Message::new(BINDING_ERROR, m.transaction);
+            e.push(stun::ERROR_CODE, stun::encode_error(code, reason));
+            e.push(stun::USERNAME, user);
+            e.push(
+                stun::IMPLEMENTATION_VERSION,
+                OUR_IMPLEMENTATION_VERSION.to_be_bytes().to_vec(),
+            );
+            if let Some(w) = self.seal(&e, &key) {
+                out.push(Transmit {
+                    local,
+                    to: from,
+                    data: w,
+                });
+            }
+            return;
+        }
         self.learn_format(m);
         // §3.1.5.2.3: XOR-MAPPED-ADDRESS (0x0020), USERNAME, MI, IMPLEMENTATION-VERSION; plus
         // FINGERPRINT, which the receiver requires (§3.1.5.3.1, K-IC-2).
@@ -845,6 +943,7 @@ impl Agent {
                 self.add_remote(Remote {
                     foundation: f,
                     component,
+                    kind: Kind::PeerReflexive,
                     transport,
                     address: from,
                     priority,
@@ -970,6 +1069,15 @@ impl Agent {
                 401 | 430 | 431 | 432 | 500 => {
                     pair.state = State::Waiting;
                     self.triggered.push(t.pair);
+                }
+                // [MS-ICE2BWM] §3.1.5.2.2: 274 fails every pair of this local candidate.
+                274 => {
+                    let local = pair.local;
+                    for q in self.pairs.iter_mut().filter(|q| q.local == local) {
+                        if q.state != State::Succeeded {
+                            q.state = State::Failed;
+                        }
+                    }
                 }
                 _ => pair.state = State::Failed,
             }
