@@ -1,0 +1,15 @@
+[package]
+name = "commscraft-sdp"
+description = "SDP for audio calls (MS-SDPEXT): bounded parser, offer/answer, a=crypto keys, ICE attributes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-sipae = { path = "../sipae" }
+zeroize.workspace = true
+
+[lints]
+workspace = true

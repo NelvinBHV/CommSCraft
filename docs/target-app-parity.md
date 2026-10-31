@@ -47,7 +47,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 20 | Persistent chat | MS-XCCOSIP, MS-OCGCWEB | T | – |
 | 21 | Media relay access | MS-AVEDGEA, MS-TURN | B | – |
 | 22 | ICE connectivity | MS-ICE2, MS-ICE | B\* | – |
-| 23 | Media negotiation (SDP) | MS-SDPEXT, MS-SIPRE | B\* | – |
+| 23 | Media negotiation (SDP) | MS-SDPEXT, MS-SIPRE | B\* | parts tested-offline (audio offer/answer, a=crypto, ICE-19 attributes: `sdp`) |
 | 24 | Media encryption | MS-SRTP, MS-SSRTP | B | tested-offline (SRTP/SRTCP contexts with MKI, replay window, ROC; RFC 3711 B.2/B.3 and libsrtp reference packets: `srtp`) |
 | 25 | RTP/RTCP, bandwidth, video source requests | MS-RTP | B | parts tested-offline (RTP header, sender, reception statistics, SR/RR/SDES/BYE, DTMF: `rtp`); MS-RTP profile extensions – |
 | 26 | Audio codecs G.711, G.722 | MS-RTP, MS-SDPEXT, ITU-T G.711, G.722 | B | tested-offline (G.711 against Tables 1–6; G.722 ADPCM bit-exact against all ITU digital test sequences, QMF round trip: `g711`, `g722`) |
