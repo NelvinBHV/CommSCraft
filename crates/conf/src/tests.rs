@@ -682,3 +682,74 @@ mod scheduling {
         assert_eq!(m.len(), MAX_MEETINGS - 1);
     }
 }
+
+/// CB-42 ([MS-CONFBAS] §2.2.3.9, second example, p. 42; K-CB-3): lock state plus the three options
+/// after the separator, in the confinfoextensions namespace; unknown autopromote bits refused.
+#[test]
+fn meeting_options_request() {
+    let focus = "sip:alice@fabrikam.com;gruu;opaque=app:conf:focus:id:5D3747C";
+    let o = MeetingOptions {
+        admission: schedule::Admission::OpenAuthenticated,
+        autopromote: AUTOPROMOTE_COMPANY,
+        pstn_lobby_bypass: false,
+    };
+    let body = modify_conference_options(12, "sip:bob@fabrikam.com", focus, true, &o).unwrap();
+    assert!(body.contains("<locked>true</locked><separator xmlns=\"urn:ietf:params:xml:ns:conference-info-separator\"/><msci:admission-policy>openAuthenticated</msci:admission-policy><msci:autopromote>32768</msci:autopromote><msci:pstn-lobby-bypass>false</msci:pstn-lobby-bypass></modifyConferenceLock>"));
+    let root = commscraft_xml::parse(&body, &commscraft_xml::Limits::default()).unwrap();
+    let cmd = root.child("modifyConferenceLock").unwrap();
+    assert_eq!(
+        cmd.child("autopromote").unwrap().namespace.as_deref(),
+        Some(NS_MSCI)
+    );
+    let bad = MeetingOptions {
+        autopromote: 1,
+        ..o
+    };
+    assert!(modify_conference_options(1, "sip:bob@fabrikam.com", focus, false, &bad).is_err());
+    assert!(modify_conference_options(1, "sip:bob@fabrikam.com", "sip:x\"/>", false, &o).is_err());
+}
+
+/// CB-43 ([MS-CONFBAS] §2.2.2.3, pp. 26–28; §2.2.4.4.1, p. 49): settings from the
+/// conference-description and the lock state from the focus entity-view; partial documents keep
+/// what they do not mention; nonsense values become unknown.
+#[test]
+fn meeting_settings_from_roster() {
+    let focus = "sip:alice@fabrikam.com;gruu;opaque=app:conf:focus:id:5D3747C";
+    let full = format!(
+        "<conference-info xmlns=\"urn:ietf:params:xml:ns:conference-info\" xmlns:msci=\"{NS_MSCI}\" entity=\"{focus}\" state=\"full\" version=\"1\"><conference-description><msci:admission-policy>openAuthenticated</msci:admission-policy><msci:lobby-capable>true</msci:lobby-capable><msci:anonymous-type-allowed>false</msci:anonymous-type-allowed><msci:autopromote>32768</msci:autopromote><msci:autopromote-allowed>2147516416</msci:autopromote-allowed><msci:pstn-lobby-bypass>false</msci:pstn-lobby-bypass><msci:pstn-lobby-bypass-allowed>true</msci:pstn-lobby-bypass-allowed></conference-description><msci:conference-view><msci:entity-view entity=\"{focus}\"><msci:entity-state><msci:locked>false</msci:locked></msci:entity-state></msci:entity-view></msci:conference-view></conference-info>"
+    );
+    let mut r = Roster::default();
+    assert!(r.apply(&full, focus).unwrap());
+    let s = &r.settings;
+    assert_eq!(s.locked, Some(false));
+    assert_eq!(s.admission, Some(schedule::Admission::OpenAuthenticated));
+    assert_eq!(s.lobby_capable, Some(true));
+    assert_eq!(s.anonymous_allowed, Some(false));
+    assert_eq!(
+        s.autopromote_allowed,
+        Some(AUTOPROMOTE_COMPANY | AUTOPROMOTE_EVERYONE)
+    );
+    assert_eq!(
+        s.options(),
+        Some(MeetingOptions {
+            admission: schedule::Admission::OpenAuthenticated,
+            autopromote: AUTOPROMOTE_COMPANY,
+            pstn_lobby_bypass: false,
+        })
+    );
+    let partial = format!(
+        "<conference-info xmlns=\"urn:ietf:params:xml:ns:conference-info\" xmlns:msci=\"{NS_MSCI}\" entity=\"{focus}\" state=\"partial\" version=\"2\"><conference-description><msci:pstn-lobby-bypass>true</msci:pstn-lobby-bypass><msci:autopromote>-1</msci:autopromote></conference-description><msci:conference-view><msci:entity-view entity=\"sip:other@fabrikam.com\"><msci:entity-state><msci:locked>true</msci:locked></msci:entity-state></msci:entity-view></msci:conference-view></conference-info>"
+    );
+    assert!(r.apply(&partial, focus).unwrap());
+    assert_eq!(r.settings.pstn_lobby_bypass, Some(true));
+    assert_eq!(r.settings.autopromote, None, "not an unsigned integer");
+    assert_eq!(
+        r.settings.locked,
+        Some(false),
+        "another entity's view does not count"
+    );
+    assert_eq!(
+        r.settings.admission,
+        Some(schedule::Admission::OpenAuthenticated)
+    );
+}

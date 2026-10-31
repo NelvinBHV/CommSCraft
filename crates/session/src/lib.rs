@@ -70,6 +70,8 @@ pub enum ConferenceAction {
         presenter: bool,
     },
     Lock(bool),
+    /// Admission policy, automatic promotion and lobby bypass for phone callers (CB-42).
+    Options(conf::MeetingOptions),
     Remove {
         user: String,
     },
@@ -282,6 +284,11 @@ pub enum Event {
     ConferenceAudio {
         conversation: ConversationId,
         call: CallId,
+    },
+    /// The lock state or meeting options of a conference changed (CB-43).
+    MeetingSettings {
+        conversation: ConversationId,
+        settings: conf::Settings,
     },
     /// The roster of a group conversation changed (CB-24).
     Participants {

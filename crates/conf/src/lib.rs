@@ -344,6 +344,114 @@ pub fn modify_conference_lock(
     )
 }
 
+/// Who is promoted to presenter on admission ([MS-CONFBAS] §2.2.2.3, p. 27; CB-42): bit 15,
+/// authenticated users of the company.
+pub const AUTOPROMOTE_COMPANY: u32 = 0x0000_8000;
+/// Bit 31: everyone.
+pub const AUTOPROMOTE_EVERYONE: u32 = 0x8000_0000;
+
+/// The meeting options a presenter can change in a running meeting (CB-42).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MeetingOptions {
+    pub admission: schedule::Admission,
+    /// Combination of [`AUTOPROMOTE_COMPANY`] and [`AUTOPROMOTE_EVERYONE`]; 0 = nobody.
+    pub autopromote: u32,
+    /// Callers over the phone network skip the lobby.
+    pub pstn_lobby_bypass: bool,
+}
+
+/// modifyConferenceLock with the meeting options ([MS-CONFBAS] §2.2.3.9, second example, p. 42;
+/// schema `modify-conference-lock-type`, §6.2; CB-42): admission policy, autopromote and
+/// pstn-lobby-bypass only together, after the separator. The three elements are in the
+/// confinfoextensions namespace as the schema's `msci:` references say; the prose example shows
+/// them without prefix in the request namespace (K-CB-3).
+pub fn modify_conference_options(
+    request_id: u32,
+    from: &str,
+    focus: &str,
+    locked: bool,
+    options: &MeetingOptions,
+) -> Result<String, Error> {
+    if options.autopromote & !(AUTOPROMOTE_COMPANY | AUTOPROMOTE_EVERYONE) != 0 {
+        return Err(Error::BadValue("autopromote"));
+    }
+    let focus_c = uri(focus)?;
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<modifyConferenceLock xmlns:msci=\"{NS_MSCI}\"><conferenceKeys confEntity=\"{}\"/><locked>{locked}</locked><separator xmlns=\"{NS_SEPARATOR}\"/><msci:admission-policy>{}</msci:admission-policy><msci:autopromote>{}</msci:autopromote><msci:pstn-lobby-bypass>{}</msci:pstn-lobby-bypass></modifyConferenceLock>",
+            escape(&focus_c),
+            options.admission.as_str(),
+            options.autopromote,
+            options.pstn_lobby_bypass
+        ),
+    )
+}
+
+/// The meeting settings the focus reports (CB-43; [MS-CONFBAS] §2.2.2.3, pp. 26–28, and the
+/// focus entity-view, §2.2.4.4.1, p. 49). `None` = not (yet) reported.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Settings {
+    pub locked: Option<bool>,
+    pub admission: Option<schedule::Admission>,
+    /// The admission policy can be changed in the running meeting.
+    pub lobby_capable: Option<bool>,
+    pub anonymous_allowed: Option<bool>,
+    pub autopromote: Option<u32>,
+    pub autopromote_allowed: Option<u32>,
+    pub pstn_lobby_bypass: Option<bool>,
+    pub pstn_lobby_bypass_allowed: Option<bool>,
+}
+
+impl Settings {
+    /// The options as they are now, if all three are known.
+    pub fn options(&self) -> Option<MeetingOptions> {
+        Some(MeetingOptions {
+            admission: self.admission?,
+            autopromote: self.autopromote?,
+            pstn_lobby_bypass: self.pstn_lobby_bypass?,
+        })
+    }
+
+    fn apply_description(&mut self, d: &Element) {
+        let flag = |name: &str| {
+            d.child(name).and_then(|e| match e.text().trim() {
+                "true" | "TRUE" | "1" => Some(true),
+                "false" | "FALSE" | "0" => Some(false),
+                _ => None,
+            })
+        };
+        let number = |name: &str| {
+            d.child(name)
+                .and_then(|e| e.text().trim().parse::<u32>().ok())
+        };
+        if let Some(a) = d.child("admission-policy") {
+            self.admission = schedule::Admission::parse(&a.text());
+        }
+        for (name, slot) in [
+            ("lobby-capable", &mut self.lobby_capable),
+            ("anonymous-type-allowed", &mut self.anonymous_allowed),
+            ("pstn-lobby-bypass", &mut self.pstn_lobby_bypass),
+            (
+                "pstn-lobby-bypass-allowed",
+                &mut self.pstn_lobby_bypass_allowed,
+            ),
+        ] {
+            if d.child(name).is_some() {
+                *slot = flag(name);
+            }
+        }
+        if d.child("autopromote").is_some() {
+            self.autopromote = number("autopromote");
+        }
+        if d.child("autopromote-allowed").is_some() {
+            self.autopromote_allowed = number("autopromote-allowed");
+        }
+    }
+}
+
 /// deleteUser ([MS-CONFBAS] §2.2.3.11 with its example): remove a participant.
 pub fn delete_user(request_id: u32, from: &str, focus: &str, user: &str) -> Result<String, Error> {
     let focus_c = uri(focus)?;
@@ -549,6 +657,8 @@ pub struct Roster {
     /// MCU conference URI with purpose `audio-video` (CA-01).
     pub av_uri: Option<String>,
     pub participants: Vec<Participant>,
+    /// Lock state and meeting options (CB-43).
+    pub settings: Settings,
 }
 
 impl Roster {
@@ -578,6 +688,25 @@ impl Roster {
             *self = Roster::default();
         }
         self.version = version;
+        if let Some(d) = root.child("conference-description") {
+            self.settings.apply_description(d);
+        }
+        // §2.2.4.4.1: the focus entity-view carries the lock state.
+        if let Some(view) = root.child("conference-view") {
+            for v in view.children_named("entity-view") {
+                if v.attr("entity")
+                    .is_some_and(|e| e.eq_ignore_ascii_case(focus))
+                {
+                    if let Some(l) = v.child("entity-state").and_then(|s| s.child("locked")) {
+                        self.settings.locked = match l.text().trim() {
+                            "true" => Some(true),
+                            "false" => Some(false),
+                            _ => None,
+                        };
+                    }
+                }
+            }
+        }
         if let Some(uris) = root
             .child("conference-description")
             .and_then(|d| d.child("conf-uris"))

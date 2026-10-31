@@ -50,6 +50,8 @@ Source: [MS-CONFBAS] "Centralized Conference Control Protocol: Basic Architectur
 | CB-35 | Commands: modifyConferenceLock (locked + optional admission-policy/autopromote/pstn-lobby-bypass together), modifyUserRoles, deleteUser (eject; the focus ends subscriptions with reason "ParticipantRemoved"/"Participant Denied" and BYE), deleteConference (ends, does not deprovision), setLobbyAccess (granted/denied; status success/conferenceFull/userDoesntExist/alreadyGranted), modifyEndpoint (e.g. recording state), getConference, modifyConference (MCU state) | §2.2.3.7–2.2.3.28, pp. 40–51; §3.6–3.15, pp. 104–117 |
 | CB-36 | **addUser dial-in** (the client joins an MCU): INFO to the focus with `mcuUri` = MCU conference URI, joining-method `dialed-in`, user = own URI; response `connection-info` with `Mcu-Server-Uri`, `Mcu-Conference-Uri` (+ PSOM keys sAuthId, pwrpc.modes tls/fwdtls, pwrpc.port, proxy[N].FQDN/Port, pwrpc.pwsURI, alternativeName); then **INVITE to the MCU** (To/Request-URI = MCU conference URI, body MCU-specific) | §2.2.3.17–2.2.3.18, pp. 46–49; §3.11–3.11.5.1.2, pp. 110–113 |
 | CB-37 | **addUser dial-out** (the MCU calls): mcuUri only IMMCU/AVMCU; the MCU sends an INVITE (From = MCU conference URI, Request-URI = refer-to-uri / endpoint-uri / To) | §2.2.3.15–2.2.3.16, pp. 44–46; §3.10, pp. 108–110 |
+| CB-42 | **Meeting options** in modifyConferenceLock: after `locked` a `separator`, then `admission-policy` (closedAuthenticated/openAuthenticated/anonymous), `autopromote` (unsigned int: 0 nobody, bit 15 0x8000 company, bit 31 0x80000000 everyone) and `pstn-lobby-bypass` (true/false) – all three or none; `locked` is always included | §2.2.3.9, pp. 41–42 (second example); §2.2.2.3, pp. 26–28; schema `modify-conference-lock-type`, §6.2 |
+| CB-43 | The focus reports the options in `conference-description` (`admission-policy`, `lobby-capable` – the admission policy can be changed after activation –, `anonymous-type-allowed`, `autopromote`, `autopromote-allowed`, `pstn-lobby-bypass`, `pstn-lobby-bypass-allowed`) and the lock state in its own `entity-view`/`entity-state/locked` | §2.2.2.3, pp. 26–28; §2.2.4.4.1, p. 49; schema §6.3.2 (confinfoextensions) |
 
 ## Simple join
 
@@ -61,6 +63,7 @@ Source: [MS-CONFBAS] "Centralized Conference Control Protocol: Basic Architectur
 ## Conflicts / gaps
 - K-CB-1: Examples in §4 use the namespace `http://schemas.fabrikam.com/rtc/2005/08/confinfoextensions` (pp. 122, 128), syntax/schema `http://schemas.microsoft.com/rtc/2005/08/confinfoextensions` (pp. 38, 53, schema §6.3.2). Authoritative: the schema (microsoft.com) – the examples are wrongly anonymised.
 - K-CB-2: Example §2.2.3.4 (p. 39) is not well-formed (`</endpoint>` without an opening tag, clientInfo directly below user).
+- K-CB-3: modifyConferenceLock options: the schema references `msci:admission-policy`, `msci:autopromote`, `msci:pstn-lobby-bypass` (confinfoextensions namespace, §6.2), the examples (p. 42, §4.4.1 p. 132) write them without prefix in the request namespace `urn:ietf:params:xml:ns:cccp`. Authoritative: the schema (as K-CB-1); the client sends the `msci:` form.
 - O-CB-1: For simple join on Linux, `.ocsmeet` handling or the HTTP fetch (CB-41) needs an own MIME/URL handler; whether the join manager accepts a non-Windows User-Agent is not documented – interop test.
 - L-09: RFC 4353/4575/4579/3265/4028/3311/2976 and draft-sipsoap-00 were not in the package.
 
@@ -74,3 +77,6 @@ Joining a meeting by its focus URI or by its meeting link: the link is fetched o
 
 ## Implementation (2026-10-31, presenter commands)
 Over INFO in the focus dialog (CB-31) with the bodies of the specification examples: setLobbyAccess granted/denied for named users or everyone waiting (§2.2.3.21, example §4.4.8), modifyUserRoles (§2.2.3.7), modifyConferenceLock with the lock state only (§2.2.3.9), deleteUser (§2.2.3.11); the client sends them only with the presenter role in the roster (CB-33; the focus decides anyway) and reports every refused command. Not implemented: admission policy/autopromote changes, deleteConference, recording. Status: tested-offline.
+
+## Implementation (2026-10-31, meeting options)
+`conf::modify_conference_options` (CB-42, K-CB-3) and `conf::Settings` from the roster (CB-43). Before sending, the session refuses what the focus says it does not allow (`lobby-capable` false, anonymous not allowed, autopromote bits outside `autopromote-allowed`, lobby bypass not allowed); locking sends the known options along so they stay as they are. CLI `/options [open|closed|anonymous] [promote none|company|everyone] [phone bypass|lobby]` and a line per settings change. Not implemented: deleteConference, recording. Status: tested-offline.

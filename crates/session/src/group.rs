@@ -375,8 +375,15 @@ impl<R: Random> Engine<R> {
         let aor = self.cfg.aor.clone();
         let Some(g) = self.group_mut(id) else { return };
         let Some(focus) = g.focus.clone() else { return };
+        let settings_before = g.roster.settings.clone();
         match g.roster.apply(body, &focus) {
             Ok(true) => {
+                if g.roster.settings != settings_before {
+                    out.push(Output::Event(Event::MeetingSettings {
+                        conversation: id,
+                        settings: g.roster.settings.clone(),
+                    }));
+                }
                 // CB-23: our focus endpoint on-hold = lobby; connected = admitted.
                 let waiting = g.roster.in_lobby(&aor);
                 if waiting != g.lobby_since.is_some() {
@@ -848,10 +855,47 @@ impl<R: Random> Engine<R> {
                     out,
                 );
             }
-            ConferenceAction::Lock(locked) => {
+            ConferenceAction::Options(options) => {
+                // CB-42/CB-43: refuse what the focus says it does not allow.
+                let s = &roster.settings;
+                let refused = if s.lobby_capable == Some(false) {
+                    Some("the admission policy of this meeting cannot be changed")
+                } else if options.admission == conf::schedule::Admission::Anonymous
+                    && s.anonymous_allowed == Some(false)
+                {
+                    Some("anonymous admission is not allowed for this meeting")
+                } else if s
+                    .autopromote_allowed
+                    .is_some_and(|a| options.autopromote & !a != 0)
+                {
+                    Some("that automatic promotion is not allowed for this meeting")
+                } else if options.pstn_lobby_bypass && s.pstn_lobby_bypass_allowed == Some(false) {
+                    Some("phone callers may not bypass the lobby in this meeting")
+                } else {
+                    None
+                };
+                if let Some(why) = refused {
+                    out.push(Output::Event(Event::Notice(why.into())));
+                    return;
+                }
+                let locked = s.locked.unwrap_or(false);
                 self.send_c3p(
                     id,
-                    |r, f, focus, _| conf::modify_conference_lock(r, f, focus, locked),
+                    |r, f, focus, _| conf::modify_conference_options(r, f, focus, locked, &options),
+                    now,
+                    out,
+                );
+            }
+            ConferenceAction::Lock(locked) => {
+                // CB-42: when the options are known they are sent along, so locking does not
+                // reset them.
+                let options = roster.settings.options();
+                self.send_c3p(
+                    id,
+                    |r, f, focus, _| match &options {
+                        Some(o) => conf::modify_conference_options(r, f, focus, locked, o),
+                        None => conf::modify_conference_lock(r, f, focus, locked),
+                    },
                     now,
                     out,
                 );
