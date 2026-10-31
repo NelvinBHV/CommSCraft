@@ -105,6 +105,7 @@ dependencies = [
  "commscraft-sdp",
  "commscraft-stun",
  "commscraft-turn",
+ "commscraft-turn-bwm",
  "getrandom 0.3.4",
  "zeroize",
 ]
@@ -131,6 +132,7 @@ dependencies = [
  "commscraft-session",
  "commscraft-sip-msg",
  "commscraft-sipae",
+ "commscraft-turn-bwm",
  "commscraft-url",
  "zeroize",
 ]

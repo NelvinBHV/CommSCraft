@@ -309,3 +309,12 @@ fn hold_and_music_on_hold() {
     assert!(sdp.contains("a=inactive\r\n"), "{sdp}");
     assert_eq!((n.direction, n.music_on_hold), (Direction::Inactive, false));
 }
+
+/// The offer's ICE parameters for the callee's bandwidth check; none without ICE.
+#[test]
+fn offer_ice_parameters() {
+    let ice = offer_ice(SPEC_OFFER.as_bytes()).expect("the specification offer has ICE");
+    assert!(!ice.candidates.is_empty());
+    assert!(offer_ice(b"v=0\r\nm=audio 5000 RTP/AVP 0\r\n").is_none());
+    assert!(offer_ice(b"garbage").is_none());
+}

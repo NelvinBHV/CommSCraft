@@ -18,9 +18,9 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
 | Implementation status of the 52 functions | **10** tested-offline as a whole, **11** in parts, **29** not started, 2 not planned/needs captures | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **53** / **19** (16 closed or no evidence problem) / **25** (22 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
-| Owner test cases | **28** (IT-01 … IT-28, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
+| Owner test cases | **29** (IT-01 … IT-29, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **32 crates + 1 app** (`commscraft-cli`), **269 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **32 crates + 1 app** (`commscraft-cli`), **274 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **none** (D-08): all work is `tested-offline` at best | measured |
 
@@ -34,9 +34,10 @@ transfer can come later from interop captures.
 
 ## What comes next
 
-1. **M3 – audio 1:1** (current): bandwidth management; then the owner's first calls
-   (IT-23 … IT-28).
-2. **M4 – conferences and telephony**, **M5 – video**, **M6 – viewing shared screens**,
+1. **M3 – audio 1:1** (built): the owner's first calls (IT-23 … IT-29); remaining optional
+   parts in [`docs/gaps.md`](docs/gaps.md).
+2. **M4 – conferences and telephony** (next).
+3. **M5 – video**, **M6 – viewing shared screens**,
    **M7 – Exchange integration**; the graphical interface (egui, D-07) is not yet in a milestone.
    Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
 
@@ -46,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-10-31 | Bandwidth management in calls: the callee checks while gathering (refused relay not offered, blocked policy ends the call, restrictions to ICE), commit every 500 ms until answered, updates every 19 s, cancel at the end; caller towards a peer without ICE commits; policy bandwidth to the peer in RTCP; CLI with `enableBWPolicyCheck`; interop test IT-29. |
 | 2026-10-31 | Bandwidth management building blocks (MS-TURNBWM/MS-ICE2BWM): Check/Commit/Update attributes and their responses with the path rules (`turn-bwm`), bandwidth requests as authenticated Allocates on the TURN allocation (`turn`), refused sites and 274/275 in the ICE agent; feature matrix 10/11/29. |
 | 2026-10-31 | Early media as the caller (MS-SDPEXT §3.1.5.12–3.1.5.13): `Supported: 100rel`/`ms-early-media`, early dialogs, PRACK with RAck in RSeq order, early answer with ICE starts media (receive, DTMF only after reception, no speech before 200), 199 ends it, the 200 continues it; 420 for an INVITE requiring 100rel; interop test IT-28. |
 | 2026-10-31 | Security audit issue #42 closed: strict HTTP framing (a kept-alive chunked response used to leave its final CRLF behind), CLI output filtered for control and bidi characters, NTLM over HTTP bound to the TLS connection (`tls-server-end-point`, RFC 4121/5929), no ICE checks or media to loopback/link-local peers, one bounded way into the TCP relay buffer, terminal echo restored on every path; interop test IT-27. |

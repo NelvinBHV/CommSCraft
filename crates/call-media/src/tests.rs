@@ -382,3 +382,247 @@ fn early_media_then_confirm() {
     let (_, at_b) = run(&mut a, &mut b, 60);
     assert!(at_b > 1e9, "speech after the answer: {at_b}");
 }
+
+/// What the UDP test TURN server answers to a bandwidth check: (local, local relay, remote) V
+/// flags.
+type CheckAnswer = (bool, bool, bool);
+
+/// A UDP TURN server for the bandwidth tests: challenge, SHA-256 allocation (relayed address
+/// `relayed`), and the bandwidth requests of MS-TURNBWM. Returns the BAC message types it saw,
+/// with the amount's maximum send value when one was present.
+fn mock_udp_turn_bwm(
+    socket: UdpSocket,
+    relayed: SocketAddr,
+    answer: CheckAnswer,
+    stop: std::sync::Arc<std::sync::atomic::AtomicBool>,
+) -> std::thread::JoinHandle<Vec<(u8, Option<u32>)>> {
+    use commscraft_stun as stun;
+    std::thread::spawn(move || {
+        socket
+            .set_read_timeout(Some(std::time::Duration::from_millis(50)))
+            .unwrap();
+        let key = stun::ms_turn_sha256_key(b"nonce", b"pw", b"user", b"realm");
+        let mut seen = Vec::new();
+        let mut buf = [0u8; 2048];
+        while !stop.load(std::sync::atomic::Ordering::Relaxed) {
+            let Ok((n, from)) = socket.recv_from(&mut buf) else {
+                continue;
+            };
+            let Some(req) = turn::parse(&buf[..n]) else {
+                continue;
+            };
+            let reply = |kind: u16, attrs: Vec<(u16, Vec<u8>)>, sign: bool| {
+                let mut m = stun::Message::new(kind, req.transaction);
+                m.push(
+                    stun::MS_MAGIC_COOKIE,
+                    stun::MS_MAGIC_COOKIE_VALUE.to_be_bytes().to_vec(),
+                );
+                for (k, v) in attrs {
+                    m.push(k, v);
+                }
+                let raw = m.encode().unwrap();
+                if sign {
+                    stun::with_integrity(raw, stun::Integrity::LegacySha256(&key)).unwrap()
+                } else {
+                    raw
+                }
+            };
+            let site = |valid: bool| -> Vec<u8> {
+                let flags: u32 = u32::from(valid) << 31;
+                [flags, 85, 85]
+                    .iter()
+                    .flat_map(|v| v.to_be_bytes())
+                    .collect()
+            };
+            let out = if req.get(stun::MESSAGE_INTEGRITY).is_none() {
+                reply(
+                    turn::ALLOCATE_ERROR,
+                    vec![
+                        (stun::ERROR_CODE, stun::encode_error(401, "Unauthorized")),
+                        (stun::REALM, b"realm".to_vec()),
+                        (stun::NONCE, b"nonce".to_vec()),
+                        (stun::MS_VERSION, 3u32.to_be_bytes().to_vec()),
+                    ],
+                    false,
+                )
+            } else if let Some(bac) = req.get(turn_bwm::attr::BAC_MESSAGE) {
+                let kind = bac[3];
+                let max_send = req
+                    .get(turn_bwm::attr::RESERVATION_AMOUNT)
+                    .map(|a| u32::from_be_bytes([a[4], a[5], a[6], a[7]]));
+                seen.push((kind, max_send));
+                let attrs = match kind {
+                    0 => {
+                        let mut v = vec![
+                            (turn_bwm::attr::REMOTE_SITE_ADDRESS_RESPONSE, site(answer.2)),
+                            (turn_bwm::attr::LOCAL_SITE_ADDRESS_RESPONSE, site(answer.0)),
+                        ];
+                        if req.get(turn_bwm::attr::REMOTE_RELAY_SITE_ADDRESS).is_some() {
+                            v.push((
+                                turn_bwm::attr::REMOTE_RELAY_SITE_ADDRESS_RESPONSE,
+                                site(answer.2),
+                            ));
+                        }
+                        if req.get(turn_bwm::attr::LOCAL_RELAY_SITE_ADDRESS).is_some() {
+                            v.push((
+                                turn_bwm::attr::LOCAL_RELAY_SITE_ADDRESS_RESPONSE,
+                                site(answer.1),
+                            ));
+                        }
+                        v
+                    }
+                    _ => vec![
+                        (turn_bwm::attr::RESERVATION_ID, vec![0x42; 16]),
+                        (turn_bwm::attr::RESERVATION_AMOUNT, vec![0; 16]),
+                    ],
+                };
+                reply(turn::ALLOCATE_RESPONSE, attrs, true)
+            } else {
+                reply(
+                    turn::ALLOCATE_RESPONSE,
+                    vec![
+                        (stun::MAPPED_ADDRESS, stun::encode_address(relayed)),
+                        (stun::LIFETIME, 600u32.to_be_bytes().to_vec()),
+                    ],
+                    true,
+                )
+            };
+            let _ = socket.send_to(&out, from);
+        }
+        seen
+    })
+}
+
+/// The media under test, the server's stop flag and its log of bandwidth requests.
+type BwmSetup = (
+    CallMedia,
+    std::sync::Arc<std::sync::atomic::AtomicBool>,
+    std::thread::JoinHandle<Vec<(u8, Option<u32>)>>,
+);
+
+fn bwm_media(answer: CheckAnswer, peer: Option<sdp::Ice>) -> BwmSetup {
+    let server = UdpSocket::bind("127.0.0.1:0").unwrap();
+    let relay = Relay {
+        server: server.local_addr().unwrap(),
+        tcp_server: None,
+        username: "user".into(),
+        password: zeroize::Zeroizing::new(b"pw".to_vec()),
+    };
+    let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let handle = mock_udp_turn_bwm(
+        server,
+        "127.0.0.1:40500".parse().unwrap(),
+        answer,
+        stop.clone(),
+    );
+    let ip: IpAddr = "127.0.0.1".parse().unwrap();
+    let (mut m, first) = CallMedia::prepare(ip, Some(&relay), now_ms()).unwrap();
+    m.enable_bandwidth_management(BwmConfig {
+        call_id: "call-1".into(),
+        profile: turn_bwm::LocationProfile {
+            peer: turn_bwm::Location::Unknown,
+            own: turn_bwm::Location::Unknown,
+            federation: turn_bwm::Federation::None,
+        },
+        peer,
+    });
+    m.send_initial(first);
+    (m, stop, handle)
+}
+
+fn peer_offer() -> sdp::Ice {
+    let cand = |kind, port| sdp::Candidate {
+        foundation: "1".into(),
+        component: 1,
+        transport: sdp::Transport::Udp,
+        priority: 1,
+        address: "198.51.100.7".parse().unwrap(),
+        port,
+        kind,
+        related: None,
+    };
+    sdp::Ice {
+        ufrag: "PEER".into(),
+        pwd: "peerpassword0123456789ab".into(),
+        candidates: vec![
+            cand(sdp::CandidateType::Host, 7000),
+            cand(sdp::CandidateType::Relay, 7100),
+        ],
+    }
+}
+
+/// [MS-ICE2BWM] §3.1.4.2 (BW-02, BW-03): the callee checks while gathering; a refused local
+/// relay is not offered; a policy without any path blocks the call.
+#[test]
+fn callee_bandwidth_check() {
+    let (mut m, stop, handle) = bwm_media((true, false, true), Some(peer_offer()));
+    let t0 = now_ms();
+    while !m.gathered(now_ms()) && now_ms() < t0 + 5000 {
+        m.poll(now_ms());
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    let d = m.local_description();
+    let cands = &d.ice.as_ref().unwrap().candidates;
+    assert!(
+        cands.iter().all(|c| c.kind != sdp::CandidateType::Relay),
+        "relay refused: {cands:?}"
+    );
+    assert!(!m.bandwidth_blocked());
+    stop.store(true, std::sync::atomic::Ordering::Relaxed);
+    let seen = handle.join().unwrap();
+    assert_eq!(
+        seen.first(),
+        Some(&(0, Some(bwm::AUDIO_KBPS))),
+        "a check with the audio amount"
+    );
+
+    let (mut m, stop, handle) = bwm_media((false, false, true), Some(peer_offer()));
+    let t0 = now_ms();
+    while !m.gathered(now_ms()) && now_ms() < t0 + 5000 {
+        m.poll(now_ms());
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    assert!(m.bandwidth_blocked(), "no path out of the local site");
+    stop.store(true, std::sync::atomic::Ordering::Relaxed);
+    handle.join().unwrap();
+}
+
+/// §3.1.4.4.2, §3.1.4.8.2.2–3 and MS-TURNBWM §2.2.3: towards a peer without ICE the caller
+/// commits, updates, and cancels the reservation at the end.
+#[test]
+fn commit_update_cancel_without_ice() {
+    let (mut m, stop, handle) = bwm_media((true, true, true), None);
+    let t0 = now_ms();
+    while !m.gathered(now_ms()) && now_ms() < t0 + 5000 {
+        m.poll(now_ms());
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    let mut n = negotiated_from(&m);
+    n.remote_ice = None;
+    n.remote_key = Some(m.key().clone());
+    n.remote_rtp = ("198.51.100.7".parse().unwrap(), 7000);
+    n.remote_rtcp = ("198.51.100.7".parse().unwrap(), 7001);
+    m.start(&n, true, "a@test", now_ms()).unwrap();
+    // Commit, then (with a simulated clock) an update after 19 s.
+    let t = now_ms();
+    for k in 0..40u64 {
+        m.poll(t + k * 10);
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    m.poll(t + bwm::UPDATE_MS + 1000);
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    m.poll(t + bwm::UPDATE_MS + 1100);
+    m.stop(t + bwm::UPDATE_MS + 2000);
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    stop.store(true, std::sync::atomic::Ordering::Relaxed);
+    let seen = handle.join().unwrap();
+    assert_eq!(
+        seen,
+        vec![
+            (1, Some(bwm::AUDIO_KBPS)),
+            (2, Some(bwm::AUDIO_KBPS)),
+            (2, Some(0))
+        ],
+        "commit, update, cancel"
+    );
+}

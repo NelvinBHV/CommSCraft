@@ -88,11 +88,12 @@ pub fn spawn(
     id: u32,
     local_ip: IpAddr,
     relay: Option<cm::Relay>,
+    bwm: Option<cm::BwmConfig>,
     device: alsa::Config,
     events: Sender<FromMedia>,
 ) -> MediaHandle {
     let (tx, rx) = mpsc::channel::<ToMedia>();
-    std::thread::spawn(move || run(id, local_ip, relay, device, rx, events));
+    std::thread::spawn(move || run(id, local_ip, relay, bwm, device, rx, events));
     MediaHandle { tx }
 }
 
@@ -100,6 +101,7 @@ fn run(
     id: u32,
     local_ip: IpAddr,
     relay: Option<cm::Relay>,
+    bwm: Option<cm::BwmConfig>,
     mut device: alsa::Config,
     rx: Receiver<ToMedia>,
     events: Sender<FromMedia>,
@@ -113,10 +115,22 @@ fn run(
         }
     };
     drop(relay);
+    if let Some(cfg) = bwm {
+        media.enable_bandwidth_management(cfg);
+    }
     media.send_initial(first);
     while !media.gathered(now_ms()) {
         media.poll(now_ms());
         std::thread::sleep(Duration::from_millis(5));
+    }
+    // [MS-ICE2BWM] §3.1.4.2: every path refused – no answer is sent, the call fails.
+    if media.bandwidth_blocked() {
+        let _ = events.send(FromMedia::Failed(
+            id,
+            "the bandwidth policy allows no media path".into(),
+        ));
+        media.stop(now_ms());
+        return;
     }
     let _ = events.send(FromMedia::Ready(id, Box::new(media.local_description())));
 
@@ -320,5 +334,64 @@ pub fn policy(av: Option<commscraft_provisioning::AvEncryption>) -> sdp::Encrypt
             allow_plaintext: false,
         },
         _ => sdp::Encryption::Required,
+    }
+}
+
+/// The bandwidth management settings for a call when the server enables it (`enableBWPolicyCheck`,
+/// [MS-SIPREGE]). `offer`: Call-ID and offer of an incoming call (the callee checks). Inference:
+/// a peer in our own SIP domain is not federated, any other counts as enterprise federation;
+/// locations are not known to the client ("unknown").
+pub fn bandwidth_config(
+    enabled: bool,
+    own_aor: &str,
+    peer: Option<&str>,
+    offer: Option<(&str, &[u8])>,
+) -> Option<cm::BwmConfig> {
+    use commscraft_turn_bwm as b;
+    if !enabled {
+        return None;
+    }
+    let domain = |u: &str| u.rsplit_once('@').map(|(_, d)| d.to_ascii_lowercase());
+    let federation = match (peer.and_then(domain), domain(own_aor)) {
+        (Some(p), Some(o)) if p != o => b::Federation::Enterprise,
+        _ => b::Federation::None,
+    };
+    Some(cm::BwmConfig {
+        call_id: offer.map(|(c, _)| c.to_string()).unwrap_or_default(),
+        profile: b::LocationProfile {
+            peer: b::Location::Unknown,
+            own: b::Location::Unknown,
+            federation,
+        },
+        peer: offer.and_then(|(_, o)| sdp::offer_ice(o)),
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bandwidth_config_rules() {
+        assert!(
+            bandwidth_config(false, "sip:a@contoso.com", None, None).is_none(),
+            "off unless provisioned"
+        );
+        let c =
+            bandwidth_config(true, "sip:a@contoso.com", Some("sip:b@contoso.com"), None).unwrap();
+        assert_eq!(c.profile.federation, commscraft_turn_bwm::Federation::None);
+        assert!(c.peer.is_none() && c.call_id.is_empty(), "caller: no check");
+        let c = bandwidth_config(
+            true,
+            "sip:a@contoso.com",
+            Some("sip:b@fabrikam.com"),
+            Some(("id1", b"x")),
+        )
+        .unwrap();
+        assert_eq!(
+            c.profile.federation,
+            commscraft_turn_bwm::Federation::Enterprise
+        );
+        assert_eq!(c.call_id, "id1");
     }
 }
