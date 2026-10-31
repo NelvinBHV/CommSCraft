@@ -361,6 +361,8 @@ pub struct Engine<R: Random> {
     c3p_request: u32,
     /// MRAS URI from provisioning (AV-01) and the current credentials with their refresh time.
     mras_uri: Option<String>,
+    /// Location profile for dial strings (RE-40, PS-01).
+    location_profile: Option<String>,
     media_relay: Option<avedgea::Credentials>,
     media_relay_refresh_at: Option<u64>,
     calls: HashMap<CallId, call::Call>,
@@ -412,6 +414,7 @@ impl<R: Random> Engine<R> {
             focus_factory: None,
             c3p_request: 0,
             mras_uri: None,
+            location_profile: None,
             media_relay: None,
             media_relay_refresh_at: None,
             calls: HashMap::new(),
@@ -1420,7 +1423,11 @@ impl<R: Random> Engine<R> {
             Purpose::Provisioning => match prov::from_message(resp) {
                 Ok(Some(p)) => {
                     if let Some(g) = p.group("ServerConfiguration") {
-                        let c = prov::ServerConfiguration::from_group(g, &self.user_domain());
+                        let mut c = prov::ServerConfiguration::from_group(g, &self.user_domain());
+                        if let Some(u) = p.group("userSetting") {
+                            c.apply_user_setting(u);
+                        }
+                        self.location_profile = c.location_profile.clone();
                         self.focus_factory = c
                             .focus_factory_uri
                             .as_deref()
@@ -1756,7 +1763,7 @@ impl<R: Random> Engine<R> {
 mod call;
 mod group;
 
-pub use call::CallId;
+pub use call::{CallId, Caller};
 
 #[cfg(test)]
 mod tests;

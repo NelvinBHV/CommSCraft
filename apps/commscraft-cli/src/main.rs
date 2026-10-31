@@ -52,7 +52,7 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
           once, optionally sets the own state for the time of the session (--set-status), signs out.
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
-          /call sip:URI  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /call sip:URI|+491234…|0401234…  /callback N  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /confaudio (join the meeting's audio)  /confmute  /confunmute (mute in the meeting)
@@ -1337,8 +1337,18 @@ fn interactive(
                     // /answer) follows. An incoming call rings and ends after 60 s with 480.
                     E::CallRinging { call } => println!("* call {call} ringing"),
                     E::IncomingCall { call, from } => {
+                        // PS-02/PS-04/PS-07: number, gateway and anonymous callers.
+                        let who = match engine.caller(call) {
+                            Some(c) if c.anonymous => "an anonymous caller".to_string(),
+                            Some(c) => match (c.number, c.gateway) {
+                                (Some(n), true) => format!("{n} (phone line)"),
+                                (Some(n), false) => format!("{n} ({})", c.uri),
+                                (None, _) => c.uri,
+                            },
+                            None => from,
+                        };
                         println!(
-                            "* incoming call {call} from {from} – /answer {call} or /hangup {call}"
+                            "* incoming call {call} from {who} – /answer {call} or /hangup {call}"
                         );
                         current_call = Some(call);
                     }
@@ -1661,7 +1671,25 @@ fn interactive(
                     }
                 },
                 "/chat" => Some(C::StartConversation { to: arg }),
-                "/call" => {
+                "/call" | "/callback" => {
+                    // A phone number becomes a SIP URI with the dial plan (PS-01); /callback N
+                    // calls the asserted identity of call N (PS-02).
+                    let target = if cmd == "/callback" {
+                        arg.parse::<u32>().ok().and_then(|n| engine.callback_uri(n))
+                    } else if arg.starts_with("sip:") {
+                        Some(arg.clone())
+                    } else {
+                        engine.phone_uri(&arg)
+                    };
+                    let Some(arg) = target else {
+                        println!(
+                            "* /call sip:URI or a phone number; /callback N needs a known caller"
+                        );
+                        continue;
+                    };
+                    if arg.contains(";user=phone") {
+                        println!("* calling {arg}");
+                    }
                     let relay = engine.media_relay().and_then(calls::relay_from);
                     let bwm = calls::bandwidth_config(
                         services.as_ref().and_then(|s| s.enable_bw_policy_check) == Some(true),

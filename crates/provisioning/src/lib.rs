@@ -286,7 +286,34 @@ pub struct ServerConfiguration {
     pub video_ports: Option<PortRange>,
     pub app_sharing_ports: Option<PortRange>,
     pub enable_bw_policy_check: Option<bool>,
+    /// The location profile (dial plan) for phone numbers ([MS-SIPREGE] §2.2.2.5.1
+    /// `ucLocationProfile`, overridden by userSetting `ucUserLocationProfile`, §2.2.2.5.5; RE-40).
+    pub location_profile: Option<String>,
     pub rejected: Vec<String>,
+}
+
+/// A location profile name as it goes into `phone-context` (inference: dial plan names are
+/// tokens; anything else is refused so that it cannot break the SIP URI).
+pub fn profile_name(v: &str) -> Option<String> {
+    let v = v.trim();
+    (!v.is_empty()
+        && v.len() <= 128
+        && v.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "._-".contains(c)))
+    .then(|| v.to_string())
+}
+
+impl ServerConfiguration {
+    /// Applies the userSetting group: the user's own location profile wins (inference: the
+    /// user-specific setting is the more specific one).
+    pub fn apply_user_setting(&mut self, g: &Group) {
+        if let Some(v) = g.get("ucUserLocationProfile") {
+            match profile_name(v) {
+                Some(p) => self.location_profile = Some(p),
+                None => self.rejected.push("ucUserLocationProfile".into()),
+            }
+        }
+    }
 }
 
 fn boolean(v: &str) -> Option<bool> {
@@ -340,6 +367,12 @@ impl ServerConfiguration {
         c.dlx_enabled = flag("dlxEnabled");
         c.port_range_enabled = flag("ucPortRangeEnabled");
         c.enable_bw_policy_check = flag("enableBWPolicyCheck");
+        if let Some(v) = g.get("ucLocationProfile") {
+            c.location_profile = profile_name(v);
+            if c.location_profile.is_none() {
+                rejected.push("ucLocationProfile".into());
+            }
+        }
         c.av_encryption = match g.get("ucPC2PCAVEncryption") {
             None => None,
             Some(v) if v.eq_ignore_ascii_case("SupportEncryption") => Some(AvEncryption::Support),

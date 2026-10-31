@@ -143,7 +143,7 @@ pub fn checked_sip_uri(raw: &str) -> Result<String, Error> {
         && !rest.ends_with('@')
         && rest
             .chars()
-            .all(|c| c.is_ascii_alphanumeric() || "@._-+=;:%~".contains(c));
+            .all(|c| c.is_ascii_alphanumeric() || "@._-+=;:%~*".contains(c));
     ok.then_some(uri).ok_or(Error::UnsafeUri)
 }
 

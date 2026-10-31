@@ -18,11 +18,11 @@ owner on an authorized server and is deferred until such an environment exists (
 | M1 | built, tested-offline | discovery (Autodiscover HTTPS-only, DNS SRV, trust model), TLS adapter, NTLM + MS-SIPAE, REGISTER (GRUU, refresh, redirect, deregister), keep-alive, provisioning, sign-out, `commscraft-cli` | Kerberos, TLS-DSK; owner verification |
 | M2 | built, tested-offline | presence (publish, batch subscriptions, pool resubscribe), contact list (read, live), 1:1 IM with typing, group IM (ad-hoc conference, invitations, IMDN), address book search (MS-DLX over NTLM/HTTP), session engine, CLI `interactive` | contact list editing, privacy/blocking, offline address book, photos; owner verification |
 | M3 | in progress | G.711, G.722, ALSA/PipeWire adapter (D-11), RTP/RTCP, DTMF, SRTP, SDP, STUN, MS-TURN, MS-AVEDGEA, ICE agent (UDP and TCP relay on 443 with pseudo-TLS), call signalling incl. hold/resume and early media, media core with the MS-RTP RTCP profile, bandwidth management (call admission control) and runtime, CLI `/call` `/answer` `/hangup` `/dtmf` `/mute` `/hold` `/resume` | redundancy, early answer as the callee, TCP-only mode, own music on hold, bandwidth management for video; owner verification (IT-23 … IT-29) |
-| M4 | in progress | meetings: join (focus URI, meeting link), lobby, roster, conference audio via the A/V MCU (SRTP sent, SRTP/SSRTP received), muting ourselves, presenter commands | scheduling, PSTN, transfer, forwarding, park, E911, QoE |
+| M4 | in progress | meetings: join (focus URI, meeting link), lobby, roster, conference audio via the A/V MCU (SRTP sent, SRTP/SSRTP received), muting ourselves, presenter commands, PSTN calling | scheduling, transfer, forwarding, park, E911, QoE |
 | M5 – M7 | not started | building blocks only: PSOM/ABS/MPPC test vectors | everything else |
 
-Next steps in order: telephony (PSTN,
-transfer, forwarding, park); the M3 remainders above are optional or need captures.
+Next steps in order: telephony (transfer,
+forwarding, park); the M3 remainders above are optional or need captures.
 
 ## Milestones
 
