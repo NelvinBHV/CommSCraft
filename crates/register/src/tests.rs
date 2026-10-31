@@ -92,6 +92,8 @@ struct Server {
     snum: u64,
     challenge: Vec<u8>,
     presence_action: &'static str,
+    /// MS-SIPAE version offered in the challenges (3 or 4).
+    version: u32,
 }
 
 impl Server {
@@ -100,6 +102,7 @@ impl Server {
             password: "Password",
             flags: GOOD_FLAGS,
             presence_action: "added",
+            version: 3,
             ..Self::default()
         }
     }
@@ -198,71 +201,91 @@ impl Server {
         true
     }
 
+    fn challenge_401(&self, req: &Message) -> Message {
+        let v = self.version;
+        let mut r = Self::reply(req, 401, "Unauthorized");
+        r.push_header(
+            "WWW-Authenticate",
+            &format!("NTLM realm=\"{REALM}\", targetname=\"{TARGET}\", version=\"{v}\""),
+        );
+        r.push_header(
+            "WWW-Authenticate",
+            &format!("Kerberos realm=\"{REALM}\", targetname=\"sip/{TARGET}\", version={v}"),
+        );
+        r
+    }
+
+    /// Checks crand/cnum/response of a signed request with the client keys (AE-29/AE-30).
+    fn client_signature_ok(&self, req: &Message, get: &dyn Fn(&str) -> Option<String>) -> bool {
+        let (Some(response), Some(crand), Some(cnum), Some(key)) =
+            (get("response"), get("crand"), get("cnum"), self.key)
+        else {
+            return false;
+        };
+        let mut unsigned = req.clone();
+        unsigned.headers.retain(|h| h.name != "Authorization");
+        let buf = signature_buffer(
+            &BufferParams {
+                scheme: Scheme::Ntlm,
+                rand: &crand,
+                num: &cnum,
+                realm: REALM,
+                targetname: TARGET,
+                version: Some(3),
+            },
+            &unsigned,
+            Direction::Outgoing,
+        )
+        .unwrap();
+        let token: Vec<u8> = (0..response.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&response[i..i + 2], 16).unwrap())
+            .collect();
+        NtlmMic::server(&key).verify_mic(buf.as_bytes(), &token)
+    }
+
     fn handle(&mut self, req: &Message) -> Message {
         let Some(auth) = req.header_values("Authorization").next() else {
-            let mut r = Self::reply(req, 401, "Unauthorized");
-            r.push_header(
-                "WWW-Authenticate",
-                &format!("NTLM realm=\"{REALM}\", targetname=\"{TARGET}\", version=3"),
-            );
-            r.push_header(
-                "WWW-Authenticate",
-                &format!("Kerberos realm=\"{REALM}\", targetname=\"sip/{TARGET}\", version=3"),
-            );
-            return r;
+            return self.challenge_401(req);
         };
         let (_, params) = parse_auth_params(auth).unwrap();
         let get = |n: &str| params.iter().find(|(k, _)| k == n).map(|(_, v)| v.clone());
-        if let Some(response) = get("response") {
-            // A signed request: check the client signature with the client keys.
-            let mut unsigned = req.clone();
-            unsigned.headers.retain(|h| h.name != "Authorization");
-            let buf = signature_buffer(
-                &BufferParams {
-                    scheme: Scheme::Ntlm,
-                    rand: &get("crand").unwrap(),
-                    num: &get("cnum").unwrap(),
-                    realm: REALM,
-                    targetname: TARGET,
-                    version: Some(3),
-                },
-                &unsigned,
-                Direction::Outgoing,
-            )
-            .unwrap();
-            let token: Vec<u8> = (0..response.len())
-                .step_by(2)
-                .map(|i| u8::from_str_radix(&response[i..i + 2], 16).unwrap())
-                .collect();
-            assert!(
-                NtlmMic::server(&self.key.unwrap()).verify_mic(buf.as_bytes(), &token),
-                "client signature"
-            );
-            return self.ok(req);
+        assert_eq!(
+            get("version").as_deref(),
+            Some(self.version.to_string().as_str()),
+            "client answers with the server version"
+        );
+        match get("gssapi-data") {
+            Some(g) if g.is_empty() => {
+                self.challenge = ntlm_challenge(self.flags);
+                let mut r = Self::reply(req, 401, "Unauthorized");
+                r.push_header(
+                    "WWW-Authenticate",
+                    &format!(
+                        "NTLM opaque=\"BCDC0C9D\", gssapi-data=\"{}\", targetname=\"{TARGET}\", realm=\"{REALM}\", version=\"{}\"",
+                        base64::encode(&self.challenge),
+                        self.version
+                    ),
+                );
+                r
+            }
+            Some(g) => {
+                assert_eq!(get("opaque").as_deref(), Some("BCDC0C9D"));
+                if !self.accept_authenticate(&base64::decode(&g).unwrap()) {
+                    return self.challenge_401(req);
+                }
+                // MS-SIPAE §3.2.5.1 step 6.8: with version 4 the AUTHENTICATE request is signed.
+                if self.version >= 4 && !self.client_signature_ok(req, &get) {
+                    self.key = None;
+                    return self.challenge_401(req);
+                }
+                self.ok(req)
+            }
+            None => {
+                assert!(self.client_signature_ok(req, &get), "client signature");
+                self.ok(req)
+            }
         }
-        let gssapi = get("gssapi-data").unwrap();
-        if gssapi.is_empty() {
-            self.challenge = ntlm_challenge(self.flags);
-            let mut r = Self::reply(req, 401, "Unauthorized");
-            r.push_header(
-                "WWW-Authenticate",
-                &format!(
-                    "NTLM opaque=\"BCDC0C9D\", gssapi-data=\"{}\", targetname=\"{TARGET}\", realm=\"{REALM}\", version=3",
-                    base64::encode(&self.challenge)
-                ),
-            );
-            return r;
-        }
-        assert_eq!(get("opaque").as_deref(), Some("BCDC0C9D"));
-        if !self.accept_authenticate(&base64::decode(&gssapi).unwrap()) {
-            let mut r = Self::reply(req, 401, "Unauthorized");
-            r.push_header(
-                "WWW-Authenticate",
-                &format!("NTLM realm=\"{REALM}\", targetname=\"{TARGET}\", version=3"),
-            );
-            return r;
-        }
-        self.ok(req)
     }
 }
 
@@ -836,4 +859,56 @@ fn ntlm_diagnostics_and_legacy_mode() {
         let lm_len = u16::from_le_bytes([token[12], token[13]]);
         assert_eq!(lm_len, if legacy { 24 } else { 0 });
     }
+}
+
+/// MS-SIPAE §3.2.5.1 step 6.8 (p. 26): a version 4 server gets a signed AUTHENTICATE request
+/// (crand, cnum 1, response) and later requests continue with cnum 2.
+#[test]
+fn version_4_signs_the_authentication_request() {
+    let mut reg = registrar();
+    let mut server = Server {
+        version: 4,
+        ..Server::new()
+    };
+    let r1 = reg.start(NOW);
+    let r2 = only_send(reg.on_message(&server.handle(&r1), NOW));
+    let r3 = only_send(reg.on_message(&server.handle(&r2), NOW));
+    let a3 = r3.single("Authorization").unwrap().unwrap().to_string();
+    assert!(
+        a3.contains("version=4") && a3.contains("cnum=\"1\"") && a3.contains("response=\""),
+        "{a3}"
+    );
+    assert!(matches!(
+        reg.on_message(&server.handle(&r3), NOW).as_slice(),
+        [Event::Registered(_)]
+    ));
+    let refresh = only_send(reg.on_tick(NOW + 5760));
+    assert!(refresh
+        .single("Authorization")
+        .unwrap()
+        .unwrap()
+        .contains("cnum=\"2\""));
+    assert!(matches!(
+        reg.on_message(&server.handle(&refresh), NOW + 5760)
+            .as_slice(),
+        [Event::Registered(_)]
+    ));
+}
+
+/// A server version above 4 is answered with 4 (§3.2.5.1 step 6.8).
+#[test]
+fn higher_server_versions_are_answered_with_4() {
+    let mut reg = registrar();
+    let r1 = reg.start(NOW);
+    let mut r = Server::reply(&r1, 401, "Unauthorized");
+    r.push_header(
+        "WWW-Authenticate",
+        &format!("NTLM realm=\"{REALM}\", targetname=\"{TARGET}\", version=\"7\""),
+    );
+    let r2 = only_send(reg.on_message(&r, NOW));
+    assert!(r2
+        .single("Authorization")
+        .unwrap()
+        .unwrap()
+        .ends_with("version=4"));
 }

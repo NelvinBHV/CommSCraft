@@ -650,8 +650,12 @@ impl<R: Random> Registrar<R> {
         params.push(format!("realm=\"{}\"", c.realm));
         params.push(format!("targetname=\"{}\"", c.targetname));
         params.push(format!("gssapi-data=\"{gssapi}\""));
+        // §3.2.5.1 steps 6.7–6.8: answer with 3 or 4, never more than the client implements.
         if let Some(n) = c.version {
-            params.push(format!("version={n}"));
+            params.push(format!(
+                "version={}",
+                n.min(commscraft_sipae::IMPLEMENTED_VERSION)
+            ));
         }
         let name = if c.proxy {
             "Proxy-Authorization"
@@ -757,7 +761,24 @@ impl<R: Random> Registrar<R> {
         drop(key);
         self.sa = Some(sa);
         let mut m = self.register_request(now, false);
-        let (name, value) = Self::auth_header(&c, &base64::encode(&token));
+        let (name, mut value) = Self::auth_header(&c, &base64::encode(&token));
+        // Version 4: this request is already signed (MS-SIPAE §3.2.5.1 step 6.8, p. 26; AE-06).
+        if c.version.is_some_and(|v| v >= 4) {
+            let mut r = [0u8; 4];
+            self.rng.fill(&mut r);
+            let signed = match self.sa.as_mut() {
+                Some(sa) => sa.handshake_signature(&m, u32::from_be_bytes(r)),
+                None => Err(commscraft_sipae::Error::WrongState),
+            };
+            match signed {
+                Ok((crand, cnum, response)) => {
+                    value.push_str(&format!(
+                        ", crand=\"{crand}\", cnum=\"{cnum}\", response=\"{response}\""
+                    ));
+                }
+                Err(e) => return self.fail(Failure::Auth(e)),
+            }
+        }
         m.push_header(name, &value);
         self.phase = Phase::AwaitFinal;
         vec![Event::Send(m)]

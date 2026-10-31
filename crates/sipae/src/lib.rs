@@ -501,6 +501,9 @@ impl Mic for NtlmMic {
     }
 }
 
+/// Highest MS-SIPAE version this client implements.
+pub const IMPLEMENTED_VERSION: u32 = 4;
+
 /// Security policy of the client.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Policy {
@@ -559,6 +562,10 @@ impl<M: Mic> SecurityAssociation<M> {
             Some(v) if v >= policy.min_version => {}
             v => return Err(Error::VersionTooLow(v)),
         }
+        let mut challenge = challenge;
+        // The client implements version 4; a higher server version is answered with 4
+        // (§3.2.5.1 steps 6.7–6.8).
+        challenge.version = challenge.version.map(|v| v.min(IMPLEMENTED_VERSION));
         Ok(Self {
             challenge,
             state: SaState::Establishing,
@@ -582,6 +589,48 @@ impl<M: Mic> SecurityAssociation<M> {
         if self.state != SaState::Established {
             return Err(Error::WrongState);
         }
+        let (crand, cnum_text, response) = self.signature(msg, crand)?;
+        let c = &self.challenge;
+        let mut value = format!(
+            "{} qop=\"auth\", realm=\"{}\", targetname=\"{}\"",
+            c.scheme.name(),
+            c.realm,
+            c.targetname
+        );
+        if let Some(o) = &c.opaque {
+            value.push_str(&format!(", opaque=\"{o}\""));
+        }
+        if let Some(v) = c.version {
+            value.push_str(&format!(", version={v}"));
+        }
+        value.push_str(&format!(
+            ", crand=\"{crand}\", cnum=\"{cnum_text}\", response=\"{response}\""
+        ));
+        let name = if c.proxy {
+            "Proxy-Authorization"
+        } else {
+            "Authorization"
+        };
+        msg.push_header(name, &value);
+        Ok(())
+    }
+
+    /// Version 4: the request that carries the final authentication token is already signed
+    /// ([MS-SIPAE] §3.2.5.1 step 6.8, p. 26; AE-06). Returns `crand`, `cnum` and `response` for the
+    /// caller's Authorization header; `msg` must not contain that header yet.
+    pub fn handshake_signature(
+        &mut self,
+        msg: &Message,
+        crand: u32,
+    ) -> Result<(String, String, String), Error> {
+        if self.state != SaState::Establishing || self.challenge.version.is_none_or(|v| v < 4) {
+            return Err(Error::WrongState);
+        }
+        self.signature(msg, crand)
+    }
+
+    /// §3.2.4.1 steps 1–4: next cnum, crand as 8 hex digits, MIC over the buffer, lower-case hex.
+    fn signature(&mut self, msg: &Message, crand: u32) -> Result<(String, String, String), Error> {
         let cnum = self
             .cnum
             .checked_add(1)
@@ -604,29 +653,8 @@ impl<M: Mic> SecurityAssociation<M> {
         )?;
         let token = self.mic.get_mic(buffer.as_bytes())?;
         let response: String = token.iter().map(|b| format!("{b:02x}")).collect();
-        let mut value = format!(
-            "{} qop=\"auth\", realm=\"{}\", targetname=\"{}\"",
-            c.scheme.name(),
-            c.realm,
-            c.targetname
-        );
-        if let Some(o) = &c.opaque {
-            value.push_str(&format!(", opaque=\"{o}\""));
-        }
-        if let Some(v) = c.version {
-            value.push_str(&format!(", version={v}"));
-        }
-        value.push_str(&format!(
-            ", crand=\"{crand}\", cnum=\"{cnum_text}\", response=\"{response}\""
-        ));
-        let name = if c.proxy {
-            "Proxy-Authorization"
-        } else {
-            "Authorization"
-        };
-        msg.push_header(name, &value);
         self.cnum = cnum;
-        Ok(())
+        Ok((crand, cnum_text, response))
     }
 
     /// Verifies a message from the server (§3.2.5.2, AE-32/AE-33). Any error means: drop the

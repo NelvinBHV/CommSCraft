@@ -242,7 +242,14 @@ fn show(prefix: &str, m: &Message) {
         copy.body = format!("<{} bytes body>", m.body.len()).into_bytes();
     }
     match copy.to_bytes() {
-        Ok(b) => eprintln!("{prefix}\n{}", String::from_utf8_lossy(&b)),
+        Ok(b) => {
+            // The serializer writes the length of the placeholder; show the real one.
+            let text = String::from_utf8_lossy(&b).replace(
+                &format!("Content-Length: {}\r\n", copy.body.len()),
+                &format!("Content-Length: {}\r\n", m.body.len()),
+            );
+            eprintln!("{prefix}\n{text}")
+        }
         Err(_) => eprintln!("{prefix} <unprintable message>"),
     }
 }
