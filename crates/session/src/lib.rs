@@ -174,6 +174,18 @@ pub enum Command {
     Hangup {
         call: CallId,
     },
+    /// Send the quality report of an ended call with the measured network figures (function
+    /// 45, QE-01/QE-02).
+    ReportQuality {
+        call: CallId,
+        audio: Box<commscraft_qoe::AudioLine>,
+    },
+    /// Rate a call 1–5 with an optional text (QE-03).
+    RateCall {
+        call: CallId,
+        stars: u8,
+        feedback: Option<String>,
+    },
     /// Park the active call at the call park server (function 37, CK-01); retrieve it later by
     /// calling the reported orbit.
     ParkCall {
@@ -399,6 +411,7 @@ enum Purpose {
     Refer(CallId),
     Schedule(schedule::ScheduleOp),
     Park(u32),
+    Quality,
     Ignore,
 }
 
@@ -443,6 +456,9 @@ pub struct Engine<R: Random> {
     call_park: Option<String>,
     parks: Vec<park::Park>,
     next_park: u32,
+    /// QoE URI from provisioning (qosUri, QE-01) and the dialog data of recent calls.
+    qos_uri: Option<String>,
+    quality_calls: Vec<(CallId, qoe::Kept)>,
     c3p_request: u32,
     /// MRAS URI from provisioning (AV-01) and the current credentials with their refresh time.
     mras_uri: Option<String>,
@@ -501,6 +517,8 @@ impl<R: Random> Engine<R> {
             call_park: None,
             parks: Vec::new(),
             next_park: 0,
+            qos_uri: None,
+            quality_calls: Vec::new(),
             c3p_request: 0,
             mras_uri: None,
             location_profile: None,
@@ -1394,6 +1412,14 @@ impl<R: Random> Engine<R> {
             Command::UpdateCall { call, local } => self.update_call(call, *local, now, &mut out),
             Command::Hangup { call } => self.hangup(call, now, &mut out),
             Command::ParkCall { call } => self.park_call(call, now, &mut out),
+            Command::ReportQuality { call, audio } => {
+                self.report_quality(call, *audio, now, &mut out)
+            }
+            Command::RateCall {
+                call,
+                stars,
+                feedback,
+            } => self.rate_call(call, stars, feedback.as_deref(), now, &mut out),
             Command::Transfer { call, to } => self.transfer(call, to, now, &mut out),
             Command::FollowTransfer {
                 call,
@@ -1599,6 +1625,10 @@ impl<R: Random> Engine<R> {
                             .call_park_server_uri
                             .as_deref()
                             .and_then(|u| pres::checked_sip_uri(u).ok());
+                        self.qos_uri = c
+                            .qos_uri
+                            .as_deref()
+                            .and_then(|u| pres::checked_sip_uri(u).ok());
                         self.mras_uri = c
                             .mras_uri
                             .as_deref()
@@ -1668,6 +1698,7 @@ impl<R: Random> Engine<R> {
             Purpose::CreateConference(id) => self.on_conference_created(id, resp, now, out),
             Purpose::Schedule(op) => self.on_schedule_answer(op, &resp.body, now, out),
             Purpose::Park(id) => self.on_parked(id, &p.request, resp, now, out),
+            Purpose::Quality => {}
             Purpose::CallInvite(id) => self.on_call_answered(id, &p.request, resp, now, out),
             Purpose::CallReinvite(id) => {
                 self.on_call_reinvite_answered(id, &p.request, resp, now, out)
@@ -1795,6 +1826,9 @@ impl<R: Random> Engine<R> {
                 "meeting request failed ({code})"
             )))),
             Purpose::Park(id) => self.on_park_failed(id, code, out),
+            Purpose::Quality => out.push(Output::Event(Event::Notice(format!(
+                "quality report not accepted ({code})"
+            )))),
             Purpose::Message(id) => out.push(Output::Event(Event::NotDelivered {
                 conversation: id,
                 status: code,
@@ -1967,6 +2001,7 @@ impl<R: Random> Engine<R> {
 mod call;
 mod group;
 mod park;
+mod qoe;
 mod schedule;
 mod transfer;
 

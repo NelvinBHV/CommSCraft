@@ -402,3 +402,39 @@ fn receives_ssrtp_from_an_mcu() {
     b.on_rtp(&srtp_tx.protect_rtp(&plain).unwrap(), 0);
     assert_eq!(b.stats.received, 1);
 }
+
+/// Function 45 (QE-02, OB-47; RFC 3550 §6.4.1): the quality figures of both directions – our
+/// reception (loss of one packet in 20), the peer's report about our stream and the round trip
+/// from LSR/DLSR (A sends its report at 1000 ms, B gets it at 1050 ms and reports 300 ms later,
+/// A gets that at 1450 ms: RTT = 1450 − 1000 − 300 = 150 ms, ±1 ms rounding of DLSR).
+#[test]
+fn quality_figures() {
+    let (mut a, mut b) = pair(sdp::Codec::G722, 9);
+    assert!(a.quality().inbound.is_none(), "nothing received yet");
+    for f in 0..20 {
+        let p = a.on_capture(&tone(320, 16000.0, f * 320)).unwrap();
+        if f != 10 {
+            b.on_rtp(&p, f as u32 * 160);
+        }
+    }
+    for p in a.rtcp_due(1000, 0x1234_5678_9abc_0000) {
+        b.on_rtcp(&p, 1050);
+    }
+    for p in b.rtcp_due(1350, 0x0000_0001_0000_0000) {
+        a.on_rtcp(&p, 1450);
+    }
+    let qa = a.quality();
+    assert_eq!((qa.codec, qa.sample_rate), ("G722", 16000));
+    assert_eq!(qa.outbound.packets, 20);
+    let rtt = qa.outbound.rtt_avg_ms.unwrap();
+    assert!((150..=151).contains(&rtt), "{rtt}");
+    assert!(
+        qa.outbound.loss_max_ppm.unwrap() > 0,
+        "the peer reported a loss"
+    );
+    let qb = b.quality();
+    let inb = qb.inbound.unwrap();
+    assert_eq!(inb.packets, 19);
+    assert_eq!(inb.ssrc, qa.outbound.ssrc);
+    assert!(inb.loss_max_ppm.unwrap() > 0 && inb.jitter_avg_ms.is_some());
+}

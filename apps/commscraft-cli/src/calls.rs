@@ -48,6 +48,8 @@ pub enum FromMedia {
     Failed(u32, String),
     /// Something the user should know that does not end the call (a missing audio device).
     Notice(u32, String),
+    /// The media ended: its quality figures for the report (function 45).
+    Quality(u32, Box<cm::QualitySnapshot>),
     PeerBye(u32),
 }
 
@@ -272,7 +274,35 @@ fn run(
         std::thread::sleep(Duration::from_millis(4));
     }
     stop.store(true, Ordering::Relaxed);
+    if let Some(q) = media.quality() {
+        let _ = events.send(FromMedia::Quality(id, Box::new(q)));
+    }
     media.stop(now_ms());
+}
+
+/// The report's audio line from the media figures (QE-02; `offerer` is set by the engine).
+pub fn audio_line(q: &cm::QualitySnapshot) -> commscraft_qoe::AudioLine {
+    let s = |x: &commscraft_media::StreamQuality| commscraft_qoe::Stream {
+        ssrc: x.ssrc,
+        packets: x.packets,
+        jitter_avg_ms: x.jitter_avg_ms,
+        jitter_max_ms: x.jitter_max_ms,
+        loss_avg_ppm: x.loss_avg_ppm,
+        loss_max_ppm: x.loss_max_ppm,
+        rtt_avg_ms: x.rtt_avg_ms,
+        rtt_max_ms: x.rtt_max_ms,
+    };
+    commscraft_qoe::AudioLine {
+        encrypted: q.encrypted,
+        offerer: false,
+        tcp: q.tcp,
+        local: q.local,
+        remote: q.remote,
+        inbound: q.audio.inbound.as_ref().map(s),
+        outbound: Some(s(&q.audio.outbound)),
+        codec: q.audio.codec.to_string(),
+        sample_rate: q.audio.sample_rate,
+    }
 }
 
 fn spawn_capture(

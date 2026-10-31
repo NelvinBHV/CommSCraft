@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (function 37: call park)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (function 45: quality reports)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -69,7 +69,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 42 | A/V conferences, muting | MS-CONFAV | B\* | parts tested-offline (audio in the A/V MCU (SRTP sent, SRTP or SSRTP received), participants' audio state, muting ourselves and others (modifyEndpointMedia), muting the audience (mediaFiltersRules): `conf`, `session`, `call-media`, CLI `/confaudio` `/confmute` `/muteuser` `/muteall`); announcements language, dial-out of phone numbers, video – |
 | 43 | Desktop and application sharing | MS-CONFAS, MS-RTASPF, MS-RDPBCGR, MS-RDPEMC | T | – |
 | 44 | Whiteboard, PowerPoint, polls | MS-PSOM | T | – |
-| 45 | Quality reports and call rating | MS-QoE | B\* | – |
+| 45 | Quality reports and call rating | MS-QoE | B\* | tested-offline (VQReportEvent after every call with the measured network figures – jitter, loss, round trip, packets – of both directions, LocalPAI, selected media path; call rating 1–5 with text: `qoe`, `media`, `call-media`, `session`, CLI automatic report and `/rate`); MOS estimates are optional and not computed (OB-47) |
 | 46 | Error diagnostics and display | MS-OCER | B | – |
 | 47 | Response group agent | MS-RGSWS | B | – |
 | 48 | UCWA web services | MS-CVWREST, MS-ECREST, MS-OCSMP | B | – |
@@ -78,4 +78,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **11** tested-offline as a whole, **17** in parts, **22** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).
+**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **12** tested-offline as a whole, **17** in parts, **21** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).

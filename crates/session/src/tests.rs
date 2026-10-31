@@ -2493,6 +2493,119 @@ fn park_a_call() {
         .any(|ev| matches!(ev, Event::Notice(n) if n.contains("no free orbit"))));
 }
 
+const QOS: &str = "sip:fe.contoso.com@contoso.com;gruu;opaque=srvr:QoS:jcH1fn2RSB6uyC59R-IH8QAA";
+
+fn audio_line() -> commscraft_qoe::AudioLine {
+    commscraft_qoe::AudioLine {
+        encrypted: true,
+        offerer: true,
+        tcp: false,
+        local: "192.0.2.1:40000".parse().unwrap(),
+        remote: "198.51.100.7:7000".parse().unwrap(),
+        inbound: Some(commscraft_qoe::Stream {
+            ssrc: 7,
+            packets: 100,
+            jitter_avg_ms: Some(3),
+            ..Default::default()
+        }),
+        outbound: None,
+        codec: "G722".into(),
+        sample_rate: 16000,
+    }
+}
+
+/// Function 45 (QE-01 … QE-04; [MS-QoE] §1.3, §2.2.1, §3.2): after a call the report goes in a
+/// SERVICE to qosUri with the call's dialog data and LocalPAI = our address; a 202 is quiet, an
+/// error is reported; the rating goes the same way, a bad rating is not sent.
+#[test]
+fn quality_report_and_rating() {
+    let (mut e, mut server, out) = signed_in();
+    let sub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    // Without qosUri nothing is sent.
+    active_call(&mut e, &mut server, "sip:carol@contoso.com");
+    let none = e.command(
+        Command::ReportQuality {
+            call: 1,
+            audio: Box::new(audio_line()),
+        },
+        NOW,
+    );
+    assert!(sends(&none).is_empty());
+    let doc = format!(
+        r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="ServerConfiguration"><qosUri>{QOS}</qosUri></provisionGroup></provisionGroupList>"#
+    );
+    e.on_message(
+        &answer(
+            &mut server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            &doc,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+    let invite = active_call(&mut e, &mut server, "sip:bob@contoso.com");
+    let out = e.command(
+        Command::ReportQuality {
+            call: 2,
+            audio: Box::new(audio_line()),
+        },
+        NOW + 60,
+    );
+    let service = find(&out, "SERVICE");
+    assert_eq!(Engine::<Counter>::request_uri(&service), Some(QOS));
+    assert_eq!(
+        service.single("Content-Type").unwrap(),
+        Some("application/vq-rtcpxr+xml")
+    );
+    let b = String::from_utf8(service.body.clone()).unwrap();
+    assert!(b.contains(&format!(
+        "CallId=\"{}\"",
+        invite.call_id().unwrap().unwrap()
+    )));
+    assert!(
+        b.contains(&format!("FromTag=\"{}\"", our_tag(&invite))) && b.contains("ToTag=\"srv1\"")
+    );
+    assert!(
+        b.contains("<Caller>true</Caller>")
+            && b.contains("<LocalPAI>sip:alice@contoso.com</LocalPAI>")
+    );
+    assert!(b.contains("<ToURI>sip:bob@contoso.com</ToURI>"));
+    let quiet = e.on_message(&answer(&mut server, &service, 202, None, "", &[]), NOW + 60);
+    assert!(events(&quiet).is_empty());
+    let out = e.command(
+        Command::RateCall {
+            call: 2,
+            stars: 4,
+            feedback: Some("fine".into()),
+        },
+        NOW + 70,
+    );
+    let rating = find(&out, "SERVICE");
+    assert_eq!(
+        rating.single("Content-Type").unwrap(),
+        Some("application/ms-cqf+xml")
+    );
+    assert!(String::from_utf8_lossy(&rating.body).contains("<Rating>4</Rating>"));
+    let refused = e.on_message(&answer(&mut server, &rating, 400, None, "", &[]), NOW + 70);
+    assert!(events(&refused)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("not accepted (400)"))));
+    let bad = e.command(
+        Command::RateCall {
+            call: 2,
+            stars: 9,
+            feedback: None,
+        },
+        NOW,
+    );
+    assert!(sends(&bad).is_empty());
+}
+
 /// RFC 3515 / RFC 5589 §6, OB-25: unattended transfer – REFER with Refer-To and Referred-By;
 /// after 202 our call ends.
 #[test]
