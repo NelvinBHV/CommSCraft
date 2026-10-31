@@ -56,7 +56,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 29 | Video RTVideo | MS-RTVPF | N | not planned |
 | 30 | DTMF, redundancy | MS-DTMF, MS-RTPRADEX | B | parts tested-offline (DTMF per RFC 4733 within MS-DTMF, sending and receiving, CLI `/dtmf`: `rtp`, `media`, `call-media`); redundancy (MS-RTPRADEX) – |
 | 31 | Picture control (freeze/refresh) | MS-XMLMC | B | – |
-| 32 | Bandwidth management (call admission control) | MS-ICE2BWM, MS-TURNBWM | B | parts tested-offline (Check/Commit/Update attributes and responses, path rules: `turn-bwm`; bandwidth requests on the TURN allocation: `turn`; refused sites, 274/275: `ice-agent`); running it in calls (check during gathering, commit, updates) – |
+| 32 | Bandwidth management (call admission control) | MS-ICE2BWM, MS-TURNBWM | B | parts tested-offline (Check/Commit/Update attributes and responses, path rules: `turn-bwm`; bandwidth requests on the TURN allocation: `turn`; refused sites, 274/275: `ice-agent`; audio calls: check while gathering as the callee, commit, updates, cancel, policy bandwidth to the peer: `call-media`, CLI with `enableBWPolicyCheck`); video streams, PSTN failover – |
 | 33 | PSTN telephony | MS-OCPSTN, MS-SIPRE | B | – |
 | 34 | Forwarding, simultaneous ring, team and delegate calls | MS-SIPRE, MS-PRES | B | – |
 | 35 | Hold, music on hold | MS-SDPEXT, MS-SIPRE | B | parts tested-offline (hold/resume re-INVITE with inactive/sendrecv and `+sip.rendering="no"`, incoming hold and music on hold recognised, no RTP while held: `session`, `sdp`, `media`, `call-media`; CLI `/hold` `/resume`); streaming our own music on hold – |

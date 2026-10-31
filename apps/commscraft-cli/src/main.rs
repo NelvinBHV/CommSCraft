@@ -1595,12 +1595,19 @@ fn interactive(
                 "/chat" => Some(C::StartConversation { to: arg }),
                 "/call" => {
                     let relay = engine.media_relay().and_then(calls::relay_from);
+                    let bwm = calls::bandwidth_config(
+                        services.as_ref().and_then(|s| s.enable_bw_policy_check) == Some(true),
+                        engine.own_aor(),
+                        Some(arg.as_str()),
+                        None,
+                    );
                     let id = next_media;
                     next_media = next_media.wrapping_add(1).max(1);
                     let h = calls::spawn(
                         id,
                         local_ip,
                         relay,
+                        bwm,
                         commscraft_audio_alsa::Config::default(),
                         media_tx.clone(),
                     );
@@ -1612,12 +1619,20 @@ fn interactive(
                 "/answer" => match arg.parse::<u32>().ok().or(current_call) {
                     Some(call) => {
                         let relay = engine.media_relay().and_then(calls::relay_from);
+                        // The callee is the bandwidth-managing endpoint ([MS-ICE2BWM] §3.1.4).
+                        let bwm = calls::bandwidth_config(
+                            services.as_ref().and_then(|s| s.enable_bw_policy_check) == Some(true),
+                            engine.own_aor(),
+                            engine.call_peer(call),
+                            engine.incoming_offer(call),
+                        );
                         let id = next_media;
                         next_media = next_media.wrapping_add(1).max(1);
                         let h = calls::spawn(
                             id,
                             local_ip,
                             relay,
+                            bwm,
                             commscraft_audio_alsa::Config::default(),
                             media_tx.clone(),
                         );

@@ -1206,6 +1206,10 @@ fn incoming_call_flow() {
     );
     let ringing = sends(&out).pop().unwrap();
     assert_eq!(ringing.status_code(), Some(180));
+    // The callee's bandwidth check needs Call-ID and offer while it rings ([MS-ICE2BWM] §3.1.4.2).
+    let (call_id, offer) = e.incoming_offer(1).unwrap();
+    assert_eq!(call_id, "call1");
+    assert!(String::from_utf8_lossy(offer).contains("m=audio"));
     assert!(ringing.single("To").unwrap().unwrap().contains(";tag="));
     assert_eq!(
         events(&out),

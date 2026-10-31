@@ -145,6 +145,8 @@ pub struct Audio {
     fast_count: u32,
     /// The TURN server's bandwidth for this stream and how often it is still to be sent.
     turn_bps: Option<(u32, u8)>,
+    /// The bandwidth policy server's bandwidth, the same way.
+    policy_bps: Option<(u32, u8)>,
     pub peer: PeerReports,
     pub stats: Stats,
 }
@@ -216,6 +218,7 @@ impl Audio {
             train_mode: false,
             fast_count: 0,
             turn_bps: None,
+            policy_bps: None,
             peer: PeerReports::default(),
             cname: cname
                 .chars()
@@ -445,6 +448,14 @@ impl Audio {
         out
     }
 
+    /// The bandwidth the policy server reserved for this stream ([MS-TURNBWM], bit/s): passed on
+    /// in the next five reports ([MS-RTP] §3.2, MUST; policy server bandwidth extension).
+    pub fn set_policy_bandwidth(&mut self, bps: u32) {
+        if self.policy_bps.map(|(b, _)| b) != Some(bps) {
+            self.policy_bps = Some((bps, BANDWIDTH_REPEAT));
+        }
+    }
+
     /// The TURN server's bandwidth for this stream ([MS-TURN] §2.2.2.9, kbit/s → bit/s): it is
     /// passed on to the peer in the next five reports ([MS-RTP] §3.2, MUST).
     pub fn set_turn_bandwidth(&mut self, bps: u32) {
@@ -524,6 +535,12 @@ impl Audio {
             if *left > 0 {
                 *left -= 1;
                 extensions.push(rtp::Extension::TurnBandwidth(*bps));
+            }
+        }
+        if let Some((bps, left)) = self.policy_bps.as_mut() {
+            if *left > 0 {
+                *left -= 1;
+                extensions.push(rtp::Extension::PolicyBandwidth(*bps));
             }
         }
         let report = rtp::Report {

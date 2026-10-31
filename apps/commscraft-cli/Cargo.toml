@@ -22,6 +22,7 @@ commscraft-audio-alsa = { path = "../../crates/audio-alsa" }
 commscraft-g711 = { path = "../../crates/g711" }
 commscraft-g722 = { path = "../../crates/g722" }
 commscraft-call-media = { path = "../../crates/call-media" }
+commscraft-turn-bwm = { path = "../../crates/turn-bwm" }
 commscraft-sdp = { path = "../../crates/sdp" }
 commscraft-rtp = { path = "../../crates/rtp" }
 commscraft-avedgea = { path = "../../crates/avedgea" }

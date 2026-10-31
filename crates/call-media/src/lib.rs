@@ -27,6 +27,10 @@ use commscraft_ice_agent::{self as ice, Agent};
 use commscraft_media::{self as media, Audio, Kind};
 use commscraft_sdp as sdp;
 use commscraft_turn as turn;
+use commscraft_turn_bwm as turn_bwm;
+
+mod bwm;
+pub use bwm::BwmConfig;
 
 const MAX_DATAGRAM: usize = 1500;
 const MAX_WRITE_BUFFER: usize = 64 * 1024;
@@ -189,6 +193,10 @@ pub struct CallMedia {
     local_hold: bool,
     /// The peer's direction from the last offer or answer (hold, music on hold).
     remote_direction: sdp::Direction,
+    /// Bandwidth management (call admission control), when the server enables it.
+    bwm: Option<bwm::Bwm>,
+    /// Answers to bandwidth requests from the TURN clients: (socket, event).
+    bac_events: Vec<(usize, turn::Event)>,
     local_ip: IpAddr,
     started: u64,
 }
@@ -311,6 +319,8 @@ impl CallMedia {
             remote_key: None,
             local_hold: false,
             remote_direction: sdp::Direction::SendRecv,
+            bwm: None,
+            bac_events: Vec::new(),
             local_ip,
             started: now,
         };
@@ -327,16 +337,40 @@ impl CallMedia {
         self.flush_tcp();
     }
 
-    /// True when every relay allocation succeeded or failed, or the gathering time is over.
+    /// Bandwidth management for this call (`enableBWPolicyCheck`, [MS-ICE2BWM]): call right
+    /// after [`prepare`]; with the caller's candidates (callee) the check runs while gathering.
+    pub fn enable_bandwidth_management(&mut self, cfg: BwmConfig) {
+        self.bwm = Some(bwm::Bwm::new(cfg));
+    }
+
+    /// The policy server refused every path (BW-03): the call must not be offered or answered.
+    pub fn bandwidth_blocked(&self) -> bool {
+        self.bwm
+            .as_ref()
+            .and_then(|b| b.policy)
+            .is_some_and(|p| p.blocked())
+    }
+
+    /// True when every relay allocation succeeded or failed (and the bandwidth check is done),
+    /// or the gathering time is over.
     pub fn gathered(&self, now: u64) -> bool {
         now >= self.started + GATHER_MS
-            || self.sockets.iter().all(|s| match s {
+            || (self.sockets.iter().all(|s| match s {
                 Socket::Host(_) => true,
                 Socket::Relay {
                     allocated, failed, ..
                 } => allocated.is_some() || *failed,
                 Socket::Tcp(t) => t.allocated.is_some() || t.failed,
-            })
+            }) && !self.bwm.as_ref().is_some_and(|b| b.checking(now)))
+    }
+
+    /// Local relayed candidates are allowed by the bandwidth policy (BW-03: otherwise they are
+    /// not offered).
+    fn relay_allowed(&self) -> bool {
+        self.bwm
+            .as_ref()
+            .and_then(|b| b.policy)
+            .is_none_or(|p| p.local_relay_ok())
     }
 
     fn host_address(&self, i: usize) -> Option<SocketAddr> {
@@ -375,7 +409,7 @@ impl CallMedia {
                 }
                 Socket::Relay {
                     allocated: Some(a), ..
-                } => {
+                } if self.relay_allowed() => {
                     // IE-05: relay UDP: type 0, local preference 15·2^12 + 7·2^9 (= 0xfe00).
                     let p = commscraft_ice::candidate_priority(0, 0xfe00, component);
                     out.push((
@@ -390,7 +424,7 @@ impl CallMedia {
                         ),
                     ));
                 }
-                Socket::Tcp(t) => {
+                Socket::Tcp(t) if self.relay_allowed() => {
                     if let Some(a) = t.allocated {
                         // IE-04/IE-05: TCP (6), active (5) / passive (2), type relay (0).
                         for (f, tr, dir) in [
@@ -405,7 +439,7 @@ impl CallMedia {
                         }
                     }
                 }
-                Socket::Relay { .. } => {}
+                Socket::Relay { .. } | Socket::Tcp(_) => {}
             }
         }
         out
@@ -555,11 +589,234 @@ impl CallMedia {
                     .map(|r| r.address)
                     .collect();
                 agent.set_remote(&remote.ufrag, &remote.pwd, remotes, now);
+                // [MS-ICE2BWM] §3.1.4.8.2.1: the policy of the check restricts the pairs.
+                if let Some(p) = self.bwm.as_ref().and_then(|b| b.policy) {
+                    agent.set_restrictions(ice::Restrictions {
+                        local_site: !p.local_site_ok(),
+                        local_relay: !p.local_relay_ok(),
+                        remote_site: !p.remote_site_ok(),
+                        remote_relay: !p.remote_relay_ok(),
+                    });
+                }
                 self.ice = Some(agent);
             }
-            None => self.set_direct(n)?,
+            None => {
+                self.set_direct(n)?;
+                // §3.1.4.4.2: towards a peer without ICE the managing endpoint commits the path
+                // from our host socket to the peer's address.
+                if let (Some(local), Some((rtp, _))) = (self.host_address(0), self.direct) {
+                    let sites = turn_bwm::Sites {
+                        local,
+                        local_relay: None,
+                        remote: rtp,
+                        remote_relay: None,
+                    };
+                    if let (Some(sock), Some(b)) = (self.policy_server(None), self.bwm.as_mut()) {
+                        b.start_commit(sock, sites, now);
+                    }
+                }
+            }
         }
         Ok(())
+    }
+
+    /// The socket of the bandwidth policy server for commits and updates: the UDP relay unless
+    /// media runs over the TCP relay (§3.1.4.8.2).
+    fn policy_server(&self, media_socket: Option<usize>) -> Option<usize> {
+        if let Some(s) = media_socket {
+            if matches!(self.sockets.get(s), Some(Socket::Tcp(t)) if t.allocated.is_some()) {
+                return Some(s);
+            }
+        }
+        self.sockets
+            .iter()
+            .position(|s| {
+                matches!(
+                    s,
+                    Socket::Relay {
+                        allocated: Some(_),
+                        ..
+                    }
+                )
+            })
+            .or_else(|| {
+                self.sockets
+                    .iter()
+                    .position(|s| matches!(s, Socket::Tcp(t) if t.allocated.is_some()))
+            })
+    }
+
+    /// Sends a bandwidth request on a relay socket; returns its transaction ID.
+    fn bac_on(
+        &mut self,
+        sock: usize,
+        build: impl FnOnce(&[u8; 16]) -> Vec<(u16, Vec<u8>)>,
+        now: u64,
+    ) -> Option<[u8; 16]> {
+        let tid = std::cell::Cell::new(None);
+        let wrapped = |t: &[u8; 16]| {
+            tid.set(Some(*t));
+            build(t)
+        };
+        match self.sockets.get_mut(sock)? {
+            Socket::Relay {
+                socket,
+                server,
+                client,
+                ..
+            } => {
+                let w = client.bac(wrapped, now)?;
+                let _ = socket.send_to(&w, *server);
+            }
+            Socket::Tcp(t) => {
+                let w = t.client.bac(wrapped, now)?;
+                t.queue_control(&w);
+            }
+            Socket::Host(_) => return None,
+        }
+        tid.get()
+    }
+
+    /// The bandwidth management timers: checks while gathering (callee), commits every 500 ms
+    /// until answered, updates every 19 s.
+    fn bwm_tick(&mut self, now: u64) {
+        let Some(b) = self.bwm.as_ref() else {
+            return;
+        };
+        let (profile, call_id, phase) = (b.cfg.profile, b.cfg.call_id.clone(), b.phase);
+        match phase {
+            bwm::Phase::Idle | bwm::Phase::Checking => {
+                let Some(peer) = b.cfg.peer.clone() else {
+                    return;
+                };
+                if phase == bwm::Phase::Checking && now >= b.check_deadline {
+                    if let Some(b) = self.bwm.as_mut() {
+                        b.phase = bwm::Phase::Checked;
+                    }
+                    return;
+                }
+                let (Some(remote), Some(local)) = (bwm::peer_site(&peer), self.host_address(0))
+                else {
+                    if let Some(b) = self.bwm.as_mut() {
+                        b.phase = bwm::Phase::Checked;
+                    }
+                    return;
+                };
+                let remote_relay = bwm::peer_relay(&peer);
+                // One check per policy server: the first UDP relay and the TCP relay (§3.1.4.8.1.1).
+                let first_udp = self
+                    .sockets
+                    .iter()
+                    .position(|s| matches!(s, Socket::Relay { .. }));
+                let targets: Vec<(usize, SocketAddr)> = self
+                    .sockets
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(i, s)| match s {
+                        Socket::Relay {
+                            allocated: Some(a), ..
+                        } if Some(i) == first_udp => Some((i, *a)),
+                        Socket::Tcp(t) => t.allocated.map(|a| (i, a)),
+                        _ => None,
+                    })
+                    .filter(|(i, _)| !b.checked_on.contains(i))
+                    .collect();
+                let none_left = self.sockets.iter().all(|s| match s {
+                    Socket::Host(_) => true,
+                    Socket::Relay { failed, .. } => *failed,
+                    Socket::Tcp(t) => t.failed,
+                });
+                if phase == bwm::Phase::Idle && targets.is_empty() && none_left {
+                    // No relay, so no policy server: nothing to check.
+                    if let Some(b) = self.bwm.as_mut() {
+                        b.phase = bwm::Phase::Checked;
+                    }
+                    return;
+                }
+                for (sock, relayed) in targets {
+                    let sites = turn_bwm::Sites {
+                        local,
+                        local_relay: Some(relayed),
+                        remote,
+                        remote_relay,
+                    };
+                    let tid = self.bac_on(
+                        sock,
+                        |t| turn_bwm::check_attributes(&sites, bwm::amount(), &call_id, profile, t),
+                        now,
+                    );
+                    if let (Some(tid), Some(b)) = (tid, self.bwm.as_mut()) {
+                        b.checks.push((sock, tid, remote_relay.is_some(), true));
+                        b.checked_on.push(sock);
+                        if b.phase == bwm::Phase::Idle {
+                            b.phase = bwm::Phase::Checking;
+                            b.check_deadline = now + bwm::CHECK_WAIT_MS;
+                        }
+                    }
+                }
+            }
+            bwm::Phase::Committing if now >= b.next => {
+                let Some((sock, sites)) = b.commit else {
+                    return;
+                };
+                let tid = self.bac_on(
+                    sock,
+                    |t| turn_bwm::commit_attributes(&sites, bwm::amount(), "", profile, t),
+                    now,
+                );
+                if let Some(b) = self.bwm.as_mut() {
+                    b.commits += 1;
+                    b.next = now + bwm::COMMIT_MS;
+                    if tid.is_some() {
+                        b.commit_tid = tid;
+                    }
+                    if b.commits > bwm::MAX_COMMITS {
+                        b.phase = bwm::Phase::Off;
+                    }
+                }
+            }
+            bwm::Phase::Committed if now >= b.next => {
+                let (Some((sock, _)), Some(id)) = (b.commit, b.reservation) else {
+                    return;
+                };
+                self.bac_on(
+                    sock,
+                    |_| turn_bwm::update_attributes(&id, Some(bwm::amount()), ""),
+                    now,
+                );
+                if let Some(b) = self.bwm.as_mut() {
+                    b.next = now + bwm::UPDATE_MS;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// The selected path's sites for the commit (§3.1.4.8.2.2) and the policy server for it.
+    fn commit_target(&self, local: usize, remote: SocketAddr) -> Option<(usize, turn_bwm::Sites)> {
+        let l = self.ice.as_ref()?.locals().get(local)?;
+        let &(media_socket, _) = self.candidate_socket.get(local)?;
+        let (local_site, local_relay) = if l.kind == ice::Kind::Relayed {
+            (self.host_address(0)?, Some(l.address))
+        } else {
+            (l.address, None)
+        };
+        let peer = self.remote_ice.as_ref()?;
+        let (remote_site, remote_relay) = if bwm::is_peer_relay(peer, remote) {
+            (bwm::peer_site(peer)?, Some(remote))
+        } else {
+            (remote, None)
+        };
+        let sock = self.policy_server(Some(media_socket))?;
+        Some((
+            sock,
+            turn_bwm::Sites {
+                local: local_site,
+                local_relay,
+                remote: remote_site,
+                remote_relay,
+            },
+        ))
     }
 
     /// Early media from an SDP answer in a provisional response (MS-SDPEXT §3.1.5.12): ICE runs
@@ -783,6 +1040,16 @@ impl CallMedia {
 
     /// RTCP BYE and TURN teardown.
     pub fn stop(&mut self, now: u64) {
+        // Cancel the bandwidth reservation: an update with the amount 0 (§2.2.3).
+        if let Some((Some((sock, _)), Some(id))) =
+            self.bwm.as_ref().map(|b| (b.commit, b.reservation))
+        {
+            self.bac_on(
+                sock,
+                |_| turn_bwm::update_attributes(&id, Some(turn_bwm::Amount::default()), ""),
+                now,
+            );
+        }
         if let Some(bye) = self.audio.as_mut().and_then(Audio::bye) {
             if let Some((_, rtcp)) = self.direct {
                 self.send_socket(1, rtcp, &bye);
@@ -843,7 +1110,15 @@ impl CallMedia {
                             Ok(n) => match t.frames.push(chunk.get(..n).unwrap_or(&[])) {
                                 Ok(frames) => {
                                     for (kind, payload) in frames {
-                                        Self::on_tcp_frame(t, i, kind, &payload, now, &mut packets);
+                                        Self::on_tcp_frame(
+                                            t,
+                                            i,
+                                            kind,
+                                            &payload,
+                                            now,
+                                            &mut packets,
+                                            &mut self.bac_events,
+                                        );
                                     }
                                 }
                                 Err(_) => {
@@ -896,6 +1171,28 @@ impl CallMedia {
                 Socket::Host(_) => {}
             }
         }
+        // Bandwidth management: answers, then timers.
+        for (sock, e) in std::mem::take(&mut self.bac_events) {
+            if let Some(b) = self.bwm.as_mut() {
+                match e {
+                    turn::Event::Bac {
+                        attributes,
+                        transaction,
+                    } => b.on_answer(&attributes, &transaction, now),
+                    turn::Event::BacFailed(_) => b.on_failed(sock),
+                    _ => {}
+                }
+            }
+        }
+        self.bwm_tick(now);
+        // [MS-RTP] §3.2: the policy server's bandwidth goes to the peer (inference: the reserved
+        // maximum send bandwidth of the commit answer).
+        if let (Some(kbps), Some(a)) = (
+            self.bwm.as_ref().and_then(|b| b.reserved_send),
+            self.audio.as_mut(),
+        ) {
+            a.set_policy_bandwidth(kbps.saturating_mul(1000));
+        }
         // ICE.
         if let Some(agent) = self.ice.as_mut() {
             let (tx, ev) = agent.on_tick(now);
@@ -932,6 +1229,7 @@ impl CallMedia {
         payload: &[u8],
         now: u64,
         packets: &mut Vec<(usize, SocketAddr, Vec<u8>)>,
+        bac: &mut Vec<(usize, turn::Event)>,
     ) {
         let (peer, bytes) = if kind == 2 {
             let (wires, evs) = t.client.on_packet(payload, now);
@@ -948,6 +1246,9 @@ impl CallMedia {
                     } => got = Some((f, data)),
                     turn::Event::ActiveDestination(a) => t.active = Some(a),
                     turn::Event::Failed(_) | turn::Event::Malformed => t.failed = true,
+                    e @ (turn::Event::Bac { .. } | turn::Event::BacFailed(_)) => {
+                        bac.push((sock, e))
+                    }
                     _ => {}
                 }
             }
@@ -979,6 +1280,14 @@ impl CallMedia {
                 ice::Event::Usable { local, remote } => self.usable = Some((local, remote)),
                 ice::Event::Selected { rtp, rtcp } => {
                     self.selected = Some((rtp, rtcp));
+                    // [MS-ICE2BWM] §3.1.4.8.2.2: the callee (managing endpoint) commits the path.
+                    if self.bwm.as_ref().is_some_and(|b| b.cfg.peer.is_some()) {
+                        if let Some((sock, sites)) = self.commit_target(rtp.0, rtp.1) {
+                            if let Some(b) = self.bwm.as_mut() {
+                                b.start_commit(sock, sites, now);
+                            }
+                        }
+                    }
                     // [MS-RTP] §3.2: the TURN server's bandwidth of the RTP path goes to the peer.
                     let kbps = self.candidate_socket.get(rtp.0).and_then(|&(sock, _)| {
                         match self.sockets.get(sock) {
@@ -1055,6 +1364,9 @@ impl CallMedia {
                         } => got = Some((sock, f, data)),
                         turn::Event::ActiveDestination(a) => *active = Some(a),
                         turn::Event::Failed(_) => *failed = true,
+                        e @ (turn::Event::Bac { .. } | turn::Event::BacFailed(_)) => {
+                            self.bac_events.push((sock, e))
+                        }
                         _ => {}
                     }
                 }

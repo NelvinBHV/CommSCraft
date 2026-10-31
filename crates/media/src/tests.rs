@@ -345,3 +345,20 @@ fn early_media_sends_only_dtmf_after_reception() {
     a.set_early(false);
     assert!(a.on_capture(&tone(160, 8000.0, 0)).is_some());
 }
+
+/// [MS-RTP] §3.2: the policy server's bandwidth goes to the peer in five reports.
+#[test]
+fn policy_bandwidth_five_times() {
+    let (mut a, _) = plain_pair();
+    a.set_policy_bandwidth(85_000);
+    let mut seen = 0;
+    for k in 0..8u64 {
+        let p = a.rtcp_due(k * 6000, 0);
+        let (_, ext) = report_of(&p[1]);
+        seen += ext
+            .iter()
+            .filter(|e| **e == rtp::Extension::PolicyBandwidth(85_000))
+            .count();
+    }
+    assert_eq!(seen, 5);
+}

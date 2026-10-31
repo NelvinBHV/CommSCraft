@@ -825,6 +825,20 @@ impl<R: Random> Engine<R> {
     }
 
     /// The peer of a call (for the user interface).
+    /// Call-ID and offer (audio SDP) of an incoming call that is still ringing.
+    pub fn incoming_offer(&self, id: CallId) -> Option<(&str, &[u8])> {
+        let c = self.calls.get(&id)?;
+        if !matches!(c.state, CallState::Ringing { .. }) {
+            return None;
+        }
+        Some((c.invite.call_id().ok().flatten()?, c.offer.as_slice()))
+    }
+
+    /// Our own address of record.
+    pub fn own_aor(&self) -> &str {
+        &self.cfg.aor
+    }
+
     pub fn call_peer(&self, id: CallId) -> Option<&str> {
         self.calls.get(&id).map(|c| c.peer.as_str())
     }

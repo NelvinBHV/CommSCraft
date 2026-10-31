@@ -597,6 +597,13 @@ fn music_on_hold(m: &Media) -> bool {
     m.attrs("feature").any(|v| v.trim() == "MoH")
 }
 
+/// The ICE parameters of the audio stream of an offer (for the bandwidth check of the callee,
+/// [MS-ICE2BWM] §3.1.4.2), through the bounded parser.
+pub fn offer_ice(offer: &[u8]) -> Option<Ice> {
+    let s = parse(offer).ok()?;
+    ice_of(audio(&s).ok()?)
+}
+
 fn audio(s: &Session) -> Result<&Media, Error> {
     s.media
         .iter()
