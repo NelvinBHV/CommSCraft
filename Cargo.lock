@@ -117,6 +117,7 @@ dependencies = [
  "commscraft-audio-alsa",
  "commscraft-avedgea",
  "commscraft-call-media",
+ "commscraft-conf",
  "commscraft-discovery",
  "commscraft-dlx",
  "commscraft-g711",

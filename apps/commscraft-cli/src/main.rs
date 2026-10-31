@@ -54,7 +54,9 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
           /call sip:URI  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
-          /join N (accept invitation N)  /search TEXT (address book)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
+          /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
+          /confaudio (join the meeting's audio)  /confmute  /confunmute (mute in the meeting)
+          /search TEXT (address book)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
           --wait seconds (default 20), ends the conversation and signs out. Plain text only.
 
@@ -1043,6 +1045,26 @@ fn run(a: Args) -> Result<(), String> {
     }
 }
 
+/// The focus URI of a meeting link from the join manager (CB-40/CB-41, [MS-CONFBAS] §2.2.6):
+/// a GET over verified TLS with the client Accept header, no credentials, no redirects followed.
+/// Inference: our own User-Agent is sent, not the product string of §2.2.6.1.
+fn meeting_focus(tls: &TlsClient, link: &str) -> Result<String, String> {
+    let url = commscraft_url::parse_https(link).ok_or("not a usable https address")?;
+    let r = commscraft_net::http::get(
+        tls,
+        &url,
+        commscraft_conf::MEETING_ACCEPT,
+        &user_agent(),
+        Duration::from_secs(15),
+    )
+    .map_err(|e| e.to_string())?;
+    if r.status != 200 {
+        return Err(format!("HTTP {}", r.status));
+    }
+    let body = String::from_utf8(r.body).map_err(|_| "answer is not UTF-8")?;
+    commscraft_conf::parse_meeting(&body).map_err(|e| format!("{e:?}"))
+}
+
 fn user_agent() -> String {
     format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"))
 }
@@ -1250,6 +1272,10 @@ fn interactive(
     let mut next_media: u32 = 1;
     let mut pending_out: BTreeMap<u32, String> = BTreeMap::new();
     let mut pending_in: BTreeMap<u32, u32> = BTreeMap::new();
+    // Media prepared for a conference's audio: media id → conversation.
+    let mut pending_conf: BTreeMap<u32, u32> = BTreeMap::new();
+    // Conference audio calls whose media id is known before the engine names the call.
+    let mut conf_media: BTreeMap<u32, u32> = BTreeMap::new();
     let mut media_of_call: BTreeMap<u32, u32> = BTreeMap::new();
     let mut outgoing: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
     let mut current_call: Option<u32> = None;
@@ -1462,13 +1488,38 @@ fn interactive(
                     } => {
                         let names: Vec<String> = participants
                             .iter()
-                            .filter(|p| p.in_chat())
-                            .map(|p| p.name.clone().unwrap_or_else(|| p.uri.clone()))
+                            .filter(|p| p.in_chat() || p.audio_muted().is_some())
+                            .map(|p| {
+                                let n = p.name.clone().unwrap_or_else(|| p.uri.clone());
+                                match p.audio_muted() {
+                                    Some(true) => format!("{n} (audio, muted)"),
+                                    Some(false) => format!("{n} (audio)"),
+                                    None => n,
+                                }
+                            })
                             .collect();
                         println!(
                             "* [{conversation}] in the conversation: {}",
                             names.join(", ")
                         );
+                    }
+                    E::ConferenceLobby {
+                        conversation,
+                        waiting,
+                    } => {
+                        if waiting {
+                            println!("* [{conversation}] waiting in the lobby for admission …");
+                        } else {
+                            println!("* [{conversation}] admitted to the meeting");
+                        }
+                    }
+                    E::ConferenceAudio { conversation, call } => {
+                        if let Some(m) = conf_media.remove(&conversation) {
+                            media_of_call.insert(call, m);
+                            outgoing.insert(call);
+                            current_call = Some(call);
+                        }
+                        println!("* [{conversation}] joining the meeting audio (call {call})");
                     }
                     E::ConferenceInvitation { from, invitation } => {
                         invitations.push(invitation.focus.clone());
@@ -1532,6 +1583,16 @@ fn interactive(
                         media_of_call.insert(call, id);
                         outgoing.insert(call);
                         outputs.extend(engine.command(C::Call { to, local, policy }, now()));
+                    } else if let Some(conversation) = pending_conf.remove(&id) {
+                        conf_media.insert(conversation, id);
+                        outputs.extend(engine.command(
+                            C::JoinConferenceAudio {
+                                conversation,
+                                local,
+                                policy,
+                            },
+                            now(),
+                        ));
                     } else if let Some(call) = pending_in.remove(&id) {
                         media_of_call.insert(call, id);
                         outputs.extend(engine.command(
@@ -1702,18 +1763,58 @@ fn interactive(
                         None
                     }
                 },
-                "/join" => match arg
-                    .parse::<usize>()
-                    .ok()
-                    .and_then(|n| n.checked_sub(1))
-                    .and_then(|i| invitations.get(i))
-                {
-                    Some(f) => Some(C::JoinConference { focus: f.clone() }),
+                "/join" => {
+                    let invited = arg
+                        .parse::<usize>()
+                        .ok()
+                        .and_then(|n| n.checked_sub(1))
+                        .and_then(|i| invitations.get(i))
+                        .cloned();
+                    let focus = if let Some(f) = invited {
+                        Some(f)
+                    } else if arg.starts_with("sip:") {
+                        Some(arg.clone())
+                    } else if arg.starts_with("https://") {
+                        match meeting_focus(tls, &arg) {
+                            Ok(f) => Some(f),
+                            Err(e) => {
+                                println!("* meeting link not usable: {e}");
+                                None
+                            }
+                        }
+                    } else {
+                        println!("* /join N, a conference address or a https meeting link");
+                        None
+                    };
+                    focus.map(|focus| C::JoinConference { focus })
+                }
+                "/confaudio" => match current {
+                    Some(conversation) => {
+                        let relay = engine.media_relay().and_then(calls::relay_from);
+                        let id = next_media;
+                        next_media = next_media.wrapping_add(1).max(1);
+                        let h = calls::spawn(
+                            id,
+                            local_ip,
+                            relay,
+                            None,
+                            commscraft_audio_alsa::Config::default(),
+                            media_tx.clone(),
+                        );
+                        handles.insert(id, h);
+                        pending_conf.insert(id, conversation);
+                        println!("* preparing the meeting audio …");
+                        None
+                    }
                     None => {
-                        println!("* no such invitation");
+                        println!("* no meeting");
                         None
                     }
                 },
+                "/confmute" | "/confunmute" => current.map(|conversation| C::ConferenceMute {
+                    conversation,
+                    mute: cmd == "/confmute",
+                }),
                 "/search" => {
                     match search(&mut engine, tls, trust, services.as_deref(), &arg, verbose) {
                         Ok(found) if found.is_empty() => println!("* nothing found"),
