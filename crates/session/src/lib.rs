@@ -411,6 +411,8 @@ pub enum Output {
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum SubKind {
     ContactList,
+    /// Our own category instances (vnd-microsoft-roaming-self, PR-13): the routing rules.
+    SelfRoaming,
     /// Batch subscription to the presence of `uris` at `target` (own AOR or a pool GRUU), or a
     /// single one (`single`: Request-URI = To = the contact).
     Presence {
@@ -742,6 +744,14 @@ impl<R: Random> Engine<R> {
             retry_at: None,
         });
         self.subscribe(0, now, out);
+        // PR-13 / O-RE-3: our routing rules as the server keeps them.
+        self.subs.push(Subscription {
+            kind: SubKind::SelfRoaming,
+            dialog: None,
+            refresh_at: None,
+            retry_at: None,
+        });
+        self.subscribe(1, now, out);
     }
 
     /// In-band provisioning (RG-40 … RG-43), piggybacked answer (Expires: 0).
@@ -826,6 +836,24 @@ impl<R: Random> Engine<R> {
         self.send_request(m, Purpose::PublishEndpoint, now, out);
     }
 
+    /// PR-13 / O-RE-3: the routing category as the self subscription reports it – its versions
+    /// for the next publication (PR-05) and the user's rules (set here or by another client).
+    /// Rules with e911active are those of an emergency call and are not taken as the user's.
+    fn on_self_routing(&mut self, r: pres::SelfRouting, out: &mut Vec<Output>) {
+        for (slot, v) in self.routing_versions.iter_mut().zip(r.versions) {
+            if let Some(v) = v {
+                *slot = v;
+            }
+        }
+        if let Some(f) = r.rules.filter(|f| !f.e911_active) {
+            if !self.routing_known || self.routing_rules != f {
+                self.routing_rules = f.clone();
+                self.routing_known = true;
+                out.push(Output::Event(Event::Forwarding(f)));
+            }
+        }
+    }
+
     /// RE-50: the routing preamble into the routing category (private, [MS-PRES] §2.2.2.7.7).
     fn publish_routing(&mut self, rules: pres::Forwarding, now: u64, out: &mut Vec<Output>) {
         // RE-67: during an emergency call the preamble with e911active is time-bound.
@@ -882,6 +910,11 @@ impl<R: Random> Engine<R> {
                 pres::contacts_headers(&mut m, false);
                 m
             }
+            SubKind::SelfRoaming => {
+                let mut m = self.request("SUBSCRIBE", &aor, &aor);
+                pres::self_subscribe(&mut m);
+                m
+            }
             SubKind::Presence {
                 target,
                 uris,
@@ -926,6 +959,7 @@ impl<R: Random> Engine<R> {
                 m.push_header("Event", "vnd-microsoft-roaming-contacts");
                 m.push_header("Accept", "application/vnd-microsoft-roaming-contacts+xml");
             }
+            SubKind::SelfRoaming => pres::self_subscribe(&mut m),
             SubKind::Presence { uris, single, .. } => {
                 m.push_header("Event", "presence");
                 m.push_header("Accept", "application/msrtc-event-categories+xml, application/rlmi+xml, multipart/related");
@@ -1004,6 +1038,17 @@ impl<R: Random> Engine<R> {
                     pres::ContactDocument::Other => {}
                 }
             }
+            SubKind::SelfRoaming => {
+                let Ok(body) = std::str::from_utf8(&m.body) else {
+                    return;
+                };
+                match pres::parse_self_routing(body) {
+                    Ok(r) => self.on_self_routing(r, out),
+                    Err(e) => out.push(Output::Event(Event::Notice(format!(
+                        "unusable self document ({e:?})"
+                    )))),
+                }
+            }
             SubKind::Presence { .. } => match pres::parse_batch(m) {
                 Ok((states, contacts)) => {
                     for c in contacts {
@@ -1033,7 +1078,9 @@ impl<R: Random> Engine<R> {
         now: u64,
         out: &mut Vec<Output>,
     ) {
-        // Existing presence subscriptions are ended (RFC 3265 §3.3.4) and replaced.
+        // Existing presence subscriptions are ended (RFC 3265 §3.3.4) and replaced. They come
+        // after the contact list and the self subscription; transactions of removed or shifted
+        // indices are dropped.
         let old: Vec<usize> = (0..self.subs.len())
             .filter(|i| {
                 matches!(
@@ -1046,9 +1093,11 @@ impl<R: Random> Engine<R> {
             self.unsubscribe(*i, now, out);
             self.subs.remove(*i);
         }
-        self.pending.retain(
-            |_, p| !matches!(p.purpose, Purpose::Subscribe(i) | Purpose::Refresh(i) if i >= 1),
-        );
+        if let Some(first) = old.first().copied() {
+            self.pending.retain(|_, p| {
+                !matches!(p.purpose, Purpose::Subscribe(i) | Purpose::Refresh(i) if i >= first)
+            });
+        }
         let aor = self.cfg.aor.clone();
         for chunk in uris.chunks(pres::MAX_BATCH) {
             if self.subs.len() >= MAX_SUBSCRIPTIONS {
@@ -1142,6 +1191,7 @@ impl<R: Random> Engine<R> {
         };
         let event = match sub.kind {
             SubKind::ContactList => "vnd-microsoft-roaming-contacts",
+            SubKind::SelfRoaming => pres::ROAMING_SELF_EVENT,
             SubKind::Presence { .. } => "presence",
         };
         let mut m = d.request("SUBSCRIBE");

@@ -326,6 +326,133 @@ impl Forwarding {
     }
 }
 
+/// The self subscription ([MS-PRES] §2.2.2.3, pp. 35–38; PR-13).
+pub const NS_ROAMING_SELF: &str = "http://schemas.microsoft.com/2006/09/sip/roaming-self";
+pub const ROAMING_SELF_TYPE: &str = "application/vnd-microsoft-roaming-self+xml";
+pub const ROAMING_SELF_EVENT: &str = "vnd-microsoft-roaming-self";
+
+/// Headers and body of the self SUBSCRIBE (PR-13, §2.2.2.3.1): only the own category instances
+/// are asked for (`roaming type="categories"`).
+pub fn self_subscribe(m: &mut Message) {
+    m.push_header("Event", ROAMING_SELF_EVENT);
+    m.push_header("Accept", ROAMING_SELF_TYPE);
+    m.push_header("Supported", "ms-piggyback-first-notify");
+    m.push_header("Content-Type", ROAMING_SELF_TYPE);
+    m.body = format!(
+        "<roamingList xmlns=\"{NS_ROAMING_SELF}\"><roaming type=\"categories\"/></roamingList>"
+    )
+    .into_bytes();
+}
+
+/// What the self subscription says about our own routing category (PR-13, RE-50, RE-71).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SelfRouting {
+    /// The rules of the `rtcdefault` preamble; `None` if the document carries none.
+    pub rules: Option<Forwarding>,
+    /// Current versions of the routing instance per [`ROUTING_CONTAINERS`] entry (PR-05).
+    pub versions: [Option<u32>; 5],
+}
+
+/// The routing category instances in a roaming-self document (`roamingData/categories`, or a
+/// bare `categories` document). Unknown flags, lists and waits are ignored (O-TU-1); a list
+/// target that is no safe SIP URI makes the rules unknown rather than half-known.
+pub fn parse_self_routing(xml: &str) -> Result<SelfRouting, Error> {
+    let root = commscraft_xml::parse(xml, &Limits::default())?;
+    let cats = match (root.name.as_str(), root.namespace.as_deref()) {
+        ("roamingData", Some(NS_ROAMING_SELF)) => root.child("categories"),
+        ("categories", Some(NS_CATEGORIES)) => Some(&root),
+        _ => return Err(Error::WrongDocument("roamingData")),
+    };
+    let mut out = SelfRouting::default();
+    let Some(cats) = cats else {
+        return Ok(out);
+    };
+    for c in cats.children_named("category") {
+        if c.attr("name") != Some("routing") || c.attr("instance") != Some("0") {
+            continue;
+        }
+        let container = c
+            .attr("container")
+            .and_then(|v| v.trim().parse::<u32>().ok());
+        let version = c.attr("version").and_then(|v| v.trim().parse::<u32>().ok());
+        if let (Some(container), Some(version)) = (container, version) {
+            if let Some(i) = ROUTING_CONTAINERS.iter().position(|x| *x == container) {
+                if let Some(slot) = out.versions.get_mut(i) {
+                    *slot = Some(version);
+                }
+            }
+        }
+        if out.rules.is_none() {
+            out.rules = c.child("routing").and_then(Forwarding::from_routing);
+        }
+    }
+    Ok(out)
+}
+
+impl Forwarding {
+    /// The rules of a `routing` element (`rtcdefault`, version 1 or 2; §3.9.5.1.1–3.9.5.1.4).
+    pub fn from_routing(r: &Element) -> Option<Forwarding> {
+        if r.namespace.as_deref() != Some(NS_ROUTING) || r.attr("name") != Some("rtcdefault") {
+            return None;
+        }
+        let p = r.child("preamble")?;
+        let mut f = Forwarding::default();
+        let flags: Vec<String> = p
+            .children_named("flags")
+            .filter(|e| e.attr("name") == Some("clientflags"))
+            .flat_map(|e| {
+                e.attr("value")
+                    .unwrap_or("")
+                    .split_whitespace()
+                    .map(str::to_string)
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        let has = |n: &str| flags.iter().any(|f| f == n);
+        let list = |name: &str| -> Option<Vec<String>> {
+            let mut v = Vec::new();
+            for l in p
+                .children_named("list")
+                .filter(|l| l.attr("name") == Some(name))
+            {
+                for t in l.children_named("target") {
+                    if v.len() >= MAX_ROUTING_TARGETS {
+                        return None;
+                    }
+                    v.push(checked_sip_uri(t.attr("uri")?.trim()).ok()?);
+                }
+            }
+            Some(v)
+        };
+        let forward = list("forwardto")?;
+        let simring = list("simultaneous_ring")?;
+        f.team = list("team")?;
+        f.delegates = list("delegates")?;
+        f.breakthrough = list("breakthrough")?;
+        if has("enablecf") {
+            f.forward_to = forward.into_iter().next();
+        }
+        if has("simultaneous_ring") {
+            f.simultaneous_ring = simring.into_iter().next();
+        }
+        f.immediate = has("forward_immediate");
+        f.e911_active = has("e911active");
+        f.team_ring = has("team_ring");
+        f.delegate_ring = has("delegate_ring");
+        f.skip_primary = has("skip_primary");
+        for w in p.children_named("wait") {
+            let secs = w.attr("seconds").and_then(|s| s.trim().parse::<u32>().ok());
+            match w.attr("name") {
+                Some("total") => f.ring_seconds = secs,
+                Some("user") => f.user_seconds = secs,
+                Some("team2") => f.team_seconds = secs,
+                _ => {}
+            }
+        }
+        Some(f)
+    }
+}
+
 /// SERVICE body publishing the routing preamble to [`ROUTING_CONTAINERS`], instance 0, static
 /// ([MS-PRES] §2.2.2.7.7: a private category; `versions` per container as for other
 /// publications, PR-05).

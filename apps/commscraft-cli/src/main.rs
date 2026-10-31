@@ -1693,6 +1693,9 @@ fn interactive(
                     E::OwnStatus(s) => println!("* your state: {s:?} (until you sign out)"),
                     E::OwnStatusFailed(c) => println!("* setting your state failed ({c})"),
                     E::Forwarding(f) => {
+                        // PR-13: the server's rules – also those set by another client – are
+                        // the base for the next /forward, /team or /delegates.
+                        forwarding = f.clone();
                         let mut parts = Vec::new();
                         match (&f.forward_to, f.immediate) {
                             (Some(t), true) => parts.push(format!("all calls go to {t}")),
