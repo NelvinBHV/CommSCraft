@@ -49,7 +49,28 @@ pub struct MeetingSpec {
     /// Unix time after which the focus factory may delete the meeting (expiry-time).
     pub expiry: u64,
     pub admission: Admission,
+    /// Further options (PV-15); the default leaves everything to the server.
+    pub extras: Extras,
 }
+
+/// Options of a scheduled meeting beyond subject, lifetime and admission (PV-15; [MS-CONFPRO]
+/// §2.2.1.2–2.2.1.4, pp. 14–16; example §4.2, pp. 42–44). `None` = not sent, the server's default.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Extras {
+    /// Who becomes presenter on admission ([`crate::AUTOPROMOTE_COMPANY`],
+    /// [`crate::AUTOPROMOTE_EVERYONE`], 0 = nobody).
+    pub autopromote: Option<u32>,
+    /// Phone callers skip the lobby.
+    pub pstn_lobby_bypass: Option<bool>,
+    /// Everyone but the organizer waits in the lobby (conference-state/locked, §2.2.1.3).
+    pub locked: Option<bool>,
+    /// Invitees with their role (SIP URI, presenter); definitive for `closedAuthenticated`; the
+    /// organizer is implicit and not listed (§2.2.1.4).
+    pub users: Vec<(String, bool)>,
+}
+
+/// Most invitees in one meeting document (design).
+pub const MAX_INVITEES: usize = 100;
 
 /// A meeting as the focus factory reports it (getConferences / getConference, §2.2.3.4–2.2.3.5).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -65,6 +86,8 @@ pub struct Meeting {
     pub join_url: Option<String>,
     /// The conference version (needed for modifyConference).
     pub version: Option<u32>,
+    /// The organizer's static meeting (`static="true"`, PV-16).
+    pub static_meeting: bool,
 }
 
 /// Longest subject we send (design; the specification sets no limit).
@@ -88,18 +111,97 @@ fn check_subject(s: &str) -> Result<(), Error> {
     Ok(())
 }
 
-fn description(spec: &MeetingSpec) -> Result<String, Error> {
+fn description(spec: &MeetingSpec, organizer: &str) -> Result<String, Error> {
     if !valid_conference_id(&spec.conference_id) {
         return Err(Error::BadValue("conference-id"));
     }
     check_subject(&spec.subject)?;
     let expiry = xs_datetime(spec.expiry).ok_or(Error::BadValue("expiry-time"))?;
+    let x = &spec.extras;
+    // Schema conference-description-type (MS-CONFBAS §6.3.2): separator, optional pstn-access,
+    // separator, then autopromote and pstn-lobby-bypass in this order (PV-15).
+    let mut options = String::new();
+    if let Some(a) = x.autopromote {
+        if a & !(crate::AUTOPROMOTE_COMPANY | crate::AUTOPROMOTE_EVERYONE) != 0 {
+            return Err(Error::BadValue("autopromote"));
+        }
+        options.push_str(&format!("<msci:autopromote>{a}</msci:autopromote>"));
+    }
+    if let Some(b) = x.pstn_lobby_bypass {
+        options.push_str(&format!(
+            "<msci:pstn-lobby-bypass>{b}</msci:pstn-lobby-bypass>"
+        ));
+    }
+    if !options.is_empty() {
+        options = format!("<cis:separator xmlns:cis=\"{NS_SEPARATOR}\"/><cis:separator xmlns:cis=\"{NS_SEPARATOR}\"/>{options}");
+    }
+    let state = x
+        .locked
+        .map(|l| format!("<ci:conference-state><ci:locked>{l}</ci:locked></ci:conference-state>"))
+        .unwrap_or_default();
+    let users = invitees(&x.users, organizer)?;
     Ok(format!(
-        "<ci:conference-description><ci:subject>{}</ci:subject><msci:conference-id>{}</msci:conference-id><msci:expiry-time>{expiry}</msci:expiry-time><msci:admission-policy>{}</msci:admission-policy></ci:conference-description>",
+        "<ci:conference-description><ci:subject>{}</ci:subject><msci:conference-id>{}</msci:conference-id><msci:expiry-time>{expiry}</msci:expiry-time><msci:admission-policy>{}</msci:admission-policy>{options}</ci:conference-description>{state}{users}",
         escape(&spec.subject),
         spec.conference_id,
         spec.admission.as_str()
     ))
+}
+
+/// `users` with one role each (§2.2.1.4): unique, checked SIP URIs, the organizer left out.
+fn invitees(users: &[(String, bool)], organizer: &str) -> Result<String, Error> {
+    if users.is_empty() {
+        return Ok(String::new());
+    }
+    if users.len() > MAX_INVITEES {
+        return Err(Error::BadValue("users"));
+    }
+    let mut seen: Vec<String> = Vec::new();
+    let mut out = String::from("<ci:users>");
+    for (u, presenter) in users {
+        let u = uri(u)?;
+        let key = u.to_ascii_lowercase();
+        if key == organizer.to_ascii_lowercase() {
+            continue;
+        }
+        if seen.contains(&key) {
+            return Err(Error::BadValue("users"));
+        }
+        seen.push(key);
+        let role = if *presenter {
+            crate::Role::Presenter
+        } else {
+            crate::Role::Attendee
+        };
+        out.push_str(&format!(
+            "<ci:user entity=\"{}\"><ci:roles><ci:entry>{}</ci:entry></ci:roles></ci:user>",
+            escape(&u),
+            role.as_str()
+        ));
+    }
+    out.push_str("</ci:users>");
+    Ok(out)
+}
+
+/// addConference for the organizer's static meeting (PV-16; §2.2.2.1, p. 19; example §4.1,
+/// p. 42): only the conference ID and `static="true"`; the administrator's defaults apply.
+pub fn schedule_static(
+    request_id: u32,
+    organizer: &str,
+    focus_factory: &str,
+    conference_id: &str,
+) -> Result<String, Error> {
+    if !valid_conference_id(conference_id) {
+        return Err(Error::BadValue("conference-id"));
+    }
+    request(
+        request_id,
+        organizer,
+        focus_factory,
+        &format!(
+            "<addConference><ci:conference-info xmlns:ci=\"{NS_CI}\" entity=\"\" xmlns:msci=\"{NS_MSCI}\" static=\"true\"><ci:conference-description><msci:conference-id>{conference_id}</msci:conference-id></ci:conference-description></ci:conference-info></addConference>"
+        ),
+    )
 }
 
 /// The MCUs of a scheduled meeting: IM and audio (PV-12).
@@ -113,7 +215,7 @@ pub fn schedule_conference(
     focus_factory: &str,
     spec: &MeetingSpec,
 ) -> Result<String, Error> {
-    let d = description(spec)?;
+    let d = description(spec, organizer)?;
     request(
         request_id,
         organizer,
@@ -136,7 +238,7 @@ pub fn modify_conference(
     if version == 0 {
         return Err(Error::BadValue("version"));
     }
-    let d = description(spec)?;
+    let d = description(spec, organizer)?;
     request(
         request_id,
         organizer,
@@ -152,6 +254,7 @@ fn keyed(
     organizer: &str,
     focus_factory: &str,
     command: &str,
+    attrs: &str,
     conference_id: &str,
 ) -> Result<String, Error> {
     if !valid_conference_id(conference_id) {
@@ -162,23 +265,31 @@ fn keyed(
         organizer,
         focus_factory,
         &format!(
-            "<{command}><conferenceKeys xmlns:msci=\"{NS_MSCI}\" msci:conference-id=\"{conference_id}\"/></{command}>"
+            "<{command}{attrs}><conferenceKeys xmlns:msci=\"{NS_MSCI}\" msci:conference-id=\"{conference_id}\"/></{command}>"
         ),
     )
 }
 
-/// deleteConference (§2.2.2.3, p. 20; example §4.3, p. 46).
+/// deleteConference (§2.2.2.3, p. 20; example §4.3, p. 46); a static meeting needs
+/// `static="true"` on deleteConference (PV-16; schema `delete-conference-type`).
 pub fn delete_conference(
     request_id: u32,
     organizer: &str,
     focus_factory: &str,
     conference_id: &str,
+    static_meeting: bool,
 ) -> Result<String, Error> {
+    let attrs = if static_meeting {
+        " static=\"true\""
+    } else {
+        ""
+    };
     keyed(
         request_id,
         organizer,
         focus_factory,
         "deleteConference",
+        attrs,
         conference_id,
     )
 }
@@ -196,6 +307,7 @@ pub fn get_conference(
         organizer,
         focus_factory,
         "getConference",
+        "",
         conference_id,
     )
 }
@@ -206,8 +318,15 @@ pub fn get_conferences(
     request_id: u32,
     organizer: &str,
     focus_factory: &str,
+    static_meetings: bool,
 ) -> Result<String, Error> {
-    request(request_id, organizer, focus_factory, "<getConferences/>")
+    // PV-16 (§2.2.2.5, p. 21; example §4.6): `static="true"` lists the static meeting.
+    let command = if static_meetings {
+        "<getConferences static=\"true\"/>"
+    } else {
+        "<getConferences/>"
+    };
+    request(request_id, organizer, focus_factory, command)
 }
 
 /// Bounded printable text of an element.
@@ -246,6 +365,7 @@ fn meeting(ci: &Element) -> Option<Meeting> {
             .and_then(|e| Admission::parse(&e.text())),
         join_url,
         version: ci.attr("version").and_then(|v| v.trim().parse().ok()),
+        static_meeting: ci.attr("static") == Some("true"),
     })
 }
 
@@ -262,8 +382,11 @@ pub fn parse_meetings(xml: &str) -> Result<(Response, Vec<Meeting>), Error> {
             .child("conferences")
             .into_iter()
             .flat_map(|c| c.children_named("conference-info"));
+        // PV-16: an answer to getConferences static="true" says so itself.
+        let all_static = cmd.attr("static") == Some("true");
         for ci in direct.chain(listed).take(MAX_MEETINGS) {
-            if let Some(m) = meeting(ci) {
+            if let Some(mut m) = meeting(ci) {
+                m.static_meeting |= all_static;
                 meetings.push(m);
             }
         }

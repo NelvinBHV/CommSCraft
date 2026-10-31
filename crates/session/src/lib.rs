@@ -122,9 +122,15 @@ pub enum Command {
         subject: String,
         minutes: u64,
         admission: conf::schedule::Admission,
+        /// Presenters, invitees, automatic promotion, lobby bypass, locked (PV-15).
+        extras: conf::schedule::Extras,
     },
-    /// The organizer's meetings (getConferences).
-    ListMeetings,
+    /// The organizer's static meeting with the administrator's defaults (PV-16).
+    ScheduleStaticMeeting,
+    /// The organizer's meetings (getConferences), or the static meeting (PV-16).
+    ListMeetings {
+        static_meetings: bool,
+    },
     /// One meeting's details (getConference).
     ShowMeeting {
         conference_id: String,
@@ -136,10 +142,13 @@ pub enum Command {
         subject: String,
         minutes: u64,
         admission: conf::schedule::Admission,
+        extras: conf::schedule::Extras,
     },
     /// Cancel a meeting (deleteConference).
     CancelMeeting {
         conference_id: String,
+        /// The static meeting (deleteConference static="true", PV-16).
+        static_meeting: bool,
     },
     /// Join the conference's audio: INVITE to the A/V MCU (CA-02, no addUser needed).
     JoinConferenceAudio {
@@ -1421,8 +1430,21 @@ impl<R: Random> Engine<R> {
                 subject,
                 minutes,
                 admission,
-            } => self.schedule_meeting(&subject, minutes, admission, now, &mut out),
-            Command::ListMeetings => self.list_meetings(now, &mut out),
+                extras,
+            } => self.schedule_meeting(
+                schedule::Planned {
+                    subject,
+                    minutes,
+                    admission,
+                    extras,
+                },
+                now,
+                &mut out,
+            ),
+            Command::ScheduleStaticMeeting => self.schedule_static_meeting(now, &mut out),
+            Command::ListMeetings { static_meetings } => {
+                self.list_meetings(static_meetings, now, &mut out)
+            }
             Command::ShowMeeting { conference_id } => {
                 self.show_meeting(&conference_id, now, &mut out)
             }
@@ -1431,10 +1453,22 @@ impl<R: Random> Engine<R> {
                 subject,
                 minutes,
                 admission,
-            } => self.change_meeting(&conference_id, &subject, minutes, admission, now, &mut out),
-            Command::CancelMeeting { conference_id } => {
-                self.cancel_meeting(&conference_id, now, &mut out)
-            }
+                extras,
+            } => self.change_meeting(
+                &conference_id,
+                schedule::Planned {
+                    subject,
+                    minutes,
+                    admission,
+                    extras,
+                },
+                now,
+                &mut out,
+            ),
+            Command::CancelMeeting {
+                conference_id,
+                static_meeting,
+            } => self.cancel_meeting(&conference_id, static_meeting, now, &mut out),
             Command::JoinConferenceAudio {
                 conversation,
                 local,

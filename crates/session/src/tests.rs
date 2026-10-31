@@ -870,6 +870,7 @@ fn schedule_list_show_cancel_meeting() {
             subject: "Plan".into(),
             minutes: 0,
             admission: Admission::OpenAuthenticated,
+            extras: conf::schedule::Extras::default(),
         },
         NOW,
     );
@@ -879,6 +880,7 @@ fn schedule_list_show_cancel_meeting() {
             subject: "Plan Q4".into(),
             minutes: 60,
             admission: Admission::ClosedAuthenticated,
+            extras: conf::schedule::Extras::default(),
         },
         NOW,
     );
@@ -942,7 +944,12 @@ fn schedule_list_show_cancel_meeting() {
     assert!(events(&out).iter().any(|ev| matches!(ev,
         Event::MeetingDetails(m) if m.join_url.as_deref() == Some(url.as_str()))));
 
-    let out = e.command(Command::ListMeetings, NOW);
+    let out = e.command(
+        Command::ListMeetings {
+            static_meetings: false,
+        },
+        NOW,
+    );
     let list = find(&out, "SERVICE");
     assert!(String::from_utf8_lossy(&list.body).contains("<getConferences/>"));
     let listed = format!(
@@ -966,6 +973,7 @@ fn schedule_list_show_cancel_meeting() {
     let out = e.command(
         Command::CancelMeeting {
             conference_id: id.clone(),
+            static_meeting: false,
         },
         NOW,
     );
@@ -990,6 +998,7 @@ fn schedule_list_show_cancel_meeting() {
     let out = e.command(
         Command::CancelMeeting {
             conference_id: id.clone(),
+            static_meeting: false,
         },
         NOW,
     );
@@ -1032,6 +1041,7 @@ fn change_meeting_uses_current_version() {
                 subject: "New subject".into(),
                 minutes: 30,
                 admission: Admission::Anonymous,
+                extras: conf::schedule::Extras::default(),
             },
             NOW,
         )

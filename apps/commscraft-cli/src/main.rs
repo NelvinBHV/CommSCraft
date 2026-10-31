@@ -57,8 +57,9 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
-          /schedule MINUTES [open|closed|anonymous] SUBJECT  /meetings  /meeting ID  /cancelmeeting ID
-          /changemeeting ID MINUTES [open|closed|anonymous] SUBJECT
+          /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /meeting ID  /cancelmeeting ID [static]
+          /changemeeting ID MINUTES [OPTIONS] SUBJECT – OPTIONS: open|closed|anonymous, promote none|company|everyone,
+            phone bypass|lobby, locked, presenter sip:URI, attendee sip:URI
           /confaudio (join the meeting's audio)  /confmute  /confunmute (mute in the meeting)
           presenters: /admit [sip:URI]  /deny sip:URI  /promote sip:URI  /demote sip:URI  /lock  /unlock
           /remove sip:URI  /muteuser sip:URI  /unmuteuser sip:URI  /muteall  /unmuteall
@@ -1854,9 +1855,10 @@ fn interactive(
                     E::Meetings(list) => {
                         for m in list {
                             println!(
-                                "  {:<34} {:<20} {}",
+                                "  {:<34} {:<20} {}{}",
                                 m.conference_id,
                                 m.admission.map(|a| a.as_str()).unwrap_or(""),
+                                if m.static_meeting { "(static) " } else { "" },
                                 m.subject.as_deref().unwrap_or("")
                             );
                         }
@@ -2527,74 +2529,73 @@ fn interactive(
                         })
                     }
                 }
+                "/schedule" if arg.trim() == "static" => Some(C::ScheduleStaticMeeting),
                 "/schedule" => {
-                    use commscraft_conf::schedule::Admission;
                     let mut words = arg.split_whitespace();
                     let minutes = words.next().and_then(|m| m.parse::<u64>().ok());
-                    let mut rest: Vec<&str> = words.collect();
-                    let admission = match rest.first().copied() {
-                        Some("open") => Some(Admission::OpenAuthenticated),
-                        Some("closed") => Some(Admission::ClosedAuthenticated),
-                        Some("anonymous") => Some(Admission::Anonymous),
-                        _ => None,
-                    };
-                    if admission.is_some() {
-                        rest.remove(0);
-                    }
-                    let subject = rest.join(" ");
-                    match minutes {
-                        Some(minutes) if !subject.is_empty() => Some(C::ScheduleMeeting {
-                            subject,
-                            minutes,
-                            admission: admission.unwrap_or(Admission::OpenAuthenticated),
-                        }),
+                    let rest: Vec<&str> = words.collect();
+                    match (minutes, meeting_words(&rest)) {
+                        (Some(minutes), Some((admission, extras, subject))) => {
+                            Some(C::ScheduleMeeting {
+                                subject,
+                                minutes,
+                                admission,
+                                extras,
+                            })
+                        }
                         _ => {
-                            println!("* /schedule MINUTES [open|closed|anonymous] SUBJECT");
+                            println!("* /schedule MINUTES [OPTIONS] SUBJECT  |  /schedule static\n  {MEETING_OPTIONS}");
                             None
                         }
                     }
                 }
                 "/changemeeting" => {
-                    use commscraft_conf::schedule::Admission;
                     let mut words = arg.split_whitespace();
                     let id = words.next().map(str::to_string);
                     let minutes = words.next().and_then(|m| m.parse::<u64>().ok());
-                    let mut rest: Vec<&str> = words.collect();
-                    let admission = match rest.first().copied() {
-                        Some("open") => Some(Admission::OpenAuthenticated),
-                        Some("closed") => Some(Admission::ClosedAuthenticated),
-                        Some("anonymous") => Some(Admission::Anonymous),
-                        _ => None,
-                    };
-                    if admission.is_some() {
-                        rest.remove(0);
-                    }
-                    let subject = rest.join(" ");
-                    match (id, minutes) {
-                        (Some(conference_id), Some(minutes)) if !subject.is_empty() => {
-                            Some(C::ChangeMeeting {
-                                conference_id,
-                                subject,
-                                minutes,
-                                admission: admission.unwrap_or(Admission::OpenAuthenticated),
-                            })
-                        }
+                    let rest: Vec<&str> = words.collect();
+                    match (id, minutes, meeting_words(&rest)) {
+                        (
+                            Some(conference_id),
+                            Some(minutes),
+                            Some((admission, extras, subject)),
+                        ) => Some(C::ChangeMeeting {
+                            conference_id,
+                            subject,
+                            minutes,
+                            admission,
+                            extras,
+                        }),
                         _ => {
-                            println!("* /changemeeting ID MINUTES [open|closed|anonymous] SUBJECT");
+                            println!("* /changemeeting ID MINUTES [OPTIONS] SUBJECT\n  {MEETING_OPTIONS}");
                             None
                         }
                     }
                 }
-                "/meetings" => Some(C::ListMeetings),
+                "/meetings" => Some(C::ListMeetings {
+                    static_meetings: arg.trim() == "static",
+                }),
                 "/meeting" | "/cancelmeeting" => {
-                    let conference_id = arg.trim().to_string();
+                    let mut w = arg.split_whitespace();
+                    let conference_id = w.next().unwrap_or("").to_string();
+                    let static_meeting = w.next() == Some("static");
                     if conference_id.is_empty() {
-                        println!("* {cmd} CONFERENCE-ID (see /meetings)");
+                        println!(
+                            "* {cmd} CONFERENCE-ID (see /meetings){}",
+                            if cmd == "/cancelmeeting" {
+                                " [static]"
+                            } else {
+                                ""
+                            }
+                        );
                         None
                     } else if cmd == "/meeting" {
                         Some(C::ShowMeeting { conference_id })
                     } else {
-                        Some(C::CancelMeeting { conference_id })
+                        Some(C::CancelMeeting {
+                            conference_id,
+                            static_meeting,
+                        })
                     }
                 }
                 "/confmute" | "/confunmute" => current.map(|conversation| C::ConferenceMute {
@@ -3029,6 +3030,52 @@ fn main() {
     std::process::exit(code);
 }
 
+const MEETING_OPTIONS: &str = "OPTIONS: open|closed|anonymous, promote none|company|everyone, phone bypass|lobby, locked, presenter sip:URI, attendee sip:URI";
+
+/// Meeting options before the subject of /schedule and /changemeeting (PV-15): admission policy,
+/// automatic promotion, lobby bypass for phone callers, locked, invitees with role. The first
+/// word that is no option starts the subject; a malformed option or an empty subject is `None`.
+fn meeting_words(
+    words: &[&str],
+) -> Option<(
+    commscraft_conf::schedule::Admission,
+    commscraft_conf::schedule::Extras,
+    String,
+)> {
+    use commscraft_conf::schedule::{Admission, Extras};
+    let mut admission = Admission::OpenAuthenticated;
+    let mut x = Extras::default();
+    let mut i = 0;
+    loop {
+        match (words.get(i).copied(), words.get(i + 1).copied()) {
+            (Some(w @ ("open" | "closed" | "anonymous")), _) => {
+                admission = Admission::parse(&admission_word(w))?;
+                i += 1;
+            }
+            (Some("promote"), Some(p)) => {
+                x.autopromote = Some(promote_value(p)?);
+                i += 2;
+            }
+            (Some("phone"), Some(p @ ("bypass" | "lobby"))) => {
+                x.pstn_lobby_bypass = Some(p == "bypass");
+                i += 2;
+            }
+            (Some("locked"), _) => {
+                x.locked = Some(true);
+                i += 1;
+            }
+            (Some(r @ ("presenter" | "attendee")), Some(u)) if u.starts_with("sip:") => {
+                x.users.push((u.to_string(), r == "presenter"));
+                i += 2;
+            }
+            (Some("promote" | "phone" | "presenter" | "attendee"), _) => return None,
+            _ => break,
+        }
+    }
+    let subject = words.get(i..)?.join(" ");
+    (!subject.is_empty()).then_some((admission, x, subject))
+}
+
 /// `open`/`closed`/`anonymous` as admission policy names (CB-42).
 fn admission_word(w: &str) -> String {
     match w {
@@ -3088,5 +3135,25 @@ tun0\t000000CB\t00000000\t0001\t0\t0\t500\t000000FF\t0\t0\t0\n";
         );
         assert_eq!(subnet_in(table, ip("2001:db8::1")), None);
         assert_eq!(subnet_in("garbage", ip("203.0.113.7")), None);
+    }
+
+    /// PV-15: options before the subject; the first other word starts the subject.
+    #[test]
+    fn meeting_option_words() {
+        use commscraft_conf::schedule::Admission;
+        let w: Vec<&str> = "closed promote company phone bypass locked presenter sip:bob@contoso.com attendee sip:carol@contoso.com Plan for open questions".split(' ').collect();
+        let (a, x, subject) = meeting_words(&w).unwrap();
+        assert_eq!(a, Admission::ClosedAuthenticated);
+        assert_eq!(x.autopromote, Some(commscraft_conf::AUTOPROMOTE_COMPANY));
+        assert_eq!((x.pstn_lobby_bypass, x.locked), (Some(true), Some(true)));
+        assert_eq!(x.users.len(), 2);
+        assert_eq!(subject, "Plan for open questions");
+        assert!(meeting_words(&["promote", "boss", "Plan"]).is_none());
+        assert!(meeting_words(&["presenter", "bob", "Plan"]).is_none());
+        assert!(meeting_words(&["open"]).is_none());
+        assert_eq!(
+            meeting_words(&["Plan"]).unwrap().0,
+            Admission::OpenAuthenticated
+        );
     }
 }
