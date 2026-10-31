@@ -22,6 +22,7 @@
 
 use std::collections::HashMap;
 
+use commscraft_conf as conf;
 use commscraft_im as im;
 use commscraft_presence as pres;
 use commscraft_provisioning as prov;
@@ -71,6 +72,19 @@ pub enum Command {
     EndConversation {
         conversation: ConversationId,
     },
+    /// Group IM: create an ad-hoc conference and invite these participants (dial-out).
+    StartGroup {
+        invite: Vec<String>,
+    },
+    /// Invite one more participant into a group conversation.
+    InviteToGroup {
+        conversation: ConversationId,
+        to: String,
+    },
+    /// Join a conference by its focus URI (after an invitation).
+    JoinConference {
+        focus: String,
+    },
     SignOut,
 }
 
@@ -102,7 +116,25 @@ pub enum Event {
     },
     Text {
         conversation: ConversationId,
+        /// In group conversations: the sender (`Ms-Sender`, CI-06), checked SIP URI.
+        sender: Option<String>,
         text: String,
+    },
+    /// The roster of a group conversation changed (CB-24).
+    Participants {
+        conversation: ConversationId,
+        participants: Vec<conf::Participant>,
+    },
+    /// An invitation to a conference arrived; joining is the user's decision.
+    ConferenceInvitation {
+        from: String,
+        invitation: conf::Invitation,
+    },
+    /// The IM MCU could not deliver a message to this participant (IMDN, CI-05).
+    NotDeliveredTo {
+        conversation: ConversationId,
+        recipient: String,
+        status: u16,
     },
     Typing {
         conversation: ConversationId,
@@ -160,6 +192,10 @@ enum Purpose {
     PublishStatus(pres::UserStatus),
     Invite(ConversationId),
     Message(ConversationId),
+    CreateConference(ConversationId),
+    JoinFocus(ConversationId),
+    Roster(ConversationId),
+    DialOut(ConversationId),
     Ignore,
 }
 
@@ -176,6 +212,10 @@ struct Conversation {
     dialog: Option<Dialog>,
     /// Texts the user wrote before the session was accepted.
     queue: Vec<String>,
+    /// Group conversation state (conference); `None` for 1:1.
+    group: Option<Box<group::Group>>,
+    /// RFC 4028 session timer of `dialog` if we are the refresher.
+    timer: Option<group::SessionTimer>,
 }
 
 /// The engine of one account.
@@ -192,6 +232,9 @@ pub struct Engine<R: Random> {
     next_conv: ConversationId,
     endpoint_versions: [u32; 2],
     status_versions: [u32; 2],
+    /// Focus factory URI from provisioning (PV-01).
+    focus_factory: Option<String>,
+    c3p_request: u32,
 }
 
 impl<R: Random> std::fmt::Debug for Engine<R> {
@@ -236,6 +279,8 @@ impl<R: Random> Engine<R> {
             next_conv: 1,
             endpoint_versions: [0, 0],
             status_versions: [0, 0],
+            focus_factory: None,
+            c3p_request: 0,
         }
     }
 
@@ -795,6 +840,8 @@ impl<R: Random> Engine<R> {
                 peer,
                 dialog: None,
                 queue: Vec::new(),
+                group: None,
+                timer: None,
             },
         );
         self.send_request(m, Purpose::Invite(id), now, out);
@@ -848,6 +895,10 @@ impl<R: Random> Engine<R> {
 
     /// An INVITE of a peer (out of dialog): accept IM sessions, refuse everything else.
     fn on_invite(&mut self, req: &Message, now: u64, out: &mut Vec<Output>) {
+        if header_token(req, "Content-Type").as_deref() == Some(conf::INVITATION_TYPE) {
+            self.on_invitation(req, now, out);
+            return;
+        }
         let is_sdp = header_token(req, "Content-Type").as_deref() == Some("application/sdp");
         if !is_sdp || im::check_sdp(&req.body).is_err() {
             // Audio/video and other sessions come with M3; 488 = not acceptable here.
@@ -866,7 +917,11 @@ impl<R: Random> Engine<R> {
             self.send_plain(r, now, out);
             return;
         };
-        let peer = dialog.remote_uri.clone();
+        let group = Self::dialed_out_group(req);
+        let peer = match &group {
+            Some(g) => g.focus.clone().unwrap_or_default(),
+            None => dialog.remote_uri.clone(),
+        };
         let mut ok = response_to(req, 200, "OK");
         for h in ok.headers.iter_mut().filter(|h| h.name == "To") {
             h.value = format!("{};tag={tag}", h.value);
@@ -875,6 +930,19 @@ impl<R: Random> Engine<R> {
             ok.push_header("Record-Route", rr);
         }
         ok.push_header("Contact", &format!("<{}>", self.gruu));
+        // CI-03: ms-sender, so that the IM MCU tells us the sender of every message.
+        ok.push_header("Supported", "ms-sender");
+        // RFC 4028 §9: confirm the session timer of the offer.
+        let timer = group::our_session_timer(req, false, now);
+        if let Some(se) = req.single("Session-Expires").ok().flatten() {
+            let refresher = if timer.is_some() { "uas" } else { "uac" };
+            if let Some(n) = se.split(';').next().map(str::trim) {
+                if n.parse::<u64>().is_ok() {
+                    ok.push_header("Session-Expires", &format!("{n};refresher={refresher}"));
+                    ok.push_header("Require", "timer");
+                }
+            }
+        }
         ok.push_header("Content-Type", "application/sdp");
         ok.body = im::sdp(self.cfg.local_ip).into_bytes();
         self.send_plain(ok, now, out);
@@ -886,6 +954,8 @@ impl<R: Random> Engine<R> {
                 peer: peer.clone(),
                 dialog: Some(dialog),
                 queue: Vec::new(),
+                group: group.map(Box::new),
+                timer,
             },
         );
         out.push(Output::Event(Event::ConversationStarted {
@@ -905,20 +975,51 @@ impl<R: Random> Engine<R> {
         if req.method().is_some_and(|m| m.eq_ignore_ascii_case("ACK")) {
             return;
         }
+        if req
+            .method()
+            .is_some_and(|m| m.eq_ignore_ascii_case("UPDATE"))
+        {
+            // Session refresh by the peer (RFC 4028).
+            let mut r = response_to(req, 200, "OK");
+            r.push_header("Supported", "timer");
+            self.send_plain(r, now, out);
+            return;
+        }
+        let is_group = self.convs.get(&id).is_some_and(|c| c.group.is_some());
         let (incoming, answer) = im::handle_request(req);
         self.send_plain(answer, now, out);
         match incoming {
-            im::Incoming::Text(text) => out.push(Output::Event(Event::Text {
-                conversation: id,
-                text,
-            })),
+            im::Incoming::Text(text) => {
+                let sender = if is_group {
+                    req.single("Ms-Sender")
+                        .ok()
+                        .flatten()
+                        .and_then(conf::ms_sender)
+                        .map(|(_, uri)| uri)
+                } else {
+                    None
+                };
+                out.push(Output::Event(Event::Text {
+                    conversation: id,
+                    sender,
+                    text,
+                }))
+            }
             im::Incoming::Typing(typing) => out.push(Output::Event(Event::Typing {
                 conversation: id,
                 typing,
             })),
             im::Incoming::Bye => {
-                self.convs.remove(&id);
-                out.push(Output::Event(Event::ConversationEnded { conversation: id }));
+                if is_group {
+                    // The IM MCU ended the session (ejection or end, CI-09): leave the conference.
+                    if let Some(c) = self.convs.get_mut(&id) {
+                        c.dialog = None;
+                    }
+                    self.leave_group(id, now, out, true);
+                } else {
+                    self.convs.remove(&id);
+                    out.push(Output::Event(Event::ConversationEnded { conversation: id }));
+                }
             }
             im::Incoming::Refused(_) => {}
         }
@@ -944,10 +1045,23 @@ impl<R: Random> Engine<R> {
                 typing,
             } => self.in_dialog(conversation, |d| im::typing(d, typing), now, &mut out),
             Command::EndConversation { conversation } => {
-                self.in_dialog(conversation, |d| d.request("BYE"), now, &mut out);
-                self.convs.remove(&conversation);
-                out.push(Output::Event(Event::ConversationEnded { conversation }));
+                if self
+                    .convs
+                    .get(&conversation)
+                    .is_some_and(|c| c.group.is_some())
+                {
+                    self.leave_group(conversation, now, &mut out, true);
+                } else {
+                    self.in_dialog(conversation, |d| d.request("BYE"), now, &mut out);
+                    self.convs.remove(&conversation);
+                    out.push(Output::Event(Event::ConversationEnded { conversation }));
+                }
             }
+            Command::StartGroup { invite } => self.start_group(&invite, now, &mut out),
+            Command::InviteToGroup { conversation, to } => {
+                self.dial_out(conversation, &to, now, &mut out)
+            }
+            Command::JoinConference { focus } => self.join_conference(&focus, now, &mut out),
             Command::SignOut => {
                 self.signing_out = true;
                 for i in (0..self.subs.len()).rev() {
@@ -956,8 +1070,12 @@ impl<R: Random> Engine<R> {
                 self.subs.clear();
                 let ids: Vec<ConversationId> = self.convs.keys().copied().collect();
                 for id in ids {
-                    self.in_dialog(id, |d| d.request("BYE"), now, &mut out);
-                    out.push(Output::Event(Event::ConversationEnded { conversation: id }));
+                    if self.convs.get(&id).is_some_and(|c| c.group.is_some()) {
+                        self.leave_group(id, now, &mut out, true);
+                    } else {
+                        self.in_dialog(id, |d| d.request("BYE"), now, &mut out);
+                        out.push(Output::Event(Event::ConversationEnded { conversation: id }));
+                    }
                 }
                 self.convs.clear();
                 match self.reg.unregister(now) {
@@ -991,6 +1109,7 @@ impl<R: Random> Engine<R> {
                 self.subscribe(i, now, &mut out);
             }
         }
+        self.group_tick(now, &mut out);
         let expired: Vec<(String, u32)> = self
             .pending
             .iter()
@@ -1104,6 +1223,10 @@ impl<R: Random> Engine<R> {
                 Ok(Some(p)) => {
                     if let Some(g) = p.group("ServerConfiguration") {
                         let c = prov::ServerConfiguration::from_group(g, &self.user_domain());
+                        self.focus_factory = c
+                            .focus_factory_uri
+                            .as_deref()
+                            .and_then(|u| pres::checked_sip_uri(u).ok());
                         out.push(Output::Event(Event::Provisioned(Box::new(c))));
                     }
                 }
@@ -1135,6 +1258,8 @@ impl<R: Random> Engine<R> {
                 let peer = c.peer.clone();
                 let queue = std::mem::take(&mut c.queue);
                 c.dialog = Some(d.clone());
+                c.timer = group::our_session_timer(resp, true, now);
+                let is_group = c.group.is_some();
                 let invite_cseq = p.request.cseq().ok().flatten().map_or(1, |x| x.number);
                 let mut ack = im::ack_for_2xx(&d, invite_cseq);
                 self.complete(&mut ack);
@@ -1147,8 +1272,25 @@ impl<R: Random> Engine<R> {
                 for text in queue {
                     self.send_text(id, text, now, out);
                 }
+                if is_group {
+                    self.on_chat_joined(id, now, out);
+                }
             }
-            Purpose::Message(id) => out.push(Output::Event(Event::Delivered { conversation: id })),
+            Purpose::Message(id) => {
+                if resp.status_code() == Some(202) {
+                    self.on_message_accepted(id, resp, now);
+                } else {
+                    out.push(Output::Event(Event::Delivered { conversation: id }))
+                }
+            }
+            Purpose::CreateConference(id) => self.on_conference_created(id, resp, now, out),
+            Purpose::JoinFocus(id) => self.on_focus_joined(id, &p.request, resp, now, out),
+            Purpose::Roster(id) => self.on_roster_subscribed(id, &p.request, resp, now, out),
+            Purpose::DialOut(id) => {
+                if resp.status_code() == Some(200) && !resp.body.is_empty() {
+                    self.on_c3p_answer(id, &resp.body, out);
+                }
+            }
             Purpose::Ignore => {}
         }
     }
@@ -1171,12 +1313,39 @@ impl<R: Random> Engine<R> {
                 "provisioning failed ({code})"
             )))),
             Purpose::Invite(id) => {
+                if self.convs.get(&id).is_some_and(|c| c.group.is_some()) {
+                    out.push(Output::Event(Event::Notice(format!(
+                        "the IM conference refused us ({code})"
+                    ))));
+                    self.leave_group(id, now, out, true);
+                } else {
+                    self.convs.remove(&id);
+                    out.push(Output::Event(Event::ConversationFailed {
+                        conversation: id,
+                        status: code,
+                    }));
+                }
+            }
+            Purpose::CreateConference(id) | Purpose::JoinFocus(id) => {
                 self.convs.remove(&id);
                 out.push(Output::Event(Event::ConversationFailed {
                     conversation: id,
                     status: code,
                 }));
             }
+            Purpose::Roster(id) => {
+                // Without roster no chat URI: give up unless the chat session is already up.
+                let joined = self.convs.get(&id).is_some_and(|c| c.dialog.is_some());
+                if !joined {
+                    out.push(Output::Event(Event::Notice(format!(
+                        "conference state not available ({code})"
+                    ))));
+                    self.leave_group(id, now, out, true);
+                }
+            }
+            Purpose::DialOut(id) => out.push(Output::Event(Event::Notice(format!(
+                "[{id}] invitation failed ({code})"
+            )))),
             Purpose::Message(id) => out.push(Output::Event(Event::NotDelivered {
                 conversation: id,
                 status: code,
@@ -1197,7 +1366,29 @@ impl<R: Random> Engine<R> {
                 if !req.body.is_empty() {
                     self.on_document(i, req, now, out);
                 }
+            } else if let Some(id) = self.roster_of(req) {
+                self.on_roster_document(id, req, now, out);
+            } else if let Some(id) = self.chat_of(req) {
+                self.on_imdn(id, req, out);
             }
+            return;
+        }
+        if let Some(id) = self.roster_of(req) {
+            if method == "NOTIFY" {
+                let ok = response_to(req, 200, "OK");
+                self.send_plain(ok, now, out);
+                self.on_roster_document(id, req, now, out);
+                if header_token(req, "subscription-state").as_deref() == Some("terminated") {
+                    self.leave_group(id, now, out, true);
+                }
+            } else {
+                let r = response_to(req, 405, "Method Not Allowed");
+                self.send_plain(r, now, out);
+            }
+            return;
+        }
+        if let Some(id) = self.focus_of(req) {
+            self.on_focus_request(id, req, now, out);
             return;
         }
         if let Some(i) = self
@@ -1247,6 +1438,52 @@ impl<R: Random> Engine<R> {
         }
     }
 
+    fn roster_of(&self, req: &Message) -> Option<ConversationId> {
+        self.convs
+            .iter()
+            .find(|(_, c)| {
+                c.group
+                    .as_ref()
+                    .and_then(|g| g.roster_dialog.as_ref())
+                    .is_some_and(|d| d.is_peer_request(req))
+            })
+            .map(|(id, _)| *id)
+    }
+
+    fn focus_of(&self, req: &Message) -> Option<ConversationId> {
+        self.convs
+            .iter()
+            .find(|(_, c)| {
+                c.group
+                    .as_ref()
+                    .and_then(|g| g.focus_dialog.as_ref())
+                    .is_some_and(|d| d.is_peer_request(req))
+            })
+            .map(|(id, _)| *id)
+    }
+
+    /// The group conversation whose IM MCU dialog `req` belongs to; an IMDN BENOTIFY may come
+    /// outside the dialog, then the sender (the MCU conference URI) decides (inference, CI-05).
+    fn chat_of(&self, req: &Message) -> Option<ConversationId> {
+        let from = req
+            .from()
+            .ok()
+            .flatten()
+            .map(|f| f.uri.to_ascii_lowercase());
+        self.convs
+            .iter()
+            .find(|(_, c)| {
+                c.group.is_some()
+                    && c.dialog.as_ref().is_some_and(|d| {
+                        d.is_peer_request(req)
+                            || from
+                                .as_deref()
+                                .is_some_and(|f| f == d.remote_uri.to_ascii_lowercase())
+                    })
+            })
+            .map(|(id, _)| *id)
+    }
+
     /// For tests and diagnostics: the request line of a sent message.
     pub fn request_uri(m: &Message) -> Option<&str> {
         match &m.start {
@@ -1255,6 +1492,8 @@ impl<R: Random> Engine<R> {
         }
     }
 }
+
+mod group;
 
 #[cfg(test)]
 mod tests;

@@ -18,6 +18,7 @@ members = [
     "crates/im",
     "crates/session",
     "crates/dlx",
+    "crates/conf",
     "crates/url",
     "crates/discovery",
     "crates/net",

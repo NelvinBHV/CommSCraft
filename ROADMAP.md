@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-28 | Group IM (`conf`, MS-CONFPRO/CONFBAS/CONFIM): ad-hoc conference, focus join, roster, IM MCU session, dial-out invitations, 202 + IMDN, Ms-Sender, RFC 4028 session timers, leave; invitations of other clients reported (secondary evidence, K-CI-3, IT-20); CLI `/group`, `/invite`, `/join`. |
 | 2026-10-27 | Address book search (`dlx`, MS-DLX SearchAbEntry): SOAP request, bounded answer parser with SIP URI check; connection-oriented NTLM over HTTP (MS-NTHT, MIC over NEGOTIATE ‖ CHALLENGE ‖ AUTHENTICATE) on one kept-alive TLS connection; the session engine fetches provisioning; CLI `/search`. |
 | 2026-10-27 | CLI `interactive`: stays signed in on top of the session engine – live presence of the contacts, own state, several conversations (`/contacts`, `/status`, `/chat`, `/to`, `/end`, `/quit`). |
 | 2026-10-27 | Session engine (`session`, L4): bootstrap with endpoint publication, long-lived contact list and presence subscriptions (NOTIFY, refresh, resubscribe), incoming and outgoing IM conversations, timeouts; UAS dialogs in `sip-msg`; the test registrar of `register` is available to other crates (feature `testing`). |
