@@ -300,11 +300,24 @@ impl<R: Random> Engine<R> {
             return;
         };
         local.key = c.local.as_ref().and_then(|l| l.key.clone());
+        let hold = local.direction == sdp::Direction::Inactive;
         let body = sdp::offer(&local, c.policy);
         c.local = Some(local);
         let mut m = d.request("INVITE");
         c.dialog = Some(d);
         self.complete(&mut m);
+        if hold {
+            // MS-SDPEXT §3.1.5.23.1 (SD-06): the sip.rendering feature tag with value "no" on the
+            // Contact, encoded `+sip.rendering="no"` (RFC 4235 §5.2 example; RFC 3840 §9: tags
+            // outside the base set carry a "+").
+            for h in m
+                .headers
+                .iter_mut()
+                .filter(|h| h.name.eq_ignore_ascii_case("Contact"))
+            {
+                h.value = format!("{};+sip.rendering=\"no\"", h.value);
+            }
+        }
         m.push_header("Content-Type", "application/sdp");
         m.body = body.into_bytes();
         self.send_request(m, Purpose::CallReinvite(id), now, out);
@@ -655,6 +668,21 @@ impl<R: Random> Engine<R> {
                     && c.dialog.as_ref().is_some_and(|d| d.is_peer_request(req))
             })
             .map(|(id, _)| *id)
+    }
+
+    /// `Hold` / `Resume` (MS-SDPEXT §3.1.5.23): a re-INVITE with the current description and the
+    /// direction inactive (hold, sip.rendering="no") or sendrecv (resume).
+    pub(crate) fn hold_call(&mut self, id: CallId, hold: bool, now: u64, out: &mut Vec<Output>) {
+        let Some(mut local) = self.calls.get(&id).and_then(|c| c.local.clone()) else {
+            out.push(Output::Event(Event::Notice("no such call".into())));
+            return;
+        };
+        local.direction = if hold {
+            sdp::Direction::Inactive
+        } else {
+            sdp::Direction::SendRecv
+        };
+        self.update_call(id, local, now, out);
     }
 
     /// The ID the next `Command::Call` will get (to map the media of the adapter).

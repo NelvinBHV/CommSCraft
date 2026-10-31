@@ -33,7 +33,7 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
           once, optionally sets the own state for the time of the session (--set-status), signs out.
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
-          /call sip:URI  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute (audio calls)
+          /call sip:URI  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N (accept invitation N)  /search TEXT (address book)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
@@ -1292,6 +1292,20 @@ fn interactive(
                         }
                     }
                     E::CallUpdated { call, media } => {
+                        // MS-SDPEXT §3.1.5.23/§3.1.5.27: the peer's hold or music on hold.
+                        match (media.direction, media.music_on_hold) {
+                            (commscraft_sdp::Direction::SendOnly, true) => {
+                                println!("* call {call}: on hold (music)")
+                            }
+                            (
+                                commscraft_sdp::Direction::SendOnly
+                                | commscraft_sdp::Direction::Inactive,
+                                _,
+                            ) => {
+                                println!("* call {call}: on hold by the peer")
+                            }
+                            _ => println!("* call {call}: media updated"),
+                        }
                         if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
                             let _ = h.tx.send(calls::ToMedia::Update(media));
                         }
@@ -1578,6 +1592,19 @@ fn interactive(
                     }
                     None
                 }
+                "/hold" | "/resume" => match current_call {
+                    Some(call) => {
+                        let hold = cmd == "/hold";
+                        if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
+                            let _ = h.tx.send(calls::ToMedia::Hold(hold));
+                        }
+                        Some(C::Hold { call, hold })
+                    }
+                    None => {
+                        println!("* no active call");
+                        None
+                    }
+                },
                 "/mute" | "/unmute" => {
                     if let Some(h) = current_call
                         .and_then(|c| media_of_call.get(&c))

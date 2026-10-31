@@ -17,10 +17,10 @@ owner on an authorized server and is deferred until such an environment exists (
 | M0 | done | analysis in [`protocol/`](protocol/), decisions, workspace, CI, specification test vectors | – |
 | M1 | built, tested-offline | discovery (Autodiscover HTTPS-only, DNS SRV, trust model), TLS adapter, NTLM + MS-SIPAE, REGISTER (GRUU, refresh, redirect, deregister), keep-alive, provisioning, sign-out, `commscraft-cli` | Kerberos, TLS-DSK; owner verification |
 | M2 | built, tested-offline | presence (publish, batch subscriptions, pool resubscribe), contact list (read, live), 1:1 IM with typing, group IM (ad-hoc conference, invitations, IMDN), address book search (MS-DLX over NTLM/HTTP), session engine, CLI `interactive` | contact list editing, privacy/blocking, offline address book, photos; owner verification |
-| M3 | in progress | G.711, G.722, ALSA/PipeWire adapter (D-11), RTP/RTCP, DTMF, SRTP, SDP, STUN, MS-TURN, MS-AVEDGEA, ICE agent (UDP and TCP relay on 443 with pseudo-TLS), call signalling, media core and runtime, CLI `/call` `/answer` `/hangup` `/dtmf` `/mute` | hold/resume command, MS-RTP RTCP profile, bandwidth management, redundancy, TCP-only mode; owner verification (IT-23, IT-24) |
+| M3 | in progress | G.711, G.722, ALSA/PipeWire adapter (D-11), RTP/RTCP, DTMF, SRTP, SDP, STUN, MS-TURN, MS-AVEDGEA, ICE agent (UDP and TCP relay on 443 with pseudo-TLS), call signalling incl. hold/resume, media core and runtime, CLI `/call` `/answer` `/hangup` `/dtmf` `/mute` `/hold` `/resume` | MS-RTP RTCP profile, bandwidth management, redundancy, TCP-only mode, own music on hold; owner verification (IT-23 … IT-25) |
 | M4 – M7 | not started | building blocks only: C3P/roster (`conf`), SSRTP transform, PSOM/ABS/MPPC test vectors | everything else |
 
-Next steps in order: hold/resume; MS-RTP RTCP profile extensions; then M4 (meetings with audio,
+Next steps in order: MS-RTP RTCP profile extensions; then M4 (meetings with audio,
 telephony).
 
 ## Milestones

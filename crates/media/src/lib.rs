@@ -92,6 +92,8 @@ pub struct Audio {
     highest: Option<u64>,
     last_frame: Vec<i16>,
     muted: bool,
+    /// False while the call is on hold (ours or the peer's): no RTP is sent, RTCP continues.
+    sending: bool,
     dtmf_queue: Vec<(bool, [u8; 4])>,
     dtmf_timestamp: u32,
     last_dtmf_end: Option<u32>,
@@ -156,6 +158,7 @@ impl Audio {
             highest: None,
             last_frame: Vec::new(),
             muted: false,
+            sending: true,
             dtmf_queue: Vec::new(),
             dtmf_timestamp: 0,
             last_dtmf_end: None,
@@ -191,6 +194,14 @@ impl Audio {
         self.muted = muted;
     }
 
+    /// Hold: no RTP while `false` (RFC 3264 §8.4: inactive/recvonly streams carry no media).
+    pub fn set_sending(&mut self, sending: bool) {
+        self.sending = sending;
+        if !sending {
+            self.dtmf_queue.clear();
+        }
+    }
+
     /// Queues a DTMF digit (RFC 4733, MS-DTMF); refused if no telephone-event was negotiated.
     pub fn send_dtmf(&mut self, digit: char) -> bool {
         match (self.dtmf_pt, rtp::dtmf_event(digit)) {
@@ -214,6 +225,10 @@ impl Audio {
     /// event packets replace audio (RFC 4733 §2.5.1.2: same timestamp, cumulative duration).
     pub fn on_capture(&mut self, pcm: &[i16]) -> Option<Vec<u8>> {
         let ticks = self.frame_ticks();
+        if !self.sending {
+            self.sender.skip(ticks);
+            return None;
+        }
         if !self.dtmf_queue.is_empty() {
             let (marker, payload) = self.dtmf_queue.remove(0);
             let pt = self.dtmf_pt?;

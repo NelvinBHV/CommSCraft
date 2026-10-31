@@ -18,6 +18,7 @@ fn negotiated_from(other: &CallMedia) -> sdp::Negotiated {
         remote_key: Some(other.key().clone()),
         remote_ice: d.ice.clone(),
         direction: sdp::Direction::SendRecv,
+        music_on_hold: false,
     }
 }
 
@@ -78,6 +79,32 @@ fn loopback_call_media() {
     }
     assert_eq!(digits, vec!['#']);
     assert!(energy > 1e9, "audio arrived: {energy}");
+
+    // Hold: A stops sending RTP at once; B plays silence once its buffer is empty.
+    a.set_hold(true);
+    assert!(!a.sending());
+    for _ in 0..20 {
+        a.send_frame(&frame, now_ms());
+        a.poll(now_ms());
+        b.poll(now_ms());
+        // Drains the jitter buffer; concealment then decays to silence.
+        let _ = b.playout();
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    let mut held = 0f64;
+    for _ in 0..10 {
+        a.send_frame(&frame, now_ms());
+        b.poll(now_ms());
+        held += b
+            .playout()
+            .iter()
+            .map(|&s| f64::from(s).powi(2))
+            .sum::<f64>();
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    assert!(held < 1e7, "no audio on hold: {held}");
+    a.set_hold(false);
+    assert!(a.sending());
     a.stop(now_ms());
     let mut bye = false;
     for _ in 0..20 {

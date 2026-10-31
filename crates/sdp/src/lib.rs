@@ -588,6 +588,13 @@ pub struct Negotiated {
     pub remote_key: Option<Key>,
     pub remote_ice: Option<Ice>,
     pub direction: Direction,
+    /// The peer streams music on hold (`a=sendonly` + `a=feature:MoH`, MS-SDPEXT §3.1.5.27).
+    pub music_on_hold: bool,
+}
+
+/// MS-SDPEXT §3.1.5.27.2: `a=feature:MoH` on the audio line.
+fn music_on_hold(m: &Media) -> bool {
+    m.attrs("feature").any(|v| v.trim() == "MoH")
 }
 
 fn audio(s: &Session) -> Result<&Media, Error> {
@@ -670,6 +677,7 @@ pub fn answer_to_offer(
         remote_key,
         remote_ice: ice_of(m),
         direction: Direction::of(m),
+        music_on_hold: music_on_hold(m),
     })
 }
 
@@ -736,6 +744,7 @@ pub fn answer(
             remote_key,
             remote_ice: ice_of(m),
             direction: remote_direction,
+            music_on_hold: music_on_hold(m),
         },
     ))
 }

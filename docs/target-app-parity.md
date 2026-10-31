@@ -59,7 +59,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 32 | Bandwidth management (call admission control) | MS-ICE2BWM, MS-TURNBWM | B | – |
 | 33 | PSTN telephony | MS-OCPSTN, MS-SIPRE | B | – |
 | 34 | Forwarding, simultaneous ring, team and delegate calls | MS-SIPRE, MS-PRES | B | – |
-| 35 | Hold, music on hold | MS-SDPEXT, MS-SIPRE | B | parts tested-offline (hold/resume as re-INVITE with a new direction through `Command::UpdateCall`: `session`, `sdp`); CLI command and music on hold – |
+| 35 | Hold, music on hold | MS-SDPEXT, MS-SIPRE | B | parts tested-offline (hold/resume re-INVITE with inactive/sendrecv and `+sip.rendering="no"`, incoming hold and music on hold recognised, no RTP while held: `session`, `sdp`, `media`, `call-media`; CLI `/hold` `/resume`); streaming our own music on hold – |
 | 36 | Call transfer | MS-SIPAE, MS-SIPRE | B\* | – |
 | 37 | Call park | MS-SIPAPP | B\* | – |
 | 38 | Voicemail | MS-OCEXUM, MS-EUMSDP | T | – |
