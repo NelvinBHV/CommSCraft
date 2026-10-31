@@ -18,7 +18,7 @@ The assessment of how close CommSCraft is to the Skype for Business desktop clie
 
 ## Functions and evidence status (2026-10-26)
 
-Evidence status comes from the protocol analysis (to be imported in M0): **B** fully documented,
+Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`](protocol/function-matrix.md)): **B** fully documented,
 **B\*** documented with conflicts/gaps needing a decision or interop check, **T** partly documented,
 **N** not documented or not implementable without a licence. Implementation status is "–" for all
 rows: no code exists yet.

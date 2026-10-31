@@ -34,7 +34,7 @@ transfer can come later from interop captures.
 
 ## What comes next
 
-1. **M0 – foundations** (current): import the protocol analysis into `docs/protocol/`, set up an empty Rust workspace and CI on
+1. **M0 – foundations** (current): protocol analysis imported into [`docs/protocol/`](docs/protocol/); set up an empty Rust workspace and CI on
    standard runners.
 2. **M1 – sign-in and registration**, **M2 – presence and IM**, **M3 – audio 1:1**,
    **M4 – conferences and telephony**, **M5 – video**, **M6 – viewing shared screens**, **M7 – Exchange
@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-26 | Protocol analysis imported into `docs/protocol/` (English): 39 evidence files, function matrix, conflict/gap/open-point list (generated), source registers. |
 | 2026-10-26 | D-08: no interop test environment for now (offline work only); D-09: CI only on runners without costs. |
 | 2026-10-26 | Owner decisions D-01 … D-07 taken (licence MIT OR Apache-2.0, English, pure-Rust protocol core, publication scope, codecs, target servers, egui); licence files added. |
 | 2026-10-26 | Repository restarted. Previous history (407 commits up to 2026-10-20) archived outside the repository. Project plan, agent rules and progress docs added. |

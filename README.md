@@ -41,6 +41,7 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 | [`docs/gaps.md`](docs/gaps.md) | Ranked list of everything missing or unresolved |
 | [`docs/target-app-parity.md`](docs/target-app-parity.md) | The target client and the 52 functions with their evidence status |
 | [`docs/architecture.md`](docs/architecture.md) | Planned layers and crates |
+| [`docs/protocol/`](docs/protocol/) | The protocol analysis: evidence per protocol, function matrix, conflicts/gaps/open points, source registers |
 | [`docs/decisions.md`](docs/decisions.md) | Decisions the owner has to take, and decisions already taken |
 | [`AGENTS.md`](AGENTS.md) | Rules for contributors and AI agents (clean room, evidence, security) |
 
