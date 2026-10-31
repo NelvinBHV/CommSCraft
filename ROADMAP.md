@@ -2,7 +2,7 @@
 
 **Stage: M3 (audio 1:1)** · M0 done · M1 and M2 built and tested offline · M3 in progress
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (D-08 changed: private owner lab)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (calls without audio devices, ALSA drain fix, test count)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **54** / **19** (16 closed or no evidence problem) / **25** (22 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **32 crates + 1 app** (`commscraft-cli`), **296 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **32 crates + 1 app** (`commscraft-cli`), **297 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **private owner lab** (D-08, since 2026-10-31): the agent may test there; results are not published, public statuses stay `tested-offline` | owner decision |
 
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-10-31 | Calls survive missing audio devices: without a microphone the call sends silence, without a speaker it goes on without sound, and the user is told (a local device never hangs up a call). ALSA playback stays usable after `drain()` (the PCM is prepared again; before, the next write failed with EBADFD). |
 | 2026-10-31 | D-08 changed: the owner operates an isolated lab and allows the agent to test against it; nothing about the lab is published, public statuses stay `tested-offline`. |
 | 2026-10-31 | Call forwarding and simultaneous ring: routing preamble (MS-SIPRE §2.2.9/§3.9) published to the routing category with version-conflict retry; CLI `/forward`, `/simring`; SDK namespace contradiction recorded as K-RE-2; interop test IT-33. |
 | 2026-10-31 | Call transfer: unattended and attended (REFER, Replaces, NOTIFY sipfrag) as transferor, following a REFER as transferee (Referred-By, Replaces, Ms-Sensitivity, ms-safe-transfer), Replaces as target (481 without a match); CLI `/transfer`; interop test IT-32. |

@@ -1696,6 +1696,12 @@ fn interactive(
                 calls::FromMedia::PeerBye(id) => {
                     println!("* [media {id}] the other side left the media session")
                 }
+                calls::FromMedia::Notice(id, what) => {
+                    match media_of_call.iter().find(|(_, &m)| m == id) {
+                        Some((call, _)) => println!("* call {call}: {what}"),
+                        None => println!("* [media {id}] {what}"),
+                    }
+                }
                 calls::FromMedia::Failed(id, why) => {
                     println!("* media problem: {why}");
                     if let Some((&call, _)) = media_of_call.iter().find(|(_, &m)| m == id) {

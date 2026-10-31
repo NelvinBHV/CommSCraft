@@ -8,8 +8,8 @@ application, a ranked work list, and nothing copied from Microsoft products.
 
 > **Stage: M3 (audio 1:1), pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search and audio calls exist as building blocks that pass offline tests (32 crates,
-> 296 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is verified
-> against a real server yet**; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
+> 297 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is marked as
+> verified against a real server**; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
 CommSCraft is not affiliated with, endorsed by or sponsored by Microsoft. "Skype for Business",
