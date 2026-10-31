@@ -1,0 +1,15 @@
+[package]
+name = "commscraft-avedgea"
+description = "Media relay credentials (MS-AVEDGEA): request body and checked answer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-xml = { path = "../xml" }
+zeroize.workspace = true
+
+[lints]
+workspace = true

@@ -14,6 +14,7 @@ commscraft-presence = { path = "../presence" }
 commscraft-im = { path = "../im" }
 commscraft-provisioning = { path = "../provisioning" }
 commscraft-conf = { path = "../conf" }
+commscraft-avedgea = { path = "../avedgea" }
 
 [dev-dependencies]
 commscraft-register = { path = "../register", features = ["testing"] }

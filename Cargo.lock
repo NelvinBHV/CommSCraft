@@ -88,6 +88,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "commscraft-avedgea"
+version = "0.0.1"
+dependencies = [
+ "commscraft-xml",
+ "zeroize",
+]
+
+[[package]]
 name = "commscraft-cli"
 version = "0.0.1"
 dependencies = [
@@ -224,6 +232,7 @@ dependencies = [
 name = "commscraft-session"
 version = "0.0.1"
 dependencies = [
+ "commscraft-avedgea",
  "commscraft-conf",
  "commscraft-im",
  "commscraft-presence",

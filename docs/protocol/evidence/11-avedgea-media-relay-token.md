@@ -16,3 +16,7 @@ Source: [MS-AVEDGEA] "Audio Video Edge Authentication Protocol", edition 2025052
 
 ## Conflicts
 - K-AV-1: §2.2.2.1.2 (pp. 11–12) lists `route` as an **attribute** of `requestType`; example §4.2.1 (p. 27) shows `<route>directip</route>` as a **child element** of `credentialsRequest`. Likewise `location`/`duration` are called "attribute" once in the table on p. 13 but sent as elements in the example. **Checked against the schema §6 (pp. 30–32):** `route` is an attribute of `request` (optional, default `loadbalanced`); `identity`, `location`, `duration` are elements of `credentialsRequest`. The example §4.2.1 with `<route>` as a child element is therefore invalid against the schema; the implementation follows the schema (`<request … route="directip">`).
+
+## Implementation (2026-10-31, `crates/avedgea`, `crates/session`)
+Request body version 2.0, load-balanced, without `location` (both relay locations, AV-05), duration 480 min (AV-03); answer parser with requestID/reasonPhrase check, opaque username/password (AV-06; secondary: SIPE uses them as received), relays by host name or direct IP with default ports 3478/443 (AV-04). The engine sends the SERVICE to the provisioned `mrasUri` during bootstrap (AV-09), keeps the credentials (never in events) and refreshes them at 90 % of the lifetime (design); failures are retried after 5 min. Checked against the answers of §4.1.2 and §4.2.2. Status: tested-offline.
+

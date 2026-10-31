@@ -30,6 +30,7 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 | `commscraft-srtp` | L1 | RFC 3711 key derivation, SSRTP packet transform, SRTP/SRTCP cryptographic contexts of the MS-SRTP profile (MKI, replay window 64, ROC) | SR-*, SS-01…SS-05, IE-09 |
 | `commscraft-sdp` | L3 | SDP for audio: bounded parser, offer/answer, a=crypto keys, ICE-19 attributes, encryption policy | SD-01…SD-05, SD-10, SD-11, SD-14, SD-25, SD-41, K-SD-3 |
 | `commscraft-stun` | L1 | STUN messages in RFC 5389 and STUN-02/MS-TURN format, MESSAGE-INTEGRITY (SHA-1, legacy, MS-TURN SHA-256), FINGERPRINT, addresses | TU-10…TU-15, IC-02…IC-04, IC-13, IE-02, IE-03, O-IC-2 |
+| `commscraft-avedgea` | L3 | Media relay credentials (MS-AVEDGEA): SERVICE body, checked answer with relays | AV-01…AV-09, K-AV-1 |
 | `commscraft-turn` | L2 | MS-TURN client: Allocate with digest challenge, sequence numbers, Send/Data Indication, Set Active Destination, refresh, teardown, retransmission, TCP framing, pseudo-TLS | TU-02, TU-04, TU-10…TU-27 |
 | `commscraft-rtp` | L1 | RTP header, sender, reception statistics, RTCP SR/RR/SDES/BYE, telephone events | RT-01…RT-10, RT-20, RT-21, PL-30 |
 | `commscraft-turn-bwm` | L1 | MS-TURNBWM attribute types, XOR site addresses | BW-11, BW-12 |
