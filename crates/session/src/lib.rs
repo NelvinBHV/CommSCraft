@@ -174,6 +174,11 @@ pub enum Command {
     Hangup {
         call: CallId,
     },
+    /// Park the active call at the call park server (function 37, CK-01); retrieve it later by
+    /// calling the reported orbit.
+    ParkCall {
+        call: CallId,
+    },
     /// Transfer the call (REFER): to an address, or to another call's party (attended).
     Transfer {
         call: CallId,
@@ -325,6 +330,18 @@ pub enum Event {
         media: Box<sdp::Negotiated>,
     },
     /// The call ended or failed (status code; 0 = normal hang-up).
+    /// The call is parked; dial the orbit to retrieve it (CK-02).
+    CallParked {
+        call: CallId,
+        orbit: String,
+    },
+    /// A parked call left its orbit (CK-04): retrieved (by `target`), hung up, rang back, went to
+    /// the fallback destination or was dropped.
+    ParkNotification {
+        orbit: String,
+        reason: commscraft_park::UnparkReason,
+        target: Option<String>,
+    },
     CallEnded {
         call: CallId,
         status: u16,
@@ -381,6 +398,7 @@ enum Purpose {
     CallReinvite(CallId),
     Refer(CallId),
     Schedule(schedule::ScheduleOp),
+    Park(u32),
     Ignore,
 }
 
@@ -421,6 +439,10 @@ pub struct Engine<R: Random> {
     routing_versions: [u32; 5],
     /// Focus factory URI from provisioning (PV-01).
     focus_factory: Option<String>,
+    /// Call park server from provisioning (callParkServerUri, CK-01).
+    call_park: Option<String>,
+    parks: Vec<park::Park>,
+    next_park: u32,
     c3p_request: u32,
     /// MRAS URI from provisioning (AV-01) and the current credentials with their refresh time.
     mras_uri: Option<String>,
@@ -476,6 +498,9 @@ impl<R: Random> Engine<R> {
             status_versions: [0, 0],
             routing_versions: [0; 5],
             focus_factory: None,
+            call_park: None,
+            parks: Vec::new(),
+            next_park: 0,
             c3p_request: 0,
             mras_uri: None,
             location_profile: None,
@@ -1368,6 +1393,7 @@ impl<R: Random> Engine<R> {
             } => self.accept_call(call, *local, policy, now, &mut out),
             Command::UpdateCall { call, local } => self.update_call(call, *local, now, &mut out),
             Command::Hangup { call } => self.hangup(call, now, &mut out),
+            Command::ParkCall { call } => self.park_call(call, now, &mut out),
             Command::Transfer { call, to } => self.transfer(call, to, now, &mut out),
             Command::FollowTransfer {
                 call,
@@ -1378,6 +1404,7 @@ impl<R: Random> Engine<R> {
             Command::SignOut => {
                 self.signing_out = true;
                 self.end_all_calls(now, &mut out);
+                self.leave_parks(now, &mut out);
                 for i in (0..self.subs.len()).rev() {
                     self.unsubscribe(i, now, &mut out);
                 }
@@ -1425,6 +1452,7 @@ impl<R: Random> Engine<R> {
         }
         self.group_tick(now, &mut out);
         self.call_tick(now, &mut out);
+        self.park_tick(now, &mut out);
         if self.media_relay_refresh_at.is_some_and(|t| now >= t) {
             self.media_relay_refresh_at = None;
             self.fetch_media_relay(now, &mut out);
@@ -1567,6 +1595,10 @@ impl<R: Random> Engine<R> {
                             .focus_factory_uri
                             .as_deref()
                             .and_then(|u| pres::checked_sip_uri(u).ok());
+                        self.call_park = c
+                            .call_park_server_uri
+                            .as_deref()
+                            .and_then(|u| pres::checked_sip_uri(u).ok());
                         self.mras_uri = c
                             .mras_uri
                             .as_deref()
@@ -1635,6 +1667,7 @@ impl<R: Random> Engine<R> {
             }
             Purpose::CreateConference(id) => self.on_conference_created(id, resp, now, out),
             Purpose::Schedule(op) => self.on_schedule_answer(op, &resp.body, now, out),
+            Purpose::Park(id) => self.on_parked(id, &p.request, resp, now, out),
             Purpose::CallInvite(id) => self.on_call_answered(id, &p.request, resp, now, out),
             Purpose::CallReinvite(id) => {
                 self.on_call_reinvite_answered(id, &p.request, resp, now, out)
@@ -1761,6 +1794,7 @@ impl<R: Random> Engine<R> {
             Purpose::Schedule(_) => out.push(Output::Event(Event::Notice(format!(
                 "meeting request failed ({code})"
             )))),
+            Purpose::Park(id) => self.on_park_failed(id, code, out),
             Purpose::Message(id) => out.push(Output::Event(Event::NotDelivered {
                 conversation: id,
                 status: code,
@@ -1830,6 +1864,10 @@ impl<R: Random> Engine<R> {
                 let r = response_to(req, 405, "Method Not Allowed");
                 self.send_plain(r, now, out);
             }
+            return;
+        }
+        if let Some(id) = self.park_of(req) {
+            self.on_park_request(id, req, now, out);
             return;
         }
         if let Some(id) = self.call_of(req) {
@@ -1928,6 +1966,7 @@ impl<R: Random> Engine<R> {
 
 mod call;
 mod group;
+mod park;
 mod schedule;
 mod transfer;
 

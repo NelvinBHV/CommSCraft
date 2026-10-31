@@ -2383,6 +2383,116 @@ fn our_tag(m: &Message) -> String {
     m.from().unwrap().unwrap().param("tag").unwrap().to_string()
 }
 
+const CPS: &str = "sip:callparkservice.contoso.com@contoso.com;gruu;opaque=srvr:Microsoft.Rtc.Applications.Cps:4H28w6olDlm9KG3nl5tyBQAA";
+
+/// Provisioning with the call park server (MS-SIPREGE §2.2.2.5.1, CK-01).
+fn provisioned_with_cps(e: &mut Engine<Counter>, server: &mut Server, out: &[Output]) {
+    let sub = sends(out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    let doc = format!(
+        r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="ServerConfiguration"><callParkServerUri>{CPS}</callParkServerUri></provisionGroup></provisionGroupList>"#
+    );
+    e.on_message(
+        &answer(
+            server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            &doc,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+}
+
+/// Function 37 (CK-01 … CK-04; [MS-SIPAPP] §3.1.5.1–3.1.5.5, pp. 15–17, example §4.1.1): park an
+/// active call – INVITE to the CPS with the call's From/To tags and the peer's contact, the orbit
+/// from the 200 OK, session timer refresh of the parker's dialog, unpark notification by INFO,
+/// BYE of the CPS; refusal with 500 (no free orbit).
+#[test]
+fn park_a_call() {
+    let (mut e, mut server, out) = signed_in();
+    // Without a call park server nothing is sent.
+    let out2 = e.command(Command::ParkCall { call: 1 }, NOW);
+    assert!(sends(&out2).is_empty());
+    provisioned_with_cps(&mut e, &mut server, &out);
+    let invite = active_call(&mut e, &mut server, "sip:bob@contoso.com");
+    let out = e.command(Command::ParkCall { call: 1 }, NOW);
+    let park = find(&out, "INVITE");
+    assert_eq!(Engine::<Counter>::request_uri(&park), Some(CPS));
+    assert_eq!(
+        park.single("Content-Type").unwrap(),
+        Some("application/ms-call-park+xml")
+    );
+    let b = String::from_utf8(park.body.clone()).unwrap();
+    assert!(b.contains(&format!(
+        "<call-id>{}</call-id>",
+        invite.call_id().unwrap().unwrap()
+    )));
+    assert!(
+        b.contains(&format!("<from-tag>{}</from-tag>", our_tag(&invite))),
+        "we called: our tag is the From tag"
+    );
+    assert!(b.contains("<to-tag>srv1</to-tag>"));
+    assert!(b.contains("<target>sip:pool.contoso.com:5061;transport=tls</target>"));
+    let response = r#"<?xml version="1.0"?><park-response version="1.0" request-id="1" xmlns="http://schemas.microsoft.com/rtc/2008/12/callpark"><orbit>1504</orbit><ms-parked-call>3e851601;from-tag=76ea4cdd28</ms-parked-call></park-response>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &park,
+            200,
+            Some("application/ms-call-park+xml"),
+            response,
+            &[("Session-Expires", "320;refresher=uac")],
+        ),
+        NOW,
+    );
+    assert_eq!(
+        find(&out, "ACK").call_id().unwrap(),
+        park.call_id().unwrap()
+    );
+    assert!(events(&out).contains(&Event::CallParked {
+        call: 1,
+        orbit: "1504".into()
+    }));
+    // RFC 4028: the CPS asked us to refresh (320 s): UPDATE in the parker's dialog.
+    let update = find(&e.on_tick(NOW + 170), "UPDATE");
+    assert_eq!(update.call_id().unwrap(), park.call_id().unwrap());
+    // CK-04: unpark notification after a retrieval (example p. 30).
+    let info = peer_request(
+        &mut server,
+        &park,
+        "INFO",
+        2,
+        Some("application/ms-call-park+xml"),
+        r#"<unpark-notification version="1.0" request-id="1" xmlns="http://schemas.microsoft.com/rtc/2008/12/callpark"><reason>retrieval</reason><target>sip:carol@contoso.com</target></unpark-notification>"#,
+        &[],
+    );
+    let out = e.on_message(&info, NOW);
+    assert_eq!(sends(&out)[0].status_code(), Some(200));
+    assert!(events(&out).contains(&Event::ParkNotification {
+        orbit: "1504".into(),
+        reason: commscraft_park::UnparkReason::Retrieval,
+        target: Some("sip:carol@contoso.com".into()),
+    }));
+    // The CPS ends the dialog; afterwards the dialog is unknown.
+    let bye = peer_request(&mut server, &park, "BYE", 3, None, "", &[]);
+    assert_eq!(sends(&e.on_message(&bye, NOW))[0].status_code(), Some(200));
+    let late = peer_request(&mut server, &park, "INFO", 4, None, "", &[]);
+    assert_eq!(sends(&e.on_message(&late, NOW))[0].status_code(), Some(481));
+
+    // CK-03: no free orbit.
+    active_call(&mut e, &mut server, "sip:carol@contoso.com");
+    let out = e.command(Command::ParkCall { call: 2 }, NOW);
+    let park = find(&out, "INVITE");
+    let out = e.on_message(&answer(&mut server, &park, 500, None, "", &[]), NOW);
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("no free orbit"))));
+}
+
 /// RFC 3515 / RFC 5589 §6, OB-25: unattended transfer – REFER with Refer-To and Referred-By;
 /// after 202 our call ends.
 #[test]

@@ -2,7 +2,7 @@
 
 **Stage: M3 (audio 1:1)** · M0 done · M1 and M2 built and tested offline · M3 in progress
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (scheduling meetings, numbers)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (call park, numbers)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,11 +16,11 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **10** tested-offline as a whole, **17** in parts, **23** not started, 2 not planned/needs captures | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Implementation status of the 52 functions | **11** tested-offline as a whole, **17** in parts, **22** not started, 2 not planned/needs captures | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **55** / **19** (16 closed or no evidence problem) / **25** (22 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **32 crates + 1 app** (`commscraft-cli`), **311 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **33 crates + 1 app** (`commscraft-cli`), **319 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **private owner lab** (D-08, since 2026-10-31): the agent may test there; results are not published, public statuses stay `tested-offline` | owner decision |
 
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-10-31 | Call park (function 37): park request to the call park server, orbit, refresh of the parker's dialog, unpark notifications, refusals (crate `park`, `session::park`, CK-07); retrieval by calling the orbit; CLI `/park`. |
 | 2026-10-31 | Scheduling meetings (function 40): create with subject, lifetime and admission policy, list, details, change with the current version, cancel (`conf::schedule`, PV-13, PV-14); CLI `/schedule` `/meetings` `/meeting` `/changemeeting` `/cancelmeeting`. |
 | 2026-10-31 | Conferences: ad-hoc conferences are created with the IM and the A/V MCU (PV-12, fallback to chat only on `mcuTypeNotAvailable`); a client the IM MCU dials out to joins the focus of the same conference for the roster and conference audio (CI-13); IM sessions with an MCU accept the IMDN type (CI-14); re-INVITEs keep the first offer's crypto and cryptoscale lines (SD-13); muting sends the filter in the schema's namespace (new conflict K-CA-3). |
 | 2026-10-31 | Calls survive missing audio devices: without a microphone the call sends silence, without a speaker it goes on without sound, and the user is told (a local device never hangs up a call). ALSA playback stays usable after `drain()` (the PCM is prepared again; before, the next write failed with EBADFD). |

@@ -19,6 +19,7 @@ members = [
     "crates/session",
     "crates/dlx",
     "crates/conf",
+    "crates/park",
     "crates/g711",
     "crates/g722",
     "crates/audio-alsa",
