@@ -2,7 +2,7 @@
 
 **Stage: planning** · next: M0 (analysis imported, owner decisions taken), then M1 (sign-in)
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** major (first version)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M0 test vectors complete)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -10,17 +10,17 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 [`docs/gaps.md`](docs/gaps.md), and milestones and the current focus are in
 [`docs/roadmap.md`](docs/roadmap.md).
 
-## Headline numbers (2026-10-26)
+## Headline numbers (2026-10-27)
 
 | Number | Value | Kind |
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Documented conflicts between specification passages | **39** | measured (analysis) |
+| Documented conflicts between specification passages | **42** | measured (analysis) |
 | Missing sources (all IETF/ITU gaps closed or narrowed) | **18** listed, 9 closed | measured (analysis) |
-| Open points needing an interop capture or owner decision | **22** | measured (analysis) |
+| Open points needing an interop capture or owner decision | **23** | measured (analysis) |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 192 RFCs, 20 Internet-Drafts, ITU-T G.722.1/P.562/P.800.1 | measured |
-| Program code | 4 crates, 16 tests (specification test vectors), no network code | measured |
+| Program code | 8 crates, 55 tests (specification test vectors and examples), no network code | measured |
 | Owner decisions | **all taken** (D-01 … D-09; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **none** (D-08): all work is `tested-offline` at best | measured |
 
@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-27 | M0 test vectors complete: `sipcomp` (MPPC, RFC 2118/MS-RDPBCGR examples), `abs` (decompresses the compressed example of MS-ABS §3.2), `psom` (complete ConnMgr frames of MS-PSOM §4.1), `turn-bwm` (XOR examples); 55 tests. New findings K-CP-1, K-AB-4, K-PO-3, O-CP-3; K-AB-1 confirmed by the specification example. |
 | 2026-10-26 | Rust workspace started: `ntlm`, `ice`, `srtp`, `sip-identity` with 16 tests from published test vectors (MS-NLMP, RFC 3711, MS-SSRTP, MS-SIPRE, IE-05); CI on `ubuntu-latest`. |
 | 2026-10-26 | Protocol analysis imported into `docs/protocol/` (English): 39 evidence files, function matrix, conflict/gap/open-point list (generated), source registers. |
 | 2026-10-26 | D-08: no interop test environment for now (offline work only); D-09: CI only on runners without costs. |

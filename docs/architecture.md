@@ -1,6 +1,6 @@
 # CommSCraft architecture (planned)
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** major (first version, proposal)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (four more test-vector crates)
 
 Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 [`decisions.md`](decisions.md) are taken. Rules for working in the code are in
@@ -17,7 +17,7 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
   numbers and padding, MS-ICE2 duplicate check with the misprinted CRC table, NTLM sequence number
   100, SHA-1 in the endpoint ID derivation), the variant is a named, tested code path.
 
-## Crates that exist (2026-10-26)
+## Crates that exist (2026-10-27)
 
 | Crate | Layer | Job | Evidence |
 |---|---|---|---|
@@ -25,8 +25,13 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 | `commscraft-ntlm` | L1 | NTLMv2 keys, ESS signatures, connectionless SIP signing (seq 100) | NL-01…NL-05, AE-30 |
 | `commscraft-ice` | L1 | CRC-32/FINGERPRINT incl. the MS-ICE2 duplicate variant, candidate priorities | IC-12, IC-14, IE-03…IE-05, OB-09 |
 | `commscraft-srtp` | L1 | RFC 3711 key derivation, SSRTP packet transform | SR-*, SS-01…SS-05, IE-09 |
+| `commscraft-turn-bwm` | L1 | MS-TURNBWM attribute types, XOR site addresses | BW-11, BW-12 |
+| `commscraft-sipcomp` | L2 | MPPC compressor/decompressor with 8 KiB history and packet flags (no header: O-CP-1) | CP-05…CP-08, K-CP-1, O-CP-3, OB-01 |
+| `commscraft-abs` | L3 | Address book block compression (LZ77 variant), CRC-32, file-name dates | AB-03, AB-04, K-AB-1, K-AB-4 |
+| `commscraft-psom` | L3 | PSOM GenericInt, String, RPC frame | PO-04, PO-05, K-PO-2, K-PO-3 |
 
-Dependencies (decision D-03, pure Rust): RustCrypto `md4`, `md-5`, `hmac`, `sha1`, `aes`.
+Dependencies (decision D-03, pure Rust): RustCrypto `md4`, `md-5`, `hmac`, `sha1`, `aes`. The four
+newer crates use only the standard library.
 
 ## Layers (proposal)
 

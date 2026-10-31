@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** major (first version)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M0 test vectors complete)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -15,10 +15,13 @@ owner on an authorized server and is deferred until such an environment exists (
    matrix, conflict/gap/open-point list, source registers; English, no PDFs, no patent notes).
 3. ~~Workspace skeleton~~ – done: Rust workspace with the first crates (`ntlm`, `ice`, `srtp`,
    `sip-identity`), lints from [`AGENTS.md`](../AGENTS.md), CI on `ubuntu-latest` (D-09).
-4. **Test vectors as tests** – started: MS-NLMP NTLMv2 (§4.2.4), RFC 3711 B.3 and MS-SSRTP §4
+4. ~~Test vectors as tests~~ – done: MS-NLMP NTLMv2 (§4.2.4), RFC 3711 B.3 and MS-SSRTP §4
    (key derivation and packet transform), MS-SIPRE §4.2 (EPID → +sip.instance), MS-ICE2 CRC table
-   and the SfB candidate priorities (IE-05). Still to add: SIPCOMP/MPPC, ABS compression, PSOM
-   encoding, TURNBWM XOR.
+   and the SfB candidate priorities (IE-05), MPPC per RFC 2118/MS-RDPBCGR (`sipcomp`), the
+   compressed MS-ABS example and file-name dates (`abs`), the MS-PSOM ConnMgr frames (`psom`) and
+   the MS-TURNBWM XOR examples (`turn-bwm`).
+5. **Next:** M1 – sign-in and registration, offline against self-built fixtures (SIP message
+   parser, MS-SIPAE NTLM signing of SIP messages, REGISTER flow as a sans-I/O state machine).
 
 ## Milestones
 

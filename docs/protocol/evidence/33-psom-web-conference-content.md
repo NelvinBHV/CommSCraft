@@ -24,4 +24,9 @@ Source: [MS-PSOM] "PSOM Shared Object Messaging Protocol", edition 20250520, 111
 ## Conflicts
 - K-PO-1 (documented): §3.1.4.1.1 (p. 28) "first declared method = index 1, then consecutive"; §3.1.4.1.2.1 (p. 30) "alphabetical order". The example bytes confirm the **declaration order**.
 - K-PO-2: The "irregular" GenericInt values for −2^31 (`88 00`) and −2^63 (`8d` + 6 zero bytes) (p. 102) do not follow from the pseudo code (which yields `8b 80 00 00 00` or `8f 80 00…`); probably overflow effects of the original implementation. Make the decoder tolerant.
+- K-PO-3 (found 2026-10-27): The Meeting `addProtocol` example (§4.1.5, p. 96) announces version 1 with the hash −2007473133263860314. The interface definition (§3.1.4.1.6.1, p. 36) is `Version=2`; the sum of its printed hashes (7811924786664530844 + 2106930589629680263, 64-bit wrap-around) is −8527888697415340509. The version 1 hashes are not printed, so the example hash cannot be recomputed. For ConnMgr the sum matches (p. 95).
 - L-17: The content result (PowerPoint rendering) requires Office file formats (ECMA-376/ISO 29500, cited normatively, p. 12) – showing it on Linux needs a renderer; from Lync 2013, PowerPoint rendering usually happens via Office Web Apps (MS-WOPI) – to be checked separately.
+
+## Later findings (2026-10-27)
+- Recomputed in `crates/psom`: GenericInt table (p. 102), String example (p. 104), the complete ConnMgr frames `version`, `addProtocol` and `doneProtocols` of client and server (§4.1.4–4.1.5, pp. 93–95; frame = 0x16, 4-byte big-endian MessageLength, ProxyId, MethodIndex, parameters), and the decoding of the Meeting `addProtocol` frame (p. 96).
+- K-PO-2: the decoder accepts the two irregular forms with the meaning given in the table; the encoder follows the pseudo code.

@@ -1,6 +1,6 @@
 # Where CommSCraft falls short of the Skype for Business client
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** major (first version)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M0 test vectors done, O-CP-3)
 
 The work list, ranked by how much each item blocks the alpha gate in
 [`roadmap.md`](roadmap.md#alpha-gate-core-workflows) (**A** = blocks alpha). Each entry says what is
@@ -16,7 +16,7 @@ and the first milestones, followed by the open points found in the analysis.
 |---|---|---|---|
 | 1 | No interop test environment (D-08): nothing can be verified against a real server; open points needing captures stay open | [`decisions.md`](decisions.md) | after M0 |
 | 2 | ~~Protocol analysis not yet in the repository~~ – imported | [`protocol/`](protocol/) | done |
-| 3 | Remaining M0 test vectors (SIPCOMP/MPPC, ABS, PSOM, TURNBWM XOR) | [`roadmap.md`](roadmap.md) | M0 |
+| 3 | ~~Remaining M0 test vectors (SIPCOMP/MPPC, ABS, PSOM, TURNBWM XOR)~~ – done | [`roadmap.md`](roadmap.md) | done |
 | 4 | Sign-in stack: discovery, TLS, NTLM/Kerberos/TLS-DSK, registration, provisioning | functions 1–8 | M1 |
 | 5 | Presence and IM | functions 9–19 | M2 |
 | 6 | Media stack: MS-ICE2/MS-TURN, SRTP, RTP/RTCP, G.711/G.722 | functions 21–26 | M3 |
@@ -30,6 +30,7 @@ Full list with status: [`protocol/conflicts-gaps-open-points.md`](protocol/confl
 | ID | Open point | Status after research |
 |---|---|---|
 | O-CP-1 | Byte order of the 16-bit "Uncompressed size" in [MS-SIPCOMP] | open (compression is optional; can stay off) |
+| O-CP-3 | Bit order within a byte of the MPPC stream | inference: most significant bit first; interop |
 | O-IC-1 | Duplicate MS-ICE2 connectivity check with the misprinted CRC table | confirmed by a secondary source; interop |
 | O-AW-1 | WS-Security header layout when presenting a web ticket | secondary source; WSDL policy is normative |
 | O-NL-1 | NTLM flags negotiated by current servers | recomputed for OCS 2007 R2; interop for 2015+ |

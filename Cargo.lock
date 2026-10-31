@@ -39,6 +39,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "commscraft-abs"
+version = "0.0.1"
+
+[[package]]
 name = "commscraft-ice"
 version = "0.0.1"
 
@@ -52,11 +56,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "commscraft-psom"
+version = "0.0.1"
+
+[[package]]
 name = "commscraft-sip-identity"
 version = "0.0.1"
 dependencies = [
  "sha1",
 ]
+
+[[package]]
+name = "commscraft-sipcomp"
+version = "0.0.1"
 
 [[package]]
 name = "commscraft-srtp"
@@ -66,6 +78,10 @@ dependencies = [
  "hmac",
  "sha1",
 ]
+
+[[package]]
+name = "commscraft-turn-bwm"
+version = "0.0.1"
 
 [[package]]
 name = "cpufeatures"
