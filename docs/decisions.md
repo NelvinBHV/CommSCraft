@@ -1,6 +1,6 @@
 # Decisions
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** major (all decisions D-01 … D-08 taken)
+> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** minor (proposal D-10)
 
 Decisions that belong to the project owner. Agents propose, the owner decides; a decision is
 recorded here with date and reason before work depends on it.
@@ -9,7 +9,7 @@ recorded here with date and reason before work depends on it.
 
 | ID | Question | Proposal | Why it matters |
 |---|---|---|---|
-| – | – | – | – |
+| D-10 | MS-OCDISCWS §3.2.1.1 says the client MUST also try `http://lyncdiscover[internal].<domain>`. Follow it? | No: HTTPS only (current default, switch `allow_plain_http`). Plain HTTP sends the SIP URI unencrypted and accepts spoofable redirects; the HTTPS hosts are the same, so interoperation only suffers where a deployment has no valid certificate on lyncdiscover | Deviation from a MUST of the specification; security against interoperation |
 
 ## Taken
 

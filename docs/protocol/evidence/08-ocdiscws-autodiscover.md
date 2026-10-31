@@ -22,8 +22,10 @@ Classification: second, HTTP-based discovery path next to DNS SRV (MS-CONMGMT). 
 
 ## Open points
 - O-AD-1: The specification does not say in which order a **SIP desktop client** combines DNS SRV (CONMGMT) and Lync Autodiscover. Both paths are documented; the priority in the Windows client is not.
+- K-AD-1 (found 2026-10-27): §2.2.5.1 (p. 16) says AccessLocation "MUST have values of either \"internal\" or \"external\""; all responses in example §4.1 (pp. 24–26) carry `AccessLocation="Internal"`. The schema types it as `xs:string` (p. 28). Decision: compare case-insensitively, refuse other values.
 - O-AD-2: The example (p. 24) uses `http://lyncdiscover.contoso.com/?sipuri=…`, §3.1.5.2 the path `/autodiscover/autodiscoverservice.svc/root?sipuri=` – both forms are to be checked.
 
 ## Later findings (file 39)
 - O-AD-1 **closed** (OB-06, official): lyncdiscoverinternal → lyncdiscover → _sipinternaltls._tcp → _sip._tls → sipinternal → sip → sipexternal; Autodiscover always has priority.
 - O-AD-2 **closed** (OB-07): the root URL `https://lyncdiscover[internal].<domain>/?sipuri=` is for automatic discovery, the path form `…/autodiscoverservice.svc/Root` for manual configuration.
+- Implementation (2026-10-27, `crates/discovery`): §3.2.1.1 (p. 22) says the client MUST try `http://` and `https://` for both host names. Plain HTTP would send the SIP URI unencrypted and accept spoofable answers; CommSCraft tries HTTPS only unless the owner decides otherwise (decision proposal D-10). Discovery follows the Root's Domain link (AD-10, no authentication) and sends no credentials. Whether Skype for Business servers put `SipClientInternalAccess`/`SipClientExternalAccess` into the unauthenticated Domain resource ("if present", AD-10) is interop test IT-16.

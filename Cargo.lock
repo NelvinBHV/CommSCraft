@@ -43,6 +43,14 @@ name = "commscraft-abs"
 version = "0.0.1"
 
 [[package]]
+name = "commscraft-discovery"
+version = "0.0.1"
+dependencies = [
+ "commscraft-url",
+ "commscraft-xml",
+]
+
+[[package]]
 name = "commscraft-ice"
 version = "0.0.1"
 
@@ -61,6 +69,7 @@ name = "commscraft-provisioning"
 version = "0.0.1"
 dependencies = [
  "commscraft-sip-msg",
+ "commscraft-url",
  "commscraft-xml",
 ]
 
@@ -76,6 +85,7 @@ dependencies = [
  "commscraft-sip-identity",
  "commscraft-sip-msg",
  "commscraft-sipae",
+ "commscraft-url",
  "zeroize",
 ]
 
@@ -115,6 +125,10 @@ dependencies = [
 
 [[package]]
 name = "commscraft-turn-bwm"
+version = "0.0.1"
+
+[[package]]
+name = "commscraft-url"
 version = "0.0.1"
 
 [[package]]

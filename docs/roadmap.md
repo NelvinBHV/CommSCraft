@@ -27,9 +27,10 @@ owner on an authorized server and is deferred until such an environment exists (
    and verification with NTLM (`sipae`), NTLM CHALLENGE/AUTHENTICATE messages (`ntlm::messages`,
    example §4.2.4.3 byte for byte), the REGISTER flow as a sans-I/O state machine (`register`,
    offline sign-in against a test registrar). In-band provisioning (`provisioning`,
-   bounded `xml` reader) and the deregister NOTIFY are done. Next: discovery (Lync Autodiscover
-   and DNS SRV order, OB-06) with redirect validation, then the TLS/TCP adapter and a
-   `commscraft-cli` that signs in against a server only when the owner runs it.
+   bounded `xml` reader) and the deregister NOTIFY are done. Discovery (`discovery`, `url`) and the
+   registrar redirect are done. Next: keep-alive negotiation (CON-30…CON-35), the TLS/TCP adapter
+   (rustls, system trust store) and a `commscraft-cli` that signs in against a server only when
+   the owner runs it.
 
 ## Milestones
 

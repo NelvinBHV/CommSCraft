@@ -16,12 +16,12 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Documented conflicts between specification passages | **44** | measured (analysis) |
+| Documented conflicts between specification passages | **45** | measured (analysis) |
 | Missing sources (all IETF/ITU gaps closed or narrowed) | **18** listed, 9 closed | measured (analysis) |
-| Open points still needing an interop capture | **2** of 23 (plus 3 of 18 gaps and 5 conflicts) and 2 design checks from M1: 15 owner test cases, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured (analysis) |
+| Open points still needing an interop capture | **3** of 24 (plus 3 of 18 gaps and 5 conflicts) and 3 design checks from M1: 17 owner test cases, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured (analysis) |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 192 RFCs, 20 Internet-Drafts, ITU-T G.722.1/P.562/P.800.1 | measured |
-| Program code | 13 crates, 113 tests (specification test vectors, examples, hostile-input tests, offline sign-in), no network code | measured |
-| Owner decisions | **all taken** (D-01 … D-09; [`docs/decisions.md`](docs/decisions.md)) | measured |
+| Program code | 15 crates, 125 tests (specification test vectors, examples, hostile-input tests, offline sign-in), no network code | measured |
+| Owner decisions | D-01 … D-09 taken; **D-10 proposed** (Autodiscover HTTPS only; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **none** (D-08): all work is `tested-offline` at best | measured |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-27 | Discovery: `discovery` (Autodiscover over HTTPS only via the unauthenticated Domain resource, ≤ 10 redirects, loop detection; DNS SRV/fallback ordering, TLS only, domain filter) and `url`; signed registrar redirect (O-RG-1, researched in secondary sources). New: K-AD-1, O-RG-1, decision proposal D-10, IT-16/IT-17. |
 | 2026-10-27 | Provisioning and server NOTIFYs: bounded `xml` reader (no DTD/entities), `provisioning` (SUBSCRIBE, parser for the three group shapes of MS-SIPREGE §4.2.2, ServerConfiguration with HTTPS/domain/port checks), deregister and survivable mode NOTIFY in `register`. New conflict K-RG-4 (malformed examples, inconsistent element names). |
 | 2026-10-27 | Offline sign-in: `register` state machine (REGISTER → NTLM → signed 200 OK → GRUU → refresh → sign-out) against a test registrar; strict base64; client version block (RG-50). Findings: the MS-SIPAE signature does not cover Contact/GRUU; the MS-SIPREGE example uses NTLMv1. New interop tests IT-14, IT-15. |
 | 2026-10-27 | NTLM handshake messages: CHALLENGE parsing with bounds checks, AUTHENTICATE construction (reproduces MS-NLMP §4.2.4.3 byte for byte), MIC/channel bindings/no LM response per §3.1.5.2.1, flag policy that refuses anything weaker than NTLMv2 + ESS + 128-bit + key exchange. |

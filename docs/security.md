@@ -34,6 +34,7 @@ This page lists the rules every crate follows and how each is enforced. The gene
 | No panics | `unsafe` forbidden; `unwrap`, `expect`, `panic!`, indexing and slicing are denied by workspace lints. Errors are `Result` | `Cargo.toml` `[workspace.lints]`, CI clippy |
 | Bounded XML | No DTD (so no external entities, no entity expansion), only predefined entities and character references, limits on size, depth, attributes and nodes, tree built without recursion | `xml` |
 | Provisioned values are input too | Web service URLs from provisioning must be `https://` with a DNS host (no IP literal, no user info); a host outside the user's SIP domain is marked so that the user is asked before credentials go there; SIP URIs, numbers, port ranges (≥ 1024) and enumerations are checked; invalid values are dropped and listed | `provisioning::ServerConfiguration` |
+| Discovery without secrets | Autodiscover over HTTPS only (D-10 proposal), unauthenticated Domain resource, at most 10 redirects, no loops; every URL and host checked; DNS SRV targets outside the user's domain dropped; Autodiscover targets, links and registrar redirects outside the domain marked so the user is asked; TLS only, no plain TCP or DHCP targets | `discovery`, `url`, `register` (redirect) |
 | Hostile-input tests | Every parser gets tests with malformed input and a deterministic mutation test (thousands of corrupted messages; must not panic) | `sip-msg` `mutated_inputs_never_panic` |
 | Minimal, reviewed dependencies | Pure Rust, mostly RustCrypto (D-03); new dependencies need a reason in the PR. No dependency on code from the specification package or from GPL projects | `Cargo.toml`, `Cargo.lock` (CI uses `--locked`) |
 | No real servers in development | Work happens offline against specification examples and own fixtures (D-08); interop runs only by the owner | [`interop-tests.md`](interop-tests.md) |
@@ -42,8 +43,6 @@ This page lists the rules every crate follows and how each is enforced. The gene
 
 - **TLS:** system trust store or the user's configured CA, host-name check against the SIP domain or
   the discovered server, TLS 1.2 or later, no option to switch validation off.
-- **Discovery:** Autodiscover redirects and DNS SRV targets are only followed inside the user's SIP
-  domain (or a domain the user confirms) before any credential is sent.
 - **Kerberos/TLS-DSK:** behind adapter crates (D-03); tickets and private keys never leave them.
 - **Media:** SRTP only (`AES_CM_128_HMAC_SHA1_80`, K-SR-1); no unencrypted RTP fallback.
 - **Logging:** headers that carry secrets (`Authorization`, `Proxy-Authorization`, `gssapi-data`,

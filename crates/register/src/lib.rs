@@ -137,6 +137,17 @@ pub enum Event {
     Deregistered(Deregistration),
     /// The presence service is unavailable; the registration stays (survivable mode, RG-31).
     SurvivableMode,
+    /// The registrar sent a signed 301/302 to the user's home pool (O-RG-1): close the connection
+    /// and register there. The caller asks the user first if `in_user_domain` is false.
+    Redirected(RedirectTarget),
+}
+
+/// Target of a registrar redirect (validated, TLS only).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RedirectTarget {
+    pub host: String,
+    pub port: u16,
+    pub in_user_domain: bool,
 }
 
 /// Reason of a deregister NOTIFY (MS-SIPREGE §2.2.1.13, pp. 18–19).
@@ -707,8 +718,63 @@ impl<R: Random> Registrar<R> {
         }
     }
 
+    /// O-RG-1 (secondary evidence: SIPE `sip-transport.c` l. 1154–1196; RFC 3261 §8.1.3.4,
+    /// §21.3.2): after the authentication handshake the registrar can answer 301 with the home
+    /// pool in the Contact. Accepted only when signed; host checked; only TLS.
+    fn on_redirect(&mut self, msg: &Message) -> Vec<Event> {
+        if self.verified(msg).is_none() {
+            return Vec::new();
+        }
+        let target = msg
+            .name_addrs("Contact")
+            .ok()
+            .and_then(|c| c.into_iter().next())
+            .and_then(|c| {
+                let rest = c
+                    .uri
+                    .get(..4)
+                    .filter(|s| s.eq_ignore_ascii_case("sip:"))
+                    .and(c.uri.get(4..))?;
+                let mut parts = rest.split(';');
+                let hostport = parts.next()?;
+                if hostport.contains('@') {
+                    return None;
+                }
+                let tls = parts.all(|p| match p.split_once('=') {
+                    Some((k, v)) if k.eq_ignore_ascii_case("transport") => {
+                        v.eq_ignore_ascii_case("tls")
+                    }
+                    _ => true,
+                });
+                if !tls {
+                    return None;
+                }
+                let (host, port) = match hostport.rsplit_once(':') {
+                    Some((h, p)) => (h, p.parse::<u16>().ok().filter(|p| *p != 0)?),
+                    None => (hostport, 5061),
+                };
+                let host = commscraft_url::dns_host(host)?;
+                let domain = self.cfg.aor.rsplit_once('@').map(|(_, d)| d.to_string())?;
+                Some(RedirectTarget {
+                    in_user_domain: commscraft_url::in_domain(&host, &domain),
+                    host,
+                    port,
+                })
+            });
+        match target {
+            Some(t) => {
+                self.phase = Phase::Done;
+                self.sa = None;
+                self.deadline = None;
+                vec![Event::Redirected(t)]
+            }
+            None => self.fail(Failure::BadResponse("unusable redirect")),
+        }
+    }
+
     fn on_final(&mut self, msg: &Message, code: u16, now: u64) -> Vec<Event> {
         match code {
+            301 | 302 => self.on_redirect(msg),
             200..=299 => {
                 if self.verified(msg).is_none() {
                     return Vec::new();
@@ -739,6 +805,7 @@ impl<R: Random> Registrar<R> {
                 }
                 self.registered(msg, now)
             }
+            301 | 302 => self.on_redirect(msg),
             // AE-23: a signed request challenged again ⇒ discard the SA and authenticate anew.
             401 | 407 => vec![Event::Send(self.start(now))],
             _ => self.fail(Failure::Status(code)),

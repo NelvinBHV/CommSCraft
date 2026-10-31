@@ -12,6 +12,7 @@ commscraft-sip-msg = { path = "../sip-msg" }
 commscraft-sipae = { path = "../sipae" }
 commscraft-ntlm = { path = "../ntlm" }
 commscraft-sip-identity = { path = "../sip-identity" }
+commscraft-url = { path = "../url" }
 zeroize.workspace = true
 
 [lints]
