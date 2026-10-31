@@ -72,6 +72,7 @@ impl Kind {
 pub struct Local {
     pub foundation: String,
     pub component: u8,
+    pub transport: Transport,
     pub kind: Kind,
     pub address: SocketAddr,
     pub base: SocketAddr,
@@ -82,8 +83,29 @@ pub struct Local {
 pub struct Remote {
     pub foundation: String,
     pub component: u8,
+    pub transport: Transport,
     pub address: SocketAddr,
     pub priority: u32,
+}
+
+/// Transport of a candidate (IC-10; ice-tcp-07 §3: active/passive, no simultaneous-open).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Transport {
+    Udp,
+    TcpActive,
+    TcpPassive,
+}
+
+impl Transport {
+    /// ice-tcp-07 §4.2: UDP–UDP, tcp-act–tcp-pass, tcp-pass–tcp-act.
+    fn pairs_with(self, remote: Transport) -> bool {
+        matches!(
+            (self, remote),
+            (Transport::Udp, Transport::Udp)
+                | (Transport::TcpActive, Transport::TcpPassive)
+                | (Transport::TcpPassive, Transport::TcpActive)
+        )
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -265,11 +287,9 @@ impl Agent {
     }
 
     fn add_remote(&mut self, c: Remote) -> usize {
-        if let Some(i) = self
-            .remotes
-            .iter()
-            .position(|r| r.address == c.address && r.component == c.component)
-        {
+        if let Some(i) = self.remotes.iter().position(|r| {
+            r.address == c.address && r.component == c.component && r.transport == c.transport
+        }) {
             return i;
         }
         self.remotes.push(c);
@@ -288,11 +308,17 @@ impl Agent {
         for (li, l) in self.locals.iter().enumerate() {
             // Server-reflexive candidates send from their base: the host pair covers them
             // (ice-19 §5.7.3 pruning).
-            if l.kind == Kind::ServerReflexive {
+            if l.kind == Kind::ServerReflexive && l.transport == Transport::Udp {
+                continue;
+            }
+            // ice-tcp-07 §4.2: pairs with a passive local candidate are pruned; they arise from
+            // incoming checks (peer-reflexive learning).
+            if l.transport == Transport::TcpPassive {
                 continue;
             }
             for (ri, r) in self.remotes.iter().enumerate() {
                 if l.component == r.component
+                    && l.transport.pairs_with(r.transport)
                     && l.base.is_ipv4() == r.address.is_ipv4()
                     && !self.pairs.iter().any(|p| p.local == li && p.remote == ri)
                     && self.pairs.len() < MAX_PAIRS
@@ -811,9 +837,16 @@ impl Agent {
             Some(i) => i,
             None if self.remotes.len() < MAX_CANDIDATES && usable_address(from.ip()) => {
                 let f = format!("prflx{}", self.remotes.len());
+                // The peer's end of the connection has the opposite TCP role.
+                let transport = match self.locals.get(local).map(|l| l.transport) {
+                    Some(Transport::TcpPassive) => Transport::TcpActive,
+                    Some(Transport::TcpActive) => Transport::TcpPassive,
+                    _ => Transport::Udp,
+                };
                 self.add_remote(Remote {
                     foundation: f,
                     component,
+                    transport,
                     address: from,
                     priority,
                 })

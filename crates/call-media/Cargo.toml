@@ -1,6 +1,6 @@
 [package]
 name = "commscraft-call-media"
-description = "Network side of a call's media: UDP sockets, MS-TURN relays, ICE agent and the audio core"
+description = "Network side of a call's media: UDP sockets, MS-TURN relays over UDP and TCP, ICE agent and the audio core"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -15,6 +15,9 @@ commscraft-sdp = { path = "../sdp" }
 commscraft-turn = { path = "../turn" }
 getrandom.workspace = true
 zeroize.workspace = true
+
+[dev-dependencies]
+commscraft-stun = { path = "../stun" }
 
 [lints]
 workspace = true

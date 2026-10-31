@@ -17,11 +17,11 @@ owner on an authorized server and is deferred until such an environment exists (
 | M0 | done | analysis in [`protocol/`](protocol/), decisions, workspace, CI, specification test vectors | – |
 | M1 | built, tested-offline | discovery (Autodiscover HTTPS-only, DNS SRV, trust model), TLS adapter, NTLM + MS-SIPAE, REGISTER (GRUU, refresh, redirect, deregister), keep-alive, provisioning, sign-out, `commscraft-cli` | Kerberos, TLS-DSK; owner verification |
 | M2 | built, tested-offline | presence (publish, batch subscriptions, pool resubscribe), contact list (read, live), 1:1 IM with typing, group IM (ad-hoc conference, invitations, IMDN), address book search (MS-DLX over NTLM/HTTP), session engine, CLI `interactive` | contact list editing, privacy/blocking, offline address book, photos; owner verification |
-| M3 | in progress | G.711, G.722, ALSA/PipeWire adapter (D-11), RTP/RTCP, DTMF, SRTP, SDP, STUN, MS-TURN, MS-AVEDGEA, ICE agent (UDP), call signalling, media core and runtime, CLI `/call` `/answer` `/hangup` `/dtmf` `/mute` | TCP candidates/relay on 443, hold/resume command, MS-RTP RTCP profile, bandwidth management, redundancy; owner verification (IT-23) |
+| M3 | in progress | G.711, G.722, ALSA/PipeWire adapter (D-11), RTP/RTCP, DTMF, SRTP, SDP, STUN, MS-TURN, MS-AVEDGEA, ICE agent (UDP and TCP relay on 443 with pseudo-TLS), call signalling, media core and runtime, CLI `/call` `/answer` `/hangup` `/dtmf` `/mute` | hold/resume command, MS-RTP RTCP profile, bandwidth management, redundancy, TCP-only mode; owner verification (IT-23, IT-24) |
 | M4 – M7 | not started | building blocks only: C3P/roster (`conf`), SSRTP transform, PSOM/ABS/MPPC test vectors | everything else |
 
-Next steps in order: TCP candidates and the TCP relay (pseudo-TLS) for networks that only allow
-443; hold/resume; MS-RTP RTCP profile extensions; then M4 (meetings with audio, telephony).
+Next steps in order: hold/resume; MS-RTP RTCP profile extensions; then M4 (meetings with audio,
+telephony).
 
 ## Milestones
 
@@ -50,6 +50,6 @@ and pass offline tests; none is verified against a real server yet.
 | Sign in automatically (discovery, authentication, registration) and sign out | built, tested-offline (NTLM only) |
 | See colleagues' presence and set your own | built, tested-offline |
 | Chat 1:1 and in a group | built, tested-offline |
-| Call a colleague with audio (incl. through the Edge server) | built, tested-offline over UDP (loopback test); TCP relay missing |
+| Call a colleague with audio (incl. through the Edge server) | built, tested-offline (UDP loopback test, TCP relay against a TURN test server) |
 | Join a scheduled meeting with audio and see who is speaking | no |
 | Watch a colleague's shared screen | no |
