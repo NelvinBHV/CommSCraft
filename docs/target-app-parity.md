@@ -47,7 +47,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 20 | Persistent chat | MS-XCCOSIP, MS-OCGCWEB | T | – |
 | 21 | Media relay access | MS-AVEDGEA, MS-TURN | B | parts tested-offline (MS-TURN client incl. TCP framing and pseudo-TLS: `turn`; STUN codec: `stun`); MS-AVEDGEA credentials tested-offline (`avedgea`, engine bootstrap and refresh) |
 | 22 | ICE connectivity | MS-ICE2, MS-ICE | B\* | parts tested-offline (UDP ICE agent: checks in both STUN formats, nomination, keep-alive, consent: `ice-agent`); TCP candidates and MS-ICE (2007) – |
-| 23 | Media negotiation (SDP) | MS-SDPEXT, MS-SIPRE | B\* | parts tested-offline (audio offer/answer, a=crypto, ICE-19 attributes: `sdp`) |
+| 23 | Media negotiation (SDP) | MS-SDPEXT, MS-SIPRE | B\* | parts tested-offline (audio offer/answer, a=crypto, ICE-19 attributes, remote-candidates: `sdp`; call signalling with multipart offers, ringing, answer, final offer, CANCEL, BYE: `session`) |
 | 24 | Media encryption | MS-SRTP, MS-SSRTP | B | tested-offline (SRTP/SRTCP contexts with MKI, replay window, ROC; RFC 3711 B.2/B.3 and libsrtp reference packets: `srtp`) |
 | 25 | RTP/RTCP, bandwidth, video source requests | MS-RTP | B | parts tested-offline (RTP header, sender, reception statistics, SR/RR/SDES/BYE, DTMF: `rtp`); MS-RTP profile extensions – |
 | 26 | Audio codecs G.711, G.722 | MS-RTP, MS-SDPEXT, ITU-T G.711, G.722 | B | tested-offline (G.711 against Tables 1–6; G.722 ADPCM bit-exact against all ITU digital test sequences, QMF round trip: `g711`, `g722`) |

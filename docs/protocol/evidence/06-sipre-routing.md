@@ -71,3 +71,7 @@ Example §4.2 (p. 81): epid `01010101` → `4b1682a8-f968-5701-83fc-7c6741dc6697
 | RE-67 | **Emergency call**: INVITE with `Priority: emergency`, `Geolocation` header, `Supported: geolocation`, PIDF-LO (RFC 3863/4119/5139, `method=Manual` for an unverified address) + `msftE911PidfExtn` (LocationPolicyTagID); before that a time-limited `routing` publication with `e911active` | §2.2.23, p. 36; §3.17.5.1, p. 80; schema §9, p. 102; example §4.14, p. 94 |
 | RE-68 | Music on hold: `sip.rendering` feature tag (RFC 4235) together with MS-SDPEXT §3.1.5.27 | §2.2.5, p. 24 |
 | RE-69 | `Content-Disposition` types render/session/icon/alert | §2.2.14, p. 29 |
+
+## Implementation (2026-10-31, `crates/session` call module)
+Outgoing INVITE with a 2-level `multipart/alternative` whose last part is the ICE-19 SDP (§3.15.4.1, RE-65; CommSCraft offers no ICE-06 part because it does not implement MS-ICE – the structure rule of §3.15.4.1 is met with the ICE-19 part alone); incoming INVITEs: the last `application/sdp` part with `m=audio` is the offer (§3.15.5.1), also inside a 3-level `multipart/mixed`. Not implemented: the 415 retry with an ICE-06 single part (§3.15.5.2) – a peer that refuses multipart cannot be reached (inference: only OCS 2007 endpoints, endnote <73>). Status: tested-offline.
+

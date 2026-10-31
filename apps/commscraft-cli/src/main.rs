@@ -1260,6 +1260,16 @@ fn interactive(
                     }
                     E::RegistrationEnded(why) => return Err(format!("registration ended: {why}")),
                     E::Provisioned(c) => services = Some(c),
+                    // Calls: signalling is in the engine; the media path (and with it /call and
+                    // /answer) follows. An incoming call rings and ends after 60 s with 480.
+                    E::CallRinging { call } => println!("* call {call} ringing"),
+                    E::IncomingCall { call, from } => {
+                        println!("* incoming call {call} from {from} (audio not yet available in this tool)")
+                    }
+                    E::CallAnswered { call, .. } | E::CallUpdated { call, .. } => {
+                        println!("* call {call} media parameters received")
+                    }
+                    E::CallEnded { call, status } => println!("* call {call} ended ({status})"),
                     E::MediaRelayReady { relays, minutes } => {
                         println!("* media relay ready ({relays} relays, valid {minutes} min)")
                     }

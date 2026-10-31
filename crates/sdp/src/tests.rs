@@ -71,6 +71,7 @@ fn local() -> Local {
             }],
         }),
         direction: Direction::SendRecv,
+        remote_candidates: Vec::new(),
     }
 }
 
@@ -267,4 +268,18 @@ fn hostile_sdp() {
     );
     assert!(Candidate::parse("1 1 SCTP 1 192.0.2.1 1 typ host").is_err());
     assert!(Candidate::parse("1 1 UDP 1 not-an-ip 1 typ host").is_err());
+}
+
+#[test]
+fn final_offer_lists_remote_candidates() {
+    let mut l = local();
+    l.remote_candidates = vec![
+        (1, "198.51.100.7:5000".parse().unwrap()),
+        (2, "198.51.100.7:5001".parse().unwrap()),
+    ];
+    let o = offer(&l, Encryption::Required);
+    assert!(
+        o.contains("a=remote-candidates:1 198.51.100.7 5000 2 198.51.100.7 5001\r\n"),
+        "{o}"
+    );
 }

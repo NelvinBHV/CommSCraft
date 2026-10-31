@@ -466,7 +466,7 @@ pub enum Encryption {
 }
 
 /// What we put into an audio offer or answer.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Local {
     pub address: IpAddr,
     pub rtp_port: u16,
@@ -474,6 +474,9 @@ pub struct Local {
     pub key: Option<Key>,
     pub ice: Option<Ice>,
     pub direction: Direction,
+    /// Final offer of the controlling agent: the chosen remote candidates per component
+    /// (ice-19 §9.1.2.2, syntax §15.2: `a=remote-candidates`, SD-41).
+    pub remote_candidates: Vec<(u8, std::net::SocketAddr)>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -530,6 +533,15 @@ fn write(local: &Local, proto: &str, codecs: &[(Codec, u8)], dtmf: Option<u8>) -
         for c in &ice.candidates {
             s.push_str(&format!("a=candidate:{}\r\n", c.attribute()));
         }
+    }
+    if !local.remote_candidates.is_empty() {
+        let list: Vec<String> = local
+            .remote_candidates
+            .iter()
+            .take(2)
+            .map(|(c, a)| format!("{c} {} {}", a.ip(), a.port()))
+            .collect();
+        s.push_str(&format!("a=remote-candidates:{}\r\n", list.join(" ")));
     }
     s.push_str("a=label:main-audio\r\n");
     if let Some(k) = &local.key {
