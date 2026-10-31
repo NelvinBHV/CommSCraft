@@ -24,7 +24,7 @@ Each requirement has an ID made of a prefix per protocol and a number, e.g. `AE-
 - **official** – Microsoft documentation outside the Open Specifications;
 - **secondary** – confirmed only by an open-source implementation or observation; needs interop confirmation;
 - **inference** – technically justified, not literally documented; always marked;
-- **open** – only an interop capture can clarify it (no interop environment yet, decision D-08).
+- **open** – only an interop capture can clarify it (lab runs stay private, decision D-08).
 
 ## What is not here
 

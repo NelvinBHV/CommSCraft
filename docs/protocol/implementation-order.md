@@ -1,6 +1,6 @@
 # Implementation order (derived from the evidence dependencies)
 
-The milestones in [`../roadmap.md`](../roadmap.md) follow this order. Each stage ends offline (`tested-offline`, decision D-08); interop tests come later and are run only by the owner.
+The milestones in [`../roadmap.md`](../roadmap.md) follow this order. Each stage ends offline (`tested-offline`, decision D-08); interop tests are run by the owner, lab runs stay private (D-08).
 
 | Stage | Content | Basis (evidence IDs) | Checkable without a server by |
 |---|---|---|---|

@@ -62,7 +62,7 @@ This page lists the rules every crate follows and how each is enforced. The gene
 | Every request answered or dropped | The session engine drops unsigned requests without an answer, answers every signed one (unknown dialog 481, unsupported 405/488/501), bounds conversations (64) and subscriptions (128), and times out every client transaction | `session` |
 | Hostile-input tests | Every parser gets tests with malformed input and a deterministic mutation test (thousands of corrupted messages; must not panic) | `sip-msg` `mutated_inputs_never_panic` |
 | Minimal, reviewed dependencies | Pure Rust, mostly RustCrypto (D-03); new dependencies need a reason in the PR. No dependency on code from the specification package or from GPL projects | `Cargo.toml`, `Cargo.lock` (CI uses `--locked`) |
-| No real servers in development | Work happens offline against specification examples and own fixtures (D-08); interop runs only by the owner | [`interop-tests.md`](interop-tests.md) |
+| No real servers in development | Work happens offline against specification examples and own fixtures (D-08); besides the owner's runs, only the owner's isolated lab is used, and nothing about it is published | [`interop-tests.md`](interop-tests.md) |
 
 ## Rules for the next building blocks
 

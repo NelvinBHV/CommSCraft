@@ -2,7 +2,7 @@
 
 **Stage: M3 (audio 1:1)** · M0 done · M1 and M2 built and tested offline · M3 in progress
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (headline numbers and next steps synchronised with the code)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (D-08 changed: private owner lab)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -22,7 +22,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
 | Program code | **32 crates + 1 app** (`commscraft-cli`), **296 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
-| Interop test environment | **none** (D-08): all work is `tested-offline` at best | measured |
+| Interop test environment | **private owner lab** (D-08, since 2026-10-31): the agent may test there; results are not published, public statuses stay `tested-offline` | owner decision |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
 interop check; **T** partly documented; **N** not documented (or not implementable without a
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-10-31 | D-08 changed: the owner operates an isolated lab and allows the agent to test against it; nothing about the lab is published, public statuses stay `tested-offline`. |
 | 2026-10-31 | Call forwarding and simultaneous ring: routing preamble (MS-SIPRE §2.2.9/§3.9) published to the routing category with version-conflict retry; CLI `/forward`, `/simring`; SDK namespace contradiction recorded as K-RE-2; interop test IT-33. |
 | 2026-10-31 | Call transfer: unattended and attended (REFER, Replaces, NOTIFY sipfrag) as transferor, following a REFER as transferee (Referred-By, Replaces, Ms-Sensitivity, ms-safe-transfer), Replaces as target (481 without a match); CLI `/transfer`; interop test IT-32. |
 | 2026-10-31 | PSTN calling (MS-OCPSTN): dial strings with the location profile as phone-context (from provisioning) or E.164, caller number from the asserted identity, gateway and anonymous callers, call back, 605 for loop calls while ringing, Content-ID/ms-accepted-content-id; CLI `/call <number>`, `/callback N`; interop test IT-31. |
