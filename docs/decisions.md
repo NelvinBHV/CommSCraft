@@ -1,6 +1,6 @@
 # Decisions
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-28 · **Change:** minor (D-11 taken)
+> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-31 · **Change:** minor (D-11 taken)
 
 Decisions that belong to the project owner. Agents propose, the owner decides; a decision is
 recorded here with date and reason before work depends on it.
@@ -27,5 +27,5 @@ recorded here with date and reason before work depends on it.
 | D-10 | 2026-10-27 | Autodiscover over HTTPS only, deviating from the MUST in MS-OCDISCWS §3.2.1.1 to also try `http://` (switch `allow_plain_http` stays off) | Plain HTTP would send the SIP URI unencrypted and accept spoofable redirects; owner followed the proposal |
 | D-11 | 2026-10-28 | Audio devices on Linux through ALSA/PipeWire: the adapter crate `audio-alsa` uses the ALSA API (crate `alsa` 0.9.1, links libasound); on PipeWire systems the ALSA device `default` is served by PipeWire's ALSA plugin. No other crate links audio libraries | Owner decision; one backend covers ALSA and PipeWire; safe Rust API, `unsafe_code` stays forbidden in CommSCraft code (D-03) |
 | T-01 | 2026-10-26 | Repository restarted; the previous history is archived outside the repository | Owner decision |
-| T-02 | 2026-10-26 | Work on branches and pull requests; no direct pushes or merges to `main` by agents | Owner rule |
+| T-02 | 2026-10-26, changed 2026-10-31 | Work on branches and pull requests; no direct pushes to `main`. Since 2026-10-31 the agent merges its own pull requests into `main` regularly once CI is green (merge commits, history kept). No releases | Owner rule; changed by the owner ("Merge aber immer wieder alles zusammen") |
 | T-03 | 2026-10-26 | Interop tests against real servers are run only by the owner | Owner rule |

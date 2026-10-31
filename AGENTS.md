@@ -73,8 +73,8 @@ sockets, the OS or the UI; transport and OS adapters are separate crates.
   without new owner approval.
 - There is no interop test environment (decision D-08): never connect to real servers; work offline
   with specification test vectors, specification examples and self-built fixtures.
-- Work on branches and open pull requests; never push to `main` directly, never merge without the
-  owner.
+- Work on branches and open pull requests; never push to `main` directly. Merge your own pull
+  requests into `main` regularly once CI is green (owner instruction T-02, 2026-10-31); no releases.
 
 ## Progress docs
 When work lands, update the gap in `docs/gaps.md`, the function row in
