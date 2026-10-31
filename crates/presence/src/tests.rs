@@ -469,3 +469,50 @@ fn team_and_delegate_ringing() {
             && listed.preamble().unwrap().contains("wait name=\"total\"")
     );
 }
+
+/// PR-13 ([MS-PRES] §2.2.2.3, pp. 35–38): the self SUBSCRIBE asks for categories; the routing
+/// instance of the answer gives the versions per container and the rules (version 2 lists and
+/// waits included); unsafe targets make the rules unknown; other categories are skipped.
+#[test]
+fn self_routing() {
+    let mut m = commscraft_sip_msg::Message::request("SUBSCRIBE", "sip:bob@contoso.com");
+    self_subscribe(&mut m);
+    assert_eq!(
+        m.single("Event").unwrap(),
+        Some("vnd-microsoft-roaming-self")
+    );
+    assert_eq!(
+        String::from_utf8_lossy(&m.body),
+        "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/></roamingList>"
+    );
+    let routing = "<routing xmlns=\"http://schemas.microsoft.com/02/2006/sip/routing\" name=\"rtcdefault\" version=\"2\"><preamble><list name=\"forwardto\"><target uri=\"sip:carol@contoso.com\"/></list><list name=\"team\"><target uri=\"sip:alice@contoso.com\"/><target uri=\"sip:bob2@contoso.com\"/></list><flags name=\"clientflags\" value=\"enablecf team_ring future_flag\"/><wait name=\"user\" seconds=\"12\"/><wait name=\"team2\" seconds=\"8\"/><wait name=\"other\" seconds=\"1\"/></preamble></routing>";
+    let doc = |routing: &str| {
+        format!(
+            "<roamingData xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><categories xmlns=\"http://schemas.microsoft.com/2006/09/sip/categories\" uri=\"sip:bob@contoso.com\"><category name=\"contactCard\" instance=\"0\" container=\"0\" version=\"1\" expireType=\"static\"/><category name=\"routing\" instance=\"0\" container=\"0\" version=\"4\" expireType=\"static\">{routing}</category><category name=\"routing\" instance=\"0\" container=\"400\" version=\"9\" expireType=\"static\">{routing}</category><category name=\"routing\" instance=\"0\" container=\"32000\" version=\"1\" expireType=\"static\"/></categories></roamingData>"
+        )
+    };
+    let r = parse_self_routing(&doc(routing)).unwrap();
+    assert_eq!(r.versions, [Some(4), None, None, None, Some(9)]);
+    let f = r.rules.unwrap();
+    assert_eq!(f.forward_to.as_deref(), Some("sip:carol@contoso.com"));
+    assert!(!f.immediate && f.team_ring && !f.delegate_ring);
+    assert_eq!(f.team.len(), 2);
+    assert_eq!((f.user_seconds, f.team_seconds), (Some(12), Some(8)));
+    // What we read back we can publish again unchanged.
+    assert!(f.preamble().unwrap().contains("team_ring"));
+    let evil = routing.replace(
+        "sip:carol@contoso.com",
+        "sip:carol@contoso.com&quot;&gt;&lt;x",
+    );
+    let r = parse_self_routing(&doc(&evil)).unwrap();
+    assert_eq!(r.rules, None, "unsafe target: rules unknown");
+    assert_eq!(r.versions[4], Some(9), "versions still usable");
+    assert!(parse_self_routing("<roamingData xmlns=\"urn:other\"/>").is_err());
+    assert_eq!(
+        parse_self_routing(
+            "<roamingData xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"/>"
+        )
+        .unwrap(),
+        SelfRouting::default()
+    );
+}

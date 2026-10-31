@@ -3221,3 +3221,54 @@ fn announcements_and_dial_out_commands() {
         vec![Event::Notice("not a usable phone number".into())]
     );
 }
+
+/// PR-13 / O-RE-3: after sign-in the client subscribes to itself; the routing category of the
+/// answer becomes the user's known rules and the versions of the next publication; rules with
+/// e911active (an emergency call in progress) are not taken as the user's.
+#[test]
+fn self_subscription_routing() {
+    let (mut e, mut server, out) = signed_in();
+    let self_sub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-roaming-self"))
+        .expect("self SUBSCRIBE");
+    let routing = |flags: &str, version: u32| {
+        format!(
+            "<roamingData xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><categories xmlns=\"http://schemas.microsoft.com/2006/09/sip/categories\" uri=\"sip:alice@contoso.com\"><category name=\"routing\" instance=\"0\" container=\"400\" version=\"{version}\" expireType=\"static\"><routing xmlns=\"http://schemas.microsoft.com/02/2006/sip/routing\" name=\"rtcdefault\" version=\"1\"><preamble><list name=\"forwardto\"><target uri=\"sip:carol@contoso.com\"/></list><flags name=\"clientflags\" value=\"{flags}\"/><wait name=\"total\" seconds=\"20\"/></preamble></routing></category></categories></roamingData>"
+        )
+    };
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &self_sub,
+            200,
+            Some("application/vnd-microsoft-roaming-self+xml"),
+            &routing("enablecf forward_immediate", 6),
+            &[("Expires", "600")],
+        ),
+        NOW,
+    );
+    assert!(events(&out).iter().any(|ev| matches!(ev, Event::Forwarding(f) if f.forward_to.as_deref() == Some("sip:carol@contoso.com") && f.immediate)));
+    // The next publication uses the server's version for container 400.
+    let out = e.command(Command::SetForwarding(pres::Forwarding::default()), NOW);
+    let body = String::from_utf8_lossy(&sends(&out).pop().unwrap().body).to_string();
+    assert!(body.contains("container=\"400\" version=\"6\""), "{body}");
+    // An e911active document (emergency call in progress) does not replace the user's rules,
+    // its versions are still taken.
+    let notify = peer_request(
+        &mut server,
+        &self_sub,
+        "BENOTIFY",
+        2,
+        Some("application/vnd-microsoft-roaming-self+xml"),
+        &routing("e911active", 8),
+        &[],
+    );
+    let out = e.on_message(&notify, NOW);
+    assert!(!events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Forwarding(_))));
+    let out = e.command(Command::SetForwarding(pres::Forwarding::default()), NOW);
+    let body = String::from_utf8_lossy(&sends(&out).pop().unwrap().body).to_string();
+    assert!(body.contains("container=\"400\" version=\"8\""), "{body}");
+}
