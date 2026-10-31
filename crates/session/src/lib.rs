@@ -115,6 +115,30 @@ pub enum Command {
     JoinConference {
         focus: String,
     },
+    /// Schedule a meeting at the focus factory (function 40, PV-09): lifetime in minutes.
+    ScheduleMeeting {
+        subject: String,
+        minutes: u64,
+        admission: conf::schedule::Admission,
+    },
+    /// The organizer's meetings (getConferences).
+    ListMeetings,
+    /// One meeting's details (getConference).
+    ShowMeeting {
+        conference_id: String,
+    },
+    /// Change a meeting's subject, lifetime and admission policy (getConference, then
+    /// modifyConference with the current version).
+    ChangeMeeting {
+        conference_id: String,
+        subject: String,
+        minutes: u64,
+        admission: conf::schedule::Admission,
+    },
+    /// Cancel a meeting (deleteConference).
+    CancelMeeting {
+        conference_id: String,
+    },
     /// Join the conference's audio: INVITE to the A/V MCU (CA-02, no addUser needed).
     JoinConferenceAudio {
         conversation: ConversationId,
@@ -213,6 +237,15 @@ pub enum Event {
     ConferenceLobby {
         conversation: ConversationId,
         waiting: bool,
+    },
+    /// A meeting was scheduled (function 40); join it with its focus URI.
+    MeetingScheduled(Box<conf::schedule::Meeting>),
+    /// The organizer's meetings.
+    Meetings(Vec<conf::schedule::Meeting>),
+    /// One meeting's details (join URL, version, expiry).
+    MeetingDetails(Box<conf::schedule::Meeting>),
+    MeetingCancelled {
+        conference_id: String,
     },
     /// The conference's audio call (an ordinary call to the A/V MCU) got this call ID.
     ConferenceAudio {
@@ -347,6 +380,7 @@ enum Purpose {
     CallInvite(CallId),
     CallReinvite(CallId),
     Refer(CallId),
+    Schedule(schedule::ScheduleOp),
     Ignore,
 }
 
@@ -1294,6 +1328,24 @@ impl<R: Random> Engine<R> {
                 self.dial_out(conversation, &to, now, &mut out)
             }
             Command::JoinConference { focus } => self.join_conference(&focus, now, &mut out),
+            Command::ScheduleMeeting {
+                subject,
+                minutes,
+                admission,
+            } => self.schedule_meeting(&subject, minutes, admission, now, &mut out),
+            Command::ListMeetings => self.list_meetings(now, &mut out),
+            Command::ShowMeeting { conference_id } => {
+                self.show_meeting(&conference_id, now, &mut out)
+            }
+            Command::ChangeMeeting {
+                conference_id,
+                subject,
+                minutes,
+                admission,
+            } => self.change_meeting(&conference_id, &subject, minutes, admission, now, &mut out),
+            Command::CancelMeeting { conference_id } => {
+                self.cancel_meeting(&conference_id, now, &mut out)
+            }
             Command::JoinConferenceAudio {
                 conversation,
                 local,
@@ -1461,6 +1513,14 @@ impl<R: Random> Engine<R> {
                     return;
                 }
             }
+            // PV-11: an error response of the focus factory may carry the C3P answer with the
+            // reason (example §4.3: 404 with conferenceDoesNotExist).
+            if let Purpose::Schedule(op) = &p.purpose {
+                if !resp.body.is_empty() {
+                    self.on_schedule_answer(op.clone(), &resp.body, now, out);
+                    return;
+                }
+            }
             self.on_failure(p, code, now, out);
         }
     }
@@ -1574,6 +1634,7 @@ impl<R: Random> Engine<R> {
                 }
             }
             Purpose::CreateConference(id) => self.on_conference_created(id, resp, now, out),
+            Purpose::Schedule(op) => self.on_schedule_answer(op, &resp.body, now, out),
             Purpose::CallInvite(id) => self.on_call_answered(id, &p.request, resp, now, out),
             Purpose::CallReinvite(id) => {
                 self.on_call_reinvite_answered(id, &p.request, resp, now, out)
@@ -1696,6 +1757,9 @@ impl<R: Random> Engine<R> {
             )))),
             Purpose::DialOut(id) => out.push(Output::Event(Event::Notice(format!(
                 "[{id}] conference command failed ({code})"
+            )))),
+            Purpose::Schedule(_) => out.push(Output::Event(Event::Notice(format!(
+                "meeting request failed ({code})"
             )))),
             Purpose::Message(id) => out.push(Output::Event(Event::NotDelivered {
                 conversation: id,
@@ -1864,6 +1928,7 @@ impl<R: Random> Engine<R> {
 
 mod call;
 mod group;
+mod schedule;
 mod transfer;
 
 pub use call::{CallId, Caller};

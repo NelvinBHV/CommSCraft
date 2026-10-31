@@ -865,5 +865,7 @@ pub fn parse_invitation(xml: &str) -> Result<Invitation, Error> {
     })
 }
 
+pub mod schedule;
+
 #[cfg(test)]
 mod tests;

@@ -56,6 +56,8 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
+          /schedule MINUTES [open|closed|anonymous] SUBJECT  /meetings  /meeting ID  /cancelmeeting ID
+          /changemeeting ID MINUTES [open|closed|anonymous] SUBJECT
           /confaudio (join the meeting's audio)  /confmute  /confunmute (mute in the meeting)
           presenters: /admit [sip:URI]  /deny sip:URI  /promote sip:URI  /demote sip:URI  /lock  /unlock
           /remove sip:URI  /muteuser sip:URI  /unmuteuser sip:URI  /muteall  /unmuteall
@@ -1591,6 +1593,46 @@ fn interactive(
                         }
                         println!("* [{conversation}] joining the meeting audio (call {call})");
                     }
+                    E::MeetingScheduled(m) => {
+                        println!(
+                            "* meeting {} scheduled{} – join with /join {}",
+                            m.conference_id,
+                            m.expiry
+                                .as_deref()
+                                .map(|x| format!(" until {x}"))
+                                .unwrap_or_default(),
+                            m.focus.as_deref().unwrap_or("(conference address unknown)")
+                        );
+                    }
+                    E::Meetings(list) if list.is_empty() => println!("* no meetings"),
+                    E::Meetings(list) => {
+                        for m in list {
+                            println!(
+                                "  {:<34} {:<20} {}",
+                                m.conference_id,
+                                m.admission.map(|a| a.as_str()).unwrap_or(""),
+                                m.subject.as_deref().unwrap_or("")
+                            );
+                        }
+                    }
+                    E::MeetingDetails(m) => {
+                        println!(
+                            "* meeting {}: {}{}{}",
+                            m.conference_id,
+                            m.subject.as_deref().unwrap_or("(no subject)"),
+                            m.expiry
+                                .as_deref()
+                                .map(|x| format!(", until {x}"))
+                                .unwrap_or_default(),
+                            m.join_url
+                                .as_deref()
+                                .map(|u| format!(", join link {u}"))
+                                .unwrap_or_default()
+                        );
+                    }
+                    E::MeetingCancelled { conference_id } => {
+                        println!("* meeting {conference_id} cancelled")
+                    }
                     E::ConferenceInvitation { from, invitation } => {
                         invitations.push(invitation.focus.clone());
                         println!(
@@ -2033,6 +2075,76 @@ fn interactive(
                             conversation,
                             action,
                         })
+                    }
+                }
+                "/schedule" => {
+                    use commscraft_conf::schedule::Admission;
+                    let mut words = arg.split_whitespace();
+                    let minutes = words.next().and_then(|m| m.parse::<u64>().ok());
+                    let mut rest: Vec<&str> = words.collect();
+                    let admission = match rest.first().copied() {
+                        Some("open") => Some(Admission::OpenAuthenticated),
+                        Some("closed") => Some(Admission::ClosedAuthenticated),
+                        Some("anonymous") => Some(Admission::Anonymous),
+                        _ => None,
+                    };
+                    if admission.is_some() {
+                        rest.remove(0);
+                    }
+                    let subject = rest.join(" ");
+                    match minutes {
+                        Some(minutes) if !subject.is_empty() => Some(C::ScheduleMeeting {
+                            subject,
+                            minutes,
+                            admission: admission.unwrap_or(Admission::OpenAuthenticated),
+                        }),
+                        _ => {
+                            println!("* /schedule MINUTES [open|closed|anonymous] SUBJECT");
+                            None
+                        }
+                    }
+                }
+                "/changemeeting" => {
+                    use commscraft_conf::schedule::Admission;
+                    let mut words = arg.split_whitespace();
+                    let id = words.next().map(str::to_string);
+                    let minutes = words.next().and_then(|m| m.parse::<u64>().ok());
+                    let mut rest: Vec<&str> = words.collect();
+                    let admission = match rest.first().copied() {
+                        Some("open") => Some(Admission::OpenAuthenticated),
+                        Some("closed") => Some(Admission::ClosedAuthenticated),
+                        Some("anonymous") => Some(Admission::Anonymous),
+                        _ => None,
+                    };
+                    if admission.is_some() {
+                        rest.remove(0);
+                    }
+                    let subject = rest.join(" ");
+                    match (id, minutes) {
+                        (Some(conference_id), Some(minutes)) if !subject.is_empty() => {
+                            Some(C::ChangeMeeting {
+                                conference_id,
+                                subject,
+                                minutes,
+                                admission: admission.unwrap_or(Admission::OpenAuthenticated),
+                            })
+                        }
+                        _ => {
+                            println!("* /changemeeting ID MINUTES [open|closed|anonymous] SUBJECT");
+                            None
+                        }
+                    }
+                }
+                "/meetings" => Some(C::ListMeetings),
+                "/meeting" | "/cancelmeeting" => {
+                    let conference_id = arg.trim().to_string();
+                    if conference_id.is_empty() {
+                        println!("* {cmd} CONFERENCE-ID (see /meetings)");
+                        None
+                    } else if cmd == "/meeting" {
+                        Some(C::ShowMeeting { conference_id })
+                    } else {
+                        Some(C::CancelMeeting { conference_id })
                     }
                 }
                 "/confmute" | "/confunmute" => current.map(|conversation| C::ConferenceMute {

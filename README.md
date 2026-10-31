@@ -8,7 +8,7 @@ application, a ranked work list, and nothing copied from Microsoft products.
 
 > **Stage: M3 (audio 1:1), pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search and audio calls exist as building blocks that pass offline tests (32 crates,
-> 301 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is marked as
+> 311 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is marked as
 > verified against a real server**; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
@@ -36,7 +36,7 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 ## What works today
 
 Status from [`docs/target-app-parity.md`](docs/target-app-parity.md) (2026-10-31): of 52 client
-functions, 10 are implemented and tested offline as a whole, 16 in parts, 24 not started.
+functions, 10 are implemented and tested offline as a whole, 17 in parts, 23 not started.
 
 | Area | In the code (tested offline) | Not yet |
 |---|---|---|

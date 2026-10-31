@@ -476,3 +476,209 @@ fn same_conference_rules() {
         "sip:alice@contoso.com;gruu;opaque=app:conf:chat:id:"
     ));
 }
+
+mod scheduling {
+    use super::*;
+    use crate::schedule::*;
+
+    const FF: &str = "sip:alice@contoso.com;gruu;opaque=app:conf:focusfactory";
+
+    fn spec() -> MeetingSpec {
+        MeetingSpec {
+            conference_id: "SDFBSD12".into(),
+            subject: "Plan <Q4> & more".into(),
+            expiry: 1_136_913_107,
+            admission: Admission::OpenAuthenticated,
+        }
+    }
+
+    /// PV-13: expiry-time as XML Schema dateTime in UTC; the §4.2 example's value.
+    #[test]
+    fn datetime() {
+        assert_eq!(xs_datetime(0).unwrap(), "1970-01-01T00:00:00Z");
+        assert_eq!(xs_datetime(1_136_913_107).unwrap(), "2006-01-10T17:11:47Z");
+        assert_eq!(xs_datetime(951_782_400).unwrap(), "2000-02-29T00:00:00Z");
+        assert_eq!(
+            xs_datetime(253_402_300_799).unwrap(),
+            "9999-12-31T23:59:59Z"
+        );
+        assert!(xs_datetime(253_402_300_800).is_none());
+        assert!(xs_datetime(u64::MAX).is_none());
+    }
+
+    /// PV-06/PV-09 ([MS-CONFPRO] §2.2.2.1, p. 19; §4.1, p. 41): addConference with subject,
+    /// conference ID, expiry time, admission policy, IM and A/V MCU.
+    #[test]
+    fn schedule_request() {
+        let x = schedule_conference(9, "sip:alice@contoso.com", FF, &spec()).unwrap();
+        let root = parse(&x);
+        assert_eq!(root.attr("requestId"), Some("9"));
+        let ci = root
+            .child("addConference")
+            .unwrap()
+            .child("conference-info")
+            .unwrap();
+        assert_eq!(ci.attr("entity"), Some(""));
+        let d = ci.child("conference-description").unwrap();
+        assert_eq!(d.child("subject").unwrap().text(), "Plan <Q4> & more");
+        assert_eq!(
+            d.child("subject").unwrap().namespace.as_deref(),
+            Some(NS_CI)
+        );
+        assert_eq!(d.child("conference-id").unwrap().text(), "SDFBSD12");
+        assert_eq!(
+            d.child("expiry-time").unwrap().text(),
+            "2006-01-10T17:11:47Z"
+        );
+        assert_eq!(
+            d.child("admission-policy").unwrap().namespace.as_deref(),
+            Some(NS_MSCI)
+        );
+        assert_eq!(
+            d.child("admission-policy").unwrap().text(),
+            "openAuthenticated"
+        );
+        let views: Vec<_> = ci
+            .child("conference-view")
+            .unwrap()
+            .elements()
+            .filter_map(|e| e.attr("entity"))
+            .collect();
+        assert_eq!(views, ["chat", "audio-video"]);
+    }
+
+    /// Hostile or broken values are refused before anything is sent.
+    #[test]
+    fn schedule_refuses_bad_values() {
+        let bad = |f: fn(&mut MeetingSpec)| {
+            let mut s = spec();
+            f(&mut s);
+            schedule_conference(1, "sip:alice@contoso.com", FF, &s).is_err()
+        };
+        assert!(bad(|s| s.conference_id = "SHORT".into()));
+        assert!(bad(|s| s.conference_id = "ABCDEFGH<".into()));
+        assert!(bad(|s| s.conference_id = "A".repeat(33)));
+        assert!(bad(|s| s.subject = "".into()));
+        assert!(bad(|s| s.subject = "a\r\nInjected: x".into()));
+        assert!(bad(|s| s.subject = "x".repeat(MAX_SUBJECT + 1)));
+        assert!(bad(|s| s.expiry = u64::MAX));
+        assert!(get_conference(1, "sip:alice@contoso.com", FF, "x\"/>").is_err());
+        assert!(delete_conference(1, "sip:alice@contoso.com", FF, "1234567").is_err());
+        assert!(modify_conference(1, "sip:alice@contoso.com", FF, 0, &spec()).is_err());
+    }
+
+    /// PV-14 (§2.2.2.2, p. 20): modifyConference carries the current version.
+    #[test]
+    fn modify_request() {
+        let x = modify_conference(3, "sip:alice@contoso.com", FF, 2, &spec()).unwrap();
+        let root = parse(&x);
+        let ci = root
+            .child("modifyConference")
+            .unwrap()
+            .child("conference-info")
+            .unwrap();
+        assert_eq!(
+            (ci.attr("entity"), ci.attr("version")),
+            (Some(""), Some("2"))
+        );
+    }
+
+    /// §2.2.2.3–2.2.2.5 (pp. 20–21), examples §4.3–§4.5: conferenceKeys with the conference ID
+    /// in the extension namespace; getConferences without children.
+    #[test]
+    fn keyed_requests() {
+        for (x, cmd) in [
+            (
+                delete_conference(3, "sip:alice@contoso.com", FF, "BGSDFJ12").unwrap(),
+                "deleteConference",
+            ),
+            (
+                get_conference(5, "sip:alice@contoso.com", FF, "SDFBSD12").unwrap(),
+                "getConference",
+            ),
+        ] {
+            let root = parse(&x);
+            let keys = root.child(cmd).unwrap().child("conferenceKeys").unwrap();
+            let id = keys
+                .attributes
+                .iter()
+                .find(|a| a.name.ends_with("conference-id"))
+                .unwrap();
+            assert_eq!(id.value.len(), 8);
+            assert!(x.contains(&format!("xmlns:msci=\"{NS_MSCI}\"")));
+        }
+        let root = parse(&get_conferences(4, "sip:alice@contoso.com", FF).unwrap());
+        assert_eq!(root.child("getConferences").unwrap().elements().count(), 0);
+    }
+
+    /// Example §4.4 (p. 47): the getConferences answer; the second entity contains a blank in the
+    /// example ("gruu; opaque") and is therefore not reported as a focus.
+    #[test]
+    fn parse_conference_list() {
+        let x = r#"<response C3PVersion="1" requestId="4" from="sip:alice@contoso.com;gruu;opaque=app:conf:focusfactory" to="sip:alice@contoso.com" code="success" xmlns="urn:ietf:params:xml:ns:cccp" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions"><getConferences><conferences><conference-info entity="sip:alice@contoso.com;gruu;opaque=app:conf:focus:id:SDFBSD12" state="partial" xmlns="urn:ietf:params:xml:ns:conference-info"><conference-description><subject>Conference subject 2</subject><msci:conference-id>SDFBSD12</msci:conference-id><msci:admission-policy>openAuthenticated</msci:admission-policy></conference-description></conference-info><conference-info entity="sip:alice@contoso.com;gruu; opaque=app:conf:focus:id:JASDFD2A" state="partial" xmlns="urn:ietf:params:xml:ns:conference-info"><conference-description><subject>Conference subject</subject><msci:conference-id>JASDFD2A</msci:conference-id><msci:admission-policy>anonymous</msci:admission-policy></conference-description></conference-info></conferences></getConferences></response>"#;
+        let (r, list) = parse_meetings(x).unwrap();
+        assert_eq!(
+            (r.code, r.command.as_str()),
+            (Code::Success, "getConferences")
+        );
+        assert_eq!(list.len(), 2);
+        assert_eq!(
+            list[0].focus.as_deref(),
+            Some("sip:alice@contoso.com;gruu;opaque=app:conf:focus:id:SDFBSD12")
+        );
+        assert_eq!(list[0].subject.as_deref(), Some("Conference subject 2"));
+        assert_eq!(list[1].admission, Some(Admission::Anonymous));
+        assert_eq!(list[1].focus, None);
+    }
+
+    /// Example §4.5 (p. 49): getConference answer with version, expiry and admission policy; a
+    /// join URL is kept only as https.
+    #[test]
+    fn parse_conference_details() {
+        let x = |join: &str| {
+            format!(
+                r#"<response C3PVersion="1" requestId="5" code="success" xmlns="urn:ietf:params:xml:ns:cccp" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions"><getConference><conference-info entity="" version="2" xmlns="urn:ietf:params:xml:ns:conference-info"><conference-description><subject>Conference subject 2</subject><msci:conference-id>SDFBSD12</msci:conference-id><msci:expiry-time>2006-01-10T17:11:47Z</msci:expiry-time><msci:admission-policy>openAuthenticated</msci:admission-policy><msci:join-url>{join}</msci:join-url></conference-description></conference-info></getConference></response>"#
+            )
+        };
+        let (_, m) = parse_meetings(&x("https://meet.contoso.com/alice/SDFBSD12")).unwrap();
+        assert_eq!(m[0].version, Some(2));
+        assert_eq!(m[0].expiry.as_deref(), Some("2006-01-10T17:11:47Z"));
+        assert_eq!(m[0].admission, Some(Admission::OpenAuthenticated));
+        assert_eq!(
+            m[0].join_url.as_deref(),
+            Some("https://meet.contoso.com/alice/SDFBSD12")
+        );
+        assert_eq!(m[0].focus, None);
+        for bad in [
+            "http://meet.contoso.com/x",
+            "javascript:alert(1)",
+            "https://a b",
+        ] {
+            assert_eq!(
+                parse_meetings(&x(bad)).unwrap().1[0].join_url,
+                None,
+                "{bad}"
+            );
+        }
+        // A failure answer (example §4.3) parses with its reason and no meetings.
+        let fail = r#"<response C3PVersion="1" requestId="3" code="failure" xmlns="urn:ietf:params:xml:ns:cccp"><deleteConference reason="conferenceDoesNotExist"/></response>"#;
+        let (r, m) = parse_meetings(fail).unwrap();
+        assert_eq!(
+            (r.reason.as_deref(), m.len()),
+            (Some("conferenceDoesNotExist"), 0)
+        );
+    }
+
+    /// Hostile answers: entries without a valid conference ID are skipped, the list is bounded.
+    #[test]
+    fn parse_is_bounded() {
+        let one = r#"<conference-info entity="" xmlns="urn:ietf:params:xml:ns:conference-info"><conference-description><msci:conference-id>ABCDEFGH</msci:conference-id></conference-description></conference-info>"#;
+        let bad = r#"<conference-info entity="" xmlns="urn:ietf:params:xml:ns:conference-info"><conference-description><msci:conference-id>x</msci:conference-id></conference-description></conference-info>"#;
+        let x = format!(
+            r#"<response requestId="1" code="success" xmlns="urn:ietf:params:xml:ns:cccp" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions"><getConferences><conferences>{bad}{}</conferences></getConferences></response>"#,
+            one.repeat(MAX_MEETINGS + 50)
+        );
+        let (_, m) = parse_meetings(&x).unwrap();
+        assert_eq!(m.len(), MAX_MEETINGS - 1);
+    }
+}
