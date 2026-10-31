@@ -113,6 +113,8 @@ name = "commscraft-cli"
 version = "0.0.1"
 dependencies = [
  "commscraft-audio-alsa",
+ "commscraft-avedgea",
+ "commscraft-call-media",
  "commscraft-discovery",
  "commscraft-dlx",
  "commscraft-g711",
@@ -123,6 +125,8 @@ dependencies = [
  "commscraft-presence",
  "commscraft-provisioning",
  "commscraft-register",
+ "commscraft-rtp",
+ "commscraft-sdp",
  "commscraft-session",
  "commscraft-sip-msg",
  "commscraft-sipae",

@@ -657,6 +657,11 @@ impl<R: Random> Engine<R> {
             .map(|(id, _)| *id)
     }
 
+    /// The ID the next `Command::Call` will get (to map the media of the adapter).
+    pub fn next_call_id(&self) -> CallId {
+        self.next_call
+    }
+
     /// The peer of a call (for the user interface).
     pub fn call_peer(&self, id: CallId) -> Option<&str> {
         self.calls.get(&id).map(|c| c.peer.as_str())
