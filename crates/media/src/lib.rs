@@ -129,6 +129,8 @@ pub struct Audio {
     muted: bool,
     /// False while the call is on hold (ours or the peer's): no RTP is sent, RTCP continues.
     sending: bool,
+    /// Early media (MS-SDPEXT §3.1.5.12.2): only DTMF is sent, and only after a packet arrived.
+    early: bool,
     dtmf_queue: Vec<(bool, [u8; 4])>,
     dtmf_timestamp: u32,
     last_dtmf_end: Option<u32>,
@@ -204,6 +206,7 @@ impl Audio {
             last_frame: Vec::new(),
             muted: false,
             sending: true,
+            early: false,
             dtmf_queue: Vec::new(),
             dtmf_timestamp: 0,
             last_dtmf_end: None,
@@ -245,6 +248,16 @@ impl Audio {
         self.muted = muted;
     }
 
+    pub fn codec(&self) -> sdp::Codec {
+        self.codec
+    }
+
+    /// Early media until the call is answered: no speech, DTMF only after the first received
+    /// packet (SD-50).
+    pub fn set_early(&mut self, early: bool) {
+        self.early = early;
+    }
+
     /// Hold: no RTP while `false` (RFC 3264 §8.4: inactive/recvonly streams carry no media).
     pub fn set_sending(&mut self, sending: bool) {
         self.sending = sending;
@@ -276,7 +289,8 @@ impl Audio {
     /// event packets replace audio (RFC 4733 §2.5.1.2: same timestamp, cumulative duration).
     pub fn on_capture(&mut self, pcm: &[i16]) -> Option<Vec<u8>> {
         let ticks = self.frame_ticks();
-        if !self.sending {
+        if !self.sending || (self.early && (self.dtmf_queue.is_empty() || self.stats.received == 0))
+        {
             self.sender.skip(ticks);
             return None;
         }

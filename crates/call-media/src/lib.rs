@@ -179,6 +179,10 @@ pub struct CallMedia {
     direct: Option<(SocketAddr, SocketAddr)>,
     selected: Option<(Path, Option<Path>)>,
     usable: Option<Path>,
+    /// The peer's ICE parameters and key of the running media (to compare a final answer with
+    /// the early one).
+    remote_ice: Option<sdp::Ice>,
+    remote_key: Option<sdp::Key>,
     /// Remote TCP-passive candidates (to know our role on a TCP relay connection).
     remote_passive: Vec<SocketAddr>,
     /// We put the call on hold (MS-SDPEXT §3.1.5.23).
@@ -303,6 +307,8 @@ impl CallMedia {
             selected: None,
             usable: None,
             remote_passive: Vec::new(),
+            remote_ice: None,
+            remote_key: None,
             local_hold: false,
             remote_direction: sdp::Direction::SendRecv,
             local_ip,
@@ -503,6 +509,11 @@ impl CallMedia {
         self.audio = Some(Audio::new(n, key, random, cname).map_err(|e| format!("{e:?}"))?);
         self.remote_direction = n.direction;
         self.apply_direction();
+        self.remote_ice = n.remote_ice.clone();
+        self.remote_key = n.remote_key.clone();
+        self.selected = None;
+        self.usable = None;
+        self.direct = None;
         match &n.remote_ice {
             Some(remote) => {
                 let mut agent = Agent::new(
@@ -544,6 +555,59 @@ impl CallMedia {
             None => self.set_direct(n)?,
         }
         Ok(())
+    }
+
+    /// Early media from an SDP answer in a provisional response (MS-SDPEXT §3.1.5.12): ICE runs
+    /// as for a final answer (§3.1.5.12.4), incoming audio plays, only DTMF is sent.
+    pub fn start_early(
+        &mut self,
+        n: &sdp::Negotiated,
+        cname: &str,
+        now: u64,
+    ) -> Result<(), String> {
+        self.start(n, true, cname, now)?;
+        if let Some(a) = self.audio.as_mut() {
+            a.set_early(true);
+        }
+        Ok(())
+    }
+
+    /// The 200 of the early media's fork (§3.1.5.12.3): speech starts and the differences of the
+    /// final answer take effect – direction, a changed key (the audio core is rebuilt with it);
+    /// other ICE credentials mean a new start.
+    pub fn confirm(&mut self, n: &sdp::Negotiated, cname: &str, now: u64) -> Result<(), String> {
+        let same_ice = match (&self.remote_ice, &n.remote_ice) {
+            (Some(a), Some(b)) => a.ufrag == b.ufrag && a.pwd == b.pwd,
+            _ => false,
+        };
+        let same_key = self.remote_key.as_ref().map(sdp::Key::attribute)
+            == n.remote_key.as_ref().map(sdp::Key::attribute);
+        if !same_ice {
+            return self.start(n, true, cname, now);
+        }
+        if !same_key || self.audio.as_ref().map(Audio::codec) != Some(n.codec) {
+            let mut random = [0u8; 10];
+            os_random(&mut random);
+            let key = n.remote_key.as_ref().map(|_| &self.key);
+            self.audio = Some(Audio::new(n, key, random, cname).map_err(|e| format!("{e:?}"))?);
+            self.remote_key = n.remote_key.clone();
+        }
+        if let Some(a) = self.audio.as_mut() {
+            a.set_early(false);
+        }
+        self.remote_direction = n.direction;
+        self.apply_direction();
+        Ok(())
+    }
+
+    /// 199 for the early media's fork: stop media, keep the sockets and relays for the answer.
+    pub fn end_early(&mut self) {
+        self.audio = None;
+        self.ice = None;
+        self.selected = None;
+        self.usable = None;
+        self.remote_ice = None;
+        self.remote_key = None;
     }
 
     /// New parameters from a re-INVITE (the peer's final offer or hold): keep ICE, update the

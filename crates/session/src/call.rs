@@ -8,9 +8,15 @@
 //! (no renegotiation of keys); RFC 3261 §9 (CANCEL), §13–§15 (INVITE, re-INVITE, BYE);
 //! draft-ietf-mmusic-ice-19 §9.1.2.2 (final offer with remote-candidates).
 //!
+//! Early media as the caller (SD-50, SD-51): [MS-SDPEXT] §3.1.5.12–3.1.5.13 (pp. 28–30),
+//! RFC 3262 (100rel, PRACK with RAck, RSeq order), RFC 3261 §12.1.2 (early dialogs), [MS-SIPRE]
+//! `Ms-Forking`, draft-ietf-sip-199-01 (199 ends an early dialog); `Supported: ms-early-media`
+//! for gateways ([MS-OCPSTN] §2.2.4, PS-06).
+//!
 //! Scope: the media (sockets, TURN, ICE, SRTP, codec, devices) runs in the adapter; the engine
-//! carries the SDP. Not offered: ICE-06 SDP (OCS 2007, RE-65 fallback), reliable provisional
-//! responses (no `Supported: 100rel`, SD-51), early media.
+//! carries the SDP. Not offered: ICE-06 SDP (OCS 2007, RE-65 fallback); as the callee we answer
+//! in the 200 only (no reliable 183 with an early answer, a SHOULD of SD-51); early media of a
+//! forked call (`Ms-Forking`) is not started (SHOULD-level in §3.1.5.12.2) – the 200 decides.
 //!
 //! Security by design: every SDP goes through the bounded `sdp` parser and the encryption
 //! policy (no silent plaintext); keys are never renegotiated in a re-INVITE (SD-13) – an update
@@ -52,6 +58,33 @@ pub(crate) struct Call {
     /// The SDP of the incoming offer (the ICE-19 part, RE-65).
     pub offer: Vec<u8>,
     pub ringing_reported: bool,
+    /// Early dialogs by To tag (for PRACK) with the last acknowledged RSeq; bounded.
+    pub early: Vec<(Dialog, Option<u32>)>,
+    /// The To tag whose SDP answer started early media.
+    pub early_media: Option<String>,
+    /// A provisional response carried `Ms-Forking` (MS-SIPRE).
+    pub forked: bool,
+}
+
+/// Most early dialogs (forks) tracked per call.
+const MAX_EARLY: usize = 8;
+
+/// RSeq of a reliable provisional response (RFC 3262 §7.1: 1 … 2^31 − 1), or `None` when the
+/// response is not sent reliably (no `Require: 100rel`).
+fn reliable_rseq(resp: &Message) -> Option<u32> {
+    let reliable = resp
+        .header_values("Require")
+        .flat_map(|v| v.split(','))
+        .any(|t| t.trim().eq_ignore_ascii_case("100rel"));
+    let rseq: u32 = resp.single("RSeq").ok().flatten()?.trim().parse().ok()?;
+    (reliable && (1..=0x7fff_ffff).contains(&rseq)).then_some(rseq)
+}
+
+fn to_tag(m: &Message) -> Option<String> {
+    m.to()
+        .ok()
+        .flatten()
+        .and_then(|t| t.param("tag").map(str::to_string))
 }
 
 /// The audio SDP of a message: plain `application/sdp`, or the last `application/sdp` part of a
@@ -130,6 +163,10 @@ impl<R: Random> Engine<R> {
         }
         let offer = sdp::offer(&local, policy);
         let mut m = self.request("INVITE", &peer, &peer);
+        // SD-51: 100rel is supported (never required in a request); PS-06: gateways may send
+        // the answer in an unreliable 183.
+        m.push_header("Supported", "100rel");
+        m.push_header("Supported", "ms-early-media");
         m.push_header(
             "Content-Type",
             &format!("multipart/alternative;boundary=\"{BOUNDARY}\""),
@@ -151,6 +188,9 @@ impl<R: Random> Engine<R> {
                 policy,
                 offer: Vec::new(),
                 ringing_reported: false,
+                early: Vec::new(),
+                early_media: None,
+                forked: false,
             },
         );
         self.send_request(m, Purpose::CallInvite(id), now, out);
@@ -168,23 +208,102 @@ impl<R: Random> Engine<R> {
         }
     }
 
-    /// A provisional response to our INVITE: report ringing once.
+    /// A provisional response to our INVITE: ringing (reported once), PRACK for reliable ones
+    /// (RFC 3262), early media from an SDP answer (MS-SDPEXT §3.1.5.12), 199 ends a fork's early
+    /// media.
     pub(crate) fn on_call_provisional(
         &mut self,
         purpose: &Purpose,
-        code: u16,
+        request: &Message,
+        resp: &Message,
+        now: u64,
         out: &mut Vec<Output>,
     ) {
         let Purpose::CallInvite(id) = *purpose else {
             return;
         };
-        if !(180..=183).contains(&code) {
+        let Some(code) = resp.status_code() else {
+            return;
+        };
+        let Some(c) = self.calls.get_mut(&id) else {
+            return;
+        };
+        if !matches!(c.state, CallState::Inviting { .. }) {
             return;
         }
-        if let Some(c) = self.calls.get_mut(&id) {
-            if !c.ringing_reported {
-                c.ringing_reported = true;
-                Self::call_event(out, Event::CallRinging { call: id });
+        if (180..=183).contains(&code) && !c.ringing_reported {
+            c.ringing_reported = true;
+            Self::call_event(out, Event::CallRinging { call: id });
+        }
+        if resp.single("Ms-Forking").ok().flatten().is_some() {
+            c.forked = true;
+        }
+        let Some(tag) = to_tag(resp) else {
+            return;
+        };
+        // The early dialog of this fork.
+        let pos = match c.early.iter().position(|(d, _)| d.remote_tag == tag) {
+            Some(i) => i,
+            None => {
+                let Ok(d) = Dialog::early_from_response(request, resp) else {
+                    return;
+                };
+                if c.early.len() >= MAX_EARLY {
+                    return;
+                }
+                c.early.push((d, None));
+                c.early.len() - 1
+            }
+        };
+        // RFC 3262 §4: a reliable response is acknowledged once, in RSeq order; a retransmission
+        // or one out of order is discarded.
+        if let Some(rseq) = reliable_rseq(resp) {
+            let Some((d, last)) = c.early.get_mut(pos) else {
+                return;
+            };
+            match *last {
+                Some(l) if rseq != l.wrapping_add(1) => return,
+                _ => *last = Some(rseq),
+            }
+            let invite_cseq = request.cseq().ok().flatten().map_or(1, |x| x.number);
+            // §7.2: PRACK in the early dialog, no SDP (SD-51).
+            let mut prack = d.request("PRACK");
+            prack.push_header("RAck", &format!("{rseq} {invite_cseq} INVITE"));
+            self.complete(&mut prack);
+            self.send_request(prack, Purpose::Ignore, now, out);
+        }
+        let Some(c) = self.calls.get_mut(&id) else {
+            return;
+        };
+        if code == 199 {
+            if c.early_media.as_deref() == Some(tag.as_str()) {
+                c.early_media = None;
+                Self::call_event(out, Event::CallEarlyMediaEnded { call: id });
+            }
+            return;
+        }
+        // SD-50: one early answer per call (later or other answers are ignored), only with
+        // ICE, not for a forked call; an answer we cannot use is ignored – the 200 decides.
+        if c.early_media.is_some()
+            || c.forked
+            || c.state != (CallState::Inviting { cancelling: false })
+        {
+            return;
+        }
+        let Some(answer) = audio_sdp(resp) else {
+            return;
+        };
+        let key = c.local.as_ref().and_then(|l| l.key.clone());
+        if let Ok(n) = sdp::answer_to_offer(&answer, key.as_ref(), c.policy) {
+            if n.remote_ice.is_some() {
+                c.early_media = Some(tag);
+                Self::call_event(
+                    out,
+                    Event::CallEarlyMedia {
+                        call: id,
+                        media: Box::new(n),
+                    },
+                );
             }
         }
     }
@@ -198,7 +317,7 @@ impl<R: Random> Engine<R> {
         now: u64,
         out: &mut Vec<Output>,
     ) {
-        let Ok(d) = Dialog::from_response(request, resp) else {
+        let Ok(mut d) = Dialog::from_response(request, resp) else {
             self.calls.remove(&id);
             Self::call_event(
                 out,
@@ -210,6 +329,14 @@ impl<R: Random> Engine<R> {
             return;
         };
         let cseq = request.cseq().ok().flatten().map_or(1, |x| x.number);
+        // CSeq keeps rising across the PRACKs of the early dialog (RFC 3261 §12.2.1.1).
+        if let Some((e, _)) = self
+            .calls
+            .get(&id)
+            .and_then(|c| c.early.iter().find(|(e, _)| e.remote_tag == d.remote_tag))
+        {
+            d.local_cseq = d.local_cseq.max(e.local_cseq);
+        }
         let mut ack = im::ack_for_2xx(&d, cseq);
         self.complete(&mut ack);
         self.send_plain(ack, now, out);
@@ -238,13 +365,16 @@ impl<R: Random> Engine<R> {
             .and_then(|s| sdp::answer_to_offer(&s, key.as_ref(), c.policy));
         match negotiated {
             Ok(n) => {
+                let continues_early = c.early_media.as_deref() == Some(d.remote_tag.as_str());
                 c.dialog = Some(d);
                 c.state = CallState::Active;
+                c.early.clear();
                 Self::call_event(
                     out,
                     Event::CallAnswered {
                         call: id,
                         media: Box::new(n),
+                        continues_early,
                     },
                 );
             }
@@ -459,6 +589,9 @@ impl<R: Random> Engine<R> {
                 policy: sdp::Encryption::Required,
                 offer,
                 ringing_reported: true,
+                early: Vec::new(),
+                early_media: None,
+                forked: false,
             },
         );
         Self::call_event(out, Event::IncomingCall { call: id, from });
@@ -514,6 +647,7 @@ impl<R: Random> Engine<R> {
                     Event::CallAnswered {
                         call: id,
                         media: Box::new(n),
+                        continues_early: false,
                     },
                 );
             }

@@ -193,6 +193,21 @@ pub enum Event {
     CallAnswered {
         call: CallId,
         media: Box<sdp::Negotiated>,
+        /// The answer comes from the fork whose early media is running: the media continues
+        /// and takes over the differences of this answer (MS-SDPEXT §3.1.5.12.3). Otherwise the
+        /// media starts (again) with this answer.
+        continues_early: bool,
+    },
+    /// An SDP answer in a provisional response (early media, MS-SDPEXT §3.1.5.12): ICE may start,
+    /// incoming media may be played, only DTMF may be sent (after the first received packet),
+    /// speech only after `CallAnswered`.
+    CallEarlyMedia {
+        call: CallId,
+        media: Box<sdp::Negotiated>,
+    },
+    /// The early media's fork ended (199, MS-SDPEXT §3.1.5.13): stop it, keep waiting.
+    CallEarlyMediaEnded {
+        call: CallId,
     },
     /// New media parameters after a re-INVITE (final offer, hold).
     CallUpdated {
@@ -1268,8 +1283,12 @@ impl<R: Random> Engine<R> {
             return;
         };
         if code < 200 {
-            if let Some(purpose) = self.pending.get(&key).map(|p| p.purpose.clone()) {
-                self.on_call_provisional(&purpose, code, out);
+            if let Some((purpose, request)) = self
+                .pending
+                .get(&key)
+                .map(|p| (p.purpose.clone(), p.request.clone()))
+            {
+                self.on_call_provisional(&purpose, &request, resp, now, out);
             }
             return;
         }
@@ -1530,6 +1549,19 @@ impl<R: Random> Engine<R> {
             } else if let Some(id) = self.chat_of(req) {
                 self.on_imdn(id, req, out);
             }
+            return;
+        }
+        // SD-51 / RFC 3262 §4, RFC 3261 §8.2.2.3: we send no reliable provisional responses, so
+        // an INVITE that requires them is refused with 420 (MS clients never require 100rel).
+        if method == "INVITE"
+            && req
+                .header_values("Require")
+                .flat_map(|v| v.split(','))
+                .any(|t| t.trim().eq_ignore_ascii_case("100rel"))
+        {
+            let mut r = response_to(req, 420, "Bad Extension");
+            r.push_header("Unsupported", "100rel");
+            self.send_plain(r, now, out);
             return;
         }
         if let Some(id) = self.roster_of(req) {
