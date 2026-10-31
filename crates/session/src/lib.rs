@@ -572,9 +572,10 @@ impl<R: Random> Engine<R> {
         negotiate: &[u8],
         challenge: &[u8],
         now: u64,
+        server_certificate: Option<&[u8]>,
     ) -> Result<Vec<u8>, String> {
         self.reg
-            .http_ntlm(negotiate, challenge, now)
+            .http_ntlm(negotiate, challenge, now, server_certificate)
             .map_err(|e| format!("{e:?}"))
     }
 

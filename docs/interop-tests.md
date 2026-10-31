@@ -1,6 +1,6 @@
 # Interop test cases for the owner
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (NTLM diagnostics for interop runs)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (M3 call tests IT-23 … IT-26, NTLM channel bindings IT-27)
 
 After the fourth search ([`protocol/evidence/39-evidence-for-open-points.md`](protocol/evidence/39-evidence-for-open-points.md),
 OB-39 … OB-51) no open point needs more document research. What is left is the observable behaviour
@@ -55,6 +55,7 @@ of the tested deployment.
 | IT-24 | Audio call with UDP blocked (TCP relay through the Edge on 443) | MS-ICE2 regular mode with TCP relayed candidates, pseudo-TLS, RFC 4571 framing (tested against a TURN test server) | From a network that blocks UDP: does `/call` connect and carry audio? | UDP first, TCP relay as additional candidates | M3 |
 | IT-25 | Hold and resume in both directions | MS-SDPEXT §3.1.5.23/§3.1.5.27, RFC 4235 §5.2 (tested offline) | Does the peer show the call as held after `/hold`, does audio come back after `/resume`, is a hold (with music) from the peer shown? | No audio sent while held | M3 |
 | IT-26 | Long audio call (≥ 5 min) | MS-RTP RTCP profile: packet pairs/trains, audio healer, "MS-EVT", TURN bandwidth (tested offline) | Does the call stay up, does the peer show call quality normally, any errors in the client log? | No media without SRTP authentication | M3 |
+| IT-27 | Address book search (NTLM over HTTP) with channel bindings | MS-NLMP §3.1.5.1.2, RFC 4121, RFC 5929 (recomputed offline; issue #42) | Does `interactive` → `/search` still work; if the web server requires Extended Protection, is it accepted? Which signature algorithm does the server certificate use (RSA/ECDSA with SHA-2 is covered, PSS/Ed25519 sends no binding)? | Never sent over a connection other than the one the challenge came on | M2 |
 | IT-19 | Whole M1 flow | Everything in IT-07, IT-14 … IT-18 | `commscraft-cli sign-in … --authorized`: registration, keep-alive, provisioning summary, sign-out | – | M1 |
 | IT-13 | O-EX-3 (optional) | Folder and item type of the conversation history (OB-22) | Body layout written by the Windows client, so that both clients' entries look alike | Own layout | optional |
 

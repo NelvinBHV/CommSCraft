@@ -216,13 +216,6 @@ pub fn pair_priority(controlling: u32, controlled: u32) -> u64 {
     (g.min(d) << 32) + 2 * g.max(d) + u64::from(g > d)
 }
 
-fn usable_address(a: IpAddr) -> bool {
-    match a {
-        IpAddr::V4(v) => !(v.is_unspecified() || v.is_broadcast() || v.is_multicast()),
-        IpAddr::V6(v) => !(v.is_unspecified() || v.is_multicast()),
-    }
-}
-
 impl Agent {
     /// `random` must be a CSPRNG (tie breaker, transaction IDs).
     pub fn new(
@@ -268,6 +261,12 @@ impl Agent {
         Some(self.locals.len() - 1)
     }
 
+    /// Issue #42: no checks towards loopback/link-local addresses unless we use such ourselves.
+    fn usable(&self, a: SocketAddr) -> bool {
+        let ours: Vec<IpAddr> = self.locals.iter().map(|l| l.base.ip()).collect();
+        commscraft_ice::usable_peer_address(a, &ours)
+    }
+
     pub fn locals(&self) -> &[Local] {
         &self.locals
     }
@@ -277,7 +276,7 @@ impl Agent {
         self.remote_ufrag = ufrag.to_string();
         self.remote_pwd = pwd.to_string();
         for c in candidates.into_iter().take(MAX_CANDIDATES) {
-            if (1..=2).contains(&c.component) && usable_address(c.address.ip()) {
+            if (1..=2).contains(&c.component) && self.usable(c.address) {
                 self.add_remote(c);
             }
         }
@@ -835,7 +834,7 @@ impl Agent {
             .position(|r| r.address == from && r.component == component);
         let ri = match known {
             Some(i) => i,
-            None if self.remotes.len() < MAX_CANDIDATES && usable_address(from.ip()) => {
+            None if self.remotes.len() < MAX_CANDIDATES && self.usable(from) => {
                 let f = format!("prflx{}", self.remotes.len());
                 // The peer's end of the connection has the opposite TCP role.
                 let transport = match self.locals.get(local).map(|l| l.transport) {
@@ -938,7 +937,7 @@ impl Agent {
             && !m
                 .get(stun::XOR_MAPPED_ADDRESS)
                 .and_then(|v| stun::decode_xor_address(v, &m.transaction).ok())
-                .is_some_and(|a| usable_address(a.ip()))
+                .is_some_and(|a| self.usable(a))
         {
             return;
         }

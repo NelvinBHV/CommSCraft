@@ -247,6 +247,10 @@ pub struct AuthenticateInput<'a> {
     /// exchange; the MIC then covers NEGOTIATE ‖ CHALLENGE ‖ AUTHENTICATE (§3.1.5.1.2). `None`
     /// for connectionless NTLM (SIP, §3.1.5.2.1).
     pub negotiate: Option<&'a [u8]>,
+    /// MsvAvChannelBindings for NTLM over TLS (HTTP): the hash of [`crate::channel_binding`]
+    /// for the server certificate; `None` sends Z(16), "no channel bindings" (§2.2.2.1), as for
+    /// SIP, where [MS-SIPAE] defines none.
+    pub channel_bindings: Option<[u8; 16]>,
 }
 
 /// NegotiateFlags of the NEGOTIATE_MESSAGE for connection-oriented NTLM over HTTP: the required
@@ -317,7 +321,10 @@ pub fn authenticate(
             }
         }
         pairs.retain(|(i, _)| *i != av::CHANNEL_BINDINGS && *i != av::TARGET_NAME);
-        pairs.push((av::CHANNEL_BINDINGS, vec![0; 16]));
+        pairs.push((
+            av::CHANNEL_BINDINGS,
+            input.channel_bindings.unwrap_or([0; 16]).to_vec(),
+        ));
         pairs.push((av::TARGET_NAME, Vec::new()));
     }
     let av_bytes = encode_av_pairs(&pairs)?;

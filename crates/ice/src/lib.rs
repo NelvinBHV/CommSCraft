@@ -84,6 +84,39 @@ pub fn tcp_local_preference(transport: u8, direction: u8, other: u16) -> u16 {
     (u16::from(transport & 0x0f) << 12) | (u16::from(direction & 0x07) << 9) | (other & 0x01ff)
 }
 
+/// Whether media or connectivity checks may go to `remote` (issue #42, design): never to
+/// unspecified, multicast or broadcast addresses or port 0; to loopback or link-local addresses
+/// only when one of `ours` is of the same kind (a local test), so a peer's SDP cannot point our
+/// STUN and RTP traffic at services on this host or the local link. IPv4-mapped IPv6 addresses
+/// are judged as IPv4.
+pub fn usable_peer_address(remote: std::net::SocketAddr, ours: &[std::net::IpAddr]) -> bool {
+    use std::net::IpAddr;
+    let canon = |a: IpAddr| match a {
+        IpAddr::V6(v) => v.to_ipv4_mapped().map_or(a, IpAddr::V4),
+        v4 => v4,
+    };
+    let loopback = |a: IpAddr| canon(a).is_loopback();
+    let link_local = |a: IpAddr| match canon(a) {
+        IpAddr::V4(v) => v.is_link_local(),
+        IpAddr::V6(v) => v.segments()[0] & 0xffc0 == 0xfe80,
+    };
+    let ip = canon(remote.ip());
+    let never = match ip {
+        IpAddr::V4(v) => v.is_unspecified() || v.is_broadcast() || v.is_multicast(),
+        IpAddr::V6(v) => v.is_unspecified() || v.is_multicast(),
+    };
+    if never || remote.port() == 0 {
+        return false;
+    }
+    if loopback(ip) {
+        return ours.iter().any(|&o| loopback(o));
+    }
+    if link_local(ip) {
+        return ours.iter().any(|&o| link_local(o));
+    }
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -129,5 +162,32 @@ mod tests {
             candidate_priority(0, tcp_local_preference(6, 2, 9), 1),
             6_556_159
         );
+    }
+
+    /// Issue #42.
+    #[test]
+    fn peer_address_rules() {
+        let public: std::net::IpAddr = "192.0.2.5".parse().unwrap();
+        let lo: std::net::IpAddr = "127.0.0.1".parse().unwrap();
+        let ok = |a: &str, ours: &[std::net::IpAddr]| usable_peer_address(a.parse().unwrap(), ours);
+        assert!(ok("198.51.100.7:5000", &[public]));
+        assert!(ok("[2001:db8::1]:5000", &[public]));
+        for bad in [
+            "127.0.0.1:5000",
+            "127.9.9.9:5000",
+            "[::1]:5000",
+            "[::ffff:127.0.0.1]:5000",
+            "169.254.1.1:5000",
+            "[fe80::1]:5000",
+            "0.0.0.0:5000",
+            "255.255.255.255:5000",
+            "224.0.0.1:5000",
+            "[ff02::1]:5000",
+            "198.51.100.7:0",
+        ] {
+            assert!(!ok(bad, &[public]), "{bad}");
+        }
+        assert!(ok("127.0.0.1:5000", &[lo]), "local test on loopback");
+        assert!(!ok("0.0.0.0:5000", &[lo]));
     }
 }

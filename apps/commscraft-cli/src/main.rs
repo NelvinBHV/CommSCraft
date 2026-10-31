@@ -8,7 +8,26 @@
 //! container; verbose output redacts every authentication header; TLS is always verified (system
 //! trust store plus an optional enterprise CA file); only TLS targets are used.
 
+// Issue #42: these shadow the standard macros for the whole crate (textual scope comes before the
+// prelude), so nothing reaches the terminal without `term::clean`.
+macro_rules! println {
+    () => { ::std::println!() };
+    ($($t:tt)*) => { ::std::println!("{}", $crate::term::clean(&format!($($t)*))) };
+}
+macro_rules! eprintln {
+    () => { ::std::eprintln!() };
+    ($($t:tt)*) => { ::std::eprintln!("{}", $crate::term::clean(&format!($($t)*))) };
+}
+#[allow(unused_macros)]
+macro_rules! print {
+    ($($t:tt)*) => { ::std::print!("{}", $crate::term::clean(&format!($($t)*))) };
+}
+macro_rules! eprint {
+    ($($t:tt)*) => { ::std::eprint!("{}", $crate::term::clean(&format!($($t)*))) };
+}
+
 mod calls;
+mod term;
 
 use std::io::{BufRead, IsTerminal, Write};
 use std::path::PathBuf;
@@ -163,10 +182,23 @@ fn now() -> u64 {
         .unwrap_or(0)
 }
 
+/// Switches terminal echo back on when dropped – on every return path and on a panic (issue
+/// #42). A signal such as Ctrl+C ends the process without it; `stty echo` or `reset` repairs the
+/// terminal then (documented residual risk: handling signals would need `unsafe` or another
+/// dependency).
+struct EchoOff;
+
+impl Drop for EchoOff {
+    fn drop(&mut self) {
+        let _ = std::process::Command::new("stty").arg("echo").status();
+    }
+}
+
 /// Reads the password without echo (via `stty`), or the first line of a non-terminal stdin.
 fn read_password() -> Result<Password, String> {
     let stdin = std::io::stdin();
     let tty = stdin.is_terminal();
+    let mut echo_off = None;
     if tty {
         eprint!("Password: ");
         let _ = std::io::stderr().flush();
@@ -175,6 +207,8 @@ fn read_password() -> Result<Password, String> {
             .status()
             .map(|s| s.success())
             .unwrap_or(false);
+        // Restore even if `stty -echo` reported a failure after partly applying it.
+        echo_off = Some(EchoOff);
         if !ok {
             return Err(
                 "cannot switch off terminal echo; pipe the password on standard input instead"
@@ -184,8 +218,7 @@ fn read_password() -> Result<Password, String> {
     }
     let mut line = String::new();
     let read = stdin.lock().read_line(&mut line);
-    if tty {
-        let _ = std::process::Command::new("stty").arg("echo").status();
+    if echo_off.take().is_some() {
         eprintln!();
     }
     read.map_err(|e| e.to_string())?;
@@ -270,7 +303,7 @@ fn print_ntlm_info(i: &commscraft_register::NtlmInfo) {
         eprintln!("ntlm: {k}: {v}");
     }
     eprintln!(
-        "ntlm: timestamp in challenge: {}; MIC/channel bindings sent: {}",
+        "ntlm: timestamp in challenge: {}; MIC sent: {}; channel bindings: none (SIP; MS-SIPAE defines none)",
         i.has_timestamp,
         i.modern && i.has_timestamp
     );
@@ -1157,7 +1190,7 @@ fn search(
             body.as_bytes(),
             &user_agent(),
             Duration::from_secs(15),
-            &mut |challenge| match challenge {
+            &mut |challenge, cert| match challenge {
                 None => Ok(format!("NTLM {}", base64::encode(&negotiate))),
                 Some(ch) => {
                     let token = ch
@@ -1165,7 +1198,7 @@ fn search(
                         .and_then(|b| base64::decode(b.trim()).ok());
                     let answer = token
                         .ok_or_else(|| "no NTLM challenge".to_string())
-                        .and_then(|t| engine.http_ntlm(&negotiate, &t, now()));
+                        .and_then(|t| engine.http_ntlm(&negotiate, &t, now(), cert));
                     match answer {
                         Ok(a) => Ok(format!("NTLM {}", base64::encode(&a))),
                         Err(e) => {

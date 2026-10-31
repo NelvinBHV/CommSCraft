@@ -48,6 +48,7 @@ fn input(flags: u32, modern: bool) -> AuthenticateInput<'static> {
         now_filetime: 0,
         modern,
         negotiate: None,
+        channel_bindings: None,
     }
 }
 

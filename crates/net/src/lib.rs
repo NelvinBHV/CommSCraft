@@ -172,6 +172,17 @@ pub struct SipConnection {
     decoder: StreamDecoder,
 }
 
+impl SipConnection {
+    /// The server's end-entity certificate (DER) as sent in the TLS handshake.
+    pub fn server_certificate(&self) -> Option<Vec<u8>> {
+        self.tls
+            .conn
+            .peer_certificates()?
+            .first()
+            .map(|c| c.as_ref().to_vec())
+    }
+}
+
 impl std::fmt::Debug for SipConnection {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("SipConnection")
