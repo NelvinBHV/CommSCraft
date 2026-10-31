@@ -16,7 +16,7 @@ what is still missing per milestone, followed by the open points found in the an
 
 | # | Gap | Evidence / tracking | Milestone |
 |---|---|---|---|
-| 1 | No interop test environment (D-08): nothing is verified against a real server; the remaining questions are owner test cases IT-01 … IT-33 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | all |
+| 1 | No published interop results (D-08): lab runs stay private, nothing is marked verified; the remaining questions are owner test cases IT-01 … IT-33 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | all |
 | 2 | Sign-in: Kerberos (function 5) and TLS-DSK with client certificate (function 6) are missing; NTLM, discovery, TLS, registration, provisioning and sign-out exist (tested-offline) | functions 1–8, 50 | M1 |
 | 3 | Presence and IM: contact list editing (add/remove contacts and groups), privacy relationships and blocking (12), offline address book (13), contact photos (15), Exchange unified contact store (11); presence, 1:1 and group IM, typing and address book search exist | functions 9–19 | M2 |
 | 4 | Audio 1:1: TCP-only mode and the artificial active TCP server-reflexive candidate (MS-ICE2 §3.1.4.8.1.3, SHOULD), streaming our own music on hold (35, optional), the peer info exchange of MS-RTP (needs link bandwidths), bandwidth management for video and PSTN failover (32, M4/M5), redundant audio (MS-RTPRADEX, 30), as the callee a reliable 183 with an early answer (SD-51, SHOULD) and early media of forked calls (SD-50, SHOULD); calls with ICE over UDP and the TCP relay (443), TURN, SRTP, G.722/G.711 and DTMF exist | functions 21–26, 30, 32, 35 | M3 |

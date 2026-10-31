@@ -11,7 +11,7 @@ Crafting Apps (WordCraft, GridCraft, DeckCraft).
 2. Check open PRs (`gh pr list`) before starting overlapping work.
 3. Stop and ask the owner only for owner decisions: licensing, publishing, pushing to new remotes,
    secrets, anything listed as open in [`docs/decisions.md`](docs/decisions.md), and any test that
-   touches a real server.
+   touches a real server outside the owner's lab (D-08).
 
 ## Evidence first
 - Every protocol behaviour is backed by a citation: document, edition/version, section, PDF page
@@ -71,8 +71,10 @@ sockets, the OS or the UI; transport and OS adapters are separate crates.
   runners (`ubuntu-latest`, `windows-latest`) in this public repository. No larger, custom or
   self-hosted runners, no paid external CI. If the repository becomes private, run no workflow
   without new owner approval.
-- There is no interop test environment (decision D-08): never connect to real servers; work offline
-  with specification test vectors, specification examples and self-built fixtures.
+- Interop testing (decision D-08, changed 2026-10-31): the owner operates an isolated lab; you may
+  test against that lab on your own once its connections are set up. Never publish anything about
+  the lab (hosts, addresses, captures, logs, results); keep notes in the gitignored `plan/`. Never
+  connect to any other real server. Public statuses stay at `tested-offline`.
 - Work on branches and open pull requests; never push to `main` directly. Merge your own pull
   requests into `main` regularly once CI is green (owner instruction T-02, 2026-10-31); no releases.
 

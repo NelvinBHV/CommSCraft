@@ -5,12 +5,13 @@
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
 A milestone is done when its gate passes offline; "verified" always means an interop run by the
-owner on an authorized server and is deferred until such an environment exists (D-08).
+owner on an authorized server (D-08). Runs in the owner's private lab inform the work but are not
+published.
 
 ## Current focus (M3 – audio 1:1)
 
-**Offline first** (decision D-08): there is no interop test environment, so every gate ends at
-`tested-offline`; "verified" waits for the owner's runs ([`interop-tests.md`](interop-tests.md)).
+**Offline first** (decision D-08): every gate ends at `tested-offline`; lab runs stay private and
+"verified" waits for the owner's runs ([`interop-tests.md`](interop-tests.md)).
 
 | Milestone | State (2026-10-31) | What exists | Missing before the gate |
 |---|---|---|---|

@@ -1,6 +1,6 @@
 # Decisions
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-31 · **Change:** minor (D-11 taken)
+> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-31 · **Change:** minor (D-08 changed: owner lab)
 
 Decisions that belong to the project owner. Agents propose, the owner decides; a decision is
 recorded here with date and reason before work depends on it.
@@ -22,7 +22,7 @@ recorded here with date and reason before work depends on it.
 | D-05 | 2026-10-26 | Codecs: G.711, G.722, H.264 UC (licensed or system H.264 implementation). No RTAudio, no RTVideo. G.722.1 and SILK only after legal clearance | Patent and licence risk |
 | D-06 | 2026-10-26 | Target servers: Skype for Business Server 2015, 2019 and Subscription Edition, on-premises; Lync Server 2013 best effort | Test matrix |
 | D-07 | 2026-10-26 | User interface toolkit: egui | Consistency with the Crafting Apps |
-| D-08 | 2026-10-26 | No interop test environment for now. Work proceeds offline only: specification test vectors, specification examples and self-built fixtures. No status can reach `verified-interoperable` until the owner provides an environment; milestone gates end at `tested-offline` | Owner decision |
+| D-08 | 2026-10-26, changed 2026-10-31 | Development works offline first: specification test vectors, specification examples and self-built fixtures. Since 2026-10-31 the owner operates an isolated lab, and the agent may run tests against that lab on its own. Nothing about the lab is published (hosts, addresses, captures, logs, results); notes stay outside the repository. No connections to any other real server; those tests remain the owner's. Public statuses stay at `tested-offline`; `verified-interoperable` stays reserved for the owner's runs on authorized servers | Owner decision; changed by the owner ("Du darfst wenn die Verbindungen eingerichtet sind, alles selbständig testen … nicht vom Lab in github veröffentlichen") |
 | D-09 | 2026-10-26 | CI only on runners that cause no costs: standard GitHub-hosted runners in this public repository. No larger, custom or self-hosted runners, no paid external CI services. If the repository ever becomes private, no workflow runs without new owner approval (private repositories consume paid minutes) | Owner rule |
 | D-10 | 2026-10-27 | Autodiscover over HTTPS only, deviating from the MUST in MS-OCDISCWS §3.2.1.1 to also try `http://` (switch `allow_plain_http` stays off) | Plain HTTP would send the SIP URI unencrypted and accept spoofable redirects; owner followed the proposal |
 | D-11 | 2026-10-28 | Audio devices on Linux through ALSA/PipeWire: the adapter crate `audio-alsa` uses the ALSA API (crate `alsa` 0.9.1, links libasound); on PipeWire systems the ALSA device `default` is served by PipeWire's ALSA plugin. No other crate links audio libraries | Owner decision; one backend covers ALSA and PipeWire; safe Rust API, `unsafe_code` stays forbidden in CommSCraft code (D-03) |
