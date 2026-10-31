@@ -22,7 +22,7 @@ Source: [MS-SDPEXT] "Session Description Protocol (SDP) Version 2.0 Extensions",
 | SD-10 | `a=crypto:<tag> AES_CM_128_HMAC_SHA1_80 inline:<key‖salt base64>|2^31|<MKI>:1` – the only suite; lifetime always 2^31 (ignore when receiving); MKI SHOULD, length 1 byte; no session params; exactly one space, no tab | §3.1.5.1, pp. 19–20 |
 | SD-11 | **Optional encryption**: offer `RTP/AVP` + a=crypto ⇒ answer `RTP/SAVP` + a=crypto (same tag) if supported, otherwise `RTP/AVP` without crypto; afterwards all re-INVITEs SAVP. Mandatory: offer `RTP/SAVP` | §3.1.5.8, pp. 25–26; examples §4.3, pp. 57–61 |
 | SD-12 | `a=cryptoscale:<tag> client|server …` for SSRTP (MCU = server, client = client); result table (e.g. offer SRTP+client SSRTP, answer server SSRTP ⇒ client sends SRTP, receives SSRTP); tags unique across crypto/cryptoscale | §3.1.5.2–3.1.5.2.1, pp. 20–22 |
-| SD-13 | **Never** renegotiate encryption parameters via re-INVITE | §3.1.5.2.2, p. 22; §3.1.5.14, p. 30 |
+| SD-13 | **Never** renegotiate encryption parameters via re-INVITE. Implementation: every re-INVITE (final offer, hold, resume) repeats the first offer's key and its crypto and cryptoscale lines (towards an MCU the client-SSRTP line stays) | §3.1.5.2.2, p. 22; §3.1.5.14, p. 30 |
 | SD-14 | Policy: `ucPC2PCAVEncryption` (Support/Require/DoNotSupport) decides AVP vs. SAVP (relationship is an inference from SIPREGE §2.2.2.5.1) | SIPREGE p. 26 |
 
 ## Codecs / payload types

@@ -618,7 +618,11 @@ impl<R: Random> Engine<R> {
             )));
             return;
         };
+        // SD-13 ([MS-SDPEXT] §3.1.5.2.2, p. 22): a re-INVITE never renegotiates encryption or any
+        // parameter of the crypto/cryptoscale lines – the same key and the same lines as the first
+        // offer (towards an MCU the client-SSRTP line stays).
         local.key = c.local.as_ref().and_then(|l| l.key.clone());
+        local.ssrtp = c.local.as_ref().is_some_and(|l| l.ssrtp);
         let hold = local.direction == sdp::Direction::Inactive;
         let body = sdp::offer(&local, c.policy);
         c.local = Some(local);

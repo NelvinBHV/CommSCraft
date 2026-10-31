@@ -1042,7 +1042,7 @@ impl<R: Random> Engine<R> {
         let id = self.next_conv;
         self.next_conv = self.next_conv.wrapping_add(1).max(1);
         let mut m = self.request("INVITE", &peer, &peer);
-        im::invite_body(&mut m, self.cfg.local_ip);
+        im::invite_body(&mut m, self.cfg.local_ip, false);
         self.convs.insert(
             id,
             Conversation {
@@ -1157,7 +1157,7 @@ impl<R: Random> Engine<R> {
             }
         }
         ok.push_header("Content-Type", "application/sdp");
-        ok.body = im::sdp(self.cfg.local_ip).into_bytes();
+        ok.body = im::sdp(self.cfg.local_ip, group.is_some()).into_bytes();
         self.send_plain(ok, now, out);
         let id = self.next_conv;
         self.next_conv = self.next_conv.wrapping_add(1).max(1);
@@ -1176,6 +1176,24 @@ impl<R: Random> Engine<R> {
             peer,
             incoming: true,
         }));
+        // CI-13: the IM MCU dialled out to us; join the focus of the same conference too, for
+        // the roster (participants, the A/V MCU for conference audio). Only if the announced
+        // focus belongs to the calling MCU's conference.
+        let focus = self
+            .convs
+            .get(&id)
+            .and_then(|c| c.group.as_ref())
+            .and_then(|g| g.focus.clone());
+        let mcu = self
+            .convs
+            .get(&id)
+            .and_then(|c| c.dialog.as_ref())
+            .map(|d| d.remote_uri.clone());
+        if let (Some(focus), Some(mcu)) = (focus, mcu) {
+            if conf::same_conference(&focus, &mcu) {
+                self.join_focus(id, now, out);
+            }
+        }
     }
 
     fn on_conversation_request(
@@ -1638,6 +1656,18 @@ impl<R: Random> Engine<R> {
                         status: code,
                     }));
                 }
+            }
+            // CI-13: the IM session the MCU dialled out to us goes on without the roster.
+            Purpose::JoinFocus(id)
+                if self
+                    .convs
+                    .get(&id)
+                    .and_then(|c| c.group.as_ref())
+                    .is_some_and(|g| g.dialed_out) =>
+            {
+                out.push(Output::Event(Event::Notice(format!(
+                    "conference state not available ({code}); the chat goes on"
+                ))));
             }
             Purpose::CreateConference(id) | Purpose::JoinFocus(id) => {
                 self.convs.remove(&id);

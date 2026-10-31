@@ -14,7 +14,7 @@ fn invite() -> Message {
     m.push_header("To", "<sip:bob@contoso.com>");
     m.push_header("Call-ID", "im1");
     m.push_header("CSeq", "1 INVITE");
-    invite_body(&mut m, "192.0.2.1".parse().unwrap());
+    invite_body(&mut m, "192.0.2.1".parse().unwrap(), false);
     m
 }
 
@@ -38,11 +38,15 @@ fn ok_200() -> Message {
 /// CI-02 (MS-CONFIM §2.2.5, p. 14): the SDP of a message session.
 #[test]
 fn sdp_offer_and_check() {
-    let s = sdp("192.0.2.1".parse().unwrap());
+    let s = sdp("192.0.2.1".parse().unwrap(), false);
     assert!(s.contains("m=message 5060 sip null\r\n"));
     assert!(s.contains("a=accept-types:text/plain\r\n"));
     assert!(!s.contains('*'), "never offer *");
-    assert!(sdp("2001:db8::1".parse().unwrap()).contains("c=IN IP6 2001:db8::1"));
+    assert!(sdp("2001:db8::1".parse().unwrap(), false).contains("c=IN IP6 2001:db8::1"));
+    // CI-14: towards an IM MCU the IMDN type is accepted too; still no `*` and plain text only.
+    let c = sdp("192.0.2.1".parse().unwrap(), true);
+    assert!(c.contains("a=accept-types:text/plain application/ms-imdn+xml\r\n"));
+    assert_eq!(check_sdp(c.as_bytes()), Ok(()));
     assert_eq!(check_sdp(s.as_bytes()), Ok(()));
     // The MS-CONFIM example (p. 14): rtf, multipart, imdn – text/plain is still implied?
     // No: an explicit list without text/plain or * is refused (we only speak text/plain).
