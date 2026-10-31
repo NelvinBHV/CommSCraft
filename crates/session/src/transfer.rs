@@ -392,8 +392,17 @@ impl<R: Random> Engine<R> {
         if let Some(s) = &t.sensitivity {
             extra.push(("Ms-Sensitivity".to_string(), s.clone()));
         }
-        let Some(new_call) = self.start_call_with(&t.target, local, policy, &extra, now, out)
-        else {
+        let Some(new_call) = self.start_call_with(
+            &t.target,
+            local,
+            policy,
+            crate::call::Extras {
+                headers: &extra,
+                part: None,
+            },
+            now,
+            out,
+        ) else {
             self.notify_refer(id, "SIP/2.0 500 Server Internal Error", true, now, out);
             return;
         };

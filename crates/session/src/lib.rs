@@ -174,6 +174,16 @@ pub enum Command {
     Hangup {
         call: CallId,
     },
+    /// The location for emergency calls: from the location information service, or typed by the
+    /// user (`manual`, E9-04).
+    SetLocation(Box<commscraft_lis::Location>),
+    /// An emergency call to a number of the location policy (function 39, RE-67): time-bound
+    /// `e911active` routing, INVITE with Priority and the PIDF-LO of the current location.
+    EmergencyCall {
+        dialled: String,
+        local: Box<sdp::Local>,
+        policy: sdp::Encryption,
+    },
     /// Send the quality report of an ended call with the measured network figures (function
     /// 45, QE-01/QE-02).
     ReportQuality {
@@ -219,6 +229,10 @@ pub enum Event {
     RegistrationEnded(String),
     /// In-band provisioning arrived (RG-41): checked ServerConfiguration (web service URLs …).
     Provisioned(Box<prov::ServerConfiguration>),
+    /// The location policy of provisioning (emergency numbers, RG-51).
+    LocationPolicy(Box<prov::LocationPolicy>),
+    /// The current location for emergency calls (E9-04).
+    Location(Box<commscraft_lis::Location>),
     /// Media relay credentials are available (kept in the engine, see
     /// [`Engine::media_relay`]); number of relays and lifetime in minutes (AV-04).
     MediaRelayReady {
@@ -450,6 +464,15 @@ pub struct Engine<R: Random> {
     status_versions: [u32; 2],
     /// Versions of the routing publications per container (PR-05).
     routing_versions: [u32; 5],
+    /// The routing rules the user published last (restored after an emergency call).
+    routing_rules: pres::Forwarding,
+    /// The rules above were published by this session (only then they are restored).
+    routing_known: bool,
+    /// locationPolicy from provisioning (RG-51) and the current location (E9-04).
+    location_policy: Option<commscraft_provisioning::LocationPolicy>,
+    location: Option<commscraft_lis::Location>,
+    /// The emergency call in progress (RE-67).
+    emergency_call: Option<CallId>,
     /// Focus factory URI from provisioning (PV-01).
     focus_factory: Option<String>,
     /// Call park server from provisioning (callParkServerUri, CK-01).
@@ -513,6 +536,11 @@ impl<R: Random> Engine<R> {
             endpoint_versions: [0, 0],
             status_versions: [0, 0],
             routing_versions: [0; 5],
+            routing_rules: pres::Forwarding::default(),
+            routing_known: false,
+            location_policy: None,
+            location: None,
+            emergency_call: None,
             focus_factory: None,
             call_park: None,
             parks: Vec::new(),
@@ -776,7 +804,18 @@ impl<R: Random> Engine<R> {
 
     /// RE-50: the routing preamble into the routing category (private, [MS-PRES] §2.2.2.7.7).
     fn publish_routing(&mut self, rules: pres::Forwarding, now: u64, out: &mut Vec<Output>) {
-        let body = match pres::publish_routing_body(&self.cfg.aor, &rules, self.routing_versions) {
+        // RE-67: during an emergency call the preamble with e911active is time-bound.
+        let body = if rules.e911_active {
+            pres::publish_routing_for_body(
+                &self.cfg.aor,
+                &rules,
+                self.routing_versions,
+                emergency::E911_ROUTING_SECONDS,
+            )
+        } else {
+            pres::publish_routing_body(&self.cfg.aor, &rules, self.routing_versions)
+        };
+        let body = match body {
             Ok(b) => b,
             Err(e) => {
                 out.push(Output::Event(Event::Notice(format!(
@@ -1412,6 +1451,12 @@ impl<R: Random> Engine<R> {
             Command::UpdateCall { call, local } => self.update_call(call, *local, now, &mut out),
             Command::Hangup { call } => self.hangup(call, now, &mut out),
             Command::ParkCall { call } => self.park_call(call, now, &mut out),
+            Command::SetLocation(loc) => self.set_location(*loc, &mut out),
+            Command::EmergencyCall {
+                dialled,
+                local,
+                policy,
+            } => self.emergency_call(&dialled, *local, policy, now, &mut out),
             Command::ReportQuality { call, audio } => {
                 self.report_quality(call, *audio, now, &mut out)
             }
@@ -1479,6 +1524,7 @@ impl<R: Random> Engine<R> {
         self.group_tick(now, &mut out);
         self.call_tick(now, &mut out);
         self.park_tick(now, &mut out);
+        self.emergency_tick(now, &mut out);
         if self.media_relay_refresh_at.is_some_and(|t| now >= t) {
             self.media_relay_refresh_at = None;
             self.fetch_media_relay(now, &mut out);
@@ -1611,6 +1657,14 @@ impl<R: Random> Engine<R> {
             }
             Purpose::Provisioning => match prov::from_message(resp) {
                 Ok(Some(p)) => {
+                    // RG-51: the location policy decides about emergency numbers.
+                    if let Some(g) = p.group("locationPolicy") {
+                        let policy = prov::LocationPolicy::from_group(g);
+                        out.push(Output::Event(Event::LocationPolicy(Box::new(
+                            policy.clone(),
+                        ))));
+                        self.location_policy = Some(policy);
+                    }
                     if let Some(g) = p.group("ServerConfiguration") {
                         let mut c = prov::ServerConfiguration::from_group(g, &self.user_domain());
                         if let Some(u) = p.group("userSetting") {
@@ -1651,7 +1705,12 @@ impl<R: Random> Engine<R> {
             }
             Purpose::PublishRouting(f) => {
                 self.routing_versions = self.routing_versions.map(|v| v + 1);
-                out.push(Output::Event(Event::Forwarding(*f)));
+                // The user's own rules are kept to restore them after an emergency call.
+                if !f.e911_active {
+                    self.routing_rules = (*f).clone();
+                    self.routing_known = true;
+                    out.push(Output::Event(Event::Forwarding(*f)));
+                }
             }
             Purpose::Invite(id) => {
                 let Some(c) = self.convs.get_mut(&id) else {
@@ -1999,6 +2058,7 @@ impl<R: Random> Engine<R> {
 }
 
 mod call;
+mod emergency;
 mod group;
 mod park;
 mod qoe;

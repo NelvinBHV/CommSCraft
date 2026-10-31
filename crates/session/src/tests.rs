@@ -2606,6 +2606,131 @@ fn quality_report_and_rating() {
     assert!(sends(&bad).is_empty());
 }
 
+/// Function 39 (RE-67, RG-51; [MS-SIPRE] §2.2.23, §3.17.5.1, example §4.14; [MS-SIPREGE]
+/// §2.2.2.5.7): the location policy makes 112 (and its mask 911) an emergency number; the
+/// emergency call publishes a time-bound e911active preamble and sends the INVITE with Priority,
+/// Supported: geolocation, Geolocation and the PIDF-LO as last part of multipart/mixed; without a
+/// location the call still goes out; other numbers never take this path.
+#[test]
+fn emergency_call_with_location() {
+    let (mut e, mut server, out) = signed_in();
+    let sub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    let doc = r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="locationPolicy"><propertyEntryList><property name="EnhancedEmergencyServicesEnabled">true</property><property name="LocationPolicyTagID">user-tagid</property><property name="EmergencyNumbers">112-911</property><property name="NotificationUri">sip:security@contoso.com</property><property name="ConferenceMode">oneway</property></propertyEntryList></provisionGroup><provisionGroup name="ServerConfiguration"><locationProfile>Redmond</locationProfile></provisionGroup></provisionGroupList>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            doc,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::LocationPolicy(p) if p.enabled)));
+    assert_eq!(e.emergency_dial("911").as_deref(), Some("112"));
+    assert_eq!(e.emergency_dial("0401234"), None);
+    // No location yet: the call still goes out, without PIDF-LO.
+    let out = e.command(
+        Command::EmergencyCall {
+            dialled: "112".into(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    assert_eq!(invite.single("Priority").unwrap(), Some("emergency"));
+    assert!(invite.single("Geolocation").unwrap().is_none());
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("WITHOUT location"))));
+    e.command(Command::Hangup { call: 1 }, NOW);
+
+    let loc = commscraft_lis::Location {
+        country: "US".into(),
+        a3: "Redmond".into(),
+        rd: "163rd".into(),
+        hno: "3910".into(),
+        nam: "Contoso <Corp>".into(),
+        manual: true,
+        ..Default::default()
+    };
+    let out = e.command(Command::SetLocation(Box::new(loc)), NOW);
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Location(_))));
+    let out = e.command(
+        Command::EmergencyCall {
+            dialled: "911".into(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let publish = sends(&out)
+        .into_iter()
+        .find(|m| m.method() == Some("SERVICE"))
+        .unwrap();
+    let p = String::from_utf8_lossy(&publish.body).to_string();
+    assert!(
+        p.contains("e911active") && p.contains("expireType=\"time\""),
+        "{p}"
+    );
+    let invite = find(&out, "INVITE");
+    let uri = Engine::<Counter>::request_uri(&invite).unwrap();
+    assert!(uri.starts_with("sip:112;phone-context="), "{uri}");
+    assert_eq!(invite.single("Priority").unwrap(), Some("emergency"));
+    assert!(invite
+        .header_values("Supported")
+        .any(|v| v == "geolocation"));
+    assert_eq!(
+        invite.single("Geolocation").unwrap(),
+        Some("<cid:alice@contoso.com>;inserted-by=\"sip:alice@contoso.com\"")
+    );
+    let ct = invite.single("Content-Type").unwrap().unwrap();
+    assert!(ct.starts_with("multipart/mixed"), "{ct}");
+    let body = String::from_utf8_lossy(&invite.body).to_string();
+    let pidf_at = body.find("Content-Type: application/pidf+xml").unwrap();
+    assert!(
+        body.find("application/sdp").unwrap() < pidf_at,
+        "the PIDF-LO is the last part"
+    );
+    assert!(body.contains("Content-ID: <alice@contoso.com>"));
+    assert!(
+        body.contains("<ca:NAM>Contoso &lt;Corp&gt;</ca:NAM>")
+            && body.contains("<gp:method>Manual</gp:method>")
+    );
+    assert!(
+        body.contains(">user-tagid</LocationPolicyTagID>")
+            && body.contains("<ms:ConferenceMode>oneway</ms:ConferenceMode>")
+    );
+    // After the call: nothing was published by the user in this session – a notice, no
+    // publication that could overwrite rules set elsewhere (O-RE-3).
+    e.command(Command::Hangup { call: 2 }, NOW);
+    e.on_message(&answer(&mut server, &invite, 487, None, "", &[]), NOW);
+    let out = e.on_tick(NOW + 1);
+    assert!(!sends(&out).iter().any(|m| m.method() == Some("SERVICE")));
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("check your forwarding"))));
+    // A number that is no emergency number never takes this path.
+    let out = e.command(
+        Command::EmergencyCall {
+            dialled: "0401234".into(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+}
+
 /// RFC 3515 / RFC 5589 §6, OB-25: unattended transfer – REFER with Refer-To and Referred-By;
 /// after 202 our call ends.
 #[test]
@@ -2859,6 +2984,7 @@ fn forwarding_publication() {
         immediate: false,
         simultaneous_ring: None,
         ring_seconds: Some(15),
+        e911_active: false,
     };
     let out = e.command(Command::SetForwarding(rules.clone()), NOW);
     let first = sends(&out).pop().unwrap();

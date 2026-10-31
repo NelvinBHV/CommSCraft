@@ -1,6 +1,6 @@
 # CommSCraft architecture (planned)
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (all 34 crates and the app listed)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (all 35 crates and the app listed)
 
 Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 [`decisions.md`](decisions.md) are taken. Rules for working in the code are in
@@ -50,6 +50,7 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 | `commscraft-dlx` | L3 | Address book search (MS-DLX SearchAbEntry): SOAP request, bounded answer parser with SIP URI check | DL-01…DL-10, K-DL-3, OB-44 |
 | `commscraft-conf` | L3 | Group IM and meetings: C3P addConference/addUser (join, dial-out), scheduling (`schedule`: add/get/list/modify/delete), roster (RFC 4575 merge, bounded), IMDN, Ms-Sender, invitations | CB-10…CB-37, PV-01…PV-14, CI-01…CI-14, K-CI-3, K-CA-3 |
 | `commscraft-park` | L3 | Call park: park request, park response, unpark notification (MS-SIPAPP) | CK-01…CK-07 |
+| `commscraft-lis` | L3 | Emergency location: GetLocations (MS-E911WS) and the PIDF-LO of emergency calls (MS-SIPRE) | E9-01…E9-07, RE-67 |
 | `commscraft-qoe` | L3 | Quality reports (VQReportEvent with network figures) and call rating (MS-QoE) | QE-01…QE-06 |
 | `commscraft-im` | L3 | 1:1 IM: message-session SDP (offer/check), ACK for 2xx and failures, MESSAGE, typing INFO, handling of the peer's requests (plain text only) | OCS-UC09, CI-02, OB-16 |
 | `commscraft-session` | L4 | Session engine (sans-I/O): registration, bootstrap (endpoint publication, contact list), long-lived presence subscriptions with NOTIFY/refresh/resubscribe, client transactions with timeouts, incoming and outgoing IM conversations, events for a UI | OCS-UC03, PR-11…PR-33, SIP-04/07, AE-29/32, RFC 3261/3265 |
@@ -75,7 +76,7 @@ A crate may only depend on crates in lower layers.
 | L1 | `srtp` | SRTP/SSRTP per MS-SRTP |
 | L2 | `sip-core` | Transactions, dialogs, registration, provisioning, keep-alive, compression (optional) |
 | L2 | `media` | RTP/RTCP (MS-RTP), payload formats (H.264 UC, DTMF, redundancy), jitter buffer |
-| L3 | `presence`, `im`, `dlx`, `conf`, `park`, `qoe`, `telephony`, `exchange`, `webservices` | Feature protocols (MS-PRES, MS-CONFBAS/AV/IM/AS, MS-OCPSTN, EWS, UCWA, MS-DLX, MS-ABS, MS-E911WS) |
+| L3 | `presence`, `im`, `dlx`, `conf`, `park`, `qoe`, `lis`, `telephony`, `exchange`, `webservices` | Feature protocols (MS-PRES, MS-CONFBAS/AV/IM/AS, MS-OCPSTN, EWS, UCWA, MS-DLX, MS-ABS, MS-E911WS) |
 | L4 | `session` | One signed-in account: orchestrates features, exposes commands and state |
 | L5 | `ui-egui` | Desktop user interface |
 | adapters | `net-tokio`, `audio-pipewire`, `video-*`, `rdp-*`, `gssapi` | OS and library bindings (subject to D-03) |

@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (function 45: quality reports)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (function 39: emergency calls)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -63,7 +63,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 36 | Call transfer | MS-SIPAE, MS-SIPRE | B\* | parts tested-offline (unattended and attended transfer as transferor, following a REFER as transferee, Replaces as target, safe transfer: `session`, CLI `/transfer`); `ms-referee-uri` after retargeting – |
 | 37 | Call park | MS-SIPAPP | B\* | tested-offline (park at the call park server from provisioning, orbit, refresh of the parker's dialog, unpark notifications, refusals; retrieval by calling the orbit with the REFER/Replaces of the transfer code; being parked as a call replacement with music on hold: `park`, `session`, CLI `/park`, `/call ORBIT`) |
 | 38 | Voicemail | MS-OCEXUM, MS-EUMSDP | T | – |
-| 39 | Emergency calls with location | MS-E911WS, MS-SIPRE | B\* | – |
+| 39 | Emergency calls with location | MS-E911WS, MS-SIPRE | B\* | parts tested-offline (location policy from provisioning, location from the location information service or typed by the user, emergency call with time-bound `e911active` routing, Priority, Geolocation and PIDF-LO, never blocked without a location: `lis`, `provisioning`, `presence`, `session`, CLI `/location`, `/call 112`); GetLocationsInCity, WLAN/LLDP identifiers, disclaimer prompt, reading own routing rules (O-RE-3) – |
 | 40 | Schedule meetings | MS-CONFPRO | B\* | parts tested-offline (create with subject, lifetime and admission policy, list, details incl. the join URL if the server names it, change with the current version, cancel: `conf::schedule`, `session`, CLI `/schedule` `/meetings` `/meeting` `/changemeeting` `/cancelmeeting`); static meetings, preset presenters, PSTN dial-in details, meeting options (lobby bypass, autopromote) – |
 | 41 | Join meetings, lobby, roles | MS-CONFBAS | B\* | parts tested-offline (join by focus URI, invitation or meeting link with the join manager document, lobby wait and admission, granted role, roster, leave, presenter commands: admit/deny from the lobby, roles, lock, remove: `conf`, `session`, CLI `/join` `/admit` `/promote` `/lock` …); scheduling is function 40, admission policy changes, recording – |
 | 42 | A/V conferences, muting | MS-CONFAV | B\* | parts tested-offline (audio in the A/V MCU (SRTP sent, SRTP or SSRTP received), participants' audio state, muting ourselves and others (modifyEndpointMedia), muting the audience (mediaFiltersRules): `conf`, `session`, `call-media`, CLI `/confaudio` `/confmute` `/muteuser` `/muteall`); announcements language, dial-out of phone numbers, video – |
@@ -78,4 +78,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **12** tested-offline as a whole, **17** in parts, **21** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).
+**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **12** tested-offline as a whole, **18** in parts, **20** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).

@@ -246,3 +246,60 @@ fn piggyback_response() {
     other.headers.retain(|h| h.name != "Event");
     assert_eq!(from_message(&other), Err(Error::NotProvisioning));
 }
+
+/// RG-51 ([MS-SIPREGE] §2.2.2.5.7, pp. 56–57): the locationPolicy group; EmergencyNumbers wins
+/// over EmergencyDialString; masks; bad entries dropped; nothing while disabled.
+#[test]
+fn location_policy() {
+    let g = |props: &[(&str, &str)]| Group {
+        name: "locationPolicy".into(),
+        properties: props
+            .iter()
+            .map(|(n, v)| (n.to_string(), v.to_string()))
+            .collect(),
+        ..Group::default()
+    };
+    let p = LocationPolicy::from_group(&g(&[
+        ("EnhancedEmergencyServicesEnabled", "true"),
+        ("LocationPolicyTagID", "user-tagid"),
+        ("LocationRequired", "disclaimer"),
+        ("EmergencyDialString", "999"),
+        ("EmergencyNumbers", "911-112,100;117;bad<x>-1"),
+        (
+            "NotificationUri",
+            "sip:security@contoso.com, sip:desk@contoso.com,http://x",
+        ),
+        ("ConferenceUri", "sip:+14255550199@contoso.com;user=phone"),
+        ("ConferenceMode", "TwoWay"),
+        ("LocationRefreshInterval", "4"),
+    ]));
+    assert!(p.enabled);
+    assert_eq!(p.tag_id.as_deref(), Some("user-tagid"));
+    assert_eq!(p.location_required, LocationRequired::Disclaimer);
+    assert_eq!(p.numbers.len(), 2, "the bad combination is dropped");
+    assert_eq!(
+        (p.emergency("911"), p.emergency("112"), p.emergency("100")),
+        (Some("911"), Some("911"), Some("911"))
+    );
+    assert_eq!(p.emergency("117"), Some("117"));
+    assert_eq!(
+        p.emergency("999"),
+        None,
+        "EmergencyNumbers takes precedence"
+    );
+    assert_eq!(p.emergency("0401234"), None);
+    assert_eq!(
+        p.notification_uris,
+        ["sip:security@contoso.com", "sip:desk@contoso.com"]
+    );
+    assert_eq!(p.conference_mode.as_deref(), Some("twoway"));
+    assert_eq!(p.refresh_hours, Some(4));
+    let old = LocationPolicy::from_group(&g(&[
+        ("EnhancedEmergencyServicesEnabled", "true"),
+        ("EmergencyDialString", "911"),
+        ("EmergencyDialMask", "112;999"),
+    ]));
+    assert_eq!(old.emergency("999"), Some("911"));
+    let off = LocationPolicy::from_group(&g(&[("EmergencyDialString", "911")]));
+    assert_eq!(off.emergency("911"), None, "disabled: no emergency path");
+}

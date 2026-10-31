@@ -1256,6 +1256,123 @@ fn search(
     Err(last)
 }
 
+/// The local IPv4 subnet of `ip` from the kernel's routing table (`/proc/net/route`), for the
+/// location request (E9-03).
+fn subnet_of(ip: std::net::IpAddr) -> Option<std::net::IpAddr> {
+    let table = std::fs::read_to_string("/proc/net/route").ok()?;
+    subnet_in(&table, ip)
+}
+
+/// The most specific non-default route of `table` that contains `ip`. Destination and mask are
+/// the kernel's network-order values printed as a native integer in hex, so the native byte
+/// order gives back the address bytes.
+fn subnet_in(table: &str, ip: std::net::IpAddr) -> Option<std::net::IpAddr> {
+    let std::net::IpAddr::V4(v4) = ip else {
+        return None;
+    };
+    let addr = u32::from(v4);
+    let field = |s: &str| {
+        u32::from_str_radix(s, 16)
+            .ok()
+            .map(|v| u32::from_be_bytes(v.to_ne_bytes()))
+    };
+    let mut best: Option<(u32, u32)> = None;
+    for line in table.lines().skip(1).take(1024) {
+        let f: Vec<&str> = line.split_whitespace().collect();
+        let (Some(dest), Some(mask)) = (
+            f.get(1).and_then(|s| field(s)),
+            f.get(7).and_then(|s| field(s)),
+        ) else {
+            continue;
+        };
+        if mask != 0
+            && addr & mask == dest
+            && best.is_none_or(|(_, m)| mask.count_ones() > m.count_ones())
+        {
+            best = Some((dest, mask));
+        }
+    }
+    best.map(|(d, _)| std::net::IpAddr::V4(std::net::Ipv4Addr::from(d)))
+}
+
+/// The location from the location information service (function 39; [MS-E911WS] GetLocations
+/// over HTTPS with NTLM, E9-01 … E9-04): the first civic address for our IP and subnet.
+fn lis_lookup(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    services: Option<&commscraft_provisioning::ServerConfiguration>,
+    local_ip: std::net::IpAddr,
+    verbose: bool,
+) -> Result<Option<commscraft_lis::Location>, String> {
+    use commscraft_sipae::base64;
+    let s = services
+        .and_then(|c| c.lis_internal.as_ref())
+        .ok_or("the server announced no location information service")?;
+    if !s.in_user_domain && !trust.trusts(&s.host) {
+        return Err(format!(
+            "{} is outside your SIP domain; add --trust-domain to use it",
+            s.host
+        ));
+    }
+    let url = commscraft_url::parse_https(&s.url).ok_or("the location service URL is not https")?;
+    let ids = commscraft_lis::NetworkIds {
+        mac: None,
+        subnet: subnet_of(local_ip),
+        ip: Some(local_ip),
+    };
+    let body = commscraft_lis::get_locations_request(engine.own_aor(), &ids)
+        .map_err(|e| format!("{e:?}"))?;
+    if verbose {
+        println!("  POST {} (GetLocations)", s.url);
+    }
+    let negotiate =
+        commscraft_ntlm::messages::negotiate_message(commscraft_ntlm::messages::HTTP_NEGOTIATE);
+    let mut auth_err: Option<String> = None;
+    let result = commscraft_net::http::post_with_auth(
+        tls,
+        &url,
+        &[
+            ("Content-Type", commscraft_lis::CONTENT_TYPE),
+            ("SOAPAction", commscraft_lis::SOAP_ACTION),
+        ],
+        body.as_bytes(),
+        &user_agent(),
+        Duration::from_secs(15),
+        &mut |challenge, cert| match challenge {
+            None => Ok(format!("NTLM {}", base64::encode(&negotiate))),
+            Some(ch) => {
+                let answer = ch
+                    .strip_prefix("NTLM ")
+                    .and_then(|b| base64::decode(b.trim()).ok())
+                    .ok_or_else(|| "no NTLM challenge".to_string())
+                    .and_then(|t| engine.http_ntlm(&negotiate, &t, now(), cert));
+                match answer {
+                    Ok(a) => Ok(format!("NTLM {}", base64::encode(&a))),
+                    Err(e) => {
+                        auth_err = Some(e);
+                        Err(commscraft_net::NetError::Io(std::io::Error::other("NTLM")))
+                    }
+                }
+            }
+        },
+    );
+    match result {
+        Ok(r) if r.status == 200 => {
+            let text = String::from_utf8(r.body).map_err(|_| "answer is not UTF-8")?;
+            let (code, mut locs) =
+                commscraft_lis::parse_get_locations(&text).map_err(|e| format!("{e:?}"))?;
+            match code {
+                200 if !locs.is_empty() => Ok(Some(locs.remove(0))),
+                200 | 404 => Ok(None),
+                c => Err(format!("location service answered {c}")),
+            }
+        }
+        Ok(r) => Err(format!("HTTP {}", r.status)),
+        Err(e) => Err(auth_err.take().unwrap_or_else(|| e.to_string())),
+    }
+}
+
 /// The interactive mode on top of the session engine. Lines from the terminal arrive through a
 /// thread and a channel; network input and the clock are handled in this loop. Everything shown
 /// comes from the engine's checked events (control characters already removed).
@@ -1276,6 +1393,10 @@ fn interactive(
     let mut handles: BTreeMap<u32, calls::MediaHandle> = BTreeMap::new();
     let mut next_media: u32 = 1;
     let mut pending_out: BTreeMap<u32, String> = BTreeMap::new();
+    // Media ids of calls being prepared that are emergency calls (function 39).
+    let mut pending_emergency: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
+    // The location policy enables emergency services: ask the location service (E9-03).
+    let mut lis_wanted = false;
     let mut pending_in: BTreeMap<u32, u32> = BTreeMap::new();
     // Media prepared for a conference's audio: media id → conversation.
     let mut pending_conf: BTreeMap<u32, u32> = BTreeMap::new();
@@ -1324,6 +1445,8 @@ fn interactive(
     let mut quitting = false;
     let mut services: Option<Box<commscraft_provisioning::ServerConfiguration>> = None;
     let mut outputs = engine.start(now());
+    // Commands that events lead to (sent after the events are shown).
+    let mut outputs_extra: Vec<C> = Vec::new();
     loop {
         for o in outputs.drain(..) {
             match o {
@@ -1343,7 +1466,42 @@ fn interactive(
                         return Ok(());
                     }
                     E::RegistrationEnded(why) => return Err(format!("registration ended: {why}")),
-                    E::Provisioned(c) => services = Some(c),
+                    E::Provisioned(c) => {
+                        services = Some(c);
+                        if lis_wanted {
+                            match lis_lookup(&mut engine, tls, trust, services.as_deref(), local_ip, verbose) {
+                                Ok(Some(loc)) => outputs_extra.push(C::SetLocation(Box::new(loc))),
+                                Ok(None) => println!("* the location service knows no location here – set one with /location"),
+                                Err(e) => println!("* location service: {e}"),
+                            }
+                        }
+                    }
+                    E::LocationPolicy(p) => {
+                        lis_wanted = p.enabled;
+                        if p.enabled {
+                            let numbers: Vec<String> = p
+                                .numbers
+                                .iter()
+                                .map(|n| {
+                                    if n.masks.is_empty() {
+                                        n.dial.clone()
+                                    } else {
+                                        format!("{} ({})", n.dial, n.masks.join(", "))
+                                    }
+                                })
+                                .collect();
+                            println!("* emergency numbers: {}", numbers.join("; "));
+                        }
+                    }
+                    E::Location(l) => println!(
+                        "* emergency location: {}{}",
+                        l.summary(),
+                        if l.manual {
+                            " (entered by hand, not verified by the network)"
+                        } else {
+                            ""
+                        }
+                    ),
                     // Calls: signalling is in the engine; the media path (and with it /call and
                     // /answer) follows. An incoming call rings and ends after 60 s with 480.
                     E::CallRinging { call } => println!("* call {call} ringing"),
@@ -1703,6 +1861,9 @@ fn interactive(
                 },
             }
         }
+        for c in std::mem::take(&mut outputs_extra) {
+            outputs.extend(engine.command(c, now()));
+        }
         let t = now();
         match conn.recv() {
             Ok(Some(m)) => {
@@ -1723,7 +1884,16 @@ fn interactive(
                         let call = engine.next_call_id();
                         media_of_call.insert(call, id);
                         outgoing.insert(call);
-                        outputs.extend(engine.command(C::Call { to, local, policy }, now()));
+                        let command = if pending_emergency.remove(&id) {
+                            C::EmergencyCall {
+                                dialled: to,
+                                local,
+                                policy,
+                            }
+                        } else {
+                            C::Call { to, local, policy }
+                        };
+                        outputs.extend(engine.command(command, now()));
                     } else if let Some(old) = pending_transfer.remove(&id) {
                         let call = engine.next_call_id();
                         media_of_call.insert(call, id);
@@ -1828,7 +1998,13 @@ fn interactive(
                 "/call" | "/callback" => {
                     // A phone number becomes a SIP URI with the dial plan (PS-01); /callback N
                     // calls the asserted identity of call N (PS-02).
-                    let target = if cmd == "/callback" {
+                    // Function 39: a number of the location policy is an emergency call.
+                    let emergency = (cmd == "/call")
+                        .then(|| engine.emergency_dial(&arg))
+                        .flatten();
+                    let target = if emergency.is_some() {
+                        Some(arg.trim().to_string())
+                    } else if cmd == "/callback" {
                         arg.parse::<u32>().ok().and_then(|n| engine.callback_uri(n))
                     } else if arg.starts_with("sip:") {
                         Some(arg.clone())
@@ -1863,6 +2039,10 @@ fn interactive(
                     );
                     handles.insert(id, h);
                     pending_out.insert(id, arg.clone());
+                    if let Some(dial) = &emergency {
+                        pending_emergency.insert(id);
+                        println!("* EMERGENCY CALL to {dial} – preparing …");
+                    }
                     println!("* preparing the call (gathering media addresses) …");
                     None
                 }
@@ -2008,6 +2188,53 @@ fn interactive(
                         _ => {
                             println!("* /rate CALL 1-5 [text]");
                             None
+                        }
+                    }
+                }
+                "/location" => {
+                    let a = arg.trim();
+                    if a.is_empty() || a == "lookup" {
+                        match lis_lookup(
+                            &mut engine,
+                            tls,
+                            trust,
+                            services.as_deref(),
+                            local_ip,
+                            verbose,
+                        ) {
+                            Ok(Some(loc)) => Some(C::SetLocation(Box::new(loc))),
+                            Ok(None) => {
+                                println!("* no location known here; /location COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME");
+                                None
+                            }
+                            Err(e) => {
+                                println!("* location service: {e}");
+                                None
+                            }
+                        }
+                    } else {
+                        // Typed by the user: method Manual (not verified by the network, E9-04).
+                        let f: Vec<String> = a
+                            .split(';')
+                            .map(|x| x.trim().chars().take(128).collect())
+                            .collect();
+                        let g = |i: usize| f.get(i).cloned().unwrap_or_default();
+                        if f.len() < 5 || g(0).len() != 2 {
+                            println!("* /location COUNTRY(2 letters);STATE;CITY;STREET;NUMBER[;POSTCODE;ROOM;NAME]");
+                            None
+                        } else {
+                            Some(C::SetLocation(Box::new(commscraft_lis::Location {
+                                country: g(0).to_ascii_uppercase(),
+                                a1: g(1),
+                                a3: g(2),
+                                rd: g(3),
+                                hno: g(4),
+                                pc: g(5),
+                                loc: g(6),
+                                nam: g(7),
+                                manual: true,
+                                ..Default::default()
+                            })))
                         }
                     }
                 }
@@ -2647,4 +2874,37 @@ fn main() {
         }
     };
     std::process::exit(code);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// E9-03: the subnet for the location request from `/proc/net/route` (values in native byte
+    /// order, here as printed on a little-endian machine); the most specific route wins, the
+    /// default route never matches.
+    #[test]
+    #[cfg(target_endian = "little")]
+    fn subnet_from_route_table() {
+        let table =
+            "Iface\tDestination\tGateway \tFlags\tRefCnt\tUse\tMetric\tMask\t\tMTU\tWindow\tIRTT\n\
+eth0\t00000000\t016433C6\t0003\t0\t0\t100\t00000000\t0\t0\t0\n\
+eth0\t006433C6\t00000000\t0001\t0\t0\t100\t00FFFFFF\t0\t0\t0\n\
+wlan0\t007100CB\t00000000\t0001\t0\t0\t426\t00FFFFFF\t0\t0\t0\n\
+tun0\t000000CB\t00000000\t0001\t0\t0\t500\t000000FF\t0\t0\t0\n";
+        let ip = |s: &str| s.parse::<std::net::IpAddr>().unwrap();
+        assert_eq!(subnet_in(table, ip("203.0.113.7")), Some(ip("203.0.113.0")));
+        assert_eq!(
+            subnet_in(table, ip("198.51.100.40")),
+            Some(ip("198.51.100.0"))
+        );
+        assert_eq!(subnet_in(table, ip("203.7.7.7")), Some(ip("203.0.0.0")));
+        assert_eq!(
+            subnet_in(table, ip("192.0.2.1")),
+            None,
+            "only the default route"
+        );
+        assert_eq!(subnet_in(table, ip("2001:db8::1")), None);
+        assert_eq!(subnet_in("garbage", ip("203.0.113.7")), None);
+    }
 }

@@ -10,6 +10,9 @@ Source: [MS-E911WS] "Web Service for E911 Support Protocol", edition 20250520, 3
 | E9-04 | Response: ReturnCode 200/400/404/500 (always inside HTTP 2xx) + presenceList of `pidf:presence` with a GEOPRIV location object, civicAddress (RFC 5139); the client evaluates only country, A1, A3, PRD, RD, STS, POD, HNO, HNS, LOC, NAM, PC; method "Manual" ⇒ the address is not verified by the network | §2.2.3–2.2.5.1, pp. 12–14; §3.1.4.1.2.2, p. 18; example §4, p. 23 |
 | E9-05 | **GetLocationsInCityRequest**: Entity, Country (ISO 3166 alpha-2), State (exactly 2 characters), City (1–64) – for manual location choice | §3.1.4.2–3.1.4.2.4.2, pp. 18–21 |
 | E9-06 | Locations may also be used for presence publication | §1.6, p. 10 |
+| E9-07 | Implementation (crate `lis`, CLI): GetLocationsRequest in the schema namespace (K-E9-1) with Entity, SubnetID (from the kernel routing table) and IP of the SIP connection, SOAPAction `LIService/GetLocations` (WSDL §6), HTTPS with NTLM like the address book search; the answer's civic address (bounded, at most 16, method `Manual` kept); the user can type a location (`Manual`); the PIDF-LO of emergency calls is built from it (file 06 RE-67) | §2.2.3–2.2.5, pp. 12–14; §3.1.4.1, pp. 16–18; §6, p. 33 |
+
+Status: tested-offline (request, answer, PIDF-LO, emergency path); not implemented: GetLocationsInCity, WLAN BSSID/RSSI and LLDP chassis/port identifiers, the disclaimer prompt of LocationRequired.
 
 ## Conflicts / gaps
 - K-E9-1: The examples (§4, pp. 23–24) show GetLocationsRequest without a target namespace (no xmlns on tns), the schema defines `urn:schema:Microsoft.Rtc.WebComponent.Lis.2010`. Implementation: use the schema namespace, check by interop.

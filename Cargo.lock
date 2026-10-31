@@ -123,6 +123,7 @@ dependencies = [
  "commscraft-g711",
  "commscraft-g722",
  "commscraft-im",
+ "commscraft-lis",
  "commscraft-media",
  "commscraft-net",
  "commscraft-ntlm",
@@ -190,6 +191,13 @@ name = "commscraft-im"
 version = "0.0.1"
 dependencies = [
  "commscraft-sip-msg",
+ "commscraft-xml",
+]
+
+[[package]]
+name = "commscraft-lis"
+version = "0.0.1"
+dependencies = [
  "commscraft-xml",
 ]
 
@@ -294,6 +302,7 @@ dependencies = [
  "commscraft-avedgea",
  "commscraft-conf",
  "commscraft-im",
+ "commscraft-lis",
  "commscraft-park",
  "commscraft-presence",
  "commscraft-provisioning",

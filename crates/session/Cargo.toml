@@ -16,6 +16,7 @@ commscraft-provisioning = { path = "../provisioning" }
 commscraft-conf = { path = "../conf" }
 commscraft-park = { path = "../park" }
 commscraft-qoe = { path = "../qoe" }
+commscraft-lis = { path = "../lis" }
 commscraft-avedgea = { path = "../avedgea" }
 commscraft-sdp = { path = "../sdp" }
 

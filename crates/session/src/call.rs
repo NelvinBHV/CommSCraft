@@ -36,6 +36,24 @@ pub const MAX_CALLS: usize = 4;
 /// An incoming call rings at most this long before 480 (design).
 pub const RING_TIMEOUT: u64 = 60;
 const BOUNDARY: &str = "CommSCraft_audio_offer";
+const MIXED_BOUNDARY: &str = "CommSCraft_e911";
+
+/// What an outgoing INVITE carries besides the offer: extra headers (transfer, emergency) and one
+/// more MIME part.
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct Extras<'a> {
+    pub headers: &'a [(String, String)],
+    pub part: Option<&'a ExtraPart>,
+}
+
+/// One more MIME part of an outgoing INVITE (the PIDF-LO of an emergency call). The fields come
+/// from checked builders; the Content-ID has no angle brackets.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ExtraPart {
+    pub content_type: String,
+    pub content_id: String,
+    pub body: String,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum CallState {
@@ -194,7 +212,7 @@ impl<R: Random> Engine<R> {
         now: u64,
         out: &mut Vec<Output>,
     ) {
-        self.start_call_with(to, local, policy, &[], now, out);
+        self.start_call_with(to, local, policy, Extras::default(), now, out);
     }
 
     /// `start_call` with extra headers (transfer: Referred-By, Replaces, Ms-Sensitivity); returns
@@ -204,10 +222,11 @@ impl<R: Random> Engine<R> {
         to: &str,
         local: sdp::Local,
         policy: sdp::Encryption,
-        extra: &[(String, String)],
+        extras: Extras<'_>,
         now: u64,
         out: &mut Vec<Output>,
     ) -> Option<CallId> {
+        let (extra, part) = (extras.headers, extras.part);
         let Ok(peer) = pres::checked_sip_uri(to) else {
             out.push(Output::Event(Event::Notice(
                 "not a usable SIP address".into(),
@@ -237,15 +256,32 @@ impl<R: Random> Engine<R> {
                 m.push_header(k, v);
             }
         }
-        m.push_header(
-            "Content-Type",
-            &format!("multipart/alternative;boundary=\"{BOUNDARY}\""),
-        );
-        m.body = format!(
-            // PS-09: every SDP part of an offer has a Content-ID.
+        // PS-09: every SDP part of an offer has a Content-ID.
+        let alternative = format!(
             "--{BOUNDARY}\r\nContent-Type: application/sdp\r\nContent-Transfer-Encoding: 7bit\r\nContent-ID: <audio-ice19@commscraft>\r\nContent-Disposition: session; handling=optional\r\n\r\n{offer}\r\n--{BOUNDARY}--\r\n"
-        )
-        .into_bytes();
+        );
+        match part {
+            // RE-67 (MS-SIPRE §2.2.23, §4.14): multipart/mixed with the offer and one more part
+            // (the PIDF-LO of an emergency call; the server takes the last PIDF-LO part).
+            Some(p) => {
+                m.push_header(
+                    "Content-Type",
+                    &format!("multipart/mixed;boundary=\"{MIXED_BOUNDARY}\""),
+                );
+                m.body = format!(
+                    "--{MIXED_BOUNDARY}\r\nContent-Type: multipart/alternative;boundary=\"{BOUNDARY}\"\r\n\r\n{alternative}\r\n--{MIXED_BOUNDARY}\r\nContent-Type: {}\r\nContent-ID: <{}>\r\n\r\n{}\r\n--{MIXED_BOUNDARY}--\r\n",
+                    p.content_type, p.content_id, p.body
+                )
+                .into_bytes();
+            }
+            None => {
+                m.push_header(
+                    "Content-Type",
+                    &format!("multipart/alternative;boundary=\"{BOUNDARY}\""),
+                );
+                m.body = alternative.into_bytes();
+            }
+        }
         let id = self.next_call;
         self.next_call = self.next_call.wrapping_add(1).max(1);
         self.calls.insert(
