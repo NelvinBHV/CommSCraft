@@ -2243,3 +2243,52 @@ fn transfer_target_replaces() {
     let out = e.on_message(&server.sign(unknown), NOW);
     assert_eq!(sends(&out).pop().unwrap().status_code(), Some(481));
 }
+
+/// RE-50 / [MS-PRES] §2.2.2.7.7, PR-05: forwarding is published as routing preamble to the five
+/// containers; a version conflict is retried with the server's versions; success is reported.
+#[test]
+fn forwarding_publication() {
+    let (mut e, mut server, _) = signed_in();
+    let rules = pres::Forwarding {
+        forward_to: e.phone_uri("+4940123456"),
+        immediate: false,
+        simultaneous_ring: None,
+        ring_seconds: Some(15),
+    };
+    let out = e.command(Command::SetForwarding(rules.clone()), NOW);
+    let first = sends(&out).pop().unwrap();
+    assert_eq!(first.method(), Some("SERVICE"));
+    let body = String::from_utf8_lossy(&first.body).to_string();
+    assert!(
+        body.contains("categoryName=\"routing\" instance=\"0\" container=\"400\" version=\"0\""),
+        "{body}"
+    );
+    assert!(
+        body.contains("<target uri=\"sip:+4940123456@contoso.com;user=phone\"/>")
+            && body.contains("value=\"enablecf\"")
+            && body.contains("seconds=\"15\"")
+    );
+    let fault = r#"<Fault><Faultcode>Client.BadCall.WrongDelta</Faultcode><details><operation index="5" version="0" curVersion="7"/></details></Fault>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &first,
+            409,
+            Some("application/msrtc-fault+xml"),
+            fault,
+            &[],
+        ),
+        NOW,
+    );
+    let retry = sends(&out).pop().unwrap();
+    assert!(String::from_utf8_lossy(&retry.body).contains("container=\"400\" version=\"7\""));
+    let out = e.on_message(&answer(&mut server, &retry, 200, None, "", &[]), NOW);
+    assert_eq!(events(&out), vec![Event::Forwarding(rules)]);
+    // An unsafe target never reaches the server.
+    let bad = pres::Forwarding {
+        simultaneous_ring: Some("sip:x@y\"/>".into()),
+        ..pres::Forwarding::default()
+    };
+    let out = e.command(Command::SetForwarding(bad), NOW);
+    assert!(sends(&out).is_empty());
+}

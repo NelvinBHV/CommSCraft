@@ -52,7 +52,8 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
           once, optionally sets the own state for the time of the session (--set-status), signs out.
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
-          /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)
+          /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /confaudio (join the meeting's audio)  /confmute  /confunmute (mute in the meeting)
@@ -1288,6 +1289,8 @@ fn interactive(
     let self_tx = tx.clone();
     // Media prepared for a transfer we follow: media id → the transferred call.
     let mut pending_transfer: BTreeMap<u32, u32> = BTreeMap::new();
+    // The routing rules last asked for (forwarding and simultaneous ring are combined).
+    let mut forwarding = commscraft_presence::Forwarding::default();
     std::thread::spawn(move || {
         let stdin = std::io::stdin();
         let mut line = String::new();
@@ -1488,6 +1491,22 @@ fn interactive(
                     }
                     E::OwnStatus(s) => println!("* your state: {s:?} (until you sign out)"),
                     E::OwnStatusFailed(c) => println!("* setting your state failed ({c})"),
+                    E::Forwarding(f) => {
+                        let mut parts = Vec::new();
+                        match (&f.forward_to, f.immediate) {
+                            (Some(t), true) => parts.push(format!("all calls go to {t}")),
+                            (Some(t), false) => parts.push(format!(
+                                "unanswered calls go to {t} after {} s",
+                                f.ring_seconds.unwrap_or(20)
+                            )),
+                            (None, true) => parts.push("all calls go to voice mail".into()),
+                            (None, false) => parts.push("no forwarding".into()),
+                        }
+                        if let Some(s) = &f.simultaneous_ring {
+                            parts.push(format!("{s} rings too"));
+                        }
+                        println!("* call routing: {}", parts.join("; "));
+                    }
                     E::ConversationStarted {
                         conversation,
                         peer,
@@ -1787,6 +1806,58 @@ fn interactive(
                         None
                     }
                 },
+                "/forward" | "/simring" => {
+                    // RE-50/RE-51: TARGET is a SIP address or a phone number.
+                    let mut w = arg.split_whitespace();
+                    let first = w.next().unwrap_or("");
+                    let target = |s: &str| {
+                        if s.starts_with("sip:") {
+                            Some(s.to_string())
+                        } else {
+                            engine.phone_uri(s)
+                        }
+                    };
+                    let mut next = forwarding.clone();
+                    let ok = match (cmd, first) {
+                        ("/simring", "off") => {
+                            next.simultaneous_ring = None;
+                            true
+                        }
+                        ("/simring", t) => {
+                            next.simultaneous_ring = target(t);
+                            next.simultaneous_ring.is_some()
+                        }
+                        (_, "off") => {
+                            next.forward_to = None;
+                            next.immediate = false;
+                            next.ring_seconds = None;
+                            true
+                        }
+                        (_, "voicemail") => {
+                            next.forward_to = None;
+                            next.immediate = true;
+                            true
+                        }
+                        (_, "noanswer") => {
+                            next.forward_to = w.next().and_then(target);
+                            next.immediate = false;
+                            next.ring_seconds = w.next().and_then(|s| s.parse().ok());
+                            next.forward_to.is_some()
+                        }
+                        (_, t) => {
+                            next.forward_to = target(t);
+                            next.immediate = true;
+                            next.forward_to.is_some()
+                        }
+                    };
+                    if ok {
+                        forwarding = next.clone();
+                        Some(C::SetForwarding(next))
+                    } else {
+                        println!("* /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off");
+                        None
+                    }
+                }
                 "/transfer" => {
                     let mut w = arg.split_whitespace();
                     let call = w.next().and_then(|n| n.parse::<u32>().ok());

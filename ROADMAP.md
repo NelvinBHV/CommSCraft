@@ -16,11 +16,11 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **10** tested-offline as a whole, **15** in parts, **25** not started, 2 not planned/needs captures | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
-| Conflicts / gaps / open points in the generated list | **53** / **19** (16 closed or no evidence problem) / **25** (22 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
-| Owner test cases | **32** (IT-01 … IT-32, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
+| Implementation status of the 52 functions | **10** tested-offline as a whole, **16** in parts, **24** not started, 2 not planned/needs captures | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Conflicts / gaps / open points in the generated list | **54** / **19** (16 closed or no evidence problem) / **25** (22 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
+| Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **32 crates + 1 app** (`commscraft-cli`), **294 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **32 crates + 1 app** (`commscraft-cli`), **296 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **none** (D-08): all work is `tested-offline` at best | measured |
 
@@ -36,7 +36,7 @@ transfer can come later from interop captures.
 
 1. **M3 – audio 1:1** (built): the owner's first calls (IT-23 … IT-29); remaining optional
    parts in [`docs/gaps.md`](docs/gaps.md).
-2. **M4 – conferences and telephony** (current): meetings with audio (incl. SSRTP reception) and presenter commands, PSTN calling and call transfer are in; next forwarding, park, scheduling, E911, QoE.
+2. **M4 – conferences and telephony** (current): meetings with audio (incl. SSRTP reception) and presenter commands, PSTN calling, call transfer and forwarding are in; next park, scheduling, E911, QoE.
 3. **M5 – video**, **M6 – viewing shared screens**,
    **M7 – Exchange integration**; the graphical interface (egui, D-07) is not yet in a milestone.
    Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-10-31 | Call forwarding and simultaneous ring: routing preamble (MS-SIPRE §2.2.9/§3.9) published to the routing category with version-conflict retry; CLI `/forward`, `/simring`; SDK namespace contradiction recorded as K-RE-2; interop test IT-33. |
 | 2026-10-31 | Call transfer: unattended and attended (REFER, Replaces, NOTIFY sipfrag) as transferor, following a REFER as transferee (Referred-By, Replaces, Ms-Sensitivity, ms-safe-transfer), Replaces as target (481 without a match); CLI `/transfer`; interop test IT-32. |
 | 2026-10-31 | PSTN calling (MS-OCPSTN): dial strings with the location profile as phone-context (from provisioning) or E.164, caller number from the asserted identity, gateway and anonymous callers, call back, 605 for loop calls while ringing, Content-ID/ms-accepted-content-id; CLI `/call <number>`, `/callback N`; interop test IT-31. |
 | 2026-10-31 | Presenter commands: admit/deny from the lobby, roles, lock, remove, mute a participant, mute the audience (setLobbyAccess, modifyUserRoles, modifyConferenceLock, deleteUser, modifyEndpointMedia, modifyConference mediaFiltersRules); refusals reported; CLI commands. |

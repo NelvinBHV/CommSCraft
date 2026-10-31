@@ -86,6 +86,8 @@ pub enum ConferenceAction {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
     SetStatus(pres::UserStatus),
+    /// Call forwarding and simultaneous ring: publishes the routing preamble (RE-50).
+    SetForwarding(pres::Forwarding),
     StartConversation {
         to: String,
     },
@@ -189,6 +191,8 @@ pub enum Event {
         state: String,
     },
     OwnStatus(pres::UserStatus),
+    /// The routing preamble was published (forwarding is in effect on the server).
+    Forwarding(pres::Forwarding),
     OwnStatusFailed(u16),
     ConversationStarted {
         conversation: ConversationId,
@@ -332,6 +336,7 @@ enum Purpose {
     PublishEndpoint,
     Provisioning,
     PublishStatus(pres::UserStatus),
+    PublishRouting(Box<pres::Forwarding>),
     Invite(ConversationId),
     Message(ConversationId),
     CreateConference(ConversationId),
@@ -378,6 +383,8 @@ pub struct Engine<R: Random> {
     next_conv: ConversationId,
     endpoint_versions: [u32; 2],
     status_versions: [u32; 2],
+    /// Versions of the routing publications per container (PR-05).
+    routing_versions: [u32; 5],
     /// Focus factory URI from provisioning (PV-01).
     focus_factory: Option<String>,
     c3p_request: u32,
@@ -433,6 +440,7 @@ impl<R: Random> Engine<R> {
             next_conv: 1,
             endpoint_versions: [0, 0],
             status_versions: [0, 0],
+            routing_versions: [0; 5],
             focus_factory: None,
             c3p_request: 0,
             mras_uri: None,
@@ -687,6 +695,24 @@ impl<R: Random> Engine<R> {
         m.push_header("Content-Type", "application/msrtc-category-publish+xml");
         m.body = body.into_bytes();
         self.send_request(m, Purpose::PublishEndpoint, now, out);
+    }
+
+    /// RE-50: the routing preamble into the routing category (private, [MS-PRES] §2.2.2.7.7).
+    fn publish_routing(&mut self, rules: pres::Forwarding, now: u64, out: &mut Vec<Output>) {
+        let body = match pres::publish_routing_body(&self.cfg.aor, &rules, self.routing_versions) {
+            Ok(b) => b,
+            Err(e) => {
+                out.push(Output::Event(Event::Notice(format!(
+                    "forwarding not usable ({e:?})"
+                ))));
+                return;
+            }
+        };
+        let aor = self.cfg.aor.clone();
+        let mut m = self.request("SERVICE", &aor, &aor);
+        m.push_header("Content-Type", "application/msrtc-category-publish+xml");
+        m.body = body.into_bytes();
+        self.send_request(m, Purpose::PublishRouting(Box::new(rules)), now, out);
     }
 
     fn publish_status(&mut self, status: pres::UserStatus, now: u64, out: &mut Vec<Output>) {
@@ -1223,6 +1249,7 @@ impl<R: Random> Engine<R> {
         }
         match cmd {
             Command::SetStatus(s) => self.publish_status(s, now, &mut out),
+            Command::SetForwarding(f) => self.publish_routing(f, now, &mut out),
             Command::StartConversation { to } => self.start_conversation(&to, now, &mut out),
             Command::SendText { conversation, text } => {
                 self.send_text(conversation, text, now, &mut out)
@@ -1410,6 +1437,7 @@ impl<R: Random> Engine<R> {
                     match retry {
                         Purpose::PublishEndpoint => self.publish_endpoint(now, out),
                         Purpose::PublishStatus(s) => self.publish_status(s, now, out),
+                        Purpose::PublishRouting(f) => self.publish_routing(*f, now, out),
                         _ => {}
                     }
                     return;
@@ -1425,7 +1453,8 @@ impl<R: Random> Engine<R> {
         let conflicts = pres::parse_fault(body).ok()?;
         let target = match p.purpose {
             Purpose::PublishEndpoint => &mut self.endpoint_versions,
-            Purpose::PublishStatus(_) => &mut self.status_versions,
+            Purpose::PublishStatus(_) => &mut self.status_versions[..],
+            Purpose::PublishRouting(_) => &mut self.routing_versions[..],
             _ => return None,
         };
         let mut changed = false;
@@ -1479,6 +1508,10 @@ impl<R: Random> Engine<R> {
             Purpose::PublishStatus(s) => {
                 self.status_versions = self.status_versions.map(|v| v + 1);
                 out.push(Output::Event(Event::OwnStatus(s)));
+            }
+            Purpose::PublishRouting(f) => {
+                self.routing_versions = self.routing_versions.map(|v| v + 1);
+                out.push(Output::Event(Event::Forwarding(*f)));
             }
             Purpose::Invite(id) => {
                 let Some(c) = self.convs.get_mut(&id) else {
@@ -1576,6 +1609,9 @@ impl<R: Random> Engine<R> {
                 }
             }
             Purpose::PublishStatus(_) => out.push(Output::Event(Event::OwnStatusFailed(code))),
+            Purpose::PublishRouting(_) => out.push(Output::Event(Event::Notice(format!(
+                "forwarding not set ({code})"
+            )))),
             Purpose::PublishEndpoint => out.push(Output::Event(Event::Notice(format!(
                 "endpoint publication failed ({code})"
             )))),
