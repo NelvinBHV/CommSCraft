@@ -125,6 +125,7 @@ dependencies = [
  "commscraft-im",
  "commscraft-net",
  "commscraft-ntlm",
+ "commscraft-park",
  "commscraft-presence",
  "commscraft-provisioning",
  "commscraft-register",
@@ -225,6 +226,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "commscraft-park"
+version = "0.0.1"
+dependencies = [
+ "commscraft-presence",
+ "commscraft-xml",
+]
+
+[[package]]
 name = "commscraft-presence"
 version = "0.0.1"
 dependencies = [
@@ -276,6 +285,7 @@ dependencies = [
  "commscraft-avedgea",
  "commscraft-conf",
  "commscraft-im",
+ "commscraft-park",
  "commscraft-presence",
  "commscraft-provisioning",
  "commscraft-register",

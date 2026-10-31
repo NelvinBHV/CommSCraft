@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (function 40: scheduling)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (function 37: call park)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -61,7 +61,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 34 | Forwarding, simultaneous ring, team and delegate calls | MS-SIPRE, MS-PRES | B | parts tested-offline (forwarding immediately or on no answer, to an address, number or voice mail, simultaneous ring, ring time – routing preamble: `presence`, `session`, CLI `/forward` `/simring`); team and delegate calls, working hours only – |
 | 35 | Hold, music on hold | MS-SDPEXT, MS-SIPRE | B | parts tested-offline (hold/resume re-INVITE with inactive/sendrecv and `+sip.rendering="no"`, incoming hold and music on hold recognised, no RTP while held: `session`, `sdp`, `media`, `call-media`; CLI `/hold` `/resume`); streaming our own music on hold – |
 | 36 | Call transfer | MS-SIPAE, MS-SIPRE | B\* | parts tested-offline (unattended and attended transfer as transferor, following a REFER as transferee, Replaces as target, safe transfer: `session`, CLI `/transfer`); `ms-referee-uri` after retargeting – |
-| 37 | Call park | MS-SIPAPP | B\* | – |
+| 37 | Call park | MS-SIPAPP | B\* | tested-offline (park at the call park server from provisioning, orbit, refresh of the parker's dialog, unpark notifications, refusals; retrieval by calling the orbit with the REFER/Replaces of the transfer code; being parked as a call replacement with music on hold: `park`, `session`, CLI `/park`, `/call ORBIT`) |
 | 38 | Voicemail | MS-OCEXUM, MS-EUMSDP | T | – |
 | 39 | Emergency calls with location | MS-E911WS, MS-SIPRE | B\* | – |
 | 40 | Schedule meetings | MS-CONFPRO | B\* | parts tested-offline (create with subject, lifetime and admission policy, list, details incl. the join URL if the server names it, change with the current version, cancel: `conf::schedule`, `session`, CLI `/schedule` `/meetings` `/meeting` `/changemeeting` `/cancelmeeting`); static meetings, preset presenters, PSTN dial-in details, meeting options (lobby bypass, autopromote) – |
@@ -78,4 +78,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **10** tested-offline as a whole, **17** in parts, **23** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).
+**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **11** tested-offline as a whole, **17** in parts, **22** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).

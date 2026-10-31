@@ -53,7 +53,7 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
           /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)
-          /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /park [N] (call park; retrieve with /call ORBIT)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /schedule MINUTES [open|closed|anonymous] SUBJECT  /meetings  /meeting ID  /cancelmeeting ID
@@ -1447,6 +1447,29 @@ fn interactive(
                             println!("* transfer of call {call} failed ({status})");
                         }
                     }
+                    E::CallParked { call, orbit } => {
+                        println!(
+                            "* call {call} parked at orbit {orbit} – retrieve with /call {orbit}"
+                        )
+                    }
+                    E::ParkNotification {
+                        orbit,
+                        reason,
+                        target,
+                    } => {
+                        use commscraft_park::UnparkReason as U;
+                        let what = match reason {
+                            U::Retrieval => "retrieved",
+                            U::HangUp => "the parked party hung up",
+                            U::Ringback => "rings back to you",
+                            U::Fallback => "went to the fallback destination",
+                            U::Drop => "was dropped",
+                        };
+                        println!(
+                            "* parked call at orbit {orbit}: {what}{}",
+                            target.map(|t| format!(" ({t})")).unwrap_or_default()
+                        );
+                    }
                     E::CallEnded { call, status } => {
                         println!("* call {call} ended ({status})");
                         if let Some(m) = media_of_call.remove(&call) {
@@ -1950,6 +1973,16 @@ fn interactive(
                         None => println!("* no active call"),
                     }
                     None
+                }
+                "/park" => {
+                    let call = arg.trim().parse::<u32>().ok().or(current_call);
+                    match call {
+                        Some(call) => Some(C::ParkCall { call }),
+                        None => {
+                            println!("* no active call");
+                            None
+                        }
+                    }
                 }
                 "/hold" | "/resume" => match current_call {
                     Some(call) => {
