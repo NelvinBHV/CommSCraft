@@ -21,6 +21,7 @@ members = [
     "crates/conf",
     "crates/g711",
     "crates/g722",
+    "crates/audio-alsa",
     "crates/url",
     "crates/discovery",
     "crates/net",

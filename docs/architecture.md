@@ -26,6 +26,7 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 | `commscraft-ice` | L1 | CRC-32/FINGERPRINT incl. the MS-ICE2 duplicate variant, candidate priorities | IC-12, IC-14, IE-03…IE-05, OB-09 |
 | `commscraft-g711` | L1 | ITU-T G.711 A-law/µ-law from the decision values of the Recommendation | G7-01…G7-05 |
 | `commscraft-g722` | L1 | ITU-T G.722 SB-ADPCM 64 kbit/s with QMF; ADPCM bit-exact against the ITU test sequences | G2-01…G2-06, K-G2-1 |
+| `commscraft-audio-alsa` | L2 | Audio device adapter (D-11): ALSA API, PipeWire through its ALSA plugin; mono 16-bit at 8/16 kHz, checked configuration, xrun recovery | D-03, D-11 |
 | `commscraft-srtp` | L1 | RFC 3711 key derivation, SSRTP packet transform | SR-*, SS-01…SS-05, IE-09 |
 | `commscraft-turn-bwm` | L1 | MS-TURNBWM attribute types, XOR site addresses | BW-11, BW-12 |
 | `commscraft-sipcomp` | L2 | MPPC compressor/decompressor with 8 KiB history and packet flags (no header: O-CP-1) | CP-05…CP-08, K-CP-1, O-CP-3, OB-01 |
