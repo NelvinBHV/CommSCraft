@@ -1,0 +1,11 @@
+[package]
+name = "commscraft-rtp"
+description = "RTP/RTCP for audio: headers, sender, reception statistics, SR/RR/SDES/BYE, DTMF (RFC 3550, RFC 4733, MS-RTP, MS-DTMF)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

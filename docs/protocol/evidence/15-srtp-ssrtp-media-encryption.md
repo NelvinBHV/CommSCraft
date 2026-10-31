@@ -44,3 +44,19 @@ These checks become automated tests in M0.
 
 ## Later finding (file 38)
 - L-04 **closed**: RFC 3711 obtained; key derivation additionally recomputed against RFC 3711 appendix B.3 (IE-09).
+
+## Implementation (2026-10-28, `crates/srtp` `Context`)
+
+| ID | Requirement | Evidence |
+|---|---|---|
+| SR-10 | Packet layouts: SRTP = header ‖ encrypted payload ‖ MKI ‖ tag, tag = HMAC-SHA1(k_a, header ‖ encrypted payload ‖ ROC) truncated to 80 bits; SRTCP = first 8 octets clear ‖ encrypted rest ‖ E ‖ 31-bit index ‖ MKI ‖ tag over everything before the MKI | RFC 3711 §3.1, §3.4, §4.2 |
+| SR-11 | AES-CM IV = (k_s·2^16) ⊕ (SSRC·2^64) ⊕ (i·2^16), i = 2^16·ROC + SEQ (SRTP) or the SRTCP index | RFC 3711 §4.1.1 |
+| SR-12 | Index estimation v ∈ {ROC−1, ROC, ROC+1}, s_l initialised from the first packet, update of ROC/s_l only after authentication | RFC 3711 §3.3.1, Appendix A |
+| SR-13 | Replay list as sliding window (≥ 64; MS-SRTP: exactly 64), updated after authentication | RFC 3711 §3.3.2; [MS-SRTP] §3.1.1.1, p. 10 |
+| SR-14 | Count failures, do not log individual ones; do not drop the session on replay hits | [MS-SRTP] §3.1.5.1.2, §3.1.5.2.2, pp. 12–13; §5.1, p. 15 |
+
+### Recomputed
+- RFC 3711 B.2 AES-CM key stream: first three blocks and the blocks at counter …FEFF, …FF00, …FF01 identical.
+- Secondary reference (libsrtp v2.6.0 `test/srtp_driver.c`, `srtp_validate()`, data only; `sources-secondary.tsv`): with the B.3 master key/salt, SSRC 0xCAFEBABE and no MKI, our SRTP packet and our SRTCP packet (index 1) are **identical** to the reference ciphertexts, and unprotect returns the plaintexts.
+- Design (security): the tag is checked in constant time before decryption or any state change; wrong MKI, replays and unknown streams beyond 32 SSRCs are refused; session keys are zeroised on drop. The libsrtp vector starts the SRTCP index at 1, RFC 3711 §3.4 at 0 – CommSCraft starts at 0.
+

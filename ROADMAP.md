@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-28 | SRTP/SRTCP contexts (MS-SRTP profile; identical to RFC 3711 B.2 and the libsrtp reference packets) and `rtp` (RTP/RTCP, reception statistics, DTMF per RFC 4733/MS-DTMF). |
 | 2026-10-28 | Decision D-11 (owner): audio through ALSA/PipeWire. Adapter `audio-alsa` (ALSA API; PipeWire via its ALSA plugin) and the local device check `commscraft-cli audio-check` (tone, recording, playback through G.722 or G.711, no network). |
 | 2026-10-28 | M3 started: codecs G.711 (`g711`, generated from the decision values, Tables 1–6 incl. all conversion rows) and G.722 (`g722`, ADPCM bit-exact against all 14 ITU comparison files, QMF round trip); gap L-12 closed by obtaining ITU-T G.711/G.722. |
 | 2026-10-28 | Group IM (`conf`, MS-CONFPRO/CONFBAS/CONFIM): ad-hoc conference, focus join, roster, IM MCU session, dial-out invitations, 202 + IMDN, Ms-Sender, RFC 4028 session timers, leave; invitations of other clients reported (secondary evidence, K-CI-3, IT-20); CLI `/group`, `/invite`, `/join`. |

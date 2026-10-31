@@ -42,3 +42,7 @@ Source: [MS-RTP] "Real-time Transport Protocol (RTP) Extensions", edition 202505
 ## Later findings (file 38)
 - L-05 **closed**: RFC 3550/3551/4585/5506/5761/4571/4733/3389 obtained.
 - L-06 **closed** via archive search: [MSFT-H264UCConfig] V1.1 obtained; "UCConfig mode 1" in the VSR (RT-25) = SVC temporal scalability with hierarchical P (IE-08). Internal reference use only, therefore not redistributed.
+
+## Implementation (2026-10-28, `crates/rtp`)
+RTP header parse/build with RFC 3550 A.1 checks (version, CSRC list, extension, padding; ≤ 1500 octets, RT-01), sender with random SSRC ≠ 0 (RT-06) and start sequence 0 … 32767 ([MS-SRTP] §5.1), reception statistics after A.1/A.3/A.8 with jitter excluding telephone events (RT-10), compound RTCP SR/RR + SDES CNAME, BYE, parser for compound and simple packets (RT-20) with at most 10 report blocks (RT-21); telephone events per RFC 4733 §2.3/§2.5.1.2/§2.5.1.4 within the limits of [MS-DTMF] (PL-30: events 0–16, one event per packet, no zero duration, 8000 Hz). Not yet: MS-RTP profile extensions (RT-22 … RT-27), SSRC/sequence throttling (RT-08). Status: tested-offline.
+

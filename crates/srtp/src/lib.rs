@@ -32,6 +32,16 @@ pub enum SrtpError {
     MalformedHeader,
     /// The ESN does not fit into 48 bits.
     EsnOutOfRange,
+    /// The authentication tag does not verify.
+    Authentication,
+    /// The packet index was already received or lies behind the replay window.
+    Replay,
+    /// The MKI does not name our master key.
+    UnknownMki,
+    /// More SSRCs than the context accepts.
+    TooManyStreams,
+    /// The HMAC key could not be set up.
+    Key,
 }
 
 impl std::fmt::Display for SrtpError {
@@ -39,6 +49,11 @@ impl std::fmt::Display for SrtpError {
         match self {
             Self::MalformedHeader => f.write_str("malformed RTP header"),
             Self::EsnOutOfRange => f.write_str("encryption sequence number exceeds 48 bits"),
+            Self::Authentication => f.write_str("authentication failed"),
+            Self::Replay => f.write_str("replayed packet"),
+            Self::UnknownMki => f.write_str("unknown master key identifier"),
+            Self::TooManyStreams => f.write_str("too many streams"),
+            Self::Key => f.write_str("bad key"),
         }
     }
 }
@@ -46,7 +61,7 @@ impl std::fmt::Display for SrtpError {
 impl std::error::Error for SrtpError {}
 
 /// AES-CM key stream: E(k, IV + i) for i = 0, 1, … (RFC 3711 §4.1.1), XORed into `data`.
-fn aes_cm(key: &[u8; 16], iv: u128, data: &mut [u8]) {
+pub(crate) fn aes_cm(key: &[u8; 16], iv: u128, data: &mut [u8]) {
     let cipher = Aes128::new(&(*key).into());
     for (i, chunk) in data.chunks_mut(16).enumerate() {
         let counter = iv.wrapping_add(i as u128);
@@ -187,6 +202,9 @@ pub fn ssrtp_protect(
         tag,
     })
 }
+
+mod context;
+pub use context::{Context, MAX_STREAMS, REPLAY_WINDOW};
 
 #[cfg(test)]
 mod tests;
