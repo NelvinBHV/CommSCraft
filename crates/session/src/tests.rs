@@ -856,6 +856,229 @@ fn group_conversation_flow() {
     assert!(events(&out).contains(&Event::ConversationEnded { conversation }));
 }
 
+/// Function 40 (PV-06, PV-09, PV-13; [MS-CONFPRO] §2.2.2, examples §4.1–§4.5): schedule a
+/// meeting, read its details (join URL), list, cancel; refusals and bad input are reported.
+#[test]
+fn schedule_list_show_cancel_meeting() {
+    use commscraft_conf::schedule::Admission;
+    let (mut e, mut server, out) = signed_in();
+    provisioned(&mut e, &mut server, &out);
+    let ff = "sip:alice@contoso.com;gruu;opaque=app:conf:focusfactory";
+    // A lifetime of zero minutes is refused locally.
+    let out = e.command(
+        Command::ScheduleMeeting {
+            subject: "Plan".into(),
+            minutes: 0,
+            admission: Admission::OpenAuthenticated,
+        },
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+    let out = e.command(
+        Command::ScheduleMeeting {
+            subject: "Plan Q4".into(),
+            minutes: 60,
+            admission: Admission::ClosedAuthenticated,
+        },
+        NOW,
+    );
+    let add = find(&out, "SERVICE");
+    assert_eq!(Engine::<Counter>::request_uri(&add), Some(ff));
+    let body = String::from_utf8(add.body.clone()).unwrap();
+    assert!(body.contains("<addConference>") && body.contains("<ci:subject>Plan Q4</ci:subject>"));
+    assert!(body.contains("closedAuthenticated") && body.contains("entity=\"audio-video\""));
+    let id = body
+        .split("<msci:conference-id>")
+        .nth(1)
+        .and_then(|r| r.split('<').next())
+        .unwrap()
+        .to_string();
+    assert_eq!(id.len(), 32);
+    let created = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" C3PVersion="1" requestId="1" code="success"><addConference><conference-info xmlns="urn:ietf:params:xml:ns:conference-info" entity="sip:alice@contoso.com;gruu;opaque=app:conf:focus:id:{id}" state="partial" version="1"/></addConference></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &add,
+            200,
+            Some("application/cccp+xml"),
+            &created,
+            &[],
+        ),
+        NOW,
+    );
+    let Some(Event::MeetingScheduled(m)) = events(&out)
+        .into_iter()
+        .find(|ev| matches!(ev, Event::MeetingScheduled(_)))
+    else {
+        panic!("no MeetingScheduled")
+    };
+    assert_eq!(m.conference_id, id);
+    assert!(m
+        .focus
+        .as_deref()
+        .unwrap()
+        .ends_with(&format!("focus:id:{id}")));
+    assert_eq!(m.admission, Some(Admission::ClosedAuthenticated));
+    // The details are asked for right away (join URL).
+    let get = find(&out, "SERVICE");
+    assert!(String::from_utf8_lossy(&get.body).contains("<getConference>"));
+    let details = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" C3PVersion="1" requestId="2" code="success"><getConference><conference-info xmlns="urn:ietf:params:xml:ns:conference-info" entity="" version="1"><conference-description><subject>Plan Q4</subject><msci:conference-id>{id}</msci:conference-id><msci:join-url>https://meet.contoso.com/alice/{id}</msci:join-url></conference-description></conference-info></getConference></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &get,
+            200,
+            Some("application/cccp+xml"),
+            &details,
+            &[],
+        ),
+        NOW,
+    );
+    let url = format!("https://meet.contoso.com/alice/{id}");
+    assert!(events(&out).iter().any(|ev| matches!(ev,
+        Event::MeetingDetails(m) if m.join_url.as_deref() == Some(url.as_str()))));
+
+    let out = e.command(Command::ListMeetings, NOW);
+    let list = find(&out, "SERVICE");
+    assert!(String::from_utf8_lossy(&list.body).contains("<getConferences/>"));
+    let listed = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" requestId="3" code="success"><getConferences><conferences><conference-info xmlns="urn:ietf:params:xml:ns:conference-info" entity="sip:alice@contoso.com;gruu;opaque=app:conf:focus:id:{id}"><conference-description><subject>Plan Q4</subject><msci:conference-id>{id}</msci:conference-id></conference-description></conference-info></conferences></getConferences></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &list,
+            200,
+            Some("application/cccp+xml"),
+            &listed,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Meetings(l) if l.len() == 1)));
+
+    let out = e.command(
+        Command::CancelMeeting {
+            conference_id: id.clone(),
+        },
+        NOW,
+    );
+    let del = find(&out, "SERVICE");
+    assert!(String::from_utf8_lossy(&del.body).contains("<deleteConference>"));
+    // Example §4.3 (p. 46): 404 with the C3P failure answer; the reason is shown.
+    let refused = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" requestId="4" code="failure"><deleteConference reason="conferenceDoesNotExist"/></response>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &del,
+            404,
+            Some("application/cccp+xml"),
+            refused,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("conferenceDoesNotExist"))));
+    let out = e.command(
+        Command::CancelMeeting {
+            conference_id: id.clone(),
+        },
+        NOW,
+    );
+    let del = find(&out, "SERVICE");
+    let ok = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" requestId="5" code="success"><deleteConference/></response>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &del,
+            200,
+            Some("application/cccp+xml"),
+            ok,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(events(&out).contains(&Event::MeetingCancelled { conference_id: id }));
+    // A malformed conference ID never leaves the client.
+    let out = e.command(
+        Command::ShowMeeting {
+            conference_id: "x\"/><evil".into(),
+        },
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+}
+
+/// PV-09/PV-14 ([MS-CONFPRO] §3.1.4.3, p. 33; §2.2.2.2, p. 20): a change first reads the
+/// meeting, then sends modifyConference with the current version; without a version nothing is
+/// changed.
+#[test]
+fn change_meeting_uses_current_version() {
+    use commscraft_conf::schedule::Admission;
+    let (mut e, mut server, out) = signed_in();
+    provisioned(&mut e, &mut server, &out);
+    let change = |e: &mut Engine<Counter>| {
+        e.command(
+            Command::ChangeMeeting {
+                conference_id: "SDFBSD12".into(),
+                subject: "New subject".into(),
+                minutes: 30,
+                admission: Admission::Anonymous,
+            },
+            NOW,
+        )
+    };
+    let out = change(&mut e);
+    let get = find(&out, "SERVICE");
+    assert!(String::from_utf8_lossy(&get.body).contains("<getConference>"));
+    let details = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" requestId="1" code="success"><getConference><conference-info xmlns="urn:ietf:params:xml:ns:conference-info" entity="" version="3"><conference-description><msci:conference-id>SDFBSD12</msci:conference-id></conference-description></conference-info></getConference></response>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &get,
+            200,
+            Some("application/cccp+xml"),
+            details,
+            &[],
+        ),
+        NOW,
+    );
+    let modify = find(&out, "SERVICE");
+    let b = String::from_utf8_lossy(&modify.body).to_string();
+    assert!(
+        b.contains("<modifyConference>") && b.contains("version=\"3\""),
+        "{b}"
+    );
+    assert!(b.contains("New subject") && b.contains("anonymous"));
+    // Without a version in the answer the meeting is not changed.
+    let out = change(&mut e);
+    let get = find(&out, "SERVICE");
+    let no_version = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" requestId="3" code="success"><getConference><conference-info xmlns="urn:ietf:params:xml:ns:conference-info" entity=""><conference-description><msci:conference-id>SDFBSD12</msci:conference-id></conference-description></conference-info></getConference></response>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &get,
+            200,
+            Some("application/cccp+xml"),
+            no_version,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("not changed"))));
+}
+
 /// CI-13: a Ms-Focus-Uri of another conference than the calling MCU's is not followed.
 #[test]
 fn dialed_out_foreign_focus_is_not_joined() {

@@ -98,7 +98,7 @@ impl<R: Random> Engine<R> {
         Some(id)
     }
 
-    fn next_c3p(&mut self) -> u32 {
+    pub(crate) fn next_c3p(&mut self) -> u32 {
         self.c3p_request = self.c3p_request.wrapping_add(1);
         self.c3p_request
     }
