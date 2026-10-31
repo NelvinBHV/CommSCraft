@@ -48,6 +48,8 @@ Machine comparison of the 256 entries (pp. 25–26) with the standard CRC-32 tab
 
 - O-IC-2: For connectivity checks in the STUN-02 format with MESSAGE-INTEGRITY **and** a following FINGERPRINT, neither STUN-02 (no FINGERPRINT) nor MS-ICE2 says which value the length field has while the HMAC is computed. Implementation (inference): the length counts up to the end of MESSAGE-INTEGRITY, as RFC 5389 §15.4 prescribes; for MS-TURN (MI last) both readings are identical. Interop test IT-22.
 
+- K-IC-2: §3.1.5.2.3 (p. 29) says a Binding Response "MUST implement only" XOR-MAPPED-ADDRESS, USERNAME, MESSAGE-INTEGRITY and IMPLEMENTATION-VERSION, while §3.1.5.3.1 (p. 29) makes the receiver discard every response without FINGERPRINT, and ice-19 §7.1.1 requires the FINGERPRINT mechanism for connectivity checks. Implementation: responses carry FINGERPRINT as well (otherwise every peer following §3.1.5.3.1 would drop them).
+
 ## Later findings (files 38, 39)
 - L-02 **closed**: ice-19, ice-06, ice-tcp-00/-07, STUN-02 and rfc3489bis-08 obtained.
 - IC-12/IC-13 now with a primary source: priority formulas (IE-04, recomputed with SfB example values IE-05), MI in the old STUN format (IE-02).
@@ -56,3 +58,7 @@ Machine comparison of the 256 entries (pp. 25–26) with the standard CRC-32 tab
 
 ## Implementation (2026-10-31, `crates/stun`)
 STUN codec for both formats (RFC 5389 with magic cookie and padding; STUN-02/MS-TURN with 128-bit transaction ID and without padding), MESSAGE-INTEGRITY (RFC 5389; legacy HMAC-SHA1 over a 64-octet padded text, IE-02; MS-TURN HMAC-SHA256 with the two-step key, TU-14), FINGERPRINT (IE-03), (XOR-)MAPPED-ADDRESS for IPv4/IPv6, ERROR-CODE. Recomputed: all four test vectors of RFC 5769 verify (short-term and long-term integrity, fingerprint, IPv4/IPv6 XOR address); the long-term request §2.4 is rebuilt octet for octet. Security by design: ≤ 1500 octets, ≤ 32 attributes, lengths checked, MI compared in constant time and only accepted as the last attribute (FINGERPRINT may follow). Status: tested-offline.
+
+## Implementation (2026-10-31, `crates/ice-agent`)
+ICE agent per media stream over UDP: pairs per component and address family (≤ 40 + 40 candidates, ≤ 80 pairs, IC-10), pair priority ice-19 §5.7.2, initial states per foundation (§5.7.4), pacing Ta = 20 ms, retransmission 100 ms doubled × 5 (within ice-19 §16), checks with USERNAME, PRIORITY (peer-reflexive), ICE-CONTROLLING/CONTROLLED, USE-CANDIDATE, CANDIDATE-IDENTIFIER, IMPLEMENTATION-VERSION 3, MI in the format of the message and FINGERPRINT (IC-13), STUN-02 plus RFC 5389 duplicate until the peer's IMPLEMENTATION-VERSION is known (IC-03), request validation with 401/431 (IC-15), response validation incl. symmetric addresses and usable XOR-MAPPED-ADDRESS (IC-16), peer-reflexive remote candidates and triggered checks, role conflict 487, check phase 10 s/5 s and nomination 10 s (IC-06), regular nomination by the controlling agent with both components (IC-17), keep-alive with MI only (IC-05) or consent freshness every 5 s/30 s for RFC 5389 peers. Tested with two agents over a simulated network and with forged/misrouted packets. Not yet: TCP candidates (IC-10/IC-11), the 2007 CRC-table duplicate (only for OC 2007 peers, OB-42). Status: tested-offline.
+
