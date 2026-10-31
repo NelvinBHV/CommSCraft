@@ -29,6 +29,7 @@ use commscraft_presence as pres;
 use commscraft_provisioning as prov;
 use commscraft_register::keepalive::KeepAlive;
 use commscraft_register::{Deregistration, Event as RegEvent, Random, Registrar, Registration};
+use commscraft_sdp as sdp;
 use commscraft_sip_msg::dialog::{response_to, Dialog};
 use commscraft_sip_msg::{Header, Message, StartLine};
 
@@ -85,6 +86,25 @@ pub enum Command {
     /// Join a conference by its focus URI (after an invitation).
     JoinConference {
         focus: String,
+    },
+    /// Audio call (OCS-UC12): `local` from the media adapter (candidates, key).
+    Call {
+        to: String,
+        local: Box<sdp::Local>,
+        policy: sdp::Encryption,
+    },
+    AcceptCall {
+        call: CallId,
+        local: Box<sdp::Local>,
+        policy: sdp::Encryption,
+    },
+    /// Final offer with the selected candidates, or hold/resume (re-INVITE).
+    UpdateCall {
+        call: CallId,
+        local: Box<sdp::Local>,
+    },
+    Hangup {
+        call: CallId,
     },
     SignOut,
 }
@@ -157,6 +177,28 @@ pub enum Event {
     ConversationEnded {
         conversation: ConversationId,
     },
+    CallRinging {
+        call: CallId,
+    },
+    IncomingCall {
+        call: CallId,
+        from: String,
+    },
+    /// The call is established; the adapter starts ICE and media with these parameters.
+    CallAnswered {
+        call: CallId,
+        media: Box<sdp::Negotiated>,
+    },
+    /// New media parameters after a re-INVITE (final offer, hold).
+    CallUpdated {
+        call: CallId,
+        media: Box<sdp::Negotiated>,
+    },
+    /// The call ended or failed (status code; 0 = normal hang-up).
+    CallEnded {
+        call: CallId,
+        status: u16,
+    },
     /// Something the user should know but that is not an error of theirs.
     Notice(String),
 }
@@ -204,6 +246,8 @@ enum Purpose {
     Roster(ConversationId),
     DialOut(ConversationId),
     MediaRelay(u32),
+    CallInvite(CallId),
+    CallReinvite(CallId),
     Ignore,
 }
 
@@ -247,6 +291,8 @@ pub struct Engine<R: Random> {
     mras_uri: Option<String>,
     media_relay: Option<avedgea::Credentials>,
     media_relay_refresh_at: Option<u64>,
+    calls: HashMap<CallId, call::Call>,
+    next_call: CallId,
 }
 
 impl<R: Random> std::fmt::Debug for Engine<R> {
@@ -296,6 +342,8 @@ impl<R: Random> Engine<R> {
             mras_uri: None,
             media_relay: None,
             media_relay_refresh_at: None,
+            calls: HashMap::new(),
+            next_call: 1,
         }
     }
 
@@ -936,6 +984,10 @@ impl<R: Random> Engine<R> {
             self.on_invitation(req, now, out);
             return;
         }
+        if let Some(offer) = call::audio_sdp(req) {
+            self.on_incoming_call(req, offer, now, out);
+            return;
+        }
         let is_sdp = header_token(req, "Content-Type").as_deref() == Some("application/sdp");
         if !is_sdp || im::check_sdp(&req.body).is_err() {
             // Audio/video and other sessions come with M3; 488 = not acceptable here.
@@ -1099,8 +1151,19 @@ impl<R: Random> Engine<R> {
                 self.dial_out(conversation, &to, now, &mut out)
             }
             Command::JoinConference { focus } => self.join_conference(&focus, now, &mut out),
+            Command::Call { to, local, policy } => {
+                self.start_call(&to, *local, policy, now, &mut out)
+            }
+            Command::AcceptCall {
+                call,
+                local,
+                policy,
+            } => self.accept_call(call, *local, policy, now, &mut out),
+            Command::UpdateCall { call, local } => self.update_call(call, *local, now, &mut out),
+            Command::Hangup { call } => self.hangup(call, now, &mut out),
             Command::SignOut => {
                 self.signing_out = true;
+                self.end_all_calls(now, &mut out);
                 for i in (0..self.subs.len()).rev() {
                     self.unsubscribe(i, now, &mut out);
                 }
@@ -1147,6 +1210,7 @@ impl<R: Random> Engine<R> {
             }
         }
         self.group_tick(now, &mut out);
+        self.call_tick(now, &mut out);
         if self.media_relay_refresh_at.is_some_and(|t| now >= t) {
             self.media_relay_refresh_at = None;
             self.fetch_media_relay(now, &mut out);
@@ -1197,6 +1261,9 @@ impl<R: Random> Engine<R> {
             return;
         };
         if code < 200 {
+            if let Some(purpose) = self.pending.get(&key).map(|p| p.purpose.clone()) {
+                self.on_call_provisional(&purpose, code, out);
+            }
             return;
         }
         let Some(p) = self.pending.remove(&key) else {
@@ -1331,6 +1398,10 @@ impl<R: Random> Engine<R> {
                 }
             }
             Purpose::CreateConference(id) => self.on_conference_created(id, resp, now, out),
+            Purpose::CallInvite(id) => self.on_call_answered(id, &p.request, resp, now, out),
+            Purpose::CallReinvite(id) => {
+                self.on_call_reinvite_answered(id, &p.request, resp, now, out)
+            }
             Purpose::MediaRelay(request_id) => {
                 let parsed = std::str::from_utf8(&resp.body)
                     .map_err(|_| avedgea::Error::BadValue("UTF-8"))
@@ -1420,6 +1491,10 @@ impl<R: Random> Engine<R> {
                     self.leave_group(id, now, out, true);
                 }
             }
+            Purpose::CallInvite(id) => self.on_call_failed(id, code, out),
+            Purpose::CallReinvite(id) => out.push(Output::Event(Event::Notice(format!(
+                "call {id}: update refused ({code})"
+            )))),
             Purpose::DialOut(id) => out.push(Output::Event(Event::Notice(format!(
                 "[{id}] invitation failed ({code})"
             )))),
@@ -1481,6 +1556,10 @@ impl<R: Random> Engine<R> {
             }
             return;
         }
+        if let Some(id) = self.call_of(req) {
+            self.on_call_request(id, req, now, out);
+            return;
+        }
         let conv = self
             .convs
             .iter()
@@ -1498,6 +1577,7 @@ impl<R: Random> Engine<R> {
         match (method.as_str(), has_to_tag) {
             ("INVITE", false) => self.on_invite(req, now, out),
             ("ACK", _) => {}
+            ("CANCEL", false) => self.on_cancel(req, now, out),
             ("OPTIONS", false) => {
                 let mut r = response_to(req, 200, "OK");
                 r.push_header("Accept", "application/sdp");
@@ -1570,7 +1650,10 @@ impl<R: Random> Engine<R> {
     }
 }
 
+mod call;
 mod group;
+
+pub use call::CallId;
 
 #[cfg(test)]
 mod tests;

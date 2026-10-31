@@ -246,6 +246,7 @@ dependencies = [
  "commscraft-presence",
  "commscraft-provisioning",
  "commscraft-register",
+ "commscraft-sdp",
  "commscraft-sip-msg",
 ]
 

@@ -395,7 +395,7 @@ fn failures_and_refusals() {
             status: 408
         })
     );
-    // An audio call is not supported yet: 488.
+    // A video-only or other non-audio, non-IM session is refused with 488.
     let mut call = Message::request("INVITE", "sip:alice@contoso.com");
     call.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKa");
     call.push_header("From", "<sip:bob@contoso.com>;tag=b9");
@@ -404,7 +404,7 @@ fn failures_and_refusals() {
     call.push_header("CSeq", "1 INVITE");
     call.push_header("Contact", "<sip:bob@contoso.com>");
     call.push_header("Content-Type", "application/sdp");
-    call.body = b"v=0\r\nm=audio 5000 RTP/SAVP 0\r\n".to_vec();
+    call.body = b"v=0\r\nm=video 5000 RTP/SAVP 122\r\n".to_vec();
     let out = e.on_message(&server.sign(call), NOW);
     assert_eq!(sends(&out).pop().unwrap().status_code(), Some(488));
     // Bad address.
@@ -946,4 +946,286 @@ fn media_relay_credentials_at_bootstrap() {
     // Refreshed at 90 % of the lifetime (the registration itself would need refreshing first in
     // this test, so the timer is checked directly).
     assert_eq!(e.media_relay_refresh_at, Some(NOW + 480 * 54));
+}
+
+fn media_local(port: u16, key_byte: u8) -> commscraft_sdp::Local {
+    commscraft_sdp::Local {
+        address: "192.0.2.1".parse().unwrap(),
+        rtp_port: port,
+        rtcp_port: port + 1,
+        key: Some(commscraft_sdp::Key::new(1, [key_byte; 30])),
+        ice: None,
+        direction: commscraft_sdp::Direction::SendRecv,
+        remote_candidates: Vec::new(),
+    }
+}
+
+fn peer_sdp(key_byte: u8, proto: &str) -> String {
+    let k = commscraft_sdp::Key::new(1, [key_byte; 30]);
+    format!("v=0\r\no=- 0 0 IN IP4 198.51.100.7\r\ns=session\r\nc=IN IP4 198.51.100.7\r\nt=0 0\r\nm=audio 7000 {proto} 9 0 101\r\na=crypto:{}\r\na=rtcp:7001\r\na=rtpmap:9 G722/8000\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:101 telephone-event/8000\r\na=fmtp:101 0-16\r\n", k.attribute())
+}
+
+/// OCS-UC12 / MS-SIPRE §3.15: outgoing call with multipart offer, ringing, answer, final offer
+/// (re-INVITE keeping the key), hang-up.
+#[test]
+fn outgoing_call_flow() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::Call {
+            to: "sip:bob@contoso.com".into(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    assert!(server.verify_client(&invite));
+    assert!(invite
+        .single("Content-Type")
+        .unwrap()
+        .unwrap()
+        .starts_with("multipart/alternative"));
+    let offer = call::audio_sdp(&invite).expect("ICE-19 SDP as the last part");
+    assert!(String::from_utf8(offer)
+        .unwrap()
+        .contains("m=audio 40000 RTP/SAVP 9 0 8 101"));
+
+    let out = e.on_message(&answer(&mut server, &invite, 180, None, "", &[]), NOW);
+    assert_eq!(events(&out), vec![Event::CallRinging { call: 1 }]);
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            &peer_sdp(9, "RTP/SAVP"),
+            &[],
+        ),
+        NOW,
+    );
+    assert_eq!(
+        find(&out, "ACK").call_id().unwrap(),
+        invite.call_id().unwrap()
+    );
+    let Some(Event::CallAnswered { call: 1, media }) = events(&out).pop() else {
+        panic!()
+    };
+    assert_eq!(media.payload_type, 9);
+    assert_eq!(media.remote_rtp, ("198.51.100.7".parse().unwrap(), 7000));
+
+    // Final offer: a re-INVITE in the dialog; a different key in the update is replaced (SD-13).
+    let mut fin = media_local(40000, 99);
+    fin.remote_candidates = vec![(1, "198.51.100.7:7000".parse().unwrap())];
+    let out = e.command(
+        Command::UpdateCall {
+            call: 1,
+            local: Box::new(fin),
+        },
+        NOW,
+    );
+    let reinvite = find(&out, "INVITE");
+    assert_eq!(reinvite.call_id().unwrap(), invite.call_id().unwrap());
+    let body = String::from_utf8(reinvite.body.clone()).unwrap();
+    assert!(body.contains("a=remote-candidates:1 198.51.100.7 7000"));
+    assert!(
+        body.contains(&commscraft_sdp::Key::new(1, [7; 30]).attribute()),
+        "original key kept"
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &reinvite,
+            200,
+            Some("application/sdp"),
+            &peer_sdp(9, "RTP/SAVP"),
+            &[],
+        ),
+        NOW,
+    );
+    assert!(matches!(
+        events(&out).pop(),
+        Some(Event::CallUpdated { call: 1, .. })
+    ));
+
+    let out = e.command(Command::Hangup { call: 1 }, NOW);
+    assert!(sends(&out).iter().any(|m| m.method() == Some("BYE")));
+    assert_eq!(events(&out), vec![Event::CallEnded { call: 1, status: 0 }]);
+}
+
+/// Security by design: a plaintext answer to a required-encryption offer ends the call with BYE.
+#[test]
+fn plaintext_answer_is_refused() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::Call {
+            to: "sip:bob@contoso.com".into(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    let plain = "v=0\r\nc=IN IP4 198.51.100.7\r\nm=audio 7000 RTP/AVP 0\r\n";
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            plain,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(sends(&out).iter().any(|m| m.method() == Some("BYE")));
+    assert!(events(&out).contains(&Event::CallEnded {
+        call: 1,
+        status: 488
+    }));
+}
+
+/// Outgoing call cancelled while ringing (RFC 3261 §9.1): CANCEL with the INVITE's Via, then
+/// the 487 ends the call.
+#[test]
+fn cancel_while_ringing() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::Call {
+            to: "sip:bob@contoso.com".into(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    let out = e.command(Command::Hangup { call: 1 }, NOW);
+    let cancel = find(&out, "CANCEL");
+    assert_eq!(cancel.single("Via").unwrap(), invite.single("Via").unwrap());
+    assert_eq!(
+        cancel.cseq().unwrap().unwrap().number,
+        invite.cseq().unwrap().unwrap().number
+    );
+    let out = e.on_message(&answer(&mut server, &invite, 487, None, "", &[]), NOW);
+    assert!(find(&out, "ACK").method() == Some("ACK"));
+    assert_eq!(
+        events(&out),
+        vec![Event::CallEnded {
+            call: 1,
+            status: 487
+        }]
+    );
+}
+
+fn incoming_invite(server: &mut Server, body: &str, multipart: bool) -> Message {
+    let mut invite = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    invite.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKcall");
+    invite.push_header("From", "<sip:bob@contoso.com>;tag=bobcall");
+    invite.push_header("To", "<sip:alice@contoso.com>");
+    invite.push_header("Call-ID", "call1");
+    invite.push_header("CSeq", "1 INVITE");
+    invite.push_header("Contact", "<sip:bob@contoso.com;opaque=user:epid:y;gruu>");
+    if multipart {
+        // MS-SIPRE §4.12.1 structure: ICEv6 part with ms-proxy-2007fallback, ICEv19 part last.
+        invite.push_header("Content-Type", "multipart/alternative;boundary=\"b\"");
+        invite.body = format!(
+            "--b\r\nContent-Type: application/sdp\r\nContent-Disposition: session; handling=optional; ms-proxy-2007fallback\r\n\r\nv=0\r\nc=IN IP4 198.51.100.66\r\nm=audio 1 RTP/AVP 0\r\n\r\n--b\r\nContent-Type: application/sdp\r\nContent-Disposition: session; handling=optional\r\n\r\n{body}\r\n--b--\r\n"
+        )
+        .into_bytes();
+    } else {
+        invite.push_header("Content-Type", "application/sdp");
+        invite.body = body.as_bytes().to_vec();
+    }
+    server.sign(invite)
+}
+
+/// Incoming call: 180, the user accepts, 200 with the answer to the ICE-19 part; BYE ends it.
+#[test]
+fn incoming_call_flow() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.on_message(
+        &incoming_invite(&mut server, &peer_sdp(9, "RTP/AVP"), true),
+        NOW,
+    );
+    let ringing = sends(&out).pop().unwrap();
+    assert_eq!(ringing.status_code(), Some(180));
+    assert!(ringing.single("To").unwrap().unwrap().contains(";tag="));
+    assert_eq!(
+        events(&out),
+        vec![Event::IncomingCall {
+            call: 1,
+            from: "sip:bob@contoso.com".into()
+        }]
+    );
+    let out = e.command(
+        Command::AcceptCall {
+            call: 1,
+            local: Box::new(media_local(42000, 3)),
+            policy: commscraft_sdp::Encryption::Optional {
+                allow_plaintext: false,
+            },
+        },
+        NOW,
+    );
+    let ok = sends(&out).pop().unwrap();
+    assert_eq!(ok.status_code(), Some(200));
+    let body = String::from_utf8(ok.body.clone()).unwrap();
+    assert!(
+        body.contains("RTP/SAVP"),
+        "optional offer answered encrypted (SD-11)"
+    );
+    assert!(!body.contains("198.51.100.66"));
+    let Some(Event::CallAnswered { call: 1, media }) = events(&out).pop() else {
+        panic!()
+    };
+    assert_eq!(
+        media.remote_rtp,
+        ("198.51.100.7".parse().unwrap(), 7000),
+        "the ICE-19 part was used"
+    );
+    let tag = ok.to().unwrap().unwrap().param("tag").unwrap().to_string();
+    let mut bye = Message::request("BYE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    bye.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKbye");
+    bye.push_header("From", "<sip:bob@contoso.com>;tag=bobcall");
+    bye.push_header("To", &format!("<sip:alice@contoso.com>;tag={tag}"));
+    bye.push_header("Call-ID", "call1");
+    bye.push_header("CSeq", "2 BYE");
+    let out = e.on_message(&server.sign(bye), NOW);
+    assert_eq!(sends(&out)[0].status_code(), Some(200));
+    assert_eq!(events(&out), vec![Event::CallEnded { call: 1, status: 0 }]);
+}
+
+#[test]
+fn incoming_call_cancel_and_timeout() {
+    let (mut e, mut server, _) = signed_in();
+    e.on_message(
+        &incoming_invite(&mut server, &peer_sdp(9, "RTP/SAVP"), false),
+        NOW,
+    );
+    let mut cancel = Message::request("CANCEL", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    cancel.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKcall");
+    cancel.push_header("From", "<sip:bob@contoso.com>;tag=bobcall");
+    cancel.push_header("To", "<sip:alice@contoso.com>");
+    cancel.push_header("Call-ID", "call1");
+    cancel.push_header("CSeq", "1 CANCEL");
+    let out = e.on_message(&server.sign(cancel), NOW);
+    let codes: Vec<_> = sends(&out).iter().map(|m| m.status_code()).collect();
+    assert_eq!(codes, vec![Some(200), Some(487)]);
+    assert_eq!(
+        events(&out),
+        vec![Event::CallEnded {
+            call: 1,
+            status: 487
+        }]
+    );
+    // An unanswered call ends after 60 s with 480.
+    e.on_message(
+        &incoming_invite(&mut server, &peer_sdp(9, "RTP/SAVP"), false),
+        NOW,
+    );
+    let out = e.on_tick(NOW + call::RING_TIMEOUT);
+    assert!(sends(&out).iter().any(|m| m.status_code() == Some(480)));
+    assert!(events(&out).contains(&Event::CallEnded {
+        call: 2,
+        status: 480
+    }));
 }
