@@ -1,6 +1,6 @@
 # Interop test cases for the owner
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (IT-18, IT-19 and how to run the CLI)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (discovery in the CLI, `--discover-only`)
 
 After the fourth search ([`protocol/evidence/39-evidence-for-open-points.md`](protocol/evidence/39-evidence-for-open-points.md),
 OB-39 … OB-51) no open point needs more document research. What is left is the observable behaviour
@@ -50,9 +50,19 @@ non-blocking.
 
 ```
 cargo build --release -p commscraft-cli
+# 1. Discovery only (IT-16): no password, no sign-in.
+./target/release/commscraft-cli sign-in --aor sip:alice@contoso.com --discover-only --authorized
+# 2. Complete run (IT-19); the server is discovered, or given with --server pool1.contoso.com:5061.
 ./target/release/commscraft-cli sign-in --aor sip:alice@contoso.com --user alice --domain CONTOSO \
-    --server pool1.contoso.com:5061 [--ca-file enterprise-root.pem] [--verbose] --authorized
+    [--ca-file enterprise-root.pem] [--verbose] --authorized
 ```
+
+Discovery order (OB-06, D-10): `https://lyncdiscoverinternal.<domain>`, then
+`https://lyncdiscover.<domain>` (Root → Domain resource, no credentials), then DNS SRV
+`_sipinternaltls._tcp` and `_sip._tls` via the name servers in `/etc/resolv.conf`, then
+`sipinternal`, `sip`, `sipexternal.<domain>:443`. Every step is printed. Targets outside the SIP
+domain are skipped with a note; pass them with `--server` if you trust them. If Autodiscover uses a
+certificate from an enterprise CA that is not in the system trust store, add `--ca-file`.
 
 The password is asked without echo. `--verbose` prints the SIP messages with every
 authentication header and all bodies redacted; review the output before sharing it anyway (host

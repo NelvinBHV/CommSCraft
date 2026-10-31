@@ -21,12 +21,14 @@ use commscraft_sipae::Policy;
 
 const USAGE: &str =
     "usage: commscraft-cli sign-in --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
-[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] --authorized
+[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] --authorized
 
 Signs in once, fetches provisioning, prints a summary and signs out.
 --authorized  confirms that you are allowed to test against this server (required).
---server      SIP server; without it the fallback hosts sipinternal/sip/sipexternal.<domain>:443
-              are tried (MS-CONMGMT). Autodiscover and DNS SRV lookups are not wired up yet.
+--server      SIP server; without it the server is discovered: Lync Autodiscover over HTTPS
+              (lyncdiscoverinternal, lyncdiscover), then DNS SRV (_sipinternaltls._tcp, _sip._tls),
+              then sipinternal/sip/sipexternal.<domain>:443 (MS-OCDISCWS, MS-CONMGMT).
+--discover-only  run only the discovery and print the result; no password, no sign-in.
 The password is read from the terminal without echo, or as the first line of standard input.";
 
 struct Args {
@@ -38,6 +40,7 @@ struct Args {
     epid: Option<String>,
     verbose: bool,
     authorized: bool,
+    discover_only: bool,
 }
 
 fn parse_args() -> Result<Args, String> {
@@ -53,6 +56,7 @@ fn parse_args() -> Result<Args, String> {
         ca_file: None,
         epid: None,
         verbose: false,
+        discover_only: false,
         authorized: false,
     };
     while let Some(flag) = it.next() {
@@ -75,12 +79,13 @@ fn parse_args() -> Result<Args, String> {
             "--ca-file" => a.ca_file = Some(PathBuf::from(value()?)),
             "--epid" => a.epid = Some(value()?),
             "--verbose" => a.verbose = true,
+            "--discover-only" => a.discover_only = true,
             "--authorized" => a.authorized = true,
             "-h" | "--help" => return Err(USAGE.into()),
             other => return Err(format!("unknown argument {other}\n\n{USAGE}")),
         }
     }
-    if a.aor.is_empty() || a.user.is_empty() || a.domain.is_empty() {
+    if a.aor.is_empty() || (!a.discover_only && (a.user.is_empty() || a.domain.is_empty())) {
         return Err(USAGE.into());
     }
     Ok(a)
@@ -231,6 +236,150 @@ fn print_provisioning(p: &prov::Provisioning, user_domain: &str) {
     }
 }
 
+/// Server discovery (OB-06): Autodiscover over HTTPS first (D-10), then DNS SRV and the fallback
+/// host names. Targets outside the user's SIP domain are not used automatically.
+fn discover(
+    tls: &TlsClient,
+    aor: &str,
+    user_domain: &str,
+    verbose: bool,
+) -> Result<Vec<(String, u16)>, String> {
+    use commscraft_discovery as d;
+    let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
+    let timeout = Duration::from_secs(10);
+    let mut ad = d::Autodiscover::new(&d::Config {
+        aor: aor.to_string(),
+        allow_plain_http: false,
+    })
+    .map_err(|e| format!("discovery: {e:?}"))?;
+    let mut step = ad.start();
+    let mut outcome = None;
+    loop {
+        match step {
+            d::Step::Fetch(url) => {
+                eprintln!("autodiscover: GET {url}");
+                let response = match commscraft_url::parse_https(&url) {
+                    None => d::Response::Failed,
+                    Some(u) => match commscraft_net::http::get(tls, &u, d::ACCEPT, &ua, timeout) {
+                        Err(e) => {
+                            eprintln!("  {e}");
+                            d::Response::Failed
+                        }
+                        Ok(r) => {
+                            let header = |n: &str| r.header(n).ok().flatten().map(str::to_string);
+                            // A relative Location is resolved against the requested URL.
+                            let location = header("location").map(|l| {
+                                if l.starts_with('/') {
+                                    let port = if u.port == 443 {
+                                        String::new()
+                                    } else {
+                                        format!(":{}", u.port)
+                                    };
+                                    format!("https://{}{port}{l}", u.host)
+                                } else {
+                                    l
+                                }
+                            });
+                            eprintln!("  HTTP {}", r.status);
+                            match String::from_utf8(r.body.clone()) {
+                                Ok(body) => {
+                                    if verbose && r.status == 200 {
+                                        eprintln!("{body}");
+                                    }
+                                    d::Response::Http {
+                                        status: r.status,
+                                        location,
+                                        content_type: header("content-type"),
+                                        body,
+                                    }
+                                }
+                                Err(_) => d::Response::Failed,
+                            }
+                        }
+                    },
+                };
+                step = ad.on_response(response);
+            }
+            d::Step::Done(o) => {
+                eprintln!("autodiscover: access location {:?}", o.access_location);
+                for t in &o.targets {
+                    eprintln!(
+                        "  SIP access point {}:{}{}",
+                        t.host,
+                        t.port,
+                        if t.in_user_domain {
+                            ""
+                        } else {
+                            " (outside your domain)"
+                        }
+                    );
+                }
+                if o.targets.is_empty() {
+                    eprintln!(
+                        "  no SIP access point in the Autodiscover answer (interop test IT-16)"
+                    );
+                }
+                outcome = Some(o);
+                break;
+            }
+            d::Step::Failed(e) => {
+                eprintln!("autodiscover: {e:?}");
+                break;
+            }
+        }
+    }
+    // DNS SRV (CON-11, TLS names only).
+    let servers = std::fs::read_to_string("/etc/resolv.conf")
+        .map(|c| commscraft_net::dns::nameservers(&c))
+        .unwrap_or_default();
+    let mut rng = OsRandom::new().map_err(|e| e.to_string())?;
+    let mut lookup = |name: &str| -> Vec<d::SrvRecord> {
+        let mut id = [0u8; 2];
+        rng.fill(&mut id);
+        match commscraft_net::dns::lookup_srv(
+            &servers,
+            name,
+            u16::from_be_bytes(id),
+            Duration::from_secs(5),
+        ) {
+            Ok(r) => {
+                eprintln!("dns: {name}: {} record(s)", r.len());
+                r.into_iter()
+                    .map(|s| d::SrvRecord {
+                        priority: s.priority,
+                        weight: s.weight,
+                        port: s.port,
+                        target: s.target,
+                    })
+                    .collect()
+            }
+            Err(e) => {
+                eprintln!("dns: {name}: {e}");
+                Vec::new()
+            }
+        }
+    };
+    let [internal_name, external_name] = d::srv_names(user_domain);
+    let internal = lookup(&internal_name);
+    let external = lookup(&external_name);
+    let all = d::candidates(
+        outcome.as_ref(),
+        d::srv_targets(user_domain, &internal, &external),
+    );
+    let mut out = Vec::new();
+    for t in all {
+        if t.in_user_domain {
+            out.push((t.host, t.port));
+        } else {
+            eprintln!(
+                "skipping {}:{} outside your SIP domain; pass it with --server if you trust it",
+                t.host, t.port
+            );
+        }
+    }
+    Ok(out)
+}
+
 struct Session {
     conn: SipConnection,
     keepalive: Option<KeepAlive>,
@@ -271,11 +420,15 @@ fn run(a: Args) -> Result<(), String> {
     let tls = TlsClient::new(ca.as_deref()).map_err(|e| e.to_string())?;
     let targets: Vec<(String, u16)> = match &a.server {
         Some(s) => vec![s.clone()],
-        None => commscraft_discovery::srv_targets(&user_domain, &[], &[])
-            .into_iter()
-            .map(|t| (t.host, t.port))
-            .collect(),
+        None => discover(&tls, &a.aor, &user_domain, a.verbose)?,
     };
+    if a.discover_only {
+        println!("discovery result (in order):");
+        for (h, p) in &targets {
+            println!("  {h}:{p}");
+        }
+        return Ok(());
+    }
     let password = read_password()?;
     let timeout = Duration::from_secs(10);
     let mut conn = None;

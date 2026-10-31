@@ -14,6 +14,9 @@
 //! - random numbers come from the OS CSPRNG; if it fails, the process aborts instead of continuing
 //!   with predictable values.
 
+pub mod dns;
+pub mod http;
+
 use std::io::{ErrorKind, Read, Write};
 use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::sync::Arc;

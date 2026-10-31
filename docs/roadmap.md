@@ -29,8 +29,9 @@ owner on an authorized server and is deferred until such an environment exists (
    offline sign-in against a test registrar). In-band provisioning (`provisioning`,
    bounded `xml` reader) and the deregister NOTIFY are done. Discovery (`discovery`, `url`) and the
    registrar redirect are done. Keep-alive, the TLS adapter (`net`) and `commscraft-cli`
-   are done: **M1 is ready for the owner's first interop run (IT-19)**. Next while waiting: HTTPS and
-   DNS SRV adapters for discovery in the CLI, provisioning by NOTIFY, then M2 (presence, IM).
+   are done: **M1 is ready for the owner's first interop run (IT-19)**. Discovery is wired into the CLI
+   (`--discover-only` for IT-16). Next while waiting: provisioning by NOTIFY, then M2 (presence,
+   IM).
 
 ## Milestones
 
