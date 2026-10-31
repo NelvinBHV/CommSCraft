@@ -46,7 +46,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 19 | Group IM (IM conference) | MS-CONFPRO, MS-CONFBAS, MS-CONFIM | B\* | tested-offline (create, join, roster, IM MCU, dial-out invitations, IMDN, session timers, leave: `conf`, `session`; CLI `/group`, `/invite`, `/join`); invitations of Windows clients secondary only (K-CI-3) |
 | 20 | Persistent chat | MS-XCCOSIP, MS-OCGCWEB | T | – |
 | 21 | Media relay access | MS-AVEDGEA, MS-TURN | B | parts tested-offline (MS-TURN client incl. TCP framing and pseudo-TLS: `turn`; STUN codec: `stun`); MS-AVEDGEA credentials tested-offline (`avedgea`, engine bootstrap and refresh) |
-| 22 | ICE connectivity | MS-ICE2, MS-ICE | B\* | – |
+| 22 | ICE connectivity | MS-ICE2, MS-ICE | B\* | parts tested-offline (UDP ICE agent: checks in both STUN formats, nomination, keep-alive, consent: `ice-agent`); TCP candidates and MS-ICE (2007) – |
 | 23 | Media negotiation (SDP) | MS-SDPEXT, MS-SIPRE | B\* | parts tested-offline (audio offer/answer, a=crypto, ICE-19 attributes: `sdp`) |
 | 24 | Media encryption | MS-SRTP, MS-SSRTP | B | tested-offline (SRTP/SRTCP contexts with MKI, replay window, ROC; RFC 3711 B.2/B.3 and libsrtp reference packets: `srtp`) |
 | 25 | RTP/RTCP, bandwidth, video source requests | MS-RTP | B | parts tested-offline (RTP header, sender, reception statistics, SR/RR/SDES/BYE, DTMF: `rtp`); MS-RTP profile extensions – |

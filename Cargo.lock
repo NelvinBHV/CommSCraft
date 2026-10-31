@@ -154,6 +154,14 @@ name = "commscraft-ice"
 version = "0.0.1"
 
 [[package]]
+name = "commscraft-ice-agent"
+version = "0.0.1"
+dependencies = [
+ "commscraft-ice",
+ "commscraft-stun",
+]
+
+[[package]]
 name = "commscraft-im"
 version = "0.0.1"
 dependencies = [
