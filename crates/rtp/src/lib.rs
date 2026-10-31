@@ -5,13 +5,16 @@
 //! `17-payload-formats-video-audio-appsharing.md` (PL-30). Sources: RFC 3550 §5.1 (header),
 //! §6.4.1/6.4.2 (SR/RR), §6.5 (SDES), §6.6 (BYE), Appendix A.1/A.3/A.8 (validity, loss,
 //! jitter); RFC 4733 §2.3, §2.5.1.2, §2.5.1.4 (telephone events); [MS-RTP] 20250520 §2.1–2.2.2
-//! (pp. 14–17), §3.1.2 (p. 35); [MS-DTMF] 20250520 §2.2.1, §3.1–3.3 (pp. 8–12); [MS-SRTP] §5.1
+//! (pp. 14–17), §2.2.3–2.2.11 (probe, packet pair and train, SDES PRIV "MS-EVT", profile
+//! extensions, pp. 16–27, RT-22 … RT-24), §3.1.2 (p. 35); [MS-DTMF] 20250520 §2.2.1, §3.1–3.3 (pp. 8–12); [MS-SRTP] §5.1
 //! (start sequence number, p. 15).
 //!
 //! Security by design: every length is checked before use (packet ≤ 1500 bytes, RT-01), CSRC
 //! lists are bounded by the header field, RTCP walking is bounded (at most 16 packets per
 //! compound, at most 10 report blocks, RT-21), SDES text is bounded and stripped of control
-//! characters; nothing here allocates per received octet beyond the packet itself.
+//! characters; profile extensions are walked by their length field (at least 4, a multiple of 4,
+//! inside the report) and at most 20 per report (§2.2.11), unknown types are skipped; nothing
+//! here allocates per received octet beyond the packet itself.
 
 /// Largest RTP/RTCP packet (RT-01).
 pub const MAX_PACKET: usize = 1500;
@@ -351,6 +354,290 @@ pub struct SenderInfo {
     pub octets: u32,
 }
 
+/// [MS-RTP] §2.2.11 profile-specific extensions after the report blocks of an SR or RR
+/// (RT-23). Bandwidths in bits per second unless noted.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Extension {
+    /// Type 1 (§2.2.11.1): the receiver's estimate; −3/−5/−6 are the special values.
+    Bandwidth {
+        ssrc: u32,
+        bps: u32,
+        confidence: Option<u8>,
+    },
+    /// Type 4 (§2.2.11.2): a lost video packet.
+    PacketLoss { sequence: u16 },
+    /// Type 5 (§2.2.11.3).
+    VideoPreference { width: u16, height: u16 },
+    /// Type 6 (§2.2.11.4): `n` padding words of 4 octets.
+    Padding { words: u16 },
+    /// Type 7 (§2.2.11.5).
+    PolicyBandwidth(u32),
+    /// Type 8 (§2.2.11.6).
+    TurnBandwidth(u32),
+    /// Type 9 (§2.2.11.7): frames of 10 ms; quality 0 unknown, 1 good, 2 poor, 3 bad.
+    AudioHealer {
+        ssrc: u32,
+        concealed: u32,
+        stretched: u32,
+        compressed: u32,
+        total: u32,
+        quality: u8,
+        fec_distance: u8,
+    },
+    /// Type 10 (§2.2.11.8).
+    ReceiverLimit(u32),
+    /// Type 11 (§2.2.11.9).
+    PacketTrain {
+        ssrc: u32,
+        last: bool,
+        index: u8,
+        count: u8,
+        bytes: u16,
+    },
+    /// Type 12 (§2.2.11.10).
+    PeerInfo {
+        ssrc: u32,
+        inbound: u32,
+        outbound: u32,
+        no_cache: bool,
+    },
+    /// Type 13 (§2.2.11.11): NTP timestamp and the congestion bit mask.
+    Congestion { ntp: u64, info: u8 },
+    /// Type 14 (§2.2.11.12): modality 2 = video.
+    ModalityLimit { modality: u8, bps: u32 },
+}
+
+/// Bandwidth estimate special values (§2.2.11.1).
+pub const BANDWIDTH_PACKET_PAIR: u32 = 0xffff_fffd;
+pub const BANDWIDTH_PACKET_TRAIN: u32 = 0xffff_fffb;
+pub const BANDWIDTH_SEND_TRAIN: u32 = 0xffff_fffa;
+/// Most profile extensions per report (§2.2.11).
+pub const MAX_EXTENSIONS: usize = 20;
+
+impl Extension {
+    fn write(&self, out: &mut Vec<u8>) {
+        let mut body: Vec<u8> = Vec::new();
+        let kind: u16 = match *self {
+            Extension::Bandwidth {
+                ssrc,
+                bps,
+                confidence,
+            } => {
+                body.extend_from_slice(&ssrc.to_be_bytes());
+                body.extend_from_slice(&bps.to_be_bytes());
+                if let Some(c) = confidence {
+                    body.extend_from_slice(&[(c & 0x0f) << 4, 0, 0, 0]);
+                }
+                1
+            }
+            Extension::PacketLoss { sequence } => {
+                body.extend_from_slice(&[0, 0]);
+                body.extend_from_slice(&sequence.to_be_bytes());
+                4
+            }
+            Extension::VideoPreference { width, height } => {
+                body.extend_from_slice(&[0; 4]);
+                body.extend_from_slice(&width.to_be_bytes());
+                body.extend_from_slice(&height.to_be_bytes());
+                body.extend_from_slice(&[0; 8]);
+                5
+            }
+            Extension::Padding { words } => {
+                body.resize(usize::from(words.min(16382)) * 4, 0);
+                6
+            }
+            Extension::PolicyBandwidth(b)
+            | Extension::TurnBandwidth(b)
+            | Extension::ReceiverLimit(b) => {
+                body.extend_from_slice(&[0; 4]);
+                body.extend_from_slice(&b.to_be_bytes());
+                match self {
+                    Extension::PolicyBandwidth(_) => 7,
+                    Extension::TurnBandwidth(_) => 8,
+                    _ => 10,
+                }
+            }
+            Extension::AudioHealer {
+                ssrc,
+                concealed,
+                stretched,
+                compressed,
+                total,
+                quality,
+                fec_distance,
+            } => {
+                for v in [ssrc, concealed, stretched, compressed, total] {
+                    body.extend_from_slice(&v.to_be_bytes());
+                }
+                body.extend_from_slice(&[0, 0, quality.min(3), fec_distance.min(3)]);
+                9
+            }
+            Extension::PacketTrain {
+                ssrc,
+                last,
+                index,
+                count,
+                bytes,
+            } => {
+                body.extend_from_slice(&ssrc.to_be_bytes());
+                body.push((u8::from(last) << 7) | (index & 0x7f));
+                body.push(count & 0x7f);
+                body.extend_from_slice(&bytes.to_be_bytes());
+                11
+            }
+            Extension::PeerInfo {
+                ssrc,
+                inbound,
+                outbound,
+                no_cache,
+            } => {
+                for v in [ssrc, inbound, outbound] {
+                    body.extend_from_slice(&v.to_be_bytes());
+                }
+                body.extend_from_slice(&[u8::from(no_cache) << 7, 0, 0, 0]);
+                12
+            }
+            Extension::Congestion { ntp, info } => {
+                body.extend_from_slice(&ntp.to_be_bytes());
+                body.extend_from_slice(&[info & 0x0f, 0, 0, 0]);
+                13
+            }
+            Extension::ModalityLimit { modality, bps } => {
+                body.extend_from_slice(&[modality, 0, 0, 0]);
+                body.extend_from_slice(&bps.to_be_bytes());
+                14
+            }
+        };
+        out.extend_from_slice(&kind.to_be_bytes());
+        out.extend_from_slice(&((body.len() + 4) as u16).to_be_bytes());
+        out.extend_from_slice(&body);
+    }
+
+    /// One extension (`p` = type, length and info); `None` for unknown types or wrong lengths.
+    fn read(kind: u16, p: &[u8]) -> Option<Self> {
+        let w = |at: usize| be32(p, at).ok();
+        let h = |at: usize| be16(p, at).ok();
+        let b = |at: usize| p.get(at).copied();
+        Some(match (kind, p.len()) {
+            (1, 12) => Extension::Bandwidth {
+                ssrc: w(4)?,
+                bps: w(8)?,
+                confidence: None,
+            },
+            (1, 16) => Extension::Bandwidth {
+                ssrc: w(4)?,
+                bps: w(8)?,
+                confidence: Some(b(12)? >> 4),
+            },
+            (4, 8) => Extension::PacketLoss { sequence: h(6)? },
+            (5, 20) => Extension::VideoPreference {
+                width: h(8)?,
+                height: h(10)?,
+            },
+            (6, n) => Extension::Padding {
+                words: ((n - 4) / 4) as u16,
+            },
+            (7, 12) => Extension::PolicyBandwidth(w(8)?),
+            (8, 12) => Extension::TurnBandwidth(w(8)?),
+            (9, 28) => Extension::AudioHealer {
+                ssrc: w(4)?,
+                concealed: w(8)?,
+                stretched: w(12)?,
+                compressed: w(16)?,
+                total: w(20)?,
+                // Other values mean "unknown" (§2.2.11.7).
+                quality: Some(b(26)?).filter(|q| *q <= 3).unwrap_or(0),
+                fec_distance: Some(b(27)?).filter(|f| *f <= 3).unwrap_or(0),
+            },
+            (10, 12) => Extension::ReceiverLimit(w(8)?),
+            (11, 12) => Extension::PacketTrain {
+                ssrc: w(4)?,
+                last: b(8)? & 0x80 != 0,
+                index: b(8)? & 0x7f,
+                count: b(9)? & 0x7f,
+                bytes: h(10)?,
+            },
+            (12, 20) => Extension::PeerInfo {
+                ssrc: w(4)?,
+                inbound: w(8)?,
+                outbound: w(12)?,
+                no_cache: b(16)? & 0x80 != 0,
+            },
+            (13, 16) => Extension::Congestion {
+                ntp: (u64::from(w(4)?) << 32) | u64::from(w(8)?),
+                info: b(12)? & 0x0f,
+            },
+            (14, 12) => Extension::ModalityLimit {
+                modality: b(4)?,
+                bps: w(8)?,
+            },
+            _ => return None,
+        })
+    }
+}
+
+/// The extensions of one report (`p` = the octets after the report blocks); bounded and
+/// fail-closed: a broken length ends the walk, what came before stays.
+fn read_extensions(p: &[u8]) -> Vec<Extension> {
+    let mut out = Vec::new();
+    let mut at = 0;
+    for _ in 0..MAX_EXTENSIONS {
+        let (Ok(kind), Ok(len)) = (be16(p, at), be16(p, at + 2)) else {
+            break;
+        };
+        let len = usize::from(len);
+        if len < 4 || !len.is_multiple_of(4) {
+            break;
+        }
+        let Some(ext) = p.get(at..at + len) else {
+            break;
+        };
+        if let Some(e) = Extension::read(kind, ext) {
+            out.push(e);
+        }
+        at += len;
+    }
+    out
+}
+
+/// SDES PRIV "MS-EVT" media quality (§2.2.10.1, RT-22): `known` = the m mask, `bad` = the q mask.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Quality {
+    pub known: u32,
+    pub bad: u32,
+}
+
+impl Quality {
+    fn value(&self) -> String {
+        format!("v=1 m={:08x} q={:08x}", self.known, self.bad & self.known)
+    }
+
+    /// Parses `v=1 m=… q=…`; only the last 8 hex digits count, other fields are ignored.
+    fn parse(v: &[u8]) -> Option<Self> {
+        let s = std::str::from_utf8(v).ok()?;
+        let mut version = None;
+        let (mut known, mut bad) = (None, None);
+        for field in s.split(' ') {
+            let (k, val) = field.split_once('=')?;
+            let low = |x: &str| u32::from_str_radix(x.get(x.len().saturating_sub(8)..)?, 16).ok();
+            match k {
+                "v" => version = Some(val),
+                "m" => known = low(val),
+                "q" => bad = low(val),
+                _ => {}
+            }
+        }
+        if version != Some("1") {
+            return None;
+        }
+        let known = known?;
+        Some(Quality {
+            known,
+            bad: if known == 0 { 0 } else { bad? & known },
+        })
+    }
+}
+
 /// RTCP packet types handled here (others are skipped).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Rtcp {
@@ -358,10 +645,17 @@ pub enum Rtcp {
         ssrc: u32,
         info: SenderInfo,
         reports: Vec<ReportBlock>,
+        extensions: Vec<Extension>,
     },
     ReceiverReport {
         ssrc: u32,
         reports: Vec<ReportBlock>,
+        extensions: Vec<Extension>,
+    },
+    /// SDES PRIV "MS-EVT" (RT-22).
+    MediaQuality {
+        ssrc: u32,
+        quality: Quality,
     },
     /// SDES CNAME items (other items are skipped).
     Cname {
@@ -390,6 +684,36 @@ pub fn compound(
     reports: &[ReportBlock],
     cname: &str,
 ) -> Vec<u8> {
+    Report {
+        ssrc,
+        info,
+        reports,
+        extensions: &[],
+        cname,
+        quality: None,
+    }
+    .build()
+}
+
+/// A report with [MS-RTP] additions: profile extensions after the report blocks (at most 20)
+/// and the SDES PRIV "MS-EVT" item after the CNAME.
+#[derive(Debug, Clone, Copy)]
+pub struct Report<'a> {
+    pub ssrc: u32,
+    pub info: Option<SenderInfo>,
+    pub reports: &'a [ReportBlock],
+    pub extensions: &'a [Extension],
+    pub cname: &'a str,
+    pub quality: Option<Quality>,
+}
+
+/// The SR or RR alone (a simple packet, RT-20), with its extensions.
+fn report_packet(
+    ssrc: u32,
+    info: Option<SenderInfo>,
+    reports: &[ReportBlock],
+    extensions: &[Extension],
+) -> Vec<u8> {
     let reports = reports.get(..reports.len().min(MAX_REPORTS)).unwrap_or(&[]);
     let mut out = Vec::new();
     let mut body = ssrc.to_be_bytes().to_vec();
@@ -406,25 +730,104 @@ pub fn compound(
     for r in reports {
         r.write(&mut body);
     }
+    for e in extensions.iter().take(MAX_EXTENSIONS) {
+        e.write(&mut body);
+    }
     header(&mut out, reports.len(), pt, body.len());
     out.extend_from_slice(&body);
-    // SDES: SSRC, CNAME item, END item, padding to 32 bits.
+    out
+}
+
+impl Report<'_> {
+    pub fn build(&self) -> Vec<u8> {
+        let mut out = report_packet(self.ssrc, self.info, self.reports, self.extensions);
+        sdes(&mut out, self.ssrc, self.cname, self.quality);
+        out
+    }
+}
+
+/// RTCP probe packet (§2.2.3): a simple SR without report blocks, first of a packet pair.
+pub fn probe(ssrc: u32, info: SenderInfo) -> Vec<u8> {
+    report_packet(ssrc, Some(info), &[], &[])
+}
+
+/// A packet train packet (§2.2.6, §2.2.11.9): a simple RR with the train extension, padded with
+/// the padding extension to `size` octets (at least 20). `bytes` = the train's octets so far,
+/// including this packet.
+pub fn train_packet(ssrc: u32, index: u8, count: u8, bytes: u16, size: usize) -> Vec<u8> {
+    let train = Extension::PacketTrain {
+        ssrc,
+        last: index + 1 == count,
+        index,
+        count,
+        bytes,
+    };
+    // RR header (8) + train extension (12) + padding extension (4 + 4n).
+    let words = size.saturating_sub(8 + 12 + 4) / 4;
+    let pad = Extension::Padding {
+        words: words.min(16382) as u16,
+    };
+    report_packet(ssrc, None, &[], &[train, pad])
+}
+
+/// Pads a report so the packet reaches `size` octets: a padding extension appended to the first
+/// SR/RR, whose length field grows accordingly (§2.2.4). Unchanged if it is already larger.
+pub fn pad_report(packet: &[u8], size: usize) -> Vec<u8> {
+    let missing = size.saturating_sub(packet.len());
+    let (Some(&b0), Ok(len)) = (packet.first(), be16(packet, 2)) else {
+        return packet.to_vec();
+    };
+    if missing < 4 || b0 & 0x20 != 0 {
+        return packet.to_vec();
+    }
+    let first = (usize::from(len) + 1) * 4;
+    let words = (missing - 4) / 4;
+    let mut ext = Vec::new();
+    Extension::Padding {
+        words: words.min(16382) as u16,
+    }
+    .write(&mut ext);
+    let (Some(head), Some(rest)) = (packet.get(..first), packet.get(first..)) else {
+        return packet.to_vec();
+    };
+    let mut out = head.to_vec();
+    out.extend_from_slice(&ext);
+    let new_len = ((out.len() / 4 - 1) as u16).to_be_bytes();
+    if let Some(l) = out.get_mut(2..4) {
+        l.copy_from_slice(&new_len);
+    }
+    out.extend_from_slice(rest);
+    out
+}
+
+/// SDES with CNAME, optionally the "MS-EVT" PRIV item, END item, padding to 32 bits.
+fn sdes(out: &mut Vec<u8>, ssrc: u32, cname: &str, quality: Option<Quality>) {
     let cname: Vec<u8> = cname
         .bytes()
         .filter(|b| b.is_ascii_graphic())
-        .take(255)
+        .take(254)
         .collect();
     let mut sdes = ssrc.to_be_bytes().to_vec();
+    // CNAME text NUL-terminated, the NUL counted in the length ([MS-RTP] §2.2.10, RT-20).
     sdes.push(1);
-    sdes.push(cname.len() as u8);
+    sdes.push((cname.len() + 1) as u8);
     sdes.extend_from_slice(&cname);
+    sdes.push(0);
+    if let Some(q) = quality {
+        // PRIV (8): prefix length, prefix "MS-EVT", value; neither NUL-terminated (§2.2.10.1).
+        let value = q.value();
+        sdes.push(8);
+        sdes.push((1 + 6 + value.len()) as u8);
+        sdes.push(6);
+        sdes.extend_from_slice(b"MS-EVT");
+        sdes.extend_from_slice(value.as_bytes());
+    }
     sdes.push(0);
     while !sdes.len().is_multiple_of(4) {
         sdes.push(0);
     }
-    header(&mut out, 1, 202, sdes.len());
+    header(out, 1, 202, sdes.len());
     out.extend_from_slice(&sdes);
-    out
 }
 
 /// BYE for our source (RFC 3550 §6.6), as its own compound with an empty RR first.
@@ -476,13 +879,29 @@ pub fn parse_rtcp(p: &[u8]) -> Result<Vec<Rtcp>, Error> {
                             .and_then(ReportBlock::read)
                     })
                     .collect::<Result<Vec<_>, _>>()?;
+                // Profile extensions follow the report blocks (§2.2.11); RTCP padding is removed.
+                let pad = if b0 & 0x20 != 0 {
+                    usize::from(*pkt.last().ok_or(Error::Malformed)?)
+                } else {
+                    0
+                };
+                let end = pkt.len().checked_sub(pad).ok_or(Error::Malformed)?;
+                let extensions = pkt
+                    .get(first + 24 * count..end)
+                    .map(read_extensions)
+                    .unwrap_or_default();
                 out.push(match info {
                     Some(info) => Rtcp::SenderReport {
                         ssrc,
                         info,
                         reports,
+                        extensions,
                     },
-                    None => Rtcp::ReceiverReport { ssrc, reports },
+                    None => Rtcp::ReceiverReport {
+                        ssrc,
+                        reports,
+                        extensions,
+                    },
                 });
             }
             202 => {
@@ -503,7 +922,16 @@ pub fn parse_rtcp(p: &[u8]) -> Result<Vec<Rtcp>, Error> {
                                 .filter(|c| !c.is_control())
                                 .collect();
                             out.push(Rtcp::Cname { ssrc, cname });
-                            break;
+                        } else if kind == 8 {
+                            // PRIV: prefix length, prefix, value (RT-22).
+                            if let Some((&pl, rest)) = text.split_first() {
+                                let pl = usize::from(pl);
+                                if rest.get(..pl) == Some(&b"MS-EVT"[..]) {
+                                    if let Some(quality) = rest.get(pl..).and_then(Quality::parse) {
+                                        out.push(Rtcp::MediaQuality { ssrc, quality });
+                                    }
+                                }
+                            }
                         }
                         at += 2 + usize::from(l);
                     }
