@@ -18,6 +18,8 @@
 //! The crate is sans-I/O: the caller supplies random numbers (`crand`) from a CSPRNG and the
 //! clock; NTLM context establishment and Kerberos/TLS-DSK live elsewhere.
 
+pub mod base64;
+
 use commscraft_sip_msg::{read_quoted, Message};
 use subtle::ConstantTimeEq;
 use zeroize::Zeroize;

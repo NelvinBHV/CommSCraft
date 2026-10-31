@@ -74,3 +74,4 @@ States: **establishing → established → expired**. Data per SA: (realm, targe
 
 ## Later finding (file 39)
 - OB-11: a real OCS 2007 R2 exchange (from the SIPE test suite) was recomputed: client and server signatures match only with a per-message sealing key MD5(SealKey ‖ 100) and sequence number 100 (confirms AE-30 and NL-05).
+- Found 2026-10-27 (implementation, inference from §3.2.4.1 step 2 / §3.2.5.2 step 2): the signature buffer covers Call-ID, CSeq, From/To URI and tag, P-Asserted-/P-Preferred-Identity, Expires and the status code, but **not** Contact (incl. `gruu` and `expires` parameters), Via, Content-Type or the body. Their integrity rests on TLS alone. The client therefore takes the registration expiry from the signed Expires header (`crates/register`, test `expiry_comes_from_the_signed_header`).

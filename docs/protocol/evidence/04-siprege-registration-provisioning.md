@@ -90,3 +90,4 @@ Dependencies: RFC 3261 §10 (REGISTER), RFC 3265 (SUBSCRIBE/NOTIFY), draft-ietf-
 
 ## Later finding (file 39)
 - OB-22: `EnableServerConversationHistory` (endpointConfiguration, p. 55; footnote <124>, p. 127: not supported before Lync 2013) lets the IM server record conversation history.
+- Found 2026-10-27 (implementation): the REGISTER example §4.1.1 (p. 94) carries a real NTLM AUTHENTICATE_MESSAGE in `gssapi-data`. Decoded it is **NTLMv1** (24-byte LM and NT responses) with flags 0x42908255 (DATAGRAM, IDENTIFY, KEY_EXCH, VERSION; **no** EXTENDED_SESSIONSECURITY, no 128-bit) from Windows 5.2.3790. CommSCraft refuses such an offer (OB-43); whether current servers offer ESS/128/KEY_EXCH is interop test IT-14. Test: `crates/register` `siprege_example_authenticate_is_ntlm_v1`.

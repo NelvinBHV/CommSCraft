@@ -31,7 +31,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 4 | Sign-in with NTLM | MS-SIPAE, MS-NLMP | B\* | parts tested-offline (NTLMv2 handshake messages, SIP signing and verification: `ntlm`, `sipae`) |
 | 5 | Sign-in with Kerberos | MS-SIPAE, MS-KILE | B | – |
 | 6 | Sign-in with TLS-DSK and client certificate | MS-SIPAE, MS-OCAUTHWS | B\* | – |
-| 7 | Registration, GRUU, endpoint ID | MS-SIPREGE, MS-SIPRE | B | – |
+| 7 | Registration, GRUU, endpoint ID | MS-SIPREGE, MS-SIPRE | B | parts tested-offline (REGISTER flow, GRUU, refresh: `register`, `sip-identity`) |
 | 8 | In-band provisioning | MS-SIPREGE | B\* | – |
 | 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | – |
 | 10 | Contact list (server) | MS-SIP, MS-PRES | B | – |
@@ -74,7 +74,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 47 | Response group agent | MS-RGSWS | B | – |
 | 48 | UCWA web services | MS-CVWREST, MS-ECREST, MS-OCSMP | B | – |
 | 49 | Conversation history in Exchange | MS-OXWSCDATA, MS-OXWSSRCH | T | – |
-| 50 | Sign-out | MS-SIPREGE, MS-CONFBAS | B | – |
+| 50 | Sign-out | MS-SIPREGE, MS-CONFBAS | B | parts tested-offline (REGISTER Expires 0: `register`) |
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 

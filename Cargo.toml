@@ -11,6 +11,7 @@ members = [
     "crates/turn-bwm",
     "crates/sip-msg",
     "crates/sipae",
+    "crates/register",
 ]
 
 [workspace.package]

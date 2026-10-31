@@ -61,6 +61,17 @@ name = "commscraft-psom"
 version = "0.0.1"
 
 [[package]]
+name = "commscraft-register"
+version = "0.0.1"
+dependencies = [
+ "commscraft-ntlm",
+ "commscraft-sip-identity",
+ "commscraft-sip-msg",
+ "commscraft-sipae",
+ "zeroize",
+]
+
+[[package]]
 name = "commscraft-sip-identity"
 version = "0.0.1"
 dependencies = [
