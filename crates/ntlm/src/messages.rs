@@ -243,6 +243,33 @@ pub struct AuthenticateInput<'a> {
     /// §3.1.5.2.1 SHOULDs: omit the LM response, add MsvAvFlags/MIC (with a timestamp), channel
     /// bindings Z(16) and an empty target name. `false` reproduces the older example §4.2.4.
     pub modern: bool,
+    /// Connection-oriented NTLM (HTTP, MS-NTHT): the NEGOTIATE_MESSAGE that started the
+    /// exchange; the MIC then covers NEGOTIATE ‖ CHALLENGE ‖ AUTHENTICATE (§3.1.5.1.2). `None`
+    /// for connectionless NTLM (SIP, §3.1.5.2.1).
+    pub negotiate: Option<&'a [u8]>,
+}
+
+/// NegotiateFlags of the NEGOTIATE_MESSAGE for connection-oriented NTLM over HTTP: the required
+/// security flags (OB-43) plus REQUEST_TARGET and ALWAYS_SIGN; no DATAGRAM, no SEAL (HTTP
+/// authentication only), no VERSION (no Windows version claimed).
+pub const HTTP_NEGOTIATE: u32 = REQUIRED | flags::REQUEST_TARGET | flags::ALWAYS_SIGN;
+
+/// NEGOTIATE_MESSAGE without domain, workstation or version (§2.2.1.1, pp. 21–23).
+pub fn negotiate_message(flags: u32) -> Vec<u8> {
+    let mut m = SIGNATURE.to_vec();
+    m.extend_from_slice(&1u32.to_le_bytes());
+    m.extend_from_slice(&flags.to_le_bytes());
+    m.extend_from_slice(&[0; 16]); // DomainNameFields, WorkstationFields: empty
+    m
+}
+
+/// Connection-oriented flag choice for HTTP: what both sides offered, required flags enforced.
+pub fn choose_flags_http(offered: u32) -> Result<u32, Error> {
+    let missing = REQUIRED & !offered;
+    if missing != 0 {
+        return Err(Error::MissingFlag(missing));
+    }
+    Ok(offered & HTTP_NEGOTIATE)
 }
 
 fn put_field(
@@ -357,8 +384,12 @@ pub fn authenticate(
     let mut msg = header;
     msg.extend_from_slice(&payload);
     if with_mic {
-        // MIC = HMAC_MD5(ExportedSessionKey, CHALLENGE ‖ AUTHENTICATE) (§3.1.5.2.1).
-        let mic = hmac_md5(&exported, &[&ch.raw, &msg]);
+        // MIC = HMAC_MD5(ExportedSessionKey, [NEGOTIATE ‖] CHALLENGE ‖ AUTHENTICATE)
+        // (§3.1.5.1.2 connection-oriented, §3.1.5.2.1 connectionless).
+        let mic = match input.negotiate {
+            Some(n) => hmac_md5(&exported, &[n, &ch.raw, &msg]),
+            None => hmac_md5(&exported, &[&ch.raw, &msg]),
+        };
         if let Some(slot) = msg.get_mut(mic_at..mic_at + 16) {
             slot.copy_from_slice(&mic);
         }

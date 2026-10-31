@@ -47,6 +47,7 @@ fn input(flags: u32, modern: bool) -> AuthenticateInput<'static> {
         random_session_key: [0x55; 16],
         now_filetime: 0,
         modern,
+        negotiate: None,
     }
 }
 
@@ -224,4 +225,41 @@ fn mutated_challenges_never_panic() {
             let _ = authenticate(&ch, &input(ch.flags, true));
         }
     }
+}
+
+/// Connection-oriented NTLM (HTTP): NEGOTIATE message layout and the MIC over all three messages.
+#[test]
+fn connection_oriented_negotiate_and_mic() {
+    let neg = negotiate_message(HTTP_NEGOTIATE);
+    assert_eq!(&neg[..12], b"NTLMSSP\0\x01\0\0\0");
+    assert_eq!(
+        u32::from_le_bytes(neg[12..16].try_into().unwrap()),
+        HTTP_NEGOTIATE
+    );
+    assert_eq!(neg.len(), 32);
+    assert_eq!(HTTP_NEGOTIATE & flags::DATAGRAM, 0);
+    // A challenge with a timestamp (as built in modern_authenticate_with_mic).
+    let mut raw = hex(CHALLENGE);
+    raw.truncate(0x44);
+    let mut avs = vec![0x02, 0x00, 0x0c, 0x00];
+    avs.extend(utf16le("Domain"));
+    avs.extend([0x07, 0x00, 0x08, 0x00, 1, 2, 3, 4, 5, 6, 7, 8]);
+    avs.extend([0, 0, 0, 0]);
+    let len = u16::try_from(avs.len()).unwrap().to_le_bytes();
+    raw[0x28..0x2a].copy_from_slice(&len);
+    raw[0x2a..0x2c].copy_from_slice(&len);
+    raw.extend(&avs);
+    let ch = Challenge::parse(&raw).unwrap();
+    let flags = choose_flags_http(ch.flags).unwrap();
+    assert_eq!(flags & flags::DATAGRAM, 0);
+    let mut inp = input(flags, true);
+    inp.negotiate = Some(&neg);
+    let (msg, key) = authenticate(&ch, &inp).unwrap();
+    let mut zeroed = msg.clone();
+    zeroed[72..88].fill(0);
+    assert_eq!(
+        &msg[72..88],
+        &hmac_md5(key.as_bytes(), &[&neg, &raw, &zeroed])
+    );
+    assert_ne!(&msg[72..88], &hmac_md5(key.as_bytes(), &[&raw, &zeroed]));
 }

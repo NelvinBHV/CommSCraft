@@ -282,3 +282,101 @@ fn https_get_for_autodiscover() {
     assert!(req.contains("Accept: application/vnd.microsoft.rtc.autodiscover+xml;v=1\r\n"));
     assert!(req.contains("Connection: close\r\n"));
 }
+
+/// POST with a two-round authentication on one kept-alive TLS connection (RFC 4559 style).
+#[test]
+fn post_with_connection_bound_authentication() {
+    let Some(dir) = make_certs("auth") else {
+        eprintln!("openssl not available; skipping");
+        return;
+    };
+    let certs: Vec<CertificateDer<'static>> = CertificateDer::pem_file_iter(dir.join("leaf.pem"))
+        .unwrap()
+        .map(|c| c.unwrap())
+        .collect();
+    let key = PrivateKeyDer::from_pem_file(dir.join("leaf.key")).unwrap();
+    let config = rustls::ServerConfig::builder_with_provider(Arc::new(
+        rustls::crypto::ring::default_provider(),
+    ))
+    .with_safe_default_protocol_versions()
+    .unwrap()
+    .with_no_client_auth()
+    .with_single_cert(certs, key)
+    .unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let handle = std::thread::spawn(move || {
+        let (tcp, _) = listener.accept().unwrap();
+        let conn = rustls::ServerConnection::new(Arc::new(config)).unwrap();
+        let mut tls = rustls::StreamOwned::new(conn, tcp);
+        let mut seen = Vec::new();
+        for round in 0..2 {
+            let mut req = Vec::new();
+            let mut b = [0u8; 1];
+            while !req.ends_with(b"\r\n\r\n") {
+                tls.read_exact(&mut b).unwrap();
+                req.push(b[0]);
+            }
+            let head = String::from_utf8(req).unwrap();
+            let len: usize = head
+                .lines()
+                .find_map(|l| l.strip_prefix("Content-Length: "))
+                .unwrap()
+                .trim()
+                .parse()
+                .unwrap();
+            let mut body = vec![0u8; len];
+            tls.read_exact(&mut body).unwrap();
+            seen.push(
+                head.lines()
+                    .find(|l| l.starts_with("Authorization: "))
+                    .unwrap()
+                    .to_string(),
+            );
+            let resp = if round == 0 {
+                "HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: NTLM Q0hBTExFTkdF\r\nContent-Length: 0\r\n\r\n".to_string()
+            } else {
+                "HTTP/1.1 200 OK\r\nContent-Type: text/xml\r\nContent-Length: 2\r\n\r\nok"
+                    .to_string()
+            };
+            tls.write_all(resp.as_bytes()).unwrap();
+            tls.flush().unwrap();
+        }
+        seen
+    });
+    let client = TlsClient::with_roots(roots(&dir)).unwrap();
+    // Connect by name to the loopback address: resolve through the test's own address.
+    let url = commscraft_url::parse_https(&format!(
+        "https://{NAME}:{}/groupexpansion/service.svc",
+        addr.port()
+    ))
+    .unwrap();
+    let mut rounds = Vec::new();
+    let r = commscraft_net::http::post_with_auth_at(
+        &client,
+        addr,
+        &url,
+        &[("SOAPAction", "\"x\"")],
+        b"<x/>",
+        "CommSCraft/test",
+        Duration::from_secs(5),
+        &mut |ch| {
+            rounds.push(ch.map(str::to_string));
+            Ok(if ch.is_none() {
+                "NTLM TkVHT1RJQVRF".into()
+            } else {
+                "NTLM QVVUSA==".into()
+            })
+        },
+    )
+    .unwrap();
+    assert_eq!((r.status, r.body.as_slice()), (200, b"ok".as_slice()));
+    assert_eq!(rounds, vec![None, Some("NTLM Q0hBTExFTkdF".into())]);
+    assert_eq!(
+        handle.join().unwrap(),
+        vec![
+            "Authorization: NTLM TkVHT1RJQVRF".to_string(),
+            "Authorization: NTLM QVVUSA==".to_string()
+        ]
+    );
+}

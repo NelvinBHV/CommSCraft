@@ -38,7 +38,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 11 | Contact list (Exchange unified contact store) | MS-PRES, MS-OXWSCOS, MS-OXWSPERS | B\* | – |
 | 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | – |
 | 13 | Offline address book | MS-ABS | B\* | – |
-| 14 | Address book and distribution list search | MS-DLX | B\* | – |
+| 14 | Address book and distribution list search | MS-DLX, MS-NTHT | B\* | parts tested-offline (SearchAbEntry basic search with checked answer: `dlx`; NTLM over HTTP on a kept-alive connection: `ntlm`, `net`; CLI `/search`); distribution list expansion – |
 | 15 | Contact photos | MS-OXWSPHOTO | B | – |
 | 16 | Calendar and out-of-office state | MS-PRES (format) | T | – |
 | 17 | Instant messaging 1:1 | MS-SIPRE, MS-OCSPROT | B | tested-offline (incoming and outgoing sessions, queued text, delivery state: `im`, `session`) |

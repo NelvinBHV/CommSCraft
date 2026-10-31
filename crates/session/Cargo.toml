@@ -12,6 +12,7 @@ commscraft-sip-msg = { path = "../sip-msg" }
 commscraft-register = { path = "../register" }
 commscraft-presence = { path = "../presence" }
 commscraft-im = { path = "../im" }
+commscraft-provisioning = { path = "../provisioning" }
 
 [dev-dependencies]
 commscraft-register = { path = "../register", features = ["testing"] }

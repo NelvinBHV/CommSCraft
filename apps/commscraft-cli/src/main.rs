@@ -30,7 +30,7 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
           once, optionally sets the own state for the time of the session (--set-status), signs out.
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
-          /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
+          /search TEXT (address book)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
           --wait seconds (default 20), ends the conversation and signs out. Plain text only.
 
@@ -924,7 +924,13 @@ fn run(a: Args) -> Result<(), String> {
             user_agent: user_agent(),
             machine_name: "CommSCraft".into(),
         };
-        return interactive(conn, commscraft_session::Engine::new(ecfg, reg), a.verbose);
+        return interactive(
+            conn,
+            commscraft_session::Engine::new(ecfg, reg),
+            &tls,
+            &trust,
+            a.verbose,
+        );
     }
     let mut reg = reg;
     let mut s = Session {
@@ -1088,12 +1094,111 @@ fn im_actions(
     Ok(())
 }
 
+/// Address book search (MS-DLX SearchAbEntry, OB-44): the endpoint comes from in-band
+/// provisioning; only hosts in the user's SIP domain or a trusted domain get credentials. NTLM
+/// over HTTP per MS-NTHT (NEGOTIATE in the first request, AUTHENTICATE after the 401 with the
+/// CHALLENGE, all on one connection). Blocks the loop for at most the HTTP timeout.
+fn search(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    services: Option<&commscraft_provisioning::ServerConfiguration>,
+    query: &str,
+    verbose: bool,
+) -> Result<Vec<commscraft_dlx::Entry>, String> {
+    use commscraft_sipae::base64;
+    let body = commscraft_dlx::search_request(query).map_err(|e| format!("{e:?}"))?;
+    let c = services.ok_or("no provisioning yet (address book service unknown)")?;
+    if c.dlx_enabled == Some(false) {
+        return Err("the address book web search is disabled by the server".into());
+    }
+    let candidates: Vec<&commscraft_provisioning::ServiceUrl> = [
+        &c.dlx_internal,
+        &c.dlx_external,
+        &c.abwq_internal,
+        &c.abwq_external,
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    if candidates.is_empty() {
+        return Err("the server announced no address book web service".into());
+    }
+    let mut last = String::from("no usable service");
+    for s in candidates {
+        if !s.in_user_domain && !trust.trusts(&s.host) {
+            last = format!(
+                "{} is outside your SIP domain; add --trust-domain to use it",
+                s.host
+            );
+            continue;
+        }
+        let Some(url) = commscraft_url::parse_https(&s.url) else {
+            continue;
+        };
+        if verbose {
+            println!("  POST {} (SearchAbEntry)", s.url);
+        }
+        let negotiate =
+            commscraft_ntlm::messages::negotiate_message(commscraft_ntlm::messages::HTTP_NEGOTIATE);
+        let mut auth_err: Option<String> = None;
+        let result = commscraft_net::http::post_with_auth(
+            tls,
+            &url,
+            &[
+                ("Content-Type", commscraft_dlx::CONTENT_TYPE),
+                ("SOAPAction", commscraft_dlx::SOAP_ACTION),
+            ],
+            body.as_bytes(),
+            &user_agent(),
+            Duration::from_secs(15),
+            &mut |challenge| match challenge {
+                None => Ok(format!("NTLM {}", base64::encode(&negotiate))),
+                Some(ch) => {
+                    let token = ch
+                        .strip_prefix("NTLM ")
+                        .and_then(|b| base64::decode(b.trim()).ok());
+                    let answer = token
+                        .ok_or_else(|| "no NTLM challenge".to_string())
+                        .and_then(|t| engine.http_ntlm(&negotiate, &t, now()));
+                    match answer {
+                        Ok(a) => Ok(format!("NTLM {}", base64::encode(&a))),
+                        Err(e) => {
+                            auth_err = Some(e);
+                            Err(commscraft_net::NetError::Io(std::io::Error::other("NTLM")))
+                        }
+                    }
+                }
+            },
+        );
+        match result {
+            Ok(r) if r.status == 200 => {
+                let text = String::from_utf8(r.body).map_err(|_| "answer is not UTF-8")?;
+                return commscraft_dlx::parse_response(&text).map_err(|e| format!("{e:?}"));
+            }
+            Ok(r) if r.status == 401 => return Err("not authorized (401)".into()),
+            Ok(r) => {
+                // A SOAP fault comes with 500.
+                let text = String::from_utf8_lossy(&r.body).to_string();
+                return match commscraft_dlx::parse_response(&text) {
+                    Err(commscraft_dlx::Error::Fault(f)) => Err(format!("server fault: {f}")),
+                    _ => Err(format!("HTTP {}", r.status)),
+                };
+            }
+            Err(e) => last = auth_err.take().unwrap_or_else(|| e.to_string()),
+        }
+    }
+    Err(last)
+}
+
 /// The interactive mode on top of the session engine. Lines from the terminal arrive through a
 /// thread and a channel; network input and the clock are handled in this loop. Everything shown
 /// comes from the engine's checked events (control characters already removed).
 fn interactive(
     conn: SipConnection,
     mut engine: commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
     verbose: bool,
 ) -> Result<(), String> {
     use commscraft_session::{Command as C, Event as E, Output};
@@ -1130,6 +1235,7 @@ fn interactive(
     let mut peers: BTreeMap<u32, String> = BTreeMap::new();
     let mut current: Option<u32> = None;
     let mut quitting = false;
+    let mut services: Option<Box<commscraft_provisioning::ServerConfiguration>> = None;
     let mut outputs = engine.start(now());
     loop {
         for o in outputs.drain(..) {
@@ -1150,6 +1256,7 @@ fn interactive(
                         return Ok(());
                     }
                     E::RegistrationEnded(why) => return Err(format!("registration ended: {why}")),
+                    E::Provisioned(c) => services = Some(c),
                     E::ContactList(l) => {
                         for c in &l.contacts {
                             presence
@@ -1272,6 +1379,28 @@ fn interactive(
                     }
                 },
                 "/chat" => Some(C::StartConversation { to: arg }),
+                "/search" => {
+                    match search(&mut engine, tls, trust, services.as_deref(), &arg, verbose) {
+                        Ok(found) if found.is_empty() => println!("* nothing found"),
+                        Ok(found) => {
+                            for f in found {
+                                println!(
+                                    "  {:<40} {}  {}",
+                                    f.sip_uri.as_deref().unwrap_or("(no SIP address)"),
+                                    f.display_name.as_deref().unwrap_or(""),
+                                    [f.title, f.department, f.company, f.phone]
+                                        .into_iter()
+                                        .flatten()
+                                        .filter(|s| !s.is_empty())
+                                        .collect::<Vec<_>>()
+                                        .join(", ")
+                                );
+                            }
+                        }
+                        Err(e) => println!("* search failed: {e}"),
+                    }
+                    None
+                }
                 "/to" => {
                     match arg.parse::<u32>().ok().filter(|n| peers.contains_key(n)) {
                         Some(n) => current = Some(n),

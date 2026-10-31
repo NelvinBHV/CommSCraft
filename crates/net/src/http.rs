@@ -217,6 +217,132 @@ fn request(
     parse_response(&data)
 }
 
+/// Reads one complete response from a kept-alive connection: Content-Length or chunked framing;
+/// without either, until the server closes the connection.
+fn read_one(conn: &mut crate::SipConnection) -> Result<HttpResponse, NetError> {
+    let mut data = Vec::new();
+    let mut buf = [0u8; 16 * 1024];
+    loop {
+        if let Some(head_end) = data.windows(4).position(|w| w == b"\r\n\r\n") {
+            let head = String::from_utf8_lossy(data.get(..head_end).unwrap_or_default())
+                .to_ascii_lowercase();
+            let framed =
+                head.contains("\r\ncontent-length:") || head.contains("\r\ntransfer-encoding:");
+            if framed {
+                if let Ok(r) = parse_response(&data) {
+                    let complete = match r.header("content-length")? {
+                        Some(l) => l
+                            .parse::<usize>()
+                            .is_ok_and(|n| data.len() >= head_end + 4 + n),
+                        None => true, // chunked: parse_response only succeeds when complete
+                    };
+                    if complete {
+                        return Ok(r);
+                    }
+                }
+            }
+        }
+        match conn.tls.read(&mut buf) {
+            Ok(0) => return parse_response(&data),
+            Ok(n) => {
+                data.extend_from_slice(buf.get(..n).unwrap_or_default());
+                if data.len() > MAX_RESPONSE {
+                    return Err(bad("response too large"));
+                }
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof && !data.is_empty() => {
+                return parse_response(&data)
+            }
+            Err(e) => return Err(NetError::Io(e)),
+        }
+    }
+}
+
+/// POST with HTTP authentication on one kept-alive connection (RFC 4559 / MS-NTHT: NTLM is bound
+/// to the connection). `authorize` gets the server's challenge header value (`None` before the
+/// first request) and returns the next `Authorization` value. At most three rounds.
+#[allow(clippy::too_many_arguments)]
+pub fn post_with_auth(
+    tls: &TlsClient,
+    url: &HttpsUrl,
+    extra_headers: &[(&str, &str)],
+    body: &[u8],
+    user_agent: &str,
+    timeout: Duration,
+    authorize: &mut dyn FnMut(Option<&str>) -> Result<String, NetError>,
+) -> Result<HttpResponse, NetError> {
+    let conn = tls.connect(&url.host, url.port, timeout)?;
+    post_with_auth_on(conn, url, extra_headers, body, user_agent, authorize)
+}
+
+/// Like [`post_with_auth`], connecting to `addr` (the certificate is checked against `url.host`).
+#[allow(clippy::too_many_arguments)]
+pub fn post_with_auth_at(
+    tls: &TlsClient,
+    addr: std::net::SocketAddr,
+    url: &HttpsUrl,
+    extra_headers: &[(&str, &str)],
+    body: &[u8],
+    user_agent: &str,
+    timeout: Duration,
+    authorize: &mut dyn FnMut(Option<&str>) -> Result<String, NetError>,
+) -> Result<HttpResponse, NetError> {
+    let conn = tls.connect_addr(addr, &url.host, timeout)?;
+    post_with_auth_on(conn, url, extra_headers, body, user_agent, authorize)
+}
+
+fn post_with_auth_on(
+    mut conn: crate::SipConnection,
+    url: &HttpsUrl,
+    extra_headers: &[(&str, &str)],
+    body: &[u8],
+    user_agent: &str,
+    authorize: &mut dyn FnMut(Option<&str>) -> Result<String, NetError>,
+) -> Result<HttpResponse, NetError> {
+    let host = if url.port == 443 {
+        url.host.clone()
+    } else {
+        format!("{}:{}", url.host, url.port)
+    };
+    let safe = |s: &str| !s.chars().any(|c| c.is_control());
+    if !safe(&url.path)
+        || !safe(user_agent)
+        || extra_headers.iter().any(|(k, v)| !safe(k) || !safe(v))
+    {
+        return Err(bad("unsafe request value"));
+    }
+    let mut challenge: Option<String> = None;
+    for _ in 0..3 {
+        let auth = authorize(challenge.as_deref())?;
+        if !safe(&auth) {
+            return Err(bad("unsafe authorization value"));
+        }
+        let mut req = format!("POST {} HTTP/1.1\r\nHost: {host}\r\nUser-Agent: {user_agent}\r\nConnection: keep-alive\r\nAuthorization: {auth}\r\n", url.path);
+        for (k, v) in extra_headers {
+            req.push_str(&format!("{k}: {v}\r\n"));
+        }
+        req.push_str(&format!("Content-Length: {}\r\n\r\n", body.len()));
+        conn.tls.write_all(req.as_bytes()).map_err(NetError::Io)?;
+        conn.tls.write_all(body).map_err(NetError::Io)?;
+        conn.tls.flush().map_err(NetError::Io)?;
+        let r = read_one(&mut conn)?;
+        if r.status != 401 {
+            return Ok(r);
+        }
+        // The challenge: a WWW-Authenticate value with a token (NTLM or Negotiate).
+        challenge = r
+            .headers
+            .iter()
+            .filter(|(n, _)| n == "www-authenticate")
+            .map(|(_, v)| v.clone())
+            .find(|v| v.split_whitespace().nth(1).is_some());
+        if challenge.is_none() {
+            return Ok(r);
+        }
+    }
+    Err(bad("authentication did not complete"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -60,7 +60,7 @@ A crate may only depend on crates in lower layers.
 | L1 | `srtp` | SRTP/SSRTP per MS-SRTP |
 | L2 | `sip-core` | Transactions, dialogs, registration, provisioning, keep-alive, compression (optional) |
 | L2 | `media` | RTP/RTCP (MS-RTP), payload formats (H.264 UC, DTMF, redundancy), jitter buffer |
-| L3 | `presence`, `im`, `conf`, `telephony`, `exchange`, `webservices` | Feature protocols (MS-PRES, MS-CONFBAS/AV/IM/AS, MS-OCPSTN, EWS, UCWA, MS-DLX, MS-ABS, MS-E911WS) |
+| L3 | `presence`, `im`, `dlx`, `conf`, `telephony`, `exchange`, `webservices` | Feature protocols (MS-PRES, MS-CONFBAS/AV/IM/AS, MS-OCPSTN, EWS, UCWA, MS-DLX, MS-ABS, MS-E911WS) |
 | L4 | `session` | One signed-in account: orchestrates features, exposes commands and state |
 | L5 | `ui-egui` | Desktop user interface |
 | adapters | `net-tokio`, `audio-pipewire`, `video-*`, `rdp-*`, `gssapi` | OS and library bindings (subject to D-03) |

@@ -24,6 +24,7 @@ use std::collections::HashMap;
 
 use commscraft_im as im;
 use commscraft_presence as pres;
+use commscraft_provisioning as prov;
 use commscraft_register::keepalive::KeepAlive;
 use commscraft_register::{Deregistration, Event as RegEvent, Random, Registrar, Registration};
 use commscraft_sip_msg::dialog::{response_to, Dialog};
@@ -80,6 +81,8 @@ pub enum Event {
     SignedOut,
     /// The registration ended without the user asking (deregistered by the server, lost, failed).
     RegistrationEnded(String),
+    /// In-band provisioning arrived (RG-41): checked ServerConfiguration (web service URLs …).
+    Provisioned(Box<prov::ServerConfiguration>),
     ContactList(pres::ContactList),
     Presence(pres::ContactPresence),
     PresenceUnavailable {
@@ -153,6 +156,7 @@ enum Purpose {
     Subscribe(usize),
     Refresh(usize),
     PublishEndpoint,
+    Provisioning,
     PublishStatus(pres::UserStatus),
     Invite(ConversationId),
     Message(ConversationId),
@@ -387,6 +391,7 @@ impl<R: Random> Engine<R> {
     /// OCS-UC03: after the first registration publish the endpoint and subscribe to the contact
     /// list (the presence subscriptions follow when the list is known).
     fn bootstrap(&mut self, now: u64, out: &mut Vec<Output>) {
+        self.fetch_provisioning(now, out);
         self.publish_endpoint(now, out);
         self.subs.push(Subscription {
             kind: SubKind::ContactList,
@@ -395,6 +400,47 @@ impl<R: Random> Engine<R> {
             retry_at: None,
         });
         self.subscribe(0, now, out);
+    }
+
+    /// In-band provisioning (RG-40 … RG-43), piggybacked answer (Expires: 0).
+    fn fetch_provisioning(&mut self, now: u64, out: &mut Vec<Output>) {
+        let via = self.via();
+        let tag = self.hex(5);
+        let call_id = self.hex(16);
+        let m = prov::subscribe(&prov::Request {
+            aor: &self.cfg.aor,
+            gruu: &self.gruu,
+            epid: &self.cfg.epid,
+            from_tag: &tag,
+            call_id: &call_id,
+            cseq: 1,
+            via: &via,
+            user_agent: &self.cfg.user_agent,
+            subnet: None,
+        });
+        self.send_request(m, Purpose::Provisioning, now, out);
+    }
+
+    /// The user's SIP domain (host part of the AOR).
+    pub fn user_domain(&self) -> String {
+        self.cfg
+            .aor
+            .rsplit_once('@')
+            .map(|(_, d)| d.to_ascii_lowercase())
+            .unwrap_or_default()
+    }
+
+    /// The AUTHENTICATE_MESSAGE for NTLM over HTTP (web services); the password stays in the
+    /// registrar.
+    pub fn http_ntlm(
+        &mut self,
+        negotiate: &[u8],
+        challenge: &[u8],
+        now: u64,
+    ) -> Result<Vec<u8>, String> {
+        self.reg
+            .http_ntlm(negotiate, challenge, now)
+            .map_err(|e| format!("{e:?}"))
     }
 
     fn publish_endpoint(&mut self, now: u64, out: &mut Vec<Output>) {
@@ -1054,6 +1100,20 @@ impl<R: Random> Engine<R> {
             Purpose::PublishEndpoint => {
                 self.endpoint_versions = self.endpoint_versions.map(|v| v + 1)
             }
+            Purpose::Provisioning => match prov::from_message(resp) {
+                Ok(Some(p)) => {
+                    if let Some(g) = p.group("ServerConfiguration") {
+                        let c = prov::ServerConfiguration::from_group(g, &self.user_domain());
+                        out.push(Output::Event(Event::Provisioned(Box::new(c))));
+                    }
+                }
+                Ok(None) => out.push(Output::Event(Event::Notice(
+                    "provisioning without document".into(),
+                ))),
+                Err(e) => out.push(Output::Event(Event::Notice(format!(
+                    "unusable provisioning ({e:?})"
+                )))),
+            },
             Purpose::PublishStatus(s) => {
                 self.status_versions = self.status_versions.map(|v| v + 1);
                 out.push(Output::Event(Event::OwnStatus(s)));
@@ -1106,6 +1166,9 @@ impl<R: Random> Engine<R> {
             Purpose::PublishStatus(_) => out.push(Output::Event(Event::OwnStatusFailed(code))),
             Purpose::PublishEndpoint => out.push(Output::Event(Event::Notice(format!(
                 "endpoint publication failed ({code})"
+            )))),
+            Purpose::Provisioning => out.push(Output::Event(Event::Notice(format!(
+                "provisioning failed ({code})"
             )))),
             Purpose::Invite(id) => {
                 self.convs.remove(&id);
