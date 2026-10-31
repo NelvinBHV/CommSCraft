@@ -1314,14 +1314,41 @@ fn interactive(
                         );
                         current_call = Some(call);
                     }
-                    E::CallAnswered { call, media } => {
+                    E::CallAnswered {
+                        call,
+                        media,
+                        continues_early,
+                    } => {
                         println!("* call {call} connected ({:?})", media.codec);
                         current_call = Some(call);
                         if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
+                            let _ = h.tx.send(if continues_early {
+                                calls::ToMedia::Confirm(media)
+                            } else {
+                                calls::ToMedia::Start {
+                                    media,
+                                    controlling: outgoing.contains(&call),
+                                    early: false,
+                                }
+                            });
+                        }
+                    }
+                    // MS-SDPEXT §3.1.5.12: play what the far end sends before it answers
+                    // (announcements, ringback from a gateway); speech only after the answer.
+                    E::CallEarlyMedia { call, media } => {
+                        println!("* call {call}: early media ({:?})", media.codec);
+                        if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
                             let _ = h.tx.send(calls::ToMedia::Start {
                                 media,
-                                controlling: outgoing.contains(&call),
+                                controlling: true,
+                                early: true,
                             });
+                        }
+                    }
+                    E::CallEarlyMediaEnded { call } => {
+                        println!("* call {call}: early media ended");
+                        if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
+                            let _ = h.tx.send(calls::ToMedia::EndEarly);
                         }
                     }
                     E::CallUpdated { call, media } => {

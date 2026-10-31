@@ -1007,7 +1007,7 @@ fn outgoing_call_flow() {
         find(&out, "ACK").call_id().unwrap(),
         invite.call_id().unwrap()
     );
-    let Some(Event::CallAnswered { call: 1, media }) = events(&out).pop() else {
+    let Some(Event::CallAnswered { call: 1, media, .. }) = events(&out).pop() else {
         panic!()
     };
     assert_eq!(media.payload_type, 9);
@@ -1232,7 +1232,7 @@ fn incoming_call_flow() {
         "optional offer answered encrypted (SD-11)"
     );
     assert!(!body.contains("198.51.100.66"));
-    let Some(Event::CallAnswered { call: 1, media }) = events(&out).pop() else {
+    let Some(Event::CallAnswered { call: 1, media, .. }) = events(&out).pop() else {
         panic!()
     };
     assert_eq!(
@@ -1286,4 +1286,199 @@ fn incoming_call_cancel_and_timeout() {
         call: 2,
         status: 480
     }));
+}
+
+fn peer_sdp_ice() -> String {
+    peer_sdp(9, "RTP/SAVP")
+        + "a=ice-ufrag:PEER\r\na=ice-pwd:peerpassword0123456789ab\r\na=candidate:1 1 UDP 2130706431 198.51.100.7 7000 typ host\r\n"
+}
+
+/// MS-SDPEXT §3.1.5.12/§3.1.5.13 and RFC 3262 (SD-50, SD-51): a reliable 183 with an SDP
+/// answer starts early media and is acknowledged with PRACK (RAck, no SDP); a retransmission is
+/// not acknowledged again; the 200 of the same fork continues the early media; CSeq keeps rising.
+#[test]
+fn early_media_with_prack() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::Call {
+            to: "sip:bob@contoso.com".into(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    let supported: Vec<&str> = invite.header_values("Supported").collect();
+    assert!(supported.contains(&"100rel") && supported.contains(&"ms-early-media"));
+    assert!(
+        invite
+            .header_values("Require")
+            .all(|v| !v.contains("100rel")),
+        "SD-51"
+    );
+
+    let reliable = [("Require", "100rel"), ("RSeq", "1")];
+    let r183 = answer(
+        &mut server,
+        &invite,
+        183,
+        Some("application/sdp"),
+        &peer_sdp_ice(),
+        &reliable,
+    );
+    let out = e.on_message(&r183, NOW);
+    let prack = find(&out, "PRACK");
+    assert_eq!(prack.single("RAck").unwrap(), Some("1 1 INVITE"));
+    assert!(prack.body.is_empty(), "no SDP in PRACK");
+    assert_eq!(prack.cseq().unwrap().unwrap().number, 2);
+    assert!(
+        prack.single("To").unwrap().unwrap().contains("tag=srv1"),
+        "early dialog"
+    );
+    let ev = events(&out);
+    assert!(ev.contains(&Event::CallRinging { call: 1 }));
+    assert!(ev
+        .iter()
+        .any(|e| matches!(e, Event::CallEarlyMedia { call: 1, .. })));
+
+    // Retransmission (same RSeq): neither PRACK nor a second early media event.
+    let out = e.on_message(&r183, NOW);
+    assert!(sends(&out).iter().all(|m| m.method() != Some("PRACK")));
+    assert!(events(&out).is_empty());
+    // The next reliable 18x (RSeq 2) is acknowledged; its SDP is ignored (one answer only).
+    let r180 = answer(
+        &mut server,
+        &invite,
+        180,
+        Some("application/sdp"),
+        &peer_sdp_ice(),
+        &[("Require", "100rel"), ("RSeq", "2")],
+    );
+    let out = e.on_message(&r180, NOW);
+    assert_eq!(
+        find(&out, "PRACK").single("RAck").unwrap(),
+        Some("2 1 INVITE")
+    );
+    assert!(events(&out).is_empty());
+
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            &peer_sdp_ice(),
+            &[],
+        ),
+        NOW,
+    );
+    assert!(events(&out).iter().any(|e| matches!(
+        e,
+        Event::CallAnswered {
+            call: 1,
+            continues_early: true,
+            ..
+        }
+    )));
+    let out = e.command(Command::Hangup { call: 1 }, NOW);
+    assert!(
+        find(&out, "BYE").cseq().unwrap().unwrap().number > 3,
+        "CSeq above the PRACKs"
+    );
+}
+
+/// SD-50: no early media without ICE or for a forked call; 199 ends the early media of its fork.
+#[test]
+fn early_media_limits() {
+    let (mut e, mut server, _) = signed_in();
+    let call = |e: &mut Engine<_>| {
+        let out = e.command(
+            Command::Call {
+                to: "sip:bob@contoso.com".into(),
+                local: Box::new(media_local(40000, 7)),
+                policy: commscraft_sdp::Encryption::Required,
+            },
+            NOW,
+        );
+        find(&out, "INVITE")
+    };
+    let invite = call(&mut e);
+    // Unreliable 183 without ICE: no early media.
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            183,
+            Some("application/sdp"),
+            &peer_sdp(9, "RTP/SAVP"),
+            &[],
+        ),
+        NOW,
+    );
+    assert!(!events(&out)
+        .iter()
+        .any(|e| matches!(e, Event::CallEarlyMedia { .. })));
+    // Forked: no early media.
+    let invite2 = call(&mut e);
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite2,
+            183,
+            Some("application/sdp"),
+            &peer_sdp_ice(),
+            &[("Ms-Forking", "Active")],
+        ),
+        NOW,
+    );
+    assert!(!events(&out)
+        .iter()
+        .any(|e| matches!(e, Event::CallEarlyMedia { .. })));
+    // Unreliable 183 with ICE (gateway, PS-06): early media; 199 of that fork ends it.
+    let invite3 = call(&mut e);
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite3,
+            183,
+            Some("application/sdp"),
+            &peer_sdp_ice(),
+            &[],
+        ),
+        NOW,
+    );
+    assert!(
+        sends(&out).iter().all(|m| m.method() != Some("PRACK")),
+        "unreliable: no PRACK"
+    );
+    let id = match events(&out).iter().find_map(|e| match e {
+        Event::CallEarlyMedia { call, .. } => Some(*call),
+        _ => None,
+    }) {
+        Some(id) => id,
+        None => panic!("early media expected"),
+    };
+    let out = e.on_message(&answer(&mut server, &invite3, 199, None, "", &[]), NOW);
+    assert_eq!(events(&out), vec![Event::CallEarlyMediaEnded { call: id }]);
+}
+
+/// SD-51 / RFC 3262 §4: an INVITE that requires 100rel is refused with 420 and Unsupported.
+#[test]
+fn invite_requiring_100rel_refused() {
+    let (mut e, mut server, _) = signed_in();
+    let mut invite = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    invite.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKrel");
+    invite.push_header("From", "<sip:bob@contoso.com>;tag=bobrel");
+    invite.push_header("To", "<sip:alice@contoso.com>");
+    invite.push_header("Call-ID", "callrel");
+    invite.push_header("CSeq", "1 INVITE");
+    invite.push_header("Contact", "<sip:bob@contoso.com;opaque=user:epid:y;gruu>");
+    invite.push_header("Require", "100rel");
+    invite.push_header("Content-Type", "application/sdp");
+    invite.body = peer_sdp(9, "RTP/AVP").into_bytes();
+    let out = e.on_message(&server.sign(invite), NOW);
+    let r = sends(&out).pop().unwrap();
+    assert_eq!(r.status_code(), Some(420));
+    assert_eq!(r.single("Unsupported").unwrap(), Some("100rel"));
+    assert!(events(&out).is_empty(), "no ringing");
 }

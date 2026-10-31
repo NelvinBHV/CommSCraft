@@ -18,10 +18,17 @@ use commscraft_sdp as sdp;
 
 /// Commands to a media thread.
 pub enum ToMedia {
+    /// The answer: start the media (`early`: from a provisional response, SD-50). A second
+    /// `Start` (an answer from another fork) starts it again with the new answer.
     Start {
         media: Box<sdp::Negotiated>,
         controlling: bool,
+        early: bool,
     },
+    /// The 200 of the early media's fork: speech may start, its differences take effect.
+    Confirm(Box<sdp::Negotiated>),
+    /// 199: the early media's fork ended.
+    EndEarly,
     Update(Box<sdp::Negotiated>),
     Dtmf(char),
     Mute(bool),
@@ -43,6 +50,8 @@ pub enum FromMedia {
 pub struct MediaHandle {
     pub tx: Sender<ToMedia>,
 }
+
+const CNAME: &str = "commscraft@linux";
 
 fn now_ms() -> u64 {
     std::time::SystemTime::now()
@@ -112,12 +121,13 @@ fn run(
     let _ = events.send(FromMedia::Ready(id, Box::new(media.local_description())));
 
     // Wait for the answer (or the end of the call).
-    let (negotiated, controlling) = loop {
+    let (negotiated, controlling, early) = loop {
         match rx.recv_timeout(Duration::from_millis(20)) {
             Ok(ToMedia::Start {
                 media: n,
                 controlling,
-            }) => break (n, controlling),
+                early,
+            }) => break (n, controlling, early),
             Ok(ToMedia::Stop) | Err(mpsc::RecvTimeoutError::Disconnected) => {
                 media.stop(now_ms());
                 return;
@@ -127,11 +137,20 @@ fn run(
             }
         }
     };
-    if let Err(e) = media.start(&negotiated, controlling, "commscraft@linux", now_ms()) {
+    let started = if early {
+        media.start_early(&negotiated, CNAME, now_ms())
+    } else {
+        media.start(&negotiated, controlling, CNAME, now_ms())
+    };
+    if let Err(e) = started {
         let _ = events.send(FromMedia::Failed(id, e));
         return;
     }
     device.rate = media.sample_rate();
+    let rate = device.rate;
+    // The final offer (IC-07) is a re-INVITE: only once the call is answered.
+    let mut answered = !early;
+    let mut selected_early = false;
     let stop = Arc::new(AtomicBool::new(false));
     let (cap_tx, cap_rx) = mpsc::sync_channel::<Vec<i16>>(8);
     let (play_tx, play_rx) = mpsc::sync_channel::<Vec<i16>>(8);
@@ -143,9 +162,36 @@ fn run(
     let mut dtmf: std::collections::VecDeque<char> = std::collections::VecDeque::new();
     loop {
         let now = now_ms();
+        let mut restarted = None;
         match rx.try_recv() {
             Ok(ToMedia::Stop) | Err(mpsc::TryRecvError::Disconnected) => break,
             Ok(ToMedia::Update(n)) => media.update(&n),
+            Ok(ToMedia::Start {
+                media: n, early, ..
+            }) => {
+                restarted = Some(if early {
+                    media.start_early(&n, CNAME, now)
+                } else {
+                    media.start(&n, true, CNAME, now)
+                });
+                answered = !early;
+                final_sent = false;
+                selected_early = false;
+            }
+            Ok(ToMedia::Confirm(n)) => {
+                restarted = Some(media.confirm(&n, CNAME, now));
+                answered = true;
+                if selected_early && controlling && !final_sent {
+                    final_sent = true;
+                    if let Some(d) = media.final_description() {
+                        let _ = events.send(FromMedia::Selected(id, Box::new(d)));
+                    }
+                }
+            }
+            Ok(ToMedia::EndEarly) => {
+                media.end_early();
+                selected_early = false;
+            }
             Ok(ToMedia::Dtmf(d)) => {
                 if dtmf.len() < 32 {
                     dtmf.push_back(d);
@@ -153,7 +199,22 @@ fn run(
             }
             Ok(ToMedia::Mute(m)) => media.set_muted(m),
             Ok(ToMedia::Hold(h)) => media.set_hold(h),
-            Ok(ToMedia::Start { .. }) | Err(mpsc::TryRecvError::Empty) => {}
+            Err(mpsc::TryRecvError::Empty) => {}
+        }
+        match restarted {
+            Some(Err(e)) => {
+                let _ = events.send(FromMedia::Failed(id, e));
+                break;
+            }
+            // The devices run at the first answer's rate; another codec cannot be played.
+            Some(Ok(())) if media.sample_rate() != rate => {
+                let _ = events.send(FromMedia::Failed(
+                    id,
+                    "codec changed after early media".into(),
+                ));
+                break;
+            }
+            _ => {}
         }
         // One digit at a time; the next one when the previous has been sent (RFC 4733).
         if let Some(&d) = dtmf.front() {
@@ -171,6 +232,10 @@ fn run(
         }
         for e in media.poll(now) {
             let report = match e {
+                cm::Event::Selected if !answered => {
+                    selected_early = true;
+                    None
+                }
                 cm::Event::Selected if controlling && !final_sent => {
                     final_sent = true;
                     media

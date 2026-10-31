@@ -318,3 +318,30 @@ fn rtcp_profile() {
     }
     assert_eq!(seen, 5);
 }
+
+/// SD-50 (MS-SDPEXT §3.1.5.12.2): early media sends no speech; DTMF only after the first
+/// received packet; after the answer speech flows again.
+#[test]
+fn early_media_sends_only_dtmf_after_reception() {
+    let (mut a, mut b) = pair(sdp::Codec::Pcmu, 0);
+    a.set_early(true);
+    assert!(a.on_capture(&tone(160, 8000.0, 0)).is_none(), "no speech");
+    assert!(a.send_dtmf('5'));
+    assert!(
+        a.on_capture(&tone(160, 8000.0, 0)).is_none(),
+        "no DTMF before a packet arrived"
+    );
+    // A packet from the far end arrives (e.g. an announcement).
+    a.on_rtp(&b.on_capture(&tone(160, 8000.0, 0)).unwrap(), 0);
+    let mut digits = Vec::new();
+    let mut sent = 0;
+    while let Some(p) = a.on_capture(&tone(160, 8000.0, 0)) {
+        sent += 1;
+        digits.extend(b.on_rtp(&p, 0));
+    }
+    assert!(sent > 0);
+    assert_eq!(digits, vec!['5'], "only the DTMF packets went out");
+    // Answered: speech.
+    a.set_early(false);
+    assert!(a.on_capture(&tone(160, 8000.0, 0)).is_some());
+}

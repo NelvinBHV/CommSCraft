@@ -1,5 +1,5 @@
-//! UAC dialogs (RFC 3261 §12): created from a 2xx to a dialog-creating request (SUBSCRIBE,
-//! INVITE), used for in-dialog requests and to recognise requests of the peer in the dialog.
+//! UAC dialogs (RFC 3261 §12): created from a 2xx (or, early, a 1xx with a To tag) to a
+//! dialog-creating request (SUBSCRIBE, INVITE), used for in-dialog requests and to recognise requests of the peer in the dialog.
 //!
 //! Security by design: the route set and the remote target come from the network; every URI is
 //! checked (`sip:`/`sips:`, no characters that could break a header) and the number of routes is
@@ -37,10 +37,21 @@ fn safe_uri(u: &str) -> bool {
 impl Dialog {
     /// Creates the dialog from our request and the peer's 2xx (RFC 3261 §12.1.2).
     pub fn from_response(request: &Message, response: &Message) -> Result<Self, Error> {
-        if !response
-            .status_code()
-            .is_some_and(|c| (200..300).contains(&c))
-        {
+        Self::from_response_in(request, response, 200..300)
+    }
+
+    /// An early dialog from a provisional response with a To tag (RFC 3261 §12.1.2, §13.2.2.1):
+    /// used for PRACK (RFC 3262 §7.2); the confirmed dialog comes from the 2xx later.
+    pub fn early_from_response(request: &Message, response: &Message) -> Result<Self, Error> {
+        Self::from_response_in(request, response, 101..200)
+    }
+
+    fn from_response_in(
+        request: &Message,
+        response: &Message,
+        codes: std::ops::Range<u16>,
+    ) -> Result<Self, Error> {
+        if !response.status_code().is_some_and(|c| codes.contains(&c)) {
             return Err(Error::InvalidValue);
         }
         let call_id = request.call_id()?.ok_or(Error::InvalidValue)?;

@@ -343,3 +343,42 @@ fn tcp_write_buffer_bounded() {
     t.queue_control(&[0u8; 10]);
     assert!(t.out.is_empty());
 }
+
+/// SD-50 over real sockets: during early media A (the caller) plays B but sends no speech; after
+/// the 200 of the same fork (`confirm`) A's speech arrives.
+#[test]
+fn early_media_then_confirm() {
+    let ip: IpAddr = "127.0.0.1".parse().unwrap();
+    let t0 = now_ms();
+    let (mut a, _) = CallMedia::prepare(ip, None, t0).unwrap();
+    let (mut b, _) = CallMedia::prepare(ip, None, t0).unwrap();
+    let (na, nb) = (negotiated_from(&b), negotiated_from(&a));
+    a.start_early(&na, "a@test", t0).unwrap();
+    b.start(&nb, false, "b@test", t0).unwrap();
+    let frame: Vec<i16> = (0..320)
+        .map(|i| {
+            (8000.0 * (2.0 * std::f64::consts::PI * 1020.0 * f64::from(i) / 16000.0).sin()) as i16
+        })
+        .collect();
+    let energy = |v: Vec<i16>| v.iter().map(|&s| f64::from(s).powi(2)).sum::<f64>();
+    let run = |a: &mut CallMedia, b: &mut CallMedia, rounds: usize| {
+        let (mut at_a, mut at_b) = (0f64, 0f64);
+        for _ in 0..rounds {
+            let now = now_ms();
+            a.send_frame(&frame, now);
+            b.send_frame(&frame, now);
+            a.poll(now);
+            b.poll(now);
+            at_a += energy(a.playout());
+            at_b += energy(b.playout());
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+        (at_a, at_b)
+    };
+    let (at_a, at_b) = run(&mut a, &mut b, 400);
+    assert!(at_a > 1e9, "A hears B's early media: {at_a}");
+    assert!(at_b < 1e6, "A sends no speech before the answer: {at_b}");
+    a.confirm(&na, "a@test", now_ms()).unwrap();
+    let (_, at_b) = run(&mut a, &mut b, 60);
+    assert!(at_b > 1e9, "speech after the answer: {at_b}");
+}
