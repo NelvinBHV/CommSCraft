@@ -697,9 +697,12 @@ impl<R: Random> Engine<R> {
         id: ConversationId,
         local: sdp::Local,
         policy: sdp::Encryption,
+        language: Option<&str>,
         now: u64,
         out: &mut Vec<Output>,
     ) {
+        // CA-24: one language, no parameters – otherwise none is sent.
+        let language = language.filter(|l| conf::valid_language_tag(l));
         let av = match self.group_mut(id) {
             Some(g) if g.lobby_since.is_some() => {
                 out.push(Output::Event(Event::Notice("still in the lobby".into())));
@@ -723,7 +726,20 @@ impl<R: Random> Engine<R> {
         // SD-12: offer SRTP and client SSRTP to the MCU; it answers with one of them.
         let mut local = local;
         local.ssrtp = policy != sdp::Encryption::Off;
-        self.start_call(&av, local, policy, now, out);
+        let headers: Vec<(String, String)> = language
+            .map(|l| vec![("Accept-Language".to_string(), l.to_string())])
+            .unwrap_or_default();
+        self.start_call_with(
+            &av,
+            local,
+            policy,
+            crate::call::Extras {
+                headers: &headers,
+                part: None,
+            },
+            now,
+            out,
+        );
         if self.calls.len() > before {
             if let Some(g) = self.group_mut(id) {
                 g.av_call = Some(call);
@@ -925,6 +941,56 @@ impl<R: Random> Engine<R> {
                             av.ok_or(conf::Error::BadValue("no A/V MCU"))?,
                             &keys,
                             mute,
+                        )
+                    },
+                    now,
+                    out,
+                );
+            }
+            ConferenceAction::Announcements(enabled) => {
+                // CA-21 / [MS-CONFAV] §3.2.5.5: not modifiable ⇒ the MCU refuses anyway.
+                if roster.settings.announcements_modifiable == Some(false) {
+                    out.push(Output::Event(Event::Notice(
+                        "the announcements of this meeting cannot be changed".into(),
+                    )));
+                    return;
+                }
+                self.send_c3p(
+                    id,
+                    |r, f, focus, av| {
+                        conf::modify_conference_announcements(
+                            r,
+                            f,
+                            focus,
+                            av.ok_or(conf::Error::BadValue("no A/V MCU"))?,
+                            enabled,
+                        )
+                    },
+                    now,
+                    out,
+                );
+            }
+            ConferenceAction::DialOut { number } => {
+                // CA-23: the number as the phone URI an ordinary call would use.
+                let Some(phone) = self.phone_uri(&number) else {
+                    out.push(Output::Event(Event::Notice(
+                        "not a usable phone number".into(),
+                    )));
+                    return;
+                };
+                let mut random = [0u8; 16];
+                self.reg.fill_random(&mut random);
+                let guid = conf::guid(&random);
+                self.send_c3p(
+                    id,
+                    |r, f, focus, av| {
+                        conf::add_user_dial_out_audio(
+                            r,
+                            f,
+                            focus,
+                            av.ok_or(conf::Error::BadValue("no A/V MCU"))?,
+                            &phone,
+                            &guid,
                         )
                     },
                     now,

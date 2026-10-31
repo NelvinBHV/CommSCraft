@@ -31,6 +31,7 @@ Source: [MS-CONFAV] "Centralized Conference Control Protocol: Audio-Video Extens
 | CA-21 | **modifyConferenceAnnouncements** (enabled mandatory); only if modifiable=true, otherwise notSupported | §2.2.3.4, pp. 24–25; §3.2.5.5, p. 41 |
 | CA-22 | **modifyConference** to the AVMCU (presenters only): mediaFiltersRules (e.g. mute all participants) – **without** re-INVITE, roster change only; video-parameters (manual-switched/spotlight) from Lync 2013 | §3.2.5.6–3.2.5.6.2, pp. 41–43; <19>/<20> pp. 103–104 |
 | CA-23 | addUser dial-out to the AVMCU (e.g. add a phone number): exactly one endpoint, at most one of epid/endpoint-uri/sip-instance; the MCU sends an INVITE with an SDP offer, "pending", after 200 OK "success" | §2.2.3.1, p. 23; §3.2.5.2, p. 38; §3.2.7.1.1, p. 44 |
+| CA-24 | Announcement language: an `Accept-Language` header on the client's INVITE to the A/V MCU with **exactly one** language and **no** accept-params; the MCU plays entry and exit announcements in it if available (same effect as `languages` in an addUser dial-in) | §3.1.5.2, p. 27; §2.2.3.2.1, p. 23 |
 
 ## Conflicts / gaps
 - K-CA-1: MS-CONFBAS §3.11 (pp. 110–113) describes joining the MCU **with** a prior addUser dial-in by the client; MS-CONFAV §3.1.5.1 (p. 26) declares it **unnecessary** for A/V (implicit through the INVITE). Both paths are documented; implement the direct INVITE, explicit dial-in as a fallback (interop test).
@@ -43,3 +44,6 @@ The AVMCU URI from `conf-uris` (CA-01); joining the audio is an ordinary audio c
 
 ## Implementation (2026-10-31, presenter audio commands)
 Muting another participant: modifyEndpointMedia with that participant's keys from the roster (CA-20); muting the audience: modifyConference to the A/V MCU with audio mediaFiltersRules – attendees (role `default`) blocked and not allowed to unblock, presenters unblocked (example §4.5); unmuting restores the default rules of §3.2.3.1.1.2.2 (CA-22). Inference: the example omits the `msav` namespace declaration of `msav:type`; it is declared (CA-10 namespace). Status: tested-offline.
+
+## Implementation (2026-11-01, announcements, language, phone dial-out)
+`conf::modify_conference_announcements` after the example §4.4 (CA-21) and the announcements state (`entry-exit-announcements` enabled/modifiable) from the A/V MCU's entity-view; the session refuses locally when it is not modifiable. `conf::add_user_dial_out_audio` (CA-23): addUser to the A/V MCU with the phone URI as user entity, one endpoint (new GUID), joining-method dialed-out and an audio media element; only `sip:…;user=phone` or `tel:` URIs. `Accept-Language` on the conference audio INVITE (CA-24), checked as one RFC 5646-shaped tag; the CLI takes it from `/confaudio LANGUAGE` or the POSIX locale. Not implemented: video in conferences, languages in addUser dial-out. Status: tested-offline.

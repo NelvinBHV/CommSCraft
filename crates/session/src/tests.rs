@@ -1879,6 +1879,7 @@ fn meeting_lobby_audio_and_mute() {
             conversation,
             local: Box::new(media_local(40000, 7)),
             policy: commscraft_sdp::Encryption::Required,
+            language: None,
         },
         NOW,
     );
@@ -1911,10 +1912,18 @@ fn meeting_lobby_audio_and_mute() {
             conversation,
             local: Box::new(media_local(40000, 7)),
             policy: commscraft_sdp::Encryption::Required,
+            language: Some("de-DE".into()),
         },
         NOW,
     );
     let av_invite = find(&out, "INVITE");
+    assert_eq!(
+        av_invite
+            .header_values("Accept-Language")
+            .collect::<Vec<_>>(),
+        vec!["de-DE"],
+        "CA-24: one language for the announcements"
+    );
     assert_eq!(
         Engine::<Counter>::request_uri(&av_invite),
         Some(AVMCU),
@@ -2047,6 +2056,7 @@ fn conference_audio_final_offer_keeps_ssrtp() {
             conversation,
             local: Box::new(media_local(40000, 7)),
             policy: commscraft_sdp::Encryption::Required,
+            language: None,
         },
         NOW,
     );
@@ -3162,5 +3172,52 @@ fn meeting_options_follow_the_focus() {
     assert!(
         b.contains("<locked>true</locked>") && b.contains(">openAuthenticated<"),
         "{b}"
+    );
+}
+
+/// CA-21 / CA-23: announcements and the dial-out of a phone number go to the focus as INFO for
+/// the A/V MCU; a number that is no phone number is refused locally.
+#[test]
+fn announcements_and_dial_out_commands() {
+    let (mut e, _, focus_invite, conversation) = joined_meeting(PRESENTER_ROSTER);
+    let send = |e: &mut Engine<Counter>, action| {
+        e.command(
+            Command::ConferenceControl {
+                conversation,
+                action,
+            },
+            NOW,
+        )
+    };
+    let out = send(&mut e, ConferenceAction::Announcements(false));
+    let info = find(&out, "INFO");
+    assert_eq!(info.call_id().unwrap(), focus_invite.call_id().unwrap());
+    let b = String::from_utf8(info.body.clone()).unwrap();
+    assert!(
+        b.contains("<modifyConferenceAnnouncements")
+            && b.contains(AVMCU)
+            && b.contains("<enabled>false</enabled>")
+    );
+    let out = send(
+        &mut e,
+        ConferenceAction::DialOut {
+            number: "+49 40 123456".into(),
+        },
+    );
+    let b = String::from_utf8(find(&out, "INFO").body.clone()).unwrap();
+    assert!(
+        b.contains("+4940123456") && b.contains("user=phone") && b.contains("dialed-out"),
+        "{b}"
+    );
+    let out = send(
+        &mut e,
+        ConferenceAction::DialOut {
+            number: "not a number".into(),
+        },
+    );
+    assert!(sends(&out).is_empty());
+    assert_eq!(
+        events(&out),
+        vec![Event::Notice("not a usable phone number".into())]
     );
 }
