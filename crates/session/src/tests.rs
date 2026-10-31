@@ -957,6 +957,7 @@ fn media_local(port: u16, key_byte: u8) -> commscraft_sdp::Local {
         ice: None,
         direction: commscraft_sdp::Direction::SendRecv,
         remote_candidates: Vec::new(),
+        ssrtp: false,
     }
 }
 
@@ -1589,6 +1590,10 @@ fn meeting_lobby_audio_and_mute() {
         Engine::<Counter>::request_uri(&av_invite),
         Some(AVMCU),
         "CA-02: INVITE to the A/V MCU"
+    );
+    assert!(
+        String::from_utf8_lossy(&av_invite.body).contains("a=cryptoscale:2 client"),
+        "SD-12: SRTP and client SSRTP offered to the MCU"
     );
     let call = events(&out)
         .iter()

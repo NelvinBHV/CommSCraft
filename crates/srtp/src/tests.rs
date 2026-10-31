@@ -223,3 +223,69 @@ fn bounded_number_of_streams() {
     let extra = tx.protect_rtp(&rtp_packet(1, 999, &[0; 4]));
     assert_eq!(extra, Err(SrtpError::TooManyStreams));
 }
+
+/// One SSRTP wire packet (§2.2.1): header ‖ encrypted payload ‖ ESN ‖ MKI ‖ tag, built with the
+/// transform that reproduces the §4.2 vector.
+fn ssrtp_wire(header: &[u8], payload: &[u8], esn: u64, roc: u32) -> Vec<u8> {
+    let keys = SessionKeys::derive(&arr(MASTER_KEY), &arr(MASTER_SALT), false);
+    let p = ssrtp_protect(&keys, header, payload, esn, roc).unwrap();
+    let mut w = header.to_vec();
+    w.extend(p.encrypted_payload);
+    w.extend(&esn.to_be_bytes()[2..]);
+    w.push(1);
+    w.extend(p.tag);
+    w
+}
+
+/// [MS-SSRTP] §3.1.5.1.3.2 (SS-06): receive, then refuse tampering, replay, a wrong MKI and a
+/// header extension; ESN, MKI and tag are removed.
+#[test]
+fn ssrtp_receive() {
+    let mut rx = Context::new(&arr(MASTER_KEY), &arr(MASTER_SALT), Some(1));
+    let header = hex("80728001AE773346DE1A3236");
+    let payload = hex(PAYLOAD);
+    let wire = ssrtp_wire(&header, &payload, 0x5E1A_3236_8001, 0);
+    let plain = rx.unprotect_ssrtp(&wire).unwrap();
+    assert_eq!(&plain[..12], &header[..]);
+    assert_eq!(&plain[12..], &payload[..]);
+    assert_eq!(
+        rx.unprotect_ssrtp(&wire),
+        Err(SrtpError::Replay),
+        "same RTP index"
+    );
+    // The next packet (ESN not contiguous, §2.2.1) is accepted.
+    let next = hex("80728002AE773346DE1A3236");
+    assert!(rx
+        .unprotect_ssrtp(&ssrtp_wire(&next, &payload, 0x5E1A_3236_9001, 0))
+        .is_ok());
+    let mut bad = ssrtp_wire(
+        &hex("80728003AE773346DE1A3236"),
+        &payload,
+        0x5E1A_3236_9101,
+        0,
+    );
+    let n = bad.len();
+    bad[n - 12] ^= 1; // the ESN
+    assert_eq!(rx.unprotect_ssrtp(&bad), Err(SrtpError::Authentication));
+    let mut wrong_mki = ssrtp_wire(
+        &hex("80728004AE773346DE1A3236"),
+        &payload,
+        0x5E1A_3236_9201,
+        0,
+    );
+    wrong_mki[n - 11] = 2;
+    assert_eq!(rx.unprotect_ssrtp(&wrong_mki), Err(SrtpError::UnknownMki));
+    let with_ext = hex("90728005AE773346DE1A3236BEDE000100000000");
+    assert_eq!(
+        rx.unprotect_ssrtp(&ssrtp_wire(&hex("80728005AE773346DE1A3236"), &payload, 1, 0)[..0]),
+        Err(SrtpError::MalformedHeader)
+    );
+    let mut ext_packet = with_ext.clone();
+    ext_packet.extend(vec![0u8; 17]);
+    assert_eq!(
+        rx.unprotect_ssrtp(&ext_packet),
+        Err(SrtpError::MalformedHeader),
+        "header extension refused"
+    );
+    assert_eq!(rx.failures, 5);
+}
