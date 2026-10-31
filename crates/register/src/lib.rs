@@ -364,12 +364,15 @@ impl<R: Random> Registrar<R> {
 
     /// The AUTHENTICATE_MESSAGE for connection-oriented NTLM over HTTP (MS-NTHT; web services
     /// such as MS-DLX) with the account's credentials, which never leave the registrar.
-    /// `negotiate` is the NEGOTIATE_MESSAGE sent first, `challenge` the server's CHALLENGE.
+    /// `negotiate` is the NEGOTIATE_MESSAGE sent first, `challenge` the server's CHALLENGE,
+    /// `server_certificate` the DER certificate of the TLS connection the exchange runs on: it
+    /// binds the authentication to that connection (channel bindings, issue #42).
     pub fn http_ntlm(
         &mut self,
         negotiate: &[u8],
         challenge: &[u8],
         now: u64,
+        server_certificate: Option<&[u8]>,
     ) -> Result<Vec<u8>, Failure> {
         let ch = ntlm::Challenge::parse(challenge).map_err(Failure::Ntlm)?;
         let flags = ntlm::choose_flags_http(ch.flags).map_err(Failure::Ntlm)?;
@@ -393,6 +396,8 @@ impl<R: Random> Registrar<R> {
                     .saturating_mul(10_000_000),
                 modern: true,
                 negotiate: Some(negotiate),
+                channel_bindings: server_certificate
+                    .and_then(commscraft_ntlm::channel_binding::for_certificate),
             },
         );
         random_session_key.zeroize();
@@ -789,6 +794,8 @@ impl<R: Random> Registrar<R> {
                     .saturating_mul(10_000_000),
                 modern: !self.cfg.ntlm_legacy,
                 negotiate: None,
+                // [MS-SIPAE] defines no channel bindings for SIP: Z(16).
+                channel_bindings: None,
             },
         );
         random_session_key.zeroize();

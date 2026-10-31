@@ -305,3 +305,41 @@ fn tcp_relay_allocation_and_check() {
         "USERNAME = remote:local"
     );
 }
+
+/// Issue #42: the TCP relay's write buffer never grows beyond its bound; media is dropped, a
+/// control message that does not fit gives the relay up.
+#[test]
+fn tcp_write_buffer_bounded() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let stream = std::net::TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+    let relay = Relay {
+        server: "127.0.0.1:9".parse().unwrap(),
+        tcp_server: None,
+        username: "u".into(),
+        password: zeroize::Zeroizing::new(b"p".to_vec()),
+    };
+    let mut t = TcpRelay {
+        stream,
+        client: Box::new(turn_client(&relay, turn::Transport::Tcp)),
+        frames: turn::Deframer::default(),
+        out: Vec::new(),
+        allocated: None,
+        active: None,
+        failed: false,
+        peers: HashMap::new(),
+    };
+    for _ in 0..100 {
+        t.queue_media(&[0u8; 1500]);
+    }
+    assert!(
+        t.out.len() <= MAX_WRITE_BUFFER && !t.failed,
+        "media dropped, relay kept"
+    );
+    t.queue_control(&[0u8; 2000]);
+    assert!(
+        t.failed && t.out.is_empty(),
+        "control that does not fit: relay given up"
+    );
+    t.queue_control(&[0u8; 10]);
+    assert!(t.out.is_empty());
+}

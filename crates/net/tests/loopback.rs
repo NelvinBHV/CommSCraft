@@ -294,6 +294,7 @@ fn post_with_connection_bound_authentication() {
         .unwrap()
         .map(|c| c.unwrap())
         .collect();
+    let leaf = certs[0].as_ref().to_vec();
     let key = PrivateKeyDer::from_pem_file(dir.join("leaf.key")).unwrap();
     let config = rustls::ServerConfig::builder_with_provider(Arc::new(
         rustls::crypto::ring::default_provider(),
@@ -360,7 +361,9 @@ fn post_with_connection_bound_authentication() {
         b"<x/>",
         "CommSCraft/test",
         Duration::from_secs(5),
-        &mut |ch| {
+        &mut |ch, cert| {
+            // Issue #42: the certificate of this very connection, for NTLM channel bindings.
+            assert_eq!(cert, Some(leaf.as_slice()));
             rounds.push(ch.map(str::to_string));
             Ok(if ch.is_none() {
                 "NTLM TkVHT1RJQVRF".into()

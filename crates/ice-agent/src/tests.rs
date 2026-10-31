@@ -412,3 +412,34 @@ fn tcp_pairing_rules() {
         "no tcp-pass local pairs, no mixed transports: {pairs:?}"
     );
 }
+
+/// Issue #42: a peer cannot point checks at this host or the local link.
+#[test]
+fn loopback_and_link_local_remotes_ignored() {
+    let mut a = Agent::new(
+        true,
+        "AUFR".into(),
+        "apassword-0123456789abcdef".into(),
+        rng(9),
+    );
+    a.add_local(host("1", 1, "10.0.0.1:5000"));
+    let remote = |addr: &str| Remote {
+        foundation: addr.into(),
+        component: 1,
+        transport: Transport::Udp,
+        address: addr.parse().unwrap(),
+        priority: 1,
+    };
+    a.set_remote(
+        "X",
+        "y",
+        vec![
+            remote("127.0.0.1:7000"),
+            remote("169.254.3.4:7000"),
+            remote("[::1]:7000"),
+            remote("192.0.2.9:7000"),
+        ],
+        0,
+    );
+    assert_eq!(a.pairs.len(), 1, "only the routable candidate is paired");
+}

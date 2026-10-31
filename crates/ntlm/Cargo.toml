@@ -10,6 +10,7 @@ publish.workspace = true
 [dependencies]
 md4.workspace = true
 md-5.workspace = true
+sha2.workspace = true
 hmac.workspace = true
 zeroize.workspace = true
 

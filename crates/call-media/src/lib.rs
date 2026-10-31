@@ -119,6 +119,29 @@ struct TcpRelay {
     peers: HashMap<SocketAddr, Deframer4571>,
 }
 
+impl TcpRelay {
+    /// Media into the write buffer; dropped when the buffer is full, as UDP would lose it.
+    fn queue_media(&mut self, w: &[u8]) {
+        if !self.failed && self.out.len() + w.len() <= MAX_WRITE_BUFFER {
+            self.out.extend_from_slice(w);
+        }
+    }
+
+    /// TURN control messages: a stalled connection that cannot take them is given up (fail
+    /// closed) instead of growing the buffer or silently skipping a protocol step (issue #42).
+    fn queue_control(&mut self, w: &[u8]) {
+        if self.failed {
+            return;
+        }
+        if self.out.len() + w.len() > MAX_WRITE_BUFFER {
+            self.failed = true;
+            self.out.clear();
+        } else {
+            self.out.extend_from_slice(w);
+        }
+    }
+}
+
 enum Socket {
     Host(UdpSocket),
     Relay {
@@ -518,7 +541,7 @@ impl CallMedia {
                 agent.set_remote(&remote.ufrag, &remote.pwd, remotes, now);
                 self.ice = Some(agent);
             }
-            None => self.direct = Some((n.remote_rtp.into(), n.remote_rtcp.into())),
+            None => self.set_direct(n)?,
         }
         Ok(())
     }
@@ -527,10 +550,25 @@ impl CallMedia {
     /// direct addresses of a non-ICE peer.
     pub fn update(&mut self, n: &sdp::Negotiated) {
         if self.ice.is_none() {
-            self.direct = Some((n.remote_rtp.into(), n.remote_rtcp.into()));
+            // A refused new address keeps the old one (the call goes on as before).
+            let _ = self.set_direct(n);
         }
         self.remote_direction = n.direction;
         self.apply_direction();
+    }
+
+    /// Peer without ICE (IC-09): its default addresses, unless they point at this host or the
+    /// local link (issue #42).
+    fn set_direct(&mut self, n: &sdp::Negotiated) -> Result<(), String> {
+        let (rtp, rtcp): (SocketAddr, SocketAddr) = (n.remote_rtp.into(), n.remote_rtcp.into());
+        let ours = [self.local_ip];
+        if !commscraft_ice::usable_peer_address(rtp, &ours)
+            || !commscraft_ice::usable_peer_address(rtcp, &ours)
+        {
+            return Err("the peer's media address is not usable".into());
+        }
+        self.direct = Some((rtp, rtcp));
+        Ok(())
     }
 
     /// Our hold (`true`) or resume: RTP stops at once; the re-INVITE is the engine's job.
@@ -599,9 +637,7 @@ impl CallMedia {
                     t.client.send(to, &framed)
                 };
                 if let Some(w) = wire {
-                    if t.out.len() + w.len() <= MAX_WRITE_BUFFER {
-                        t.out.extend_from_slice(&w);
-                    }
+                    t.queue_media(&w);
                 }
             }
             None => {}
@@ -699,7 +735,7 @@ impl CallMedia {
                 }
                 Socket::Tcp(t) => {
                     if let Some(w) = t.client.close(now) {
-                        t.out.extend_from_slice(&w);
+                        t.queue_control(&w);
                     }
                 }
                 Socket::Host(_) => {}
@@ -782,7 +818,7 @@ impl CallMedia {
                 Socket::Tcp(t) => {
                     let (w, e) = t.client.on_tick(now);
                     for x in w {
-                        t.out.extend_from_slice(&x);
+                        t.queue_control(&x);
                     }
                     if e.iter().any(|e| matches!(e, turn::Event::Failed(_))) {
                         t.failed = true;
@@ -831,7 +867,7 @@ impl CallMedia {
         let (peer, bytes) = if kind == 2 {
             let (wires, evs) = t.client.on_packet(payload, now);
             for w in wires {
-                t.out.extend_from_slice(&w);
+                t.queue_control(&w);
             }
             let mut got = None;
             for e in evs {
@@ -903,7 +939,7 @@ impl CallMedia {
                             }
                             Some(Socket::Tcp(t)) if t.active.is_none() => {
                                 if let Some(w) = t.client.set_active(r, now) {
-                                    t.out.extend_from_slice(&w);
+                                    t.queue_control(&w);
                                 }
                             }
                             _ => {}
