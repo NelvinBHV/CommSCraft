@@ -1,0 +1,52 @@
+# CommSCraft roadmap
+
+**Stage: planning** · next: M0 (analysis imported, owner decisions taken), then M1 (sign-in)
+
+> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** major (first version)
+
+CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
+an on-premises Skype for Business Server. This page is the summary; the assessment is
+[`docs/target-app-parity.md`](docs/target-app-parity.md), the work list is
+[`docs/gaps.md`](docs/gaps.md), and milestones and the current focus are in
+[`docs/roadmap.md`](docs/roadmap.md).
+
+## Headline numbers (2026-10-26)
+
+| Number | Value | Kind |
+| --- | --- | --- |
+| Client functions identified | **52** | measured (analysis) |
+| Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
+| Documented conflicts between specification passages | **39** | measured (analysis) |
+| Missing sources (all IETF/ITU gaps closed or narrowed) | **18** listed, 9 closed | measured (analysis) |
+| Open points needing an interop capture or owner decision | **22** | measured (analysis) |
+| Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 192 RFCs, 20 Internet-Drafts, ITU-T G.722.1/P.562/P.800.1 | measured |
+| Program code | none | measured |
+| Owner decisions | **all taken** (D-01 … D-09; [`docs/decisions.md`](docs/decisions.md)) | measured |
+| Interop test environment | **none** (D-08): all work is `tested-offline` at best | measured |
+
+Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
+interop check; **T** partly documented; **N** not documented (or not implementable without a
+licence).
+
+The two **N** functions are RTVideo (VC-1 based, Microsoft licence and active patents) and 1:1 file
+transfer (no public specification). Neither blocks the core workflows: video uses H.264 UC, and file
+transfer can come later from interop captures.
+
+## What comes next
+
+1. **M0 – foundations** (current): import the protocol analysis into `docs/protocol/`, set up an empty Rust workspace and CI on
+   standard runners.
+2. **M1 – sign-in and registration**, **M2 – presence and IM**, **M3 – audio 1:1**,
+   **M4 – conferences and telephony**, **M5 – video**, **M6 – viewing shared screens**, **M7 – Exchange
+   integration**. Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
+
+Hours are not estimated yet; the first estimate follows once M0 has fixed the architecture.
+
+## Progress log
+
+| Date | Change |
+|---|---|
+| 2026-10-26 | D-08: no interop test environment for now (offline work only); D-09: CI only on runners without costs. |
+| 2026-10-26 | Owner decisions D-01 … D-07 taken (licence MIT OR Apache-2.0, English, pure-Rust protocol core, publication scope, codecs, target servers, egui); licence files added. |
+| 2026-10-26 | Repository restarted. Previous history (407 commits up to 2026-10-20) archived outside the repository. Project plan, agent rules and progress docs added. |
+| 2026-10-26 | Protocol analysis completed outside the repository: 52 functions mapped to specification sections; IETF/ITU sources gathered; open points checked against official Microsoft documentation, web archives, open-source implementations and patents. |
