@@ -21,13 +21,15 @@ use commscraft_sip_msg::Message;
 use commscraft_sipae::Policy;
 
 const USAGE: &str =
-    "usage: commscraft-cli sign-in|presence --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
+    "usage: commscraft-cli sign-in|presence|im --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
 [--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--ntlm-legacy] \
-[--set-status online|busy|dnd|away] [--max-contacts N] --authorized
+[--set-status online|busy|dnd|away] [--max-contacts N] [--to sip:URI --text TEXT [--wait S]] --authorized
 
 sign-in   signs in once, fetches provisioning, prints a summary and signs out.
 presence  signs in, reads the contact list, queries the presence of up to N contacts (default 50)
           once, optionally sets the own state for the time of the session (--set-status), signs out.
+im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
+          --wait seconds (default 20), ends the conversation and signs out. Plain text only.
 
 --authorized  confirms that you are allowed to test against this server (required).
 --server      SIP server; without it the server is discovered: Lync Autodiscover over HTTPS
@@ -56,12 +58,16 @@ struct Args {
     command: Command,
     set_status: Option<commscraft_presence::UserStatus>,
     max_contacts: usize,
+    to: Option<String>,
+    text: Option<String>,
+    wait: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Command {
     SignIn,
     Presence,
+    Im,
 }
 
 fn parse_args() -> Result<Args, String> {
@@ -69,6 +75,7 @@ fn parse_args() -> Result<Args, String> {
     let command = match it.next().as_deref() {
         Some("sign-in") => Command::SignIn,
         Some("presence") => Command::Presence,
+        Some("im") => Command::Im,
         _ => return Err(USAGE.into()),
     };
     let mut a = Args {
@@ -85,6 +92,9 @@ fn parse_args() -> Result<Args, String> {
         command,
         set_status: None,
         max_contacts: 50,
+        to: None,
+        text: None,
+        wait: 20,
         authorized: false,
     };
     while let Some(flag) = it.next() {
@@ -116,6 +126,9 @@ fn parse_args() -> Result<Args, String> {
                         .ok_or("--set-status: online, busy, dnd or away")?,
                 );
             }
+            "--to" => a.to = Some(value()?),
+            "--text" => a.text = Some(value()?),
+            "--wait" => a.wait = value()?.parse().map_err(|_| "--wait needs seconds")?,
             "--max-contacts" => {
                 a.max_contacts = value()?
                     .parse()
@@ -716,6 +729,22 @@ impl Session {
         dialog: &Dialog,
         secs: u64,
     ) -> Result<Option<Message>, String> {
+        let Some(m) = self.next_peer_request(reg, dialog, secs)? else {
+            return Ok(None);
+        };
+        let ok = commscraft_sip_msg::dialog::response_to(&m, 200, "OK");
+        self.send_signed(reg, ok)?;
+        Ok(Some(m))
+    }
+
+    /// The next request of the peer in `dialog` within `secs` seconds, with a valid signature
+    /// (AE-32); unsigned ones are dropped. Not answered yet.
+    fn next_peer_request(
+        &mut self,
+        reg: &mut Registrar<OsRandom>,
+        dialog: &Dialog,
+        secs: u64,
+    ) -> Result<Option<Message>, String> {
         let started = now();
         while now().saturating_sub(started) < secs {
             if let Pumped::Message(m) = self.pump(reg, self.verbose)? {
@@ -729,13 +758,31 @@ impl Session {
                     );
                     continue;
                 }
-                let mut ok = commscraft_sip_msg::dialog::response_to(&m, 200, "OK");
-                reg.sign_request(&mut ok).map_err(|e| format!("{e:?}"))?;
-                self.send(&ok)?;
                 return Ok(Some(m));
             }
         }
         Ok(None)
+    }
+
+    fn send_signed(&mut self, reg: &mut Registrar<OsRandom>, mut m: Message) -> Result<(), String> {
+        reg.sign_request(&mut m).map_err(|e| format!("{e:?}"))?;
+        self.send(&m)
+    }
+
+    /// Adds Via (new branch), Max-Forwards, Contact (GRUU) and User-Agent to an in-dialog request.
+    fn complete(&mut self, m: &mut Message) {
+        let via = self.via();
+        m.headers.insert(
+            0,
+            commscraft_sip_msg::Header {
+                name: "Via".into(),
+                value: via,
+            },
+        );
+        m.push_header("Max-Forwards", "70");
+        let contact = format!("<{}>", self.gruu);
+        m.push_header("Contact", &contact);
+        m.push_header("User-Agent", &user_agent());
     }
 
     /// Sends a signed request and waits for its final answer, which must carry a valid signature
@@ -744,6 +791,16 @@ impl Session {
         &mut self,
         reg: &mut Registrar<OsRandom>,
         req: &Message,
+    ) -> Result<Message, String> {
+        self.transact_within(reg, req, 32)
+    }
+
+    /// Like `transact`, with an own timeout (an INVITE may ring longer than a transaction).
+    fn transact_within(
+        &mut self,
+        reg: &mut Registrar<OsRandom>,
+        req: &Message,
+        secs: u64,
     ) -> Result<Message, String> {
         self.send(req)?;
         let call_id = req.call_id().ok().flatten().unwrap_or("").to_string();
@@ -754,7 +811,7 @@ impl Session {
             .map(|c| (c.number, c.method.to_string()));
         let started = now();
         loop {
-            if now().saturating_sub(started) > 32 {
+            if now().saturating_sub(started) > secs {
                 return Err(format!(
                     "no answer to {}",
                     req.method().unwrap_or("request")
@@ -907,6 +964,7 @@ fn run(a: Args) -> Result<(), String> {
             }
         }
         Command::Presence => presence_actions(&mut s, &mut reg, &a)?,
+        Command::Im => im_actions(&mut s, &mut reg, &a, local.ip())?,
     }
 
     // Phase 3: sign out.
@@ -925,6 +983,91 @@ fn run(a: Args) -> Result<(), String> {
 
 fn user_agent() -> String {
     format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"))
+}
+
+/// `im`: a 1:1 IM session (OCS-UC09): INVITE, ACK, MESSAGE, show answers and typing for
+/// `--wait` seconds, BYE. Plain text only.
+fn im_actions(
+    s: &mut Session,
+    reg: &mut Registrar<OsRandom>,
+    a: &Args,
+    local_ip: std::net::IpAddr,
+) -> Result<(), String> {
+    let to = commscraft_presence::checked_sip_uri(
+        a.to.as_deref().ok_or("im needs --to sip:user@domain")?,
+    )
+    .map_err(|_| "--to is not a usable SIP URI")?;
+    let text = a.text.clone().ok_or("im needs --text")?;
+    let mut invite = s.request("INVITE", &to);
+    commscraft_im::invite_body(&mut invite, local_ip);
+    reg.sign_request(&mut invite)
+        .map_err(|e| format!("{e:?}"))?;
+    println!("inviting {to} ...");
+    let answer = s.transact_within(reg, &invite, 60)?;
+    if answer.status_code() != Some(200) {
+        let ack = commscraft_im::ack_for_failure(&invite, &answer);
+        s.send_signed(reg, ack)?;
+        println!(
+            "the session was not accepted: {}",
+            answer.status_code().unwrap_or(0)
+        );
+        return Ok(());
+    }
+    let mut dialog =
+        Dialog::from_response(&invite, &answer).map_err(|e| format!("no usable dialog: {e:?}"))?;
+    let invite_cseq = invite.cseq().ok().flatten().map_or(1, |c| c.number);
+    let mut ack = commscraft_im::ack_for_2xx(&dialog, invite_cseq);
+    s.complete(&mut ack);
+    s.send_signed(reg, ack)?;
+    if let Err(e) = commscraft_im::check_sdp(&answer.body) {
+        println!("the peer answered with an unusable session description ({e:?}); ending");
+    } else {
+        let mut m = commscraft_im::message(&mut dialog, &text).map_err(|e| format!("{e:?}"))?;
+        s.complete(&mut m);
+        reg.sign_request(&mut m).map_err(|e| format!("{e:?}"))?;
+        let r = s.transact(reg, &m)?;
+        println!(
+            "message: {}",
+            if r.status_code() == Some(200) {
+                "delivered".to_string()
+            } else {
+                format!("answer {}", r.status_code().unwrap_or(0))
+            }
+        );
+        let until = now() + a.wait;
+        while now() < until {
+            let Some(req) = s.next_peer_request(reg, &dialog, until.saturating_sub(now()))? else {
+                break;
+            };
+            let (incoming, answer) = commscraft_im::handle_request(&req);
+            s.send_signed(reg, answer)?;
+            match incoming {
+                commscraft_im::Incoming::Text(t) => println!("{to}: {t}"),
+                commscraft_im::Incoming::Typing(true) => println!("({to} is typing)"),
+                commscraft_im::Incoming::Typing(false) => {}
+                commscraft_im::Incoming::Bye => {
+                    println!("{to} ended the conversation");
+                    return Ok(());
+                }
+                commscraft_im::Incoming::Refused(code) => {
+                    if s.verbose {
+                        eprintln!(
+                            "refused a {} with {code}",
+                            req.method().unwrap_or("request")
+                        );
+                    }
+                }
+            }
+        }
+    }
+    let mut bye = dialog.request("BYE");
+    s.complete(&mut bye);
+    reg.sign_request(&mut bye).map_err(|e| format!("{e:?}"))?;
+    match s.transact(reg, &bye) {
+        Ok(r) => println!("conversation ended ({})", r.status_code().unwrap_or(0)),
+        Err(e) => eprintln!("ending the conversation: {e}"),
+    }
+    Ok(())
 }
 
 /// One one-time presence query (PR-17). `target` is the Request-URI: the own AOR or a pool

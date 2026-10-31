@@ -36,6 +36,7 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 | `commscraft-net` | adapter | TLS client (rustls + ring, system trust store, optional enterprise CA), blocking SIP connection over the bounded decoder, OS random source, HTTPS GET for Autodiscover, DNS SRV client | CON-01…CON-04, CON-11, AD-02…AD-04, [SFB-TLS] |
 | `commscraft-cli` | app | Owner's interop tool: discovery (Autodiscover, DNS SRV), sign in, keep-alive, provisioning summary, sign out; `--discover-only`; `--authorized` required | IT-16, IT-19 |
 | `commscraft-presence` | L3 | Enhanced presence: publish own userState, batch presence queries (multipart/RLMI/categories), roaming contact list | PR-05, PR-10…PR-17, PR-30…PR-36, SIP-01/02/04/07, K-PR-1 |
+| `commscraft-im` | L3 | 1:1 IM: message-session SDP (offer/check), ACK for 2xx and failures, MESSAGE, typing INFO, handling of the peer's requests (plain text only) | OCS-UC09, CI-02, OB-16 |
 | `commscraft-xml` | L0 | Bounded XML reader without DTD/entities, namespaces, explicit stack | docs/security.md |
 | `commscraft-provisioning` | L3 | Provisioning SUBSCRIBE, `provisionGroupList` parser, validated ServerConfiguration (HTTPS URLs with domain check, SIP URIs, port ranges) | RG-40…RG-44, K-RG-4 |
 | `commscraft-psom` | L3 | PSOM GenericInt, String, RPC frame | PO-04, PO-05, K-PO-2, K-PO-3 |

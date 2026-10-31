@@ -63,6 +63,7 @@ name = "commscraft-cli"
 version = "0.0.1"
 dependencies = [
  "commscraft-discovery",
+ "commscraft-im",
  "commscraft-net",
  "commscraft-presence",
  "commscraft-provisioning",
@@ -84,6 +85,14 @@ dependencies = [
 [[package]]
 name = "commscraft-ice"
 version = "0.0.1"
+
+[[package]]
+name = "commscraft-im"
+version = "0.0.1"
+dependencies = [
+ "commscraft-sip-msg",
+ "commscraft-xml",
+]
 
 [[package]]
 name = "commscraft-net"
