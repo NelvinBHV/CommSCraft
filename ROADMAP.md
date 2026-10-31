@@ -16,11 +16,11 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **10** tested-offline as a whole, **13** in parts, **27** not started, 2 not planned/needs captures | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Implementation status of the 52 functions | **10** tested-offline as a whole, **14** in parts, **26** not started, 2 not planned/needs captures | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **53** / **19** (16 closed or no evidence problem) / **25** (22 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
-| Owner test cases | **30** (IT-01 … IT-30, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
+| Owner test cases | **31** (IT-01 … IT-31, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **32 crates + 1 app** (`commscraft-cli`), **286 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **32 crates + 1 app** (`commscraft-cli`), **289 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **none** (D-08): all work is `tested-offline` at best | measured |
 
@@ -36,7 +36,7 @@ transfer can come later from interop captures.
 
 1. **M3 – audio 1:1** (built): the owner's first calls (IT-23 … IT-29); remaining optional
    parts in [`docs/gaps.md`](docs/gaps.md).
-2. **M4 – conferences and telephony** (current): meetings with audio (incl. SSRTP reception) and presenter commands are in; next telephony (PSTN, transfer, forwarding, park), scheduling, E911, QoE.
+2. **M4 – conferences and telephony** (current): meetings with audio (incl. SSRTP reception) and presenter commands and PSTN calling are in; next transfer, forwarding, park, scheduling, E911, QoE.
 3. **M5 – video**, **M6 – viewing shared screens**,
    **M7 – Exchange integration**; the graphical interface (egui, D-07) is not yet in a milestone.
    Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-10-31 | PSTN calling (MS-OCPSTN): dial strings with the location profile as phone-context (from provisioning) or E.164, caller number from the asserted identity, gateway and anonymous callers, call back, 605 for loop calls while ringing, Content-ID/ms-accepted-content-id; CLI `/call <number>`, `/callback N`; interop test IT-31. |
 | 2026-10-31 | Presenter commands: admit/deny from the lobby, roles, lock, remove, mute a participant, mute the audience (setLobbyAccess, modifyUserRoles, modifyConferenceLock, deleteUser, modifyEndpointMedia, modifyConference mediaFiltersRules); refusals reported; CLI commands. |
 | 2026-10-31 | SSRTP reception from the A/V MCU: `a=cryptoscale` client offer, server answer evaluated, MS-SSRTP receive transform (authenticated block, ESN IV, replay by RTP index); SSRTCP as SRTCP. |
 | 2026-10-31 | M4 start – meetings: join by focus URI or meeting link (join manager document), lobby (lobby-capable, wait, admission, timeout), A/V MCU URI, conference audio as SRTP call to the A/V MCU, participants' audio state, muting ourselves (modifyEndpointMedia); CLI `/join` with links, `/confaudio`, `/confmute`; interop test IT-30; feature matrix 10/13/27. |

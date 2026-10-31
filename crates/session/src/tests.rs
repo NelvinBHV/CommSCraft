@@ -1791,3 +1791,177 @@ fn attendees_cannot_control() {
         vec![Event::Notice("only presenters can do that".into())]
     );
 }
+
+fn provision(e: &mut Engine<Counter>, server: &mut Server, out: &[Output], doc: &str) {
+    let sub = sends(out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    e.on_message(
+        &answer(
+            server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            doc,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+}
+
+/// PS-01 / RE-40: dial strings become SIP URIs – global numbers directly, local ones with the
+/// location profile as phone-context (the user's profile wins), `dialstring` without one.
+#[test]
+fn phone_numbers() {
+    let (mut e, mut server, out) = signed_in();
+    assert_eq!(
+        e.phone_uri("+49 (40) 123-456").as_deref(),
+        Some("sip:+4940123456@contoso.com;user=phone")
+    );
+    assert_eq!(
+        e.phone_uri("0401234").as_deref(),
+        Some("sip:0401234;phone-context=dialstring@contoso.com;user=phone")
+    );
+    assert_eq!(
+        e.phone_uri("*55#").as_deref(),
+        Some("sip:*55%23;phone-context=dialstring@contoso.com;user=phone")
+    );
+    for bad in [
+        "",
+        "abc",
+        "+",
+        "+1234567890123456",
+        "12;x",
+        "sip:bob@contoso.com",
+        "+49*1",
+    ] {
+        assert_eq!(e.phone_uri(bad), None, "{bad}");
+    }
+    let doc = r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="ServerConfiguration"><ucLocationProfile>DefaultProfile</ucLocationProfile></provisionGroup><provisionGroup name="userSetting"><ucUserLocationProfile>Redmond.contoso.com</ucUserLocationProfile></provisionGroup></provisionGroupList>"#;
+    provision(&mut e, &mut server, &out, doc);
+    let uri = e.phone_uri("1234").unwrap();
+    assert_eq!(
+        uri,
+        "sip:1234;phone-context=Redmond.contoso.com@contoso.com;user=phone"
+    );
+    let out = e.command(
+        Command::Call {
+            to: uri.clone(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    assert_eq!(Engine::<Counter>::request_uri(&invite), Some(uri.as_str()));
+    let body = String::from_utf8_lossy(&invite.body).to_string();
+    assert!(
+        body.contains("Content-ID: <audio-ice19@commscraft>"),
+        "PS-09"
+    );
+}
+
+/// An unsafe profile name from provisioning is rejected, not used.
+#[test]
+fn unsafe_location_profile_rejected() {
+    let doc = r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="ServerConfiguration"><ucLocationProfile>a@b;c</ucLocationProfile></provisionGroup></provisionGroupList>"#;
+    let p = commscraft_provisioning::parse(doc).unwrap();
+    let c = commscraft_provisioning::ServerConfiguration::from_group(
+        p.group("ServerConfiguration").unwrap(),
+        "contoso.com",
+    );
+    assert_eq!(c.location_profile, None);
+    assert!(c.rejected.contains(&"ucLocationProfile".to_string()));
+}
+
+/// PS-05 (605 for a loop call while ringing), PS-02/PS-04/PS-07 (asserted number, gateway,
+/// anonymous), PS-09 (ms-accepted-content-id names the answered part).
+#[test]
+fn pstn_incoming_calls() {
+    let (mut e, mut server, _) = signed_in();
+    let gw_invite = |server: &mut Server, call_id: &str, from: &str, extra: &[(&str, &str)]| {
+        let mut m = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+        m.push_header(
+            "Via",
+            &format!("SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bK{call_id}"),
+        );
+        m.push_header("From", &format!("<{from}>;tag=gw{call_id}"));
+        m.push_header("To", "<sip:alice@contoso.com>");
+        m.push_header("Call-ID", call_id);
+        m.push_header("CSeq", "1 INVITE");
+        m.push_header(
+            "Contact",
+            "<sip:gw.contoso.com:5068;transport=tls>;isGateway",
+        );
+        for (k, v) in extra {
+            m.push_header(k, v);
+        }
+        m.push_header("Content-Type", "multipart/alternative;boundary=\"b\"");
+        m.body = format!("--b\r\nContent-Type: application/sdp\r\nContent-ID: <gw-part-1@gw.contoso.com>\r\n\r\n{}\r\n--b--\r\n", peer_sdp(9, "RTP/AVP")).into_bytes();
+        server.sign(m)
+    };
+    let out = e.on_message(
+        &gw_invite(
+            &mut server,
+            "pstn1",
+            "sip:+4940555@contoso.com;user=phone",
+            &[("P-Asserted-Identity", "<tel:+4940555>")],
+        ),
+        NOW,
+    );
+    assert_eq!(sends(&out).pop().unwrap().status_code(), Some(180));
+    let who = e.caller(1).unwrap();
+    assert_eq!(
+        (who.number.as_deref(), who.gateway, who.anonymous),
+        (Some("+4940555"), true, false)
+    );
+    assert_eq!(
+        e.callback_uri(1).as_deref(),
+        Some("sip:+4940555@contoso.com;user=phone")
+    );
+
+    // A loop call while call 1 rings: 605.
+    let out = e.on_message(
+        &gw_invite(
+            &mut server,
+            "pstn2",
+            "sip:+4940666@contoso.com;user=phone",
+            &[("Ms-Call-Source", "ms-rtc")],
+        ),
+        NOW,
+    );
+    assert_eq!(sends(&out).pop().unwrap().status_code(), Some(605));
+
+    // Anonymous caller: shown so, no call back.
+    e.on_message(
+        &gw_invite(
+            &mut server,
+            "pstn3",
+            "sip:anonymous@contoso.com;user=phone",
+            &[],
+        ),
+        NOW,
+    );
+    let anon = e.caller(2).unwrap();
+    assert!(anon.anonymous);
+    assert_eq!(e.callback_uri(2), None);
+
+    // Answering call 1 names the accepted part.
+    let out = e.command(
+        Command::AcceptCall {
+            call: 1,
+            local: Box::new(media_local(42000, 3)),
+            policy: commscraft_sdp::Encryption::Optional {
+                allow_plaintext: true,
+            },
+        },
+        NOW,
+    );
+    let ok = sends(&out).pop().unwrap();
+    assert_eq!(ok.status_code(), Some(200));
+    assert_eq!(
+        ok.single("ms-accepted-content-id").unwrap(),
+        Some("<gw-part-1@gw.contoso.com>")
+    );
+}

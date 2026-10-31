@@ -8,6 +8,11 @@
 //! (no renegotiation of keys); RFC 3261 §9 (CANCEL), §13–§15 (INVITE, re-INVITE, BYE);
 //! draft-ietf-mmusic-ice-19 §9.1.2.2 (final offer with remote-candidates).
 //!
+//! Telephony (PS-01 … PS-09): [MS-OCPSTN] 20250520 §3.2 (phone-context, call back with the
+//! P-Asserted-Identity, pp. 16–17), §3.3 (605 while ringing, p. 18), §3.5 (anonymous, p. 20),
+//! §3.1 (`isGateway`, p. 16), §3.7 (Content-ID / ms-accepted-content-id, p. 21); RFC 3966 §5.1.4/
+//! §5.1.5 (global and local numbers), RFC 3261 §19.1.1 (`user=phone`, escaping), RFC 3325 (PAI).
+//!
 //! Early media as the caller (SD-50, SD-51): [MS-SDPEXT] §3.1.5.12–3.1.5.13 (pp. 28–30),
 //! RFC 3262 (100rel, PRACK with RAck, RSeq order), RFC 3261 §12.1.2 (early dialogs), [MS-SIPRE]
 //! `Ms-Forking`, draft-ietf-sip-199-01 (199 ends an early dialog); `Supported: ms-early-media`
@@ -64,6 +69,19 @@ pub(crate) struct Call {
     pub early_media: Option<String>,
     /// A provisional response carried `Ms-Forking` (MS-SIPRE).
     pub forked: bool,
+    /// Content-ID of the offer part we answer (PS-09: copied to ms-accepted-content-id).
+    pub content_id: Option<String>,
+}
+
+/// The caller of an incoming call as far as the signalling tells (PS-02, PS-04, PS-07).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Caller {
+    /// The asserted SIP identity, otherwise the From URI.
+    pub uri: String,
+    pub number: Option<String>,
+    pub anonymous: bool,
+    /// The call comes from a PSTN gateway (`isGateway`).
+    pub gateway: bool,
 }
 
 /// Most early dialogs (forks) tracked per call.
@@ -91,6 +109,29 @@ fn to_tag(m: &Message) -> Option<String> {
 /// `multipart/alternative` / `multipart/mixed` body (MS-SIPRE §3.15.5.1: ICE-19 is last). Only
 /// SDPs with an `m=audio` line count.
 pub(crate) fn audio_sdp(m: &Message) -> Option<Vec<u8>> {
+    audio_sdp_part(m).map(|(b, _)| b)
+}
+
+/// Like [`audio_sdp`], with the part's Content-ID (PS-09) if it is a safe header value.
+pub(crate) fn audio_sdp_part(m: &Message) -> Option<(Vec<u8>, Option<String>)> {
+    // The header value is the Content-ID in angle brackets (MS-OCPSTN §2.2.7 example; RFC 2045
+    // §7); the ID itself must be printable without brackets or white space.
+    let safe = |id: &Option<String>| {
+        id.as_ref()
+            .map(|s| {
+                s.trim()
+                    .trim_start_matches('<')
+                    .trim_end_matches('>')
+                    .to_string()
+            })
+            .filter(|s| {
+                !s.is_empty()
+                    && s.len() <= 256
+                    && s.chars()
+                        .all(|c| c.is_ascii_graphic() && !"<>\"".contains(c))
+            })
+            .map(|s| format!("<{s}>"))
+    };
     let ct = m.single("Content-Type").ok().flatten()?.to_string();
     let lower = ct.to_ascii_lowercase();
     let has_audio = |b: &[u8]| {
@@ -99,7 +140,7 @@ pub(crate) fn audio_sdp(m: &Message) -> Option<Vec<u8>> {
             .is_some_and(|s| s.media.iter().any(|x| x.kind == "audio"))
     };
     if lower.starts_with("application/sdp") {
-        return has_audio(&m.body).then(|| m.body.clone());
+        return has_audio(&m.body).then(|| (m.body.clone(), None));
     }
     if !lower.starts_with("multipart/") {
         return None;
@@ -110,7 +151,7 @@ pub(crate) fn audio_sdp(m: &Message) -> Option<Vec<u8>> {
     for p in parts.iter().take(8) {
         let pct = p.content_type.to_ascii_lowercase();
         if pct.starts_with("application/sdp") && has_audio(p.body.as_bytes()) {
-            found = Some(p.body.as_bytes().to_vec());
+            found = Some((p.body.as_bytes().to_vec(), safe(&p.content_id)));
         } else if pct.starts_with("multipart/alternative") {
             // 3-level structure: multipart/mixed ⊃ multipart/alternative ⊃ SDPs.
             let inner = pres::boundary(&p.content_type)
@@ -122,7 +163,7 @@ pub(crate) fn audio_sdp(m: &Message) -> Option<Vec<u8>> {
                     .starts_with("application/sdp")
                     && has_audio(q.body.as_bytes())
                 {
-                    found = Some(q.body.as_bytes().to_vec());
+                    found = Some((q.body.as_bytes().to_vec(), safe(&q.content_id)));
                 }
             }
         }
@@ -172,7 +213,8 @@ impl<R: Random> Engine<R> {
             &format!("multipart/alternative;boundary=\"{BOUNDARY}\""),
         );
         m.body = format!(
-            "--{BOUNDARY}\r\nContent-Type: application/sdp\r\nContent-Transfer-Encoding: 7bit\r\nContent-Disposition: session; handling=optional\r\n\r\n{offer}\r\n--{BOUNDARY}--\r\n"
+            // PS-09: every SDP part of an offer has a Content-ID.
+            "--{BOUNDARY}\r\nContent-Type: application/sdp\r\nContent-Transfer-Encoding: 7bit\r\nContent-ID: <audio-ice19@commscraft>\r\nContent-Disposition: session; handling=optional\r\n\r\n{offer}\r\n--{BOUNDARY}--\r\n"
         )
         .into_bytes();
         let id = self.next_call;
@@ -191,6 +233,7 @@ impl<R: Random> Engine<R> {
                 early: Vec::new(),
                 early_media: None,
                 forked: false,
+                content_id: None,
             },
         );
         self.send_request(m, Purpose::CallInvite(id), now, out);
@@ -205,6 +248,114 @@ impl<R: Random> Engine<R> {
             if let Some(c) = self.calls.get_mut(&id) {
                 c.invite = p.request.clone();
             }
+        }
+    }
+
+    /// A dial string as SIP URI (PS-01): visual separators removed; `+` and 1–15 digits is a
+    /// global number (`sip:+…@domain;user=phone`); anything else is a local number with the
+    /// location profile – or `dialstring` without one – as phone-context, which the server
+    /// normalises with its dial plan (no client-side rules needed). `#` is escaped (RFC 3261
+    /// §19.1.2). `None` for anything that is not a dial string.
+    pub fn phone_uri(&self, dial: &str) -> Option<String> {
+        let d = dial.trim();
+        let d = d.strip_prefix("tel:").unwrap_or(d);
+        let cleaned: String = d.chars().filter(|c| !" -.()/".contains(*c)).collect();
+        let (plus, digits) = match cleaned.strip_prefix('+') {
+            Some(r) => (true, r),
+            None => (false, cleaned.as_str()),
+        };
+        if digits.is_empty()
+            || digits.len() > 32
+            || !digits
+                .chars()
+                .all(|c| c.is_ascii_digit() || c == '*' || c == '#')
+        {
+            return None;
+        }
+        let domain = self.user_domain();
+        if plus && digits.len() <= 15 && digits.chars().all(|c| c.is_ascii_digit()) {
+            return Some(format!("sip:+{digits}@{domain};user=phone"));
+        }
+        if plus {
+            return None;
+        }
+        let context = self.location_profile.as_deref().unwrap_or("dialstring");
+        let number = digits.replace('#', "%23");
+        Some(format!(
+            "sip:{number};phone-context={context}@{domain};user=phone"
+        ))
+    }
+
+    /// Who is calling (PS-02, PS-04, PS-07): the asserted identity of a ringing call if the server
+    /// gave one, its phone number, whether the caller is anonymous and whether a gateway calls.
+    pub fn caller(&self, id: CallId) -> Option<Caller> {
+        let c = self.calls.get(&id)?;
+        let asserted = c
+            .invite
+            .header_values("P-Asserted-Identity")
+            .flat_map(|v| v.split(','))
+            .filter_map(|v| {
+                let v = v.trim();
+                let inner = v
+                    .split_once('<')
+                    .and_then(|(_, r)| r.split_once('>'))
+                    .map(|(u, _)| u)
+                    .unwrap_or(v);
+                let inner = inner.trim();
+                if inner.starts_with("tel:") {
+                    let n = inner.trim_start_matches("tel:").split(';').next()?;
+                    (n.len() <= 32 && n.chars().all(|c| c.is_ascii_digit() || "+*#".contains(c)))
+                        .then(|| format!("tel:{n}"))
+                } else {
+                    pres::checked_sip_uri(inner).ok()
+                }
+            })
+            .take(2)
+            .collect::<Vec<_>>();
+        let sip = asserted.iter().find(|u| u.starts_with("sip:")).cloned();
+        let number = asserted
+            .iter()
+            .find_map(|u| u.strip_prefix("tel:").map(str::to_string))
+            .or_else(|| {
+                let u = sip.as_deref().unwrap_or(&c.peer);
+                u.contains(";user=phone")
+                    .then(|| {
+                        u.trim_start_matches("sip:")
+                            .split(['@', ';'])
+                            .next()
+                            .unwrap_or("")
+                            .to_string()
+                    })
+                    .filter(|n| !n.is_empty())
+            });
+        let from = c.peer.to_ascii_lowercase();
+        let anonymous = from.starts_with("sip:anonymous@") || from.contains("anonymous.invalid");
+        let gateway = c
+            .invite
+            .header_values("Contact")
+            .any(|v| v.to_ascii_lowercase().contains(";isgateway"));
+        Some(Caller {
+            uri: sip.unwrap_or_else(|| c.peer.clone()),
+            number,
+            anonymous,
+            gateway,
+        })
+    }
+
+    /// The address to call back (PS-02): the asserted SIP identity as it is; an asserted `tel:`
+    /// number as phone URI; otherwise the From URI. Anonymous callers cannot be called back.
+    pub fn callback_uri(&self, id: CallId) -> Option<String> {
+        let who = self.caller(id)?;
+        if who.anonymous {
+            return None;
+        }
+        let c = self.calls.get(&id)?;
+        if who.uri != c.peer {
+            return Some(who.uri);
+        }
+        match who.number {
+            Some(n) if !c.peer.contains(";user=phone") => self.phone_uri(&n).or(Some(who.uri)),
+            _ => Some(who.uri),
         }
     }
 
@@ -555,6 +706,18 @@ impl<R: Random> Engine<R> {
             self.send_plain(r, now, out);
             return;
         }
+        // PS-05: a loop call (Ms-Call-Source) while another call rings here is refused.
+        if req.single("Ms-Call-Source").ok().flatten().is_some()
+            && self
+                .calls
+                .values()
+                .any(|c| matches!(c.state, CallState::Ringing { .. }))
+        {
+            let r = response_to(req, 605, "Rejected");
+            self.send_plain(r, now, out);
+            return;
+        }
+        let content_id = audio_sdp_part(req).and_then(|(_, id)| id);
         let tag = self.hex(5);
         let Ok(dialog) = Dialog::from_request(req, &tag) else {
             let r = response_to(req, 400, "Bad Request");
@@ -592,6 +755,7 @@ impl<R: Random> Engine<R> {
                 early: Vec::new(),
                 early_media: None,
                 forked: false,
+                content_id,
             },
         );
         Self::call_event(out, Event::IncomingCall { call: id, from });
@@ -627,6 +791,10 @@ impl<R: Random> Engine<R> {
                     ok.push_header("Record-Route", rr);
                 }
                 ok.push_header("Contact", &format!("<{}>", self.gruu));
+                // PS-09: name the offer part we answer.
+                if let Some(cid) = c.content_id.clone() {
+                    ok.push_header("ms-accepted-content-id", &cid);
+                }
                 ok.push_header("Content-Type", "application/sdp");
                 ok.body = body.into_bytes();
                 self.send_plain(ok, now, out);

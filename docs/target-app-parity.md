@@ -57,7 +57,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 30 | DTMF, redundancy | MS-DTMF, MS-RTPRADEX | B | parts tested-offline (DTMF per RFC 4733 within MS-DTMF, sending and receiving, CLI `/dtmf`: `rtp`, `media`, `call-media`); redundancy (MS-RTPRADEX) – |
 | 31 | Picture control (freeze/refresh) | MS-XMLMC | B | – |
 | 32 | Bandwidth management (call admission control) | MS-ICE2BWM, MS-TURNBWM | B | parts tested-offline (Check/Commit/Update attributes and responses, path rules: `turn-bwm`; bandwidth requests on the TURN allocation: `turn`; refused sites, 274/275: `ice-agent`; audio calls: check while gathering as the callee, commit, updates, cancel, policy bandwidth to the peer: `call-media`, CLI with `enableBWPolicyCheck`); video streams, PSTN failover – |
-| 33 | PSTN telephony | MS-OCPSTN, MS-SIPRE | B | – |
+| 33 | PSTN telephony | MS-OCPSTN, MS-SIPRE | B | parts tested-offline (dialling numbers with the location profile as phone-context, E.164, incoming gateway calls with asserted number, anonymous callers, call back, 605 loop rejection, Content-ID/ms-accepted-content-id, early media from gateways: `session`, `provisioning`, CLI `/call 0401234` `/callback`); media bypass, client-side dial rules – |
 | 34 | Forwarding, simultaneous ring, team and delegate calls | MS-SIPRE, MS-PRES | B | – |
 | 35 | Hold, music on hold | MS-SDPEXT, MS-SIPRE | B | parts tested-offline (hold/resume re-INVITE with inactive/sendrecv and `+sip.rendering="no"`, incoming hold and music on hold recognised, no RTP while held: `session`, `sdp`, `media`, `call-media`; CLI `/hold` `/resume`); streaming our own music on hold – |
 | 36 | Call transfer | MS-SIPAE, MS-SIPRE | B\* | – |
@@ -78,4 +78,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **10** tested-offline as a whole, **13** in parts, **27** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).
+**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **10** tested-offline as a whole, **14** in parts, **26** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).
