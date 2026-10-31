@@ -202,9 +202,13 @@ impl Playback {
         Ok(())
     }
 
-    /// Plays out what is queued.
+    /// Plays out what is queued. The device stays usable: `snd_pcm_drain` leaves the PCM in the
+    /// SETUP state, where a further write fails with EBADFD that `snd_pcm_recover` cannot repair,
+    /// so it is prepared again (ALSA library reference, PCM state machine: drain → SETUP,
+    /// prepare → PREPARED).
     pub fn drain(&mut self) -> Result<(), Error> {
-        self.pcm.drain().map_err(dev)
+        self.pcm.drain().map_err(dev)?;
+        self.pcm.prepare().map_err(dev)
     }
 }
 

@@ -4,7 +4,9 @@
 //!
 //! Security by design: devices are opened only for an answered call and closed when it ends;
 //! every queue between threads is bounded (frames are dropped, never buffered without limit);
-//! the relay password is handed to the media thread once and zeroised there.
+//! the relay password is handed to the media thread once and zeroised there. A missing or
+//! failing microphone or speaker does not end the call: the call goes on with silence or without
+//! sound, and the user is told (a call is never hung up because of a local device).
 
 use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -44,6 +46,8 @@ pub enum FromMedia {
     Selected(u32, Box<sdp::Local>),
     Dtmf(u32, char),
     Failed(u32, String),
+    /// Something the user should know that does not end the call (a missing audio device).
+    Notice(u32, String),
     PeerBye(u32),
 }
 
@@ -279,21 +283,47 @@ fn spawn_capture(
     id: u32,
 ) {
     std::thread::spawn(move || {
-        let mut mic = match alsa::Capture::open(&device) {
-            Ok(m) => m,
-            Err(e) => {
-                let _ = events.send(FromMedia::Failed(id, format!("microphone: {e}")));
-                return;
-            }
-        };
         let mut frame = Vec::new();
-        while !stop.load(Ordering::Relaxed) {
-            if mic.read_frame(&mut frame).is_err() {
-                break;
+        match alsa::Capture::open(&device) {
+            Ok(mut mic) => {
+                while !stop.load(Ordering::Relaxed) {
+                    if let Err(e) = mic.read_frame(&mut frame) {
+                        let _ = events.send(FromMedia::Notice(
+                            id,
+                            format!("microphone stopped ({e}); sending silence"),
+                        ));
+                        break;
+                    }
+                    let _ = tx.try_send(frame.clone());
+                }
             }
-            let _ = tx.try_send(frame.clone());
+            Err(e) => {
+                let _ = events.send(FromMedia::Notice(
+                    id,
+                    format!("no microphone ({e}); sending silence"),
+                ));
+            }
+        }
+        // Without a microphone the call goes on: silence in the packet rhythm keeps the media
+        // flowing for the peer (the speaker side is unaffected).
+        let silence = silence_frame(&device);
+        let pace = Duration::from_millis(u64::from(device.frame_ms.max(1)));
+        while !stop.load(Ordering::Relaxed) {
+            let _ = tx.try_send(silence.clone());
+            std::thread::sleep(pace);
         }
     });
+}
+
+/// One frame of silence for the device's rate and packet time (`rate × frame_ms / 1000`
+/// samples, bounded by one second of audio).
+fn silence_frame(device: &alsa::Config) -> Vec<i16> {
+    let samples = u64::from(device.rate)
+        .saturating_mul(u64::from(device.frame_ms))
+        .checked_div(1000)
+        .unwrap_or(0)
+        .min(u64::from(device.rate));
+    vec![0; usize::try_from(samples).unwrap_or(0)]
 }
 
 fn spawn_playback(
@@ -305,17 +335,27 @@ fn spawn_playback(
 ) {
     std::thread::spawn(move || {
         let mut speaker = match alsa::Playback::open(&device) {
-            Ok(s) => s,
+            Ok(s) => Some(s),
             Err(e) => {
-                let _ = events.send(FromMedia::Failed(id, format!("speaker: {e}")));
-                return;
+                let _ = events.send(FromMedia::Notice(
+                    id,
+                    format!("no speaker ({e}); the call goes on without sound"),
+                ));
+                None
             }
         };
         while !stop.load(Ordering::Relaxed) {
             match rx.recv_timeout(Duration::from_millis(100)) {
                 Ok(frame) => {
-                    if speaker.write(&frame).is_err() {
-                        break;
+                    // Without a speaker the frames are dropped; the queue never fills up.
+                    if let Some(sp) = &mut speaker {
+                        if let Err(e) = sp.write(&frame) {
+                            let _ = events.send(FromMedia::Notice(
+                                id,
+                                format!("speaker stopped ({e}); the call goes on without sound"),
+                            ));
+                            speaker = None;
+                        }
                     }
                 }
                 Err(mpsc::RecvTimeoutError::Timeout) => {}
@@ -393,5 +433,21 @@ mod tests {
             commscraft_turn_bwm::Federation::Enterprise
         );
         assert_eq!(c.call_id, "id1");
+    }
+
+    #[test]
+    fn silence_frame_size() {
+        let cfg = |rate, frame_ms| alsa::Config {
+            device: "default".into(),
+            rate,
+            frame_ms,
+        };
+        // G.722 and G.711 at 20 ms ([MS-RTP] §2.2.1).
+        assert_eq!(silence_frame(&cfg(16000, 20)).len(), 320);
+        assert_eq!(silence_frame(&cfg(8000, 20)).len(), 160);
+        assert!(silence_frame(&cfg(8000, 20)).iter().all(|&x| x == 0));
+        // Hostile or broken settings stay bounded: never more than one second of audio.
+        assert_eq!(silence_frame(&cfg(8000, u32::MAX)).len(), 8000);
+        assert_eq!(silence_frame(&cfg(0, 20)).len(), 0);
     }
 }
