@@ -108,6 +108,9 @@ pub struct Caller {
     pub anonymous: bool,
     /// The call comes from a PSTN gateway (`isGateway`).
     pub gateway: bool,
+    /// Whom the call was meant for when it reaches us through team or delegate ringing or a
+    /// forwarding: the checked `Referred-By` address (RFC 3892 §3; RE-72, inference).
+    pub on_behalf_of: Option<String>,
 }
 
 /// Most early dialogs (forks) tracked per call.
@@ -404,11 +407,20 @@ impl<R: Random> Engine<R> {
             .invite
             .header_values("Contact")
             .any(|v| v.to_ascii_lowercase().contains(";isgateway"));
+        let on_behalf_of = c
+            .invite
+            .single("Referred-By")
+            .ok()
+            .flatten()
+            .and_then(|v| commscraft_sip_msg::parse_name_addr(v).ok())
+            .and_then(|n| pres::checked_sip_uri(&n.uri).ok())
+            .filter(|u| !u.eq_ignore_ascii_case(&self.cfg.aor));
         Some(Caller {
             uri: sip.unwrap_or_else(|| c.peer.clone()),
             number,
             anonymous,
             gateway,
+            on_behalf_of,
         })
     }
 

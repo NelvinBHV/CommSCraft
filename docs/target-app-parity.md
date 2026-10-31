@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (function 39: emergency calls)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (function 34: team and delegate ringing)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -58,7 +58,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 31 | Picture control (freeze/refresh) | MS-XMLMC | B | – |
 | 32 | Bandwidth management (call admission control) | MS-ICE2BWM, MS-TURNBWM | B | parts tested-offline (Check/Commit/Update attributes and responses, path rules: `turn-bwm`; bandwidth requests on the TURN allocation: `turn`; refused sites, 274/275: `ice-agent`; audio calls: check while gathering as the callee, commit, updates, cancel, policy bandwidth to the peer: `call-media`, CLI with `enableBWPolicyCheck`); video streams, PSTN failover – |
 | 33 | PSTN telephony | MS-OCPSTN, MS-SIPRE | B | parts tested-offline (dialling numbers with the location profile as phone-context, E.164, incoming gateway calls with asserted number, anonymous callers, call back, 605 loop rejection, Content-ID/ms-accepted-content-id, early media from gateways: `session`, `provisioning`, CLI `/call 0401234` `/callback`); media bypass, client-side dial rules – |
-| 34 | Forwarding, simultaneous ring, team and delegate calls | MS-SIPRE, MS-PRES | B | parts tested-offline (forwarding immediately or on no answer, to an address, number or voice mail, simultaneous ring, ring time – routing preamble: `presence`, `session`, CLI `/forward` `/simring`); team and delegate calls, working hours only – |
+| 34 | Forwarding, simultaneous ring, team and delegate calls | MS-SIPRE, MS-PRES | B | parts tested-offline (forwarding immediately or on no answer, to an address, number or voice mail, simultaneous ring, ring time – team and delegate ringing (routing version 2, skip_primary, breakthrough), "for whom" of incoming team/delegate calls – routing preamble: `presence`, `session`, CLI `/forward` `/simring` `/team` `/delegates`); calls on behalf of the boss, delegate relationships in presence, working hours only – |
 | 35 | Hold, music on hold | MS-SDPEXT, MS-SIPRE | B | parts tested-offline (hold/resume re-INVITE with inactive/sendrecv and `+sip.rendering="no"`, incoming hold and music on hold recognised, no RTP while held: `session`, `sdp`, `media`, `call-media`; CLI `/hold` `/resume`); streaming our own music on hold – |
 | 36 | Call transfer | MS-SIPAE, MS-SIPRE | B\* | parts tested-offline (unattended and attended transfer as transferor, following a REFER as transferee, Replaces as target, safe transfer: `session`, CLI `/transfer`); `ms-referee-uri` after retargeting – |
 | 37 | Call park | MS-SIPAPP | B\* | tested-offline (park at the call park server from provisioning, orbit, refresh of the parker's dialog, unpark notifications, refusals; retrieval by calling the orbit with the REFER/Replaces of the transfer code; being parked as a call replacement with music on hold: `park`, `session`, CLI `/park`, `/call ORBIT`) |

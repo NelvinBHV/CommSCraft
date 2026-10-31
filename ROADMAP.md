@@ -2,7 +2,7 @@
 
 **Stage: M3 (audio 1:1)** · M0 done · M1 and M2 built and tested offline · M3 in progress
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (emergency calls, numbers)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (team and delegate ringing, numbers)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **57** / **19** (16 closed or no evidence problem) / **26** (22 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **35 crates + 1 app** (`commscraft-cli`), **332 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **35 crates + 1 app** (`commscraft-cli`), **334 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **private owner lab** (D-08, since 2026-10-31): the agent may test there; results are not published, public statuses stay `tested-offline` | owner decision |
 
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-10-31 | Team and delegate ringing (function 34): routing preamble version 2 with team/delegates/breakthrough lists, team_ring, delegate_ring, skip_primary and the user/team2 waits (RE-71); incoming team/delegate calls show for whom they were meant (RE-72); CLI `/team`, `/delegates`. |
 | 2026-10-31 | Emergency calls (function 39): location policy from provisioning, location from the location information service (MS-E911WS) or typed by the user, emergency INVITE with Priority, Geolocation and PIDF-LO after a time-bound `e911active` routing publication; new conflicts K-RE-3, K-PR-2, open point O-RE-3 (crate `lis`); CLI `/location`. |
 | 2026-10-31 | Quality reports (function 45): VQReportEvent after every call with the network figures measured from RTP/RTCP (jitter, loss, round trip from LSR/DLSR, packets) and LocalPAI; call rating 1–5 (crate `qoe`, QE-06); CLI automatic report and `/rate`. |
 | 2026-10-31 | Call park (function 37): park request to the call park server, orbit, refresh of the parker's dialog, unpark notifications, refusals (crate `park`, `session::park`, CK-07); retrieval by calling the orbit; CLI `/park`. |
