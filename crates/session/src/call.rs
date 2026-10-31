@@ -71,6 +71,14 @@ pub(crate) struct Call {
     pub forked: bool,
     /// Content-ID of the offer part we answer (PS-09: copied to ms-accepted-content-id).
     pub content_id: Option<String>,
+    /// Our transfer of this call (REFER sent).
+    pub transfer_out: Option<transfer::Outgoing>,
+    /// A REFER of the peer we follow.
+    pub transfer_in: Option<transfer::Incoming>,
+    /// This call was placed for a transfer of that call (its result is reported there).
+    pub transferred_from: Option<CallId>,
+    /// This incoming call replaces that call (RFC 3891).
+    pub replaces: Option<CallId>,
 }
 
 /// The caller of an incoming call as far as the signalling tells (PS-02, PS-04, PS-07).
@@ -172,7 +180,7 @@ pub(crate) fn audio_sdp_part(m: &Message) -> Option<(Vec<u8>, Option<String>)> {
 }
 
 impl<R: Random> Engine<R> {
-    fn call_event(out: &mut Vec<Output>, e: Event) {
+    pub(crate) fn call_event(out: &mut Vec<Output>, e: Event) {
         out.push(Output::Event(e));
     }
 
@@ -186,21 +194,35 @@ impl<R: Random> Engine<R> {
         now: u64,
         out: &mut Vec<Output>,
     ) {
+        self.start_call_with(to, local, policy, &[], now, out);
+    }
+
+    /// `start_call` with extra headers (transfer: Referred-By, Replaces, Ms-Sensitivity); returns
+    /// the new call's ID.
+    pub(crate) fn start_call_with(
+        &mut self,
+        to: &str,
+        local: sdp::Local,
+        policy: sdp::Encryption,
+        extra: &[(String, String)],
+        now: u64,
+        out: &mut Vec<Output>,
+    ) -> Option<CallId> {
         let Ok(peer) = pres::checked_sip_uri(to) else {
             out.push(Output::Event(Event::Notice(
                 "not a usable SIP address".into(),
             )));
-            return;
+            return None;
         };
         if self.calls.len() >= MAX_CALLS {
             out.push(Output::Event(Event::Notice("too many calls".into())));
-            return;
+            return None;
         }
         if policy != sdp::Encryption::Off && local.key.is_none() {
             out.push(Output::Event(Event::Notice(
                 "no media key for an encrypted call".into(),
             )));
-            return;
+            return None;
         }
         let offer = sdp::offer(&local, policy);
         let mut m = self.request("INVITE", &peer, &peer);
@@ -208,6 +230,13 @@ impl<R: Random> Engine<R> {
         // the answer in an unreliable 183.
         m.push_header("Supported", "100rel");
         m.push_header("Supported", "ms-early-media");
+        // RE-64: we take Ms-Sensitivity from a Refer-To into the triggered INVITE.
+        m.push_header("Supported", "ms-safe-transfer");
+        for (k, v) in extra {
+            if !v.chars().any(|c| c.is_control()) {
+                m.push_header(k, v);
+            }
+        }
         m.push_header(
             "Content-Type",
             &format!("multipart/alternative;boundary=\"{BOUNDARY}\""),
@@ -234,6 +263,10 @@ impl<R: Random> Engine<R> {
                 early_media: None,
                 forked: false,
                 content_id: None,
+                transfer_out: None,
+                transfer_in: None,
+                transferred_from: None,
+                replaces: None,
             },
         );
         self.send_request(m, Purpose::CallInvite(id), now, out);
@@ -249,6 +282,7 @@ impl<R: Random> Engine<R> {
                 c.invite = p.request.clone();
             }
         }
+        Some(id)
     }
 
     /// A dial string as SIP URI (PS-01): visual separators removed; `+` and 1–15 digits is a
@@ -516,6 +550,7 @@ impl<R: Random> Engine<R> {
             .and_then(|s| sdp::answer_to_offer(&s, key.as_ref(), c.policy));
         match negotiated {
             Ok(n) => {
+                let transferred = c.transferred_from.is_some();
                 let continues_early = c.early_media.as_deref() == Some(d.remote_tag.as_str());
                 c.dialog = Some(d);
                 c.state = CallState::Active;
@@ -528,6 +563,9 @@ impl<R: Random> Engine<R> {
                         continues_early,
                     },
                 );
+                if transferred {
+                    self.transferred_call_result(id, 200, now, out);
+                }
             }
             Err(e) => {
                 // An answer we cannot use (e.g. plaintext against our policy): hang up.
@@ -718,6 +756,12 @@ impl<R: Random> Engine<R> {
             return;
         }
         let content_id = audio_sdp_part(req).and_then(|(_, id)| id);
+        // RFC 3891 §3: Replaces must name one of our established calls, else 481.
+        let Ok(replaces) = self.replaced_call(req) else {
+            let r = response_to(req, 481, "Call/Transaction Does Not Exist");
+            self.send_plain(r, now, out);
+            return;
+        };
         let tag = self.hex(5);
         let Ok(dialog) = Dialog::from_request(req, &tag) else {
             let r = response_to(req, 400, "Bad Request");
@@ -756,6 +800,10 @@ impl<R: Random> Engine<R> {
                 early_media: None,
                 forked: false,
                 content_id,
+                transfer_out: None,
+                transfer_in: None,
+                transferred_from: None,
+                replaces,
             },
         );
         Self::call_event(out, Event::IncomingCall { call: id, from });
@@ -791,6 +839,7 @@ impl<R: Random> Engine<R> {
                     ok.push_header("Record-Route", rr);
                 }
                 ok.push_header("Contact", &format!("<{}>", self.gruu));
+                ok.push_header("Supported", "ms-safe-transfer");
                 // PS-09: name the offer part we answer.
                 if let Some(cid) = c.content_id.clone() {
                     ok.push_header("ms-accepted-content-id", &cid);
@@ -809,6 +858,10 @@ impl<R: Random> Engine<R> {
                     c.state = CallState::Active;
                     c.local = Some(kept);
                     c.policy = policy;
+                }
+                // RFC 3891 §3: the replaced call ends once the new one is accepted.
+                if let Some(old) = self.calls.get(&id).and_then(|c| c.replaces) {
+                    self.hangup(old, now, out);
                 }
                 Self::call_event(
                     out,
@@ -891,6 +944,16 @@ impl<R: Random> Engine<R> {
                         self.send_plain(r, now, out);
                     }
                 }
+            }
+            "REFER" => self.on_refer(id, req, now, out),
+            "NOTIFY"
+                if req
+                    .single("Event")
+                    .ok()
+                    .flatten()
+                    .is_some_and(|e| e.trim().eq_ignore_ascii_case("refer")) =>
+            {
+                self.on_refer_notify(id, req, now, out)
             }
             "UPDATE" | "INFO" | "OPTIONS" => {
                 let r = response_to(req, 200, "OK");

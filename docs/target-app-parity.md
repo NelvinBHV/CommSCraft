@@ -60,7 +60,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 33 | PSTN telephony | MS-OCPSTN, MS-SIPRE | B | parts tested-offline (dialling numbers with the location profile as phone-context, E.164, incoming gateway calls with asserted number, anonymous callers, call back, 605 loop rejection, Content-ID/ms-accepted-content-id, early media from gateways: `session`, `provisioning`, CLI `/call 0401234` `/callback`); media bypass, client-side dial rules – |
 | 34 | Forwarding, simultaneous ring, team and delegate calls | MS-SIPRE, MS-PRES | B | – |
 | 35 | Hold, music on hold | MS-SDPEXT, MS-SIPRE | B | parts tested-offline (hold/resume re-INVITE with inactive/sendrecv and `+sip.rendering="no"`, incoming hold and music on hold recognised, no RTP while held: `session`, `sdp`, `media`, `call-media`; CLI `/hold` `/resume`); streaming our own music on hold – |
-| 36 | Call transfer | MS-SIPAE, MS-SIPRE | B\* | – |
+| 36 | Call transfer | MS-SIPAE, MS-SIPRE | B\* | parts tested-offline (unattended and attended transfer as transferor, following a REFER as transferee, Replaces as target, safe transfer: `session`, CLI `/transfer`); `ms-referee-uri` after retargeting – |
 | 37 | Call park | MS-SIPAPP | B\* | – |
 | 38 | Voicemail | MS-OCEXUM, MS-EUMSDP | T | – |
 | 39 | Emergency calls with location | MS-E911WS, MS-SIPRE | B\* | – |
@@ -78,4 +78,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **10** tested-offline as a whole, **14** in parts, **26** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).
+**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **10** tested-offline as a whole, **15** in parts, **25** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).
