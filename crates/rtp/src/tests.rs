@@ -107,7 +107,8 @@ fn rtcp_compound_and_bye() {
             Rtcp::SenderReport {
                 ssrc: 0xcafebabe,
                 info,
-                reports: vec![rb]
+                reports: vec![rb],
+                extensions: vec![]
             },
             Rtcp::Cname {
                 ssrc: 0xcafebabe,
@@ -168,4 +169,219 @@ fn telephone_events() {
         vec![160, 320, 480, 640, 800, 800, 800]
     );
     assert_eq!(decoded.iter().filter(|e| e.end).count(), 3);
+}
+
+/// [MS-RTP] §2.2.11 (RT-23): every extension type survives a round trip with the sizes of the
+/// specification; unknown types and wrong sizes are skipped, at most 20 are read.
+#[test]
+fn profile_extensions() {
+    let all = [
+        Extension::Bandwidth {
+            ssrc: 1,
+            bps: BANDWIDTH_PACKET_PAIR,
+            confidence: None,
+        },
+        Extension::Bandwidth {
+            ssrc: 1,
+            bps: 2_000_000,
+            confidence: Some(15),
+        },
+        Extension::PacketLoss { sequence: 513 },
+        Extension::VideoPreference {
+            width: 640,
+            height: 480,
+        },
+        Extension::Padding { words: 3 },
+        Extension::PolicyBandwidth(100_000),
+        Extension::TurnBandwidth(200_000),
+        Extension::AudioHealer {
+            ssrc: 2,
+            concealed: 3,
+            stretched: 4,
+            compressed: 5,
+            total: 600,
+            quality: 1,
+            fec_distance: 2,
+        },
+        Extension::ReceiverLimit(300_000),
+        Extension::PacketTrain {
+            ssrc: 3,
+            last: true,
+            index: 4,
+            count: 5,
+            bytes: 700,
+        },
+        Extension::PeerInfo {
+            ssrc: 4,
+            inbound: 10,
+            outbound: 20,
+            no_cache: true,
+        },
+        Extension::Congestion {
+            ntp: 0x0102_0304_0506_0708,
+            info: 0b1010,
+        },
+        Extension::ModalityLimit {
+            modality: 2,
+            bps: 400_000,
+        },
+    ];
+    let sizes = [12, 16, 8, 20, 16, 12, 12, 28, 12, 12, 20, 16, 12];
+    for (e, size) in all.iter().zip(sizes) {
+        let mut v = Vec::new();
+        e.write(&mut v);
+        assert_eq!(v.len(), size, "{e:?}");
+        assert_eq!(u16::from_be_bytes([v[2], v[3]]) as usize, size);
+    }
+    let r = Report {
+        ssrc: 9,
+        info: None,
+        reports: &[],
+        extensions: &all,
+        cname: "c",
+        quality: None,
+    }
+    .build();
+    let parsed = parse_rtcp(&r).unwrap();
+    assert_eq!(
+        parsed[0],
+        Rtcp::ReceiverReport {
+            ssrc: 9,
+            reports: vec![],
+            extensions: all.to_vec()
+        }
+    );
+
+    // Unknown type 99 skipped by its length, then a broken length ends the walk.
+    let mut body = 9u32.to_be_bytes().to_vec();
+    body.extend_from_slice(&[0, 99, 0, 8, 1, 2, 3, 4]);
+    body.extend_from_slice(&[0, 8, 0, 12, 0, 0, 0, 0, 0, 0, 0, 5]);
+    body.extend_from_slice(&[0, 7, 0, 3]);
+    let mut p = vec![0x80, 201];
+    p.extend_from_slice(&(((body.len() + 4) / 4 - 1) as u16).to_be_bytes());
+    p.extend_from_slice(&body);
+    assert_eq!(
+        parse_rtcp(&p).unwrap(),
+        vec![Rtcp::ReceiverReport {
+            ssrc: 9,
+            reports: vec![],
+            extensions: vec![Extension::TurnBandwidth(5)]
+        }]
+    );
+    // Out-of-range quality and FEC values read as 0 (§2.2.11.7).
+    let mut v = Vec::new();
+    Extension::AudioHealer {
+        ssrc: 1,
+        concealed: 0,
+        stretched: 0,
+        compressed: 0,
+        total: 0,
+        quality: 0,
+        fec_distance: 0,
+    }
+    .write(&mut v);
+    v[26] = 9;
+    v[27] = 7;
+    assert!(matches!(
+        read_extensions(&v)[..],
+        [Extension::AudioHealer {
+            quality: 0,
+            fec_distance: 0,
+            ..
+        }]
+    ));
+    // At most 20 extensions.
+    let many: Vec<u8> = std::iter::repeat_n([0u8, 6, 0, 4], 30).flatten().collect();
+    assert_eq!(read_extensions(&many).len(), MAX_EXTENSIONS);
+}
+
+/// RT-22: SDES PRIV "MS-EVT" (prefix and value not NUL-terminated), CNAME NUL-terminated (RT-20).
+#[test]
+fn media_quality_sdes() {
+    let q = Quality {
+        known: 0x1,
+        bad: 0x1,
+    };
+    let r = Report {
+        ssrc: 7,
+        info: None,
+        reports: &[],
+        extensions: &[],
+        cname: "a@b",
+        quality: Some(q),
+    }
+    .build();
+    let text = String::from_utf8_lossy(&r);
+    assert!(
+        text.contains("\x06MS-EVTv=1 m=00000001 q=00000001"),
+        "{text:?}"
+    );
+    assert!(
+        r.windows(5).any(|w| w == [1, 4, b'a', b'@', b'b']),
+        "CNAME length counts the NUL"
+    );
+    let parsed = parse_rtcp(&r).unwrap();
+    assert!(parsed.contains(&Rtcp::Cname {
+        ssrc: 7,
+        cname: "a@b".into()
+    }));
+    assert!(parsed.contains(&Rtcp::MediaQuality {
+        ssrc: 7,
+        quality: q
+    }));
+    // Longer masks: only the last 8 digits count; unknown fields ignored; q ignored if m = 0.
+    assert_eq!(
+        Quality::parse(b"v=1 m=ff00000004 q=0000000004 x=1"),
+        Some(Quality { known: 4, bad: 4 })
+    );
+    assert_eq!(
+        Quality::parse(b"v=1 m=00000000 q=ffffffff"),
+        Some(Quality { known: 0, bad: 0 })
+    );
+    assert_eq!(Quality::parse(b"v=2 m=00000001 q=00000001"), None);
+    assert_eq!(Quality::parse(b"garbage"), None);
+}
+
+/// §2.2.3–2.2.7: probe (simple SR without blocks), padded pair packet, train packets of equal size.
+#[test]
+fn probe_pair_and_train() {
+    let info = SenderInfo {
+        ntp: 1,
+        rtp_timestamp: 2,
+        packets: 3,
+        octets: 4,
+    };
+    let probe = probe(5, info);
+    assert_eq!(probe.len(), 28);
+    assert_eq!(&probe[..4], &[0x80, 200, 0, 6]);
+    let pair = compound(5, Some(info), &[], "c");
+    let padded = pad_report(&pair, 120);
+    assert_eq!(padded.len(), 120);
+    let parsed = parse_rtcp(&padded).unwrap();
+    assert!(
+        matches!(&parsed[0], Rtcp::SenderReport { extensions, .. } if extensions == &[Extension::Padding { words: (120 - pair.len() - 4) as u16 / 4 }])
+    );
+    assert!(parsed.contains(&Rtcp::Cname {
+        ssrc: 5,
+        cname: "c".into()
+    }));
+    let mut total = 0u16;
+    for i in 0..5u8 {
+        total += 120;
+        let p = train_packet(5, i, 5, total, 120);
+        assert_eq!(p.len(), 120);
+        let Rtcp::ReceiverReport { extensions, .. } = &parse_rtcp(&p).unwrap()[0] else {
+            panic!()
+        };
+        assert_eq!(
+            extensions[0],
+            Extension::PacketTrain {
+                ssrc: 5,
+                last: i == 4,
+                index: i,
+                count: 5,
+                bytes: total
+            }
+        );
+    }
 }

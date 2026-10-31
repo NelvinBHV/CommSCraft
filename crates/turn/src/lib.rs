@@ -113,6 +113,9 @@ pub type Random = Box<dyn FnMut(&mut [u8]) + Send>;
 
 /// One allocation on one TURN server.
 pub struct Client {
+    /// Peak bandwidth of the allocation in kbit/s (BANDWIDTH in the Allocate response,
+    /// draft-rosenberg-midcom-turn-08 §8.2/§9.2.4, [MS-TURN] §2.2.2.9).
+    bandwidth: Option<u32>,
     creds: Credentials,
     transport: Transport,
     stream: Stream,
@@ -157,11 +160,17 @@ impl Client {
             sequence: None,
             pending: None,
             relayed: None,
+            bandwidth: None,
             lifetime: 0,
             refresh_at: None,
             active: None,
             permissions: Vec::new(),
         }
+    }
+
+    /// The allocation's peak bandwidth in kbit/s, if the server named one.
+    pub fn bandwidth(&self) -> Option<u32> {
+        self.bandwidth
     }
 
     pub fn relayed(&self) -> Option<SocketAddr> {
@@ -457,6 +466,12 @@ impl Client {
                             }
                         }
                     }
+                }
+                if let Some(b) = m
+                    .get(stun::BANDWIDTH)
+                    .and_then(|v| <[u8; 4]>::try_from(v).ok())
+                {
+                    self.bandwidth = Some(u32::from_be_bytes(b));
                 }
                 match relayed {
                     Some(r) => {

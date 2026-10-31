@@ -81,6 +81,8 @@ fn allocated(req: &Message, sha256: bool) -> Vec<u8> {
                 stun::encode_xor_address("192.0.2.10:54321".parse().unwrap(), &req.transaction),
             ),
             (stun::LIFETIME, 600u32.to_be_bytes().to_vec()),
+            // turn-08 §8.2: the server names the peak bandwidth (kbit/s).
+            (stun::BANDWIDTH, 1500u32.to_be_bytes().to_vec()),
             (stun::MS_SEQUENCE_NUMBER, seq),
             (stun::MS_VERSION, 3u32.to_be_bytes().to_vec()),
         ],
@@ -124,6 +126,7 @@ fn allocate_send_activate_refresh_teardown() {
             lifetime: 600
         }]
     );
+    assert_eq!(c.bandwidth(), Some(1500));
 
     let peer: SocketAddr = "192.0.2.30:44556".parse().unwrap();
     let send = parse(&c.send(peer, b"rtp").unwrap()).unwrap();

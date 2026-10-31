@@ -801,7 +801,13 @@ impl CallMedia {
         }
         // RTCP reports; NTP timestamp (RFC 3550 §4) from Unix time in ms.
         let ntp = ((now / 1000 + 2_208_988_800) << 32) | (((now % 1000) << 32) / 1000);
-        if let Some(p) = self.audio.as_mut().and_then(|a| a.rtcp_due(now, ntp)) {
+        // Probe, report and train packets back to back ([MS-RTP] §3.2.6).
+        let due = self
+            .audio
+            .as_mut()
+            .map(|a| a.rtcp_due(now, ntp))
+            .unwrap_or_default();
+        for p in due {
             if let Some((_, rtcp)) = self.direct {
                 self.send_socket(1, rtcp, &p);
             } else if let Some((l, r)) = self.rtcp_path() {
@@ -868,6 +874,17 @@ impl CallMedia {
                 ice::Event::Usable { local, remote } => self.usable = Some((local, remote)),
                 ice::Event::Selected { rtp, rtcp } => {
                     self.selected = Some((rtp, rtcp));
+                    // [MS-RTP] §3.2: the TURN server's bandwidth of the RTP path goes to the peer.
+                    let kbps = self.candidate_socket.get(rtp.0).and_then(|&(sock, _)| {
+                        match self.sockets.get(sock) {
+                            Some(Socket::Relay { client, .. }) => client.bandwidth(),
+                            Some(Socket::Tcp(t)) => t.client.bandwidth(),
+                            _ => None,
+                        }
+                    });
+                    if let (Some(k), Some(a)) = (kbps, self.audio.as_mut()) {
+                        a.set_turn_bandwidth(k.saturating_mul(1000));
+                    }
                     // TU-25: a relayed path becomes the active destination.
                     for (l, r) in std::iter::once(rtp).chain(rtcp) {
                         let Some(&(sock, _)) = self.candidate_socket.get(l) else {
@@ -1014,7 +1031,7 @@ impl CallMedia {
                     return;
                 };
                 if media::classify(payload) == Kind::Rtcp {
-                    if audio.on_rtcp(payload) {
+                    if audio.on_rtcp(payload, now) {
                         events.push(Event::PeerBye);
                     }
                 } else if let Some(d) = audio.on_rtp(payload, (now as u32).wrapping_mul(8)) {
