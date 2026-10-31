@@ -46,8 +46,13 @@ Machine comparison of the 256 entries (pp. 25–26) with the standard CRC-32 tab
 ## Gap
 - L-02: draft-ietf-mmusic-ice-19, ice-06, ice-tcp-07 and STUN-02 (basis of MS-ICE/MS-ICE2) were not in the Microsoft package.
 
+- O-IC-2: For connectivity checks in the STUN-02 format with MESSAGE-INTEGRITY **and** a following FINGERPRINT, neither STUN-02 (no FINGERPRINT) nor MS-ICE2 says which value the length field has while the HMAC is computed. Implementation (inference): the length counts up to the end of MESSAGE-INTEGRITY, as RFC 5389 §15.4 prescribes; for MS-TURN (MI last) both readings are identical. Interop test IT-22.
+
 ## Later findings (files 38, 39)
 - L-02 **closed**: ice-19, ice-06, ice-tcp-00/-07, STUN-02 and rfc3489bis-08 obtained.
 - IC-12/IC-13 now with a primary source: priority formulas (IE-04, recomputed with SfB example values IE-05), MI in the old STUN format (IE-02).
 - O-IC-1 narrowed (IE-03) and then **secondary evidence** (OB-09, libnice): the duplicate uses CRC-32 with the misprinted entry 0x08BBE8EA followed by XOR 0x5354554E; the misprinted variant is accepted only without IMPLEMENTATION-VERSION.
 - O-IC-1 **closed for the target servers** (OB-42, normative): IMPLEMENTATION-VERSION is mandatory (§2.2.2, p. 17) and missing only in 2007-generation endpoints (<3>); the CRC-table duplicate applies only towards such peers.
+
+## Implementation (2026-10-31, `crates/stun`)
+STUN codec for both formats (RFC 5389 with magic cookie and padding; STUN-02/MS-TURN with 128-bit transaction ID and without padding), MESSAGE-INTEGRITY (RFC 5389; legacy HMAC-SHA1 over a 64-octet padded text, IE-02; MS-TURN HMAC-SHA256 with the two-step key, TU-14), FINGERPRINT (IE-03), (XOR-)MAPPED-ADDRESS for IPv4/IPv6, ERROR-CODE. Recomputed: all four test vectors of RFC 5769 verify (short-term and long-term integrity, fingerprint, IPv4/IPv6 XOR address); the long-term request §2.4 is rebuilt octet for octet. Security by design: ≤ 1500 octets, ≤ 32 attributes, lengths checked, MI compared in constant time and only accepted as the last attribute (FINGERPRINT may follow). Status: tested-offline.
