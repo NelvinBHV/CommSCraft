@@ -28,9 +28,9 @@ owner on an authorized server and is deferred until such an environment exists (
    example §4.2.4.3 byte for byte), the REGISTER flow as a sans-I/O state machine (`register`,
    offline sign-in against a test registrar). In-band provisioning (`provisioning`,
    bounded `xml` reader) and the deregister NOTIFY are done. Discovery (`discovery`, `url`) and the
-   registrar redirect are done. Next: keep-alive negotiation (CON-30…CON-35), the TLS/TCP adapter
-   (rustls, system trust store) and a `commscraft-cli` that signs in against a server only when
-   the owner runs it.
+   registrar redirect are done. Keep-alive, the TLS adapter (`net`) and `commscraft-cli`
+   are done: **M1 is ready for the owner's first interop run (IT-19)**. Next while waiting: HTTPS and
+   DNS SRV adapters for discovery in the CLI, provisioning by NOTIFY, then M2 (presence, IM).
 
 ## Milestones
 

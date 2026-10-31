@@ -1,6 +1,6 @@
 # CommSCraft architecture (planned)
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M1 crates up to `discovery`)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (first adapter `net`, first app `commscraft-cli`)
 
 Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 [`decisions.md`](decisions.md) are taken. Rules for working in the code are in
@@ -30,15 +30,18 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 | `commscraft-abs` | L3 | Address book block compression (LZ77 variant), CRC-32, file-name dates | AB-03, AB-04, K-AB-1, K-AB-4 |
 | `commscraft-sip-msg` | L0 | SIP parsing, stream framing and serialization; bounded, fail-closed, injection-safe | RFC 3261 §7, §18.3, §25; AE-29 |
 | `commscraft-sipae` | L1 | MS-SIPAE security associations, signature buffers, Authorization header, verification with replay window | AE-05, AE-10, AE-11, AE-29…AE-33, K-AE-4 |
-| `commscraft-register` | L2 | Sign-in state machine: REGISTER → NTLM handshake → signed 200 OK → GRUU/expiry → refresh → sign-out; client version block (RG-50); deregister/survivable mode NOTIFY; signed home pool redirect (O-RG-1) | AE-20…AE-33, RG-03…RG-32, RG-50, RE-03, RE-06, K-RG-4 |
+| `commscraft-register` | L2 | Sign-in state machine: REGISTER → NTLM handshake → signed 200 OK → GRUU/expiry → refresh → sign-out; client version block (RG-50); deregister/survivable mode NOTIFY; signed home pool redirect (O-RG-1); keep-alive negotiation (CON-30…CON-35) | AE-20…AE-33, RG-03…RG-32, RG-50, RE-03, RE-06, K-RG-4 |
 | `commscraft-url` | L0 | Checked DNS host names and HTTPS URLs, user-domain test | docs/security.md |
 | `commscraft-discovery` | L2 | Autodiscover (HTTPS only, Domain resource, redirect limits) and DNS SRV/fallback ordering (TLS only, domain filter) | AD-02…AD-13, CON-10…CON-18, OB-06, K-AD-1 |
+| `commscraft-net` | adapter | TLS client (rustls + ring, system trust store, optional enterprise CA), blocking SIP connection over the bounded decoder, OS random source | CON-01…CON-04, [SFB-TLS] |
+| `commscraft-cli` | app | Owner's interop tool: sign in, keep-alive, provisioning summary, sign out (`--authorized` required) | IT-19 |
 | `commscraft-xml` | L0 | Bounded XML reader without DTD/entities, namespaces, explicit stack | docs/security.md |
 | `commscraft-provisioning` | L3 | Provisioning SUBSCRIBE, `provisionGroupList` parser, validated ServerConfiguration (HTTPS URLs with domain check, SIP URIs, port ranges) | RG-40…RG-44, K-RG-4 |
 | `commscraft-psom` | L3 | PSOM GenericInt, String, RPC frame | PO-04, PO-05, K-PO-2, K-PO-3 |
 
 Dependencies (decision D-03, pure Rust): RustCrypto `md4`, `md-5`, `hmac`, `sha1`, `aes`, plus
-`subtle` (constant-time comparison) and `zeroize` (wiping keys) in `sipae`. `sip-msg`, `sipcomp`,
+`subtle` (constant-time comparison) and `zeroize` (wiping keys) in `sipae`. The adapter `net` adds
+`rustls` (with `ring`), `rustls-native-certs` and `getrandom`. `sip-msg`, `sipcomp`,
 `abs`, `psom` and `turn-bwm` use only the standard library. Security rules: [`security.md`](security.md).
 
 ## Layers (proposal)

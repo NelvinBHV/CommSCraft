@@ -22,6 +22,8 @@
 //! Not yet covered: the keep-alive negotiation (RG-22); following a preferred registrar (RG-32) is
 //! reported to the caller, which decides after its own domain check.
 
+pub mod keepalive;
+
 use commscraft_ntlm::messages as ntlm;
 use commscraft_sip_msg::{parse_name_addr, read_quoted, Message};
 use commscraft_sipae::{base64, Challenge, NtlmMic, Policy, Scheme, SecurityAssociation};
@@ -124,6 +126,8 @@ pub struct Registration {
     pub expires: u64,
     /// When the refresh has to be sent (shorter than the expiry, RG-21).
     pub refresh_at: u64,
+    /// Negotiated keep-alive timeout (CON-34), `None` if the negotiation failed (CON-33).
+    pub keepalive_timeout: Option<u64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -315,6 +319,8 @@ impl<R: Random> Registrar<R> {
         );
         m.push_header("User-Agent", &c.user_agent);
         m.push_header("Supported", "gruu-10");
+        // CON-30: hop-by-hop keep-alive negotiation on the REGISTER (MS-CONMGMT §4.1).
+        m.push_header("ms-keep-alive", keepalive::REQUEST_VALUE);
         if let Some(s) = &c.subnet {
             m.push_header("ms-subnet", s);
         }
@@ -340,6 +346,21 @@ impl<R: Random> Registrar<R> {
         self.sign(&mut m)?;
         self.phase = Phase::Unregistering;
         Ok(m)
+    }
+
+    /// Signs another request of this endpoint (e.g. the provisioning SUBSCRIBE) with the
+    /// established security association (AE-29).
+    pub fn sign_request(&mut self, m: &mut Message) -> Result<(), Failure> {
+        if !self.is_registered() {
+            return Err(Failure::BadResponse("not registered"));
+        }
+        self.sign(m)
+    }
+
+    /// Verifies a message from the registrar outside the REGISTER transaction (AE-32). `false`:
+    /// drop it.
+    pub fn verify_message(&mut self, m: &Message) -> bool {
+        self.is_registered() && self.verified(m).is_some()
     }
 
     fn sign(&mut self, m: &mut Message) -> Result<(), Failure> {
@@ -702,6 +723,7 @@ impl<R: Random> Registrar<R> {
             expires,
             // Inference: refresh after 4/5 of the expiry ("shorter", RG-21).
             refresh_at: now.saturating_add(expires * 4 / 5),
+            keepalive_timeout: keepalive::negotiated_timeout(msg),
         })
     }
 

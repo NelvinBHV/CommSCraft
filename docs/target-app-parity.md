@@ -26,7 +26,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | # | Function | Main specifications | Evidence | Implemented |
 |---|---|---|---|---|
 | 1 | Server discovery | MS-OCDISCWS, MS-CONMGMT | B | parts tested-offline (Autodiscover state machine, DNS SRV ordering: `discovery`) |
-| 2 | TLS connection, keep-alive | MS-CONMGMT | B | parts tested-offline (SIP stream framing, CRLF keep-alive: `sip-msg`) |
+| 2 | TLS connection, keep-alive | MS-CONMGMT | B | tested-offline (TLS adapter with loopback test, stream framing, keep-alive negotiation: `net`, `sip-msg`, `register`) |
 | 3 | SIP compression (optional) | MS-SIPCOMP | B\* | – |
 | 4 | Sign-in with NTLM | MS-SIPAE, MS-NLMP | B\* | parts tested-offline (NTLMv2 handshake messages, SIP signing and verification: `ntlm`, `sipae`) |
 | 5 | Sign-in with Kerberos | MS-SIPAE, MS-KILE | B | – |

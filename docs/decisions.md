@@ -1,6 +1,6 @@
 # Decisions
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** minor (proposal D-10)
+> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-26 · **Change:** minor (D-10 taken)
 
 Decisions that belong to the project owner. Agents propose, the owner decides; a decision is
 recorded here with date and reason before work depends on it.
@@ -9,7 +9,7 @@ recorded here with date and reason before work depends on it.
 
 | ID | Question | Proposal | Why it matters |
 |---|---|---|---|
-| D-10 | MS-OCDISCWS §3.2.1.1 says the client MUST also try `http://lyncdiscover[internal].<domain>`. Follow it? | No: HTTPS only (current default, switch `allow_plain_http`). Plain HTTP sends the SIP URI unencrypted and accepts spoofable redirects; the HTTPS hosts are the same, so interoperation only suffers where a deployment has no valid certificate on lyncdiscover | Deviation from a MUST of the specification; security against interoperation |
+| – | – | – | – |
 
 ## Taken
 
@@ -24,6 +24,7 @@ recorded here with date and reason before work depends on it.
 | D-07 | 2026-10-26 | User interface toolkit: egui | Consistency with the Crafting Apps |
 | D-08 | 2026-10-26 | No interop test environment for now. Work proceeds offline only: specification test vectors, specification examples and self-built fixtures. No status can reach `verified-interoperable` until the owner provides an environment; milestone gates end at `tested-offline` | Owner decision |
 | D-09 | 2026-10-26 | CI only on runners that cause no costs: standard GitHub-hosted runners in this public repository. No larger, custom or self-hosted runners, no paid external CI services. If the repository ever becomes private, no workflow runs without new owner approval (private repositories consume paid minutes) | Owner rule |
+| D-10 | 2026-10-27 | Autodiscover over HTTPS only, deviating from the MUST in MS-OCDISCWS §3.2.1.1 to also try `http://` (switch `allow_plain_http` stays off) | Plain HTTP would send the SIP URI unencrypted and accept spoofable redirects; owner followed the proposal |
 | T-01 | 2026-10-26 | Repository restarted; the previous history is archived outside the repository | Owner decision |
 | T-02 | 2026-10-26 | Work on branches and pull requests; no direct pushes or merges to `main` by agents | Owner rule |
 | T-03 | 2026-10-26 | Interop tests against real servers are run only by the owner | Owner rule |

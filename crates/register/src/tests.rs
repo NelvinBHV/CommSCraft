@@ -162,6 +162,10 @@ impl Server {
         );
         r.push_header("Expires", expires);
         r.push_header(
+            "ms-keep-alive",
+            "UAS; tcp=no; hop-hop=yes; end-end=no; timeout=300",
+        );
+        r.push_header(
             "presence-state",
             &format!("register-action=\"{}\"", self.presence_action),
         );
@@ -291,6 +295,11 @@ fn full_sign_in_refresh_and_sign_out() {
         "RE-06"
     );
     assert_eq!(r1.single("ms-subnet").unwrap(), Some("192.0.2.0"));
+    assert_eq!(
+        r1.single("ms-keep-alive").unwrap(),
+        Some("UAC;hop-hop=yes"),
+        "CON-30"
+    );
     assert!(r1
         .single("Via")
         .unwrap()
@@ -322,6 +331,7 @@ fn full_sign_in_refresh_and_sign_out() {
         gruu: Some("sip:alice@contoso.com;opaque=user:epid:Qf0zQjsJ1l10mUe1Vlp5gAA;gruu".into()),
         expires: 7200,
         refresh_at: NOW + 5760,
+        keepalive_timeout: Some(300),
     };
     assert_eq!(events, vec![Event::Registered(expected)]);
     assert!(reg.is_registered());

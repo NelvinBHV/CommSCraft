@@ -48,8 +48,13 @@ According to §6 (p. 23) it applies up to and including Skype for Business 2021 
 | CON-41 | Idle 15 min 32 s ⇒ server closes the connection | §3.5.2, p. 19 |
 | CON-42 | A new authenticated connection of the same endpoint ⇒ server closes the old one together with its security association | §3.5.5, p. 20 |
 
+## Conflicts
+- K-CON-1 (found 2026-10-27): §3.4.2 (p. 17) sets the client refresh timer to two thirds of the negotiated timeout, but in the next sentence says it "is reset to the time-out value" when the client sends data. Taken literally, the second rule lets the connection idle for the full timeout, which the server's expiry timer (timeout plus a grace period) only just tolerates. Decision: always two thirds (`crates/register` `keepalive`). The response example §4.2 (p. 21) also has typing errors (`To: <sip: alice@…>`, `Call-ID … CSeq: 1` on one line).
+
 ## Consequence for the Linux client
 One connection = one TCP/TLS session to the outbound proxy carrying all SIP dialogs; reconnecting creates a new security association (see MS-SIPAE).
 
 ## Later finding (file 39)
 - The Skype for Business client tries Lync Autodiscover (`lyncdiscoverinternal`, `lyncdiscover`) **before** the SRV records above; see OB-06 in file 39 and evidence file 08.
+- Implementation (2026-10-27): keep-alive negotiation on the REGISTER (CON-30 … CON-35) in `crates/register` (`keepalive`), with the server timeout bounded to 30 … 3600 s (design). TLS adapter `crates/net` (rustls, TLS 1.2/1.3 only, system trust store plus optional enterprise CA, certificate and host name always verified).
+- Research (2026-10-27, [SFB-TLS], official): Skype for Business Server supports TLS-1.2-only operation from **2015 CU9** (6.0.9319.548) and **2019 CU1** (17.0.2046.123); Lync Server 2013 front ends are out of scope (Windows Fabric 1.0 has no TLS 1.2; only the Edge role is supported). The supported cipher suite order starts with `TLS_ECDHE_ECDSA/RSA_WITH_AES_256/128_GCM_SHA384/256`, which rustls offers; the CBC and static-RSA suites of the list are not offered by rustls. Consequence: CommSCraft, which does not offer TLS 1.0/1.1, needs servers at these update levels with TLS 1.2 enabled; Lync Server 2013 (best effort in D-06) only through an updated Edge. Interop test IT-18.
