@@ -1,0 +1,93 @@
+<!-- [MS-SIPREGE] 20250819 §4.2.2, pp. 110-111: excerpt of the 200 OK body (ServerConfiguration to publicProviders). Line breaks that the PDF inserted inside tokens are joined; everything else is unchanged, including the example errors (see K-RG-4). -->
+<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification">
+<provisionGroup name="ServerConfiguration">
+<lisInternalUrl>https://clientmainse.fabrikam.com:443/locationinformation/liservice.svc</lisInternalUrl>
+<absInternalServerUrl>https://clientmainse.fabrikam.com:443/abs/handler</absInternalServerUrl>
+<absExternalServerUrl>https://clientmainse.fabrikam.com:4443/abs/handler</absExternalServerUrl>
+<abwqInternalUrl>https://clientmainse.fabrikam.com:443/groupexpansion/service.svc</abwqInternalUrl>
+<abwqExternalUrl>https://clientmainse.fabrikam.com:4443/groupexpansion/service.svc</abwqExternalUrl>
+<dlxInternalUrl>https://clientmainse.fabrikam.com:443/groupexpansion/service.svc</dlxInternalUrl>
+<dlxExternalUrl>https://clientmainse.fabrikam.com:4443/groupexpansion/service.svc</dlxExternalUrl>
+<dlxEnabled>true</dlxEnabled>
+<updatesServerInternalUrl>https://clientmainse.fabrikam.com:443/RequestHandler/ucdevice.upx</updatesServerInternalUrl>
+<updatesServerExternalUrl>https://clientmainse.fabrikam.com:4443/RequestHandlerExt/ucdevice.upx</updatesServerExternalUrl>
+<updatesServerEnabled>true</updatesServerEnabled>
+<ucPortRangeEnabled>false</ucPortRangeEnabled>
+<ucMinMediaPort>5350</ucMinMediaPort>
+<ucMaxMediaPort>5389</ucMaxMediaPort>
+<ucMinSipDynamicPort>7100</ucMinSipDynamicPort>
+<ucMaxSipDynamicPort>7102</ucMaxSipDynamicPort>
+<ucMinAudioPort>5350</ucMinAudioPort>
+<ucMaxAudioPort>5389</ucMaxAudioPort>
+<ucMinVideoPort>5350</ucMinVideoPort>
+<ucMaxVideoPort>5389</ucMaxVideoPort>
+<ucMinAppSharingPort>5350</ucMinAppSharingPort>
+<ucMaxAppSharingPort>5389</ucMaxAppSharingPort>
+<ucMinFileTransferPort>5350</ucMinFileTransferPort>
+<ucMaxFileTransferPort>5389</ucMaxFileTransferPort>
+<ucPC2PCAVEncryption>RequireEncryption</ucPC2PCAVEncryption>
+<ucMaxVideoRateAllowed>VGA-600K</ucMaxVideoRateAllowed>
+<qosEnabled>false</qosEnabled>
+<enableInCallQoS>false</enableInCallQoS>
+<inCallQoSIntervalSeconds>35</inCallQoSIntervalSeconds>
+<ucDiffServVoice>40</ucDiffServVoice>
+<ucVoice802_1p>0</ucVoice802_1p>
+<ucEnforcePinLock>true</ucEnforcePinLock>
+<ucMinPinLength>6</ucMinPinLength>
+<ucPhoneTimeOut>10</ucPhoneTimeOut>
+<ucExchangeMWIPoll>3</ucExchangeMWIPoll>
+<ucEnableSIPSecurityMode>High</ucEnableSIPSecurityMode>
+<ucEnableUserLogging>true</ucEnableUserLogging>
+<loggingLevel>Medium</loggingLevel>
+<enableBWPolicyCheck>true</enableBWPolicyCheck>
+<poolUri>sip:clientmainse.fabrikam.com@fabrikam.com;gruu;opaque=srvr:HomeServer:5duhvIdz_FOhto7rkSU2gAAA</poolUri>
+<mrasUri>sip:clientmain_int.fabrikam.com@fabrikam.com;gruu;opaque=srvr:MRAS:lvmY26x3w1WbYUtPiviXXgAA</mrasUri>
+<qosUri>sip:clientmainse.fabrikam.com@fabrikam.com;gruu;opaque=srvr:QoS:N7bgtXm_dla-s17uU81BIwAA</qosUri>
+<callParkServerUri>sip:clientmainse.fabrikam.com@fabrikam.com;gruu;opaque=srvr:Microsoft.Rtc.Applications.Cps:4H28w6olDlm9KG3nl5tyBQAA</callParkServerUri>
+<responseGroupServiceInternalURL>https://clientmainse.fabrikam.com:443/RgsClients/AgentService.svc</responseGroupServiceInternalURL>
+<responseGroupServiceExternalURL>https://clientmainse.fabrikam.com:4443/RgsClients/AgentService.svc</responseGroupServiceExternalURL>
+<responseGroupServiceInternalAgentURL>https://clientmainse.fabrikam.com:443/RgsClients/Tab.aspx</responseGroupServiceInternalAgentURL>
+<responseGroupServiceExternalAgentURL>https://clientmainse.fabrikam.com:4443/RgsClients/Tab.aspx</responseGroupServiceExternalAgentURL>
+<botSipUriForTestCall>sip:clientmainse.fabrikam.com@fabrikam.com;gruu;opaque=srvr:Microsoft.Rtc.Applications.TestBot:Hzhw8lv8gF-49c74fEDnRgAA</botSipUriForTestCall>
+<ucLocationProfile>DefaultProfile</ucLocationProfile>
+<focusFactoryUri>sip:alice@fabrikam.com;gruu;opaque=app:conf:focusfactory</focusFactoryUri>
+<voiceMailUri>sip:alice@fabrikam.com;opaque=app:voicemail</voiceMailUri>
+<requireFIPSCompliantMedia>false</ requireFIPSCompliantMedia>
+</provisionGroup>
+<provisionGroup name="ucPolicy">
+<instance>
+<property name="name">DefaultPolicy</property>
+<property name="AllowSimultaneousRinging">true</property>
+<property name="AllowCallForwarding">true</property>
+<property name="EnableDelegation">true</property>
+<property name="EnableTeamCall">true</property>
+<property name="EnableCallPark">true</property>
+<property name="EnableCallTransfer">true</property>
+<property name="EnableMaliciousCallTrace">true</property>
+<property name="enableBWPolicyOverride">false</property>
+<property name="UcEnabled">true</property>
+<property name="VoiceDeploymentMode">OnPrem</property>
+</instance>
+</provisionGroup>
+<provisionGroup name="userSetting">
+<disableFileTransfer>false</disableFileTransfer>
+<ucUserLocationProfile>DefaultProfile</ucUserLocationProfile>
+</provisionGroup>
+<provisionGroup name="persistentChatConfiguration" >
+<propertyEntryList >
+<property name="EnablePersistentChat" >true</property>
+<property name="DefaultPersistentChatPoolUri">sip:mgcdog1.fabrikam.com@fabrikam.com;gruu;opaque=srvr:GroupChat:k_7TLwJGsVy7jWMyTAtJcwAA</property>
+<property name="PersistentChatPoolUris">sip:server1.fabrikam.com@fabrikam.com;gruu;opaque=srvr:GroupChat:k_7TLwJGsVy7jWMyTAtJcwAA sip:server2.fabrikam.com@fabrikam.com;gruu;opaque=srvr:GroupChat: l_7TLwJGsVy7jWMyTAtJcwBB
+</property>
+<property name="PersistentChatWebManagerUriInt">https://pool0.fabrikam.com:123/PersistentChat/RM</property>
+<property name="PersistentChatWebManagerUriExt">https://ext.fabrikam.com:1234/PersistentChat/RM</property>
+</propertyEntryList>
+</provisionGroup>
+<provisionGroup name="publicProviders" >
+<propertyEntryList >
+<property name="PublicProviders" >
+<![CDATA[<PublicProviders>< /PublicProviders>]]>
+</property>
+</propertyEntryList>
+</provisionGroup>
+</provisionGroupList>
