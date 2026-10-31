@@ -8,6 +8,8 @@
 //! container; verbose output redacts every authentication header; TLS is always verified (system
 //! trust store plus an optional enterprise CA file); only TLS targets are used.
 
+mod calls;
+
 use std::io::{BufRead, IsTerminal, Write};
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -31,6 +33,7 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
           once, optionally sets the own state for the time of the session (--set-status), signs out.
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
+          /call sip:URI  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N (accept invitation N)  /search TEXT (address book)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
@@ -1208,6 +1211,15 @@ fn interactive(
     use std::sync::mpsc;
 
     let mut conn = conn;
+    let local_ip = conn.local_addr().map_err(|e| e.to_string())?.ip();
+    let (media_tx, media_rx) = mpsc::channel::<calls::FromMedia>();
+    let mut handles: BTreeMap<u32, calls::MediaHandle> = BTreeMap::new();
+    let mut next_media: u32 = 1;
+    let mut pending_out: BTreeMap<u32, String> = BTreeMap::new();
+    let mut pending_in: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut media_of_call: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut outgoing: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
+    let mut current_call: Option<u32> = None;
     conn.set_timeout(Duration::from_millis(250))
         .map_err(|e| e.to_string())?;
     let (tx, rx) = mpsc::channel::<String>();
@@ -1264,12 +1276,38 @@ fn interactive(
                     // /answer) follows. An incoming call rings and ends after 60 s with 480.
                     E::CallRinging { call } => println!("* call {call} ringing"),
                     E::IncomingCall { call, from } => {
-                        println!("* incoming call {call} from {from} (audio not yet available in this tool)")
+                        println!(
+                            "* incoming call {call} from {from} – /answer {call} or /hangup {call}"
+                        );
+                        current_call = Some(call);
                     }
-                    E::CallAnswered { call, .. } | E::CallUpdated { call, .. } => {
-                        println!("* call {call} media parameters received")
+                    E::CallAnswered { call, media } => {
+                        println!("* call {call} connected ({:?})", media.codec);
+                        current_call = Some(call);
+                        if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
+                            let _ = h.tx.send(calls::ToMedia::Start {
+                                media,
+                                controlling: outgoing.contains(&call),
+                            });
+                        }
                     }
-                    E::CallEnded { call, status } => println!("* call {call} ended ({status})"),
+                    E::CallUpdated { call, media } => {
+                        if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
+                            let _ = h.tx.send(calls::ToMedia::Update(media));
+                        }
+                    }
+                    E::CallEnded { call, status } => {
+                        println!("* call {call} ended ({status})");
+                        if let Some(m) = media_of_call.remove(&call) {
+                            if let Some(h) = handles.remove(&m) {
+                                let _ = h.tx.send(calls::ToMedia::Stop);
+                            }
+                        }
+                        outgoing.remove(&call);
+                        if current_call == Some(call) {
+                            current_call = None;
+                        }
+                    }
                     E::MediaRelayReady { relays, minutes } => {
                         println!("* media relay ready ({relays} relays, valid {minutes} min)")
                     }
@@ -1411,6 +1449,48 @@ fn interactive(
             Err(e) => return Err(e.to_string()),
         }
         outputs.extend(engine.on_tick(t));
+        while let Ok(m) = media_rx.try_recv() {
+            let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
+            match m {
+                calls::FromMedia::Ready(id, local) => {
+                    if let Some(to) = pending_out.remove(&id) {
+                        let call = engine.next_call_id();
+                        media_of_call.insert(call, id);
+                        outgoing.insert(call);
+                        outputs.extend(engine.command(C::Call { to, local, policy }, now()));
+                    } else if let Some(call) = pending_in.remove(&id) {
+                        media_of_call.insert(call, id);
+                        outputs.extend(engine.command(
+                            C::AcceptCall {
+                                call,
+                                local,
+                                policy,
+                            },
+                            now(),
+                        ));
+                    }
+                }
+                calls::FromMedia::Selected(id, local) => {
+                    if let Some((&call, _)) = media_of_call.iter().find(|(_, &m)| m == id) {
+                        outputs.extend(engine.command(C::UpdateCall { call, local }, now()));
+                    }
+                }
+                calls::FromMedia::Dtmf(id, d) => println!("* [media {id}] DTMF {d}"),
+                calls::FromMedia::PeerBye(id) => {
+                    println!("* [media {id}] the other side left the media session")
+                }
+                calls::FromMedia::Failed(id, why) => {
+                    println!("* media problem: {why}");
+                    if let Some((&call, _)) = media_of_call.iter().find(|(_, &m)| m == id) {
+                        outputs.extend(engine.command(C::Hangup { call }, now()));
+                    } else if let Some(h) = handles.remove(&id) {
+                        let _ = h.tx.send(calls::ToMedia::Stop);
+                        pending_out.remove(&id);
+                        pending_in.remove(&id);
+                    }
+                }
+            }
+        }
         while let Ok(line) = rx.try_recv() {
             let line = line.trim().to_string();
             let mut words = line.splitn(2, ' ');
@@ -1439,6 +1519,74 @@ fn interactive(
                     }
                 },
                 "/chat" => Some(C::StartConversation { to: arg }),
+                "/call" => {
+                    let relay = engine.media_relay().and_then(calls::relay_from);
+                    let id = next_media;
+                    next_media = next_media.wrapping_add(1).max(1);
+                    let h = calls::spawn(
+                        id,
+                        local_ip,
+                        relay,
+                        commscraft_audio_alsa::Config::default(),
+                        media_tx.clone(),
+                    );
+                    handles.insert(id, h);
+                    pending_out.insert(id, arg.clone());
+                    println!("* preparing the call (gathering media addresses) …");
+                    None
+                }
+                "/answer" => match arg.parse::<u32>().ok().or(current_call) {
+                    Some(call) => {
+                        let relay = engine.media_relay().and_then(calls::relay_from);
+                        let id = next_media;
+                        next_media = next_media.wrapping_add(1).max(1);
+                        let h = calls::spawn(
+                            id,
+                            local_ip,
+                            relay,
+                            commscraft_audio_alsa::Config::default(),
+                            media_tx.clone(),
+                        );
+                        handles.insert(id, h);
+                        pending_in.insert(id, call);
+                        None
+                    }
+                    None => {
+                        println!("* no call to answer");
+                        None
+                    }
+                },
+                "/hangup" => arg
+                    .parse::<u32>()
+                    .ok()
+                    .or(current_call)
+                    .map(|call| C::Hangup { call }),
+                "/dtmf" => {
+                    match current_call
+                        .and_then(|c| media_of_call.get(&c))
+                        .and_then(|m| handles.get(m))
+                    {
+                        Some(h) => {
+                            for d in arg
+                                .chars()
+                                .filter(|c| commscraft_rtp::dtmf_event(*c).is_some())
+                            {
+                                let _ = h.tx.send(calls::ToMedia::Dtmf(d));
+                            }
+                        }
+                        None => println!("* no active call"),
+                    }
+                    None
+                }
+                "/mute" | "/unmute" => {
+                    if let Some(h) = current_call
+                        .and_then(|c| media_of_call.get(&c))
+                        .and_then(|m| handles.get(m))
+                    {
+                        let _ = h.tx.send(calls::ToMedia::Mute(cmd == "/mute"));
+                    }
+                    None
+                }
                 "/group" => Some(C::StartGroup {
                     invite: arg.split_whitespace().map(str::to_string).collect(),
                 }),

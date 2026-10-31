@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-31 | CLI `interactive` calls: `/call`, `/answer`, `/hangup`, `/dtmf`, `/mute`; one media thread per call with ALSA capture/playback threads and bounded queues; final offer after ICE. Interop test IT-23. |
 | 2026-10-31 | Call media runtime (`call-media`): UDP sockets, TURN relays, ICE, audio core; loopback test with real sockets: ICE selection, final offer, encrypted G.722, DTMF, RTCP BYE. |
 | 2026-10-31 | Audio media core (`media`): codec, RTP, SRTP, jitter buffer with concealment, DTMF, RTCP, packet classification (RFC 5761 §4, STUN-02 §10.1). |
 | 2026-10-31 | Call signalling in the engine: multipart offer (MS-SIPRE §3.15), ringing, answer, final offer with remote-candidates, CANCEL, BYE, incoming calls with accept/decline/timeout. |
