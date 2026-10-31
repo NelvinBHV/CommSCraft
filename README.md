@@ -1,15 +1,16 @@
 # CommSCraft
 
-CommSCraft is a planned **clean-room, open-source Linux client for Skype for Business Server**
-(and Lync Server 2013 and later), built from Microsoft's public Open Specifications and IETF RFCs.
-It follows the conventions of the [storytold Crafting Apps](https://github.com/storytold)
+CommSCraft is a **clean-room, open-source Linux client for Skype for Business Server** (and Lync
+Server 2013 and later), built from Microsoft's public Open Specifications, IETF RFCs and ITU-T
+Recommendations. It follows the conventions of the [storytold Crafting Apps](https://github.com/storytold)
 (WordCraft, GridCraft, DeckCraft, …): pure Rust where possible, measured parity with the target
 application, a ranked work list, and nothing copied from Microsoft products.
 
-> **Stage: planning.** There is no program code yet. The first milestone imports the protocol
-> analysis (every client function mapped to the specification sections that define it) under the owner
-> decisions in [`docs/decisions.md`](docs/decisions.md). Read
-> [`ROADMAP.md`](ROADMAP.md) for where the project stands.
+> **Stage: M3 (audio 1:1), pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
+> address book search and audio calls exist as building blocks that pass offline tests (32 crates,
+> 242 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is verified
+> against a real server yet**; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
+> for where the project stands.
 
 CommSCraft is not affiliated with, endorsed by or sponsored by Microsoft. "Skype for Business",
 "Lync" and "Microsoft" are trademarks of Microsoft Corporation; they are used here only to describe
@@ -32,6 +33,34 @@ What it will **not** do: connect to Skype for Business Online (retired by Micros
 Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Details:
 [`docs/target-app-parity.md`](docs/target-app-parity.md).
 
+## What works today
+
+Status from [`docs/target-app-parity.md`](docs/target-app-parity.md) (2026-10-31): of 52 client
+functions, 10 are implemented and tested offline as a whole, 10 in parts, 30 not started.
+
+| Area | In the code (tested offline) | Not yet |
+|---|---|---|
+| Sign-in | Autodiscover (HTTPS only), DNS SRV, TLS 1.2/1.3, NTLM with MS-SIPAE signing, registration with GRUU, home-pool redirect, keep-alive, in-band provisioning, sign-out | Kerberos, TLS-DSK |
+| Presence and contacts | own state, contacts' presence (live), contact list (read), address book search | editing the contact list, privacy/blocking, offline address book, photos |
+| Instant messaging | 1:1 with typing indicator, group conversations (ad-hoc conference, invitations, delivery reports) | rich text, file transfer |
+| Audio calls | G.722 and G.711, SRTP, ICE and MS-TURN relay over UDP, DTMF, mute, ALSA/PipeWire devices | TCP relay through the Edge on 443, hold, conferences |
+| Conferences, telephony, video, screen sharing, Exchange | – | everything (M4–M7) |
+
+## Building and running
+
+Requirements: Rust (stable) and the ALSA development files (`libasound2-dev` / `alsa-lib`).
+
+```
+cargo build --release
+./target/release/commscraft-cli audio-check            # local microphone/speaker check, no network
+./target/release/commscraft-cli interactive --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN --authorized
+```
+
+`commscraft-cli` connects to a server only with `--authorized`: it is meant for runs on systems you
+are allowed to test. In `interactive` mode the commands are `/contacts`, `/status`, `/chat`,
+`/group`, `/invite`, `/join`, `/search`, `/call`, `/answer`, `/hangup`, `/dtmf`, `/mute`, `/to`,
+`/end`, `/quit`; `commscraft-cli` without arguments prints the full usage.
+
 ## How the work is documented
 
 | File | Content |
@@ -42,7 +71,7 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 | [`docs/interop-tests.md`](docs/interop-tests.md) | Test cases only the owner runs against a real server, each with a default |
 | [`docs/security.md`](docs/security.md) | Security by design: threat model and the rules every crate follows |
 | [`docs/target-app-parity.md`](docs/target-app-parity.md) | The target client and the 52 functions with their evidence status |
-| [`docs/architecture.md`](docs/architecture.md) | Planned layers and crates |
+| [`docs/architecture.md`](docs/architecture.md) | Layers and crates |
 | [`docs/protocol/`](docs/protocol/) | The protocol analysis: evidence per protocol, function matrix, conflicts/gaps/open points, source registers |
 | [`docs/decisions.md`](docs/decisions.md) | Decisions the owner has to take, and decisions already taken |
 | [`AGENTS.md`](AGENTS.md) | Rules for contributors and AI agents (clean room, evidence, security) |
@@ -57,7 +86,8 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
   implementations are read only to confirm behaviour and are cited as secondary evidence; their code
   is not copied.
 - Interoperability tests against real servers are run only by the project owner on authorized
-  systems; there is no such test environment yet, so all work is verified offline.
+  systems ([`docs/interop-tests.md`](docs/interop-tests.md)); their results are not published.
+  All work in this repository is verified offline.
 
 ## License
 

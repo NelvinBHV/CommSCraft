@@ -1,8 +1,8 @@
 # CommSCraft roadmap
 
-**Stage: M2 (presence, IM)** · M0 done (analysis imported, decisions taken, test vectors)
+**Stage: M3 (audio 1:1)** · M0 done · M1 and M2 built and tested offline · M3 in progress
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M1 started)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (headline numbers and next steps synchronised with the code)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -10,18 +10,18 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 [`docs/gaps.md`](docs/gaps.md), and milestones and the current focus are in
 [`docs/roadmap.md`](docs/roadmap.md).
 
-## Headline numbers (2026-10-27)
+## Headline numbers (2026-10-31)
 
 | Number | Value | Kind |
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Documented conflicts between specification passages | **47** | measured (analysis) |
-| Missing sources (all IETF/ITU gaps closed or narrowed) | **18** listed, 9 closed | measured (analysis) |
-| Open points still needing an interop capture | **3** of 24 (plus 3 of 18 gaps and 5 conflicts) and 5 checks from M1: 19 owner test cases, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured (analysis) |
-| Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 192 RFCs, 20 Internet-Drafts, ITU-T G.722.1/P.562/P.800.1 | measured |
-| Program code | 16 crates + 1 app, 138 tests (specification test vectors, examples, hostile-input tests, offline sign-in, TLS loopback); network code only in the `net` adapter, used only by the owner's `commscraft-cli` runs | measured |
-| Owner decisions | **all taken** (D-01 … D-10; [`docs/decisions.md`](docs/decisions.md)) | measured |
+| Implementation status of the 52 functions | **10** tested-offline as a whole, **10** in parts, **30** not started, 2 not planned/needs captures | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Conflicts / gaps / open points in the generated list | **53** / **19** (16 closed or no evidence problem) / **25** (22 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
+| Owner test cases | **23** (IT-01 … IT-23, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
+| Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
+| Program code | **32 crates + 1 app** (`commscraft-cli`), **242 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **none** (D-08): all work is `tested-offline` at best | measured |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -34,18 +34,19 @@ transfer can come later from interop captures.
 
 ## What comes next
 
-1. **M0 – foundations** (current): protocol analysis imported into [`docs/protocol/`](docs/protocol/); set up an empty Rust workspace and CI on
-   standard runners.
-2. **M1 – sign-in and registration**, **M2 – presence and IM**, **M3 – audio 1:1**,
-   **M4 – conferences and telephony**, **M5 – video**, **M6 – viewing shared screens**, **M7 – Exchange
-   integration**. Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
+1. **M3 – audio 1:1** (current): TCP candidates and the TCP relay through the Edge on 443, hold and
+   resume, MS-RTP RTCP profile extensions; then the owner's first call (IT-23).
+2. **M4 – conferences and telephony**, **M5 – video**, **M6 – viewing shared screens**,
+   **M7 – Exchange integration**; the graphical interface (egui, D-07) is not yet in a milestone.
+   Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
 
-Hours are not estimated yet; the first estimate follows once M0 has fixed the architecture.
+Hours are not estimated.
 
 ## Progress log
 
 | Date | Change |
 |---|---|
+| 2026-10-31 | Status documents synchronised with the code (owner rule): README (stage, what works, build and run), headline numbers measured (32 crates + 1 app, 242 tests, 10/10/30 functions), feature matrix rows and totals, gap list per milestone incl. IT-20 … IT-23, current focus and alpha gate. |
 | 2026-10-31 | CLI `interactive` calls: `/call`, `/answer`, `/hangup`, `/dtmf`, `/mute`; one media thread per call with ALSA capture/playback threads and bounded queues; final offer after ICE. Interop test IT-23. |
 | 2026-10-31 | Call media runtime (`call-media`): UDP sockets, TURN relays, ICE, audio core; loopback test with real sockets: ICE selection, final offer, encrypted G.722, DTMF, RTCP BYE. |
 | 2026-10-31 | Audio media core (`media`): codec, RTP, SRTP, jitter buffer with concealment, DTMF, RTCP, packet classification (RFC 5761 §4, STUN-02 §10.1). |

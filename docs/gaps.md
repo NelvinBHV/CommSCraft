@@ -1,36 +1,39 @@
 # Where CommSCraft falls short of the Skype for Business client
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M1 building blocks)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (synchronised with the code: M1–M3)
 
 The work list, ranked by how much each item blocks the alpha gate in
 [`roadmap.md`](roadmap.md#alpha-gate-core-workflows) (**A** = blocks alpha). Each entry says what is
 missing, the evidence, and which document tracks it. Agents: pick from the top, check open PRs
 first, and update this file when a gap closes.
 
-At this stage the whole client is missing; the list below covers what stands between the analysis
-and the first milestones, followed by the open points found in the analysis.
+State of the code (2026-10-31): sign-in, presence, IM (1:1 and group), address book search and
+audio calls over UDP exist as tested-offline building blocks and are usable in `commscraft-cli
+interactive`; nothing is verified against a real server yet (owner test cases). The list below says
+what is still missing per milestone, followed by the open points found in the analysis.
 
 ## Blocking (A)
 
 | # | Gap | Evidence / tracking | Milestone |
 |---|---|---|---|
-| 1 | No interop test environment (D-08): nothing can be verified against a real server; the remaining questions are owner test cases IT-01 … IT-19 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | after M0 |
-| 2 | ~~Protocol analysis not yet in the repository~~ – imported | [`protocol/`](protocol/) | done |
-| 3 | ~~Remaining M0 test vectors (SIPCOMP/MPPC, ABS, PSOM, TURNBWM XOR)~~ – done | [`roadmap.md`](roadmap.md) | done |
-| 4 | Sign-in stack: discovery, TLS, NTLM/Kerberos/TLS-DSK, registration, provisioning. Done offline: SIP parser/framing, MS-SIPAE signing and verification (NTLM), NTLM handshake messages, REGISTER flow (sign-in, refresh, sign-out, deregister NOTIFY), in-band provisioning, discovery (Autodiscover HTTPS-only, DNS SRV), registrar redirect, keep-alive, TLS adapter, `commscraft-cli` for the owner's run. Missing: Kerberos/TLS-DSK, discovery, TLS adapter | functions 1–8 | M1 |
-| 5 | Presence and IM | functions 9–19 | M2 |
-| 6 | Media stack: MS-ICE2/MS-TURN, SRTP, RTP/RTCP, G.711/G.722 | functions 21–26 | M3 |
-| 7 | Conferences (C3P/CCCP, focus, MCUs) | functions 40–42 | M4 |
-| 8 | Viewing shared screens (RDP over RTP) | function 43 | M6 |
+| 1 | No interop test environment (D-08): nothing is verified against a real server; the remaining questions are owner test cases IT-01 … IT-23 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | all |
+| 2 | Sign-in: Kerberos (function 5) and TLS-DSK with client certificate (function 6) are missing; NTLM, discovery, TLS, registration, provisioning and sign-out exist (tested-offline) | functions 1–8, 50 | M1 |
+| 3 | Presence and IM: contact list editing (add/remove contacts and groups), privacy relationships and blocking (12), offline address book (13), contact photos (15), Exchange unified contact store (11); presence, 1:1 and group IM, typing and address book search exist | functions 9–19 | M2 |
+| 4 | Audio 1:1: TCP candidates and TCP relay through the Edge on 443 (IC-10/IC-11, TU-02 – the TURN client already speaks TCP framing and pseudo-TLS), hold/resume command and music on hold (35), MS-RTP profile extensions in RTCP (RT-22 … RT-27), bandwidth management (32), redundant audio (MS-RTPRADEX, 30), early media (SD-50/SD-51); UDP calls with ICE/TURN/SRTP/G.722/G.711/DTMF exist | functions 21–26, 30, 32, 35 | M3 |
+| 5 | Conferences and telephony: meetings (schedule, join, lobby, roles), A/V conference with SSRTP, PSTN, transfer, forwarding, park, E911, QoE | functions 33–34, 36–37, 39–42, 45 | M4 |
+| 6 | Video H.264 UC | functions 28, 31 | M5 |
+| 7 | Viewing shared screens (RDP over RTP) | function 43 | M6 |
+| 8 | Graphical user interface (egui, D-07); today only the command-line tool exists | [`decisions.md`](decisions.md) | not yet in a milestone |
 
-## Open points from the analysis – closed (2026-10-27)
+## Open points from the analysis – closed (2026-10-31)
 
 Full list with status: [`protocol/conflicts-gaps-open-points.md`](protocol/conflicts-gaps-open-points.md);
 evidence of the closing pass: [`protocol/evidence/39-evidence-for-open-points.md`](protocol/evidence/39-evidence-for-open-points.md)
 (OB-39 … OB-51).
 
-No point needs more document research. Of 23 open points, 21 are closed by a normative source, by
-design or as not needed; of 18 gaps, 15 are closed or no evidence problem. What remains is server or
+No point needs more document research. Of 25 open points, 22 are closed by a normative source, by
+design or as not needed; of 19 gaps, 16 are closed or no evidence problem (counted from the
+generated list, 2026-10-31). What remains is server or
 Windows-client behaviour that only a capture can show. These are the owner test cases in
 [`interop-tests.md`](interop-tests.md). Each one has a default, so none blocks offline work.
 
@@ -40,6 +43,7 @@ Windows-client behaviour that only a capture can show. These are the owner test 
 | Not needed by the client | O-CP-1, O-CP-3 (OB-40: compression is only negotiated by the client; CommSCraft does not) |
 | By design or owner decision | O-EX-3 (OB-49), L-03 and L-07 (D-05, OB-51) |
 | Earlier passes | O-SIP-1, O-PR-1, O-AD-1, O-AD-2, O-CP-2, O-PV-3, O-BW-1, L-01 … L-10, L-12, L-14, L-17, L-18 |
+| Sources obtained during development | L-19 (ITU-T G.711/G.722 incl. digital test sequences, 2026-10-28) |
 
 | Interop test | Point | Default until tested |
 |---|---|---|
@@ -57,6 +61,10 @@ Windows-client behaviour that only a capture can show. These are the owner test 
 | IT-17 | Registrar redirect to the home pool (O-RG-1) | Signed TLS redirect only |
 | IT-18 | TLS 1.2 handshake with the pool (SfB 2015 CU9+/2019 CU1+) | No TLS 1.0/1.1 |
 | IT-19 | First complete sign-in with `commscraft-cli` | – |
+| IT-20 | K-CI-3 invitation INVITE (`application/ms-conf-invite+xml`) of the Windows client | Reported only; join with `/join N` |
+| IT-21 | Group IM against the conferencing server | – |
+| IT-22 | O-IC-2 length rule for STUN-02 checks with MI and FINGERPRINT | RFC 5389 rule |
+| IT-23 | First audio call (inside and through the Edge) | Encryption as provisioned, no plaintext fallback |
 
 ## Not planned without an owner decision
 

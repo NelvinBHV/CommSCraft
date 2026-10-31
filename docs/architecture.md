@@ -1,6 +1,6 @@
 # CommSCraft architecture (planned)
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (first adapter `net`, first app `commscraft-cli`)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (all 32 crates and the app listed)
 
 Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 [`decisions.md`](decisions.md) are taken. Rules for working in the code are in

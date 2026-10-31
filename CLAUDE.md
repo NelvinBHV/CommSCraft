@@ -77,6 +77,9 @@ sockets, the OS or the UI; transport and OS adapters are separate crates.
   requests into `main` regularly once CI is green (owner instruction T-02, 2026-10-31); no releases.
 
 ## Progress docs
-When work lands, update the gap in `docs/gaps.md`, the function row in
-`docs/target-app-parity.md` and the progress log in `ROADMAP.md`, and bump the touched docs'
-status line.
+With every change that lands, bring the four status documents in line with the actual code (owner
+rule, 2026-10-31): `README.md` (stage, what works today), `ROADMAP.md` (stage, headline numbers
+measured from the repository, progress log), `docs/target-app-parity.md` (the function rows and
+the totals – the feature matrix) and `docs/gaps.md` (what is still missing per milestone), plus the
+current focus in `docs/roadmap.md`. Numbers are measured (crates, tests, generated open-point
+list), never estimated. Bump the touched docs' status line.

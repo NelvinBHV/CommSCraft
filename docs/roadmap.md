@@ -1,44 +1,27 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M2 started)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (synchronised with the code: M3 in progress)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
 A milestone is done when its gate passes offline; "verified" always means an interop run by the
 owner on an authorized server and is deferred until such an environment exists (D-08).
 
-## Current focus (M0 – foundations)
+## Current focus (M3 – audio 1:1)
 
-1. **Offline first** (decision D-08): there is no interop test environment yet, so every gate below
-   ends at `tested-offline`; "verified" rows wait until the owner provides an environment.
-2. ~~Import the protocol analysis~~ – done: [`protocol/`](protocol/) (39 evidence files, function
-   matrix, conflict/gap/open-point list, source registers; English, no PDFs, no patent notes).
-3. ~~Workspace skeleton~~ – done: Rust workspace with the first crates (`ntlm`, `ice`, `srtp`,
-   `sip-identity`), lints from [`AGENTS.md`](../AGENTS.md), CI on `ubuntu-latest` (D-09).
-4. ~~Test vectors as tests~~ – done: MS-NLMP NTLMv2 (§4.2.4), RFC 3711 B.3 and MS-SSRTP §4
-   (key derivation and packet transform), MS-SIPRE §4.2 (EPID → +sip.instance), MS-ICE2 CRC table
-   and the SfB candidate priorities (IE-05), MPPC per RFC 2118/MS-RDPBCGR (`sipcomp`), the
-   compressed MS-ABS example and file-name dates (`abs`), the MS-PSOM ConnMgr frames (`psom`) and
-   the MS-TURNBWM XOR examples (`turn-bwm`).
-5. ~~Close the open-point list~~ – done: normative answers or defaults for every point; the
-   remaining server behaviour is the owner's test catalogue [`interop-tests.md`](interop-tests.md).
-6. **M1 in progress** – sign-in and registration, offline against specification examples and
-   self-built fixtures. Done: SIP message parser and stream framing (`sip-msg`), MS-SIPAE signing
-   and verification with NTLM (`sipae`), NTLM CHALLENGE/AUTHENTICATE messages (`ntlm::messages`,
-   example §4.2.4.3 byte for byte), the REGISTER flow as a sans-I/O state machine (`register`,
-   offline sign-in against a test registrar). In-band provisioning (`provisioning`,
-   bounded `xml` reader) and the deregister NOTIFY are done. Discovery (`discovery`, `url`) and the
-   registrar redirect are done. Keep-alive, the TLS adapter (`net`) and `commscraft-cli`
-   are done: **M1 is ready for the owner's first interop run (IT-19)**. Discovery is wired into the CLI
-   (`--discover-only` for IT-16).
-7. **M2 in progress** – presence and IM. Done offline: contact list, one-time batch presence
-   queries, own state publication scoped to the endpoint (`presence`, CLI `presence`), 1:1 IM
-   (`im`), the session engine with long-lived subscriptions and conversations (`session`), the
-   interactive CLI mode, address book search (`dlx`, NTLM over HTTP), group IM (`conf`).
-8. **M3 in progress** – audio 1:1. Done offline: codecs G.711 (`g711`) and G.722 (`g722`, bit-exact
-   against the ITU test sequences), audio devices (`audio-alsa`, D-11), RTP/RTCP and DTMF (`rtp`),
-   SRTP/SRTCP contexts (`srtp`), SDP audio offer/answer (`sdp`). Next: STUN/ICE (MS-ICE2) and TURN (MS-TURN, MS-AVEDGEA), call signalling,
-   audio device adapter.
+**Offline first** (decision D-08): there is no interop test environment, so every gate ends at
+`tested-offline`; "verified" waits for the owner's runs ([`interop-tests.md`](interop-tests.md)).
+
+| Milestone | State (2026-10-31) | What exists | Missing before the gate |
+|---|---|---|---|
+| M0 | done | analysis in [`protocol/`](protocol/), decisions, workspace, CI, specification test vectors | – |
+| M1 | built, tested-offline | discovery (Autodiscover HTTPS-only, DNS SRV, trust model), TLS adapter, NTLM + MS-SIPAE, REGISTER (GRUU, refresh, redirect, deregister), keep-alive, provisioning, sign-out, `commscraft-cli` | Kerberos, TLS-DSK; owner verification |
+| M2 | built, tested-offline | presence (publish, batch subscriptions, pool resubscribe), contact list (read, live), 1:1 IM with typing, group IM (ad-hoc conference, invitations, IMDN), address book search (MS-DLX over NTLM/HTTP), session engine, CLI `interactive` | contact list editing, privacy/blocking, offline address book, photos; owner verification |
+| M3 | in progress | G.711, G.722, ALSA/PipeWire adapter (D-11), RTP/RTCP, DTMF, SRTP, SDP, STUN, MS-TURN, MS-AVEDGEA, ICE agent (UDP), call signalling, media core and runtime, CLI `/call` `/answer` `/hangup` `/dtmf` `/mute` | TCP candidates/relay on 443, hold/resume command, MS-RTP RTCP profile, bandwidth management, redundancy; owner verification (IT-23) |
+| M4 – M7 | not started | building blocks only: C3P/roster (`conf`), SSRTP transform, PSOM/ABS/MPPC test vectors | everything else |
+
+Next steps in order: TCP candidates and the TCP relay (pseudo-TLS) for networks that only allow
+443; hold/resume; MS-RTP RTCP profile extensions; then M4 (meetings with audio, telephony).
 
 ## Milestones
 
@@ -59,13 +42,14 @@ transfer — needs captures) stay outside the milestones until the matching deci
 ## Alpha gate (core workflows)
 
 What a typical Skype for Business user does every day, end to end on Linux against an on-premises
-server. Status: **not started**.
+server. Status: **in progress** – the first four workflows exist in `commscraft-cli interactive`
+and pass offline tests; none is verified against a real server yet.
 
 | Core workflow | Works end to end? |
 |---|---|
-| Sign in automatically (discovery, authentication, registration) and sign out | no |
-| See colleagues' presence and set your own | no |
-| Chat 1:1 and in a group | no |
-| Call a colleague with audio (incl. through the Edge server) | no |
+| Sign in automatically (discovery, authentication, registration) and sign out | built, tested-offline (NTLM only) |
+| See colleagues' presence and set your own | built, tested-offline |
+| Chat 1:1 and in a group | built, tested-offline |
+| Call a colleague with audio (incl. through the Edge server) | built, tested-offline over UDP (loopback test); TCP relay missing |
 | Join a scheduled meeting with audio and see who is speaking | no |
 | Watch a colleague's shared screen | no |
