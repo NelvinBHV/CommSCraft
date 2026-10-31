@@ -38,6 +38,7 @@ STATUS = {
     "O-EX-3": "closed by design (OB-49); optional interop test IT-13", "O-EX-4": "closed (OB-48, normative server interface)", "O-EX-5": "closed (OB-48, normative: Autodiscover AuthPackage)",
     "O-RG-1": "secondary evidence (SIPE), implemented fail-closed; interop test IT-17",
     "O-TU-1": "closed (OB-41, normative: ignore unknown optional attributes)",
+    "L-12": "closed (ITU-T G.711 and G.722 incl. digital test sequences obtained 2026-10-28, evidence 17)",
 }
 
 ID_RE = re.compile(r"^- (?:\*\*)?([KLO])-([A-Z0-9]+(?:-[0-9]+)?)")

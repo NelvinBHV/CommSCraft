@@ -50,7 +50,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 23 | Media negotiation (SDP) | MS-SDPEXT, MS-SIPRE | B\* | – |
 | 24 | Media encryption | MS-SRTP, MS-SSRTP | B | – |
 | 25 | RTP/RTCP, bandwidth, video source requests | MS-RTP | B | – |
-| 26 | Audio codecs G.711, G.722 | MS-RTP, MS-SDPEXT | B | – |
+| 26 | Audio codecs G.711, G.722 | MS-RTP, MS-SDPEXT, ITU-T G.711, G.722 | B | tested-offline (G.711 against Tables 1–6; G.722 ADPCM bit-exact against all ITU digital test sequences, QMF round trip: `g711`, `g722`) |
 | 27 | Audio codecs RTAudio, Siren, G.722.1 | MS-SDPEXT, MS-RTP, ITU-T G.722.1 | T | – |
 | 28 | Video H.264 UC/SVC | MS-H264PF, MS-SDPEXT | B | – |
 | 29 | Video RTVideo | MS-RTVPF | N | not planned |

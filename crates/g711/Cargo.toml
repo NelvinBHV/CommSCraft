@@ -1,0 +1,11 @@
+[package]
+name = "commscraft-g711"
+description = "ITU-T G.711 A-law and µ-law, built from the decision values of the Recommendation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true

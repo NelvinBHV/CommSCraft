@@ -19,6 +19,8 @@ members = [
     "crates/session",
     "crates/dlx",
     "crates/conf",
+    "crates/g711",
+    "crates/g722",
     "crates/url",
     "crates/discovery",
     "crates/net",

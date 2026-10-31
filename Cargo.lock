@@ -102,6 +102,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "commscraft-g711"
+version = "0.0.1"
+
+[[package]]
+name = "commscraft-g722"
+version = "0.0.1"
+
+[[package]]
 name = "commscraft-ice"
 version = "0.0.1"
 
