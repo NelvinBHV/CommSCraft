@@ -19,3 +19,4 @@ Sources (Windows package): [MS-RDPBCGR] "Remote Desktop Protocol: Basic Connecti
 ## Later findings (file 39)
 - O-RD-1 **narrowed** (OB-18): SIPE works without a pre-connection blob (inference: not required).
 - O-RD-2 **narrowed** (OB-19): MultifragMaxRequestSize ≤ 0x3EFFFF; (OB-35, FreeRDP PR #3669): the Lync 2013 viewer accepts RemoteFX. Other codecs still open.
+- O-RD-2 **closed** (OB-45, normative): the RDP server must send only what the client's capabilities allow (MS-RDPBCGR §3.3.5.3.13.2, p. 322). O-RD-1: MS-RDPEMC §1.5 (p. 10) names a pre-connection PDU as precondition, SIPE sends none → interop test IT-02 (OB-46).

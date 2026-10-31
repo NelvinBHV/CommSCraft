@@ -55,3 +55,4 @@ Sources (all edition 20250520): [MS-H264PF] 33 pp.; [MS-RTVPF] 36 pp.; [MS-RTPRA
 - L-08 **closed**: draft-levin-mmusic-xml-media-control-12 obtained; INFO body `Content-Type: application/media_control+xml` (IE-07).
 - Base RFCs 6184/6190/5109/2198/4733 obtained.
 - Comparison of MS-RTVPF §3.1.5.5 (p. 21) with FFmpeg's VC-1 decoder suggests that RTVideo signals cached frames and SP-frames with picture type codes beyond the VC-1 code `1111` (skipped picture); a standard VC-1 decoder would therefore misread them (inference).
+- L-07 **closed by decision** D-05 (OB-51): no RTVideo/VC-1 codec.

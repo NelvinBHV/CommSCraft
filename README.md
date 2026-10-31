@@ -39,6 +39,7 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 | [`ROADMAP.md`](ROADMAP.md) | Stage, headline numbers, progress log |
 | [`docs/roadmap.md`](docs/roadmap.md) | Milestones, current focus, alpha gate |
 | [`docs/gaps.md`](docs/gaps.md) | Ranked list of everything missing or unresolved |
+| [`docs/interop-tests.md`](docs/interop-tests.md) | Test cases only the owner runs against a real server, each with a default |
 | [`docs/target-app-parity.md`](docs/target-app-parity.md) | The target client and the 52 functions with their evidence status |
 | [`docs/architecture.md`](docs/architecture.md) | Planned layers and crates |
 | [`docs/protocol/`](docs/protocol/) | The protocol analysis: evidence per protocol, function matrix, conflicts/gaps/open points, source registers |

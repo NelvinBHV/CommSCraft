@@ -26,3 +26,4 @@ Source: [MS-OCPSTN] "Session Initiation Protocol (SIP) for PSTN Calls Extensions
 - L-13: base RFCs 3515/3891/3892 obtained.
 - L-13 **largely documented** (OB-25, official UCMA reference for Lync 2013): attended (completed after a successful REFER NOTIFY), supervised (REFER with Replaces for the consultation call), unattended (ends after REFER Accepted).
 - OB-37 (secondary): transferred or forwarded calls from the Mediation Server carry History-Info or Referred-By.
+- L-13: the transfer flow is officially documented (OB-25); the Skype for Business specific headers are interop test IT-06.

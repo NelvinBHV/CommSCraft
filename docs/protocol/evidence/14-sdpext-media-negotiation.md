@@ -96,3 +96,4 @@ Source: [MS-SDPEXT] "Session Description Protocol (SDP) Version 2.0 Extensions",
 - OB-20/OB-26: ITU-T G.722.1 including Annex C (Siren14) is freely available from the ITU with reference code and test vectors (package obtained).
 - OB-27: RTAudio – Microsoft's official overview contains no bitstream and states that a licence from Microsoft is needed to implement it.
 - OB-34: Siren7 **secondary evidence** (libsiren): 2-bit rate code + 4-bit checksum per 20 ms frame; SDP `SIREN/16000 bitrate=16000`.
+- L-03 **closed by decision** D-05 (OB-51): RTAudio, RTVideo and Siren are not implemented; G.722.1 only after legal clearance.

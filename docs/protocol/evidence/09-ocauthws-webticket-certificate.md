@@ -43,3 +43,4 @@ Dependencies: SOAP 1.1/1.2, WS-Trust 1.3, WS-Security, WS-MetadataExchange, SAML
 
 ## Later finding (file 39)
 - O-AW-1 **secondary evidence** (OB-08): bearer variant (Timestamp + Assertion/EncryptedData) or proof of possession (P_SHA1 key, HMAC-SHA1 XML signature over `#timestamp`). The WSDL policy in §6 remains authoritative.
+- O-AW-1 **closed** (OB-39, normative): the web-ticket policy §6.3 (p. 81) requires a bearer SAML 1.1 token as a signed supporting token over HTTPS, with WS-Addressing and no timestamp requirement; MS-DLX names its binding `AddressBookWebTicketBearer`.

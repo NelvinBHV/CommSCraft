@@ -47,3 +47,4 @@ Important: this is **not** RFC 5766 TURN. Magic cookie as an attribute, own mess
 ## Later findings (files 38, 39)
 - Comparison with turn-08 confirms message types, attributes and MAGIC-COOKIE (IE-01); error codes 434–440 from turn-08 §9.2.10.
 - MS-TURN specifics (no padding, NONCE/REALM swapped) confirmed by the Wireshark dissector (OB-38).
+- O-TU-1 **closed** (OB-41, normative): MS-TURN §2.2.2 (p. 22) says unknown attributes of the optional space SHOULD be ignored; the meaning of 0x8006 is not needed.

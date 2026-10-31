@@ -50,3 +50,4 @@ Machine comparison of the 256 entries (pp. 25–26) with the standard CRC-32 tab
 - L-02 **closed**: ice-19, ice-06, ice-tcp-00/-07, STUN-02 and rfc3489bis-08 obtained.
 - IC-12/IC-13 now with a primary source: priority formulas (IE-04, recomputed with SfB example values IE-05), MI in the old STUN format (IE-02).
 - O-IC-1 narrowed (IE-03) and then **secondary evidence** (OB-09, libnice): the duplicate uses CRC-32 with the misprinted entry 0x08BBE8EA followed by XOR 0x5354554E; the misprinted variant is accepted only without IMPLEMENTATION-VERSION.
+- O-IC-1 **closed for the target servers** (OB-42, normative): IMPLEMENTATION-VERSION is mandatory (§2.2.2, p. 17) and missing only in 2007-generation endpoints (<3>); the CRC-table duplicate applies only towards such peers.

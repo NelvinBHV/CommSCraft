@@ -29,3 +29,4 @@ These points are dispensable for a first Linux client or need an interop test.
 - O-EX-5 **secondary evidence** (OB-15): Exchange Autodiscover (POX), then Negotiate/NTLM, Basic only as the last fallback.
 - O-EX-3 **partly** (OB-22): stored in each participant's "Conversation History" folder as a mail item (Lync 2010 SDK, official); server-side recording from Lync 2013 via `EnableServerConversationHistory` (MS-SIPREGE pp. 55/127).
 - O-EX-4 **narrowed** (OB-23): voicemail message classes per MS-OXOUM §2.2.2.1, p. 10.
+- O-EX-1, O-EX-2, O-EX-4, O-EX-5 **closed** (OB-48, normative): Autodiscover gives `ASUrl`, `EwsUrl` and `AuthPackage` (MS-OXDSCLI pp. 18–23); the EWS operations are server interfaces. O-EX-3 closed by design (OB-49).

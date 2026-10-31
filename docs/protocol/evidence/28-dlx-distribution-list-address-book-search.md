@@ -20,3 +20,4 @@ Source: [MS-DLX] "Distribution List Expansion Protocol", edition 20250520, 70 pp
 
 ## Later finding (file 39)
 - O-DL-1 **secondary evidence** (OB-12): endpoint = the provisioned `dlxInternalUrl`/`dlxExternalUrl`; SOAPAction `DistributionListExpander/IAddressBook/SearchAbEntry`.
+- O-DL-1 **closed** (OB-44, normative): the provisioned `dlx*`/`abwq*` URLs are the MS-DLX endpoint (MS-SIPREGE §2.2.2.5.1, pp. 27–28). K-DL-1 resolved: the `AddressBookWinNegotiate` binding (p. 65) prints `DistributionListExpander/ExpandDistributionList` without the space.
