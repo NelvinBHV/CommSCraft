@@ -409,5 +409,151 @@ impl ServerConfiguration {
     }
 }
 
+/// Whether the client asks the user for a location when none is known (§2.2.2.5.7, p. 56).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum LocationRequired {
+    #[default]
+    No,
+    Yes,
+    /// Ask, and show the administrator's disclaimer if the user goes on without one.
+    Disclaimer,
+}
+
+/// One emergency dial string and the dial strings that are translated into it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EmergencyNumber {
+    pub dial: String,
+    pub masks: Vec<String>,
+}
+
+/// The `locationPolicy` provisioning group (RG-51; [MS-SIPREGE] §2.2.2.5.7, pp. 56–57).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct LocationPolicy {
+    /// EnhancedEmergencyServicesEnabled: send PIDF-LO with emergency calls.
+    pub enabled: bool,
+    /// LocationPolicyTagID: goes into the PIDF-LO of every emergency call.
+    pub tag_id: Option<String>,
+    pub location_required: LocationRequired,
+    /// UseLocationForE911Only.
+    pub e911_only: bool,
+    /// EmergencyNumbers, or EmergencyDialString with EmergencyDialMask when that is absent.
+    pub numbers: Vec<EmergencyNumber>,
+    /// NotificationUri: SIP URIs the server notifies (comma separated).
+    pub notification_uris: Vec<String>,
+    pub conference_uri: Option<String>,
+    /// ConferenceMode: `oneway` or `twoway`.
+    pub conference_mode: Option<String>,
+    pub disclaimer: Option<String>,
+    /// LocationRefreshInterval in hours.
+    pub refresh_hours: Option<u32>,
+}
+
+/// Bound for emergency numbers and masks (design).
+const MAX_EMERGENCY_NUMBERS: usize = 16;
+
+/// A dial string: digits, `*`, `#`, a leading `+`; 1–32 characters (design).
+fn dial_string(v: &str) -> Option<String> {
+    let v = v.trim();
+    let body = v.strip_prefix('+').unwrap_or(v);
+    let ok = (1..=32).contains(&body.len())
+        && body
+            .chars()
+            .all(|c| c.is_ascii_digit() || c == '*' || c == '#');
+    ok.then(|| v.to_string())
+}
+
+impl LocationPolicy {
+    /// Reads the group; invalid entries are dropped (fail closed: no number, no emergency path).
+    pub fn from_group(g: &Group) -> Self {
+        let yes = |n: &str| {
+            g.get(n)
+                .is_some_and(|v| v.trim().eq_ignore_ascii_case("true"))
+        };
+        let text = |n: &str, max: usize| {
+            g.get(n)
+                .map(|v| {
+                    v.trim()
+                        .chars()
+                        .filter(|c| !c.is_control())
+                        .take(max)
+                        .collect::<String>()
+                })
+                .filter(|v| !v.is_empty())
+        };
+        // EmergencyNumbers takes precedence over EmergencyDialString (§2.2.2.5.7, p. 57).
+        let mut numbers = Vec::new();
+        if let Some(list) = g.get("EmergencyNumbers").filter(|v| !v.trim().is_empty()) {
+            for combo in list.split(';').take(MAX_EMERGENCY_NUMBERS) {
+                let (dial, masks) = combo.split_once('-').unwrap_or((combo, ""));
+                if let Some(dial) = dial_string(dial) {
+                    numbers.push(EmergencyNumber {
+                        dial,
+                        masks: masks
+                            .split(',')
+                            .filter_map(dial_string)
+                            .take(MAX_EMERGENCY_NUMBERS)
+                            .collect(),
+                    });
+                }
+            }
+        } else if let Some(dial) = g.get("EmergencyDialString").and_then(dial_string) {
+            numbers.push(EmergencyNumber {
+                dial,
+                masks: g
+                    .get("EmergencyDialMask")
+                    .unwrap_or("")
+                    .split(';')
+                    .filter_map(dial_string)
+                    .take(MAX_EMERGENCY_NUMBERS)
+                    .collect(),
+            });
+        }
+        LocationPolicy {
+            enabled: yes("EnhancedEmergencyServicesEnabled"),
+            tag_id: text("LocationPolicyTagID", 256),
+            location_required: match g
+                .get("LocationRequired")
+                .map(|v| v.trim().to_ascii_lowercase())
+                .as_deref()
+            {
+                Some("yes") => LocationRequired::Yes,
+                Some("disclaimer") => LocationRequired::Disclaimer,
+                _ => LocationRequired::No,
+            },
+            e911_only: yes("UseLocationForE911Only"),
+            numbers,
+            notification_uris: g
+                .get("NotificationUri")
+                .unwrap_or("")
+                .split(',')
+                .filter_map(|u| sip_uri(u.trim()))
+                .take(MAX_EMERGENCY_NUMBERS)
+                .collect(),
+            conference_uri: g.get("ConferenceUri").and_then(|u| sip_uri(u.trim())),
+            conference_mode: g
+                .get("ConferenceMode")
+                .map(|m| m.trim().to_ascii_lowercase())
+                .filter(|m| m == "oneway" || m == "twoway"),
+            disclaimer: text("EmergencyServiceDisclaimer", 2048),
+            refresh_hours: g
+                .get("LocationRefreshInterval")
+                .and_then(|v| v.trim().parse().ok()),
+        }
+    }
+
+    /// The emergency dial string a dialled number stands for (the number itself or one of its
+    /// masks), only while enhanced emergency services are enabled.
+    pub fn emergency(&self, dialled: &str) -> Option<&str> {
+        if !self.enabled {
+            return None;
+        }
+        let d = dialled.trim();
+        self.numbers
+            .iter()
+            .find(|n| n.dial == d || n.masks.iter().any(|m| m == d))
+            .map(|n| n.dial.as_str())
+    }
+}
+
 #[cfg(test)]
 mod tests;

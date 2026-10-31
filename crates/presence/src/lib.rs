@@ -202,6 +202,9 @@ pub struct Forwarding {
     pub simultaneous_ring: Option<String>,
     /// Seconds the registered endpoints ring (`wait total`, 0 … 1200; the server's default is 20).
     pub ring_seconds: Option<u32>,
+    /// An emergency call is in progress: all routing rules are suspended, calls go only to the
+    /// registered endpoints (`e911active`, [MS-SIPRE] §3.9.5.1.2, p. 60; RE-51, RE-67).
+    pub e911_active: bool,
 }
 
 impl Forwarding {
@@ -228,6 +231,9 @@ impl Forwarding {
             ));
             flags.push("simultaneous_ring");
         }
+        if self.e911_active {
+            flags.push("e911active");
+        }
         let seconds = self.ring_seconds.unwrap_or(20);
         if seconds > 1200 {
             return Err(Error::OutOfRange);
@@ -247,6 +253,36 @@ pub fn publish_routing_body(
     rules: &Forwarding,
     versions: [u32; 5],
 ) -> Result<String, Error> {
+    routing_body(aor, rules, versions, "expireType=\"static\"")
+}
+
+/// SERVICE body publishing a time-bound routing preamble (RE-67: before an emergency call, with
+/// `e911active`; [MS-SIPRE] §3.17.5.1, p. 80): `expireType="time"` with `expires` in seconds
+/// (K-PR-2: the publication schema types `expires` as an unsigned integer, [MS-PRES] §6 p. 209;
+/// the prose of §2.2.2.2, p. 35, speaks of a UTC time – the schema is authoritative).
+pub fn publish_routing_for_body(
+    aor: &str,
+    rules: &Forwarding,
+    versions: [u32; 5],
+    seconds: u32,
+) -> Result<String, Error> {
+    if seconds == 0 {
+        return Err(Error::OutOfRange);
+    }
+    routing_body(
+        aor,
+        rules,
+        versions,
+        &format!("expireType=\"time\" expires=\"{seconds}\""),
+    )
+}
+
+fn routing_body(
+    aor: &str,
+    rules: &Forwarding,
+    versions: [u32; 5],
+    expiry: &str,
+) -> Result<String, Error> {
     let aor = checked_sip_uri(aor)?;
     let preamble = rules.preamble()?;
     let mut b = format!(
@@ -255,7 +291,7 @@ pub fn publish_routing_body(
     );
     for (container, version) in ROUTING_CONTAINERS.iter().zip(versions) {
         b.push_str(&format!(
-            "<publication categoryName=\"routing\" instance=\"0\" container=\"{container}\" version=\"{version}\" expireType=\"static\">{preamble}</publication>"
+            "<publication categoryName=\"routing\" instance=\"0\" container=\"{container}\" version=\"{version}\" {expiry}>{preamble}</publication>"
         ));
     }
     b.push_str("</publications></publish>");

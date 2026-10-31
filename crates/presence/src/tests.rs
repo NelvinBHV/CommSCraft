@@ -320,6 +320,7 @@ fn routing_preambles() {
         immediate: false,
         simultaneous_ring: Some("sip:+14255550100@contoso.com;user=phone".into()),
         ring_seconds: Some(18),
+        e911_active: false,
     };
     let p = sim.preamble().unwrap();
     assert_eq!(
@@ -364,6 +365,7 @@ fn routing_preambles() {
     assert_eq!(
         Forwarding {
             ring_seconds: Some(1201),
+            e911_active: false,
             ..Forwarding::default()
         }
         .preamble(),
@@ -374,4 +376,21 @@ fn routing_preambles() {
         assert!(body.contains(&format!("categoryName=\"routing\" instance=\"0\" container=\"{c}\" version=\"{v}\" expireType=\"static\"")));
     }
     assert!(commscraft_xml::parse(&body, &commscraft_xml::Limits::default()).is_ok());
+}
+
+/// RE-67 ([MS-SIPRE] §3.9.5.1.2, §3.17.5.1; K-PR-2): the time-bound routing publication before an
+/// emergency call carries `e911active` and its lifetime in seconds.
+#[test]
+fn e911_routing_publication() {
+    let rules = Forwarding {
+        forward_to: Some("sip:bob@contoso.com".into()),
+        e911_active: true,
+        ..Forwarding::default()
+    };
+    let b = publish_routing_for_body("sip:alice@contoso.com", &rules, [1; 5], 3600).unwrap();
+    assert!(b.contains("value=\"enablecf e911active\""), "{b}");
+    assert_eq!(b.matches("expireType=\"time\" expires=\"3600\"").count(), 5);
+    let s = publish_routing_body("sip:alice@contoso.com", &Forwarding::default(), [1; 5]).unwrap();
+    assert!(s.contains("expireType=\"static\"") && !s.contains("e911active"));
+    assert!(publish_routing_for_body("sip:alice@contoso.com", &rules, [1; 5], 0).is_err());
 }
