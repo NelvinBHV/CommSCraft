@@ -89,6 +89,15 @@ pub enum Event {
     Failed(u16),
     /// A message that is not well-formed MS-TURN (TCP: close the connection, §3.1.10).
     Malformed,
+    /// The authenticated answer to a bandwidth admission control request ([MS-TURNBWM] §3.1):
+    /// all its attributes and the transaction ID (the site responses are XOR-coded with it).
+    Bac {
+        attributes: Vec<(u16, Vec<u8>)>,
+        transaction: [u8; 16],
+    },
+    /// The bandwidth request was refused or not answered (error code, 0 = timeout); the
+    /// allocation itself stays.
+    BacFailed(u16),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -97,6 +106,7 @@ enum Kind {
     Refresh,
     Teardown,
     SetActive(SocketAddr),
+    Bac,
 }
 
 #[derive(Debug)]
@@ -319,6 +329,29 @@ impl Client {
         Some(self.send_request(Kind::SetActive(peer), t, bytes, now))
     }
 
+    /// A bandwidth admission control request ([MS-TURNBWM] §3.1, §3.2.4): an authenticated
+    /// Allocate on the existing allocation with the attributes `build` returns for the new
+    /// transaction ID (the site addresses are XOR-coded with it). `None` while another request
+    /// is outstanding or before the allocation exists – the caller tries again later.
+    pub fn bac(
+        &mut self,
+        build: impl FnOnce(&[u8; 16]) -> Vec<(u16, Vec<u8>)>,
+        now: u64,
+    ) -> Option<Wire> {
+        self.relayed?;
+        if self.pending.is_some() {
+            return None;
+        }
+        let mut m = self.base(ALLOCATE);
+        m.push(stun::MS_SERVICE_QUALITY, self.service_quality());
+        let t = m.transaction;
+        for (k, v) in build(&t).into_iter().take(16) {
+            m.push(k, v);
+        }
+        let bytes = self.authenticate(m)?;
+        Some(self.send_request(Kind::Bac, t, bytes, now))
+    }
+
     /// Teardown: Allocate with Lifetime 0 (§3.2.4.4, TU-26).
     pub fn close(&mut self, now: u64) -> Option<Wire> {
         self.relayed?;
@@ -337,6 +370,7 @@ impl Client {
                     self.pending = None;
                     events.push(match kind {
                         Kind::SetActive(_) => Event::ActiveDestinationFailed(0),
+                        Kind::Bac => Event::BacFailed(0),
                         _ => Event::Failed(0),
                     });
                 } else {
@@ -400,6 +434,16 @@ impl Client {
             .map(|(c, _)| c);
         // Unauthenticated digest challenge (§3.2.5.2).
         let challenge = is_error && matches!(code, Some(401 | 431 | 432 | 434 | 435 | 438));
+        if challenge && kind == Kind::Bac {
+            // New nonce/realm: the caller builds the request again (new transaction ID).
+            if let (Some(r), Some(n)) = (m.get(stun::REALM), m.get(stun::NONCE)) {
+                self.realm = Some(r.to_vec());
+                self.nonce = Some(n.to_vec());
+            }
+            self.pending = None;
+            events.push(Event::BacFailed(code.unwrap_or(0)));
+            return (wires, events);
+        }
         if challenge && matches!(kind, Kind::Allocate | Kind::Refresh) {
             if self.challenges >= MAX_CHALLENGES {
                 self.pending = None;
@@ -491,6 +535,28 @@ impl Client {
                     None => events.push(Event::Failed(500)),
                 }
             }
+            (Kind::Bac, ALLOCATE_RESPONSE) => {
+                // It refreshes the allocation as well (it is an Allocate on it).
+                if let Some(l) = m
+                    .get(stun::LIFETIME)
+                    .and_then(|v| <[u8; 4]>::try_from(v).ok())
+                    .map(u32::from_be_bytes)
+                {
+                    self.lifetime = l.clamp(30, 86_400);
+                    if self.transport == Transport::Udp {
+                        self.refresh_at = Some(now + u64::from(self.lifetime) * 750);
+                    }
+                }
+                events.push(Event::Bac {
+                    attributes: m
+                        .attributes
+                        .iter()
+                        .map(|a| (a.kind, a.value.clone()))
+                        .collect(),
+                    transaction: m.transaction,
+                });
+            }
+            (Kind::Bac, ALLOCATE_ERROR) => events.push(Event::BacFailed(code.unwrap_or(0))),
             (Kind::Teardown, ALLOCATE_RESPONSE) => {
                 self.relayed = None;
                 self.active = None;

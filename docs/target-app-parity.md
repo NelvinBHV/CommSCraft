@@ -56,7 +56,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 29 | Video RTVideo | MS-RTVPF | N | not planned |
 | 30 | DTMF, redundancy | MS-DTMF, MS-RTPRADEX | B | parts tested-offline (DTMF per RFC 4733 within MS-DTMF, sending and receiving, CLI `/dtmf`: `rtp`, `media`, `call-media`); redundancy (MS-RTPRADEX) – |
 | 31 | Picture control (freeze/refresh) | MS-XMLMC | B | – |
-| 32 | Bandwidth management (call admission control) | MS-ICE2BWM, MS-TURNBWM | B | – |
+| 32 | Bandwidth management (call admission control) | MS-ICE2BWM, MS-TURNBWM | B | parts tested-offline (Check/Commit/Update attributes and responses, path rules: `turn-bwm`; bandwidth requests on the TURN allocation: `turn`; refused sites, 274/275: `ice-agent`); running it in calls (check during gathering, commit, updates) – |
 | 33 | PSTN telephony | MS-OCPSTN, MS-SIPRE | B | – |
 | 34 | Forwarding, simultaneous ring, team and delegate calls | MS-SIPRE, MS-PRES | B | – |
 | 35 | Hold, music on hold | MS-SDPEXT, MS-SIPRE | B | parts tested-offline (hold/resume re-INVITE with inactive/sendrecv and `+sip.rendering="no"`, incoming hold and music on hold recognised, no RTP while held: `session`, `sdp`, `media`, `call-media`; CLI `/hold` `/resume`); streaming our own music on hold – |
@@ -78,4 +78,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **10** tested-offline as a whole, **10** in parts, **30** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).
+**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **10** tested-offline as a whole, **11** in parts, **29** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).

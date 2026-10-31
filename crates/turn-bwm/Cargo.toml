@@ -1,6 +1,6 @@
 [package]
 name = "commscraft-turn-bwm"
-description = "MS-TURNBWM bandwidth admission control: attribute types and XOR site addresses"
+description = "MS-TURNBWM bandwidth admission control: Check, Commit and Update attributes and responses"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

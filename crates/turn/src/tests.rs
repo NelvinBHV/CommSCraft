@@ -284,3 +284,80 @@ fn tcp_framing_and_pseudo_tls() {
     server[77] = 0x2f;
     assert!(!check_pseudo_tls_server_hello(&server));
 }
+
+/// [MS-TURNBWM] §3.1: a bandwidth request is an authenticated Allocate on the allocation with
+/// the caller's attributes (built for its transaction ID); only one request at a time; the
+/// authenticated answer is reported with its attributes, an error or timeout as `BacFailed`
+/// while the allocation stays.
+#[test]
+fn bandwidth_admission_requests() {
+    let mut c = client(Transport::Udp);
+    assert!(c.bac(|_| Vec::new(), 0).is_none(), "no allocation yet");
+    let req = parse(&c.start(0).unwrap()).unwrap();
+    let (w, _) = c.on_packet(&challenge(&req, 3), 10);
+    let req2 = parse(&w[0]).unwrap();
+    c.on_packet(&allocated(&req2, true), 20);
+
+    let mut seen = None;
+    let wire = c
+        .bac(
+            |t| {
+                seen = Some(*t);
+                vec![(0x8056, vec![0, 0, 0, 0])]
+            },
+            30,
+        )
+        .unwrap();
+    let bac = parse(&wire).unwrap();
+    assert_eq!(
+        Some(bac.transaction),
+        seen,
+        "attributes built for this transaction"
+    );
+    assert_eq!(bac.kind, ALLOCATE);
+    assert_eq!(bac.get(0x8056), Some(&[0u8, 0, 0, 0][..]));
+    assert!(bac.get(stun::MESSAGE_INTEGRITY).is_some());
+    assert!(c.bac(|_| Vec::new(), 31).is_none(), "one request at a time");
+
+    // An unauthenticated answer is ignored; the authenticated one is reported.
+    let site = vec![0x80, 0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 100];
+    let unsigned = reply(&bac, ALLOCATE_RESPONSE, &[(0x805d, site.clone())], None);
+    assert!(c.on_packet(&unsigned, 40).1.is_empty());
+    let (_, e) = c.on_packet(
+        &reply(
+            &bac,
+            ALLOCATE_RESPONSE,
+            &[(0x805d, site.clone())],
+            Some(true),
+        ),
+        41,
+    );
+    match &e[..] {
+        [Event::Bac {
+            attributes,
+            transaction,
+        }] => {
+            assert_eq!(*transaction, bac.transaction);
+            assert!(attributes.contains(&(0x805d, site)));
+        }
+        other => panic!("{other:?}"),
+    }
+    assert_eq!(c.relayed(), Some("192.0.2.20:55667".parse().unwrap()));
+
+    // Error and timeout: BacFailed, the allocation stays.
+    let bac2 = parse(&c.bac(|_| Vec::new(), 50).unwrap()).unwrap();
+    let err = reply(
+        &bac2,
+        ALLOCATE_ERROR,
+        &[(stun::ERROR_CODE, stun::encode_error(403, "Forbidden"))],
+        Some(true),
+    );
+    assert_eq!(c.on_packet(&err, 60).1, vec![Event::BacFailed(403)]);
+    c.bac(|_| Vec::new(), 70).unwrap();
+    let mut events = Vec::new();
+    for k in 0..20 {
+        events.extend(c.on_tick(70 + k * 1000).1);
+    }
+    assert_eq!(events, vec![Event::BacFailed(0)]);
+    assert!(c.relayed().is_some());
+}
