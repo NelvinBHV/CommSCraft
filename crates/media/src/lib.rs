@@ -118,6 +118,8 @@ pub struct Audio {
     decoder: Decoder,
     tx_srtp: Option<srtp::Context>,
     rx_srtp: Option<srtp::Context>,
+    /// The peer (an MCU) sends SSRTP ([MS-SSRTP], SD-12); RTCP stays SRTCP (§3.1.5.2).
+    rx_ssrtp: bool,
     sender: rtp::Sender,
     receiver: rtp::Receiver,
     remote_ssrc: Option<u32>,
@@ -199,6 +201,7 @@ impl Audio {
             decoder,
             tx_srtp,
             rx_srtp,
+            rx_ssrtp: negotiated.ssrtp,
             sender: rtp::Sender::new(random),
             receiver: rtp::Receiver::default(),
             remote_ssrc: None,
@@ -332,7 +335,11 @@ impl Audio {
             return None;
         }
         let plain = match self.rx_srtp.as_mut() {
-            Some(c) => match c.unprotect_rtp(packet) {
+            Some(c) => match if self.rx_ssrtp {
+                c.unprotect_ssrtp(packet)
+            } else {
+                c.unprotect_rtp(packet)
+            } {
                 Ok(p) => p,
                 Err(_) => {
                     self.stats.dropped += 1;

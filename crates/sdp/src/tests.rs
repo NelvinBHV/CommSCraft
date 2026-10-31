@@ -72,6 +72,7 @@ fn local() -> Local {
         }),
         direction: Direction::SendRecv,
         remote_candidates: Vec::new(),
+        ssrtp: false,
     }
 }
 
@@ -317,4 +318,55 @@ fn offer_ice_parameters() {
     assert!(!ice.candidates.is_empty());
     assert!(offer_ice(b"v=0\r\nm=audio 5000 RTP/AVP 0\r\n").is_none());
     assert!(offer_ice(b"garbage").is_none());
+}
+
+/// SD-12 ([MS-SDPEXT] §3.1.5.2.1): "SRTP and Client SSRTP" offered; the MCU answers server SSRTP
+/// (we receive SSRTP) or SRTP (SRTP wins if both); a client flavor in the answer is no key; an
+/// answer of ours never carries cryptoscale.
+#[test]
+fn ssrtp_offer_and_answers() {
+    let mut l = local();
+    l.ssrtp = true;
+    let o = offer(&l, Encryption::Required);
+    let ours = Key::new(1, [7; 30]);
+    let (_, rest) = ours
+        .attribute()
+        .split_once(' ')
+        .map(|(a, b)| (a.to_string(), b.to_string()))
+        .unwrap();
+    assert!(o.contains(&format!("a=crypto:{}\r\n", ours.attribute())));
+    assert!(
+        o.contains(&format!("a=cryptoscale:2 client {rest}\r\n")),
+        "{o}"
+    );
+
+    let mcu = Key::new(9, [3; 30]);
+    let (_, mcu_rest) = mcu
+        .attribute()
+        .split_once(' ')
+        .map(|(a, b)| (a.to_string(), b.to_string()))
+        .unwrap();
+    let base = SPEC_OFFER.replace("RTP/AVP", "RTP/SAVP");
+    let server = format!("{base}a=cryptoscale:2 server {mcu_rest}\r\n");
+    let n = answer_to_offer(server.as_bytes(), Some(&ours), Encryption::Required).unwrap();
+    assert!(n.ssrtp);
+    assert_eq!(n.remote_key.as_ref().unwrap().key, mcu.key);
+    let both = format!("{server}a=crypto:1 {mcu_rest}\r\n");
+    assert!(
+        !answer_to_offer(both.as_bytes(), Some(&ours), Encryption::Required)
+            .unwrap()
+            .ssrtp,
+        "SRTP wins"
+    );
+    let client = format!("{base}a=cryptoscale:2 client {mcu_rest}\r\n");
+    assert!(answer_to_offer(client.as_bytes(), Some(&ours), Encryption::Required).is_err());
+
+    let (a, _) = answer(
+        SPEC_OFFER.as_bytes(),
+        &l,
+        Key::new(9, [3; 30]),
+        Encryption::Required,
+    )
+    .unwrap();
+    assert!(!a.contains("cryptoscale"), "answers name one encryption");
 }

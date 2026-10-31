@@ -671,6 +671,9 @@ impl<R: Random> Engine<R> {
         };
         let call = self.next_call_id();
         let before = self.calls.len();
+        // SD-12: offer SRTP and client SSRTP to the MCU; it answers with one of them.
+        let mut local = local;
+        local.ssrtp = policy != sdp::Encryption::Off;
         self.start_call(&av, local, policy, now, out);
         if self.calls.len() > before {
             if let Some(g) = self.group_mut(id) {

@@ -477,6 +477,9 @@ pub struct Local {
     /// Final offer of the controlling agent: the chosen remote candidates per component
     /// (ice-19 §9.1.2.2, syntax §15.2: `a=remote-candidates`, SD-41).
     pub remote_candidates: Vec<(u8, std::net::SocketAddr)>,
+    /// Offer SRTP and client SSRTP (`a=cryptoscale:<tag+1> client`, SD-12) – towards an MCU,
+    /// which may then answer with server SSRTP. Offers only; never in an answer.
+    pub ssrtp: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -546,6 +549,17 @@ fn write(local: &Local, proto: &str, codecs: &[(Codec, u8)], dtmf: Option<u8>) -
     s.push_str("a=label:main-audio\r\n");
     if let Some(k) = &local.key {
         s.push_str(&format!("a=crypto:{}\r\n", k.attribute()));
+        if local.ssrtp {
+            // [MS-SDPEXT] §3.1.5.2: same suite and key-params, flavor "client", a tag unique
+            // across crypto and cryptoscale (ours + 1). We send SRTP either way.
+            if let Some((tag, rest)) = k.attribute().split_once(' ') {
+                let tag: u32 = tag.parse().unwrap_or(0);
+                s.push_str(&format!(
+                    "a=cryptoscale:{} client {rest}\r\n",
+                    tag.saturating_add(1)
+                ));
+            }
+        }
     }
     s.push_str(&format!("a=rtcp:{}\r\n", local.rtcp_port));
     s.push_str(&format!("a={}\r\n", local.direction.as_str()));
@@ -590,6 +604,21 @@ pub struct Negotiated {
     pub direction: Direction,
     /// The peer streams music on hold (`a=sendonly` + `a=feature:MoH`, MS-SDPEXT §3.1.5.27).
     pub music_on_hold: bool,
+    /// The peer (an MCU) sends SSRTP with `remote_key` (answer with server SSRTP, SD-12); we
+    /// still send SRTP.
+    pub ssrtp: bool,
+}
+
+/// `a=cryptoscale:<tag> server <suite> <key-params>`: the server flavor's key (SD-12).
+fn server_scale_keys(m: &Media) -> Vec<Key> {
+    m.attrs("cryptoscale")
+        .filter_map(|v| {
+            let mut f = v.splitn(3, ' ');
+            let (tag, flavor, rest) = (f.next()?, f.next()?, f.next()?);
+            (flavor == "server").then(|| Key::parse(&format!("{tag} {rest}")).ok())?
+        })
+        .take(8)
+        .collect()
 }
 
 /// MS-SDPEXT §3.1.5.27.2: `a=feature:MoH` on the audio line.
@@ -647,13 +676,22 @@ pub fn answer_to_offer(
     let s = parse(answer)?;
     let m = audio(&s)?;
     let secure = m.proto.eq_ignore_ascii_case("RTP/SAVP");
+    let mut ssrtp = false;
     let remote_key = if secure {
         let ours = our_key.ok_or(Error::Crypto("SAVP answer without our offer of a key"))?;
-        // The answer echoes the tag of the accepted crypto line (§4.3.1.3).
-        let k = keys_of(m)
-            .into_iter()
-            .find(|k| k.tag == ours.tag)
-            .ok_or(Error::Crypto("no key with our tag"))?;
+        // The answer echoes the tag of the accepted crypto line (§4.3.1.3); an MCU may instead
+        // answer our cryptoscale offer (tag + 1) with server SSRTP (SD-12). SRTP wins if both.
+        let k = match keys_of(m).into_iter().find(|k| k.tag == ours.tag) {
+            Some(k) => k,
+            None => {
+                let k = server_scale_keys(m)
+                    .into_iter()
+                    .find(|k| k.tag == ours.tag.saturating_add(1))
+                    .ok_or(Error::Crypto("no key with our tag"))?;
+                ssrtp = true;
+                k
+            }
+        };
         if k.key == ours.key {
             // Send and receive keys must differ (MS-SRTP §5.1).
             return Err(Error::Crypto("peer reused our key"));
@@ -685,6 +723,7 @@ pub fn answer_to_offer(
         remote_ice: ice_of(m),
         direction: Direction::of(m),
         music_on_hold: music_on_hold(m),
+        ssrtp,
     })
 }
 
@@ -731,6 +770,8 @@ pub fn answer(
     let (rtp, rtcp) = endpoints(&s, m)?;
     let mut l = local.clone();
     l.key = ours;
+    // An answer names one encryption (§3.1.5.2.1): no cryptoscale offer of our own here.
+    l.ssrtp = false;
     // Answer with the direction that matches the offer (RFC 3264 §6.1).
     let remote_direction = Direction::of(m);
     l.direction = match remote_direction {
@@ -752,6 +793,7 @@ pub fn answer(
             remote_ice: ice_of(m),
             direction: remote_direction,
             music_on_hold: music_on_hold(m),
+            ssrtp: false,
         },
     ))
 }

@@ -491,6 +491,7 @@ impl CallMedia {
             }),
             direction: sdp::Direction::SendRecv,
             remote_candidates: Vec::new(),
+            ssrtp: false,
         }
     }
 

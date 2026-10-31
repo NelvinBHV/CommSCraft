@@ -5,6 +5,8 @@
 //! SR-14). Sources: [MS-SRTP] 20250520 §3.1.3–3.1.5 (pp. 10–13), §5.1 (p. 15); RFC 3711 §3.1
 //! (packet format), §3.3 (index, ROC, s_l, replay), §3.4 (SRTCP), §4.1.1 (AES-CM IV), §4.2
 //! (HMAC-SHA1 tag over the authenticated portion ‖ ROC), Appendix A (index estimation).
+//! Receiving SSRTP from an MCU (SS-01 … SS-06): [MS-SSRTP] 20250520 §2.2.1 (packet, pp. 10–12),
+//! §3.1.5.1.1–3.1.5.1.3.2 (index, IV, receive steps, pp. 14–17); SSRTCP is SRTCP (§3.1.5.2).
 //!
 //! Security by design: everything is authenticated before anything is decrypted or any state
 //! changes (the tag is compared in constant time); replay window of 64 per SSRC and for SRTCP;
@@ -18,7 +20,7 @@ use hmac::{Hmac, Mac};
 use sha1::Sha1;
 use zeroize::Zeroize;
 
-use crate::{aes_cm, SessionKeys, SrtpError, AUTH_TAG_LEN};
+use crate::{aes_cm, ssrtp_iv, SessionKeys, SrtpError, AUTH_TAG_LEN};
 
 /// Replay list size (SR-04).
 pub const REPLAY_WINDOW: u64 = 64;
@@ -306,6 +308,79 @@ impl Context {
         let mut out = body.to_vec();
         let (_, payload) = out.split_at_mut(hlen);
         aes_cm(&self.rtp.encryption, iv(&self.rtp.salt, ssrc, i), payload);
+        let st = self.stream(ssrc, seq)?;
+        st.update(v, seq);
+        st.replay.add(i);
+        Ok(out)
+    }
+
+    /// SSRTP → RTP ([MS-SSRTP] §3.1.5.1.3.2): authenticate the rearranged block (CSRC ‖
+    /// encrypted payload ‖ ESN ‖ zero padding to 64 octets ‖ fixed header ‖ ROC) in constant
+    /// time, check replay by the RTP index (never by the ESN, §3.1.5.1.1), decrypt with the ESN
+    /// IV, then update ROC/s_l and the replay list; ESN, MKI and tag are removed. MKI is
+    /// mandatory (§2.2.1). Inference (fail closed): §2.2.1 places the payload right after the
+    /// CSRC list, so packets with a header extension are refused.
+    pub fn unprotect_ssrtp(&mut self, packet: &[u8]) -> Result<Vec<u8>, SrtpError> {
+        let r = self.unprotect_ssrtp_inner(packet);
+        if r.is_err() {
+            self.failures = self.failures.saturating_add(1);
+        }
+        r
+    }
+
+    fn unprotect_ssrtp_inner(&mut self, packet: &[u8]) -> Result<Vec<u8>, SrtpError> {
+        const ESN_LEN: usize = 6;
+        let mki = self.mki.ok_or(SrtpError::UnknownMki)?;
+        let body_len = packet
+            .len()
+            .checked_sub(ESN_LEN + 1 + AUTH_TAG_LEN)
+            .ok_or(SrtpError::MalformedHeader)?;
+        let (body, trailer) = packet.split_at(body_len);
+        let hlen = rtp_header_len(body)?;
+        let first = *body.first().ok_or(SrtpError::MalformedHeader)?;
+        if first & 0x10 != 0 {
+            return Err(SrtpError::MalformedHeader);
+        }
+        let (esn, rest) = trailer.split_at(ESN_LEN);
+        let (pkt_mki, received_tag) = rest.split_at(1);
+        if pkt_mki.first().copied() != Some(mki) {
+            return Err(SrtpError::UnknownMki);
+        }
+        let esn_value = esn.iter().fold(0u64, |a, b| (a << 8) | u64::from(*b));
+        let seq = be16(body, 2)?;
+        let ssrc = be32(body, 8)?;
+        let (v, i) = match self.streams.get(&ssrc) {
+            Some(st) => {
+                let v = st.estimate(seq);
+                let i = index(v, seq);
+                st.replay.check(i)?;
+                (v, i)
+            }
+            None if self.streams.len() >= MAX_STREAMS => return Err(SrtpError::TooManyStreams),
+            None => (0, index(0, seq)),
+        };
+        let fixed = body.get(..12).ok_or(SrtpError::MalformedHeader)?;
+        let csrc = body.get(12..hlen).ok_or(SrtpError::MalformedHeader)?;
+        let encrypted = body.get(hlen..).ok_or(SrtpError::MalformedHeader)?;
+        let mut block = Vec::with_capacity(csrc.len() + encrypted.len() + ESN_LEN + 64 + 16);
+        block.extend_from_slice(csrc);
+        block.extend_from_slice(encrypted);
+        block.extend_from_slice(esn);
+        let padding = (64 - block.len() % 64) % 64;
+        block.resize(block.len() + padding, 0);
+        block.extend_from_slice(fixed);
+        verify(
+            &self.rtp.authentication,
+            &[&block, &v.to_be_bytes()],
+            received_tag,
+        )?;
+        let mut out = body.to_vec();
+        let (_, payload) = out.split_at_mut(hlen);
+        aes_cm(
+            &self.rtp.encryption,
+            ssrtp_iv(&self.rtp.salt, esn_value),
+            payload,
+        );
         let st = self.stream(ssrc, seq)?;
         st.update(v, seq);
         st.replay.add(i);

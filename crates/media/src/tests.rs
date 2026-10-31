@@ -16,6 +16,7 @@ fn pair(codec: sdp::Codec, pt: u8) -> (Audio, Audio) {
         remote_ice: None,
         direction: sdp::Direction::SendRecv,
         music_on_hold: false,
+        ssrtp: false,
     };
     let a = Audio::new(&n(2), Some(&key(1)), [1; 10], "a@client").unwrap();
     let b = Audio::new(&n(1), Some(&key(2)), [2; 10], "b@client").unwrap();
@@ -172,6 +173,7 @@ fn plain_pair() -> (Audio, Audio) {
         remote_ice: None,
         direction: sdp::Direction::SendRecv,
         music_on_hold: false,
+        ssrtp: false,
     };
     let a = Audio::new(&n, None, [1; 10], "a@client").unwrap();
     let b = Audio::new(&n, None, [2; 10], "b@client").unwrap();
@@ -361,4 +363,42 @@ fn policy_bandwidth_five_times() {
             .count();
     }
     assert_eq!(seen, 5);
+}
+
+/// SD-12 / [MS-SSRTP]: with an SSRTP answer, packets of the MCU are taken as SSRTP; a packet in
+/// SRTP format is refused.
+#[test]
+fn receives_ssrtp_from_an_mcu() {
+    let mcu = key(2);
+    let n = sdp::Negotiated {
+        codec: sdp::Codec::Pcmu,
+        payload_type: 0,
+        dtmf_payload_type: None,
+        remote_rtp: ("192.0.2.1".parse().unwrap(), 5000),
+        remote_rtcp: ("192.0.2.1".parse().unwrap(), 5001),
+        remote_key: Some(mcu.clone()),
+        remote_ice: None,
+        direction: sdp::Direction::SendRecv,
+        music_on_hold: false,
+        ssrtp: true,
+    };
+    let mut b = Audio::new(&n, Some(&key(1)), [2; 10], "b@client").unwrap();
+    let keys = srtp::SessionKeys::derive(&mcu.key, &mcu.salt, false);
+    let header = [0x80, 0, 0, 7, 0, 0, 0, 160, 0xAB, 0xCD, 0, 1];
+    let payload = vec![0xffu8; 160];
+    let p = srtp::ssrtp_protect(&keys, &header, &payload, 0x0100_0000_0001, 0).unwrap();
+    let mut wire = header.to_vec();
+    wire.extend(p.encrypted_payload);
+    wire.extend(&0x0100_0000_0001u64.to_be_bytes()[2..]);
+    wire.push(1);
+    wire.extend(p.tag);
+    b.on_rtp(&wire, 0);
+    assert_eq!(b.stats.received, 1);
+    // SRTP format with the same key: not SSRTP, refused.
+    let mut srtp_tx = srtp::Context::new(&mcu.key, &mcu.salt, Some(1));
+    let mut plain = header.to_vec();
+    plain[3] = 8;
+    plain.extend(&payload);
+    b.on_rtp(&srtp_tx.protect_rtp(&plain).unwrap(), 0);
+    assert_eq!(b.stats.received, 1);
 }

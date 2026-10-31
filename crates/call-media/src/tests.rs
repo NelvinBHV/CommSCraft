@@ -19,6 +19,7 @@ fn negotiated_from(other: &CallMedia) -> sdp::Negotiated {
         remote_ice: d.ice.clone(),
         direction: sdp::Direction::SendRecv,
         music_on_hold: false,
+        ssrtp: false,
     }
 }
 
