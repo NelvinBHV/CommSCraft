@@ -204,5 +204,9 @@ pub fn to_hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
+pub mod messages;
+
+#[cfg(test)]
+mod messages_tests;
 #[cfg(test)]
 mod tests;

@@ -11,6 +11,7 @@ publish.workspace = true
 md4.workspace = true
 md-5.workspace = true
 hmac.workspace = true
+zeroize.workspace = true
 
 [lints]
 workspace = true

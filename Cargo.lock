@@ -53,6 +53,7 @@ dependencies = [
  "hmac",
  "md-5",
  "md4",
+ "zeroize",
 ]
 
 [[package]]
