@@ -927,6 +927,65 @@ fn user_agent() -> String {
     format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"))
 }
 
+/// One one-time presence query (PR-17). `target` is the Request-URI: the own AOR or a pool
+/// GRUU for a batch, the contact itself for a single SUBSCRIBE (`single`, To = contact).
+fn query_presence(
+    s: &mut Session,
+    reg: &mut Registrar<OsRandom>,
+    a: &Args,
+    target: &str,
+    uris: &[String],
+    single: bool,
+) -> Result<
+    (
+        Vec<commscraft_presence::ResourceState>,
+        Vec<commscraft_presence::ContactPresence>,
+    ),
+    String,
+> {
+    use commscraft_presence as pres;
+    let to = if single {
+        target.to_string()
+    } else {
+        a.aor.clone()
+    };
+    let mut req = s.request("SUBSCRIBE", &to);
+    if !single {
+        // A pool GRUU (checked when parsed) as Request-URI, To stays the own AOR (§3.4.5.1.3.1).
+        if let commscraft_sip_msg::StartLine::Request { uri, .. } = &mut req.start {
+            *uri = target.to_string();
+        }
+        pres::batch_headers(&mut req, true);
+    } else {
+        pres::single_headers(&mut req, true);
+    }
+    let mut id = [0u8; 4];
+    s.rng.fill(&mut id);
+    req.body = pres::batch_body(&a.aor, uris, u32::from_be_bytes(id) & 0x7fff_ffff)
+        .map_err(|e| format!("{e:?}"))?
+        .into_bytes();
+    reg.sign_request(&mut req).map_err(|e| format!("{e:?}"))?;
+    let answer = s.transact(reg, &req)?;
+    if answer.status_code() != Some(200) {
+        println!(
+            "presence query to {target}: answer {}",
+            answer.status_code().unwrap_or(0)
+        );
+        return Ok((Vec::new(), Vec::new()));
+    }
+    if answer.body.is_empty() {
+        println!("presence query to {target}: no document");
+        return Ok((Vec::new(), Vec::new()));
+    }
+    match pres::parse_batch(&answer) {
+        Ok(r) => Ok(r),
+        Err(e) => {
+            println!("presence query to {target}: unusable answer ({e:?})");
+            Ok((Vec::new(), Vec::new()))
+        }
+    }
+}
+
 /// `presence`: contact list, presence of the contacts, optionally the own state (M2).
 fn presence_actions(
     s: &mut Session,
@@ -1019,63 +1078,83 @@ fn presence_actions(
         );
     }
 
-    // Presence of the contacts (PR-14, PR-17): one-time batch queries of at most MAX_BATCH.
+    // Presence of the contacts (PR-14, PR-17): one-time batch queries of at most MAX_BATCH to the
+    // own AOR; contacts the server answers with "resubscribe" are asked again at the pool named
+    // in poolFqdn (batch) or, without poolFqdn, one by one (§3.4.5.1.3.1, p. 102; §4.6).
     let uris: Vec<String> = list
         .contacts
         .iter()
         .map(|c| c.uri.clone())
         .take(a.max_contacts)
         .collect();
+    let mut results: Vec<pres::ContactPresence> = Vec::new();
+    let mut open_states: Vec<pres::ResourceState> = Vec::new();
     for chunk in uris.chunks(pres::MAX_BATCH) {
-        let mut req = s.request("SUBSCRIBE", &a.aor.clone());
-        pres::batch_headers(&mut req, true);
-        let mut id = [0u8; 4];
-        s.rng.fill(&mut id);
-        req.body = pres::batch_body(&a.aor, chunk, u32::from_be_bytes(id) & 0x7fff_ffff)
-            .map_err(|e| format!("{e:?}"))?
-            .into_bytes();
-        reg.sign_request(&mut req).map_err(|e| format!("{e:?}"))?;
-        let answer = s.transact(reg, &req)?;
-        if answer.status_code() != Some(200) {
-            println!(
-                "presence query: answer {}",
-                answer.status_code().unwrap_or(0)
-            );
+        let (states, contacts) = query_presence(s, reg, a, &a.aor.clone(), chunk, false)?;
+        results.extend(contacts);
+        open_states.extend(states.into_iter().filter(|st| st.state != "active"));
+    }
+    let mut pools: Vec<(String, Vec<String>)> = Vec::new();
+    let mut singles: Vec<String> = Vec::new();
+    let mut remaining: Vec<pres::ResourceState> = Vec::new();
+    for st in open_states {
+        if st.state != "resubscribe" {
+            remaining.push(st);
             continue;
         }
-        match pres::parse_batch(&answer) {
-            Ok((states, contacts)) => {
-                for c in &contacts {
-                    let name = list
-                        .contacts
-                        .iter()
-                        .find(|x| x.uri.eq_ignore_ascii_case(&c.uri))
-                        .map(|x| x.name.clone())
-                        .filter(|n| !n.is_empty())
-                        .or_else(|| c.display_name.clone())
-                        .unwrap_or_default();
-                    println!(
-                        "  {:<14} {:<40} {}{}",
-                        format!("{:?}", c.class()),
-                        c.uri,
-                        name,
-                        c.note
-                            .as_deref()
-                            .map(|n| format!("  \"{n}\""))
-                            .unwrap_or_default()
-                    );
-                }
-                for st in states.iter().filter(|st| st.state != "active") {
-                    println!(
-                        "  {:<14} {:<40} ({})",
-                        st.state,
-                        st.uri,
-                        st.reason.as_deref().unwrap_or("")
-                    );
-                }
-            }
-            Err(e) => println!("presence query: unusable answer ({e:?})"),
+        let Ok(uri) = pres::checked_sip_uri(&st.uri) else {
+            continue;
+        };
+        match &st.pool_fqdn {
+            Some(pool) => match pools.iter_mut().find(|(p, _)| p == pool) {
+                Some((_, v)) => v.push(uri),
+                None => pools.push((pool.clone(), vec![uri])),
+            },
+            None => singles.push(uri),
         }
+    }
+    for (pool, members) in &pools {
+        if s.verbose {
+            eprintln!("asking pool {pool} for {} contacts", members.len());
+        }
+        for chunk in members.chunks(pres::MAX_BATCH) {
+            let (states, contacts) = query_presence(s, reg, a, pool, chunk, false)?;
+            results.extend(contacts);
+            remaining.extend(states.into_iter().filter(|st| st.state != "active"));
+        }
+    }
+    for uri in &singles {
+        let (states, contacts) = query_presence(s, reg, a, uri, std::slice::from_ref(uri), true)?;
+        results.extend(contacts);
+        remaining.extend(states.into_iter().filter(|st| st.state != "active"));
+    }
+    for c in &results {
+        let name = list
+            .contacts
+            .iter()
+            .find(|x| x.uri.eq_ignore_ascii_case(&c.uri))
+            .map(|x| x.name.clone())
+            .filter(|n| !n.is_empty())
+            .or_else(|| c.display_name.clone())
+            .unwrap_or_default();
+        println!(
+            "  {:<14} {:<40} {}{}",
+            format!("{:?}", c.class()),
+            c.uri,
+            name,
+            c.note
+                .as_deref()
+                .map(|n| format!("  \"{n}\""))
+                .unwrap_or_default()
+        );
+    }
+    for st in &remaining {
+        println!(
+            "  {:<14} {:<40} ({})",
+            st.state,
+            st.uri,
+            st.reason.as_deref().unwrap_or("")
+        );
     }
 
     // Own state (PR-11), only on request and scoped to this endpoint (PR-02).

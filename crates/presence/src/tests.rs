@@ -248,3 +248,23 @@ fn hostile_presence_data_is_neutralised() {
     assert!(parse_categories("<categories xmlns=\"http://schemas.microsoft.com/2006/09/sip/categories\" uri=\"javascript:x\"/>").is_err());
     assert_eq!(printable(&"x".repeat(1000)).len(), 256);
 }
+
+/// §3.4.5.1.3.1 (p. 102): resubscribe with and without poolFqdn; quota exceeded.
+#[test]
+fn rlmi_rejections() {
+    let rlmi = r#"<list xmlns="urn:ietf:params:xml:ns:rlmi" uri="sip:bob@contoso.com" version="0" fullState="false">
+<resource uri="sip:alice@contoso.com"><instance id="0" state="resubscribe" cid="alice@contoso.com"
+ poolFqdn="sip:server.contoso.com@contoso.com;gruu;opaque=srvr:HomeServer:dL8cwxBrTuG8eC4-Q_GNGAAA"/></resource>
+<resource uri="sip:john@fabrikam.com"><instance id="0" state="resubscribe" cid="john@fabrikam.com"/></resource>
+<resource uri="sip:eve@contoso.com"><instance id="0" state="resubscribe" cid="eve@contoso.com" poolFqdn="sip:x@y.z&gt;;evil"/></resource>
+<resource uri="sip:alice2@contoso.com"><instance id="0" state="terminated" reason="quotaExceeded" statusCode="413" cid="alice2@contoso.com"/></resource>
+</list>"#;
+    let r = parse_rlmi(rlmi).unwrap();
+    assert_eq!(r[0].pool_fqdn.as_deref(), Some("sip:server.contoso.com@contoso.com;gruu;opaque=srvr:HomeServer:dL8cwxBrTuG8eC4-Q_GNGAAA"));
+    assert_eq!(r[1].pool_fqdn, None);
+    assert_eq!(r[2].pool_fqdn, None, "unsafe pool URI dropped");
+    assert_eq!(r[3].reason.as_deref(), Some("quotaExceeded"));
+    let mut m = Message::request("SUBSCRIBE", "sip:john@fabrikam.com");
+    single_headers(&mut m, true);
+    assert_eq!(m.single("Require").unwrap(), None);
+}
