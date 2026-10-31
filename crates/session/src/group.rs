@@ -64,7 +64,14 @@ pub(crate) struct Group {
     pub invitees: Vec<String>,
     /// Message-Ids answered with 202 and waiting for their IMDN (CI-05), with the deadline.
     pub imdn: Vec<(u32, u64)>,
+    /// Since when we wait in the lobby (CB-23).
+    pub lobby_since: Option<u64>,
+    /// The call to the A/V MCU (conference audio).
+    pub av_call: Option<CallId>,
 }
+
+/// How long we wait in the lobby before leaving (CB-23 recommends an own timeout; design).
+pub const LOBBY_TIMEOUT: u64 = 15 * 60;
 
 /// Upper bound of participants invited at once (design).
 pub const MAX_INVITEES: usize = 32;
@@ -324,10 +331,21 @@ impl<R: Random> Engine<R> {
         let Ok(body) = std::str::from_utf8(&m.body) else {
             return;
         };
+        let aor = self.cfg.aor.clone();
         let Some(g) = self.group_mut(id) else { return };
         let Some(focus) = g.focus.clone() else { return };
         match g.roster.apply(body, &focus) {
             Ok(true) => {
+                // CB-23: our focus endpoint on-hold = lobby; connected = admitted.
+                let waiting = g.roster.in_lobby(&aor);
+                if waiting != g.lobby_since.is_some() {
+                    g.lobby_since = waiting.then_some(now);
+                    out.push(Output::Event(Event::ConferenceLobby {
+                        conversation: id,
+                        waiting,
+                    }));
+                }
+                let Some(g) = self.group_mut(id) else { return };
                 let participants = g.roster.participants.clone();
                 let join_chat = !g.chat_requested && g.roster.chat_uri.is_some();
                 out.push(Output::Event(Event::Participants {
@@ -434,6 +452,12 @@ impl<R: Random> Engine<R> {
         else {
             return;
         };
+        if r.command == "modifyEndpointMedia" && r.code == conf::Code::Failure {
+            out.push(Output::Event(Event::Notice(format!(
+                "[{id}] muting refused ({})",
+                r.reason.clone().unwrap_or_else(|| "failure".into())
+            ))));
+        }
         if r.command == "addUser" && r.code == conf::Code::Failure {
             out.push(Output::Event(Event::Notice(format!(
                 "[{id}] invitation of {} failed ({})",
@@ -532,6 +556,9 @@ impl<R: Random> Engine<R> {
             self.send_request(m, Purpose::Ignore, now, out);
         }
         if let Some(g) = c.group {
+            if let Some(call) = g.av_call {
+                self.hangup(call, now, out);
+            }
             if let Some(mut d) = g.roster_dialog {
                 let mut m = d.request("SUBSCRIBE");
                 self.complete(&mut m);
@@ -552,6 +579,7 @@ impl<R: Random> Engine<R> {
     /// timeouts (CI-05: treat as 408 for all).
     pub(crate) fn group_tick(&mut self, now: u64, out: &mut Vec<Output>) {
         let ids: Vec<ConversationId> = self.convs.keys().copied().collect();
+        let mut lobby_expired = Vec::new();
         for id in ids {
             let Some(c) = self.convs.get_mut(&id) else {
                 continue;
@@ -589,6 +617,9 @@ impl<R: Random> Engine<R> {
                 let before = g.imdn.len();
                 g.imdn.retain(|(_, deadline)| now < *deadline);
                 timed_out = before - g.imdn.len();
+                if g.lobby_since.is_some_and(|t| now >= t + LOBBY_TIMEOUT) {
+                    lobby_expired.push(id);
+                }
             }
             for _ in 0..timed_out {
                 out.push(Output::Event(Event::NotDelivered {
@@ -601,6 +632,93 @@ impl<R: Random> Engine<R> {
                 self.send_request(m, purpose, now, out);
             }
         }
+        for id in lobby_expired {
+            out.push(Output::Event(Event::Notice(format!(
+                "[{id}] not admitted from the lobby in time"
+            ))));
+            self.leave_group(id, now, out, true);
+        }
+    }
+
+    /// `JoinConferenceAudio`: an ordinary audio call to the A/V MCU of the conference (CA-01,
+    /// CA-02: the INVITE itself joins, no addUser dial-in); the call belongs to the conversation
+    /// and ends with it.
+    pub(crate) fn join_conference_audio(
+        &mut self,
+        id: ConversationId,
+        local: sdp::Local,
+        policy: sdp::Encryption,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let av = match self.group_mut(id) {
+            Some(g) if g.lobby_since.is_some() => {
+                out.push(Output::Event(Event::Notice("still in the lobby".into())));
+                return;
+            }
+            Some(g) if g.av_call.is_some() => {
+                out.push(Output::Event(Event::Notice("audio already joined".into())));
+                return;
+            }
+            Some(g) => g.roster.av_uri.clone(),
+            None => None,
+        };
+        let Some(av) = av else {
+            out.push(Output::Event(Event::Notice(
+                "this conference has no audio".into(),
+            )));
+            return;
+        };
+        let call = self.next_call_id();
+        let before = self.calls.len();
+        self.start_call(&av, local, policy, now, out);
+        if self.calls.len() > before {
+            if let Some(g) = self.group_mut(id) {
+                g.av_call = Some(call);
+            }
+            out.push(Output::Event(Event::ConferenceAudio {
+                conversation: id,
+                call,
+            }));
+        }
+    }
+
+    /// `ConferenceMute`: modifyEndpointMedia over INFO to the focus with our audio's keys from
+    /// the roster (CA-20). Unmuting is refused by the MCU if the role may not (mayModifyOwnFilters).
+    pub(crate) fn conference_mute(
+        &mut self,
+        id: ConversationId,
+        mute: bool,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let request_id = self.next_c3p();
+        let (aor, gruu) = (self.cfg.aor.clone(), self.gruu.clone());
+        let Some(g) = self.group_mut(id) else { return };
+        let (Some(focus), Some(av)) = (g.focus.clone(), g.roster.av_uri.clone()) else {
+            out.push(Output::Event(Event::Notice("no conference audio".into())));
+            return;
+        };
+        let Some(keys) = g.roster.own_audio(&aor, &gruu) else {
+            out.push(Output::Event(Event::Notice(
+                "our audio is not in the conference yet".into(),
+            )));
+            return;
+        };
+        let Some(mut d) = g.focus_dialog.take() else {
+            return;
+        };
+        let body = conf::modify_endpoint_media(request_id, &aor, &focus, &av, &keys, mute);
+        let mut m = d.request("INFO");
+        if let Some(g) = self.group_mut(id) {
+            g.focus_dialog = Some(d);
+        }
+        let Ok(body) = body else { return };
+        self.complete(&mut m);
+        m.push_header("Supported", "timer");
+        m.push_header("Content-Type", conf::CONTENT_TYPE);
+        m.body = body.into_bytes();
+        self.send_request(m, Purpose::DialOut(id), now, out);
     }
 
     /// An INVITE of the IM MCU calling us (dial-out to us, CI-01) carries `Ms-Focus-Uri`.

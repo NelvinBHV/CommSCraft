@@ -1,11 +1,15 @@
-//! Group IM over the conferencing server (sans-I/O): C3P commands (MS-CONFPRO addConference,
-//! MS-CONFBAS addUser join and dial-out), the conference roster (RFC 4575 with MS-CONFBAS
-//! extensions), delivery notifications of the IM MCU (MS-CONFIM IMDN) and invitations.
+//! Conferences over the conferencing server (sans-I/O): C3P commands (MS-CONFPRO addConference,
+//! MS-CONFBAS addUser join and dial-out, MS-CONFAV modifyEndpointMedia), the conference roster
+//! (RFC 4575 with MS-CONFBAS/MS-CONFAV extensions: MCU URIs, lobby state, A/V media and filters),
+//! the join manager's meeting document (ocsmeet), delivery notifications of the IM MCU
+//! (MS-CONFIM IMDN) and invitations.
 //!
 //! Evidence: `docs/protocol/evidence/` files 18 (CB-10 … CB-37), 19 (PV-01 … PV-11) and 21
 //! (CI-01 … CI-12). Sources: [MS-CONFPRO] 20250520 §2.2.2, §4.1 (pp. 19–26, 41–42);
 //! [MS-CONFBAS] 20250520 §2.2.2–2.2.3 (pp. 24–49); [MS-CONFIM] 20250520 §2.2.2–2.2.4 (pp. 13–14),
-//! §4.1–4.2 (pp. 28–58).
+//! §4.1–4.2 (pp. 28–58); [MS-CONFBAS] §2.2.6.3 (ocsmeet, pp. 55–56), §3.4 (lobby, pp. 92–97),
+//! example §3.2.4 addUser with clientInfo/lobby-capable (pp. 63–64); [MS-CONFAV] 20250520
+//! §2.2.2.1 (A/V endpoint media), §2.2.3.3 and example §4.3 (modifyEndpointMedia, pp. 24, 54–56).
 //!
 //! Security by design: every URI taken from the network is checked (`sip:` only, no characters
 //! that could break a header or XML); values we put into XML are escaped; all documents are read
@@ -24,6 +28,11 @@ pub const NS_CI: &str = "urn:ietf:params:xml:ns:conference-info";
 pub const NS_MSCI: &str = "http://schemas.microsoft.com/rtc/2005/08/confinfoextensions";
 pub const NS_MSCP: &str = "http://schemas.microsoft.com/rtc/2005/08/cccpextensions";
 pub const NS_IMDN: &str = "http://schemas.microsoft.com/rtc/2005/08/imdn";
+pub const NS_MSCI_2008: &str = "http://schemas.microsoft.com/rtc/2008/12/confinfoextensions";
+pub const NS_SEPARATOR: &str = "urn:ietf:params:xml:ns:conference-info-separator";
+pub const NS_OCSMEET: &str = "http://schemas.microsoft.com/rtc/2009/05/simplejoinconfdoc";
+/// The join manager's meeting document for clients (CB-41).
+pub const MEETING_ACCEPT: &str = "Application/vnd.microsoft.lync.meeting+xml;ver=15.0";
 /// Bounds of the roster (design).
 pub const MAX_PARTICIPANTS: usize = 250;
 pub const MAX_ENDPOINTS: usize = 16;
@@ -142,7 +151,8 @@ pub fn add_user_join(
         user,
         focus,
         &format!(
-            "<addUser><conferenceKeys confEntity=\"{}\"/><ci:user xmlns:ci=\"{NS_CI}\" entity=\"{}\"><ci:roles><ci:entry>{}</ci:entry></ci:roles><ci:endpoint entity=\"{}\" xmlns:msci=\"{NS_MSCI}\"/></ci:user></addUser>",
+            // CB-11/CB-23: we can wait in the lobby (clientInfo/lobby-capable as in the example).
+            "<addUser><conferenceKeys confEntity=\"{}\"/><ci:user xmlns:ci=\"{NS_CI}\" entity=\"{}\"><ci:roles><ci:entry>{}</ci:entry></ci:roles><ci:endpoint entity=\"{}\" xmlns:msci=\"{NS_MSCI}\"><clientInfo xmlns=\"{NS_MSCI}\"><separator xmlns=\"{NS_SEPARATOR}\"/><lobby-capable xmlns=\"{NS_MSCI_2008}\">true</lobby-capable></clientInfo></ci:endpoint></ci:user></addUser>",
             escape(&focus_c),
             escape(&user_c),
             role.as_str(),
@@ -176,6 +186,73 @@ pub fn add_user_dial_out(
             escape(endpoint_guid)
         ),
     )
+}
+
+/// modifyEndpointMedia (CA-20; [MS-CONFAV] §2.2.3.3, example §4.3): block or unblock the audio
+/// a user's A/V endpoint sends to the MCU (mute). Sent over INFO to the focus.
+pub fn modify_endpoint_media(
+    request_id: u32,
+    from: &str,
+    focus: &str,
+    av_mcu: &str,
+    target: &AudioKeys,
+    block: bool,
+) -> Result<String, Error> {
+    let focus_c = uri(focus)?;
+    let mcu = uri(av_mcu)?;
+    let user = uri(&target.user)?;
+    if !safe_token(&target.endpoint) || !safe_token(&target.media_id) {
+        return Err(Error::BadValue("media keys"));
+    }
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<modifyEndpointMedia mscp:mcuUri=\"{}\"><mediaKeys confEntity=\"{}\" userEntity=\"{}\" endpointEntity=\"{}\" mediaId=\"{}\"/><ci:media xmlns:ci=\"{NS_CI}\" id=\"{}\"><ci:type>audio</ci:type><media-ingress-filter>{}</media-ingress-filter></ci:media></modifyEndpointMedia>",
+            escape(&mcu),
+            escape(&focus_c),
+            escape(&user),
+            escape(&target.endpoint),
+            escape(&target.media_id),
+            escape(&target.media_id),
+            if block { "block" } else { "unblock" }
+        ),
+    )
+}
+
+/// Endpoint GUIDs and media IDs from the roster: short, printable, no XML specials.
+fn safe_token(s: &str) -> bool {
+    !s.is_empty()
+        && s.len() <= 64
+        && s.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "{}-_.".contains(c))
+}
+
+/// The keys of one user's audio in the A/V MCU (modifyEndpointMedia mediaKeys).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AudioKeys {
+    pub user: String,
+    pub endpoint: String,
+    pub media_id: String,
+}
+
+/// The conference URI from the join manager's meeting document (CB-40/CB-41; [MS-CONFBAS]
+/// §2.2.6.3): `conf-uri` must be a focus URI; an empty one means the URL was not understood.
+pub fn parse_meeting(xml: &str) -> Result<String, Error> {
+    let root = commscraft_xml::parse(xml, &limits()).map_err(Error::Xml)?;
+    if root.name != "conf-info" || root.namespace.as_deref() != Some(NS_OCSMEET) {
+        return Err(Error::WrongDocument("ocsmeet conf-info"));
+    }
+    let u = root
+        .child("conf-uri")
+        .map(|c| c.text().trim().to_string())
+        .unwrap_or_default();
+    if is_focus_uri(&u) {
+        uri(&u)
+    } else {
+        Err(Error::BadValue("conf-uri"))
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -249,21 +326,41 @@ pub fn parse_response(xml: &str) -> Result<Response, Error> {
     })
 }
 
+/// One endpoint of a participant.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Endpoint {
+    pub entity: String,
+    /// Session type: focus, chat, audio-video …
+    pub kind: String,
+    /// connected, on-hold (lobby, CB-23), …
+    pub status: String,
+    /// The endpoint's SIP URI (GRUU), if named.
+    pub uri: Option<String>,
+    /// A/V endpoint: the audio media's ID and whether the MCU blocks it (CA-12, CA-20).
+    pub audio: Option<(String, bool)>,
+}
+
 /// One participant of the conference roster.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Participant {
     pub uri: String,
     pub name: Option<String>,
     pub roles: Vec<String>,
-    /// endpoint entity → session type (focus, chat, audio-video …).
-    endpoints: Vec<(String, String)>,
+    pub endpoints: Vec<Endpoint>,
 }
 
 impl Participant {
     /// True if the participant takes part in the IM conference (an endpoint with
     /// `session-type="chat"`, CB-24).
     pub fn in_chat(&self) -> bool {
-        self.endpoints.iter().any(|(_, t)| t == "chat")
+        self.endpoints.iter().any(|e| e.kind == "chat")
+    }
+
+    /// The participant's audio in the A/V MCU: `Some(muted)`.
+    pub fn audio_muted(&self) -> Option<bool> {
+        self.endpoints
+            .iter()
+            .find_map(|e| e.audio.as_ref().map(|(_, b)| *b))
     }
 }
 
@@ -273,6 +370,8 @@ pub struct Roster {
     pub version: u32,
     /// MCU conference URI with purpose `chat` (from `conf-uris`).
     pub chat_uri: Option<String>,
+    /// MCU conference URI with purpose `audio-video` (CA-01).
+    pub av_uri: Option<String>,
     pub participants: Vec<Participant>,
 }
 
@@ -309,8 +408,11 @@ impl Roster {
         {
             for e in uris.children_named("entry") {
                 let purpose = e.child("purpose").map(|p| p.text()).unwrap_or_default();
-                if purpose.trim() == "chat" {
-                    self.chat_uri = e.child("uri").and_then(|u| uri(u.text().trim()).ok());
+                let u = e.child("uri").and_then(|u| uri(u.text().trim()).ok());
+                match purpose.trim() {
+                    "chat" => self.chat_uri = u,
+                    "audio-video" => self.av_uri = u,
+                    _ => {}
                 }
             }
         }
@@ -373,20 +475,91 @@ impl Roster {
             let Some(id) = ep.attr("entity").map(printable) else {
                 continue;
             };
-            p.endpoints.retain(|(e, _)| *e != id);
+            let previous = p
+                .endpoints
+                .iter()
+                .position(|e| e.entity == id)
+                .map(|i| p.endpoints.remove(i));
             if ep.attr("state") == Some("deleted") {
                 continue;
             }
             // A disconnected endpoint is no longer in the session (CB-24 status).
-            let status = ep.child("status").map(|s| s.text()).unwrap_or_default();
-            if status.trim() == "disconnected" {
+            let status = ep.child("status").map(|s| printable(s.text().trim()));
+            if status.as_deref() == Some("disconnected") {
                 continue;
             }
+            // A partial endpoint element updates what it names.
+            let mut e = previous.unwrap_or(Endpoint {
+                entity: id,
+                kind: String::new(),
+                status: String::new(),
+                uri: None,
+                audio: None,
+            });
+            if let Some(k) = attr_local(ep, "session-type") {
+                e.kind = printable(k);
+            }
+            if let Some(s) = status {
+                e.status = s;
+            }
+            if let Some(u) = attr_local(ep, "endpoint-uri").and_then(|u| uri(u).ok()) {
+                e.uri = Some(u);
+            }
+            for m in ep.children_named("media") {
+                let is_audio = m.child("type").is_some_and(|t| t.text().trim() == "audio");
+                let Some(mid) = m.attr("id").filter(|i| safe_token(i)) else {
+                    continue;
+                };
+                if is_audio {
+                    let blocked = m
+                        .child("media-ingress-filter")
+                        .map(|f| f.text().trim() == "block")
+                        .unwrap_or_else(|| e.audio.as_ref().is_some_and(|(_, b)| *b));
+                    e.audio = Some((mid.to_string(), blocked));
+                }
+            }
             if p.endpoints.len() < MAX_ENDPOINTS {
-                let kind = attr_local(ep, "session-type").unwrap_or("").to_string();
-                p.endpoints.push((id, printable(&kind)));
+                p.endpoints.push(e);
             }
         }
+    }
+}
+
+impl Roster {
+    /// Our own focus endpoint is in the lobby (`on-hold`, CB-23).
+    pub fn in_lobby(&self, own: &str) -> bool {
+        self.own(own).is_some_and(|p| {
+            p.endpoints
+                .iter()
+                .any(|e| e.kind == "focus" && e.status == "on-hold")
+        })
+    }
+
+    /// The keys of our audio in the A/V MCU; with several devices, the one with our GRUU.
+    pub fn own_audio(&self, own: &str, gruu: &str) -> Option<AudioKeys> {
+        let p = self.own(own)?;
+        let av = |e: &&Endpoint| e.kind == "audio-video" && e.audio.is_some();
+        let e = p
+            .endpoints
+            .iter()
+            .filter(av)
+            .find(|e| {
+                e.uri
+                    .as_deref()
+                    .is_some_and(|u| u.eq_ignore_ascii_case(gruu))
+            })
+            .or_else(|| p.endpoints.iter().find(av))?;
+        Some(AudioKeys {
+            user: p.uri.clone(),
+            endpoint: e.entity.clone(),
+            media_id: e.audio.as_ref()?.0.clone(),
+        })
+    }
+
+    fn own(&self, own: &str) -> Option<&Participant> {
+        self.participants
+            .iter()
+            .find(|p| p.uri.eq_ignore_ascii_case(own))
     }
 }
 

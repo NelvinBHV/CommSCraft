@@ -83,9 +83,20 @@ pub enum Command {
         conversation: ConversationId,
         to: String,
     },
-    /// Join a conference by its focus URI (after an invitation).
+    /// Join a conference by its focus URI (after an invitation, or from a meeting link).
     JoinConference {
         focus: String,
+    },
+    /// Join the conference's audio: INVITE to the A/V MCU (CA-02, no addUser needed).
+    JoinConferenceAudio {
+        conversation: ConversationId,
+        local: Box<sdp::Local>,
+        policy: sdp::Encryption,
+    },
+    /// Mute or unmute ourselves in the A/V MCU (modifyEndpointMedia, CA-20).
+    ConferenceMute {
+        conversation: ConversationId,
+        mute: bool,
     },
     /// Audio call (OCS-UC12): `local` from the media adapter (candidates, key).
     Call {
@@ -151,6 +162,16 @@ pub enum Event {
         /// In group conversations: the sender (`Ms-Sender`, CI-06), checked SIP URI.
         sender: Option<String>,
         text: String,
+    },
+    /// We wait in the lobby of a conference (`true`) or were admitted (`false`) (CB-23).
+    ConferenceLobby {
+        conversation: ConversationId,
+        waiting: bool,
+    },
+    /// The conference's audio call (an ordinary call to the A/V MCU) got this call ID.
+    ConferenceAudio {
+        conversation: ConversationId,
+        call: CallId,
     },
     /// The roster of a group conversation changed (CB-24).
     Participants {
@@ -1172,6 +1193,14 @@ impl<R: Random> Engine<R> {
                 self.dial_out(conversation, &to, now, &mut out)
             }
             Command::JoinConference { focus } => self.join_conference(&focus, now, &mut out),
+            Command::JoinConferenceAudio {
+                conversation,
+                local,
+                policy,
+            } => self.join_conference_audio(conversation, *local, policy, now, &mut out),
+            Command::ConferenceMute { conversation, mute } => {
+                self.conference_mute(conversation, mute, now, &mut out)
+            }
             Command::Call { to, local, policy } => {
                 self.start_call(&to, *local, policy, now, &mut out)
             }
@@ -1522,7 +1551,7 @@ impl<R: Random> Engine<R> {
                 "call {id}: update refused ({code})"
             )))),
             Purpose::DialOut(id) => out.push(Output::Event(Event::Notice(format!(
-                "[{id}] invitation failed ({code})"
+                "[{id}] conference command failed ({code})"
             )))),
             Purpose::Message(id) => out.push(Output::Event(Event::NotDelivered {
                 conversation: id,

@@ -1486,3 +1486,160 @@ fn invite_requiring_100rel_refused() {
     assert_eq!(r.single("Unsupported").unwrap(), Some("100rel"));
     assert!(events(&out).is_empty(), "no ringing");
 }
+
+const AVMCU: &str =
+    "sip:alice@contoso.com;gruu;opaque=app:conf:audio-video:id:FC275ECD12493E4E9C27C894FE91E104";
+
+/// MS-CONFBAS §3.4 (lobby, CB-23) and MS-CONFAV (CA-01, CA-02, CA-20): join a meeting by its
+/// focus URI as lobby-capable attendee, wait in the lobby, get admitted, join the audio with an
+/// INVITE to the A/V MCU, mute ourselves with modifyEndpointMedia, and leave (the audio ends).
+#[test]
+fn meeting_lobby_audio_and_mute() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::JoinConference {
+            focus: FOCUS.into(),
+        },
+        NOW,
+    );
+    let focus_invite = find(&out, "INVITE");
+    let b = String::from_utf8_lossy(&focus_invite.body).to_string();
+    assert!(b.contains("<ci:entry>attendee</ci:entry>") && b.contains("lobby-capable"));
+    let granted = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" requestId="1" C3PVersion="1" code="success"><addUser><conferenceKeys confEntity="{FOCUS}"/></addUser></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &focus_invite,
+            200,
+            Some("application/cccp+xml"),
+            &granted,
+            &[],
+        ),
+        NOW,
+    );
+    let roster_sub = find(&out, "SUBSCRIBE");
+    let lobby_doc = format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="full" version="1"><users><user entity="sip:alice@contoso.com" state="full"><endpoint entity="{{F}}" msci:session-type="focus"><status>on-hold</status></endpoint></user></users></conference-info>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &roster_sub,
+            200,
+            Some("application/conference-info+xml"),
+            &lobby_doc,
+            &[("Expires", "3600")],
+        ),
+        NOW,
+    );
+    let conversation = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::ConferenceLobby {
+                conversation,
+                waiting: true,
+            } => Some(*conversation),
+            _ => None,
+        })
+        .expect("lobby reported");
+    let out = e.command(
+        Command::JoinConferenceAudio {
+            conversation,
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    assert_eq!(
+        events(&out),
+        vec![Event::Notice("still in the lobby".into())]
+    );
+
+    // Admitted: full document with the MCU URIs and our A/V endpoint.
+    let admitted = format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="full" version="2"><conference-description><conf-uris><entry><uri>{AVMCU}</uri><purpose>audio-video</purpose></entry></conf-uris></conference-description><users><user entity="sip:alice@contoso.com" state="full"><endpoint entity="{{F}}" msci:session-type="focus"><status>connected</status></endpoint></user></users></conference-info>"#
+    );
+    let notify = peer_request(
+        &mut server,
+        &roster_sub,
+        "BENOTIFY",
+        2,
+        Some("application/conference-info+xml"),
+        &admitted,
+        &[("Event", "conference")],
+    );
+    let out = e.on_message(&notify, NOW);
+    assert!(events(&out).contains(&Event::ConferenceLobby {
+        conversation,
+        waiting: false
+    }));
+
+    let out = e.command(
+        Command::JoinConferenceAudio {
+            conversation,
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let av_invite = find(&out, "INVITE");
+    assert_eq!(
+        Engine::<Counter>::request_uri(&av_invite),
+        Some(AVMCU),
+        "CA-02: INVITE to the A/V MCU"
+    );
+    let call = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::ConferenceAudio { call, .. } => Some(*call),
+            _ => None,
+        })
+        .expect("conference audio call");
+
+    // Our A/V endpoint appears; mute.
+    let with_av = format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="partial" version="3"><users><user entity="sip:alice@contoso.com" state="partial"><endpoint entity="{{AV1}}" msci:session-type="audio-video"><status>connected</status><media id="1"><type>audio</type><label>main-audio</label><status>sendrecv</status><msci:media-ingress-filter>unblock</msci:media-ingress-filter></media></endpoint></user></users></conference-info>"#
+    );
+    e.on_message(
+        &peer_request(
+            &mut server,
+            &roster_sub,
+            "BENOTIFY",
+            3,
+            Some("application/conference-info+xml"),
+            &with_av,
+            &[("Event", "conference")],
+        ),
+        NOW,
+    );
+    let out = e.command(
+        Command::ConferenceMute {
+            conversation,
+            mute: true,
+        },
+        NOW,
+    );
+    let info = find(&out, "INFO");
+    assert_eq!(
+        info.call_id().unwrap(),
+        focus_invite.call_id().unwrap(),
+        "in the focus dialog"
+    );
+    let b = String::from_utf8(info.body.clone()).unwrap();
+    assert!(
+        b.contains("<modifyEndpointMedia")
+            && b.contains("endpointEntity=\"{AV1}\"")
+            && b.contains(">block<"),
+        "{b}"
+    );
+
+    // Leaving ends the conference audio too (CANCEL, as it is not answered yet).
+    let out = e.command(Command::EndConversation { conversation }, NOW);
+    assert!(sends(&out)
+        .iter()
+        .any(|m| m.method() == Some("CANCEL")
+            && m.call_id().unwrap() == av_invite.call_id().unwrap()));
+    assert!(call > 0);
+}

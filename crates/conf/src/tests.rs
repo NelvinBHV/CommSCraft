@@ -264,3 +264,101 @@ fn invitations() {
         Err(Error::Xml(_))
     ));
 }
+
+const AV: &str =
+    "sip:alice@contoso.com;gruu;opaque=app:conf:audio-video:id:FC275ECD12493E4E9C27C894FE91E104";
+
+/// [MS-CONFBAS] §3.4 example (p. 92): our focus endpoint `on-hold` = lobby; `connected` = admitted.
+#[test]
+fn lobby_state() {
+    let doc = |status: &str, version: u32| {
+        format!(
+            r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="partial" version="{version}"><users state="partial"><user entity="sip:bob@fabrikam.com" state="full"><display-text>Bob</display-text><roles><entry>attendee</entry></roles><endpoint entity="{{659dae6c-82aa-46c8-8b37-da684a1a0d06}}" msci:session-type="focus" msci:epid="732A323248" msci:endpoint-uri="sip:bob@fabrikam.com;opaque=user:epid:vAaOGYq2H12kV5u7RWPdEQAA;gruu"><status>{status}</status></endpoint></user></users></conference-info>"#
+        )
+    };
+    let mut r = Roster::default();
+    r.apply(&doc("on-hold", 2), FOCUS).unwrap();
+    assert!(r.in_lobby("sip:bob@fabrikam.com"));
+    assert!(!r.in_lobby("sip:alice@contoso.com"));
+    r.apply(&doc("connected", 3), FOCUS).unwrap();
+    assert!(!r.in_lobby("sip:bob@fabrikam.com"));
+}
+
+/// [MS-CONFAV] §4.3 (pp. 55–56): the A/V endpoint with its audio media and ingress filter; the
+/// AVMCU URI from conf-uris (CA-01); own audio keys by GRUU.
+#[test]
+fn av_roster_and_mute_request() {
+    let doc = format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="full" version="16">
+<conference-description><conf-uris><entry><uri>{AV}</uri><purpose>audio-video</purpose></entry></conf-uris></conference-description>
+<users state="full"><user entity="sip:bob@fabrikam.com" state="full"><display-text>Bob Freer</display-text><roles><entry>attendee</entry></roles>
+<endpoint entity="{{BB7A3FD2-6467-4A42-88D6-4D0488D74A9D}}" msci:session-type="focus" msci:epid="b7b13da6d6" msci:endpoint-uri="sip:bob@fabrikam.com;opaque=user:epid:yIwZ40vZRFqmQ2_rs6oOzQAA;gruu"><status>connected</status></endpoint>
+<endpoint entity="{{679ACDDB-2171-4176-8414-6ABA41ED881A}}" msci:session-type="audio-video" msci:endpoint-uri="sip:bob@fabrikam.com;opaque=user:epid:yIwZ40vZRFqmQ2_rs6oOzQAA;gruu"><status>connected</status><joining-method>dialed-in</joining-method>
+<media id="1"><type>audio</type><label>main-audio</label><status>sendrecv</status><msci:media-ingress-filter>
+block
+</msci:media-ingress-filter></media>
+<media id="2"><type>video</type><label>main-video</label><status>sendrecv</status></media></endpoint></user></users></conference-info>"#
+    );
+    let mut r = Roster::default();
+    r.apply(&doc, FOCUS).unwrap();
+    assert_eq!(r.av_uri.as_deref(), Some(AV));
+    assert_eq!(r.participants[0].audio_muted(), Some(true));
+    let keys = r
+        .own_audio(
+            "sip:bob@fabrikam.com",
+            "sip:bob@fabrikam.com;opaque=user:epid:yIwZ40vZRFqmQ2_rs6oOzQAA;gruu",
+        )
+        .unwrap();
+    assert_eq!(keys.endpoint, "{679ACDDB-2171-4176-8414-6ABA41ED881A}");
+    assert_eq!(keys.media_id, "1");
+    let body =
+        modify_endpoint_media(96451088, "sip:alice@contoso.com", FOCUS, AV, &keys, false).unwrap();
+    assert!(
+        body.contains(&format!("<modifyEndpointMedia mscp:mcuUri=\"{AV}\">")),
+        "{body}"
+    );
+    assert!(
+        body.contains("endpointEntity=\"{679ACDDB-2171-4176-8414-6ABA41ED881A}\" mediaId=\"1\"")
+    );
+    assert!(body.contains("<media-ingress-filter>unblock</media-ingress-filter>"));
+    let bad = AudioKeys {
+        endpoint: "\"/><x".into(),
+        ..keys
+    };
+    assert!(modify_endpoint_media(1, "sip:alice@contoso.com", FOCUS, AV, &bad, true).is_err());
+}
+
+/// CB-11 / example p. 64: addUser announces lobby-capable.
+#[test]
+fn add_user_is_lobby_capable() {
+    let b = add_user_join(1, "sip:alice@contoso.com", FOCUS, "{G}", Role::Attendee).unwrap();
+    assert!(b.contains("<lobby-capable xmlns=\"http://schemas.microsoft.com/rtc/2008/12/confinfoextensions\">true</lobby-capable>"));
+    assert!(commscraft_xml::parse(&b, &limits()).is_ok());
+}
+
+/// [MS-CONFBAS] §2.2.6.3 example (p. 56).
+#[test]
+fn meeting_document() {
+    let doc = r#"<conf-info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.microsoft.com/rtc/2009/05/simplejoinconfdoc">
+  <conf-uri>sip:bob@fabrikam.com;gruu;opaque=app:conf:focus:id:MJMAY7RF</conf-uri>
+  <server-time>1.0001</server-time>
+  <original-incoming-url>https://www.fabrikam.com/meet/bob/MJMAY7RF</original-incoming-url>
+  <conf-key>MJMAY7RF</conf-key>
+  <fallback-url>https://www.fabrikam.com/meet/bob/MJMAY7RF?sl=1</fallback-url>
+  <telemetry-id>00bfd6b5-6cd3-4327-b6e1-7c3aa0deac52</telemetry-id>
+</conf-info>"#;
+    assert_eq!(
+        parse_meeting(doc).unwrap(),
+        "sip:bob@fabrikam.com;gruu;opaque=app:conf:focus:id:MJMAY7RF"
+    );
+    assert!(
+        parse_meeting(&doc.replace("app:conf:focus", "app:conf:chat")).is_err(),
+        "not a focus"
+    );
+    assert!(parse_meeting(&doc.replace(
+        "sip:bob@fabrikam.com;gruu;opaque=app:conf:focus:id:MJMAY7RF",
+        ""
+    ))
+    .is_err());
+    assert!(parse_meeting("<html/>").is_err());
+}
