@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-27 | NTLM diagnostics for interop runs: non-secret facts of the handshake with `--verbose` (offered/chosen flags, target-info names, MS-SIPAE version), auth headers shown with their non-secret parameters, `--ntlm-legacy` (NTLMv2 without the optional MIC/channel-binding additions). |
 | 2026-10-27 | Trust model for SIP servers named by Autodiscover in another DNS domain (`--trust-domain`, interactive question, remembered; like `TrustModelData`, [SFB-TRUST]); SRV records are printed. |
 | 2026-10-27 | Discovery in `commscraft-cli`: HTTPS GET (`net::http`, strict parser, loopback test) and DNS SRV (`net::dns`, ID/question checks, bounded parser, mutation test); `--discover-only` runs discovery without a password. |
 | 2026-10-27 | M1 ready for the owner's first run: keep-alive negotiation (K-CON-1), `net` adapter (rustls, TLS 1.2/1.3, system trust store + enterprise CA, loopback tests with a throw-away CA), `commscraft-cli sign-in` (requires `--authorized`). D-10 taken. Research: TLS 1.2 support needs SfB 2015 CU9 / 2019 CU1 ([SFB-TLS]); IT-18, IT-19. |

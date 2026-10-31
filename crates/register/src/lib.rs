@@ -83,6 +83,10 @@ pub struct Config {
     /// `ms-subnet` (RG-06), if known.
     pub subnet: Option<String>,
     pub policy: Policy,
+    /// Leave out the optional MS-NLMP §3.1.5.2.1 additions (MIC, MsvAvFlags, channel bindings,
+    /// target name) and send the LMv2 response, as in the MS-NLMP §4.2.4 example. Still NTLMv2.
+    /// Diagnostic switch for interop runs.
+    pub ntlm_legacy: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -188,6 +192,81 @@ enum Phase {
     Done,
 }
 
+/// Non-secret facts about the NTLM handshake, for diagnostics of interop runs: offered and chosen
+/// flags, the names from the CHALLENGE's target information, the MS-SIPAE version. No challenge
+/// nonce, no response, no key.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NtlmInfo {
+    pub sipae_version: Option<u32>,
+    pub offered_flags: u32,
+    pub chosen_flags: Option<u32>,
+    /// (AV_PAIR name, value) for the name pairs 1 … 5.
+    pub names: Vec<(&'static str, String)>,
+    pub has_timestamp: bool,
+    /// MIC and the other §3.1.5.2.1 additions are sent.
+    pub modern: bool,
+}
+
+impl NtlmInfo {
+    fn new(ch: &ntlm::Challenge, version: Option<u32>, modern: bool) -> Self {
+        let names = [
+            (1u16, "NetBIOS computer"),
+            (2, "NetBIOS domain"),
+            (3, "DNS computer"),
+            (4, "DNS domain"),
+            (5, "DNS forest"),
+        ]
+        .iter()
+        .filter_map(|(id, label)| {
+            let v = ch.av(*id)?;
+            let units: Vec<u16> = v
+                .chunks(2)
+                .map(|c| u16::from_le_bytes([*c.first().unwrap_or(&0), *c.get(1).unwrap_or(&0)]))
+                .collect();
+            Some((*label, String::from_utf16_lossy(&units)))
+        })
+        .collect();
+        Self {
+            sipae_version: version,
+            offered_flags: ch.flags,
+            chosen_flags: None,
+            names,
+            has_timestamp: ch.av(ntlm::av::TIMESTAMP).is_some(),
+            modern,
+        }
+    }
+
+    /// Flag names (MS-NLMP §2.2.2.5) for display.
+    pub fn flag_names(flags: u32) -> Vec<&'static str> {
+        use ntlm::flags as f;
+        [
+            (f::UNICODE, "UNICODE"),
+            (f::OEM, "OEM"),
+            (f::REQUEST_TARGET, "REQUEST_TARGET"),
+            (f::SIGN, "SIGN"),
+            (f::SEAL, "SEAL"),
+            (f::DATAGRAM, "DATAGRAM"),
+            (f::LM_KEY, "LM_KEY"),
+            (f::NTLM, "NTLM"),
+            (f::ANONYMOUS, "ANONYMOUS"),
+            (f::ALWAYS_SIGN, "ALWAYS_SIGN"),
+            (f::TARGET_TYPE_DOMAIN, "TARGET_TYPE_DOMAIN"),
+            (f::TARGET_TYPE_SERVER, "TARGET_TYPE_SERVER"),
+            (f::EXTENDED_SESSIONSECURITY, "EXTENDED_SESSIONSECURITY"),
+            (f::IDENTIFY, "IDENTIFY"),
+            (f::TARGET_INFO, "TARGET_INFO"),
+            (f::VERSION, "VERSION"),
+            (f::N128, "128"),
+            (f::KEY_EXCH, "KEY_EXCH"),
+            (f::N56, "56"),
+        ]
+        .iter()
+        .filter(|(bit, _)| flags & bit != 0)
+        .map(|(_, n)| *n)
+        .collect()
+    }
+}
+
 /// The registration state machine of one endpoint.
 pub struct Registrar<R: Random> {
     cfg: Config,
@@ -201,6 +280,7 @@ pub struct Registrar<R: Random> {
     deadline: Option<u64>,
     phase: Phase,
     sa: Option<SecurityAssociation<NtlmMic>>,
+    ntlm_info: Option<NtlmInfo>,
 }
 
 impl<R: Random> std::fmt::Debug for Registrar<R> {
@@ -273,12 +353,18 @@ impl<R: Random> Registrar<R> {
             deadline: None,
             phase: Phase::Idle,
             sa: None,
+            ntlm_info: None,
         })
     }
 
     /// The `+sip.instance` value derived from the EPID (RE-07).
     pub fn instance(&self) -> &str {
         &self.instance
+    }
+
+    /// Non-secret facts about the last NTLM handshake (for `--verbose` diagnostics).
+    pub fn ntlm_info(&self) -> Option<&NtlmInfo> {
+        self.ntlm_info.as_ref()
     }
 
     pub fn is_registered(&self) -> bool {
@@ -626,10 +712,14 @@ impl<R: Random> Registrar<R> {
             Ok(ch) => ch,
             Err(e) => return self.fail(Failure::Ntlm(e)),
         };
+        self.ntlm_info = Some(NtlmInfo::new(&ch, c.version, !self.cfg.ntlm_legacy));
         let flags = match ntlm::choose_flags(ch.flags) {
             Ok(f) => f,
             Err(e) => return self.fail(Failure::Ntlm(e)),
         };
+        if let Some(i) = &mut self.ntlm_info {
+            i.chosen_flags = Some(flags);
+        }
         let mut client_challenge = [0u8; 8];
         self.rng.fill(&mut client_challenge);
         let mut random_session_key = [0u8; 16];
@@ -648,7 +738,7 @@ impl<R: Random> Registrar<R> {
                 now_filetime: now
                     .saturating_add(FILETIME_UNIX_OFFSET)
                     .saturating_mul(10_000_000),
-                modern: true,
+                modern: !self.cfg.ntlm_legacy,
             },
         );
         random_session_key.zeroize();

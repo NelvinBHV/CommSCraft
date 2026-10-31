@@ -1,6 +1,6 @@
 # Interop test cases for the owner
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (trust model for servers in another domain)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (NTLM diagnostics for interop runs)
 
 After the fourth search ([`protocol/evidence/39-evidence-for-open-points.md`](protocol/evidence/39-evidence-for-open-points.md),
 OB-39 … OB-51) no open point needs more document research. What is left is the observable behaviour
