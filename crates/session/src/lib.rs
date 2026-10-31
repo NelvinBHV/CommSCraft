@@ -82,6 +82,12 @@ pub enum ConferenceAction {
     },
     /// Mute or unmute the audience (attendees) in the A/V MCU.
     MuteAudience(bool),
+    /// Entry and exit announcements of the A/V MCU on or off (CA-21).
+    Announcements(bool),
+    /// The A/V MCU calls this phone number into the meeting (CA-23).
+    DialOut {
+        number: String,
+    },
 }
 
 /// What the user asks for.
@@ -155,6 +161,8 @@ pub enum Command {
         conversation: ConversationId,
         local: Box<sdp::Local>,
         policy: sdp::Encryption,
+        /// Language of the entry and exit announcements (Accept-Language, CA-24).
+        language: Option<String>,
     },
     /// A presenter command in a conference (CB-33, CB-35, CA-20, CA-22).
     ConferenceControl {
@@ -1473,7 +1481,15 @@ impl<R: Random> Engine<R> {
                 conversation,
                 local,
                 policy,
-            } => self.join_conference_audio(conversation, *local, policy, now, &mut out),
+                language,
+            } => self.join_conference_audio(
+                conversation,
+                *local,
+                policy,
+                language.as_deref(),
+                now,
+                &mut out,
+            ),
             Command::ConferenceControl {
                 conversation,
                 action,

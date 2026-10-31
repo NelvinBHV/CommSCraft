@@ -830,3 +830,80 @@ fn static_meeting() {
     assert_eq!(meetings.len(), 1);
     assert!(meetings[0].static_meeting);
 }
+
+/// CA-24: one language tag, no parameters, RFC 5646 shape.
+#[test]
+fn language_tags() {
+    for ok in ["de", "de-DE", "en-US", "zh-Hant-TW", "sr-Latn-RS"] {
+        assert!(valid_language_tag(ok), "{ok}");
+    }
+    for bad in [
+        "",
+        "d",
+        "de_DE",
+        "de-DE;q=1",
+        "de, en",
+        "de-",
+        "x".repeat(40).as_str(),
+        "de-\r\nX",
+    ] {
+        assert!(!valid_language_tag(bad), "{bad:?}");
+    }
+}
+
+/// CA-21 ([MS-CONFAV] §2.2.3.4, example §4.4, p. 59) and CA-23 ([MS-CONFBAS] §2.2.3.15;
+/// [MS-CONFAV] §2.2.3.1): the announcements command and the audio dial-out of a phone number;
+/// only phone URIs are dialled out.
+#[test]
+fn announcements_and_phone_dial_out() {
+    let focus = "sip:bob@fabrikam.com;gruu;opaque=app:conf:focus:id:YAZ75GMP";
+    let av = "sip:bob@fabrikam.com;gruu;opaque=app:conf:audio-video:id:YAZ75GMP";
+    let a = modify_conference_announcements(7, "sip:bob@fabrikam.com", focus, av, true).unwrap();
+    assert!(a.contains(&format!("<modifyConferenceAnnouncements mscp:mcuUri=\"{av}\"><conferenceKeys confEntity=\"{focus}\"/><enabled>true</enabled></modifyConferenceAnnouncements>")));
+    let d = add_user_dial_out_audio(
+        8,
+        "sip:bob@fabrikam.com",
+        focus,
+        av,
+        "sip:+4940123456@fabrikam.com;user=phone",
+        "{G}",
+    )
+    .unwrap();
+    assert!(d.contains("entity=\"sip:+4940123456@fabrikam.com;user=phone\"") && d.contains("<ci:joining-method>dialed-out</ci:joining-method><ci:media id=\"1\"><ci:type>audio</ci:type>"));
+    assert!(commscraft_xml::parse(&d, &commscraft_xml::Limits::default()).is_ok());
+    assert!(add_user_dial_out_audio(
+        8,
+        "sip:bob@fabrikam.com",
+        focus,
+        av,
+        "tel:+4940123456",
+        "{G}"
+    )
+    .is_ok());
+    for bad in [
+        "sip:carol@fabrikam.com",
+        "tel:",
+        "tel:12a",
+        "sip:+49\"/>@x;user=phone",
+    ] {
+        assert!(
+            add_user_dial_out_audio(8, "sip:bob@fabrikam.com", focus, av, bad, "{G}").is_err(),
+            "{bad}"
+        );
+    }
+}
+
+/// CA-21 ([MS-CONFAV] §2.2.1.1.4, p. 16): announcements state from the A/V MCU's entity-view;
+/// another MCU's view does not count.
+#[test]
+fn announcements_from_roster() {
+    let focus = "sip:bob@fabrikam.com;gruu;opaque=app:conf:focus:id:YAZ75GMP";
+    let av = "sip:bob@fabrikam.com;gruu;opaque=app:conf:audio-video:id:YAZ75GMP";
+    let doc = format!(
+        "<conference-info xmlns=\"urn:ietf:params:xml:ns:conference-info\" xmlns:msci=\"{NS_MSCI}\" xmlns:cmn=\"http://schemas.microsoft.com/rtc/2009/03/commonmcuextensions\" entity=\"{focus}\" state=\"full\" version=\"1\"><conference-description><conf-uris><entry><uri>{av}</uri><purpose>audio-video</purpose></entry></conf-uris></conference-description><msci:conference-view><msci:entity-view entity=\"sip:x@fabrikam.com;gruu;opaque=app:conf:chat:id:1\"><msci:entity-state><cmn:entry-exit-announcements><cmn:enabled>false</cmn:enabled></cmn:entry-exit-announcements></msci:entity-state></msci:entity-view><msci:entity-view entity=\"{av}\"><msci:entity-state><cmn:entry-exit-announcements><cmn:modifiable>true</cmn:modifiable><cmn:enabled>true</cmn:enabled></cmn:entry-exit-announcements></msci:entity-state></msci:entity-view></msci:conference-view></conference-info>"
+    );
+    let mut r = Roster::default();
+    r.apply(&doc, focus).unwrap();
+    assert_eq!(r.settings.announcements, Some(true));
+    assert_eq!(r.settings.announcements_modifiable, Some(true));
+}

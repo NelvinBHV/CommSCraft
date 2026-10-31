@@ -2,7 +2,7 @@
 
 **Stage: M3 (audio 1:1)** · M0 done · M1 and M2 built and tested offline · M3 in progress
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (options when scheduling, numbers)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (announcements, phone dial-out, numbers)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **58** / **19** (16 closed or no evidence problem) / **26** (22 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **35 crates + 1 app** (`commscraft-cli`), **340 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **35 crates + 1 app** (`commscraft-cli`), **345 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **private owner lab** (D-08, since 2026-10-31): the agent may test there; results are not published, public statuses stay `tested-offline` | owner decision |
 
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-01 | Conference audio (function 42): entry/exit announcements on/off with the A/V MCU's state (CA-21), the announcement language as Accept-Language (CA-24), dialling a phone number into the meeting (CA-23); CLI `/announcements`, `/dialout`, `/confaudio LANGUAGE`. |
 | 2026-11-01 | Options when scheduling (function 40): presenters and invitees, automatic promotion, lobby bypass for phone callers and locked meetings in addConference/modifyConference (PV-15); the static meeting – create, list, delete (PV-16); CLI options before the subject, `/schedule static`, `/meetings static`. |
 | 2026-11-01 | Meeting options (function 41): presenters change the admission policy, automatic promotion and lobby bypass for phone callers in the running meeting (CB-42, schema namespace K-CB-3); the client reads the options and the lock state from the roster (CB-43) and refuses what the focus does not allow; CLI `/options`. |
 | 2026-10-31 | Team and delegate ringing (function 34): routing preamble version 2 with team/delegates/breakthrough lists, team_ring, delegate_ring, skip_primary and the user/team2 waits (RE-71); incoming team/delegate calls show for whom they were meant (RE-72); CLI `/team`, `/delegates`. |

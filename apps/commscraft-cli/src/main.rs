@@ -60,7 +60,8 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /meeting ID  /cancelmeeting ID [static]
           /changemeeting ID MINUTES [OPTIONS] SUBJECT – OPTIONS: open|closed|anonymous, promote none|company|everyone,
             phone bypass|lobby, locked, presenter sip:URI, attendee sip:URI
-          /confaudio (join the meeting's audio)  /confmute  /confunmute (mute in the meeting)
+          /confaudio [LANGUAGE] (join the meeting's audio; announcements in LANGUAGE, default from $LANG)
+          /announcements on|off  /dialout NUMBER (presenters: the meeting calls a phone)  /confmute  /confunmute (mute in the meeting)
           presenters: /admit [sip:URI]  /deny sip:URI  /promote sip:URI  /demote sip:URI  /lock  /unlock
           /remove sip:URI  /muteuser sip:URI  /unmuteuser sip:URI  /muteall  /unmuteall
           /options [open|closed|anonymous] [promote none|company|everyone] [phone bypass|lobby]
@@ -1402,7 +1403,8 @@ fn interactive(
     let mut lis_wanted = false;
     let mut pending_in: BTreeMap<u32, u32> = BTreeMap::new();
     // Media prepared for a conference's audio: media id → conversation.
-    let mut pending_conf: BTreeMap<u32, u32> = BTreeMap::new();
+    // Media handle → (conversation, announcement language, CA-24).
+    let mut pending_conf: BTreeMap<u32, (u32, Option<String>)> = BTreeMap::new();
     // Conference audio calls whose media id is known before the engine names the call.
     let mut conf_media: BTreeMap<u32, u32> = BTreeMap::new();
     let mut media_of_call: BTreeMap<u32, u32> = BTreeMap::new();
@@ -1788,6 +1790,16 @@ fn interactive(
                                 .to_string(),
                             );
                         }
+                        if let Some(a) = settings.announcements {
+                            parts.push(
+                                if a {
+                                    "entry/exit announcements on"
+                                } else {
+                                    "entry/exit announcements off"
+                                }
+                                .to_string(),
+                            );
+                        }
                         if settings.lobby_capable == Some(false) {
                             parts.push("options cannot be changed".into());
                         }
@@ -1967,13 +1979,14 @@ fn interactive(
                             },
                             now(),
                         ));
-                    } else if let Some(conversation) = pending_conf.remove(&id) {
+                    } else if let Some((conversation, language)) = pending_conf.remove(&id) {
                         conf_media.insert(conversation, id);
                         outputs.extend(engine.command(
                             C::JoinConferenceAudio {
                                 conversation,
                                 local,
                                 policy,
+                                language,
                             },
                             now(),
                         ));
@@ -2433,7 +2446,13 @@ fn interactive(
                             media_tx.clone(),
                         );
                         handles.insert(id, h);
-                        pending_conf.insert(id, conversation);
+                        // CA-24: the language given, else the one of the environment.
+                        let language = Some(arg.trim())
+                            .filter(|l| !l.is_empty())
+                            .map(str::to_string)
+                            .or_else(language_from_env)
+                            .filter(|l| commscraft_conf::valid_language_tag(l));
+                        pending_conf.insert(id, (conversation, language));
                         println!("* preparing the meeting audio …");
                         None
                     }
@@ -2442,6 +2461,27 @@ fn interactive(
                         None
                     }
                 },
+                "/announcements" | "/dialout" => {
+                    use commscraft_session::ConferenceAction as A;
+                    let a = arg.trim();
+                    let action = match (cmd, a) {
+                        ("/announcements", "on" | "off") => Some(A::Announcements(a == "on")),
+                        ("/dialout", n) if !n.is_empty() => Some(A::DialOut {
+                            number: n.to_string(),
+                        }),
+                        _ => None,
+                    };
+                    match action {
+                        Some(action) => current.map(|conversation| C::ConferenceControl {
+                            conversation,
+                            action,
+                        }),
+                        None => {
+                            println!("* /announcements on|off  /dialout NUMBER");
+                            None
+                        }
+                    }
+                }
                 "/admit" | "/deny" | "/promote" | "/demote" | "/lock" | "/unlock" | "/remove"
                 | "/muteuser" | "/unmuteuser" | "/muteall" | "/unmuteall" => {
                     use commscraft_session::ConferenceAction as A;
@@ -3030,6 +3070,24 @@ fn main() {
     std::process::exit(code);
 }
 
+/// The announcement language from the environment (CA-24): `de_DE.UTF-8` → `de-DE`; `C` and
+/// `POSIX` mean none.
+fn language_from_env() -> Option<String> {
+    ["LC_ALL", "LC_MESSAGES", "LANG"]
+        .iter()
+        .find_map(|k| std::env::var(k).ok().filter(|v| !v.is_empty()))
+        .and_then(|v| posix_language(&v))
+}
+
+fn posix_language(v: &str) -> Option<String> {
+    let base = v.split(['.', '@']).next().unwrap_or("");
+    if base.is_empty() || base == "C" || base == "POSIX" {
+        return None;
+    }
+    let tag = base.replace('_', "-");
+    commscraft_conf::valid_language_tag(&tag).then_some(tag)
+}
+
 const MEETING_OPTIONS: &str = "OPTIONS: open|closed|anonymous, promote none|company|everyone, phone bypass|lobby, locked, presenter sip:URI, attendee sip:URI";
 
 /// Meeting options before the subject of /schedule and /changemeeting (PV-15): admission policy,
@@ -3155,5 +3213,15 @@ tun0\t000000CB\t00000000\t0001\t0\t0\t500\t000000FF\t0\t0\t0\n";
             meeting_words(&["Plan"]).unwrap().0,
             Admission::OpenAuthenticated
         );
+    }
+
+    /// CA-24: POSIX locale names become language tags.
+    #[test]
+    fn language_from_locale() {
+        assert_eq!(posix_language("de_DE.UTF-8").as_deref(), Some("de-DE"));
+        assert_eq!(posix_language("en_US@euro").as_deref(), Some("en-US"));
+        assert_eq!(posix_language("C.UTF-8"), None);
+        assert_eq!(posix_language("POSIX"), None);
+        assert_eq!(posix_language("x;q=1"), None);
     }
 }

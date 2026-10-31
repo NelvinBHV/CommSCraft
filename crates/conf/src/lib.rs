@@ -211,6 +211,86 @@ pub fn add_user_join(
     )
 }
 
+/// A language tag for announcements (CA-24: exactly one language, no parameters): RFC 5646
+/// shape – a 2–8 letter primary subtag, then up to four 1–8 alphanumeric subtags, at most 35
+/// characters (design bound).
+pub fn valid_language_tag(tag: &str) -> bool {
+    let mut parts = tag.split('-');
+    let primary_ok = parts
+        .next()
+        .is_some_and(|p| (2..=8).contains(&p.len()) && p.chars().all(|c| c.is_ascii_alphabetic()));
+    let rest: Vec<&str> = parts.collect();
+    tag.len() <= 35
+        && primary_ok
+        && rest.len() <= 4
+        && rest
+            .iter()
+            .all(|p| (1..=8).contains(&p.len()) && p.chars().all(|c| c.is_ascii_alphanumeric()))
+}
+
+/// modifyConferenceAnnouncements over INFO to the focus for the A/V MCU (CA-21; [MS-CONFAV]
+/// §2.2.3.4, pp. 24–25; example §4.4, p. 59): entry and exit announcements on or off.
+pub fn modify_conference_announcements(
+    request_id: u32,
+    from: &str,
+    focus: &str,
+    av_mcu: &str,
+    enabled: bool,
+) -> Result<String, Error> {
+    let focus_c = uri(focus)?;
+    let mcu = uri(av_mcu)?;
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<modifyConferenceAnnouncements mscp:mcuUri=\"{}\"><conferenceKeys confEntity=\"{}\"/><enabled>{enabled}</enabled></modifyConferenceAnnouncements>",
+            escape(&mcu),
+            escape(&focus_c)
+        ),
+    )
+}
+
+/// addUser dial-out to the A/V MCU: the MCU calls a phone number into the conference (CA-23;
+/// [MS-CONFBAS] §2.2.3.15, pp. 44–45, §3.10.4.1.1, p. 109: the INVITE goes to the user entity;
+/// [MS-CONFAV] §2.2.3.1, p. 22: one endpoint, an optional audio media element as constraint).
+/// `phone` is a `sip:…;user=phone` or `tel:` URI.
+pub fn add_user_dial_out_audio(
+    request_id: u32,
+    from: &str,
+    focus: &str,
+    av_mcu: &str,
+    phone: &str,
+    endpoint_guid: &str,
+) -> Result<String, Error> {
+    let focus_c = uri(focus)?;
+    let mcu = uri(av_mcu)?;
+    let phone = if let Some(n) = phone.strip_prefix("tel:") {
+        if n.is_empty() || n.len() > 32 || !n.chars().all(|c| c.is_ascii_digit() || c == '+') {
+            return Err(Error::BadValue("phone"));
+        }
+        phone.to_string()
+    } else {
+        let p = uri(phone)?;
+        if !p.to_ascii_lowercase().contains(";user=phone") {
+            return Err(Error::BadValue("phone"));
+        }
+        p
+    };
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<addUser mscp:mcuUri=\"{}\"><conferenceKeys confEntity=\"{}\"/><ci:user xmlns:ci=\"{NS_CI}\" entity=\"{}\"><ci:roles><ci:entry>attendee</ci:entry></ci:roles><ci:endpoint entity=\"{}\" xmlns:msci=\"{NS_MSCI}\"><ci:joining-method>dialed-out</ci:joining-method><ci:media id=\"1\"><ci:type>audio</ci:type><ci:status>sendrecv</ci:status></ci:media></ci:endpoint></ci:user></addUser>",
+            escape(&mcu),
+            escape(&focus_c),
+            escape(&phone),
+            escape(endpoint_guid)
+        ),
+    )
+}
+
 /// addUser dial-out over INFO to the focus: the IM MCU invites `invitee` (CB-37; [MS-CONFBAS]
 /// §2.2.3.15, pp. 44–45; [MS-CONFIM] §4.1.2 step 1, p. 41).
 pub fn add_user_dial_out(
@@ -403,6 +483,10 @@ pub struct Settings {
     pub autopromote_allowed: Option<u32>,
     pub pstn_lobby_bypass: Option<bool>,
     pub pstn_lobby_bypass_allowed: Option<bool>,
+    /// Entry and exit announcements of the A/V MCU and whether they can be changed (CA-21;
+    /// [MS-CONFAV] §2.2.1.1.4, p. 16).
+    pub announcements: Option<bool>,
+    pub announcements_modifiable: Option<bool>,
 }
 
 impl Settings {
@@ -691,22 +775,6 @@ impl Roster {
         if let Some(d) = root.child("conference-description") {
             self.settings.apply_description(d);
         }
-        // §2.2.4.4.1: the focus entity-view carries the lock state.
-        if let Some(view) = root.child("conference-view") {
-            for v in view.children_named("entity-view") {
-                if v.attr("entity")
-                    .is_some_and(|e| e.eq_ignore_ascii_case(focus))
-                {
-                    if let Some(l) = v.child("entity-state").and_then(|s| s.child("locked")) {
-                        self.settings.locked = match l.text().trim() {
-                            "true" => Some(true),
-                            "false" => Some(false),
-                            _ => None,
-                        };
-                    }
-                }
-            }
-        }
         if let Some(uris) = root
             .child("conference-description")
             .and_then(|d| d.child("conf-uris"))
@@ -718,6 +786,38 @@ impl Roster {
                     "chat" => self.chat_uri = u,
                     "audio-video" => self.av_uri = u,
                     _ => {}
+                }
+            }
+        }
+        let flag = |e: Option<&Element>| match e.map(|e| e.text()) {
+            Some(t) if t.trim() == "true" => Some(true),
+            Some(t) if t.trim() == "false" => Some(false),
+            _ => None,
+        };
+        if let Some(view) = root.child("conference-view") {
+            for v in view.children_named("entity-view") {
+                let Some(entity) = v.attr("entity") else {
+                    continue;
+                };
+                let state = v.child("entity-state");
+                // §2.2.4.4.1: the focus entity-view carries the lock state.
+                if entity.eq_ignore_ascii_case(focus) {
+                    if let Some(l) = state.and_then(|s| s.child("locked")) {
+                        self.settings.locked = flag(Some(l));
+                    }
+                }
+                // CA-21: the A/V MCU's entry-exit-announcements.
+                if self
+                    .av_uri
+                    .as_deref()
+                    .is_some_and(|av| entity.eq_ignore_ascii_case(av))
+                {
+                    if let Some(a) = state.and_then(|s| s.child("entry-exit-announcements")) {
+                        self.settings.announcements = flag(a.child("enabled"));
+                        if a.child("modifiable").is_some() {
+                            self.settings.announcements_modifiable = flag(a.child("modifiable"));
+                        }
+                    }
                 }
             }
         }
