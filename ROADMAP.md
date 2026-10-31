@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-31 | Call media runtime (`call-media`): UDP sockets, TURN relays, ICE, audio core; loopback test with real sockets: ICE selection, final offer, encrypted G.722, DTMF, RTCP BYE. |
 | 2026-10-31 | Audio media core (`media`): codec, RTP, SRTP, jitter buffer with concealment, DTMF, RTCP, packet classification (RFC 5761 §4, STUN-02 §10.1). |
 | 2026-10-31 | Call signalling in the engine: multipart offer (MS-SIPRE §3.15), ringing, answer, final offer with remote-candidates, CANCEL, BYE, incoming calls with accept/decline/timeout. |
 | 2026-10-31 | ICE agent (`ice-agent`, MS-ICE2 over UDP): checks in both STUN formats, nomination, keep-alive, consent freshness; K-IC-2 (FINGERPRINT in responses). |

@@ -32,6 +32,7 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 | `commscraft-stun` | L1 | STUN messages in RFC 5389 and STUN-02/MS-TURN format, MESSAGE-INTEGRITY (SHA-1, legacy, MS-TURN SHA-256), FINGERPRINT, addresses | TU-10…TU-15, IC-02…IC-04, IC-13, IE-02, IE-03, O-IC-2 |
 | `commscraft-avedgea` | L3 | Media relay credentials (MS-AVEDGEA): SERVICE body, checked answer with relays | AV-01…AV-09, K-AV-1 |
 | `commscraft-ice-agent` | L2 | ICE agent per media stream (MS-ICE2, UDP): pairs, checks in STUN-02 and RFC 5389, peer-reflexive learning, triggered checks, regular nomination, keep-alive, consent freshness | IC-01…IC-17, K-IC-2, O-IC-2 |
+| `commscraft-call-media` | L2 | Network side of a call's media: UDP sockets, MS-TURN relays, ICE agent, audio core; local and final SDP description, direct media for peers without ICE | OCS-UC12, IC-07, IC-09, TU-24, TU-25 |
 | `commscraft-media` | L2 | Audio media core of a call: codec, RTP, SRTP, jitter buffer (60 ms, bounded), loss concealment, DTMF, RTCP reports and BYE, STUN/RTP/RTCP classification | RT-01…RT-10, SR-*, PL-30, G7-*, G2-* |
 | `commscraft-turn` | L2 | MS-TURN client: Allocate with digest challenge, sequence numbers, Send/Data Indication, Set Active Destination, refresh, teardown, retransmission, TCP framing, pseudo-TLS | TU-02, TU-04, TU-10…TU-27 |
 | `commscraft-rtp` | L1 | RTP header, sender, reception statistics, RTCP SR/RR/SDES/BYE, telephone events | RT-01…RT-10, RT-20, RT-21, PL-30 |

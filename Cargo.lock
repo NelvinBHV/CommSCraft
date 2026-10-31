@@ -96,6 +96,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "commscraft-call-media"
+version = "0.0.1"
+dependencies = [
+ "commscraft-ice",
+ "commscraft-ice-agent",
+ "commscraft-media",
+ "commscraft-sdp",
+ "commscraft-turn",
+ "getrandom 0.3.4",
+ "zeroize",
+]
+
+[[package]]
 name = "commscraft-cli"
 version = "0.0.1"
 dependencies = [
