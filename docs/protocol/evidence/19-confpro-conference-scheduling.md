@@ -15,6 +15,7 @@ Source: [MS-CONFPRO] "Centralized Conference Control Protocol: Provisioning", ed
 | PV-09 | Client flows: create = generate a unique conference ID + addConference; static = getConferences static → getConference or addConference static; modify = first getConference, compare version, then modifyConference | §3.1.4.1–3.1.4.3, pp. 32–33 |
 | PV-10 | Details with the conference key: send a **self-signed certificate** (public key only, CMS RFC 3852), decrypt the encrypted key with the own private key | §3.1.4.5, p. 33; §3.1.5.6, p. 35; §3.1.7.3, p. 37 |
 | PV-11 | Request timer 32 s per requestId (ORQ); 200 OK ⇒ body mandatory; other codes ⇒ error, body optional | §3.1, p. 32; §3.1.5.1–3.1.5.2, pp. 34–35; §3.1.6 p. 36 |
+| PV-12 | addConference `conference-view`: one `entity-view` per MCU type to allocate, each value unique and among the focus factory's MCU types; refusal `mcuTypeNotAvailable`. Implementation: ad-hoc conferences ask for `chat` and `audio-video` (the §4.1 example lists chat, audio-video, applicationsharing, data-conf), so audio can be added later; after `mcuTypeNotAvailable` once more with `chat` only (design, no loop) | §2.2.1.5, p. 16; §2.2.3.1, p. 23; §4.1, p. 41 |
 
 ## Conflicts / gaps
 - K-PV-1: §3.1.5.3 (p. 35) says the conference URI is in the entity attribute of the **addConference** element; §2.2.3.1 (p. 24) and the example (pp. 41–42) show it in the **conference-info** child element. Implementation: read conference-info/@entity.

@@ -1086,7 +1086,7 @@ fn im_actions(
     .map_err(|_| "--to is not a usable SIP URI")?;
     let text = a.text.clone().ok_or("im needs --text")?;
     let mut invite = s.request("INVITE", &to);
-    commscraft_im::invite_body(&mut invite, local_ip);
+    commscraft_im::invite_body(&mut invite, local_ip, false);
     reg.sign_request(&mut invite)
         .map_err(|e| format!("{e:?}"))?;
     println!("inviting {to} ...");

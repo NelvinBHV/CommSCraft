@@ -35,6 +35,7 @@ Source: [MS-CONFAV] "Centralized Conference Control Protocol: Audio-Video Extens
 ## Conflicts / gaps
 - K-CA-1: MS-CONFBAS §3.11 (pp. 110–113) describes joining the MCU **with** a prior addUser dial-in by the client; MS-CONFAV §3.1.5.1 (p. 26) declares it **unnecessary** for A/V (implicit through the INVITE). Both paths are documented; implement the direct INVITE, explicit dial-in as a fallback (interop test).
 - K-CA-2: Filter values are called `block`/`unblock` in the schema (§2.2.1.1.1.1, p. 15), "blocked"/"unblocked" in §3.2.5.6.1 (p. 42). Authoritative: the schema enumeration.
+- K-CA-3: In the modifyEndpointMedia example (§4.3) `media-ingress-filter` is unprefixed, so it falls into the CCCP namespace of the request; the schema defines `media-ingress-filter` and `media-egress-filter` in `http://schemas.microsoft.com/rtc/2005/08/confinfoextensions` ([MS-CONFBAS] §6 schema, p. 220), and other C3P types reference them as `msci:media-ingress-filter` (p. 185). Authoritative: the schema; CommSCraft sends `msci:media-ingress-filter` (CA-20).
 - L-10: SDP content beyond type/label/direction is "implementation-specific" (§3.2.5.1.1, p. 35) – MS-SDPEXT (file 14) is authoritative.
 
 ## Implementation (2026-10-31, conference audio)

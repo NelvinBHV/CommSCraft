@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (synchronised with the code: M1–M3 building blocks)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (group IM and A/V conference rows)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -43,7 +43,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 16 | Calendar and out-of-office state | MS-PRES (format) | T | – |
 | 17 | Instant messaging 1:1 | MS-SIPRE, MS-OCSPROT | B | tested-offline (incoming and outgoing sessions, queued text, delivery state: `im`, `session`) |
 | 18 | Typing indicator | MS-CONFIM | T | parts tested-offline (INFO KeyboardActivity, secondary format: `im`) |
-| 19 | Group IM (IM conference) | MS-CONFPRO, MS-CONFBAS, MS-CONFIM | B\* | tested-offline (create, join, roster, IM MCU, dial-out invitations, IMDN, session timers, leave: `conf`, `session`; CLI `/group`, `/invite`, `/join`); invitations of Windows clients secondary only (K-CI-3) |
+| 19 | Group IM (IM conference) | MS-CONFPRO, MS-CONFBAS, MS-CONFIM | B\* | tested-offline (create with IM and A/V MCU, join, roster, IM MCU, dial-out invitations and the invitee's focus join, IMDN, session timers, leave: `conf`, `session`; CLI `/group`, `/invite`, `/join`); invitations of Windows clients secondary only (K-CI-3) |
 | 20 | Persistent chat | MS-XCCOSIP, MS-OCGCWEB | T | – |
 | 21 | Media relay access | MS-AVEDGEA, MS-TURN | B | parts tested-offline (MS-TURN client incl. SHA-256, TCP framing and pseudo-TLS: `turn`; STUN codec: `stun`; MS-AVEDGEA credentials fetched and refreshed by the engine: `avedgea`, `session`; UDP and TCP (443) relay candidates in calls: `call-media`); IPv6 relays, multiplexed TURN (not used by SfB) – |
 | 22 | ICE connectivity | MS-ICE2, MS-ICE | B\* | parts tested-offline (ICE agent over UDP and TCP (ice-tcp-07 pairing, RFC 4571 framing on the TCP relay): checks in both STUN formats, peer-reflexive candidates, regular nomination, keep-alive, consent freshness: `ice-agent`, `call-media`); TCP-only mode and MS-ICE (2007) – |

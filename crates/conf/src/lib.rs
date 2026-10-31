@@ -66,6 +66,23 @@ pub fn is_focus_uri(u: &str) -> bool {
     checked_sip_uri(u).is_ok() && u.to_ascii_lowercase().contains(";opaque=app:conf:focus:")
 }
 
+/// Whether `focus` is the focus of the conference that `mcu` (an MCU or focus URI) belongs to:
+/// same organizer address and same conference ID in `opaque=app:conf:<type>:id:<ID>` (inference
+/// from the URIs of one conference in the examples, e.g. [MS-CONFIM] §4.1.1–§4.1.2, pp. 28–51:
+/// focus and MCU URIs differ only in the type). Used before following `Ms-Focus-Uri` of a dial-out INVITE (CI-13).
+pub fn same_conference(focus: &str, mcu: &str) -> bool {
+    fn key(u: &str) -> Option<(String, String)> {
+        let l = u.to_ascii_lowercase();
+        let (base, rest) = l.split_once(";opaque=app:conf:")?;
+        let id = rest.split_once(":id:")?.1.split(';').next()?.trim();
+        let base = base.split(';').next()?.trim();
+        (!id.is_empty() && !base.is_empty()).then(|| (base.to_string(), id.to_string()))
+    }
+    is_focus_uri(focus)
+        && checked_sip_uri(mcu).is_ok()
+        && matches!((key(focus), key(mcu)), (Some(a), Some(b)) if a == b)
+}
+
 /// Upper-case hex of 16 random bytes: a conference ID of 32 characters (PV-04: 8–32
 /// alphanumeric, unique per organizer). 128 random bits also make the conference URI unguessable
 /// for the `openAuthenticated` admission policy (design).
@@ -96,14 +113,34 @@ fn request(request_id: u32, from: &str, to: &str, command: &str) -> Result<Strin
     ))
 }
 
-/// addConference to the focus factory for an ad-hoc IM conference (PV-02, PV-03, PV-06;
-/// [MS-CONFPRO] §4.1, p. 41): only the `chat` MCU, admission policy `openAuthenticated` as in the
-/// example.
+/// An MCU type a conference is created with (PV-12; [MS-CONFPRO] §2.2.1.5, p. 16: the
+/// conference-view lists the MCU types allocated for the conference).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum McuType {
+    /// The IM MCU.
+    Chat,
+    /// The A/V MCU (conference audio).
+    AudioVideo,
+}
+
+impl McuType {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            McuType::Chat => "chat",
+            McuType::AudioVideo => "audio-video",
+        }
+    }
+}
+
+/// addConference to the focus factory for an ad-hoc conference (PV-02, PV-03, PV-06, PV-12;
+/// [MS-CONFPRO] §4.1, p. 41): the given MCU types (each at most once, at least one), admission
+/// policy `openAuthenticated` as in the example.
 pub fn add_conference(
     request_id: u32,
     organizer: &str,
     focus_factory: &str,
     conference_id: &str,
+    mcus: &[McuType],
 ) -> Result<String, Error> {
     if conference_id.is_empty()
         || conference_id.len() > 32
@@ -111,12 +148,24 @@ pub fn add_conference(
     {
         return Err(Error::BadValue("conference-id"));
     }
+    // "This value MUST be unique among all entity-view elements specified" (§2.2.1.5, p. 16).
+    let unique = mcus
+        .iter()
+        .enumerate()
+        .all(|(i, m)| !mcus.iter().take(i).any(|o| o == m));
+    if mcus.is_empty() || !unique {
+        return Err(Error::BadValue("mcu types"));
+    }
+    let views: String = mcus
+        .iter()
+        .map(|m| format!("<msci:entity-view entity=\"{}\"/>", m.as_str()))
+        .collect();
     request(
         request_id,
         organizer,
         focus_factory,
         &format!(
-            "<addConference><ci:conference-info xmlns:ci=\"{NS_CI}\" entity=\"\" xmlns:msci=\"{NS_MSCI}\"><ci:conference-description><msci:conference-id>{conference_id}</msci:conference-id><msci:admission-policy>openAuthenticated</msci:admission-policy></ci:conference-description><msci:conference-view><msci:entity-view entity=\"chat\"/></msci:conference-view></ci:conference-info></addConference>"
+            "<addConference><ci:conference-info xmlns:ci=\"{NS_CI}\" entity=\"\" xmlns:msci=\"{NS_MSCI}\"><ci:conference-description><msci:conference-id>{conference_id}</msci:conference-id><msci:admission-policy>openAuthenticated</msci:admission-policy></ci:conference-description><msci:conference-view>{views}</msci:conference-view></ci:conference-info></addConference>"
         ),
     )
 }
@@ -190,7 +239,9 @@ pub fn add_user_dial_out(
 }
 
 /// modifyEndpointMedia (CA-20; [MS-CONFAV] §2.2.3.3, example §4.3): block or unblock the audio
-/// a user's A/V endpoint sends to the MCU (mute). Sent over INFO to the focus.
+/// a user's A/V endpoint sends to the MCU (mute). Sent over INFO to the focus. The filter
+/// element is in the `confinfoextensions` namespace as the schema defines it (K-CA-3; the
+/// example writes it unprefixed).
 pub fn modify_endpoint_media(
     request_id: u32,
     from: &str,
@@ -210,7 +261,7 @@ pub fn modify_endpoint_media(
         from,
         focus,
         &format!(
-            "<modifyEndpointMedia mscp:mcuUri=\"{}\"><mediaKeys confEntity=\"{}\" userEntity=\"{}\" endpointEntity=\"{}\" mediaId=\"{}\"/><ci:media xmlns:ci=\"{NS_CI}\" id=\"{}\"><ci:type>audio</ci:type><media-ingress-filter>{}</media-ingress-filter></ci:media></modifyEndpointMedia>",
+            "<modifyEndpointMedia mscp:mcuUri=\"{}\"><mediaKeys confEntity=\"{}\" userEntity=\"{}\" endpointEntity=\"{}\" mediaId=\"{}\"/><ci:media xmlns:ci=\"{NS_CI}\" id=\"{}\"><ci:type>audio</ci:type><msci:media-ingress-filter xmlns:msci=\"{NS_MSCI}\">{}</msci:media-ingress-filter></ci:media></modifyEndpointMedia>",
             escape(&mcu),
             escape(&focus_c),
             escape(&user),

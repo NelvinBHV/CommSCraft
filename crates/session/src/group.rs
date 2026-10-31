@@ -50,8 +50,8 @@ pub(crate) struct Group {
     /// Conference URI of the focus (known after addConference or from the invitation).
     pub focus: Option<String>,
     pub organizer: bool,
-    /// The focus dialog was created by the IM MCU calling us (dial-out to us, CI-01): no focus
-    /// dialog, no roster.
+    /// The IM session was created by the IM MCU calling us (dial-out to us, CI-01); the focus is
+    /// joined afterwards for the roster when Ms-Focus-Uri names the same conference (CI-13).
     pub dialed_out: bool,
     pub focus_dialog: Option<Dialog>,
     pub focus_timer: Option<SessionTimer>,
@@ -68,6 +68,8 @@ pub(crate) struct Group {
     pub lobby_since: Option<u64>,
     /// The call to the A/V MCU (conference audio).
     pub av_call: Option<CallId>,
+    /// The focus factory refused the A/V MCU (`mcuTypeNotAvailable`): created with chat only.
+    pub chat_only: bool,
 }
 
 /// How long we wait in the lobby before leaving (CB-23 recommends an own timeout; design).
@@ -135,14 +137,33 @@ impl<R: Random> Engine<R> {
             )));
             return;
         };
+        self.send_add_conference(id, &factory, now, out);
+    }
+
+    /// addConference with the IM MCU and the A/V MCU, so that the conversation can add audio
+    /// later (PV-12); after a `mcuTypeNotAvailable` refusal with the IM MCU only.
+    fn send_add_conference(
+        &mut self,
+        id: ConversationId,
+        factory: &str,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let chat_only = self.group_mut(id).is_some_and(|g| g.chat_only);
+        let mcus: &[conf::McuType] = if chat_only {
+            &[conf::McuType::Chat]
+        } else {
+            &[conf::McuType::Chat, conf::McuType::AudioVideo]
+        };
         let mut random = [0u8; 16];
         self.reg.fill_random(&mut random);
         let request_id = self.next_c3p();
         let body = match conf::add_conference(
             request_id,
             &self.cfg.aor,
-            &factory,
+            factory,
             &conf::conference_id(&random),
+            mcus,
         ) {
             Ok(b) => b,
             Err(e) => {
@@ -153,7 +174,7 @@ impl<R: Random> Engine<R> {
                 return;
             }
         };
-        let mut m = self.request("SERVICE", &factory, &factory);
+        let mut m = self.request("SERVICE", factory, factory);
         m.push_header("Content-Type", conf::CONTENT_TYPE);
         m.body = body.into_bytes();
         self.send_request(m, Purpose::CreateConference(id), now, out);
@@ -180,7 +201,7 @@ impl<R: Random> Engine<R> {
     }
 
     /// INVITE to the focus with addUser (CB-10, CB-11).
-    fn join_focus(&mut self, id: ConversationId, now: u64, out: &mut Vec<Output>) {
+    pub(crate) fn join_focus(&mut self, id: ConversationId, now: u64, out: &mut Vec<Output>) {
         let Some(g) = self.group_mut(id) else { return };
         let (Some(focus), organizer) = (g.focus.clone(), g.organizer) else {
             return;
@@ -245,6 +266,19 @@ impl<R: Random> Engine<R> {
                 }
             }
             Some(r) => {
+                // PV-12: the focus factory has no A/V MCU – once more with the IM MCU only.
+                let retry = r.reason.as_deref() == Some("mcuTypeNotAvailable")
+                    && self.group_mut(id).is_some_and(|g| !g.chat_only);
+                if let (true, Some(factory)) = (retry, self.focus_factory.clone()) {
+                    if let Some(g) = self.group_mut(id) {
+                        g.chat_only = true;
+                    }
+                    out.push(Output::Event(Event::Notice(
+                        "the server offers no conference audio; chat only".into(),
+                    )));
+                    self.send_add_conference(id, &factory, now, out);
+                    return;
+                }
                 out.push(Output::Event(Event::Notice(format!(
                     "conference not created ({})",
                     r.reason.unwrap_or_else(|| "failure".into())
@@ -281,7 +315,14 @@ impl<R: Random> Engine<R> {
             let mut m = bye.request("BYE");
             self.complete(&mut m);
             self.send_request(m, Purpose::Ignore, now, out);
-            self.fail_group(id, 403, out);
+            // CI-13: a dialled-out IM session goes on without the roster.
+            if self.group_mut(id).is_some_and(|g| g.dialed_out) {
+                out.push(Output::Event(Event::Notice(
+                    "conference state not available; the chat goes on".into(),
+                )));
+            } else {
+                self.fail_group(id, 403, out);
+            }
             return;
         }
         let timer = our_session_timer(resp, true, now);
@@ -373,7 +414,7 @@ impl<R: Random> Engine<R> {
         let mut m = self.request("INVITE", &chat, &chat);
         m.push_header("Supported", "timer");
         m.push_header("Supported", "ms-sender");
-        im::invite_body(&mut m, self.cfg.local_ip);
+        im::invite_body(&mut m, self.cfg.local_ip, true);
         self.send_request(m, Purpose::Invite(id), now, out);
     }
 
@@ -410,7 +451,7 @@ impl<R: Random> Engine<R> {
             out.push(Output::Event(Event::Notice("no such conversation".into())));
             return;
         };
-        if g.dialed_out {
+        if g.dialed_out && g.focus_dialog.is_none() {
             out.push(Output::Event(Event::Notice(
                 "invitations are only possible in conferences joined through the focus".into(),
             )));

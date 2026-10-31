@@ -35,14 +35,23 @@ pub enum Error {
 }
 
 /// The SDP offer/answer for a message session (CI-02). `ip` is the local address of the SIP
-/// connection (the port is meaningless for `sip` transport, §2.2.5).
-pub fn sdp(ip: std::net::IpAddr) -> String {
+/// connection (the port is meaningless for `sip` transport, §2.2.5). `conference`: a session with
+/// an IM MCU, which also announces `application/ms-imdn+xml` (CI-14): the client waits for the
+/// MCU's IMDN after a 202 (CI-05), and the MCU stores the announced formats for what it sends to
+/// the client ([MS-CONFIM] §3.1.3.5.1, p. 19; the type in the accept-types example of §2.2.5,
+/// p. 14). Plain text stays the only message format either way.
+pub fn sdp(ip: std::net::IpAddr, conference: bool) -> String {
     let (family, addr) = match ip {
         std::net::IpAddr::V4(v4) => ("IP4", v4.to_string()),
         std::net::IpAddr::V6(v6) => ("IP6", v6.to_string()),
     };
     format!(
-        "v=0\r\no=- 0 0 IN {family} {addr}\r\ns=session\r\nc=IN {family} {addr}\r\nt=0 0\r\nm=message 5060 sip null\r\na=accept-types:text/plain\r\n"
+        "v=0\r\no=- 0 0 IN {family} {addr}\r\ns=session\r\nc=IN {family} {addr}\r\nt=0 0\r\nm=message 5060 sip null\r\na=accept-types:text/plain{}\r\n",
+        if conference {
+            " application/ms-imdn+xml"
+        } else {
+            ""
+        }
     )
 }
 
@@ -94,9 +103,9 @@ pub fn printable(s: &str) -> String {
 /// Headers and body of the INVITE that opens an IM session (OCS-UC09). The caller adds Via,
 /// From/To/Call-ID/CSeq/Contact (an out-of-dialog request with the GRUU as Contact, RE-09) and
 /// signs it.
-pub fn invite_body(m: &mut Message, ip: std::net::IpAddr) {
+pub fn invite_body(m: &mut Message, ip: std::net::IpAddr, conference: bool) {
     m.push_header("Content-Type", "application/sdp");
-    m.body = sdp(ip).into_bytes();
+    m.body = sdp(ip, conference).into_bytes();
 }
 
 /// ACK for a 2xx to our INVITE: a new request in the dialog with the INVITE's CSeq number

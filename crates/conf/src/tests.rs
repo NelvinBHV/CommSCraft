@@ -27,6 +27,7 @@ fn add_conference_request_and_response() {
         "sip:alice@contoso.com",
         "sip:alice@contoso.com;gruu;opaque=app:conf:focusfactory",
         "TPDD8VYG",
+        &[McuType::Chat, McuType::AudioVideo],
     )
     .unwrap();
     let root = parse(&x);
@@ -48,16 +49,27 @@ fn add_conference_request_and_response() {
         d.child("conference-id").unwrap().namespace.as_deref(),
         Some(NS_MSCI)
     );
-    assert_eq!(
-        ci.child("conference-view")
-            .unwrap()
-            .child("entity-view")
-            .unwrap()
-            .attr("entity"),
-        Some("chat")
-    );
-    assert!(add_conference(1, "sip:a@b.c", "sip:f@b.c", "x<y").is_err());
-    assert!(add_conference(1, "sip:a@b.c\"", "sip:f@b.c", "ID").is_err());
+    // PV-12: one entity-view per MCU type, in order (the §4.1 example lists chat, audio-video …).
+    let views: Vec<_> = ci
+        .child("conference-view")
+        .unwrap()
+        .elements()
+        .filter_map(|n| n.attr("entity"))
+        .collect();
+    assert_eq!(views, ["chat", "audio-video"]);
+    let chat = &[McuType::Chat];
+    assert!(add_conference(1, "sip:a@b.c", "sip:f@b.c", "x<y", chat).is_err());
+    assert!(add_conference(1, "sip:a@b.c\"", "sip:f@b.c", "ID", chat).is_err());
+    // No MCU or one twice: refused before anything is sent.
+    assert!(add_conference(1, "sip:a@b.c", "sip:f@b.c", "ID", &[]).is_err());
+    assert!(add_conference(
+        1,
+        "sip:a@b.c",
+        "sip:f@b.c",
+        "ID",
+        &[McuType::Chat, McuType::Chat]
+    )
+    .is_err());
 
     let ok = r#"<response C3PVersion="1" requestId="1" from="sip:alice@contoso.com;gruu;opaque=app:conf:focusfactory" to="sip:alice@contoso.com" code="success" xmlns="urn:ietf:params:xml:ns:cccp"><addConference><conference-info entity="sip:alice@contoso.com;gruu;opaque=app:conf:focus:id:SDFBSD12" state="partial" version="1" xmlns="urn:ietf:params:xml:ns:conference-info"/></addConference></response>"#;
     let r = parse_response(ok).unwrap();
@@ -320,7 +332,19 @@ block
     assert!(
         body.contains("endpointEntity=\"{679ACDDB-2171-4176-8414-6ABA41ED881A}\" mediaId=\"1\"")
     );
-    assert!(body.contains("<media-ingress-filter>unblock</media-ingress-filter>"));
+    // K-CA-3: the filter element in the confinfoextensions namespace (schema, [MS-CONFBAS] p. 220).
+    let root = parse(&body);
+    let f = root
+        .child("modifyEndpointMedia")
+        .unwrap()
+        .child("media")
+        .unwrap()
+        .child("media-ingress-filter")
+        .unwrap();
+    assert_eq!(
+        (f.namespace.as_deref(), f.text().as_str()),
+        (Some(NS_MSCI), "unblock")
+    );
     let bad = AudioKeys {
         endpoint: "\"/><x".into(),
         ..keys
@@ -427,4 +451,28 @@ fn roster_queries() {
     let k = r.audio_of("sip:carol@fabrikam.com").unwrap();
     assert_eq!((k.endpoint.as_str(), k.media_id.as_str()), ("{CAV}", "1"));
     assert!(r.audio_of("sip:bob@fabrikam.com").is_none());
+}
+
+/// CI-13: a dial-out INVITE's Ms-Focus-Uri is followed only for the same conference.
+#[test]
+fn same_conference_rules() {
+    let focus = "sip:alice@contoso.com;gruu;opaque=app:conf:focus:id:FC275ECD";
+    let chat = "sip:alice@contoso.com;gruu;opaque=app:conf:chat:id:fc275ecd";
+    assert!(same_conference(focus, chat));
+    assert!(same_conference(focus, focus));
+    // Another conference ID, another organizer, not a focus, no conference at all.
+    assert!(!same_conference(
+        focus,
+        "sip:alice@contoso.com;gruu;opaque=app:conf:chat:id:OTHER"
+    ));
+    assert!(!same_conference(
+        focus,
+        "sip:mallory@contoso.com;gruu;opaque=app:conf:chat:id:FC275ECD"
+    ));
+    assert!(!same_conference(chat, chat));
+    assert!(!same_conference(focus, "sip:bob@contoso.com"));
+    assert!(!same_conference(
+        focus,
+        "sip:alice@contoso.com;gruu;opaque=app:conf:chat:id:"
+    ));
 }

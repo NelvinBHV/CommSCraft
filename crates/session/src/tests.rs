@@ -323,6 +323,8 @@ fn outgoing_conversation_with_queued_text() {
         Some("sip:bob@contoso.com")
     );
     assert!(server.verify_client(&invite));
+    // 1:1 sessions offer plain text only (CI-14 applies to IM MCU sessions).
+    assert!(String::from_utf8_lossy(&invite.body).contains("a=accept-types:text/plain\r\n"));
     // Written before the session is accepted: queued.
     assert!(e
         .command(
@@ -573,6 +575,59 @@ fn roster(version: u32, state: &str, users: &str) -> String {
     )
 }
 
+/// PV-12 ([MS-CONFPRO] §2.2.3.1, p. 23): a focus factory without the A/V MCU refuses with
+/// `mcuTypeNotAvailable`; the conference is created once more with the IM MCU only, and a second
+/// refusal ends the attempt (no loop).
+#[test]
+fn group_without_av_mcu_falls_back_to_chat_once() {
+    let (mut e, mut server, out) = signed_in();
+    provisioned(&mut e, &mut server, &out);
+    let out = e.command(
+        Command::StartGroup {
+            invite: vec!["sip:bob@contoso.com".into()],
+        },
+        NOW,
+    );
+    let first = find(&out, "SERVICE");
+    assert!(String::from_utf8_lossy(&first.body).contains("entity=\"audio-video\""));
+    let refused = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" C3PVersion="1" requestId="1" code="failure"><addConference reason="mcuTypeNotAvailable"/></response>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &first,
+            200,
+            Some("application/cccp+xml"),
+            refused,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("no conference audio"))));
+    let second = find(&out, "SERVICE");
+    let body = String::from_utf8_lossy(&second.body).to_string();
+    assert!(body.contains("entity=\"chat\"") && !body.contains("audio-video"));
+    let refused2 = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" C3PVersion="1" requestId="2" code="failure"><addConference reason="mcuTypeNotAvailable"/></response>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &second,
+            200,
+            Some("application/cccp+xml"),
+            refused2,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(!out
+        .iter()
+        .any(|o| matches!(o, Output::Send(m) if m.method() == Some("SERVICE"))));
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("conference not created"))));
+}
+
 /// [MS-CONFIM] §4.1.1/§4.1.2/§4.2: create, join focus and IM MCU, invite by dial-out, send with
 /// 202 + IMDN, receive with Ms-Sender, refresh the focus dialog, leave.
 #[test]
@@ -596,6 +651,8 @@ fn group_conversation_flow() {
     assert!(server.verify_client(&service));
     let body = String::from_utf8(service.body.clone()).unwrap();
     assert!(body.contains("<addConference>") && body.contains("entity=\"chat\""));
+    // PV-12: the A/V MCU is allocated with the conference, so audio can be added later.
+    assert!(body.contains("entity=\"audio-video\""));
     let created = format!(
         r#"<response xmlns="urn:ietf:params:xml:ns:cccp" C3PVersion="1" requestId="1" code="success"><addConference><conference-info xmlns="urn:ietf:params:xml:ns:conference-info" entity="{FOCUS}" state="partial" version="1"/></addConference></response>"#
     );
@@ -655,6 +712,9 @@ fn group_conversation_flow() {
     ));
     let chat_invite = find(&out, "INVITE");
     assert_eq!(Engine::<Counter>::request_uri(&chat_invite), Some(CHAT));
+    // CI-14: towards the IM MCU the IMDN type is announced (the 202 + IMDN path of CI-05).
+    assert!(String::from_utf8_lossy(&chat_invite.body)
+        .contains("a=accept-types:text/plain application/ms-imdn+xml"));
     assert!(chat_invite
         .header_values("Supported")
         .any(|v| v == "ms-sender"));
@@ -796,6 +856,28 @@ fn group_conversation_flow() {
     assert!(events(&out).contains(&Event::ConversationEnded { conversation }));
 }
 
+/// CI-13: a Ms-Focus-Uri of another conference than the calling MCU's is not followed.
+#[test]
+fn dialed_out_foreign_focus_is_not_joined() {
+    let (mut e, mut server, _) = signed_in();
+    let mut invite = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    invite.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKmcu2");
+    invite.push_header("From", &format!("<{CHAT}>;tag=d52f12304e"));
+    invite.push_header("To", "<sip:alice@contoso.com>;epid=8248ca9ebb");
+    invite.push_header("Call-ID", "mcu2");
+    invite.push_header("CSeq", "5 INVITE");
+    invite.push_header("Contact", "<sip:pool.contoso.com:5062;transport=tls>");
+    invite.push_header(
+        "Ms-Focus-Uri",
+        "<sip:mallory@contoso.com;gruu;opaque=app:conf:focus:id:0123456789ABCDEF>",
+    );
+    invite.push_header("Content-Type", "application/sdp");
+    invite.body = b"v=0\r\no=- 0 0 IN IP4 0.0.0.0\r\ns=session\r\nc=IN IP4 0.0.0.0\r\nt=0 0\r\nm=message 5060 sip null\r\na=accept-types:*\r\n".to_vec();
+    let out = e.on_message(&server.sign(invite), NOW);
+    assert!(sends(&out).iter().any(|m| m.status_code() == Some(200)));
+    assert!(!sends(&out).iter().any(|m| m.method() == Some("INVITE")));
+}
+
 /// CI-01: the IM MCU calls us (dial-out) with Ms-Focus-Uri and a session timer we refresh;
 /// an invitation (secondary evidence) is only reported, joining is a command.
 #[test]
@@ -814,9 +896,15 @@ fn dialed_out_to_us_and_invitation() {
     invite.push_header("Session-Expires", "600;refresher=uas");
     invite.push_header("Content-Type", "application/sdp");
     invite.body = b"v=0\r\no=- 0 0 IN IP4 0.0.0.0\r\ns=session\r\nc=IN IP4 0.0.0.0\r\nt=0 0\r\nm=message 5060 sip null\r\na=accept-types:*\r\n".to_vec();
-    let out = e.on_message(&server.sign(invite), NOW);
-    let ok = sends(&out).pop().unwrap();
-    assert_eq!(ok.status_code(), Some(200));
+    let out = e.on_message(&server.sign(invite.clone()), NOW);
+    let ok = sends(&out)
+        .into_iter()
+        .find(|m| m.status_code() == Some(200))
+        .unwrap();
+    // CI-13: the focus of the same conference is joined as attendee for the roster.
+    let focus_join = find(&out, "INVITE");
+    assert_eq!(Engine::<Counter>::request_uri(&focus_join), Some(FOCUS));
+    assert!(String::from_utf8_lossy(&focus_join.body).contains("<ci:entry>attendee</ci:entry>"));
     assert_eq!(
         ok.single("Session-Expires").unwrap(),
         Some("600;refresher=uas")
@@ -831,6 +919,14 @@ fn dialed_out_to_us_and_invitation() {
         panic!()
     };
     assert_eq!(peer, FOCUS);
+    // The focus refuses: the chat goes on (no ConversationFailed).
+    let out = e.on_message(&answer(&mut server, &focus_join, 403, None, "", &[]), NOW);
+    assert!(!events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::ConversationFailed { .. })));
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("the chat goes on"))));
     let update = find(&e.on_tick(NOW + 300), "UPDATE");
     assert_eq!(update.call_id().unwrap(), Some("mcu1"));
     // No focus dialog: no invitations from here.
@@ -1697,6 +1793,69 @@ fn joined_meeting(users: &str) -> (Engine<Counter>, Server, Message, Conversatio
         })
         .unwrap();
     (e, server, focus_invite, conversation)
+}
+
+/// SD-13 / SD-12 ([MS-SDPEXT] §3.1.5.2.2, p. 22): the A/V MCU answers our offer with server
+/// SSRTP; the final offer after ICE keeps the same crypto and cryptoscale lines and the same key
+/// (a re-INVITE must not renegotiate any parameter of these lines).
+#[test]
+fn conference_audio_final_offer_keeps_ssrtp() {
+    let (mut e, mut server, _, conversation) = joined_meeting(PRESENTER_ROSTER);
+    let out = e.command(
+        Command::JoinConferenceAudio {
+            conversation,
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let av_invite = find(&out, "INVITE");
+    let call = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::ConferenceAudio { call, .. } => Some(*call),
+            _ => None,
+        })
+        .expect("conference audio call");
+    let server_key = commscraft_sdp::Key::new(2, [9; 30]);
+    let mcu = format!(
+        "v=0\r\no=- 0 0 IN IP4 198.51.100.9\r\ns=session\r\nc=IN IP4 198.51.100.9\r\nt=0 0\r\nm=audio 7000 RTP/SAVP 9 101\r\na=cryptoscale:{} server {}\r\na=rtcp:7001\r\na=rtpmap:9 G722/8000\r\na=rtpmap:101 telephone-event/8000\r\n",
+        server_key.attribute().split_once(' ').unwrap().0,
+        server_key.attribute().split_once(' ').unwrap().1
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &av_invite,
+            200,
+            Some("application/sdp"),
+            &mcu,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::CallAnswered { .. })));
+    let mut fin = media_local(40000, 99);
+    fin.remote_candidates = vec![(1, "198.51.100.9:7000".parse().unwrap())];
+    let out = e.command(
+        Command::UpdateCall {
+            call,
+            local: Box::new(fin),
+        },
+        NOW,
+    );
+    let reinvite = find(&out, "INVITE");
+    assert_eq!(reinvite.call_id().unwrap(), av_invite.call_id().unwrap());
+    let body = String::from_utf8(reinvite.body.clone()).unwrap();
+    let ours = commscraft_sdp::Key::new(1, [7; 30]).attribute();
+    let (_, rest) = ours.split_once(' ').unwrap();
+    assert!(body.contains(&format!("a=crypto:{ours}")), "{body}");
+    assert!(
+        body.contains(&format!("a=cryptoscale:2 client {rest}")),
+        "same SSRTP offer as at first: {body}"
+    );
 }
 
 const PRESENTER_ROSTER: &str = r#"<user entity="sip:alice@contoso.com" state="full"><roles><entry>presenter</entry></roles><endpoint entity="{A}" msci:session-type="focus"><status>connected</status></endpoint></user><user entity="sip:bob@fabrikam.com" state="full"><roles><entry>attendee</entry></roles><endpoint entity="{B}" msci:session-type="focus"><status>on-hold</status></endpoint></user><user entity="sip:carol@fabrikam.com" state="full"><roles><entry>attendee</entry></roles><endpoint entity="{C}" msci:session-type="focus"><status>connected</status></endpoint><endpoint entity="{CAV}" msci:session-type="audio-video"><status>connected</status><media id="1"><type>audio</type><status>sendrecv</status></media></endpoint></user>"#;
