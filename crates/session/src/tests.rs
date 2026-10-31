@@ -1648,3 +1648,146 @@ fn meeting_lobby_audio_and_mute() {
             && m.call_id().unwrap() == av_invite.call_id().unwrap()));
     assert!(call > 0);
 }
+
+/// Joins FOCUS and delivers `users` as the full roster (with the A/V MCU); returns the engine,
+/// the server, the focus INVITE and the conversation.
+fn joined_meeting(users: &str) -> (Engine<Counter>, Server, Message, ConversationId) {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::JoinConference {
+            focus: FOCUS.into(),
+        },
+        NOW,
+    );
+    let focus_invite = find(&out, "INVITE");
+    let granted = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" requestId="1" C3PVersion="1" code="success"><addUser><conferenceKeys confEntity="{FOCUS}"/></addUser></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &focus_invite,
+            200,
+            Some("application/cccp+xml"),
+            &granted,
+            &[],
+        ),
+        NOW,
+    );
+    let roster_sub = find(&out, "SUBSCRIBE");
+    let doc = format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="full" version="1"><conference-description><conf-uris><entry><uri>{AVMCU}</uri><purpose>audio-video</purpose></entry></conf-uris></conference-description><users>{users}</users></conference-info>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &roster_sub,
+            200,
+            Some("application/conference-info+xml"),
+            &doc,
+            &[("Expires", "3600")],
+        ),
+        NOW,
+    );
+    let conversation = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::Participants { conversation, .. } => Some(*conversation),
+            _ => None,
+        })
+        .unwrap();
+    (e, server, focus_invite, conversation)
+}
+
+const PRESENTER_ROSTER: &str = r#"<user entity="sip:alice@contoso.com" state="full"><roles><entry>presenter</entry></roles><endpoint entity="{A}" msci:session-type="focus"><status>connected</status></endpoint></user><user entity="sip:bob@fabrikam.com" state="full"><roles><entry>attendee</entry></roles><endpoint entity="{B}" msci:session-type="focus"><status>on-hold</status></endpoint></user><user entity="sip:carol@fabrikam.com" state="full"><roles><entry>attendee</entry></roles><endpoint entity="{C}" msci:session-type="focus"><status>connected</status></endpoint><endpoint entity="{CAV}" msci:session-type="audio-video"><status>connected</status><media id="1"><type>audio</type><status>sendrecv</status></media></endpoint></user>"#;
+
+/// CB-35 / CA-20 / CA-22: a presenter admits everyone waiting, mutes a participant and the
+/// audience over INFO in the focus dialog; a refusal of the focus is reported.
+#[test]
+fn presenter_commands_in_the_focus_dialog() {
+    let (mut e, mut server, focus_invite, conversation) = joined_meeting(PRESENTER_ROSTER);
+    let control = |e: &mut Engine<Counter>, action| {
+        let out = e.command(
+            Command::ConferenceControl {
+                conversation,
+                action,
+            },
+            NOW,
+        );
+        let info = find(&out, "INFO");
+        assert_eq!(info.call_id().unwrap(), focus_invite.call_id().unwrap());
+        String::from_utf8(info.body.clone()).unwrap()
+    };
+    let b = control(
+        &mut e,
+        ConferenceAction::Lobby {
+            users: Vec::new(),
+            admit: true,
+        },
+    );
+    assert!(
+        b.contains("<userEntity>sip:bob@fabrikam.com</userEntity><access>granted</access>"),
+        "{b}"
+    );
+    let b = control(
+        &mut e,
+        ConferenceAction::MuteUser {
+            user: "sip:carol@fabrikam.com".into(),
+            mute: true,
+        },
+    );
+    assert!(
+        b.contains("userEntity=\"sip:carol@fabrikam.com\" endpointEntity=\"{CAV}\"")
+            && b.contains(">block<")
+    );
+    let b = control(&mut e, ConferenceAction::MuteAudience(true));
+    assert!(b.contains("<modifyConference") && b.contains(AVMCU));
+    let b = control(&mut e, ConferenceAction::Lock(true));
+    assert!(b.contains("<locked>true</locked>"));
+    let out = e.command(
+        Command::ConferenceControl {
+            conversation,
+            action: ConferenceAction::MuteUser {
+                user: "sip:bob@fabrikam.com".into(),
+                mute: true,
+            },
+        },
+        NOW,
+    );
+    assert_eq!(
+        events(&out),
+        vec![Event::Notice("that participant has no audio".into())]
+    );
+    // The focus refuses: shown.
+    let fail = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" requestId="9" C3PVersion="1" code="failure" reason="unauthorized"><modifyConferenceLock/></response>"#;
+    let info = peer_request(
+        &mut server,
+        &focus_invite,
+        "INFO",
+        9,
+        Some("application/cccp+xml"),
+        fail,
+        &[],
+    );
+    let out = e.on_message(&info, NOW);
+    assert!(events(&out).iter().any(|ev| matches!(ev, Event::Notice(n) if n.contains("modifyConferenceLock refused (unauthorized)"))));
+}
+
+/// CB-33: an attendee gets a hint instead of a request.
+#[test]
+fn attendees_cannot_control() {
+    let users = PRESENTER_ROSTER.replacen("<entry>presenter</entry>", "<entry>attendee</entry>", 1);
+    let (mut e, _, _, conversation) = joined_meeting(&users);
+    let out = e.command(
+        Command::ConferenceControl {
+            conversation,
+            action: ConferenceAction::Lock(true),
+        },
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+    assert_eq!(
+        events(&out),
+        vec![Event::Notice("only presenters can do that".into())]
+    );
+}

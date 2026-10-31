@@ -452,9 +452,10 @@ impl<R: Random> Engine<R> {
         else {
             return;
         };
-        if r.command == "modifyEndpointMedia" && r.code == conf::Code::Failure {
+        if r.command != "addUser" && r.code == conf::Code::Failure {
             out.push(Output::Event(Event::Notice(format!(
-                "[{id}] muting refused ({})",
+                "[{id}] {} refused ({})",
+                r.command,
                 r.reason.clone().unwrap_or_else(|| "failure".into())
             ))));
         }
@@ -686,8 +687,44 @@ impl<R: Random> Engine<R> {
         }
     }
 
-    /// `ConferenceMute`: modifyEndpointMedia over INFO to the focus with our audio's keys from
-    /// the roster (CA-20). Unmuting is refused by the MCU if the role may not (mayModifyOwnFilters).
+    /// A C3P command over INFO in the focus dialog (CB-31); `build` gets the request ID, our
+    /// URI, the focus and the A/V MCU URI.
+    fn send_c3p(
+        &mut self,
+        id: ConversationId,
+        build: impl FnOnce(u32, &str, &str, Option<&str>) -> Result<String, conf::Error>,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let request_id = self.next_c3p();
+        let aor = self.cfg.aor.clone();
+        let Some(g) = self.group_mut(id) else { return };
+        let Some(focus) = g.focus.clone() else { return };
+        let av = g.roster.av_uri.clone();
+        let Ok(body) = build(request_id, &aor, &focus, av.as_deref()) else {
+            out.push(Output::Event(Event::Notice("not a usable command".into())));
+            return;
+        };
+        let Some(g) = self.group_mut(id) else { return };
+        let Some(mut d) = g.focus_dialog.take() else {
+            out.push(Output::Event(Event::Notice(
+                "not joined to the focus".into(),
+            )));
+            return;
+        };
+        let mut m = d.request("INFO");
+        if let Some(g) = self.group_mut(id) {
+            g.focus_dialog = Some(d);
+        }
+        self.complete(&mut m);
+        m.push_header("Supported", "timer");
+        m.push_header("Content-Type", conf::CONTENT_TYPE);
+        m.body = body.into_bytes();
+        self.send_request(m, Purpose::DialOut(id), now, out);
+    }
+
+    /// `ConferenceMute`: modifyEndpointMedia with our audio's keys from the roster (CA-20).
+    /// Unmuting is refused by the MCU if the role may not (mayModifyOwnFilters).
     pub(crate) fn conference_mute(
         &mut self,
         id: ConversationId,
@@ -695,33 +732,137 @@ impl<R: Random> Engine<R> {
         now: u64,
         out: &mut Vec<Output>,
     ) {
-        let request_id = self.next_c3p();
         let (aor, gruu) = (self.cfg.aor.clone(), self.gruu.clone());
-        let Some(g) = self.group_mut(id) else { return };
-        let (Some(focus), Some(av)) = (g.focus.clone(), g.roster.av_uri.clone()) else {
-            out.push(Output::Event(Event::Notice("no conference audio".into())));
-            return;
-        };
-        let Some(keys) = g.roster.own_audio(&aor, &gruu) else {
+        let Some(keys) = self
+            .group_mut(id)
+            .and_then(|g| g.roster.own_audio(&aor, &gruu))
+        else {
             out.push(Output::Event(Event::Notice(
                 "our audio is not in the conference yet".into(),
             )));
             return;
         };
-        let Some(mut d) = g.focus_dialog.take() else {
+        self.send_c3p(
+            id,
+            |r, from, focus, av| {
+                conf::modify_endpoint_media(
+                    r,
+                    from,
+                    focus,
+                    av.ok_or(conf::Error::BadValue("no A/V MCU"))?,
+                    &keys,
+                    mute,
+                )
+            },
+            now,
+            out,
+        );
+    }
+
+    /// `ConferenceControl`: presenter commands (CB-33: only presenters; the focus checks too).
+    pub(crate) fn conference_control(
+        &mut self,
+        id: ConversationId,
+        action: ConferenceAction,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let aor = self.cfg.aor.clone();
+        let Some(g) = self.group_mut(id) else { return };
+        if !g.roster.is_presenter(&aor) {
+            out.push(Output::Event(Event::Notice(
+                "only presenters can do that".into(),
+            )));
             return;
-        };
-        let body = conf::modify_endpoint_media(request_id, &aor, &focus, &av, &keys, mute);
-        let mut m = d.request("INFO");
-        if let Some(g) = self.group_mut(id) {
-            g.focus_dialog = Some(d);
         }
-        let Ok(body) = body else { return };
-        self.complete(&mut m);
-        m.push_header("Supported", "timer");
-        m.push_header("Content-Type", conf::CONTENT_TYPE);
-        m.body = body.into_bytes();
-        self.send_request(m, Purpose::DialOut(id), now, out);
+        let roster = g.roster.clone();
+        match action {
+            ConferenceAction::Lobby { users, admit } => {
+                let users = if users.is_empty() {
+                    roster.lobby()
+                } else {
+                    users
+                };
+                if users.is_empty() {
+                    out.push(Output::Event(Event::Notice("nobody in the lobby".into())));
+                    return;
+                }
+                self.send_c3p(
+                    id,
+                    |r, f, focus, _| conf::set_lobby_access(r, f, focus, &users, admit),
+                    now,
+                    out,
+                );
+            }
+            ConferenceAction::Role { user, presenter } => {
+                let role = if presenter {
+                    conf::Role::Presenter
+                } else {
+                    conf::Role::Attendee
+                };
+                self.send_c3p(
+                    id,
+                    |r, f, focus, _| conf::modify_user_roles(r, f, focus, &user, role),
+                    now,
+                    out,
+                );
+            }
+            ConferenceAction::Lock(locked) => {
+                self.send_c3p(
+                    id,
+                    |r, f, focus, _| conf::modify_conference_lock(r, f, focus, locked),
+                    now,
+                    out,
+                );
+            }
+            ConferenceAction::Remove { user } => {
+                self.send_c3p(
+                    id,
+                    |r, f, focus, _| conf::delete_user(r, f, focus, &user),
+                    now,
+                    out,
+                );
+            }
+            ConferenceAction::MuteUser { user, mute } => {
+                let Some(keys) = roster.audio_of(&user) else {
+                    out.push(Output::Event(Event::Notice(
+                        "that participant has no audio".into(),
+                    )));
+                    return;
+                };
+                self.send_c3p(
+                    id,
+                    |r, f, focus, av| {
+                        conf::modify_endpoint_media(
+                            r,
+                            f,
+                            focus,
+                            av.ok_or(conf::Error::BadValue("no A/V MCU"))?,
+                            &keys,
+                            mute,
+                        )
+                    },
+                    now,
+                    out,
+                );
+            }
+            ConferenceAction::MuteAudience(mute) => {
+                self.send_c3p(
+                    id,
+                    |r, f, focus, av| {
+                        conf::mute_audience(
+                            r,
+                            f,
+                            focus,
+                            av.ok_or(conf::Error::BadValue("no A/V MCU"))?,
+                            mute,
+                        )
+                    },
+                    now,
+                    out,
+                );
+            }
+        }
     }
 
     /// An INVITE of the IM MCU calling us (dial-out to us, CI-01) carries `Ms-Focus-Uri`.

@@ -56,6 +56,8 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /confaudio (join the meeting's audio)  /confmute  /confunmute (mute in the meeting)
+          presenters: /admit [sip:URI]  /deny sip:URI  /promote sip:URI  /demote sip:URI  /lock  /unlock
+          /remove sip:URI  /muteuser sip:URI  /unmuteuser sip:URI  /muteall  /unmuteall
           /search TEXT (address book)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
           --wait seconds (default 20), ends the conversation and signs out. Plain text only.
@@ -1488,9 +1490,14 @@ fn interactive(
                     } => {
                         let names: Vec<String> = participants
                             .iter()
-                            .filter(|p| p.in_chat() || p.audio_muted().is_some())
+                            .filter(|p| p.in_chat() || p.audio_muted().is_some() || p.waiting())
                             .map(|p| {
                                 let n = p.name.clone().unwrap_or_else(|| p.uri.clone());
+                                let n = if p.waiting() {
+                                    format!("{n} <{}> (in the lobby)", p.uri)
+                                } else {
+                                    n
+                                };
                                 match p.audio_muted() {
                                     Some(true) => format!("{n} (audio, muted)"),
                                     Some(false) => format!("{n} (audio)"),
@@ -1811,6 +1818,49 @@ fn interactive(
                         None
                     }
                 },
+                "/admit" | "/deny" | "/promote" | "/demote" | "/lock" | "/unlock" | "/remove"
+                | "/muteuser" | "/unmuteuser" | "/muteall" | "/unmuteall" => {
+                    use commscraft_session::ConferenceAction as A;
+                    let user = arg.trim().to_string();
+                    let needs_user = !matches!(
+                        cmd,
+                        "/admit" | "/lock" | "/unlock" | "/muteall" | "/unmuteall"
+                    );
+                    if needs_user && !user.starts_with("sip:") {
+                        println!("* {cmd} sip:URI");
+                        None
+                    } else {
+                        let action = match cmd {
+                            "/admit" => A::Lobby {
+                                users: if user.is_empty() {
+                                    Vec::new()
+                                } else {
+                                    vec![user]
+                                },
+                                admit: true,
+                            },
+                            "/deny" => A::Lobby {
+                                users: vec![user],
+                                admit: false,
+                            },
+                            "/promote" | "/demote" => A::Role {
+                                user,
+                                presenter: cmd == "/promote",
+                            },
+                            "/lock" | "/unlock" => A::Lock(cmd == "/lock"),
+                            "/remove" => A::Remove { user },
+                            "/muteuser" | "/unmuteuser" => A::MuteUser {
+                                user,
+                                mute: cmd == "/muteuser",
+                            },
+                            _ => A::MuteAudience(cmd == "/muteall"),
+                        };
+                        current.map(|conversation| C::ConferenceControl {
+                            conversation,
+                            action,
+                        })
+                    }
+                }
                 "/confmute" | "/confunmute" => current.map(|conversation| C::ConferenceMute {
                     conversation,
                     mute: cmd == "/confmute",

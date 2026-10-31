@@ -65,8 +65,8 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 38 | Voicemail | MS-OCEXUM, MS-EUMSDP | T | – |
 | 39 | Emergency calls with location | MS-E911WS, MS-SIPRE | B\* | – |
 | 40 | Schedule meetings | MS-CONFPRO | B\* | – |
-| 41 | Join meetings, lobby, roles | MS-CONFBAS | B\* | parts tested-offline (join by focus URI, invitation or meeting link with the join manager document, lobby wait and admission, granted role, roster, leave: `conf`, `session`, CLI `/join`); scheduling is function 40, presenter commands (admit from the lobby, roles, lock) – |
-| 42 | A/V conferences, muting | MS-CONFAV | B\* | parts tested-offline (audio in the A/V MCU (SRTP sent, SRTP or SSRTP received), participants' audio state, muting ourselves with modifyEndpointMedia: `conf`, `session`, `call-media`, CLI `/confaudio` `/confmute`); muting others, announcements language, video – |
+| 41 | Join meetings, lobby, roles | MS-CONFBAS | B\* | parts tested-offline (join by focus URI, invitation or meeting link with the join manager document, lobby wait and admission, granted role, roster, leave, presenter commands: admit/deny from the lobby, roles, lock, remove: `conf`, `session`, CLI `/join` `/admit` `/promote` `/lock` …); scheduling is function 40, admission policy changes, recording – |
+| 42 | A/V conferences, muting | MS-CONFAV | B\* | parts tested-offline (audio in the A/V MCU (SRTP sent, SRTP or SSRTP received), participants' audio state, muting ourselves and others (modifyEndpointMedia), muting the audience (mediaFiltersRules): `conf`, `session`, `call-media`, CLI `/confaudio` `/confmute` `/muteuser` `/muteall`); announcements language, dial-out of phone numbers, video – |
 | 43 | Desktop and application sharing | MS-CONFAS, MS-RTASPF, MS-RDPBCGR, MS-RDPEMC | T | – |
 | 44 | Whiteboard, PowerPoint, polls | MS-PSOM | T | – |
 | 45 | Quality reports and call rating | MS-QoE | B\* | – |
