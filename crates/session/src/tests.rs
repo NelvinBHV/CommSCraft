@@ -881,3 +881,69 @@ fn dialed_out_to_us_and_invitation() {
     let out = e.on_message(&server.sign(bad), NOW);
     assert_eq!(sends(&out)[0].status_code(), Some(488));
 }
+
+/// AV-01/AV-09: after provisioning the engine fetches media relay credentials from the MRAS URI
+/// and keeps them; the event carries no secrets.
+#[test]
+fn media_relay_credentials_at_bootstrap() {
+    let (mut e, mut server, out) = signed_in();
+    let sub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    let mras = "sip:relay.contoso.com@contoso.com;gruu;opaque=srvr:MRAS:OKPDbAVxIEKtPh2g624vPAAA";
+    let doc = format!(
+        r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="ServerConfiguration"><mrasUri>{mras}</mrasUri></provisionGroup></provisionGroupList>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            &doc,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+    let service = find(&out, "SERVICE");
+    assert_eq!(Engine::<Counter>::request_uri(&service), Some(mras));
+    assert_eq!(
+        service.single("Content-Type").unwrap(),
+        Some("application/msrtc-media-relay-auth+xml")
+    );
+    let body = String::from_utf8(service.body.clone()).unwrap();
+    let id = body
+        .split("requestID=\"")
+        .nth(1)
+        .unwrap()
+        .split('"')
+        .next()
+        .unwrap()
+        .to_string();
+    let resp = format!(
+        r#"<response requestID="{id}" version="2.0" serverVersion="3.0" reasonPhrase="OK" xmlns="http://schemas.microsoft.com/2006/09/sip/mrasp"><credentialsResponse credentialsRequestID="{id}"><credentials><username>dXNlcg==</username><password>cGFzcw==</password><duration>480</duration></credentials><mediaRelayList><mediaRelay><location>internet</location><hostName>edge.contoso.com</hostName><udpPort>3478</udpPort><tcpPort>443</tcpPort></mediaRelay></mediaRelayList></credentialsResponse></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &service,
+            200,
+            Some("application/msrtc-media-relay-auth+xml"),
+            &resp,
+            &[],
+        ),
+        NOW,
+    );
+    assert_eq!(
+        events(&out),
+        vec![Event::MediaRelayReady {
+            relays: 1,
+            minutes: 480
+        }]
+    );
+    assert_eq!(&*e.media_relay().unwrap().password, "cGFzcw==");
+    // Refreshed at 90 % of the lifetime (the registration itself would need refreshing first in
+    // this test, so the timer is checked directly).
+    assert_eq!(e.media_relay_refresh_at, Some(NOW + 480 * 54));
+}

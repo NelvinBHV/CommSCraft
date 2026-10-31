@@ -1260,6 +1260,9 @@ fn interactive(
                     }
                     E::RegistrationEnded(why) => return Err(format!("registration ended: {why}")),
                     E::Provisioned(c) => services = Some(c),
+                    E::MediaRelayReady { relays, minutes } => {
+                        println!("* media relay ready ({relays} relays, valid {minutes} min)")
+                    }
                     E::ContactList(l) => {
                         for c in &l.contacts {
                             presence

@@ -22,6 +22,7 @@
 
 use std::collections::HashMap;
 
+use commscraft_avedgea as avedgea;
 use commscraft_conf as conf;
 use commscraft_im as im;
 use commscraft_presence as pres;
@@ -97,6 +98,12 @@ pub enum Event {
     RegistrationEnded(String),
     /// In-band provisioning arrived (RG-41): checked ServerConfiguration (web service URLs …).
     Provisioned(Box<prov::ServerConfiguration>),
+    /// Media relay credentials are available (kept in the engine, see
+    /// [`Engine::media_relay`]); number of relays and lifetime in minutes (AV-04).
+    MediaRelayReady {
+        relays: usize,
+        minutes: u32,
+    },
     ContactList(pres::ContactList),
     Presence(pres::ContactPresence),
     PresenceUnavailable {
@@ -196,6 +203,7 @@ enum Purpose {
     JoinFocus(ConversationId),
     Roster(ConversationId),
     DialOut(ConversationId),
+    MediaRelay(u32),
     Ignore,
 }
 
@@ -235,6 +243,10 @@ pub struct Engine<R: Random> {
     /// Focus factory URI from provisioning (PV-01).
     focus_factory: Option<String>,
     c3p_request: u32,
+    /// MRAS URI from provisioning (AV-01) and the current credentials with their refresh time.
+    mras_uri: Option<String>,
+    media_relay: Option<avedgea::Credentials>,
+    media_relay_refresh_at: Option<u64>,
 }
 
 impl<R: Random> std::fmt::Debug for Engine<R> {
@@ -281,6 +293,9 @@ impl<R: Random> Engine<R> {
             status_versions: [0, 0],
             focus_factory: None,
             c3p_request: 0,
+            mras_uri: None,
+            media_relay: None,
+            media_relay_refresh_at: None,
         }
     }
 
@@ -464,6 +479,28 @@ impl<R: Random> Engine<R> {
             subnet: None,
         });
         self.send_request(m, Purpose::Provisioning, now, out);
+    }
+
+    /// SERVICE to the Media Relay Authentication Service (MS-AVEDGEA §3.1.5, AV-01 … AV-03).
+    fn fetch_media_relay(&mut self, now: u64, out: &mut Vec<Output>) {
+        let Some(mras) = self.mras_uri.clone() else {
+            return;
+        };
+        let mut id = [0u8; 4];
+        self.reg.fill_random(&mut id);
+        let request_id = u32::from_be_bytes(id) & 0x7fff_ffff;
+        let Ok(body) = avedgea::request(request_id, &self.cfg.aor, &mras) else {
+            return;
+        };
+        let mut m = self.request("SERVICE", &mras, &mras);
+        m.push_header("Content-Type", avedgea::CONTENT_TYPE);
+        m.body = body.into_bytes();
+        self.send_request(m, Purpose::MediaRelay(request_id), now, out);
+    }
+
+    /// The current media relay credentials (for the TURN client of a call).
+    pub fn media_relay(&self) -> Option<&avedgea::Credentials> {
+        self.media_relay.as_ref()
     }
 
     /// The user's SIP domain (host part of the AOR).
@@ -1110,6 +1147,10 @@ impl<R: Random> Engine<R> {
             }
         }
         self.group_tick(now, &mut out);
+        if self.media_relay_refresh_at.is_some_and(|t| now >= t) {
+            self.media_relay_refresh_at = None;
+            self.fetch_media_relay(now, &mut out);
+        }
         let expired: Vec<(String, u32)> = self
             .pending
             .iter()
@@ -1227,7 +1268,13 @@ impl<R: Random> Engine<R> {
                             .focus_factory_uri
                             .as_deref()
                             .and_then(|u| pres::checked_sip_uri(u).ok());
+                        self.mras_uri = c
+                            .mras_uri
+                            .as_deref()
+                            .and_then(|u| pres::checked_sip_uri(u).ok());
                         out.push(Output::Event(Event::Provisioned(Box::new(c))));
+                        // AV-09: fetch relay credentials during bootstrap.
+                        self.fetch_media_relay(now, out);
                     }
                 }
                 Ok(None) => out.push(Output::Event(Event::Notice(
@@ -1284,6 +1331,29 @@ impl<R: Random> Engine<R> {
                 }
             }
             Purpose::CreateConference(id) => self.on_conference_created(id, resp, now, out),
+            Purpose::MediaRelay(request_id) => {
+                let parsed = std::str::from_utf8(&resp.body)
+                    .map_err(|_| avedgea::Error::BadValue("UTF-8"))
+                    .and_then(|b| avedgea::parse_response(b, request_id));
+                match parsed {
+                    Ok(c) => {
+                        // Refresh at 90 % of the lifetime (design; AV-06 token lifetime).
+                        self.media_relay_refresh_at =
+                            Some(now + u64::from(c.duration_minutes) * 60 * 9 / 10);
+                        out.push(Output::Event(Event::MediaRelayReady {
+                            relays: c.relays.len(),
+                            minutes: c.duration_minutes,
+                        }));
+                        self.media_relay = Some(c);
+                    }
+                    Err(e) => {
+                        self.media_relay_refresh_at = Some(now + 300);
+                        out.push(Output::Event(Event::Notice(format!(
+                            "unusable media relay answer ({e:?})"
+                        ))));
+                    }
+                }
+            }
             Purpose::JoinFocus(id) => self.on_focus_joined(id, &p.request, resp, now, out),
             Purpose::Roster(id) => self.on_roster_subscribed(id, &p.request, resp, now, out),
             Purpose::DialOut(id) => {
@@ -1309,6 +1379,13 @@ impl<R: Random> Engine<R> {
             Purpose::PublishEndpoint => out.push(Output::Event(Event::Notice(format!(
                 "endpoint publication failed ({code})"
             )))),
+            Purpose::MediaRelay(_) => {
+                // Retry later; calls then work only without the relay.
+                self.media_relay_refresh_at = Some(now + 300);
+                out.push(Output::Event(Event::Notice(format!(
+                    "media relay credentials not available ({code})"
+                ))));
+            }
             Purpose::Provisioning => out.push(Output::Event(Event::Notice(format!(
                 "provisioning failed ({code})"
             )))),

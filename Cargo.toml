@@ -26,6 +26,7 @@ members = [
     "crates/sdp",
     "crates/stun",
     "crates/turn",
+    "crates/avedgea",
     "crates/url",
     "crates/discovery",
     "crates/net",
