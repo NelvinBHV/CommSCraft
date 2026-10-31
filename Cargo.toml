@@ -28,6 +28,7 @@ members = [
     "crates/turn",
     "crates/avedgea",
     "crates/ice-agent",
+    "crates/media",
     "crates/url",
     "crates/discovery",
     "crates/net",

@@ -1,0 +1,18 @@
+[package]
+name = "commscraft-media"
+description = "Audio media core of a call: codec, RTP, SRTP, jitter buffer, DTMF, RTCP, packet classification"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-g711 = { path = "../g711" }
+commscraft-g722 = { path = "../g722" }
+commscraft-rtp = { path = "../rtp" }
+commscraft-sdp = { path = "../sdp" }
+commscraft-srtp = { path = "../srtp" }
+
+[lints]
+workspace = true
