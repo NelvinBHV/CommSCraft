@@ -205,11 +205,63 @@ pub struct Forwarding {
     /// An emergency call is in progress: all routing rules are suspended, calls go only to the
     /// registered endpoints (`e911active`, [MS-SIPRE] §3.9.5.1.2, p. 60; RE-51, RE-67).
     pub e911_active: bool,
+    /// Team members (`team` list) and whether they ring after `user_seconds` (`team_ring`,
+    /// routing version 2; RE-71, §3.9.5.1.2–3.9.5.1.4, pp. 59–61; example §4.7.4, p. 86).
+    pub team: Vec<String>,
+    pub team_ring: bool,
+    /// Delegates (`delegates` list) and whether they ring (`delegate_ring`); `skip_primary`: only
+    /// the delegates ring unless the caller is a delegate or in `breakthrough`.
+    pub delegates: Vec<String>,
+    pub delegate_ring: bool,
+    pub skip_primary: bool,
+    pub breakthrough: Vec<String>,
+    /// Version 2 waits: seconds the user rings before the team or delegates (`user`), seconds the
+    /// team or delegates ring (`team2`); 0 … 1200 each, the example uses 10.
+    pub user_seconds: Option<u32>,
+    pub team_seconds: Option<u32>,
+}
+
+/// Most entries per routing list (design).
+pub const MAX_ROUTING_TARGETS: usize = 16;
+
+fn target_list(name: &str, uris: &[String]) -> Result<String, Error> {
+    if uris.len() > MAX_ROUTING_TARGETS {
+        return Err(Error::OutOfRange);
+    }
+    if uris.is_empty() {
+        return Ok(String::new());
+    }
+    let mut l = format!("<list name=\"{name}\">");
+    for u in uris {
+        let u = checked_sip_uri(u)?;
+        l.push_str(&format!("<target uri=\"{}\"/>", escape(&u)));
+    }
+    l.push_str("</list>");
+    Ok(l)
 }
 
 impl Forwarding {
-    /// The `routing` preamble, version 1 (`rtcdefault`, §3.9.5.1.1), with checked targets.
+    /// Uses a feature of routing version 2 (team, delegates, breakthrough).
+    fn version2(&self) -> bool {
+        self.team_ring
+            || self.delegate_ring
+            || !self.team.is_empty()
+            || !self.delegates.is_empty()
+            || !self.breakthrough.is_empty()
+    }
+
+    /// The `routing` preamble (`rtcdefault`, §3.9.5.1.1): version 1, or version 2 with team and
+    /// delegate ringing (RE-71); checked targets. `team_ring` and `delegate_ring` together are
+    /// refused ("SHOULD NOT be used in combination", p. 59); `skip_primary` needs `delegate_ring`
+    /// (p. 59); a ringing list must not be empty.
     pub fn preamble(&self) -> Result<String, Error> {
+        if (self.team_ring && self.delegate_ring)
+            || (self.skip_primary && !self.delegate_ring)
+            || (self.team_ring && self.team.is_empty())
+            || (self.delegate_ring && self.delegates.is_empty())
+        {
+            return Err(Error::OutOfRange);
+        }
         let mut flags = Vec::new();
         let mut lists = String::new();
         if let Some(t) = &self.forward_to {
@@ -237,6 +289,35 @@ impl Forwarding {
         let seconds = self.ring_seconds.unwrap_or(20);
         if seconds > 1200 {
             return Err(Error::OutOfRange);
+        }
+        if self.version2() {
+            lists.push_str(&target_list("team", &self.team)?);
+            lists.push_str(&target_list("delegates", &self.delegates)?);
+            lists.push_str(&target_list("breakthrough", &self.breakthrough)?);
+            if self.team_ring {
+                flags.push("team_ring");
+            }
+            if self.delegate_ring {
+                flags.push("delegate_ring");
+            }
+            if self.skip_primary {
+                flags.push("skip_primary");
+            }
+            // §3.9.5.1.3: `total` without team/delegate ringing, `user` and `team2` with it.
+            let waits = if self.team_ring || self.delegate_ring {
+                let user = self.user_seconds.unwrap_or(10);
+                let team = self.team_seconds.unwrap_or(10);
+                if user > 1200 || team > 1200 {
+                    return Err(Error::OutOfRange);
+                }
+                format!("<wait name=\"user\" seconds=\"{user}\"/><wait name=\"team2\" seconds=\"{team}\"/>")
+            } else {
+                format!("<wait name=\"total\" seconds=\"{seconds}\"/>")
+            };
+            return Ok(format!(
+                "<routing xmlns=\"{NS_ROUTING}\" name=\"rtcdefault\" version=\"2\" minSupportedClientVersion=\"2.0.0.0\"><preamble>{lists}<flags name=\"clientflags\" value=\"{}\"/>{waits}</preamble></routing>",
+                flags.join(" ")
+            ));
         }
         Ok(format!(
             "<routing xmlns=\"{NS_ROUTING}\" name=\"rtcdefault\" version=\"1\"><preamble>{lists}<flags name=\"clientflags\" value=\"{}\"/><wait name=\"total\" seconds=\"{seconds}\"/></preamble></routing>",

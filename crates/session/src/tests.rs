@@ -2985,6 +2985,7 @@ fn forwarding_publication() {
         simultaneous_ring: None,
         ring_seconds: Some(15),
         e911_active: false,
+        ..pres::Forwarding::default()
     };
     let out = e.command(Command::SetForwarding(rules.clone()), NOW);
     let first = sends(&out).pop().unwrap();
@@ -3022,4 +3023,46 @@ fn forwarding_publication() {
     };
     let out = e.command(Command::SetForwarding(bad), NOW);
     assert!(sends(&out).is_empty());
+}
+
+/// RE-72 (inference from RFC 3892 §3): a call that reaches us through team or delegate ringing
+/// carries Referred-By with the address it was meant for; it is reported checked, never our own.
+#[test]
+fn incoming_call_on_behalf_of() {
+    let (mut e, mut server, _) = signed_in();
+    let invite = |referred: &str, id: &str| {
+        let mut m = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+        m.push_header(
+            "Via",
+            &format!("SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bK{id}"),
+        );
+        m.push_header("From", "<sip:carol@contoso.com>;tag=c1");
+        m.push_header("To", "<sip:alice@contoso.com>");
+        m.push_header("Call-ID", id);
+        m.push_header("CSeq", "1 INVITE");
+        m.push_header("Contact", "<sip:carol@contoso.com;opaque=user:epid:c;gruu>");
+        m.push_header("Referred-By", referred);
+        m.push_header("Content-Type", "application/sdp");
+        m.body = peer_sdp(9, "RTP/SAVP").into_bytes();
+        m
+    };
+    e.on_message(
+        &server.sign(invite("<sip:bob@contoso.com>;ms-identity=\"x\"", "t1")),
+        NOW,
+    );
+    assert_eq!(
+        e.caller(1).unwrap().on_behalf_of.as_deref(),
+        Some("sip:bob@contoso.com")
+    );
+    e.on_message(
+        &server.sign(invite("<sip:bob@contoso.com\"><x>", "t2")),
+        NOW,
+    );
+    assert_eq!(e.caller(2).unwrap().on_behalf_of, None);
+    e.on_message(&server.sign(invite("<sip:alice@contoso.com>", "t3")), NOW);
+    assert_eq!(
+        e.caller(3).unwrap().on_behalf_of,
+        None,
+        "never our own address"
+    );
 }

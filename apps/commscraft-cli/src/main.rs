@@ -53,6 +53,7 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
           /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)
+          /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
@@ -1507,6 +1508,11 @@ fn interactive(
                     E::CallRinging { call } => println!("* call {call} ringing"),
                     E::IncomingCall { call, from } => {
                         // PS-02/PS-04/PS-07: number, gateway and anonymous callers.
+                        let for_whom = engine
+                            .caller(call)
+                            .and_then(|c| c.on_behalf_of)
+                            .map(|u| format!(" for {u}"))
+                            .unwrap_or_default();
                         let who = match engine.caller(call) {
                             Some(c) if c.anonymous => "an anonymous caller".to_string(),
                             Some(c) => match (c.number, c.gateway) {
@@ -1515,7 +1521,7 @@ fn interactive(
                                 (None, _) => c.uri,
                             },
                             None => from,
-                        };
+                        } + &for_whom;
                         if let Some(old) = engine.replaces(call) {
                             // RFC 3891: an attended transfer replaces call `old` – answer it.
                             println!("* call {old} is being replaced by call {call} from {who}");
@@ -1693,6 +1699,24 @@ fn interactive(
                         }
                         if let Some(s) = &f.simultaneous_ring {
                             parts.push(format!("{s} rings too"));
+                        }
+                        if f.team_ring {
+                            parts.push(format!(
+                                "the team ({}) rings after {} s",
+                                f.team.join(", "),
+                                f.user_seconds.unwrap_or(10)
+                            ));
+                        }
+                        if f.delegate_ring {
+                            parts.push(format!(
+                                "the delegates ({}) ring{}",
+                                f.delegates.join(", "),
+                                if f.skip_primary {
+                                    " instead of you".to_string()
+                                } else {
+                                    format!(" after {} s", f.user_seconds.unwrap_or(10))
+                                }
+                            ));
                         }
                         println!("* call routing: {}", parts.join("; "));
                     }
@@ -2125,6 +2149,56 @@ fn interactive(
                     } else {
                         println!("* /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off");
                         None
+                    }
+                }
+                "/team" | "/delegates" => {
+                    // RE-71: team or delegate ringing (routing version 2). Members are SIP
+                    // addresses; SECONDS after which they ring; `skip` (delegates only): only the
+                    // delegates ring.
+                    let words: Vec<&str> = arg.split_whitespace().collect();
+                    let mut next = forwarding.clone();
+                    let team = cmd == "/team";
+                    if words.first() == Some(&"off") || words.is_empty() {
+                        if team {
+                            next.team.clear();
+                            next.team_ring = false;
+                        } else {
+                            next.delegates.clear();
+                            next.delegate_ring = false;
+                            next.skip_primary = false;
+                        }
+                    } else {
+                        let members: Vec<String> = words
+                            .iter()
+                            .filter(|w| w.starts_with("sip:"))
+                            .map(|w| w.to_string())
+                            .collect();
+                        let seconds = words.iter().find_map(|w| w.parse::<u32>().ok());
+                        if team {
+                            next.team = members;
+                            next.team_ring = true;
+                            next.delegate_ring = false;
+                            next.skip_primary = false;
+                        } else {
+                            next.delegates = members;
+                            next.delegate_ring = true;
+                            next.team_ring = false;
+                            next.skip_primary = words.contains(&"skip");
+                        }
+                        next.user_seconds = seconds;
+                    }
+                    match next.preamble() {
+                        Ok(_) => {
+                            forwarding = next.clone();
+                            Some(C::SetForwarding(next))
+                        }
+                        Err(_) => {
+                            println!(
+                                "* {cmd} sip:A [sip:B …] [SECONDS]{} | off",
+                                if team { "" } else { " [skip]" }
+                            );
+                            None
+                        }
                     }
                 }
                 "/transfer" => {

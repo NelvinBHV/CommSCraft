@@ -321,6 +321,7 @@ fn routing_preambles() {
         simultaneous_ring: Some("sip:+14255550100@contoso.com;user=phone".into()),
         ring_seconds: Some(18),
         e911_active: false,
+        ..Forwarding::default()
     };
     let p = sim.preamble().unwrap();
     assert_eq!(
@@ -393,4 +394,78 @@ fn e911_routing_publication() {
     let s = publish_routing_body("sip:alice@contoso.com", &Forwarding::default(), [1; 5]).unwrap();
     assert!(s.contains("expireType=\"static\"") && !s.contains("e911active"));
     assert!(publish_routing_for_body("sip:alice@contoso.com", &rules, [1; 5], 0).is_err());
+}
+
+/// RE-71 ([MS-SIPRE] §3.9.5.1.2–3.9.5.1.4, pp. 59–61; example §4.7.4, p. 86): team ringing in
+/// routing version 2 with the user and team2 waits; delegates with skip_primary; the documented
+/// combination rules; version 1 stays for plain forwarding.
+#[test]
+fn team_and_delegate_ringing() {
+    let team = Forwarding {
+        team: vec!["sip:Alice@contoso.com".into(), "sip:Bob@contoso.com".into()],
+        team_ring: true,
+        ..Forwarding::default()
+    };
+    assert_eq!(
+        team.preamble().unwrap(),
+        "<routing xmlns=\"http://schemas.microsoft.com/02/2006/sip/routing\" name=\"rtcdefault\" version=\"2\" minSupportedClientVersion=\"2.0.0.0\"><preamble><list name=\"team\"><target uri=\"sip:Alice@contoso.com\"/><target uri=\"sip:Bob@contoso.com\"/></list><flags name=\"clientflags\" value=\"team_ring\"/><wait name=\"user\" seconds=\"10\"/><wait name=\"team2\" seconds=\"10\"/></preamble></routing>"
+    );
+    let delegates = Forwarding {
+        delegates: vec!["sip:carol@contoso.com".into()],
+        delegate_ring: true,
+        skip_primary: true,
+        breakthrough: vec!["sip:boss@contoso.com".into()],
+        user_seconds: Some(0),
+        team_seconds: Some(25),
+        ..Forwarding::default()
+    };
+    let p = delegates.preamble().unwrap();
+    assert!(p.contains("<list name=\"delegates\"><target uri=\"sip:carol@contoso.com\"/></list><list name=\"breakthrough\">"));
+    assert!(p.contains("value=\"delegate_ring skip_primary\""));
+    assert!(p.contains("<wait name=\"user\" seconds=\"0\"/><wait name=\"team2\" seconds=\"25\"/>"));
+    // Rules: not both ringings, skip_primary only with delegates, no empty ringing list, bounds.
+    let both = Forwarding {
+        delegate_ring: true,
+        delegates: vec!["sip:c@contoso.com".into()],
+        ..team.clone()
+    };
+    assert!(both.preamble().is_err());
+    assert!(Forwarding {
+        skip_primary: true,
+        ..team.clone()
+    }
+    .preamble()
+    .is_err());
+    assert!(Forwarding {
+        team: Vec::new(),
+        ..team.clone()
+    }
+    .preamble()
+    .is_err());
+    assert!(Forwarding {
+        team_seconds: Some(1201),
+        ..team.clone()
+    }
+    .preamble()
+    .is_err());
+    let many = Forwarding {
+        team: vec!["sip:x@contoso.com".into(); MAX_ROUTING_TARGETS + 1],
+        ..team.clone()
+    };
+    assert!(many.preamble().is_err());
+    assert!(Forwarding {
+        team: vec!["sip:x@contoso.com\"/><evil".into()],
+        ..team
+    }
+    .preamble()
+    .is_err());
+    // A team list without team ringing: version 2 with the total wait.
+    let listed = Forwarding {
+        team: vec!["sip:a@contoso.com".into()],
+        ..Forwarding::default()
+    };
+    assert!(
+        listed.preamble().unwrap().contains("version=\"2\"")
+            && listed.preamble().unwrap().contains("wait name=\"total\"")
+    );
 }
