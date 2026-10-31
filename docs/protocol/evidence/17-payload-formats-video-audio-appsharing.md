@@ -52,7 +52,7 @@ Sources (all edition 20250520): [MS-H264PF] 33 pp.; [MS-RTVPF] 36 pp.; [MS-RTPRA
 
 ## Audio codecs G.711 and G.722 (ITU-T, obtained 2026-10-28)
 
-The base codec set of M3 (K-RT-1: G.711/G.722 are the safe base) was not in the Microsoft package (gap L-12, closed): [ITU-T G.711] (11/1988) and [ITU-T G.722] (09/2012) incl. the electronic attachment with the digital test sequences were obtained from itu.int (`sources-secondary.tsv`), kept outside the repository.
+The base codec set of M3 (K-RT-1: G.711/G.722 are the safe base) was not in the Microsoft package (gap L-19, closed): [ITU-T G.711] (11/1988) and [ITU-T G.722] (09/2012) incl. the electronic attachment with the digital test sequences were obtained from itu.int (`sources-secondary.tsv`), kept outside the repository.
 
 | ID | Requirement | Evidence |
 |---|---|---|
@@ -75,7 +75,7 @@ The base codec set of M3 (K-RT-1: G.711/G.722 are the safe base) was not in the 
 ## Conflicts / gaps (codecs)
 - K-G2-1: Table 14 prints QQ4 and WL on addresses 2 … 9, while INVQAL/LOGSCL address them with IL4 = 0 … 7 (Table 17). Resolved: address = IL4; confirmed by the test sequences.
 - K-G2-2: INFA (Appendix II) writes `XL = S# >> 1`; X# is meant (editorial).
-- L-12: ITU-T G.711 and G.722 were not in the Microsoft package – **closed** (obtained 2026-10-28).
+- L-19: ITU-T G.711 and G.722 were not in the Microsoft package – **closed** (obtained 2026-10-28).
 
 ## Later findings (files 38, 39)
 - L-07 **partly**: VC-1 RTP RFC 4425 obtained; SMPTE 421M (not IETF, paid) still not (OB-29: SMPTE ST 421:2013 only for purchase).
