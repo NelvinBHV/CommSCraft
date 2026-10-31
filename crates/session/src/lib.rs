@@ -148,6 +148,17 @@ pub enum Command {
     Hangup {
         call: CallId,
     },
+    /// Transfer the call (REFER): to an address, or to another call's party (attended).
+    Transfer {
+        call: CallId,
+        to: TransferTarget,
+    },
+    /// Place the call a REFER of `call`'s peer asked for (after `Event::TransferRequested`).
+    FollowTransfer {
+        call: CallId,
+        local: Box<sdp::Local>,
+        policy: sdp::Encryption,
+    },
     /// Put the call on hold (`true`) or resume it (MS-SDPEXT §3.1.5.23).
     Hold {
         call: CallId,
@@ -261,6 +272,16 @@ pub enum Event {
     CallEarlyMediaEnded {
         call: CallId,
     },
+    /// The peer of `call` transfers us to `to` (REFER): prepare media and send `FollowTransfer`.
+    TransferRequested {
+        call: CallId,
+        to: String,
+    },
+    /// Our transfer of `call` ended: 2xx = done (our call ends), otherwise failed (it stays).
+    TransferResult {
+        call: CallId,
+        status: u16,
+    },
     /// New media parameters after a re-INVITE (final offer, hold).
     CallUpdated {
         call: CallId,
@@ -320,6 +341,7 @@ enum Purpose {
     MediaRelay(u32),
     CallInvite(CallId),
     CallReinvite(CallId),
+    Refer(CallId),
     Ignore,
 }
 
@@ -1249,6 +1271,12 @@ impl<R: Random> Engine<R> {
             } => self.accept_call(call, *local, policy, now, &mut out),
             Command::UpdateCall { call, local } => self.update_call(call, *local, now, &mut out),
             Command::Hangup { call } => self.hangup(call, now, &mut out),
+            Command::Transfer { call, to } => self.transfer(call, to, now, &mut out),
+            Command::FollowTransfer {
+                call,
+                local,
+                policy,
+            } => self.follow_transfer(call, *local, policy, now, &mut out),
             Command::Hold { call, hold } => self.hold_call(call, hold, now, &mut out),
             Command::SignOut => {
                 self.signing_out = true;
@@ -1499,6 +1527,10 @@ impl<R: Random> Engine<R> {
             Purpose::CallReinvite(id) => {
                 self.on_call_reinvite_answered(id, &p.request, resp, now, out)
             }
+            Purpose::Refer(id) => {
+                let code = resp.status_code().unwrap_or(500);
+                self.on_refer_answered(id, code, now, out)
+            }
             Purpose::MediaRelay(request_id) => {
                 let parsed = std::str::from_utf8(&resp.body)
                     .map_err(|_| avedgea::Error::BadValue("UTF-8"))
@@ -1588,7 +1620,11 @@ impl<R: Random> Engine<R> {
                     self.leave_group(id, now, out, true);
                 }
             }
-            Purpose::CallInvite(id) => self.on_call_failed(id, code, out),
+            Purpose::CallInvite(id) => {
+                self.transferred_call_result(id, code, now, out);
+                self.on_call_failed(id, code, out)
+            }
+            Purpose::Refer(id) => self.on_refer_answered(id, code, now, out),
             Purpose::CallReinvite(id) => out.push(Output::Event(Event::Notice(format!(
                 "call {id}: update refused ({code})"
             )))),
@@ -1762,8 +1798,10 @@ impl<R: Random> Engine<R> {
 
 mod call;
 mod group;
+mod transfer;
 
 pub use call::{CallId, Caller};
+pub use transfer::TransferTarget;
 
 #[cfg(test)]
 mod tests;

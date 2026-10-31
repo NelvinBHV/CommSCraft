@@ -52,7 +52,7 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
           once, optionally sets the own state for the time of the session (--set-status), signs out.
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
-          /call sip:URI|+491234…|0401234…  /callback N  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /confaudio (join the meeting's audio)  /confmute  /confunmute (mute in the meeting)
@@ -1284,6 +1284,10 @@ fn interactive(
     conn.set_timeout(Duration::from_millis(250))
         .map_err(|e| e.to_string())?;
     let (tx, rx) = mpsc::channel::<String>();
+    // Commands the client gives itself (answering a call that replaces another, RFC 3891).
+    let self_tx = tx.clone();
+    // Media prepared for a transfer we follow: media id → the transferred call.
+    let mut pending_transfer: BTreeMap<u32, u32> = BTreeMap::new();
     std::thread::spawn(move || {
         let stdin = std::io::stdin();
         let mut line = String::new();
@@ -1347,9 +1351,15 @@ fn interactive(
                             },
                             None => from,
                         };
-                        println!(
-                            "* incoming call {call} from {who} – /answer {call} or /hangup {call}"
-                        );
+                        if let Some(old) = engine.replaces(call) {
+                            // RFC 3891: an attended transfer replaces call `old` – answer it.
+                            println!("* call {old} is being replaced by call {call} from {who}");
+                            let _ = self_tx.send(format!("/answer {call}"));
+                        } else {
+                            println!(
+                                "* incoming call {call} from {who} – /answer {call} or /hangup {call}"
+                            );
+                        }
                         current_call = Some(call);
                     }
                     E::CallAnswered {
@@ -1406,6 +1416,30 @@ fn interactive(
                         }
                         if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
                             let _ = h.tx.send(calls::ToMedia::Update(media));
+                        }
+                    }
+                    E::TransferRequested { call, to } => {
+                        // RFC 3515: the peer transfers us; place the new call.
+                        println!("* call {call}: transferred to {to} – connecting …");
+                        let relay = engine.media_relay().and_then(calls::relay_from);
+                        let id = next_media;
+                        next_media = next_media.wrapping_add(1).max(1);
+                        let h = calls::spawn(
+                            id,
+                            local_ip,
+                            relay,
+                            None,
+                            commscraft_audio_alsa::Config::default(),
+                            media_tx.clone(),
+                        );
+                        handles.insert(id, h);
+                        pending_transfer.insert(id, call);
+                    }
+                    E::TransferResult { call, status } => {
+                        if (200..300).contains(&status) {
+                            println!("* call {call} transferred");
+                        } else {
+                            println!("* transfer of call {call} failed ({status})");
                         }
                     }
                     E::CallEnded { call, status } => {
@@ -1600,6 +1634,18 @@ fn interactive(
                         media_of_call.insert(call, id);
                         outgoing.insert(call);
                         outputs.extend(engine.command(C::Call { to, local, policy }, now()));
+                    } else if let Some(old) = pending_transfer.remove(&id) {
+                        let call = engine.next_call_id();
+                        media_of_call.insert(call, id);
+                        outgoing.insert(call);
+                        outputs.extend(engine.command(
+                            C::FollowTransfer {
+                                call: old,
+                                local,
+                                policy,
+                            },
+                            now(),
+                        ));
                     } else if let Some(conversation) = pending_conf.remove(&id) {
                         conf_media.insert(conversation, id);
                         outputs.extend(engine.command(
@@ -1741,6 +1787,29 @@ fn interactive(
                         None
                     }
                 },
+                "/transfer" => {
+                    let mut w = arg.split_whitespace();
+                    let call = w.next().and_then(|n| n.parse::<u32>().ok());
+                    let target = w.next().unwrap_or("");
+                    let to = if let Ok(other) = target.parse::<u32>() {
+                        Some(commscraft_session::TransferTarget::Call(other))
+                    } else if target.starts_with("sip:") {
+                        Some(commscraft_session::TransferTarget::Address(
+                            target.to_string(),
+                        ))
+                    } else {
+                        engine
+                            .phone_uri(target)
+                            .map(commscraft_session::TransferTarget::Address)
+                    };
+                    match (call, to) {
+                        (Some(call), Some(to)) => Some(C::Transfer { call, to }),
+                        _ => {
+                            println!("* /transfer N sip:URI|number, or /transfer N M to connect call N with call M");
+                            None
+                        }
+                    }
+                }
                 "/hangup" => arg
                     .parse::<u32>()
                     .ok()

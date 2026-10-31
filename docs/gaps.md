@@ -16,11 +16,11 @@ what is still missing per milestone, followed by the open points found in the an
 
 | # | Gap | Evidence / tracking | Milestone |
 |---|---|---|---|
-| 1 | No interop test environment (D-08): nothing is verified against a real server; the remaining questions are owner test cases IT-01 … IT-31 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | all |
+| 1 | No interop test environment (D-08): nothing is verified against a real server; the remaining questions are owner test cases IT-01 … IT-32 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | all |
 | 2 | Sign-in: Kerberos (function 5) and TLS-DSK with client certificate (function 6) are missing; NTLM, discovery, TLS, registration, provisioning and sign-out exist (tested-offline) | functions 1–8, 50 | M1 |
 | 3 | Presence and IM: contact list editing (add/remove contacts and groups), privacy relationships and blocking (12), offline address book (13), contact photos (15), Exchange unified contact store (11); presence, 1:1 and group IM, typing and address book search exist | functions 9–19 | M2 |
 | 4 | Audio 1:1: TCP-only mode and the artificial active TCP server-reflexive candidate (MS-ICE2 §3.1.4.8.1.3, SHOULD), streaming our own music on hold (35, optional), the peer info exchange of MS-RTP (needs link bandwidths), bandwidth management for video and PSTN failover (32, M4/M5), redundant audio (MS-RTPRADEX, 30), as the callee a reliable 183 with an early answer (SD-51, SHOULD) and early media of forked calls (SD-50, SHOULD); calls with ICE over UDP and the TCP relay (443), TURN, SRTP, G.722/G.711 and DTMF exist | functions 21–26, 30, 32, 35 | M3 |
-| 5 | Conferences and telephony: scheduling meetings, admission policy changes and recording, announcement language, dial-out of phone numbers into meetings, PSTN media bypass, transfer, forwarding, park, E911, QoE; joining meetings (address or link), lobby, conference audio (SRTP sent, SRTP/SSRTP received), muting, the presenter commands and PSTN calling exist | functions 33–34, 36–37, 39–42, 45 | M4 |
+| 5 | Conferences and telephony: scheduling meetings, admission policy changes and recording, announcement language, dial-out of phone numbers into meetings, PSTN media bypass, forwarding, park, E911, QoE; joining meetings (address or link), lobby, conference audio (SRTP sent, SRTP/SSRTP received), muting, the presenter commands, PSTN calling and call transfer exist | functions 33–34, 36–37, 39–42, 45 | M4 |
 | 6 | Video H.264 UC | functions 28, 31 | M5 |
 | 7 | Viewing shared screens (RDP over RTP) | function 43 | M6 |
 | 8 | Graphical user interface (egui, D-07); today only the command-line tool exists | [`decisions.md`](decisions.md) | not yet in a milestone |
@@ -73,6 +73,7 @@ Windows-client behaviour that only a capture can show. These are the owner test 
 | IT-29 | Calls with call admission control enabled | Refused paths not used; reservation cancelled at the end |
 | IT-30 | Join a meeting with audio (link, lobby, mute) | Meeting link without credentials; nothing joined without the command |
 | IT-31 | PSTN calls (out with a local number, in from a gateway, call back) | Only checked numbers and profile names in SIP URIs |
+| IT-32 | Call transfer (blind, with consultation, being transferred) | REFER only in a call dialog; Replaces only for our own calls |
 
 ## Not planned without an owner decision
 

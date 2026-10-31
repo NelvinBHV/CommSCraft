@@ -1965,3 +1965,281 @@ fn pstn_incoming_calls() {
         Some("<gw-part-1@gw.contoso.com>")
     );
 }
+
+/// An outgoing call to `to`, answered: returns our INVITE (the dialog's request).
+fn active_call(e: &mut Engine<Counter>, server: &mut Server, to: &str) -> Message {
+    let out = e.command(
+        Command::Call {
+            to: to.into(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    assert!(
+        invite
+            .header_values("Supported")
+            .any(|v| v == "ms-safe-transfer"),
+        "RE-64"
+    );
+    e.on_message(
+        &answer(
+            server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            &peer_sdp(9, "RTP/SAVP"),
+            &[],
+        ),
+        NOW,
+    );
+    invite
+}
+
+fn our_tag(m: &Message) -> String {
+    m.from().unwrap().unwrap().param("tag").unwrap().to_string()
+}
+
+/// RFC 3515 / RFC 5589 §6, OB-25: unattended transfer – REFER with Refer-To and Referred-By;
+/// after 202 our call ends.
+#[test]
+fn unattended_transfer() {
+    let (mut e, mut server, _) = signed_in();
+    let invite = active_call(&mut e, &mut server, "sip:bob@contoso.com");
+    let out = e.command(
+        Command::Transfer {
+            call: 1,
+            to: TransferTarget::Address("sip:carol@contoso.com".into()),
+        },
+        NOW,
+    );
+    let refer = find(&out, "REFER");
+    assert_eq!(
+        refer.call_id().unwrap(),
+        invite.call_id().unwrap(),
+        "in the call dialog"
+    );
+    assert_eq!(
+        refer.single("Refer-To").unwrap(),
+        Some("<sip:carol@contoso.com>")
+    );
+    assert_eq!(
+        refer.single("Referred-By").unwrap(),
+        Some("<sip:alice@contoso.com>")
+    );
+    let out = e.on_message(&answer(&mut server, &refer, 202, None, "", &[]), NOW);
+    assert!(events(&out).contains(&Event::TransferResult {
+        call: 1,
+        status: 202
+    }));
+    assert!(sends(&out).iter().any(|m| m.method() == Some("BYE")));
+}
+
+/// RFC 5589 §7 / RFC 3891 §3: attended transfer – Refer-To the consultation peer with Replaces
+/// (to-tag = its tag, from-tag = ours); completed by NOTIFY 200, then our call ends.
+#[test]
+fn attended_transfer() {
+    let (mut e, mut server, _) = signed_in();
+    let first = active_call(&mut e, &mut server, "sip:bob@contoso.com");
+    let consult = active_call(&mut e, &mut server, "sip:carol@contoso.com");
+    let out = e.command(
+        Command::Transfer {
+            call: 1,
+            to: TransferTarget::Call(2),
+        },
+        NOW,
+    );
+    let refer = find(&out, "REFER");
+    let rt = refer.single("Refer-To").unwrap().unwrap().to_string();
+    let cid = consult.call_id().unwrap().unwrap().replace('@', "%40");
+    assert!(
+        rt.contains(&format!(
+            "?Replaces={cid}%3Bto-tag%3Dsrv1%3Bfrom-tag%3D{}",
+            our_tag(&consult)
+        )),
+        "{rt}"
+    );
+    let out = e.on_message(&answer(&mut server, &refer, 202, None, "", &[]), NOW);
+    assert!(
+        sends(&out).iter().all(|m| m.method() != Some("BYE")),
+        "waits for the NOTIFY"
+    );
+    let trying = peer_request(
+        &mut server,
+        &first,
+        "NOTIFY",
+        5,
+        Some("message/sipfrag;version=2.0"),
+        "SIP/2.0 100 Trying\r\n",
+        &[("Event", "refer"), ("Subscription-State", "active")],
+    );
+    let out = e.on_message(&trying, NOW);
+    assert_eq!(sends(&out).pop().unwrap().status_code(), Some(200));
+    assert!(events(&out).is_empty());
+    let done = peer_request(
+        &mut server,
+        &first,
+        "NOTIFY",
+        6,
+        Some("message/sipfrag;version=2.0"),
+        "SIP/2.0 200 OK\r\n",
+        &[
+            ("Event", "refer"),
+            ("Subscription-State", "terminated;reason=noresource"),
+        ],
+    );
+    let out = e.on_message(&done, NOW);
+    assert!(events(&out).contains(&Event::TransferResult {
+        call: 1,
+        status: 200
+    }));
+    assert!(sends(&out)
+        .iter()
+        .any(|m| m.method() == Some("BYE") && m.call_id().unwrap() == first.call_id().unwrap()));
+}
+
+/// RFC 3515 §2.4 / RFC 3892 / RE-64: we are transferred – 202, NOTIFY 100, the new call carries
+/// Referred-By, Replaces and Ms-Sensitivity; its answer is reported with NOTIFY 200 (terminated).
+#[test]
+fn transferee_follows_refer() {
+    let (mut e, mut server, _) = signed_in();
+    let first = active_call(&mut e, &mut server, "sip:bob@contoso.com");
+    let refer = peer_request(
+        &mut server,
+        &first,
+        "REFER",
+        4,
+        None,
+        "",
+        &[
+            ("Refer-To", "<sip:carol@contoso.com?Replaces=x1%40h%3Bto-tag%3Da%3Bfrom-tag%3Db&Ms-Sensitivity=private&Route=evil>"),
+            ("Referred-By", "<sip:bob@contoso.com>"),
+        ],
+    );
+    let out = e.on_message(&refer, NOW);
+    let s = sends(&out);
+    assert_eq!(s[0].status_code(), Some(202));
+    let notify = s.iter().find(|m| m.method() == Some("NOTIFY")).unwrap();
+    assert_eq!(notify.single("Event").unwrap(), Some("refer"));
+    assert_eq!(
+        String::from_utf8_lossy(&notify.body),
+        "SIP/2.0 100 Trying\r\n"
+    );
+    assert!(events(&out).contains(&Event::TransferRequested {
+        call: 1,
+        to: "sip:carol@contoso.com".into()
+    }));
+
+    let out = e.command(
+        Command::FollowTransfer {
+            call: 1,
+            local: Box::new(media_local(41000, 8)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    assert_eq!(
+        Engine::<Counter>::request_uri(&invite),
+        Some("sip:carol@contoso.com")
+    );
+    assert_eq!(
+        invite.single("Referred-By").unwrap(),
+        Some("<sip:bob@contoso.com>")
+    );
+    assert_eq!(
+        invite.single("Replaces").unwrap(),
+        Some("x1@h;to-tag=a;from-tag=b")
+    );
+    assert_eq!(invite.single("Ms-Sensitivity").unwrap(), Some("private"));
+    assert!(
+        invite.headers.iter().all(|h| !h.value.contains("evil")),
+        "only Replaces and Ms-Sensitivity are taken from the Refer-To URI"
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            &peer_sdp(9, "RTP/SAVP"),
+            &[],
+        ),
+        NOW,
+    );
+    let notify = sends(&out)
+        .into_iter()
+        .find(|m| m.method() == Some("NOTIFY"))
+        .expect("result NOTIFY");
+    assert_eq!(String::from_utf8_lossy(&notify.body), "SIP/2.0 200 OK\r\n");
+    assert_eq!(
+        notify.single("Subscription-State").unwrap(),
+        Some("terminated;reason=noresource")
+    );
+
+    // A REFER to something that is not a SIP URI is refused.
+    let second = active_call(&mut e, &mut server, "sip:dave@contoso.com");
+    let bad = peer_request(
+        &mut server,
+        &second,
+        "REFER",
+        4,
+        None,
+        "",
+        &[("Refer-To", "<tel:+491234>")],
+    );
+    assert_eq!(
+        sends(&e.on_message(&bad, NOW)).pop().unwrap().status_code(),
+        Some(400)
+    );
+}
+
+/// RFC 3891 §3: an INVITE with Replaces naming our established call replaces it (answered, the
+/// old call ends); one naming no dialog of ours gets 481.
+#[test]
+fn transfer_target_replaces() {
+    let (mut e, mut server, _) = signed_in();
+    let first = active_call(&mut e, &mut server, "sip:bob@contoso.com");
+    let replaces = format!(
+        "{};to-tag={};from-tag=srv1",
+        first.call_id().unwrap().unwrap(),
+        our_tag(&first)
+    );
+    let mut invite = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    invite.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKrep");
+    invite.push_header("From", "<sip:carol@contoso.com>;tag=carol1");
+    invite.push_header("To", "<sip:alice@contoso.com>");
+    invite.push_header("Call-ID", "replacing1");
+    invite.push_header("CSeq", "1 INVITE");
+    invite.push_header("Contact", "<sip:carol@contoso.com;opaque=user:epid:c;gruu>");
+    invite.push_header("Content-Type", "application/sdp");
+    invite.body = peer_sdp(9, "RTP/SAVP").into_bytes();
+    let mut good = invite.clone();
+    good.push_header("Replaces", &replaces);
+    e.on_message(&server.sign(good), NOW);
+    assert_eq!(e.replaces(2), Some(1));
+    let out = e.command(
+        Command::AcceptCall {
+            call: 2,
+            local: Box::new(media_local(42000, 3)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    assert!(sends(&out).iter().any(|m| m.status_code() == Some(200)));
+    assert!(sends(&out)
+        .iter()
+        .any(|m| m.method() == Some("BYE") && m.call_id().unwrap() == first.call_id().unwrap()));
+
+    // Replaces naming no dialog of ours: 481.
+    let mut unknown = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    for h in invite.headers.iter().filter(|h| h.name != "Call-ID") {
+        unknown.push_header(&h.name, &h.value);
+    }
+    unknown.push_header("Call-ID", "replacing2");
+    unknown.push_header("Replaces", "unknown@x;to-tag=1;from-tag=2");
+    unknown.body = invite.body.clone();
+    let out = e.on_message(&server.sign(unknown), NOW);
+    assert_eq!(sends(&out).pop().unwrap().status_code(), Some(481));
+}

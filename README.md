@@ -8,7 +8,7 @@ application, a ranked work list, and nothing copied from Microsoft products.
 
 > **Stage: M3 (audio 1:1), pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search and audio calls exist as building blocks that pass offline tests (32 crates,
-> 289 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is verified
+> 294 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is verified
 > against a real server yet**; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
@@ -36,7 +36,7 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 ## What works today
 
 Status from [`docs/target-app-parity.md`](docs/target-app-parity.md) (2026-10-31): of 52 client
-functions, 10 are implemented and tested offline as a whole, 14 in parts, 26 not started.
+functions, 10 are implemented and tested offline as a whole, 15 in parts, 25 not started.
 
 | Area | In the code (tested offline) | Not yet |
 |---|---|---|
@@ -45,7 +45,7 @@ functions, 10 are implemented and tested offline as a whole, 14 in parts, 26 not
 | Instant messaging | 1:1 with typing indicator, group conversations (ad-hoc conference, invitations, delivery reports) | rich text, file transfer |
 | Audio calls | G.722 and G.711, SRTP, ICE, MS-TURN relay over UDP and over TCP 443 (pseudo-TLS), DTMF, mute, hold/resume, early media, call admission control, ALSA/PipeWire devices | own music on hold |
 | Meetings | join by address or meeting link, lobby, roster, audio in the A/V MCU (SRTP/SSRTP), mute yourself; as presenter: admit, roles, lock, remove, mute others or the audience | scheduling, video |
-| Telephony | phone numbers with the dial plan (phone-context), calls from gateways with caller number, call back, anonymous callers, early media | transfer, forwarding, park, E911, voicemail |
+| Telephony | phone numbers with the dial plan (phone-context), calls from gateways with caller number, call back, anonymous callers, early media, call transfer (blind and with consultation) | forwarding, park, E911, voicemail |
 | Video, screen sharing, Exchange | – | everything (M5–M7) |
 
 ## Building and running
