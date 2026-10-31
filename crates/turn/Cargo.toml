@@ -1,0 +1,15 @@
+[package]
+name = "commscraft-turn"
+description = "MS-TURN client: allocation on the A/V Edge, Send/Data Indication, active destination, TCP framing, pseudo-TLS"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-stun = { path = "../stun" }
+zeroize.workspace = true
+
+[lints]
+workspace = true
