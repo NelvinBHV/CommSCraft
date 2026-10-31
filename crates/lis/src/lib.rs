@@ -19,6 +19,8 @@ use commscraft_xml::{escape, xs_datetime, Element, Limits};
 
 pub const CONTENT_TYPE: &str = "text/xml; charset=utf-8";
 pub const SOAP_ACTION: &str = "\"LIService/GetLocations\"";
+/// SOAPAction of GetLocationsInCity (E9-08; §3.1.4.2, p. 18).
+pub const SOAP_ACTION_IN_CITY: &str = "\"LIService/GetLocationsInCity\"";
 pub const NS_LIS: &str = "urn:schema:Microsoft.Rtc.WebComponent.Lis.2010";
 const NS_SOAP: &str = "http://schemas.xmlsoap.org/soap/envelope/";
 pub const PIDF_TYPE: &str = "application/pidf+xml";
@@ -114,15 +116,18 @@ fn valid_mac(m: &str) -> bool {
 
 /// GetLocationsRequest (E9-03): Entity (own SIP URI, 1–64 characters), then the identifiers in
 /// the schema's order (MAC, SubnetID, IP). Namespace of the schema (K-E9-1).
-pub fn get_locations_request(entity: &str, ids: &NetworkIds) -> Result<String, Error> {
-    let entity_ok = (1..=64).contains(&entity.chars().count())
+fn valid_entity(entity: &str) -> bool {
+    (1..=64).contains(&entity.chars().count())
         && entity
             .get(..4)
             .is_some_and(|s| s.eq_ignore_ascii_case("sip:"))
         && !entity
             .chars()
-            .any(|c| c.is_control() || c.is_whitespace() || "<>\"'&".contains(c));
-    if !entity_ok {
+            .any(|c| c.is_control() || c.is_whitespace() || "<>\"'&".contains(c))
+}
+
+pub fn get_locations_request(entity: &str, ids: &NetworkIds) -> Result<String, Error> {
+    if !valid_entity(entity) {
         return Err(Error::BadValue("Entity"));
     }
     let mut ident = String::new();
@@ -171,11 +176,49 @@ fn find<'a>(e: &'a Element, path: &[&str]) -> Option<&'a Element> {
 /// GetLocationsResponse (E9-04; §2.2.3–2.2.5, pp. 12–14; example §4): the return code (200, 400,
 /// 404, 500) and the civic addresses of the presence list.
 pub fn parse_get_locations(xml: &str) -> Result<(u16, Vec<Location>), Error> {
+    parse_locations(xml, "GetLocationsResponse")
+}
+
+/// GetLocationsInCityRequest (E9-08; §3.1.4.2.2.1, p. 20): Entity, Country (ISO 3166 alpha-2),
+/// State (exactly 2 characters), City (1–64 characters); everything escaped.
+pub fn get_locations_in_city_request(
+    entity: &str,
+    country: &str,
+    state: &str,
+    city: &str,
+) -> Result<String, Error> {
+    if !valid_entity(entity) {
+        return Err(Error::BadValue("Entity"));
+    }
+    if country.len() != 2 || !country.chars().all(|c| c.is_ascii_uppercase()) {
+        return Err(Error::BadValue("Country"));
+    }
+    let printable = |s: &str| !s.chars().any(char::is_control);
+    if state.chars().count() != 2 || !printable(state) {
+        return Err(Error::BadValue("State"));
+    }
+    if !(1..=64).contains(&city.chars().count()) || !printable(city) {
+        return Err(Error::BadValue("City"));
+    }
+    Ok(format!(
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"{NS_SOAP}\"><soap:Body><GetLocationsInCityRequest xmlns=\"{NS_LIS}\"><Entity>{entity}</Entity><Country>{country}</Country><State>{}</State><City>{}</City></GetLocationsInCityRequest></soap:Body></soap:Envelope>",
+        escape(state),
+        escape(city)
+    ))
+}
+
+/// GetLocationsInCityResponse (E9-08; §3.1.4.2.2.2, p. 20): the same return code and
+/// presenceList as GetLocations, bounded the same way.
+pub fn parse_get_locations_in_city(xml: &str) -> Result<(u16, Vec<Location>), Error> {
+    parse_locations(xml, "GetLocationsInCityResponse")
+}
+
+fn parse_locations(xml: &str, response: &str) -> Result<(u16, Vec<Location>), Error> {
     let root = commscraft_xml::parse(xml, &limits()).map_err(Error::Xml)?;
     if root.name != "Envelope" {
         return Err(Error::WrongDocument);
     }
-    let resp = find(&root, &["Body", "GetLocationsResponse"]).ok_or(Error::WrongDocument)?;
+    let resp = find(&root, &["Body", response]).ok_or(Error::WrongDocument)?;
     let code = resp
         .child("ReturnCode")
         .and_then(|c| c.text().trim().parse::<u16>().ok())

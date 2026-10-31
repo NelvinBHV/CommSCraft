@@ -54,6 +54,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
           /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
+          /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
           /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
@@ -1301,14 +1302,17 @@ fn subnet_in(table: &str, ip: std::net::IpAddr) -> Option<std::net::IpAddr> {
 
 /// The location from the location information service (function 39; [MS-E911WS] GetLocations
 /// over HTTPS with NTLM, E9-01 … E9-04): the first civic address for our IP and subnet.
-fn lis_lookup(
+/// One SOAP request to the location information service over HTTPS with NTLM (E9-02); the
+/// answer body on HTTP 200.
+fn lis_post(
     engine: &mut commscraft_session::Engine<OsRandom>,
     tls: &TlsClient,
     trust: &Trust,
     services: Option<&commscraft_provisioning::ServerConfiguration>,
-    local_ip: std::net::IpAddr,
+    action: &str,
+    body: &str,
     verbose: bool,
-) -> Result<Option<commscraft_lis::Location>, String> {
+) -> Result<String, String> {
     use commscraft_sipae::base64;
     let s = services
         .and_then(|c| c.lis_internal.as_ref())
@@ -1320,15 +1324,8 @@ fn lis_lookup(
         ));
     }
     let url = commscraft_url::parse_https(&s.url).ok_or("the location service URL is not https")?;
-    let ids = commscraft_lis::NetworkIds {
-        mac: None,
-        subnet: subnet_of(local_ip),
-        ip: Some(local_ip),
-    };
-    let body = commscraft_lis::get_locations_request(engine.own_aor(), &ids)
-        .map_err(|e| format!("{e:?}"))?;
     if verbose {
-        println!("  POST {} (GetLocations)", s.url);
+        println!("  POST {} ({action})", s.url);
     }
     let negotiate =
         commscraft_ntlm::messages::negotiate_message(commscraft_ntlm::messages::HTTP_NEGOTIATE);
@@ -1338,7 +1335,7 @@ fn lis_lookup(
         &url,
         &[
             ("Content-Type", commscraft_lis::CONTENT_TYPE),
-            ("SOAPAction", commscraft_lis::SOAP_ACTION),
+            ("SOAPAction", action),
         ],
         body.as_bytes(),
         &user_agent(),
@@ -1363,17 +1360,73 @@ fn lis_lookup(
     );
     match result {
         Ok(r) if r.status == 200 => {
-            let text = String::from_utf8(r.body).map_err(|_| "answer is not UTF-8")?;
-            let (code, mut locs) =
-                commscraft_lis::parse_get_locations(&text).map_err(|e| format!("{e:?}"))?;
-            match code {
-                200 if !locs.is_empty() => Ok(Some(locs.remove(0))),
-                200 | 404 => Ok(None),
-                c => Err(format!("location service answered {c}")),
-            }
+            String::from_utf8(r.body).map_err(|_| "answer is not UTF-8".to_string())
         }
         Ok(r) => Err(format!("HTTP {}", r.status)),
         Err(e) => Err(auth_err.take().unwrap_or_else(|| e.to_string())),
+    }
+}
+
+/// GetLocations for this network position (E9-03/E9-04).
+fn lis_lookup(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    services: Option<&commscraft_provisioning::ServerConfiguration>,
+    local_ip: std::net::IpAddr,
+    verbose: bool,
+) -> Result<Option<commscraft_lis::Location>, String> {
+    let ids = commscraft_lis::NetworkIds {
+        mac: None,
+        subnet: subnet_of(local_ip),
+        ip: Some(local_ip),
+    };
+    let body = commscraft_lis::get_locations_request(engine.own_aor(), &ids)
+        .map_err(|e| format!("{e:?}"))?;
+    let text = lis_post(
+        engine,
+        tls,
+        trust,
+        services,
+        commscraft_lis::SOAP_ACTION,
+        &body,
+        verbose,
+    )?;
+    let (code, mut locs) =
+        commscraft_lis::parse_get_locations(&text).map_err(|e| format!("{e:?}"))?;
+    match code {
+        200 if !locs.is_empty() => Ok(Some(locs.remove(0))),
+        200 | 404 => Ok(None),
+        c => Err(format!("location service answered {c}")),
+    }
+}
+
+/// GetLocationsInCity (E9-08): the addresses the administrator entered for a city.
+fn lis_city(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    services: Option<&commscraft_provisioning::ServerConfiguration>,
+    (country, state, city): (&str, &str, &str),
+    verbose: bool,
+) -> Result<Vec<commscraft_lis::Location>, String> {
+    let body =
+        commscraft_lis::get_locations_in_city_request(engine.own_aor(), country, state, city)
+            .map_err(|e| format!("{e:?}"))?;
+    let text = lis_post(
+        engine,
+        tls,
+        trust,
+        services,
+        commscraft_lis::SOAP_ACTION_IN_CITY,
+        &body,
+        verbose,
+    )?;
+    let (code, locs) =
+        commscraft_lis::parse_get_locations_in_city(&text).map_err(|e| format!("{e:?}"))?;
+    match code {
+        200 | 404 => Ok(locs),
+        c => Err(format!("location service answered {c}")),
     }
 }
 
@@ -1401,6 +1454,11 @@ fn interactive(
     let mut pending_emergency: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
     // The location policy enables emergency services: ask the location service (E9-03).
     let mut lis_wanted = false;
+    // RG-51: the location policy and the next periodic location lookup (LocationRefreshInterval).
+    let mut location_policy: Option<commscraft_provisioning::LocationPolicy> = None;
+    let mut lis_next: Option<u64> = None;
+    // E9-08: the addresses of the last /location city, to pick from.
+    let mut city_choices: Vec<commscraft_lis::Location> = Vec::new();
     let mut pending_in: BTreeMap<u32, u32> = BTreeMap::new();
     // Media prepared for a conference's audio: media id → conversation.
     // Media handle → (conversation, announcement language, CA-24).
@@ -1476,15 +1534,26 @@ fn interactive(
                     E::Provisioned(c) => {
                         services = Some(c);
                         if lis_wanted {
-                            match lis_lookup(&mut engine, tls, trust, services.as_deref(), local_ip, verbose) {
-                                Ok(Some(loc)) => outputs_extra.push(C::SetLocation(Box::new(loc))),
-                                Ok(None) => println!("* the location service knows no location here – set one with /location"),
-                                Err(e) => println!("* location service: {e}"),
+                            let r = lis_lookup(
+                                &mut engine,
+                                tls,
+                                trust,
+                                services.as_deref(),
+                                local_ip,
+                                verbose,
+                            );
+                            for line in lis_messages(&r, location_policy.as_ref()) {
+                                println!("{line}");
                             }
+                            if let Ok(Some(loc)) = r {
+                                outputs_extra.push(C::SetLocation(Box::new(loc)));
+                            }
+                            lis_next = lis_refresh_at(location_policy.as_ref(), now());
                         }
                     }
                     E::LocationPolicy(p) => {
                         lis_wanted = p.enabled;
+                        location_policy = Some((*p).clone());
                         if p.enabled {
                             let numbers: Vec<String> = p
                                 .numbers
@@ -1952,6 +2021,21 @@ fn interactive(
             Err(e) => return Err(e.to_string()),
         }
         outputs.extend(engine.on_tick(t));
+        // RG-51: LocationRefreshInterval – look the location up again; a location found
+        // replaces the current one, none found keeps it.
+        if lis_wanted && lis_next.is_some_and(|n| t >= n) {
+            lis_next = lis_refresh_at(location_policy.as_ref(), t);
+            if let Ok(Some(loc)) = lis_lookup(
+                &mut engine,
+                tls,
+                trust,
+                services.as_deref(),
+                local_ip,
+                verbose,
+            ) {
+                outputs.extend(engine.command(C::SetLocation(Box::new(loc)), t));
+            }
+        }
         while let Ok(m) = media_rx.try_recv() {
             let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
             match m {
@@ -2314,6 +2398,56 @@ fn interactive(
                         }
                         _ => {
                             println!("* /rate CALL 1-5 [text]");
+                            None
+                        }
+                    }
+                }
+                "/location" if arg.trim().starts_with("city ") => {
+                    let f: Vec<&str> = arg.trim()["city ".len()..]
+                        .split(';')
+                        .map(str::trim)
+                        .collect();
+                    match f.as_slice() {
+                        [c, s, city] => {
+                            match lis_city(
+                                &mut engine,
+                                tls,
+                                trust,
+                                services.as_deref(),
+                                (&c.to_ascii_uppercase(), s, city),
+                                verbose,
+                            ) {
+                                Ok(l) if l.is_empty() => {
+                                    println!("* the location service knows no addresses there")
+                                }
+                                Ok(l) => {
+                                    for (i, loc) in l.iter().enumerate() {
+                                        println!("  {} {}", i + 1, loc.summary());
+                                    }
+                                    println!("* choose one with /location pick N");
+                                    city_choices = l;
+                                }
+                                Err(e) => println!("* location service: {e}"),
+                            }
+                        }
+                        _ => println!("* /location city COUNTRY;STATE(2 characters);CITY"),
+                    }
+                    None
+                }
+                "/location" if arg.trim().starts_with("pick ") => {
+                    let n = arg.trim()["pick ".len()..].trim().parse::<usize>().ok();
+                    match n
+                        .and_then(|n| n.checked_sub(1))
+                        .and_then(|i| city_choices.get(i))
+                    {
+                        // Chosen by the user, not found for the network position: Manual (E9-08,
+                        // inference).
+                        Some(loc) => Some(C::SetLocation(Box::new(commscraft_lis::Location {
+                            manual: true,
+                            ..loc.clone()
+                        }))),
+                        None => {
+                            println!("* /location pick N – after /location city");
                             None
                         }
                     }
@@ -3091,6 +3225,45 @@ fn posix_language(v: &str) -> Option<String> {
     commscraft_conf::valid_language_tag(&tag).then_some(tag)
 }
 
+/// What the user is told after a location lookup (RG-51, [MS-SIPREGE] §2.2.2.5.7, p. 57):
+/// without a location, `LocationRequired` "yes" asks for one, "disclaimer" also shows the
+/// administrator's EmergencyServiceDisclaimer (a terminal cannot be clicked through, so it
+/// follows at once – inference), "no" only notes it.
+fn lis_messages(
+    r: &Result<Option<commscraft_lis::Location>, String>,
+    policy: Option<&commscraft_provisioning::LocationPolicy>,
+) -> Vec<String> {
+    use commscraft_provisioning::LocationRequired as Req;
+    let mut lines = match r {
+        Ok(Some(_)) => return Vec::new(),
+        Ok(None) => vec!["* the location service knows no location here".to_string()],
+        Err(e) => vec![format!("* location service: {e}")],
+    };
+    let required = policy.map(|p| p.location_required).unwrap_or_default();
+    if required != Req::No {
+        lines.push(
+            "! emergency services need your location: set it with /location COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME"
+                .to_string(),
+        );
+    }
+    if required == Req::Disclaimer {
+        if let Some(d) = policy.and_then(|p| p.disclaimer.as_deref()) {
+            lines.push(format!("! {d}"));
+        }
+    }
+    lines
+}
+
+/// When to look the location up again: LocationRefreshInterval hours, kept within 1 … 168
+/// (design); none without an interval.
+fn lis_refresh_at(
+    policy: Option<&commscraft_provisioning::LocationPolicy>,
+    now: u64,
+) -> Option<u64> {
+    let hours = policy.and_then(|p| p.refresh_hours).filter(|h| *h > 0)?;
+    Some(now.saturating_add(u64::from(hours.min(168)) * 3600))
+}
+
 const MEETING_OPTIONS: &str = "OPTIONS: open|closed|anonymous, promote none|company|everyone, phone bypass|lobby, locked, presenter sip:URI, attendee sip:URI";
 
 /// Meeting options before the subject of /schedule and /changemeeting (PV-15): admission policy,
@@ -3226,5 +3399,33 @@ tun0\t000000CB\t00000000\t0001\t0\t0\t500\t000000FF\t0\t0\t0\n";
         assert_eq!(posix_language("C.UTF-8"), None);
         assert_eq!(posix_language("POSIX"), None);
         assert_eq!(posix_language("x;q=1"), None);
+    }
+
+    /// RG-51: messages after a lookup per LocationRequired; the refresh interval is bounded.
+    #[test]
+    fn location_lookup_messages() {
+        use commscraft_provisioning::{LocationPolicy, LocationRequired};
+        let mut p = LocationPolicy {
+            enabled: true,
+            location_required: LocationRequired::Disclaimer,
+            disclaimer: Some("Without a location emergency calls may be delayed.".into()),
+            refresh_hours: Some(4),
+            ..LocationPolicy::default()
+        };
+        let none: Result<Option<commscraft_lis::Location>, String> = Ok(None);
+        let m = lis_messages(&none, Some(&p));
+        assert_eq!(m.len(), 3);
+        assert!(m[2].contains("may be delayed"));
+        p.location_required = LocationRequired::Yes;
+        assert_eq!(lis_messages(&none, Some(&p)).len(), 2);
+        p.location_required = LocationRequired::No;
+        assert_eq!(lis_messages(&none, Some(&p)).len(), 1);
+        let found = Ok(Some(commscraft_lis::Location::default()));
+        assert!(lis_messages(&found, Some(&p)).is_empty());
+        assert_eq!(lis_refresh_at(Some(&p), 100), Some(100 + 4 * 3600));
+        p.refresh_hours = Some(100_000);
+        assert_eq!(lis_refresh_at(Some(&p), 0), Some(168 * 3600));
+        p.refresh_hours = Some(0);
+        assert_eq!(lis_refresh_at(Some(&p), 0), None);
     }
 }

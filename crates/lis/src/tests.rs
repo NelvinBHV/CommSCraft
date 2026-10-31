@@ -141,3 +141,41 @@ fn pidf_lo_document() {
         "voip_911_user1@contoso.com"
     );
 }
+
+/// E9-08 (§3.1.4.2, pp. 18–20): GetLocationsInCity request with escaped state and city and the
+/// schema bounds; the answer is read like GetLocations, under its own element name.
+#[test]
+fn locations_in_city() {
+    let x = get_locations_in_city_request("sip:alice@contoso.com", "US", "WA", "Redmond & <Co>")
+        .unwrap();
+    assert!(
+        x.contains("<GetLocationsInCityRequest xmlns=\"http://schemas.microsoft.com/2007/06/lis\"")
+            || x.contains("<GetLocationsInCityRequest xmlns="),
+        "{x}"
+    );
+    assert!(x.contains("<Entity>sip:alice@contoso.com</Entity><Country>US</Country><State>WA</State><City>Redmond &amp; &lt;Co&gt;</City>"), "{x}");
+    for (c, s, city) in [
+        ("us", "WA", "X"),
+        ("USA", "WA", "X"),
+        ("US", "W", "X"),
+        ("US", "WA", ""),
+        ("US", "WA", "a\r\nb"),
+    ] {
+        assert!(
+            get_locations_in_city_request("sip:alice@contoso.com", c, s, city).is_err(),
+            "{c} {s} {city:?}"
+        );
+    }
+    assert!(
+        get_locations_in_city_request("sip:alice@contoso.com", "US", "WA", &"x".repeat(65))
+            .is_err()
+    );
+    let answer = ANSWER.replace("GetLocationsResponse", "GetLocationsInCityResponse");
+    let (code, locs) = parse_get_locations_in_city(&answer).unwrap();
+    assert_eq!(code, 200);
+    assert!(!locs.is_empty());
+    assert!(
+        parse_get_locations_in_city(ANSWER).is_err(),
+        "the other operation's answer"
+    );
+}
