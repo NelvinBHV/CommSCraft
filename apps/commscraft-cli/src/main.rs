@@ -62,6 +62,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /confaudio (join the meeting's audio)  /confmute  /confunmute (mute in the meeting)
           presenters: /admit [sip:URI]  /deny sip:URI  /promote sip:URI  /demote sip:URI  /lock  /unlock
           /remove sip:URI  /muteuser sip:URI  /unmuteuser sip:URI  /muteall  /unmuteall
+          /options [open|closed|anonymous] [promote none|company|everyone] [phone bypass|lobby]
           /search TEXT (address book)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
           --wait seconds (default 20), ends the conversation and signs out. Plain text only.
@@ -1417,6 +1418,8 @@ fn interactive(
     let mut pending_transfer: BTreeMap<u32, u32> = BTreeMap::new();
     // The routing rules last asked for (forwarding and simultaneous ring are combined).
     let mut forwarding = commscraft_presence::Forwarding::default();
+    // CB-43: the last meeting settings per conversation, so /options can change one part.
+    let mut meeting_settings: BTreeMap<_, commscraft_conf::Settings> = BTreeMap::new();
     std::thread::spawn(move || {
         let stdin = std::io::stdin();
         let mut line = String::new();
@@ -1759,6 +1762,38 @@ fn interactive(
                             .or_else(|| peers.get(&conversation).cloned())
                             .unwrap_or_default();
                         println!("[{conversation}] {who}: {text}");
+                    }
+                    E::MeetingSettings {
+                        conversation,
+                        settings,
+                    } => {
+                        let mut parts = Vec::new();
+                        if let Some(l) = settings.locked {
+                            parts.push(if l { "locked" } else { "not locked" }.to_string());
+                        }
+                        if let Some(a) = settings.admission {
+                            parts.push(format!("admission {}", a.as_str()));
+                        }
+                        if let Some(p) = settings.autopromote {
+                            parts.push(format!("promoted on joining: {}", promote_name(p)));
+                        }
+                        if let Some(b) = settings.pstn_lobby_bypass {
+                            parts.push(
+                                if b {
+                                    "phone callers bypass the lobby"
+                                } else {
+                                    "phone callers wait in the lobby"
+                                }
+                                .to_string(),
+                            );
+                        }
+                        if settings.lobby_capable == Some(false) {
+                            parts.push("options cannot be changed".into());
+                        }
+                        if !parts.is_empty() {
+                            println!("* [{conversation}] meeting: {}", parts.join(", "));
+                        }
+                        meeting_settings.insert(conversation, settings);
                     }
                     E::Participants {
                         conversation,
@@ -2448,6 +2483,50 @@ fn interactive(
                         })
                     }
                 }
+                "/options" => {
+                    use commscraft_conf::schedule::Admission;
+                    let known = current
+                        .and_then(|c| meeting_settings.get(&c))
+                        .and_then(|s| s.options());
+                    let mut o = known.unwrap_or(commscraft_conf::MeetingOptions {
+                        admission: Admission::OpenAuthenticated,
+                        autopromote: commscraft_conf::AUTOPROMOTE_COMPANY,
+                        pstn_lobby_bypass: false,
+                    });
+                    let words: Vec<&str> = arg.split_whitespace().collect();
+                    let mut ok = !words.is_empty();
+                    let mut i = 0;
+                    while ok && i < words.len() {
+                        match (words.get(i).copied(), words.get(i + 1).copied()) {
+                            (Some(a), _) if Admission::parse(&admission_word(a)).is_some() => {
+                                o.admission =
+                                    Admission::parse(&admission_word(a)).unwrap_or(o.admission);
+                                i += 1;
+                            }
+                            (Some("promote"), Some(p)) => {
+                                match promote_value(p) {
+                                    Some(v) => o.autopromote = v,
+                                    None => ok = false,
+                                }
+                                i += 2;
+                            }
+                            (Some("phone"), Some(p @ ("bypass" | "lobby"))) => {
+                                o.pstn_lobby_bypass = p == "bypass";
+                                i += 2;
+                            }
+                            _ => ok = false,
+                        }
+                    }
+                    if !ok {
+                        println!("* /options [open|closed|anonymous] [promote none|company|everyone] [phone bypass|lobby]");
+                        None
+                    } else {
+                        current.map(|conversation| C::ConferenceControl {
+                            conversation,
+                            action: commscraft_session::ConferenceAction::Options(o),
+                        })
+                    }
+                }
                 "/schedule" => {
                     use commscraft_conf::schedule::Admission;
                     let mut words = arg.split_whitespace();
@@ -2948,6 +3027,35 @@ fn main() {
         }
     };
     std::process::exit(code);
+}
+
+/// `open`/`closed`/`anonymous` as admission policy names (CB-42).
+fn admission_word(w: &str) -> String {
+    match w {
+        "open" => "openAuthenticated".into(),
+        "closed" => "closedAuthenticated".into(),
+        other => other.into(),
+    }
+}
+
+/// Automatic promotion by name (CB-42, [MS-CONFBAS] §2.2.2.3).
+fn promote_value(w: &str) -> Option<u32> {
+    match w {
+        "none" => Some(0),
+        "company" => Some(commscraft_conf::AUTOPROMOTE_COMPANY),
+        "everyone" => Some(commscraft_conf::AUTOPROMOTE_EVERYONE),
+        _ => None,
+    }
+}
+
+fn promote_name(v: u32) -> &'static str {
+    if v & commscraft_conf::AUTOPROMOTE_EVERYONE != 0 {
+        "everyone"
+    } else if v & commscraft_conf::AUTOPROMOTE_COMPANY != 0 {
+        "people from the company"
+    } else {
+        "nobody"
+    }
 }
 
 #[cfg(test)]

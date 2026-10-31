@@ -1971,6 +1971,14 @@ fn meeting_lobby_audio_and_mute() {
 /// Joins FOCUS and delivers `users` as the full roster (with the A/V MCU); returns the engine,
 /// the server, the focus INVITE and the conversation.
 fn joined_meeting(users: &str) -> (Engine<Counter>, Server, Message, ConversationId) {
+    joined_meeting_with(users, "")
+}
+
+/// As [`joined_meeting`], with more conference-description content and a conference-view.
+fn joined_meeting_with(
+    users: &str,
+    description: &str,
+) -> (Engine<Counter>, Server, Message, ConversationId) {
     let (mut e, mut server, _) = signed_in();
     let out = e.command(
         Command::JoinConference {
@@ -1995,7 +2003,7 @@ fn joined_meeting(users: &str) -> (Engine<Counter>, Server, Message, Conversatio
     );
     let roster_sub = find(&out, "SUBSCRIBE");
     let doc = format!(
-        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="full" version="1"><conference-description><conf-uris><entry><uri>{AVMCU}</uri><purpose>audio-video</purpose></entry></conf-uris></conference-description><users>{users}</users></conference-info>"#
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="full" version="1"><conference-description><conf-uris><entry><uri>{AVMCU}</uri><purpose>audio-video</purpose></entry></conf-uris>{description}</conference-description><users>{users}</users></conference-info>"#
     );
     let out = e.on_message(
         &answer(
@@ -3064,5 +3072,85 @@ fn incoming_call_on_behalf_of() {
         e.caller(3).unwrap().on_behalf_of,
         None,
         "never our own address"
+    );
+}
+
+/// CB-42/CB-43: the reported settings arrive as an event; options the focus does not allow are
+/// refused locally; allowed options go out with the current lock state; locking keeps the known
+/// options.
+#[test]
+fn meeting_options_follow_the_focus() {
+    let description = "<msci:admission-policy>openAuthenticated</msci:admission-policy><msci:lobby-capable>true</msci:lobby-capable><msci:anonymous-type-allowed>false</msci:anonymous-type-allowed><msci:autopromote>0</msci:autopromote><msci:autopromote-allowed>32768</msci:autopromote-allowed><msci:pstn-lobby-bypass>false</msci:pstn-lobby-bypass><msci:pstn-lobby-bypass-allowed>false</msci:pstn-lobby-bypass-allowed>";
+    let (mut e, _, _, conversation) = joined_meeting_with(PRESENTER_ROSTER, description);
+    let options = |admission, autopromote, pstn_lobby_bypass| {
+        ConferenceAction::Options(conf::MeetingOptions {
+            admission,
+            autopromote,
+            pstn_lobby_bypass,
+        })
+    };
+    use conf::schedule::Admission;
+    for (action, why) in [
+        (
+            options(Admission::Anonymous, 0, false),
+            "anonymous admission",
+        ),
+        (
+            options(
+                Admission::ClosedAuthenticated,
+                conf::AUTOPROMOTE_EVERYONE,
+                false,
+            ),
+            "automatic promotion",
+        ),
+        (
+            options(Admission::ClosedAuthenticated, 0, true),
+            "bypass the lobby",
+        ),
+    ] {
+        let out = e.command(
+            Command::ConferenceControl {
+                conversation,
+                action,
+            },
+            NOW,
+        );
+        assert!(sends(&out).is_empty());
+        assert!(
+            events(&out)
+                .iter()
+                .any(|ev| matches!(ev, Event::Notice(n) if n.contains(why))),
+            "{why}"
+        );
+    }
+    let out = e.command(
+        Command::ConferenceControl {
+            conversation,
+            action: options(
+                Admission::ClosedAuthenticated,
+                conf::AUTOPROMOTE_COMPANY,
+                false,
+            ),
+        },
+        NOW,
+    );
+    let b = String::from_utf8(find(&out, "INFO").body.clone()).unwrap();
+    assert!(
+        b.contains("<locked>false</locked>")
+            && b.contains(">closedAuthenticated<")
+            && b.contains(">32768<"),
+        "{b}"
+    );
+    let out = e.command(
+        Command::ConferenceControl {
+            conversation,
+            action: ConferenceAction::Lock(true),
+        },
+        NOW,
+    );
+    let b = String::from_utf8(find(&out, "INFO").body.clone()).unwrap();
+    assert!(
+        b.contains("<locked>true</locked>") && b.contains(">openAuthenticated<"),
+        "{b}"
     );
 }
