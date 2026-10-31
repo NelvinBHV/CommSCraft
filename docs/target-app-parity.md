@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (first M1 building blocks)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (synchronised with the code: M1–M3 building blocks)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -16,7 +16,7 @@ The assessment of how close CommSCraft is to the Skype for Business desktop clie
 - **Not in scope:** Skype for Business Online (retired by Microsoft), Microsoft Teams, the consumer
   Skype service.
 
-## Functions and evidence status (2026-10-26)
+## Functions and evidence status (2026-10-31)
 
 Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`](protocol/function-matrix.md)): **B** fully documented,
 **B\*** documented with conflicts/gaps needing a decision or interop check, **T** partly documented,
@@ -25,16 +25,16 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 
 | # | Function | Main specifications | Evidence | Implemented |
 |---|---|---|---|---|
-| 1 | Server discovery | MS-OCDISCWS, MS-CONMGMT | B | parts tested-offline (Autodiscover state machine, DNS SRV ordering: `discovery`) |
-| 2 | TLS connection, keep-alive | MS-CONMGMT | B | tested-offline (TLS adapter with loopback test, stream framing, keep-alive negotiation: `net`, `sip-msg`, `register`) |
+| 1 | Server discovery | MS-OCDISCWS, MS-CONMGMT | B | tested-offline (Autodiscover over HTTPS only (D-10) with trust model, DNS SRV and fallback host names: `discovery`, `url`, `net`; used by `commscraft-cli`) |
+| 2 | TLS connection, keep-alive | MS-CONMGMT | B | tested-offline (TLS 1.2/1.3 adapter with loopback test, stream framing, keep-alive negotiation and CRLF keep-alive: `net`, `sip-msg`, `register`) |
 | 3 | SIP compression (optional) | MS-SIPCOMP | B\* | – |
-| 4 | Sign-in with NTLM | MS-SIPAE, MS-NLMP | B\* | parts tested-offline (NTLMv2 handshake messages, SIP signing and verification: `ntlm`, `sipae`) |
+| 4 | Sign-in with NTLM | MS-SIPAE, MS-NLMP | B\* | tested-offline (NTLMv2 incl. MIC, MS-SIPAE signing and verification up to version 4, offline sign-in against a test registrar: `ntlm`, `sipae`, `register`) |
 | 5 | Sign-in with Kerberos | MS-SIPAE, MS-KILE | B | – |
 | 6 | Sign-in with TLS-DSK and client certificate | MS-SIPAE, MS-OCAUTHWS | B\* | – |
-| 7 | Registration, GRUU, endpoint ID | MS-SIPREGE, MS-SIPRE | B | parts tested-offline (REGISTER flow, GRUU, refresh: `register`, `sip-identity`) |
-| 8 | In-band provisioning | MS-SIPREGE | B\* | parts tested-offline (SUBSCRIBE, provisionGroupList, validated ServerConfiguration: `provisioning`, `xml`) |
+| 7 | Registration, GRUU, endpoint ID | MS-SIPREGE, MS-SIPRE | B | tested-offline (REGISTER with GRUU, refresh, signed 301 redirect to the home pool, deregistration NOTIFY, version block, keep-alive: `register`, `sip-identity`) |
+| 8 | In-band provisioning | MS-SIPREGE | B\* | tested-offline (SUBSCRIBE with piggyback, provisionGroupList, validated ServerConfiguration; used for the address book, conference and media relay URIs: `provisioning`, `xml`, `session`) |
 | 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | tested-offline (endpoint and own state publication, long-lived batch subscriptions with NOTIFY, refresh and pool resubscribe: `presence`, `session`) |
-| 10 | Contact list (server) | MS-SIP, MS-PRES | B | parts tested-offline (read: `presence`) |
+| 10 | Contact list (server) | MS-SIP, MS-PRES | B | parts tested-offline (read the contact list with a live subscription and delta updates: `presence`, `session`); adding/removing contacts and groups – |
 | 11 | Contact list (Exchange unified contact store) | MS-PRES, MS-OXWSCOS, MS-OXWSPERS | B\* | – |
 | 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | – |
 | 13 | Offline address book | MS-ABS | B\* | – |
@@ -45,21 +45,21 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 18 | Typing indicator | MS-CONFIM | T | parts tested-offline (INFO KeyboardActivity, secondary format: `im`) |
 | 19 | Group IM (IM conference) | MS-CONFPRO, MS-CONFBAS, MS-CONFIM | B\* | tested-offline (create, join, roster, IM MCU, dial-out invitations, IMDN, session timers, leave: `conf`, `session`; CLI `/group`, `/invite`, `/join`); invitations of Windows clients secondary only (K-CI-3) |
 | 20 | Persistent chat | MS-XCCOSIP, MS-OCGCWEB | T | – |
-| 21 | Media relay access | MS-AVEDGEA, MS-TURN | B | parts tested-offline (MS-TURN client incl. TCP framing and pseudo-TLS: `turn`; STUN codec: `stun`); MS-AVEDGEA credentials tested-offline (`avedgea`, engine bootstrap and refresh) |
-| 22 | ICE connectivity | MS-ICE2, MS-ICE | B\* | parts tested-offline (UDP ICE agent: checks in both STUN formats, nomination, keep-alive, consent: `ice-agent`); TCP candidates and MS-ICE (2007) – |
-| 23 | Media negotiation (SDP) | MS-SDPEXT, MS-SIPRE | B\* | parts tested-offline (audio offer/answer, a=crypto, ICE-19 attributes, remote-candidates: `sdp`; call signalling with multipart offers, ringing, answer, final offer, CANCEL, BYE: `session`) |
-| 24 | Media encryption | MS-SRTP, MS-SSRTP | B | tested-offline (SRTP/SRTCP contexts with MKI, replay window, ROC; RFC 3711 B.2/B.3 and libsrtp reference packets: `srtp`) |
-| 25 | RTP/RTCP, bandwidth, video source requests | MS-RTP | B | parts tested-offline (RTP header, sender, reception statistics, SR/RR/SDES/BYE, DTMF: `rtp`; audio media core with jitter buffer: `media`); MS-RTP profile extensions – |
-| 26 | Audio codecs G.711, G.722 | MS-RTP, MS-SDPEXT, ITU-T G.711, G.722 | B | tested-offline (G.711 against Tables 1–6; G.722 ADPCM bit-exact against all ITU digital test sequences, QMF round trip: `g711`, `g722`) |
+| 21 | Media relay access | MS-AVEDGEA, MS-TURN | B | parts tested-offline (MS-TURN client incl. SHA-256, TCP framing and pseudo-TLS: `turn`; STUN codec: `stun`; MS-AVEDGEA credentials fetched and refreshed by the engine: `avedgea`, `session`; UDP relay candidates in calls: `call-media`); TCP relay candidates – |
+| 22 | ICE connectivity | MS-ICE2, MS-ICE | B\* | parts tested-offline (UDP ICE agent: checks in both STUN formats, peer-reflexive candidates, regular nomination, keep-alive, consent freshness: `ice-agent`; used in calls with a real-socket loopback test: `call-media`); TCP candidates and MS-ICE (2007) – |
+| 23 | Media negotiation (SDP) | MS-SDPEXT, MS-SIPRE | B\* | parts tested-offline (audio offer/answer, a=crypto, ICE-19 attributes, remote-candidates: `sdp`; call signalling with multipart offers, ringing, answer, final offer, CANCEL, BYE: `session`); a=cryptoscale, early media, video – |
+| 24 | Media encryption | MS-SRTP, MS-SSRTP | B | parts tested-offline (SRTP/SRTCP contexts with MKI, replay window, ROC – RFC 3711 B.2/B.3 and libsrtp reference packets – used in calls: `srtp`, `media`); SSRTP transform only as a building block (conferences, M4) |
+| 25 | RTP/RTCP, bandwidth, video source requests | MS-RTP | B | parts tested-offline (RTP header, sender, reception statistics, SR/RR/SDES/BYE: `rtp`; audio media core with jitter buffer and concealment: `media`); MS-RTP profile extensions and bandwidth estimation – |
+| 26 | Audio codecs G.711, G.722 | MS-RTP, MS-SDPEXT, ITU-T G.711, G.722 | B | tested-offline (G.711 against Tables 1–6; G.722 ADPCM bit-exact against all ITU digital test sequences, QMF round trip; used in calls: `g711`, `g722`, `media`) |
 | 27 | Audio codecs RTAudio, Siren, G.722.1 | MS-SDPEXT, MS-RTP, ITU-T G.722.1 | T | – |
 | 28 | Video H.264 UC/SVC | MS-H264PF, MS-SDPEXT | B | – |
 | 29 | Video RTVideo | MS-RTVPF | N | not planned |
-| 30 | DTMF, redundancy | MS-DTMF, MS-RTPRADEX | B | – |
+| 30 | DTMF, redundancy | MS-DTMF, MS-RTPRADEX | B | parts tested-offline (DTMF per RFC 4733 within MS-DTMF, sending and receiving, CLI `/dtmf`: `rtp`, `media`, `call-media`); redundancy (MS-RTPRADEX) – |
 | 31 | Picture control (freeze/refresh) | MS-XMLMC | B | – |
 | 32 | Bandwidth management (call admission control) | MS-ICE2BWM, MS-TURNBWM | B | – |
 | 33 | PSTN telephony | MS-OCPSTN, MS-SIPRE | B | – |
 | 34 | Forwarding, simultaneous ring, team and delegate calls | MS-SIPRE, MS-PRES | B | – |
-| 35 | Hold, music on hold | MS-SDPEXT, MS-SIPRE | B | – |
+| 35 | Hold, music on hold | MS-SDPEXT, MS-SIPRE | B | parts tested-offline (hold/resume as re-INVITE with a new direction through `Command::UpdateCall`: `session`, `sdp`); CLI command and music on hold – |
 | 36 | Call transfer | MS-SIPAE, MS-SIPRE | B\* | – |
 | 37 | Call park | MS-SIPAPP | B\* | – |
 | 38 | Voicemail | MS-OCEXUM, MS-EUMSDP | T | – |
@@ -74,8 +74,8 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 47 | Response group agent | MS-RGSWS | B | – |
 | 48 | UCWA web services | MS-CVWREST, MS-ECREST, MS-OCSMP | B | – |
 | 49 | Conversation history in Exchange | MS-OXWSCDATA, MS-OXWSSRCH | T | – |
-| 50 | Sign-out | MS-SIPREGE, MS-CONFBAS | B | parts tested-offline (REGISTER Expires 0: `register`) |
+| 50 | Sign-out | MS-SIPREGE, MS-CONFBAS | B | tested-offline (REGISTER with Expires 0, unsubscribe, ending conversations, group conversations and calls: `register`, `session`) |
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals:** B 24 · B\* 17 · T 9 · N 2 · implemented 0 / 52.
+**Totals (2026-10-31, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **10** tested-offline as a whole, **10** in parts, **30** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).
