@@ -13,12 +13,22 @@ use crate::{Engine, Event, Output, Purpose, Random};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum ScheduleOp {
     Add(Box<MeetingSpec>),
+    /// The static meeting with this conference ID (PV-16).
+    AddStatic(String),
     List,
     Get,
     /// getConference before a change: the answer's version goes into modifyConference (PV-09).
     GetForChange(Box<MeetingSpec>),
     Change(Box<MeetingSpec>),
     Delete(String),
+}
+
+/// What `ScheduleMeeting` and `ChangeMeeting` ask for.
+pub(crate) struct Planned {
+    pub subject: String,
+    pub minutes: u64,
+    pub admission: sch::Admission,
+    pub extras: sch::Extras,
 }
 
 impl<R: Random> Engine<R> {
@@ -55,14 +65,13 @@ impl<R: Random> Engine<R> {
 
     /// `ScheduleMeeting`: a new conference ID (128 random bits, PV-04) and addConference with
     /// the IM and A/V MCU; the lifetime is bounded by [`sch::MAX_LIFETIME`] (design).
-    pub(crate) fn schedule_meeting(
-        &mut self,
-        subject: &str,
-        minutes: u64,
-        admission: sch::Admission,
-        now: u64,
-        out: &mut Vec<Output>,
-    ) {
+    pub(crate) fn schedule_meeting(&mut self, plan: Planned, now: u64, out: &mut Vec<Output>) {
+        let Planned {
+            subject,
+            minutes,
+            admission,
+            extras,
+        } = plan;
         let Some(factory) = self.factory(out) else {
             return;
         };
@@ -80,19 +89,34 @@ impl<R: Random> Engine<R> {
             subject: subject.trim().to_string(),
             expiry: now.saturating_add(lifetime),
             admission,
+            extras,
         };
         let request_id = self.next_c3p();
         let body = sch::schedule_conference(request_id, &self.cfg.aor, &factory, &spec);
         self.send_factory(&factory, body, ScheduleOp::Add(Box::new(spec)), now, out);
     }
 
-    /// `ListMeetings`: getConferences.
-    pub(crate) fn list_meetings(&mut self, now: u64, out: &mut Vec<Output>) {
+    /// `ScheduleStaticMeeting`: addConference with `static="true"` and a new conference ID; the
+    /// administrator's defaults apply (PV-16).
+    pub(crate) fn schedule_static_meeting(&mut self, now: u64, out: &mut Vec<Output>) {
+        let Some(factory) = self.factory(out) else {
+            return;
+        };
+        let mut random = [0u8; 16];
+        self.reg.fill_random(&mut random);
+        let id = conf::conference_id(&random);
+        let request_id = self.next_c3p();
+        let body = sch::schedule_static(request_id, &self.cfg.aor, &factory, &id);
+        self.send_factory(&factory, body, ScheduleOp::AddStatic(id), now, out);
+    }
+
+    /// `ListMeetings`: getConferences, ordinary or static meetings (PV-16).
+    pub(crate) fn list_meetings(&mut self, static_meetings: bool, now: u64, out: &mut Vec<Output>) {
         let Some(factory) = self.factory(out) else {
             return;
         };
         let request_id = self.next_c3p();
-        let body = sch::get_conferences(request_id, &self.cfg.aor, &factory);
+        let body = sch::get_conferences(request_id, &self.cfg.aor, &factory, static_meetings);
         self.send_factory(&factory, body, ScheduleOp::List, now, out);
     }
 
@@ -111,12 +135,16 @@ impl<R: Random> Engine<R> {
     pub(crate) fn change_meeting(
         &mut self,
         conference_id: &str,
-        subject: &str,
-        minutes: u64,
-        admission: sch::Admission,
+        plan: Planned,
         now: u64,
         out: &mut Vec<Output>,
     ) {
+        let Planned {
+            subject,
+            minutes,
+            admission,
+            extras,
+        } = plan;
         let Some(factory) = self.factory(out) else {
             return;
         };
@@ -132,6 +160,7 @@ impl<R: Random> Engine<R> {
             subject: subject.trim().to_string(),
             expiry: now.saturating_add(lifetime),
             admission,
+            extras,
         };
         let request_id = self.next_c3p();
         let body = sch::get_conference(request_id, &self.cfg.aor, &factory, conference_id);
@@ -145,12 +174,24 @@ impl<R: Random> Engine<R> {
     }
 
     /// `CancelMeeting`: deleteConference.
-    pub(crate) fn cancel_meeting(&mut self, conference_id: &str, now: u64, out: &mut Vec<Output>) {
+    pub(crate) fn cancel_meeting(
+        &mut self,
+        conference_id: &str,
+        static_meeting: bool,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
         let Some(factory) = self.factory(out) else {
             return;
         };
         let request_id = self.next_c3p();
-        let body = sch::delete_conference(request_id, &self.cfg.aor, &factory, conference_id);
+        let body = sch::delete_conference(
+            request_id,
+            &self.cfg.aor,
+            &factory,
+            conference_id,
+            static_meeting,
+        );
         self.send_factory(
             &factory,
             body,
@@ -195,10 +236,20 @@ impl<R: Random> Engine<R> {
                     admission: Some(spec.admission),
                     join_url: None,
                     version: Some(1),
+                    static_meeting: false,
                 };
                 out.push(Output::Event(Event::MeetingScheduled(Box::new(meeting))));
                 // The details may name the join URL (join-url, §2.2.1.2).
                 self.show_meeting(&spec.conference_id, now, out);
+            }
+            ScheduleOp::AddStatic(conference_id) => {
+                let meeting = sch::Meeting {
+                    focus: r.conference.filter(|c| conf::is_focus_uri(c)),
+                    conference_id: conference_id.clone(),
+                    static_meeting: true,
+                    ..sch::Meeting::default()
+                };
+                out.push(Output::Event(Event::MeetingScheduled(Box::new(meeting))));
             }
             ScheduleOp::List => out.push(Output::Event(Event::Meetings(meetings))),
             ScheduleOp::Get => {

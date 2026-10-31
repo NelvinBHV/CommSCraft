@@ -489,6 +489,7 @@ mod scheduling {
             subject: "Plan <Q4> & more".into(),
             expiry: 1_136_913_107,
             admission: Admission::OpenAuthenticated,
+            extras: Extras::default(),
         }
     }
 
@@ -563,7 +564,7 @@ mod scheduling {
         assert!(bad(|s| s.subject = "x".repeat(MAX_SUBJECT + 1)));
         assert!(bad(|s| s.expiry = u64::MAX));
         assert!(get_conference(1, "sip:alice@contoso.com", FF, "x\"/>").is_err());
-        assert!(delete_conference(1, "sip:alice@contoso.com", FF, "1234567").is_err());
+        assert!(delete_conference(1, "sip:alice@contoso.com", FF, "1234567", false).is_err());
         assert!(modify_conference(1, "sip:alice@contoso.com", FF, 0, &spec()).is_err());
     }
 
@@ -589,7 +590,7 @@ mod scheduling {
     fn keyed_requests() {
         for (x, cmd) in [
             (
-                delete_conference(3, "sip:alice@contoso.com", FF, "BGSDFJ12").unwrap(),
+                delete_conference(3, "sip:alice@contoso.com", FF, "BGSDFJ12", false).unwrap(),
                 "deleteConference",
             ),
             (
@@ -607,7 +608,7 @@ mod scheduling {
             assert_eq!(id.value.len(), 8);
             assert!(x.contains(&format!("xmlns:msci=\"{NS_MSCI}\"")));
         }
-        let root = parse(&get_conferences(4, "sip:alice@contoso.com", FF).unwrap());
+        let root = parse(&get_conferences(4, "sip:alice@contoso.com", FF, false).unwrap());
         assert_eq!(root.child("getConferences").unwrap().elements().count(), 0);
     }
 
@@ -752,4 +753,80 @@ fn meeting_settings_from_roster() {
         r.settings.admission,
         Some(schedule::Admission::OpenAuthenticated)
     );
+}
+
+/// PV-15 ([MS-CONFPRO] §2.2.1.2–2.2.1.4, pp. 14–16; example §4.2, pp. 42–44; schema
+/// conference-description-type, MS-CONFBAS §6.3.2): autopromote and pstn-lobby-bypass after two
+/// separators, conference-state/locked, users with one role each; the organizer is left out,
+/// duplicates and bad URIs are refused; nothing extra without options.
+#[test]
+fn meeting_extras() {
+    use crate::schedule::*;
+    let ff = "sip:alice@contoso.com;gruu;opaque=app:conf:focusfactory";
+    let mut spec = MeetingSpec {
+        conference_id: "SDFBSD12".into(),
+        subject: "Plan".into(),
+        expiry: 1_136_913_107,
+        admission: Admission::ClosedAuthenticated,
+        extras: Extras {
+            autopromote: Some(0),
+            pstn_lobby_bypass: Some(true),
+            locked: Some(true),
+            users: vec![
+                ("sip:bob@contoso.com".into(), true),
+                ("sip:Alice@contoso.com".into(), true),
+                ("sip:carol@contoso.com".into(), false),
+            ],
+        },
+    };
+    let x = schedule_conference(1, "sip:alice@contoso.com", ff, &spec).unwrap();
+    assert!(x.contains("<msci:admission-policy>closedAuthenticated</msci:admission-policy><cis:separator xmlns:cis=\"urn:ietf:params:xml:ns:conference-info-separator\"/><cis:separator xmlns:cis=\"urn:ietf:params:xml:ns:conference-info-separator\"/><msci:autopromote>0</msci:autopromote><msci:pstn-lobby-bypass>true</msci:pstn-lobby-bypass></ci:conference-description><ci:conference-state><ci:locked>true</ci:locked></ci:conference-state><ci:users><ci:user entity=\"sip:bob@contoso.com\"><ci:roles><ci:entry>presenter</ci:entry></ci:roles></ci:user><ci:user entity=\"sip:carol@contoso.com\"><ci:roles><ci:entry>attendee</ci:entry></ci:roles></ci:user></ci:users><msci:conference-view>"), "{x}");
+    assert!(commscraft_xml::parse(&x, &commscraft_xml::Limits::default()).is_ok());
+    spec.extras
+        .users
+        .push(("sip:BOB@contoso.com".into(), false));
+    assert!(
+        schedule_conference(1, "sip:alice@contoso.com", ff, &spec).is_err(),
+        "duplicate"
+    );
+    spec.extras.users = vec![("sip:x@y\"/><evil".into(), true)];
+    assert!(schedule_conference(1, "sip:alice@contoso.com", ff, &spec).is_err());
+    spec.extras.users = vec![("sip:x@contoso.com".into(), false); MAX_INVITEES + 1];
+    assert!(schedule_conference(1, "sip:alice@contoso.com", ff, &spec).is_err());
+    spec.extras = Extras {
+        autopromote: Some(7),
+        ..Extras::default()
+    };
+    assert!(schedule_conference(1, "sip:alice@contoso.com", ff, &spec).is_err());
+    spec.extras = Extras::default();
+    let plain = schedule_conference(1, "sip:alice@contoso.com", ff, &spec).unwrap();
+    assert!(
+        !plain.contains("separator")
+            && !plain.contains("conference-state")
+            && !plain.contains("users")
+    );
+}
+
+/// PV-16 (§2.2.2.1, p. 19, example §4.1; §2.2.2.3; §2.2.2.5, example §4.6): the static meeting
+/// is created with only its ID and static="true", listed and deleted with static="true"; an
+/// answer to the static listing marks its meetings static.
+#[test]
+fn static_meeting() {
+    use crate::schedule::*;
+    let ff = "sip:alice@contoso.com;gruu;opaque=app:conf:focusfactory";
+    let x = schedule_static(1, "sip:alice@contoso.com", ff, "WJ7UVUYO").unwrap();
+    assert!(x.contains("entity=\"\" xmlns:msci=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\" static=\"true\"><ci:conference-description><msci:conference-id>WJ7UVUYO</msci:conference-id></ci:conference-description></ci:conference-info></addConference>"), "{x}");
+    assert!(schedule_static(1, "sip:alice@contoso.com", ff, "short").is_err());
+    let d = delete_conference(2, "sip:alice@contoso.com", ff, "WJ7UVUYO", true).unwrap();
+    assert!(
+        d.contains("<deleteConference static=\"true\"><conferenceKeys")
+            && d.contains("</deleteConference>")
+    );
+    assert!(get_conferences(3, "sip:alice@contoso.com", ff, true)
+        .unwrap()
+        .contains("<getConferences static=\"true\"/>"));
+    let answer = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" requestId="3" code="success"><getConferences static="true"><conferences><conference-info xmlns="urn:ietf:params:xml:ns:conference-info" entity="sip:alice@contoso.com;gruu;opaque=app:conf:focus:id:I5TQBR7J" state="partial" version="471"><conference-description><conference-id xmlns="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions">I5TQBR7J</conference-id></conference-description></conference-info></conferences></getConferences></response>"#;
+    let (_, meetings) = parse_meetings(answer).unwrap();
+    assert_eq!(meetings.len(), 1);
+    assert!(meetings[0].static_meeting);
 }
