@@ -16,10 +16,10 @@ what is still missing per milestone, followed by the open points found in the an
 
 | # | Gap | Evidence / tracking | Milestone |
 |---|---|---|---|
-| 1 | No interop test environment (D-08): nothing is verified against a real server; the remaining questions are owner test cases IT-01 … IT-24 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | all |
+| 1 | No interop test environment (D-08): nothing is verified against a real server; the remaining questions are owner test cases IT-01 … IT-25 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | all |
 | 2 | Sign-in: Kerberos (function 5) and TLS-DSK with client certificate (function 6) are missing; NTLM, discovery, TLS, registration, provisioning and sign-out exist (tested-offline) | functions 1–8, 50 | M1 |
 | 3 | Presence and IM: contact list editing (add/remove contacts and groups), privacy relationships and blocking (12), offline address book (13), contact photos (15), Exchange unified contact store (11); presence, 1:1 and group IM, typing and address book search exist | functions 9–19 | M2 |
-| 4 | Audio 1:1: TCP-only mode and the artificial active TCP server-reflexive candidate (MS-ICE2 §3.1.4.8.1.3, SHOULD), hold/resume command and music on hold (35), MS-RTP profile extensions in RTCP (RT-22 … RT-27), bandwidth management (32), redundant audio (MS-RTPRADEX, 30), early media (SD-50/SD-51); calls with ICE over UDP and the TCP relay (443), TURN, SRTP, G.722/G.711 and DTMF exist | functions 21–26, 30, 32, 35 | M3 |
+| 4 | Audio 1:1: TCP-only mode and the artificial active TCP server-reflexive candidate (MS-ICE2 §3.1.4.8.1.3, SHOULD), streaming our own music on hold (35, optional), MS-RTP profile extensions in RTCP (RT-22 … RT-27), bandwidth management (32), redundant audio (MS-RTPRADEX, 30), early media (SD-50/SD-51); calls with ICE over UDP and the TCP relay (443), TURN, SRTP, G.722/G.711 and DTMF exist | functions 21–26, 30, 32, 35 | M3 |
 | 5 | Conferences and telephony: meetings (schedule, join, lobby, roles), A/V conference with SSRTP, PSTN, transfer, forwarding, park, E911, QoE | functions 33–34, 36–37, 39–42, 45 | M4 |
 | 6 | Video H.264 UC | functions 28, 31 | M5 |
 | 7 | Viewing shared screens (RDP over RTP) | function 43 | M6 |
@@ -66,6 +66,7 @@ Windows-client behaviour that only a capture can show. These are the owner test 
 | IT-22 | O-IC-2 length rule for STUN-02 checks with MI and FINGERPRINT | RFC 5389 rule |
 | IT-23 | First audio call (inside and through the Edge) | Encryption as provisioned, no plaintext fallback |
 | IT-24 | Audio call with UDP blocked (TCP relay on 443) | UDP first, TCP relay as additional candidates |
+| IT-25 | Hold and resume in both directions | No audio sent while held |
 
 ## Not planned without an owner decision
 

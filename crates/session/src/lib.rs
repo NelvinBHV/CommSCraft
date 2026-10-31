@@ -106,6 +106,11 @@ pub enum Command {
     Hangup {
         call: CallId,
     },
+    /// Put the call on hold (`true`) or resume it (MS-SDPEXT §3.1.5.23).
+    Hold {
+        call: CallId,
+        hold: bool,
+    },
     SignOut,
 }
 
@@ -1161,6 +1166,7 @@ impl<R: Random> Engine<R> {
             } => self.accept_call(call, *local, policy, now, &mut out),
             Command::UpdateCall { call, local } => self.update_call(call, *local, now, &mut out),
             Command::Hangup { call } => self.hangup(call, now, &mut out),
+            Command::Hold { call, hold } => self.hold_call(call, hold, now, &mut out),
             Command::SignOut => {
                 self.signing_out = true;
                 self.end_all_calls(now, &mut out);

@@ -25,6 +25,7 @@ pub enum ToMedia {
     Update(Box<sdp::Negotiated>),
     Dtmf(char),
     Mute(bool),
+    Hold(bool),
     Stop,
 }
 
@@ -151,6 +152,7 @@ fn run(
                 }
             }
             Ok(ToMedia::Mute(m)) => media.set_muted(m),
+            Ok(ToMedia::Hold(h)) => media.set_hold(h),
             Ok(ToMedia::Start { .. }) | Err(mpsc::TryRecvError::Empty) => {}
         }
         // One digit at a time; the next one when the previous has been sent (RFC 4733).

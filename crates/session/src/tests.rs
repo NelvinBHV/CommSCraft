@@ -1047,6 +1047,64 @@ fn outgoing_call_flow() {
         Some(Event::CallUpdated { call: 1, .. })
     ));
 
+    // Hold (MS-SDPEXT §3.1.5.23.1): inactive, sip.rendering="no", same key; then resume.
+    let out = e.command(
+        Command::Hold {
+            call: 1,
+            hold: true,
+        },
+        NOW,
+    );
+    let hold = find(&out, "INVITE");
+    let body = String::from_utf8(hold.body.clone()).unwrap();
+    assert!(body.contains("a=inactive"), "{body}");
+    assert!(body.contains(&commscraft_sdp::Key::new(1, [7; 30]).attribute()));
+    assert!(hold
+        .single("Contact")
+        .unwrap()
+        .unwrap()
+        .ends_with(";+sip.rendering=\"no\""));
+    e.on_message(
+        &answer(
+            &mut server,
+            &hold,
+            200,
+            Some("application/sdp"),
+            &peer_sdp(9, "RTP/SAVP"),
+            &[],
+        ),
+        NOW,
+    );
+    let out = e.command(
+        Command::Hold {
+            call: 1,
+            hold: false,
+        },
+        NOW,
+    );
+    let resume = find(&out, "INVITE");
+    let body = String::from_utf8(resume.body.clone()).unwrap();
+    assert!(
+        body.contains("a=sendrecv") && !body.contains("a=inactive"),
+        "{body}"
+    );
+    assert!(!resume
+        .single("Contact")
+        .unwrap()
+        .unwrap()
+        .contains("sip.rendering"));
+    e.on_message(
+        &answer(
+            &mut server,
+            &resume,
+            200,
+            Some("application/sdp"),
+            &peer_sdp(9, "RTP/SAVP"),
+            &[],
+        ),
+        NOW,
+    );
+
     let out = e.command(Command::Hangup { call: 1 }, NOW);
     assert!(sends(&out).iter().any(|m| m.method() == Some("BYE")));
     assert_eq!(events(&out), vec![Event::CallEnded { call: 1, status: 0 }]);

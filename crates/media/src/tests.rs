@@ -15,6 +15,7 @@ fn pair(codec: sdp::Codec, pt: u8) -> (Audio, Audio) {
         remote_key: Some(key(remote)),
         remote_ice: None,
         direction: sdp::Direction::SendRecv,
+        music_on_hold: false,
     };
     let a = Audio::new(&n(2), Some(&key(1)), [1; 10], "a@client").unwrap();
     let b = Audio::new(&n(1), Some(&key(2)), [2; 10], "b@client").unwrap();
@@ -138,4 +139,20 @@ fn rtcp_reports_and_bye() {
     assert!(a.rtcp_due(4999, 0).is_none(), "5 s interval");
     assert!(!b.on_rtcp(&sr));
     assert!(b.on_rtcp(&a.bye().unwrap()), "BYE of the peer");
+}
+
+/// Hold (RFC 3264 §8.4, MS-SDPEXT §3.1.5.23): no RTP while not sending, the timestamp keeps
+/// running, and sending resumes with the next frame.
+#[test]
+fn hold_stops_rtp() {
+    let (mut a, mut b) = pair(sdp::Codec::Pcmu, 0);
+    let first = a.on_capture(&tone(160, 8000.0, 0)).unwrap();
+    b.on_rtp(&first, 0);
+    a.set_sending(false);
+    for f in 1..=10 {
+        assert!(a.on_capture(&tone(160, 8000.0, f * 160)).is_none());
+    }
+    a.set_sending(true);
+    let p = a.on_capture(&tone(160, 8000.0, 11 * 160)).unwrap();
+    assert!(b.on_rtp(&p, 0).is_none());
 }

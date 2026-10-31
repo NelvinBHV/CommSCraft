@@ -158,6 +158,10 @@ pub struct CallMedia {
     usable: Option<Path>,
     /// Remote TCP-passive candidates (to know our role on a TCP relay connection).
     remote_passive: Vec<SocketAddr>,
+    /// We put the call on hold (MS-SDPEXT §3.1.5.23).
+    local_hold: bool,
+    /// The peer's direction from the last offer or answer (hold, music on hold).
+    remote_direction: sdp::Direction,
     local_ip: IpAddr,
     started: u64,
 }
@@ -276,6 +280,8 @@ impl CallMedia {
             selected: None,
             usable: None,
             remote_passive: Vec::new(),
+            local_hold: false,
+            remote_direction: sdp::Direction::SendRecv,
             local_ip,
             started: now,
         };
@@ -472,6 +478,8 @@ impl CallMedia {
         os_random(&mut random);
         let key = n.remote_key.as_ref().map(|_| &self.key);
         self.audio = Some(Audio::new(n, key, random, cname).map_err(|e| format!("{e:?}"))?);
+        self.remote_direction = n.direction;
+        self.apply_direction();
         match &n.remote_ice {
             Some(remote) => {
                 let mut agent = Agent::new(
@@ -521,6 +529,36 @@ impl CallMedia {
         if self.ice.is_none() {
             self.direct = Some((n.remote_rtp.into(), n.remote_rtcp.into()));
         }
+        self.remote_direction = n.direction;
+        self.apply_direction();
+    }
+
+    /// Our hold (`true`) or resume: RTP stops at once; the re-INVITE is the engine's job.
+    pub fn set_hold(&mut self, hold: bool) {
+        self.local_hold = hold;
+        self.apply_direction();
+    }
+
+    /// RTP is sent only if we are not holding and the peer receives (RFC 3264 §6.1: its
+    /// `sendrecv` or `recvonly`); RTCP and ICE consent continue in every state.
+    fn apply_direction(&mut self) {
+        let peer_receives = matches!(
+            self.remote_direction,
+            sdp::Direction::SendRecv | sdp::Direction::RecvOnly
+        );
+        let sending = !self.local_hold && peer_receives;
+        if let Some(a) = self.audio.as_mut() {
+            a.set_sending(sending);
+        }
+    }
+
+    /// True while RTP is being sent (not on hold on either side).
+    pub fn sending(&self) -> bool {
+        !self.local_hold
+            && matches!(
+                self.remote_direction,
+                sdp::Direction::SendRecv | sdp::Direction::RecvOnly
+            )
     }
 
     /// Sends `data` from ICE local candidate `local` to `to`.

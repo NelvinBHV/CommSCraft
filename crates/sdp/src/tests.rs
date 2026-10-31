@@ -283,3 +283,29 @@ fn final_offer_lists_remote_candidates() {
         "{o}"
     );
 }
+
+/// MS-SDPEXT §3.1.5.23/§3.1.5.27: a hold offer with music on hold is answered recvonly; an
+/// inactive hold offer is answered inactive; `a=feature:MoH` only counts on the audio line.
+#[test]
+fn hold_and_music_on_hold() {
+    let moh = SPEC_OFFER.to_string() + "a=sendonly\r\na=feature:MoH\r\n";
+    let (sdp, n) = answer(
+        moh.as_bytes(),
+        &local(),
+        Key::new(9, [3; 30]),
+        Encryption::Required,
+    )
+    .unwrap();
+    assert!(sdp.contains("a=recvonly\r\n"), "{sdp}");
+    assert_eq!((n.direction, n.music_on_hold), (Direction::SendOnly, true));
+    let inactive = SPEC_OFFER.to_string() + "a=inactive\r\n";
+    let (sdp, n) = answer(
+        inactive.as_bytes(),
+        &local(),
+        Key::new(9, [3; 30]),
+        Encryption::Required,
+    )
+    .unwrap();
+    assert!(sdp.contains("a=inactive\r\n"), "{sdp}");
+    assert_eq!((n.direction, n.music_on_hold), (Direction::Inactive, false));
+}
