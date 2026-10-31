@@ -16,6 +16,7 @@ commscraft-sip-msg = { path = "../../crates/sip-msg" }
 commscraft-sipae = { path = "../../crates/sipae" }
 commscraft-presence = { path = "../../crates/presence" }
 commscraft-im = { path = "../../crates/im" }
+commscraft-session = { path = "../../crates/session" }
 commscraft-url = { path = "../../crates/url" }
 zeroize.workspace = true
 

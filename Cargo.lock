@@ -68,6 +68,7 @@ dependencies = [
  "commscraft-presence",
  "commscraft-provisioning",
  "commscraft-register",
+ "commscraft-session",
  "commscraft-sip-msg",
  "commscraft-sipae",
  "commscraft-url",
