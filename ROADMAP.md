@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-31 | Owner rule T-02 changed: PRs are merged into `main` regularly once CI is green; stack #1 … #27 merged. STUN codec (`stun`) for RFC 5389 and STUN-02/MS-TURN, all RFC 5769 vectors verified; O-IC-2 / IT-22. |
 | 2026-10-28 | SDP for audio (`sdp`, MS-SDPEXT): offer/answer, a=crypto, ICE-19 attributes; checked against the §4.1.3 offer; K-SD-3 (truncated keys in the §4.3 answer examples). |
 | 2026-10-28 | SRTP/SRTCP contexts (MS-SRTP profile; identical to RFC 3711 B.2 and the libsrtp reference packets) and `rtp` (RTP/RTCP, reception statistics, DTMF per RFC 4733/MS-DTMF). |
 | 2026-10-28 | Decision D-11 (owner): audio through ALSA/PipeWire. Adapter `audio-alsa` (ALSA API; PipeWire via its ALSA plugin) and the local device check `commscraft-cli audio-check` (tone, recording, playback through G.722 or G.711, no network). |

@@ -1,0 +1,19 @@
+[package]
+name = "commscraft-stun"
+description = "STUN messages in RFC 5389 and STUN-02/MS-TURN format, integrity and fingerprint"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-ice = { path = "../ice" }
+hmac.workspace = true
+sha1.workspace = true
+sha2.workspace = true
+md-5.workspace = true
+subtle.workspace = true
+
+[lints]
+workspace = true
