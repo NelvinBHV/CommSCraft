@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-27 | Session engine (`session`, L4): bootstrap with endpoint publication, long-lived contact list and presence subscriptions (NOTIFY, refresh, resubscribe), incoming and outgoing IM conversations, timeouts; UAS dialogs in `sip-msg`; the test registrar of `register` is available to other crates (feature `testing`). |
 | 2026-10-27 | 1:1 IM: `im` crate (message-session SDP, ACK, MESSAGE, typing INFO, peer requests; plain text only) and CLI command `im`. |
 | 2026-10-27 | Presence of contacts on other pools: `resubscribe` answers are followed to the pool GRUU (`poolFqdn`) or asked one by one (MS-PRES §3.4.5.1.3.1). |
 | 2026-10-27 | SIP dialogs (RFC 3261 §12: route set, in-dialog requests, peer requests) in `sip-msg`; the contact list is now fetched with a real subscription (piggyback or NOTIFY) and the subscription is ended again. |

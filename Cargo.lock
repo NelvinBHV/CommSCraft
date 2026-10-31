@@ -150,6 +150,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "commscraft-session"
+version = "0.0.1"
+dependencies = [
+ "commscraft-im",
+ "commscraft-presence",
+ "commscraft-register",
+ "commscraft-sip-msg",
+]
+
+[[package]]
 name = "commscraft-sip-identity"
 version = "0.0.1"
 dependencies = [

@@ -1,0 +1,20 @@
+[package]
+name = "commscraft-session"
+description = "Session engine (sans-I/O): registration, subscriptions, presence, IM conversations, events for a UI"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-sip-msg = { path = "../sip-msg" }
+commscraft-register = { path = "../register" }
+commscraft-presence = { path = "../presence" }
+commscraft-im = { path = "../im" }
+
+[dev-dependencies]
+commscraft-register = { path = "../register", features = ["testing"] }
+
+[lints]
+workspace = true

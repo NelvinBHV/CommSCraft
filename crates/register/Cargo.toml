@@ -17,3 +17,7 @@ zeroize.workspace = true
 
 [lints]
 workspace = true
+
+[features]
+# Test registrar for other crates' tests (never in release builds).
+testing = []

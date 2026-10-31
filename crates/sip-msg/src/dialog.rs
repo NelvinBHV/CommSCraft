@@ -93,6 +93,56 @@ impl Dialog {
         })
     }
 
+    /// The UAS side (RFC 3261 §12.1.1): a dialog from a peer's dialog-creating request (INVITE)
+    /// that we answer with a 2xx carrying `local_tag` in the To header. Route set = the
+    /// Record-Route values in order; remote target = the peer's Contact.
+    pub fn from_request(request: &Message, local_tag: &str) -> Result<Self, Error> {
+        if !request
+            .method()
+            .is_some_and(|m| m.eq_ignore_ascii_case("INVITE"))
+        {
+            return Err(Error::InvalidValue);
+        }
+        let call_id = request.call_id()?.ok_or(Error::InvalidValue)?;
+        let from = request.from()?.ok_or(Error::InvalidValue)?;
+        let remote_tag = from.param("tag").ok_or(Error::InvalidValue)?.to_string();
+        let to = request.to()?.ok_or(Error::InvalidValue)?;
+        if to.param("tag").is_some()
+            || local_tag.is_empty()
+            || !local_tag.chars().all(|c| c.is_ascii_alphanumeric())
+        {
+            return Err(Error::InvalidValue);
+        }
+        let contact = request
+            .name_addrs("Contact")?
+            .into_iter()
+            .next()
+            .ok_or(Error::InvalidValue)?;
+        if !safe_uri(&contact.uri) || !safe_uri(&from.uri) {
+            return Err(Error::InvalidValue);
+        }
+        let mut route_set = Vec::new();
+        for v in request.header_values("Record-Route") {
+            for item in crate::split_list(v)? {
+                let a = parse_name_addr(item)?;
+                if !safe_uri(&a.uri) || route_set.len() >= MAX_ROUTES {
+                    return Err(Error::InvalidValue);
+                }
+                route_set.push(item.trim().to_string());
+            }
+        }
+        Ok(Self {
+            call_id: call_id.to_string(),
+            local_uri: to.uri,
+            local_tag: local_tag.to_string(),
+            remote_uri: from.uri,
+            remote_tag,
+            remote_target: contact.uri,
+            route_set,
+            local_cseq: 0,
+        })
+    }
+
     /// A new in-dialog request (RFC 3261 §12.2.1.1). The caller adds Via, Contact and the
     /// method-specific headers, and signs it.
     pub fn request(&mut self, method: &str) -> Message {
@@ -212,6 +262,42 @@ mod tests {
         assert!(d.is_peer_request(&notify));
         let answer = response_to(&notify, 200, "OK");
         assert_eq!(answer.cseq().unwrap().unwrap().method, "NOTIFY");
+    }
+
+    #[test]
+    fn uas_dialog_from_an_invite() {
+        let invite = msg(&[
+            "INVITE sip:alice@contoso.com;opaque=user:epid:x;gruu SIP/2.0",
+            "Via: SIP/2.0/TLS 10.0.0.1;branch=z9hG4bKi",
+            "From: <sip:bob@contoso.com>;tag=b1;epid=0b85fd1bd6",
+            "To: <sip:alice@contoso.com>",
+            "Call-ID: c9",
+            "CSeq: 1 INVITE",
+            "Contact: <sip:bob@contoso.com;opaque=user:epid:y;gruu>",
+            "Record-Route: <sip:pool.contoso.com:5061;transport=tls;lr>",
+            "Content-Length: 0",
+        ]);
+        let mut d = Dialog::from_request(&invite, "a1").unwrap();
+        assert_eq!((d.remote_tag.as_str(), d.local_tag.as_str()), ("b1", "a1"));
+        assert_eq!(
+            d.route_set,
+            ["<sip:pool.contoso.com:5061;transport=tls;lr>"]
+        );
+        let bye = d.request("BYE");
+        assert_eq!(
+            bye.single("To").unwrap(),
+            Some("<sip:bob@contoso.com>;tag=b1")
+        );
+        assert_eq!(bye.cseq().unwrap().unwrap().number, 1);
+        assert!(Dialog::from_request(&invite, "a\"b").is_err());
+        let mut with_tag = invite.clone();
+        for h in with_tag.headers.iter_mut().filter(|h| h.name == "To") {
+            h.value.push_str(";tag=x");
+        }
+        assert!(
+            Dialog::from_request(&with_tag, "a1").is_err(),
+            "re-INVITE is not a new dialog"
+        );
     }
 
     #[test]

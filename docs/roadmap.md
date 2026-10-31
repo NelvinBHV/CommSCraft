@@ -32,9 +32,10 @@ owner on an authorized server and is deferred until such an environment exists (
    are done: **M1 is ready for the owner's first interop run (IT-19)**. Discovery is wired into the CLI
    (`--discover-only` for IT-16).
 7. **M2 in progress** – presence and IM. Done offline: contact list, one-time batch presence
-   queries, own state publication scoped to the endpoint (`presence`, CLI `presence`). Next:
-   long-lived subscriptions (NOTIFY/BENOTIFY, refresh), 1:1 IM (INVITE with a message session,
-   MESSAGE, typing indicator), then the address book search.
+   queries, own state publication scoped to the endpoint (`presence`, CLI `presence`), 1:1 IM
+   (`im`), the session engine with long-lived subscriptions and conversations (`session`).
+   Next: the CLI on top of the engine (interactive mode), address book search (MS-DLX), group IM
+   (MS-CONFIM), then M3.
 
 ## Milestones
 
