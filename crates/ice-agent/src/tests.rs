@@ -18,6 +18,7 @@ fn host(foundation: &str, component: u8, addr: &str) -> Local {
     Local {
         foundation: foundation.into(),
         component,
+        transport: Transport::Udp,
         kind: Kind::Host,
         address: a,
         base: a,
@@ -29,6 +30,7 @@ fn remote_of(l: &Local) -> Remote {
     Remote {
         foundation: l.foundation.clone(),
         component: l.component,
+        transport: l.transport,
         address: l.address,
         priority: l.priority,
     }
@@ -333,6 +335,7 @@ fn bounds() {
         .map(|i| Remote {
             foundation: format!("r{i}"),
             component: 1,
+            transport: Transport::Udp,
             address: format!("10.0.2.{i}:7000").parse().unwrap(),
             priority: 1,
         })
@@ -353,10 +356,59 @@ fn bounds() {
         vec![Remote {
             foundation: "z".into(),
             component: 1,
+            transport: Transport::Udp,
             address: "0.0.0.0:1".parse().unwrap(),
             priority: 1,
         }],
         0,
     );
     assert!(c.pairs.is_empty());
+}
+
+/// ice-tcp-07 §4.2: TCP pairing rules and pruning of passive local candidates.
+#[test]
+fn tcp_pairing_rules() {
+    let mut a = Agent::new(
+        true,
+        "AUFR".into(),
+        "apassword-0123456789abcdef".into(),
+        rng(5),
+    );
+    let mut act = host("2", 1, "10.0.0.1:443");
+    act.transport = Transport::TcpActive;
+    let mut pass = host("2", 1, "10.0.0.1:443");
+    pass.transport = Transport::TcpPassive;
+    let udp = host("1", 1, "10.0.0.1:5000");
+    a.add_local(act);
+    a.add_local(pass);
+    a.add_local(udp);
+    let remote = |t: Transport, port: u16| Remote {
+        foundation: format!("r{port}"),
+        component: 1,
+        transport: t,
+        address: format!("10.0.0.2:{port}").parse().unwrap(),
+        priority: 1,
+    };
+    a.set_remote(
+        "BUFR",
+        "bpassword-0123456789abcdef",
+        vec![
+            remote(Transport::TcpPassive, 1),
+            remote(Transport::TcpActive, 2),
+            remote(Transport::Udp, 3),
+        ],
+        0,
+    );
+    let pairs: Vec<(usize, u16)> = a
+        .pairs
+        .iter()
+        .map(|p| (p.local, a.remotes[p.remote].address.port()))
+        .collect();
+    assert!(pairs.contains(&(0, 1)), "tcp-act → tcp-pass");
+    assert!(pairs.contains(&(2, 3)), "udp → udp");
+    assert_eq!(
+        pairs.len(),
+        2,
+        "no tcp-pass local pairs, no mixed transports: {pairs:?}"
+    );
 }

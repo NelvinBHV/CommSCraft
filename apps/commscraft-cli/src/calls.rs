@@ -54,15 +54,19 @@ fn now_ms() -> u64 {
 pub fn relay_from(creds: &commscraft_avedgea::Credentials) -> Option<cm::Relay> {
     let mut relays: Vec<&commscraft_avedgea::Relay> = creds.relays.iter().collect();
     relays.sort_by_key(|r| r.location != Some(commscraft_avedgea::Location::Internet));
-    let server = relays.iter().find_map(|r| match &r.host {
-        commscraft_avedgea::RelayHost::Address(a) => Some(SocketAddr::new(*a, r.udp_port)),
-        commscraft_avedgea::RelayHost::Name(n) => (n.as_str(), r.udp_port)
+    let resolve = |r: &commscraft_avedgea::Relay, port: u16| match &r.host {
+        commscraft_avedgea::RelayHost::Address(a) => Some(SocketAddr::new(*a, port)),
+        commscraft_avedgea::RelayHost::Name(n) => (n.as_str(), port)
             .to_socket_addrs()
             .ok()?
             .find(SocketAddr::is_ipv4),
-    })?;
+    };
+    let (relay, server) = relays
+        .iter()
+        .find_map(|r| resolve(r, r.udp_port).map(|s| (*r, s)))?;
     Some(cm::Relay {
         server,
+        tcp_server: resolve(relay, relay.tcp_port),
         username: creds.username.clone(),
         password: zeroize::Zeroizing::new(creds.password.as_bytes().to_vec()),
     })

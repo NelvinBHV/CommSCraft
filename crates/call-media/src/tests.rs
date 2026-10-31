@@ -109,3 +109,172 @@ fn strangers_are_ignored() {
         0
     );
 }
+
+#[test]
+fn rfc4571_framing() {
+    let mut d = Deframer4571::default();
+    let mut stream = frame_4571(b"abc");
+    stream.extend(frame_4571(b""));
+    stream.extend(frame_4571(&[7u8; 1500]));
+    assert!(d.push(&stream[..4]).unwrap().is_empty());
+    let got = d.push(&stream[4..]).unwrap();
+    assert_eq!(got, vec![b"abc".to_vec(), Vec::new(), vec![7u8; 1500]]);
+    assert!(
+        Deframer4571::default().push(&[0x05, 0xdd]).is_err(),
+        "1501 octets"
+    );
+}
+
+/// A TURN server over TCP for the test: pseudo-TLS, MS-TURN framing, digest challenge, allocation
+/// with HMAC-SHA256; then it returns the first Send request it receives.
+fn mock_tcp_turn(
+    listener: std::net::TcpListener,
+    relayed: SocketAddr,
+) -> std::thread::JoinHandle<Vec<u8>> {
+    use commscraft_stun as stun;
+    std::thread::spawn(move || {
+        let (mut s, _) = listener.accept().unwrap();
+        s.set_read_timeout(Some(std::time::Duration::from_secs(10)))
+            .unwrap();
+        let mut hello = [0u8; 50];
+        std::io::Read::read_exact(&mut s, &mut hello).unwrap();
+        assert_eq!(&hello[..5], &[0x16, 3, 1, 0, 0x2d]);
+        let mut answer = vec![0x16, 3, 1, 0, 0x4e, 2, 0, 0, 0x46, 3, 1];
+        answer.extend_from_slice(&[0; 32]);
+        answer.push(0x20);
+        answer.extend_from_slice(&[1; 32]);
+        answer.extend_from_slice(&[0, 0x18, 0, 0x0e, 0, 0, 0]);
+        std::io::Write::write_all(&mut s, &answer).unwrap();
+        let mut frames = turn::Deframer::default();
+        let mut buf = [0u8; 4096];
+        let key = stun::ms_turn_sha256_key(b"nonce", b"pw", b"user", b"realm");
+        loop {
+            let n = std::io::Read::read(&mut s, &mut buf).unwrap();
+            assert!(n > 0, "connection closed");
+            for (kind, p) in frames.push(&buf[..n]).unwrap() {
+                assert_eq!(kind, 2);
+                let req = turn::parse(&p).unwrap();
+                let reply = |kind: u16, attrs: Vec<(u16, Vec<u8>)>, sign: bool| {
+                    let mut m = stun::Message::new(kind, req.transaction);
+                    m.push(
+                        stun::MS_MAGIC_COOKIE,
+                        stun::MS_MAGIC_COOKIE_VALUE.to_be_bytes().to_vec(),
+                    );
+                    for (k, v) in attrs {
+                        m.push(k, v);
+                    }
+                    let raw = m.encode().unwrap();
+                    let raw = if sign {
+                        stun::with_integrity(raw, stun::Integrity::LegacySha256(&key)).unwrap()
+                    } else {
+                        raw
+                    };
+                    turn::frame(2, &raw)
+                };
+                let out = match (req.kind, req.get(stun::MESSAGE_INTEGRITY).is_some()) {
+                    (turn::ALLOCATE, false) => reply(
+                        turn::ALLOCATE_ERROR,
+                        vec![
+                            (stun::ERROR_CODE, stun::encode_error(401, "Unauthorized")),
+                            (stun::REALM, b"realm".to_vec()),
+                            (stun::NONCE, b"nonce".to_vec()),
+                            (stun::MS_VERSION, 3u32.to_be_bytes().to_vec()),
+                        ],
+                        false,
+                    ),
+                    (turn::ALLOCATE, true) => reply(
+                        turn::ALLOCATE_RESPONSE,
+                        vec![
+                            (stun::MAPPED_ADDRESS, stun::encode_address(relayed)),
+                            (stun::LIFETIME, 600u32.to_be_bytes().to_vec()),
+                        ],
+                        true,
+                    ),
+                    (turn::SEND, _) => return req.get(stun::DATA).unwrap().to_vec(),
+                    _ => Vec::new(),
+                };
+                std::io::Write::write_all(&mut s, &out).unwrap();
+            }
+        }
+    })
+}
+
+/// MS-ICE2 regular mode over the TCP relay (port 443 in production): pseudo-TLS, allocation,
+/// TCP-ACT/TCP-PASS relayed candidates (never the default), and an ICE check towards a passive
+/// peer candidate sent as a TURN Send request carrying an RFC 4571-framed STUN request.
+#[test]
+fn tcp_relay_allocation_and_check() {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let relayed: SocketAddr = "127.0.0.1:40443".parse().unwrap();
+    let relay = Relay {
+        // An unused UDP port: the UDP allocation fails silently, only TCP matters here.
+        server: "127.0.0.1:9".parse().unwrap(),
+        tcp_server: Some(listener.local_addr().unwrap()),
+        username: "user".into(),
+        password: zeroize::Zeroizing::new(b"pw".to_vec()),
+    };
+    let server = mock_tcp_turn(listener, relayed);
+    let ip: IpAddr = "127.0.0.1".parse().unwrap();
+    let t0 = now_ms();
+    let (mut a, first) = CallMedia::prepare(ip, Some(&relay), t0).unwrap();
+    a.send_initial(first);
+    let deadline = t0 + 5000;
+    while now_ms() < deadline
+        && !a
+            .candidates()
+            .iter()
+            .any(|(_, c)| c.transport == ice::Transport::TcpActive)
+    {
+        a.poll(now_ms());
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    let d = a.local_description();
+    let cands = &d.ice.as_ref().unwrap().candidates;
+    let tcp: Vec<_> = cands
+        .iter()
+        .filter(|c| c.transport != sdp::Transport::Udp)
+        .collect();
+    assert_eq!(tcp.len(), 4, "active and passive, RTP and RTCP: {cands:?}");
+    assert!(tcp
+        .iter()
+        .all(|c| c.kind == sdp::CandidateType::Relay
+            && SocketAddr::new(c.address, c.port) == relayed));
+    assert_ne!(
+        SocketAddr::new(d.address, d.rtp_port),
+        relayed,
+        "SD-45: default never TCP"
+    );
+
+    // The peer offers only a TCP-passive candidate: our active relay candidate checks it.
+    let peer: SocketAddr = "127.0.0.1:50000".parse().unwrap();
+    let mut n = negotiated_from(&a);
+    n.remote_ice = Some(sdp::Ice {
+        ufrag: "PEER".into(),
+        pwd: "peerpassword0123456789ab".into(),
+        candidates: vec![sdp::Candidate {
+            foundation: "9".into(),
+            component: 1,
+            transport: sdp::Transport::TcpPassive,
+            priority: 1,
+            address: peer.ip(),
+            port: peer.port(),
+            kind: sdp::CandidateType::Relay,
+            related: None,
+        }],
+    });
+    a.start(&n, true, "a@test", now_ms()).unwrap();
+    for _ in 0..50 {
+        a.poll(now_ms());
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    let data = server.join().unwrap();
+    let len = usize::from(u16::from_be_bytes([data[0], data[1]]));
+    assert_eq!(len, data.len() - 2, "RFC 4571 length prefix");
+    let stun = commscraft_stun::Message::decode(&data[2..]).unwrap();
+    assert_eq!(stun.kind, 0x0001, "Binding Request");
+    assert!(
+        stun.get(commscraft_stun::USERNAME)
+            .is_some_and(|u| u.starts_with(b"PEER:")),
+        "USERNAME = remote:local"
+    );
+}
