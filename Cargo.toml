@@ -14,6 +14,7 @@ members = [
     "crates/register",
     "crates/xml",
     "crates/provisioning",
+    "crates/presence",
     "crates/url",
     "crates/discovery",
     "crates/net",

@@ -64,6 +64,7 @@ version = "0.0.1"
 dependencies = [
  "commscraft-discovery",
  "commscraft-net",
+ "commscraft-presence",
  "commscraft-provisioning",
  "commscraft-register",
  "commscraft-sip-msg",
@@ -104,6 +105,14 @@ dependencies = [
  "md-5",
  "md4",
  "zeroize",
+]
+
+[[package]]
+name = "commscraft-presence"
+version = "0.0.1"
+dependencies = [
+ "commscraft-sip-msg",
+ "commscraft-xml",
 ]
 
 [[package]]

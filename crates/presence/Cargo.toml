@@ -1,0 +1,15 @@
+[package]
+name = "commscraft-presence"
+description = "Enhanced presence (MS-PRES): publish own state, batch presence polling, roaming contact list"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-sip-msg = { path = "../sip-msg" }
+commscraft-xml = { path = "../xml" }
+
+[lints]
+workspace = true

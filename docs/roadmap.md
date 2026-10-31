@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M1 started)
+> **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M2 started)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -30,8 +30,11 @@ owner on an authorized server and is deferred until such an environment exists (
    bounded `xml` reader) and the deregister NOTIFY are done. Discovery (`discovery`, `url`) and the
    registrar redirect are done. Keep-alive, the TLS adapter (`net`) and `commscraft-cli`
    are done: **M1 is ready for the owner's first interop run (IT-19)**. Discovery is wired into the CLI
-   (`--discover-only` for IT-16). Next while waiting: provisioning by NOTIFY, then M2 (presence,
-   IM).
+   (`--discover-only` for IT-16).
+7. **M2 in progress** – presence and IM. Done offline: contact list, one-time batch presence
+   queries, own state publication scoped to the endpoint (`presence`, CLI `presence`). Next:
+   long-lived subscriptions (NOTIFY/BENOTIFY, refresh), 1:1 IM (INVITE with a message session,
+   MESSAGE, typing indicator), then the address book search.
 
 ## Milestones
 

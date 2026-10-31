@@ -1,6 +1,6 @@
 # CommSCraft roadmap
 
-**Stage: M1 (sign-in), offline** · M0 done (analysis imported, decisions taken, test vectors)
+**Stage: M2 (presence, IM)** · M0 done (analysis imported, decisions taken, test vectors)
 
 > **Last reviewed:** 2026-10-27 · **Last updated:** 2026-10-27 · **Change:** minor (M1 started)
 
@@ -16,7 +16,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Documented conflicts between specification passages | **46** | measured (analysis) |
+| Documented conflicts between specification passages | **47** | measured (analysis) |
 | Missing sources (all IETF/ITU gaps closed or narrowed) | **18** listed, 9 closed | measured (analysis) |
 | Open points still needing an interop capture | **3** of 24 (plus 3 of 18 gaps and 5 conflicts) and 5 checks from M1: 19 owner test cases, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured (analysis) |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 192 RFCs, 20 Internet-Drafts, ITU-T G.722.1/P.562/P.800.1 | measured |
@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-27 | M2 started: `presence` crate (contact list, one-time batch presence queries, own state publication scoped to the endpoint, 409 retry), CLI command `presence` with signed request/answer handling; REGISTER announces `msrtc-event-categories` and `adhoclist`. New conflict K-PR-1. |
 | 2026-10-27 | Fix: MS-SIPAE version 4 – the request with the final NTLM token is now signed (§3.2.5.1 step 6.8, `cnum` 1); answered version capped at 4; test registrar enforces it. |
 | 2026-10-27 | NTLM diagnostics for interop runs: non-secret facts of the handshake with `--verbose` (offered/chosen flags, target-info names, MS-SIPAE version), auth headers shown with their non-secret parameters, `--ntlm-legacy` (NTLMv2 without the optional MIC/channel-binding additions). |
 | 2026-10-27 | Trust model for SIP servers named by Autodiscover in another DNS domain (`--trust-domain`, interactive question, remembered; like `TrustModelData`, [SFB-TRUST]); SRV records are printed. |
