@@ -280,6 +280,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "commscraft-turn"
+version = "0.0.1"
+dependencies = [
+ "commscraft-stun",
+ "zeroize",
+]
+
+[[package]]
 name = "commscraft-turn-bwm"
 version = "0.0.1"
 
