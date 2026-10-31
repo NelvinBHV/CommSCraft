@@ -16,7 +16,7 @@ and the first milestones, followed by the open points found in the analysis.
 |---|---|---|---|
 | 1 | No interop test environment (D-08): nothing can be verified against a real server; open points needing captures stay open | [`decisions.md`](decisions.md) | after M0 |
 | 2 | ~~Protocol analysis not yet in the repository~~ – imported | [`protocol/`](protocol/) | done |
-| 3 | No workspace, no CI, no tests | – | M0 |
+| 3 | Remaining M0 test vectors (SIPCOMP/MPPC, ABS, PSOM, TURNBWM XOR) | [`roadmap.md`](roadmap.md) | M0 |
 | 4 | Sign-in stack: discovery, TLS, NTLM/Kerberos/TLS-DSK, registration, provisioning | functions 1–8 | M1 |
 | 5 | Presence and IM | functions 9–19 | M2 |
 | 6 | Media stack: MS-ICE2/MS-TURN, SRTP, RTP/RTCP, G.711/G.722 | functions 21–26 | M3 |

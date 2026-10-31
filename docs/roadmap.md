@@ -13,12 +13,12 @@ owner on an authorized server and is deferred until such an environment exists (
    ends at `tested-offline`; "verified" rows wait until the owner provides an environment.
 2. ~~Import the protocol analysis~~ – done: [`protocol/`](protocol/) (39 evidence files, function
    matrix, conflict/gap/open-point list, source registers; English, no PDFs, no patent notes).
-3. **Workspace skeleton**: empty Rust workspace with the crate layout from
-   [`architecture.md`](architecture.md), lint settings from [`AGENTS.md`](../AGENTS.md), CI on
-   `ubuntu-latest`.
-4. **Test vectors as tests**: MS-NLMP NTLMv2 vectors, the SIP NTLM signature recomputation, MS-SRTP
-   key derivation, MS-ICE2 priority values and CRC table — the parts already recomputed in the
-   analysis become the first automated tests.
+3. ~~Workspace skeleton~~ – done: Rust workspace with the first crates (`ntlm`, `ice`, `srtp`,
+   `sip-identity`), lints from [`AGENTS.md`](../AGENTS.md), CI on `ubuntu-latest` (D-09).
+4. **Test vectors as tests** – started: MS-NLMP NTLMv2 (§4.2.4), RFC 3711 B.3 and MS-SSRTP §4
+   (key derivation and packet transform), MS-SIPRE §4.2 (EPID → +sip.instance), MS-ICE2 CRC table
+   and the SfB candidate priorities (IE-05). Still to add: SIPCOMP/MPPC, ABS compression, PSOM
+   encoding, TURNBWM XOR.
 
 ## Milestones
 

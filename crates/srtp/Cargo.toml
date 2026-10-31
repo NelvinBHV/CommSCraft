@@ -1,0 +1,16 @@
+[package]
+name = "commscraft-srtp"
+description = "SRTP key derivation (RFC 3711, MS-SRTP) and the SSRTP packet transform (MS-SSRTP)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+aes.workspace = true
+hmac.workspace = true
+sha1.workspace = true
+
+[lints]
+workspace = true

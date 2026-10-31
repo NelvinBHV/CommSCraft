@@ -1,0 +1,44 @@
+# CI on standard GitHub-hosted runners only (decision D-09: no runners or services that cause costs).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy && rustup default stable
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Tests (specification test vectors)
+        run: cargo test --locked
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generated open-point list is up to date
+        run: |
+          python3 -I scripts/collect_open_points.py
+          git diff --exit-code docs/protocol/conflicts-gaps-open-points.md
+      - name: No specification documents or captures committed
+        run: |
+          if git ls-files | grep -i -E '\.(pdf|pcap|pcapng|etl|docx?)$'; then
+            echo "forbidden file type committed"; exit 1
+          fi

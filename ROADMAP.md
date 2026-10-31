@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Missing sources (all IETF/ITU gaps closed or narrowed) | **18** listed, 9 closed | measured (analysis) |
 | Open points needing an interop capture or owner decision | **22** | measured (analysis) |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 192 RFCs, 20 Internet-Drafts, ITU-T G.722.1/P.562/P.800.1 | measured |
-| Program code | none | measured |
+| Program code | 4 crates, 16 tests (specification test vectors), no network code | measured |
 | Owner decisions | **all taken** (D-01 … D-09; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **none** (D-08): all work is `tested-offline` at best | measured |
 
@@ -46,6 +46,7 @@ Hours are not estimated yet; the first estimate follows once M0 has fixed the ar
 
 | Date | Change |
 |---|---|
+| 2026-10-26 | Rust workspace started: `ntlm`, `ice`, `srtp`, `sip-identity` with 16 tests from published test vectors (MS-NLMP, RFC 3711, MS-SSRTP, MS-SIPRE, IE-05); CI on `ubuntu-latest`. |
 | 2026-10-26 | Protocol analysis imported into `docs/protocol/` (English): 39 evidence files, function matrix, conflict/gap/open-point list (generated), source registers. |
 | 2026-10-26 | D-08: no interop test environment for now (offline work only); D-09: CI only on runners without costs. |
 | 2026-10-26 | Owner decisions D-01 … D-07 taken (licence MIT OR Apache-2.0, English, pure-Rust protocol core, publication scope, codecs, target servers, egui); licence files added. |
