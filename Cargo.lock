@@ -123,11 +123,13 @@ dependencies = [
  "commscraft-g711",
  "commscraft-g722",
  "commscraft-im",
+ "commscraft-media",
  "commscraft-net",
  "commscraft-ntlm",
  "commscraft-park",
  "commscraft-presence",
  "commscraft-provisioning",
+ "commscraft-qoe",
  "commscraft-register",
  "commscraft-rtp",
  "commscraft-sdp",
@@ -255,6 +257,13 @@ name = "commscraft-psom"
 version = "0.0.1"
 
 [[package]]
+name = "commscraft-qoe"
+version = "0.0.1"
+dependencies = [
+ "commscraft-xml",
+]
+
+[[package]]
 name = "commscraft-register"
 version = "0.0.1"
 dependencies = [
@@ -288,6 +297,7 @@ dependencies = [
  "commscraft-park",
  "commscraft-presence",
  "commscraft-provisioning",
+ "commscraft-qoe",
  "commscraft-register",
  "commscraft-sdp",
  "commscraft-sip-msg",

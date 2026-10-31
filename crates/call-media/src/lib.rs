@@ -36,6 +36,16 @@ const MAX_DATAGRAM: usize = 1500;
 const MAX_WRITE_BUFFER: usize = 64 * 1024;
 const TCP_CONNECT_MS: u64 = 3000;
 
+/// The quality figures of a call and its media path (see [`CallMedia::quality`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct QualitySnapshot {
+    pub audio: media::CallQuality,
+    pub local: SocketAddr,
+    pub remote: SocketAddr,
+    pub tcp: bool,
+    pub encrypted: bool,
+}
+
 /// A media path: ICE local candidate index and remote address.
 type Path = (usize, SocketAddr);
 /// The first TURN Allocates per socket index, returned by [`CallMedia::prepare`].
@@ -1037,6 +1047,32 @@ impl CallMedia {
         if let Some(a) = self.audio.as_mut() {
             a.set_muted(m);
         }
+    }
+
+    /// What the quality report needs (function 45, QE-02): the audio's measured figures and the
+    /// media path – local and remote address of the selected (or direct) path, TCP or UDP – and
+    /// whether the media was encrypted. `None` before the audio started.
+    pub fn quality(&self) -> Option<QualitySnapshot> {
+        let audio = self.audio.as_ref()?.quality();
+        let cands = self.candidates();
+        let (local, remote, tcp) = match (self.selected, self.direct) {
+            (Some(((idx, remote), _)), _) => {
+                let (_, c) = cands.get(idx)?;
+                (c.address, remote, c.transport != ice::Transport::Udp)
+            }
+            (None, Some((rtp, _))) => {
+                let l = self.local_description();
+                (SocketAddr::new(l.address, l.rtp_port), rtp, false)
+            }
+            (None, None) => return None,
+        };
+        Some(QualitySnapshot {
+            audio,
+            local,
+            remote,
+            tcp,
+            encrypted: self.remote_key.is_some(),
+        })
     }
 
     /// RTCP BYE and TURN teardown.

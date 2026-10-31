@@ -20,6 +20,7 @@ members = [
     "crates/dlx",
     "crates/conf",
     "crates/park",
+    "crates/qoe",
     "crates/g711",
     "crates/g722",
     "crates/audio-alsa",

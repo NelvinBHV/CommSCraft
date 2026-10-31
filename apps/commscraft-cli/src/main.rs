@@ -53,7 +53,7 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
           /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)
-          /park [N] (call park; retrieve with /call ORBIT)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /schedule MINUTES [open|closed|anonymous] SUBJECT  /meetings  /meeting ID  /cancelmeeting ID
@@ -1282,6 +1282,8 @@ fn interactive(
     // Conference audio calls whose media id is known before the engine names the call.
     let mut conf_media: BTreeMap<u32, u32> = BTreeMap::new();
     let mut media_of_call: BTreeMap<u32, u32> = BTreeMap::new();
+    // Media of ended calls whose quality figures are still to come (bounded).
+    let mut ended_media: BTreeMap<u32, u32> = BTreeMap::new();
     let mut outgoing: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
     let mut current_call: Option<u32> = None;
     conn.set_timeout(Duration::from_millis(250))
@@ -1473,6 +1475,10 @@ fn interactive(
                     E::CallEnded { call, status } => {
                         println!("* call {call} ended ({status})");
                         if let Some(m) = media_of_call.remove(&call) {
+                            if ended_media.len() >= 16 {
+                                ended_media.pop_first();
+                            }
+                            ended_media.insert(m, call);
                             if let Some(h) = handles.remove(&m) {
                                 let _ = h.tx.send(calls::ToMedia::Stop);
                             }
@@ -1761,6 +1767,18 @@ fn interactive(
                 calls::FromMedia::PeerBye(id) => {
                     println!("* [media {id}] the other side left the media session")
                 }
+                calls::FromMedia::Quality(id, q) => {
+                    // QE-01: the report after every call with media.
+                    if let Some(call) = ended_media.remove(&id) {
+                        outputs.extend(engine.command(
+                            C::ReportQuality {
+                                call,
+                                audio: Box::new(calls::audio_line(&q)),
+                            },
+                            now(),
+                        ));
+                    }
+                }
                 calls::FromMedia::Notice(id, what) => {
                     match media_of_call.iter().find(|(_, &m)| m == id) {
                         Some((call, _)) => println!("* call {call}: {what}"),
@@ -1973,6 +1991,25 @@ fn interactive(
                         None => println!("* no active call"),
                     }
                     None
+                }
+                "/rate" => {
+                    let mut words = arg.split_whitespace();
+                    let call = words.next().and_then(|c| c.parse::<u32>().ok());
+                    let stars = words.next().and_then(|s| s.parse::<u8>().ok());
+                    let text: Vec<&str> = words.collect();
+                    match (call, stars) {
+                        (Some(call), Some(stars)) if (1..=5).contains(&stars) => {
+                            Some(C::RateCall {
+                                call,
+                                stars,
+                                feedback: (!text.is_empty()).then(|| text.join(" ")),
+                            })
+                        }
+                        _ => {
+                            println!("* /rate CALL 1-5 [text]");
+                            None
+                        }
+                    }
                 }
                 "/park" => {
                     let call = arg.trim().parse::<u32>().ok().or(current_call);

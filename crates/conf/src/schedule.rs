@@ -79,30 +79,7 @@ pub fn valid_conference_id(id: &str) -> bool {
     (8..=32).contains(&id.len()) && id.chars().all(|c| c.is_ascii_alphanumeric())
 }
 
-/// XML Schema dateTime in UTC (`YYYY-MM-DDTHH:MM:SSZ`) of a Unix time; days to civil date after
-/// H. Hinnant's algorithm (proleptic Gregorian calendar). Years after 9999 are refused.
-pub fn xs_datetime(unix: u64) -> Option<String> {
-    let days = i64::try_from(unix / 86_400).ok()?;
-    let secs = unix % 86_400;
-    let z = days.checked_add(719_468)?;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let day = doy - (153 * mp + 2) / 5 + 1;
-    let month = if mp < 10 { mp + 3 } else { mp - 9 };
-    let year = yoe + era * 400 + i64::from(month <= 2);
-    if !(1970..=9999).contains(&year) {
-        return None;
-    }
-    Some(format!(
-        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}Z",
-        secs / 3600,
-        secs % 3600 / 60,
-        secs % 60
-    ))
-}
+pub use commscraft_xml::xs_datetime;
 
 fn check_subject(s: &str) -> Result<(), Error> {
     if s.trim().is_empty() || s.chars().count() > MAX_SUBJECT || s.chars().any(char::is_control) {

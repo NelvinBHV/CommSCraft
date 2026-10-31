@@ -1,6 +1,6 @@
 # Where CommSCraft falls short of the Skype for Business client
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (call park exists)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-10-31 · **Change:** minor (quality reports exist)
 
 The work list, ranked by how much each item blocks the alpha gate in
 [`roadmap.md`](roadmap.md#alpha-gate-core-workflows) (**A** = blocks alpha). Each entry says what is
@@ -20,7 +20,7 @@ what is still missing per milestone, followed by the open points found in the an
 | 2 | Sign-in: Kerberos (function 5) and TLS-DSK with client certificate (function 6) are missing; NTLM, discovery, TLS, registration, provisioning and sign-out exist (tested-offline) | functions 1–8, 50 | M1 |
 | 3 | Presence and IM: contact list editing (add/remove contacts and groups), privacy relationships and blocking (12), offline address book (13), contact photos (15), Exchange unified contact store (11); presence, 1:1 and group IM, typing and address book search exist | functions 9–19 | M2 |
 | 4 | Audio 1:1: TCP-only mode and the artificial active TCP server-reflexive candidate (MS-ICE2 §3.1.4.8.1.3, SHOULD), streaming our own music on hold (35, optional), the peer info exchange of MS-RTP (needs link bandwidths), bandwidth management for video and PSTN failover (32, M4/M5), redundant audio (MS-RTPRADEX, 30), as the callee a reliable 183 with an early answer (SD-51, SHOULD) and early media of forked calls (SD-50, SHOULD); calls with ICE over UDP and the TCP relay (443), TURN, SRTP, G.722/G.711 and DTMF exist | functions 21–26, 30, 32, 35 | M3 |
-| 5 | Conferences and telephony: static meetings, preset presenters and meeting options when scheduling, admission policy changes and recording, announcement language, dial-out of phone numbers into meetings, PSTN media bypass, team and delegate calls, E911, QoE; scheduling meetings (create, list, change, cancel), joining meetings (address or link), lobby, conference audio (SRTP sent, SRTP/SSRTP received), muting, the presenter commands, PSTN calling, call transfer, forwarding and call park exist | functions 33–34, 36–37, 39–42, 45 | M4 |
+| 5 | Conferences and telephony: static meetings, preset presenters and meeting options when scheduling, admission policy changes and recording, announcement language, dial-out of phone numbers into meetings, PSTN media bypass, team and delegate calls, E911; scheduling meetings (create, list, change, cancel), joining meetings (address or link), lobby, conference audio (SRTP sent, SRTP/SSRTP received), muting, the presenter commands, PSTN calling, call transfer, forwarding, call park and quality reports exist | functions 33–34, 36–37, 39–42, 45 | M4 |
 | 6 | Video H.264 UC | functions 28, 31 | M5 |
 | 7 | Viewing shared screens (RDP over RTP) | function 43 | M6 |
 | 8 | Graphical user interface (egui, D-07); today only the command-line tool exists | [`decisions.md`](decisions.md) | not yet in a milestone |

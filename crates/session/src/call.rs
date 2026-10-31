@@ -555,6 +555,7 @@ impl<R: Random> Engine<R> {
                 c.dialog = Some(d);
                 c.state = CallState::Active;
                 c.early.clear();
+                self.keep_for_quality(id, resp, now);
                 Self::call_event(
                     out,
                     Event::CallAnswered {
@@ -862,6 +863,9 @@ impl<R: Random> Engine<R> {
                     c.state = CallState::Active;
                     c.local = Some(kept);
                     c.policy = policy;
+                }
+                if let Some(invite) = self.calls.get(&id).map(|c| c.invite.clone()) {
+                    self.keep_for_quality(id, &invite, now);
                 }
                 // RFC 3891 §3: the replaced call ends once the new one is accepted.
                 if let Some(old) = self.calls.get(&id).and_then(|c| c.replaces) {

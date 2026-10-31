@@ -88,6 +88,61 @@ pub struct Stats {
     pub played: u64,
 }
 
+/// Running average and maximum of a metric.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+struct Acc {
+    sum: u64,
+    n: u32,
+    max: u64,
+}
+
+impl Acc {
+    fn add(&mut self, v: u64) {
+        self.sum = self.sum.saturating_add(v);
+        self.n = self.n.saturating_add(1);
+        self.max = self.max.max(v);
+    }
+
+    fn avg(&self) -> Option<u64> {
+        (self.n > 0).then(|| self.sum / u64::from(self.n))
+    }
+
+    fn max(&self) -> Option<u64> {
+        (self.n > 0).then_some(self.max)
+    }
+}
+
+/// The network figures of one direction for the quality report ([MS-QoE] §2.2.1, Network:
+/// Jitter/InterArrival in ms, PacketLoss/LossRate as a fraction, Delay/RoundTrip in ms,
+/// Utilization/Packets; QE-02). Only what RTP/RTCP measures (OB-47: no MOS estimates).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct StreamQuality {
+    pub ssrc: u32,
+    pub packets: u64,
+    pub jitter_avg_ms: Option<u32>,
+    pub jitter_max_ms: Option<u32>,
+    /// Loss rate in parts per million (fraction lost / 256, RFC 3550 §6.4.1).
+    pub loss_avg_ppm: Option<u32>,
+    pub loss_max_ppm: Option<u32>,
+    pub rtt_avg_ms: Option<u32>,
+    pub rtt_max_ms: Option<u32>,
+}
+
+/// Both directions of a call's audio for the quality report.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CallQuality {
+    /// What we received (from our own reception statistics); `None` before the first packet.
+    pub inbound: Option<StreamQuality>,
+    /// What we sent (from the peer's reception reports about our stream; RTT from LSR/DLSR).
+    pub outbound: StreamQuality,
+    /// Codec name as in the SDP (rtpmap) and its sample rate.
+    pub codec: &'static str,
+    pub sample_rate: u32,
+}
+
+/// RTP timestamp units per millisecond (8000 Hz clock for all our codecs, RFC 3551 §4.5.2).
+const CLOCK_PER_MS: u64 = 8;
+
 /// RTCPSendingRate ([MS-RTP] §3.2.1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Rate {
@@ -151,6 +206,16 @@ pub struct Audio {
     policy_bps: Option<(u32, u8)>,
     pub peer: PeerReports,
     pub stats: Stats,
+    /// Quality figures: our reception (jitter, loss), the peer's reports about our stream
+    /// (jitter, loss, round trip), and our last sender reports for the round trip (RFC 3550
+    /// §6.4.1: RTT = arrival − LSR − DLSR).
+    q_in_jitter: Acc,
+    q_in_loss: Acc,
+    q_out_jitter: Acc,
+    q_out_loss: Acc,
+    q_rtt: Acc,
+    sr_sent: [(u32, u64); 4],
+    sr_next: usize,
 }
 
 impl std::fmt::Debug for Audio {
@@ -229,7 +294,53 @@ impl Audio {
                 .take(64)
                 .collect(),
             stats: Stats::default(),
+            q_in_jitter: Acc::default(),
+            q_in_loss: Acc::default(),
+            q_out_jitter: Acc::default(),
+            q_out_loss: Acc::default(),
+            q_rtt: Acc::default(),
+            sr_sent: [(0, 0); 4],
+            sr_next: 0,
         })
+    }
+
+    /// The quality figures so far (function 45, QE-02).
+    pub fn quality(&self) -> CallQuality {
+        let ms = |a: &Acc, f: fn(&Acc) -> Option<u64>| {
+            f(a).map(|v| u32::try_from(v / CLOCK_PER_MS).unwrap_or(u32::MAX))
+        };
+        let frac = |v: Option<u64>| {
+            v.map(|x| u32::try_from(x.min(256) * 1_000_000 / 256).unwrap_or(1_000_000))
+        };
+        let rtt = |v: Option<u64>| v.map(|x| u32::try_from(x).unwrap_or(u32::MAX));
+        CallQuality {
+            inbound: self.remote_ssrc.map(|ssrc| StreamQuality {
+                ssrc,
+                packets: self.stats.received,
+                jitter_avg_ms: ms(&self.q_in_jitter, Acc::avg),
+                jitter_max_ms: ms(&self.q_in_jitter, Acc::max),
+                loss_avg_ppm: frac(self.q_in_loss.avg()),
+                loss_max_ppm: frac(self.q_in_loss.max()),
+                rtt_avg_ms: None,
+                rtt_max_ms: None,
+            }),
+            outbound: StreamQuality {
+                ssrc: self.sender.ssrc,
+                packets: self.stats.sent,
+                jitter_avg_ms: ms(&self.q_out_jitter, Acc::avg),
+                jitter_max_ms: ms(&self.q_out_jitter, Acc::max),
+                loss_avg_ppm: frac(self.q_out_loss.avg()),
+                loss_max_ppm: frac(self.q_out_loss.max()),
+                rtt_avg_ms: rtt(self.q_rtt.avg()),
+                rtt_max_ms: rtt(self.q_rtt.max()),
+            },
+            codec: match self.codec {
+                sdp::Codec::G722 => "G722",
+                sdp::Codec::Pcmu => "PCMU",
+                sdp::Codec::Pcma => "PCMA",
+            },
+            sample_rate: self.sample_rate(),
+        }
     }
 
     /// Samples per second of the device side.
@@ -534,10 +645,18 @@ impl Audio {
                     quality: 0,
                     fec_distance: 0,
                 });
-                vec![self.receiver.report(s, lsr, dlsr)]
+                let rb = self.receiver.report(s, lsr, dlsr);
+                self.q_in_jitter.add(u64::from(rb.jitter));
+                self.q_in_loss.add(u64::from(rb.fraction_lost));
+                vec![rb]
             }
             None => Vec::new(),
         };
+        // For the round trip: when this report's NTP middle bits went out.
+        if let Some(slot) = self.sr_sent.get_mut(self.sr_next % 4) {
+            *slot = ((ntp >> 16) as u32, now_ms);
+        }
+        self.sr_next = self.sr_next.wrapping_add(1);
         if let Some((bps, left)) = self.turn_bps.as_mut() {
             if *left > 0 {
                 *left -= 1;
@@ -643,6 +762,24 @@ impl Audio {
         now_ms: u64,
     ) {
         let ours = reports.iter().any(|r| r.ssrc == self.sender.ssrc);
+        for r in reports.iter().filter(|r| r.ssrc == self.sender.ssrc) {
+            self.q_out_jitter.add(u64::from(r.jitter));
+            self.q_out_loss.add(u64::from(r.fraction_lost));
+            // RFC 3550 §6.4.1: RTT = A − LSR − DLSR, here with our send time of that report.
+            if r.lsr != 0 {
+                if let Some(&(_, at)) = self
+                    .sr_sent
+                    .iter()
+                    .find(|(mid, at)| *mid == r.lsr && *at > 0)
+                {
+                    let dlsr_ms = u64::from(r.dlsr).saturating_mul(1000) / 65536;
+                    let rtt = now_ms.saturating_sub(at).saturating_sub(dlsr_ms);
+                    if rtt < 60_000 {
+                        self.q_rtt.add(rtt);
+                    }
+                }
+            }
+        }
         if ours && !self.train_mode && self.fast_count == 0 && self.rate == Rate::Normal {
             self.rate = Rate::PairFast;
             self.next_rtcp = self.next_rtcp.min(now_ms + PAIR_FAST_MS);
