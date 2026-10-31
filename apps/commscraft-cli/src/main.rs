@@ -16,6 +16,7 @@ use commscraft_net::{OsRandom, SipConnection, TlsClient};
 use commscraft_provisioning as prov;
 use commscraft_register::keepalive::KeepAlive;
 use commscraft_register::{Config, Event, Password, Random, Registrar};
+use commscraft_sip_msg::dialog::Dialog;
 use commscraft_sip_msg::Message;
 use commscraft_sipae::Policy;
 
@@ -706,6 +707,37 @@ impl Session {
         Ok(result)
     }
 
+    /// Waits up to `secs` seconds for a request of the peer in `dialog` (e.g. NOTIFY). It must
+    /// carry a valid signature (AE-32), otherwise it is dropped; it is answered with a signed
+    /// 200 OK.
+    fn wait_peer_request(
+        &mut self,
+        reg: &mut Registrar<OsRandom>,
+        dialog: &Dialog,
+        secs: u64,
+    ) -> Result<Option<Message>, String> {
+        let started = now();
+        while now().saturating_sub(started) < secs {
+            if let Pumped::Message(m) = self.pump(reg, self.verbose)? {
+                if !dialog.is_peer_request(&m) {
+                    continue;
+                }
+                if !reg.verify_message(&m) {
+                    eprintln!(
+                        "dropped a {} without a valid signature",
+                        m.method().unwrap_or("request")
+                    );
+                    continue;
+                }
+                let mut ok = commscraft_sip_msg::dialog::response_to(&m, 200, "OK");
+                reg.sign_request(&mut ok).map_err(|e| format!("{e:?}"))?;
+                self.send(&ok)?;
+                return Ok(Some(m));
+            }
+        }
+        Ok(None)
+    }
+
     /// Sends a signed request and waits for its final answer, which must carry a valid signature
     /// (AE-32); provisional answers are skipped, other traffic goes to the registrar.
     fn transact(
@@ -902,20 +934,74 @@ fn presence_actions(
     a: &Args,
 ) -> Result<(), String> {
     use commscraft_presence as pres;
-    // Contact list (SIP-07), as a one-time query.
+    // Contact list (SIP-07): a real subscription, as in MS-PRES §4.14 and MS-SIP §3.7 – the
+    // list comes piggybacked in the 200 OK or in the first NOTIFY; afterwards the subscription is
+    // ended again (in-dialog SUBSCRIBE with Expires: 0, RFC 3265 §3.3.4).
     let mut req = s.request("SUBSCRIBE", &a.aor.clone());
-    pres::contacts_headers(&mut req, true);
+    pres::contacts_headers(&mut req, false);
     reg.sign_request(&mut req).map_err(|e| format!("{e:?}"))?;
     let answer = s.transact(reg, &req)?;
-    let list = if answer.status_code() == Some(200) && !answer.body.is_empty() {
-        let body = std::str::from_utf8(&answer.body).map_err(|_| "contact list is not UTF-8")?;
-        pres::parse_contact_list(body).map_err(|e| format!("contact list: {e:?}"))?
+    let mut document = None;
+    let mut dialog = None;
+    if answer.status_code() == Some(200) {
+        if !answer.body.is_empty() {
+            document = Some(answer.body.clone());
+        }
+        match Dialog::from_response(&req, &answer) {
+            Ok(d) => dialog = Some(d),
+            Err(e) => println!("contact list: no usable dialog ({e:?})"),
+        }
     } else {
-        println!(
-            "contact list: answer {} without document",
-            answer.status_code().unwrap_or(0)
+        println!("contact list: answer {}", answer.status_code().unwrap_or(0));
+    }
+    if let Some(d) = &dialog {
+        if document.is_none() {
+            if let Some(notify) = s.wait_peer_request(reg, d, 10)? {
+                if !notify.body.is_empty() {
+                    document = Some(notify.body.clone());
+                }
+            }
+        }
+    }
+    if let Some(mut d) = dialog {
+        let mut end = d.request("SUBSCRIBE");
+        let via = s.via();
+        end.headers.insert(
+            0,
+            commscraft_sip_msg::Header {
+                name: "Via".into(),
+                value: via,
+            },
         );
-        pres::ContactList::default()
+        end.push_header("Max-Forwards", "70");
+        end.push_header("Contact", &format!("<{}>", s.gruu));
+        end.push_header("User-Agent", &user_agent());
+        end.push_header("Event", "vnd-microsoft-roaming-contacts");
+        end.push_header("Expires", "0");
+        reg.sign_request(&mut end).map_err(|e| format!("{e:?}"))?;
+        match s.transact(reg, &end) {
+            Ok(r) => {
+                if s.verbose {
+                    eprintln!(
+                        "contact list subscription ended ({})",
+                        r.status_code().unwrap_or(0)
+                    );
+                }
+            }
+            Err(e) => eprintln!("ending the contact list subscription: {e}"),
+        }
+        // A final NOTIFY (subscription-state: terminated) may follow; it is answered if it comes.
+        let _ = s.wait_peer_request(reg, &d, 2)?;
+    }
+    let list = match document {
+        Some(body) => {
+            let body = std::str::from_utf8(&body).map_err(|_| "contact list is not UTF-8")?;
+            pres::parse_contact_list(body).map_err(|e| format!("contact list: {e:?}"))?
+        }
+        None => {
+            println!("contact list: no document received");
+            pres::ContactList::default()
+        }
     };
     println!(
         "contact list: {} contacts in {} groups{}",
