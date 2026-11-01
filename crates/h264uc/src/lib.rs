@@ -16,6 +16,8 @@ pub const CLOCK_RATE: u32 = 90_000;
 /// NAL unit types used here ([RFC6184] §5.2, [RFC6190] §4.9).
 pub const NAL_IDR: u8 = 5;
 pub const NAL_SEI: u8 = 6;
+/// Prefix NAL unit of SVC ([MSFT-H264UCConfig] §7.1: before the first slice of every frame).
+pub const NAL_PREFIX: u8 = 14;
 pub const NAL_STAP_A: u8 = 24;
 pub const NAL_FU_A: u8 = 28;
 pub const NAL_PACSI: u8 = 30;
@@ -306,7 +308,8 @@ impl Pacsi {
             (self.nri << 5) | NAL_PACSI,
             0x80 | (idr << 6) | self.prid,
             0x80,
-            0x07,
+            // TID 0, U 0, D 1 and O 1 as the prefix NAL unit that follows (UCConfig §7.1), RR 3.
+            0x0f,
         ];
         let t = u8::from(self.donc.is_some());
         out.push(
@@ -403,6 +406,27 @@ fn is_vcl(t: u8) -> bool {
     (1..=5).contains(&t)
 }
 
+/// The prefix NAL unit before the first slice of a frame (PL-13; [MSFT-H264UCConfig] V1.1 §7.1,
+/// p. 11: PRID of the stream, DID = QID = TID = 0, no_inter_layer_pred = discardable = output = 1,
+/// use_ref_base_pic = 0; the MCU tells the streams apart by it). Its body (H.264 Annex G
+/// prefix_nal_unit_svc – inference, the standard is not in the package): with nal_ref_idc ≠ 0
+/// store_ref_base_pic_flag 0, additional_prefix_nal_unit_extension_flag 0 and the trailing bits
+/// (0x20); otherwise empty.
+pub fn prefix_nal(slice: &[u8], prid: u8) -> Vec<u8> {
+    let nri = nri(slice);
+    let idr = u8::from(nal_type(slice) == Some(NAL_IDR));
+    let mut p = vec![
+        (nri << 5) | NAL_PREFIX,
+        0x80 | (idr << 6) | (prid & 0x3f),
+        0x80,
+        0x0f,
+    ];
+    if nri != 0 {
+        p.push(0x20);
+    }
+    p
+}
+
 impl Packetizer {
     /// `mtu` is the largest RTP payload; `layout` must be a full layout describing `prid`.
     pub fn new(mtu: usize, prid: u8, layout: StreamLayout) -> Result<Packetizer, Error> {
@@ -421,14 +445,39 @@ impl Packetizer {
         })
     }
 
+    /// Another stream layout (e.g. another size after a video source request); it goes out in
+    /// full with the next access unit. The decoding order numbers continue.
+    pub fn set_layout(&mut self, layout: StreamLayout) -> Result<(), Error> {
+        if !layout.is_full() || layout.layer(self.prid).is_none() {
+            return Err(Error::Malformed("layout without this layer"));
+        }
+        self.layout = layout;
+        self.layout_sent = false;
+        Ok(())
+    }
+
     /// The RTP payloads of one access unit (Annex B), in order; the last one has the marker.
     pub fn packetize(&mut self, access_unit: &[u8]) -> Result<Vec<Payload>, Error> {
-        let nals = split_annex_b(access_unit)?;
-        if nals
+        let input = split_annex_b(access_unit)?;
+        if input
             .iter()
-            .any(|n| matches!(nal_type(n), Some(0 | 24..=31)))
+            .any(|n| matches!(nal_type(n), Some(0 | 14 | 20 | 24..=31)))
         {
             return Err(Error::Malformed("NAL unit type not allowed in the input"));
+        }
+        // PL-13: a prefix NAL unit before the first slice of the frame.
+        let first_slice = input.iter().position(|n| nal_type(n).is_some_and(is_vcl));
+        let prefix = first_slice
+            .and_then(|i| input.get(i))
+            .map(|s| prefix_nal(s, self.prid));
+        let mut nals: Vec<&[u8]> = Vec::with_capacity(input.len() + 1);
+        for (i, n) in input.iter().enumerate() {
+            if Some(i) == first_slice {
+                if let Some(p) = &prefix {
+                    nals.push(p);
+                }
+            }
+            nals.push(n);
         }
         let idr = nals.iter().any(|n| nal_type(n) == Some(NAL_IDR));
         // §2.2.5.1: the first PACSI and the one of every IDR carry the full layout.
@@ -655,7 +704,8 @@ impl Depacketizer {
                 let complete = c.ok && c.fu.is_none() && !c.nals.is_empty();
                 if complete {
                     let mut data = Vec::with_capacity(c.size + 4 * c.nals.len());
-                    for n in &c.nals {
+                    // Prefix NAL units are for the MCU; an AVC decoder discards them anyway.
+                    for n in c.nals.iter().filter(|n| nal_type(n) != Some(NAL_PREFIX)) {
                         data.extend_from_slice(&[0, 0, 0, 1]);
                         data.extend_from_slice(n);
                     }

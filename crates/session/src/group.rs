@@ -78,6 +78,14 @@ pub const LOBBY_TIMEOUT: u64 = 15 * 60;
 /// Upper bound of participants invited at once (design).
 pub const MAX_INVITEES: usize = 32;
 
+/// What a conference media join carries besides audio: the announcement language (CA-24) and
+/// our video stream (function 28).
+#[derive(Default)]
+pub(crate) struct ConfMedia<'a> {
+    pub language: Option<&'a str>,
+    pub video: Option<&'a sdp::video::VideoLocal>,
+}
+
 impl<R: Random> Engine<R> {
     fn new_conversation(&mut self, peer: String, group: Option<Group>) -> Option<ConversationId> {
         if self.convs.len() >= MAX_CONVERSATIONS {
@@ -697,10 +705,11 @@ impl<R: Random> Engine<R> {
         id: ConversationId,
         local: sdp::Local,
         policy: sdp::Encryption,
-        language: Option<&str>,
+        extra: ConfMedia<'_>,
         now: u64,
         out: &mut Vec<Output>,
     ) {
+        let ConfMedia { language, video } = extra;
         // CA-24: one language, no parameters – otherwise none is sent.
         let language = language.filter(|l| conf::valid_language_tag(l));
         let av = match self.group_mut(id) {
@@ -736,7 +745,7 @@ impl<R: Random> Engine<R> {
             crate::call::Extras {
                 headers: &headers,
                 part: None,
-                video: None,
+                video,
                 emergency: false,
             },
             now,

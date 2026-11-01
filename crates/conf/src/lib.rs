@@ -699,6 +699,9 @@ pub struct Endpoint {
     pub uri: Option<String>,
     /// A/V endpoint: the audio media's ID and whether the MCU blocks it (CA-12, CA-20).
     pub audio: Option<(String, bool)>,
+    /// A/V endpoint: the main video's media source ID (MSI) and whether the participant sends
+    /// it (status sendrecv or sendonly) (CA-12; [MS-CONFAV] §2.2.2.1.2.3, example §4.1).
+    pub video: Option<(u32, bool)>,
 }
 
 /// One participant of the conference roster.
@@ -722,6 +725,13 @@ impl Participant {
         self.endpoints
             .iter()
             .any(|e| e.kind == "focus" && e.status == "on-hold")
+    }
+
+    /// The media source ID of the participant's main video, if it sends video (CA-12).
+    pub fn video_source(&self) -> Option<u32> {
+        self.endpoints
+            .iter()
+            .find_map(|e| e.video.filter(|(_, sends)| *sends).map(|(msi, _)| msi))
     }
 
     /// The participant's audio in the A/V MCU: `Some(muted)`.
@@ -900,6 +910,7 @@ impl Roster {
                 status: String::new(),
                 uri: None,
                 audio: None,
+                video: None,
             });
             if let Some(k) = attr_local(ep, "session-type") {
                 e.kind = printable(k);
@@ -915,6 +926,21 @@ impl Roster {
                 let Some(mid) = m.attr("id").filter(|i| safe_token(i)) else {
                     continue;
                 };
+                let is_main_video = m.child("type").is_some_and(|t| t.text().trim() == "video")
+                    && m.child("label")
+                        .is_none_or(|l| l.text().trim() == "main-video");
+                if is_main_video {
+                    let msi = m
+                        .child("media-source-id")
+                        .and_then(|v| v.text().trim().parse::<u32>().ok());
+                    let sends = m
+                        .child("status")
+                        .is_some_and(|s| matches!(s.text().trim(), "sendrecv" | "sendonly"));
+                    // MSI 0 and the special values of a VSR are no sources (RT-25).
+                    if let Some(msi) = msi.filter(|m| *m != 0 && *m < 0xffff_fffe) {
+                        e.video = Some((msi, sends));
+                    }
+                }
                 if is_audio {
                     let blocked = m
                         .child("media-ingress-filter")

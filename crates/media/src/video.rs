@@ -119,6 +119,14 @@ impl Video {
         })
     }
 
+    /// A new stream layout of what we send (another size after a video source request): the
+    /// next access unit carries the full layout (§2.2.5.1: on the IDR that should follow).
+    pub fn set_layout(&mut self, layout: uc::StreamLayout) -> Result<(), Error> {
+        self.packetizer
+            .set_layout(layout)
+            .map_err(|_| Error::Video("stream layout"))
+    }
+
     /// Our SSRC (the start of our range).
     pub fn ssrc(&self) -> u32 {
         self.sender.ssrc
@@ -238,7 +246,9 @@ impl Video {
         self.vsr = Some((
             Vsr {
                 sender_ssrc: self.sender.ssrc,
-                media_ssrc: self.media_ssrc(),
+                // O-RT-1: the specification leaves the media source field open; it carries the
+                // requested MSI, the source the request is about (inference).
+                media_ssrc: msi,
                 msi,
                 request_id: id,
                 key_frame: true,

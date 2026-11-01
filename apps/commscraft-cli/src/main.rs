@@ -65,7 +65,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /meeting ID  /cancelmeeting ID [static]
           /changemeeting ID MINUTES [OPTIONS] SUBJECT – OPTIONS: open|closed|anonymous, promote none|company|everyone,
             phone bypass|lobby, locked, presenter sip:URI, attendee sip:URI
-          /confaudio [LANGUAGE] (join the meeting's audio; announcements in LANGUAGE, default from $LANG)
+          /confvideo [LANGUAGE] (the meeting's audio and video)  /confaudio [LANGUAGE] (join the meeting's audio; announcements in LANGUAGE, default from $LANG)
           /announcements on|off  /dialout NUMBER (presenters: the meeting calls a phone)  /confmute  /confunmute (mute in the meeting)
           presenters: /admit [sip:URI]  /deny sip:URI  /promote sip:URI  /demote sip:URI  /lock  /unlock
           /remove sip:URI  /muteuser sip:URI  /unmuteuser sip:URI  /muteall  /unmuteall
@@ -1461,6 +1461,8 @@ fn interactive(
     let mut ready_audio: BTreeMap<u32, Box<commscraft_sdp::Local>> = BTreeMap::new();
     let mut ready_video: BTreeMap<u32, Box<commscraft_sdp::video::VideoLocal>> = BTreeMap::new();
     let camera = std::env::var("COMMSCRAFT_CAMERA").unwrap_or_else(|_| "/dev/video0".into());
+    // Meetings with video: conversation → (video id, the source we watch).
+    let mut conf_video: BTreeMap<u32, (u32, Option<u32>)> = BTreeMap::new();
     let mut next_media: u32 = 1;
     let mut pending_out: BTreeMap<u32, String> = BTreeMap::new();
     // AE-38: media ids of calls placed as delegate, with the boss.
@@ -1930,6 +1932,24 @@ fn interactive(
                         conversation,
                         participants,
                     } => {
+                        // CA-13: the client names the video to watch – the first other
+                        // participant that sends video.
+                        if let Some((vid, current)) = conf_video.get_mut(&conversation) {
+                            let me = engine.own_aor().to_ascii_lowercase();
+                            let pick = participants
+                                .iter()
+                                .filter(|p| p.uri.to_ascii_lowercase() != me)
+                                .find_map(|p| p.video_source().map(|m| (m, p.uri.clone())));
+                            if let Some((msi, who)) = pick {
+                                if *current != Some(msi) {
+                                    *current = Some(msi);
+                                    if let Some(h) = video_handles.get(vid) {
+                                        let _ = h.tx.send(video_call::ToVideo::Source(msi));
+                                    }
+                                    println!("* [{conversation}] watching the video of {who}");
+                                }
+                            }
+                        }
                         let names: Vec<String> = participants
                             .iter()
                             .filter(|p| p.in_chat() || p.audio_muted().is_some() || p.waiting())
@@ -1963,6 +1983,9 @@ fn interactive(
                         }
                     }
                     E::ConferenceAudio { conversation, call } => {
+                        if let Some((vid, _)) = conf_video.get(&conversation) {
+                            video_of_call.insert(call, *vid);
+                        }
                         if let Some(m) = conf_media.remove(&conversation) {
                             media_of_call.insert(call, m);
                             outgoing.insert(call);
@@ -2125,6 +2148,18 @@ fn interactive(
                         local,
                         video,
                         policy,
+                    },
+                    now(),
+                ));
+            } else if let Some((conversation, language)) = pending_conf.remove(&aid) {
+                conf_media.insert(conversation, aid);
+                outputs.extend(engine.command(
+                    C::JoinConferenceVideo {
+                        conversation,
+                        local,
+                        video,
+                        policy,
+                        language,
                     },
                     now(),
                 ));
@@ -2790,7 +2825,7 @@ fn interactive(
                     };
                     focus.map(|focus| C::JoinConference { focus })
                 }
-                "/confaudio" => match current {
+                "/confaudio" | "/confvideo" => match current {
                     Some(conversation) => {
                         let relay = engine.media_relay().and_then(calls::relay_from);
                         let id = next_media;
@@ -2811,6 +2846,23 @@ fn interactive(
                             .or_else(language_from_env)
                             .filter(|l| commscraft_conf::valid_language_tag(l));
                         pending_conf.insert(id, (conversation, language));
+                        if cmd == "/confvideo" {
+                            let vid = next_media;
+                            next_media = next_media.wrapping_add(1).max(1);
+                            let relay = engine.media_relay().and_then(calls::relay_from);
+                            video_handles.insert(
+                                vid,
+                                video_call::spawn(
+                                    vid,
+                                    local_ip,
+                                    relay,
+                                    camera.clone(),
+                                    video_tx.clone(),
+                                ),
+                            );
+                            video_for_audio.insert(id, vid);
+                            conf_video.insert(conversation, (vid, None));
+                        }
                         println!("* preparing the meeting audio …");
                         None
                     }

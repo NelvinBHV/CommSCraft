@@ -116,3 +116,6 @@ SD-12: towards the A/V MCU the offer carries `a=crypto` and `a=cryptoscale:<tag+
 
 ## Implementation (2026-11-01, video calls in the session)
 The session offers audio and video (`VideoCall`), reports the video line of the answer as `CallVideo` after `CallAnswered` (a rejected or unusable video line leaves an audio call with a notice), tells whether an incoming call offers video (`incoming_video`) and answers it with video (`AcceptVideoCall`). Every re-INVITE – ours (final offer, hold) and the peer's – keeps the video line with the same key (SD-13) and the call's direction; `SetCallVideo` takes the final video description. Status: tested-offline.
+
+## Implementation (2026-11-01, x-mediabw)
+Offers and answers with video declare `a=x-mediabw:main-video send=1500;recv=1500` at session level (SD-61). Status: tested-offline.
