@@ -1,8 +1,8 @@
 # CommSCraft roadmap
 
-**Stage: M3 (audio 1:1)** · M0 done · M1 and M2 built and tested offline · M3 in progress
+**Stage: M4 closed, M5 next** · M0 done · M1 and M2 built and tested offline · M3 built, waiting for the owner's audio runs · M4 closed by owner decision (T-04, tested-offline)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (delegates, numbers)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (M4 closed)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -36,8 +36,8 @@ transfer can come later from interop captures.
 
 1. **M3 – audio 1:1** (built): the owner's first calls (IT-23 … IT-29); remaining optional
    parts in [`docs/gaps.md`](docs/gaps.md).
-2. **M4 – conferences and telephony** (current): meetings with audio (incl. SSRTP reception) and presenter commands, PSTN calling, call transfer and forwarding are in; next park, scheduling, E911, QoE.
-3. **M5 – video**, **M6 – viewing shared screens**,
+2. **M4 – conferences and telephony** (closed 2026-11-01, T-04): meetings (scheduling, options, lobby, audio, presenter commands, announcements, dial-out), PSTN calling, transfer, forwarding, team/delegate ringing, delegates, call park, E911, QoE; optional remainders in [`docs/gaps.md`](docs/gaps.md).
+3. **M5 – video** (next), **M6 – viewing shared screens**,
    **M7 – Exchange integration**; the graphical interface (egui, D-07) is not yet in a milestone.
    Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
 
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-01 | M4 closed by owner decision (T-04): all functions of its scope implemented and tested-offline; next M5 (video). |
 | 2026-11-01 | Delegates (functions 34/36): delegate list from the self subscription and setDelegates with version retry (PR-21, K-PR-3), calls as delegate and answering for the boss with p-session-on-behalf-of (AE-38), ms-referee-uri in transfers of retargeted calls (AE-37); CLI `/delegate`, `/callfor`. |
 | 2026-11-01 | Emergency location (function 39): addresses of a city from the location service to pick from (E9-08), LocationRequired prompts with the administrator's disclaimer and the periodic lookup (E9-09); CLI `/location city`, `/location pick`. |
 | 2026-11-01 | Self subscription (PR-13): the client reads its routing category from the server – rules set on another device are known, publications use the server's versions, and after an emergency call the user's real rules are restored (O-RE-3 closed). |
