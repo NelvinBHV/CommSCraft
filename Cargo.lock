@@ -145,9 +145,11 @@ dependencies = [
 name = "commscraft-call-media"
 version = "0.0.1"
 dependencies = [
+ "commscraft-h264uc",
  "commscraft-ice",
  "commscraft-ice-agent",
  "commscraft-media",
+ "commscraft-rtp",
  "commscraft-sdp",
  "commscraft-stun",
  "commscraft-turn",
