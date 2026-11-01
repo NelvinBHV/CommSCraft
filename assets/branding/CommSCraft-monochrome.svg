@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="CommSCraft fox mascot wearing a headset with sound waves">
+<title>CommSCraft – Fox with headset</title>
+<g stroke="#10242A" stroke-linecap="round" stroke-linejoin="round">
+<!-- fluffy shoulders and chest -->
+<path d="M228 888 Q246 792 316 742 L289 716 Q341 714 361 678 Q424 702 498 715 Q587 700 667 668 Q701 716 770 733 L728 766 Q799 819 810 906 L719 891 Q701 914 674 930 L637 903 Q576 953 503 960 Q433 950 390 908 L351 931 Q299 902 228 888Z" fill="#FFFFFF" stroke-width="25"/>
+<path d="M333 773 Q423 847 493 878 Q570 830 671 773" fill="none" stroke-width="19"/>
+<path d="M374 838 Q414 873 452 890 M652 844 Q620 878 577 900" fill="none" stroke-width="16"/>
+<!-- tall left ear -->
+<path d="M316 380 Q264 277 281 103 Q377 136 468 330 L435 440Z" fill="#FFFFFF" stroke-width="27"/>
+<path d="M323 311 Q302 210 317 154 Q380 204 418 324 L393 374Z" fill="#B5B5B5" stroke-width="8"/>
+<path d="M347 238 L375 310 M337 283 L367 337" stroke-width="16"/>
+<!-- tall right ear -->
+<path d="M610 353 Q694 146 793 93 Q815 293 745 434 L674 460Z" fill="#FFFFFF" stroke-width="27"/>
+<path d="M661 344 Q726 198 769 157 Q785 262 729 372Z" fill="#B5B5B5" stroke-width="8"/>
+<path d="M716 248 L695 317 M744 267 L710 333" stroke-width="16"/>
+<!-- fox facial fur silhouette -->
+<path d="M342 387 Q413 301 514 306 Q617 309 691 377 Q752 421 761 513 L734 566 Q773 603 766 650 L733 643 Q739 697 696 732 L679 711 Q637 787 554 815 Q462 838 385 777 L367 796 Q323 768 314 725 L291 739 Q292 683 309 650 L274 644 Q279 584 305 559 Q294 466 342 387Z" fill="#FFFFFF" stroke-width="25"/>
+<!-- forehead orange markings -->
+<path d="M370 405 Q408 349 480 355 Q431 384 426 433 Q393 414 370 405Z" fill="#D0D0D0" stroke="none"/>
+<path d="M556 356 Q636 351 682 411 Q640 405 609 429 Q603 386 556 356Z" fill="#D0D0D0" stroke="none"/>
+<!-- cheek framing -->
+<path d="M340 568 Q394 625 474 609 L440 663 Q378 668 334 638" fill="#DEDEDE" stroke="none"/>
+<path d="M617 599 Q682 609 729 568 L719 641 Q674 666 633 656" fill="#DEDEDE" stroke="none"/>
+<!-- muzzle -->
+<path d="M439 583 Q484 562 529 589 Q590 544 657 575 Q701 595 689 665 Q662 724 559 742 Q456 747 414 687 Q398 634 439 583Z" fill="#FFFFFF" stroke-width="13"/>
+<!-- expressive eyes -->
+<path d="M379 497 Q420 453 466 490 Q447 533 409 526 Q389 519 379 497Z" fill="#FFFFFF" stroke-width="13"/>
+<ellipse cx="429" cy="504" rx="20" ry="26" fill="#10242A" stroke="none"/>
+<circle cx="436" cy="494" r="7" fill="#FFFFFF" stroke="none"/>
+<path d="M594 485 Q640 442 680 489 Q663 524 632 524 Q605 523 594 485Z" fill="#FFFFFF" stroke-width="13"/>
+<ellipse cx="638" cy="495" rx="20" ry="25" fill="#10242A" stroke="none"/>
+<circle cx="644" cy="485" r="7" fill="#FFFFFF" stroke="none"/>
+<!-- nose, nose ridge, smile -->
+<path d="M593 578 Q626 548 667 574 Q690 600 639 628 Q609 629 593 606Z" fill="#10242A" stroke="none"/>
+<ellipse cx="635" cy="577" rx="12" ry="7" fill="#FFFFFF" stroke="none" opacity=".8"/>
+<path d="M631 624 Q626 665 599 677 Q531 721 445 662" stroke-width="13" fill="none"/>
+<path d="M443 662 Q449 650 465 657" fill="none" stroke-width="11"/>
+<circle cx="517" cy="646" r="4" fill="#10242A" stroke="none"/><circle cx="542" cy="639" r="4" fill="#10242A" stroke="none"/><circle cx="568" cy="643" r="4" fill="#10242A" stroke="none"/>
+<!-- headset headband follows left side and crest -->
+<path d="M276 500 Q283 277 476 245 Q625 214 750 365" fill="none" stroke="#10242A" stroke-width="56"/>
+<path d="M276 496 Q299 296 484 274 Q620 250 731 368" fill="none" stroke="#FFFFFF" stroke-width="20"/>
+<!-- right cup behind cheek -->
+<rect x="713" y="477" width="64" height="150" rx="30" fill="#E5E5E5" stroke-width="20"/>
+<!-- left headset cup -->
+<path d="M286 457 Q222 443 199 529 Q176 631 235 660 Q283 671 320 607 Q343 528 308 476Z" fill="#E5E5E5" stroke-width="23"/>
+<path d="M267 471 Q214 480 213 560 Q207 634 249 641 Q301 628 300 556 Q305 492 267 471Z" fill="#B5B5B5" stroke-width="12"/>
+<path d="M251 494 Q234 527 237 582 M274 498 Q258 541 260 609" fill="none" stroke-width="8" opacity=".55"/>
+<!-- microphone boom and capsule -->
+<path d="M297 626 Q365 715 480 708" stroke="#10242A" stroke-width="26" fill="none"/>
+<path d="M296 624 Q356 692 480 690" stroke="#FFFFFF" stroke-width="10" fill="none"/>
+<rect x="476" y="676" width="116" height="45" rx="22" fill="#10242A" stroke-width="5"/>
+<!-- radio waves -->
+<path d="M814 530 Q851 576 814 625" stroke="#10242A" stroke-width="24" fill="none"/>
+<path d="M844 497 Q914 576 847 657" stroke="#10242A" stroke-width="24" fill="none"/>
+<path d="M879 459 Q977 567 879 698" stroke="#10242A" stroke-width="24" fill="none"/>
+</g>
+</svg>
