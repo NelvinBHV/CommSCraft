@@ -25,6 +25,7 @@ Sources: [MS-ICE2BWM] "ICE Extensions 2.0: Bandwidth Management Extensions", edi
 | BW-15 | Evaluation: path LSA↔RSA only if both V=1; F=1 ⇒ PSTN rerouting allowed; relay paths analogously; do not use invalid paths | §3.2.5.1, p. 28 |
 | BW-16 | Client update timer: update at least every **60 s** (otherwise the server discards the reservation) | §3.2.2, pp. 25–26; §3.3.2, p. 29 |
 | BW-17 | Rate adaptation of Skype for Business endpoints (official documentation, not a protocol rule): media endpoints "can adapt to varying network conditions"; per H.264 resolution a maximum and a minimum payload bit rate, the minimum being "the bit rate below which a Skype for Business Server endpoint will switch to the next lower resolution" (e.g. 1280x720 2500/700, 640x480 and 640x360 800/300, 424x240 and 320x240 350/100, 320x180 250/15 kbit/s); in conferences the sender decides its streams "based on CPU capability, available uplink bandwidth, and the number of receiving clients requesting a certain video stream"; aggregated video at most 8000 kbit/s; FEC is used dynamically on packet loss | [SFB-NETREQ] (Microsoft Learn, section "Network bandwidth requirements for media traffic", retrieved 2026-11-01) |
+| BW-18 | Client video capabilities (official documentation, not a protocol rule): "For resolutions of 640x360 and higher, the maximum supported frame rate is 30 frames per second (fps). For resolutions lower than 640x360, the maximum supported frame rate is 15 fps." The Windows client "uses hardware acceleration for video encoding and decoding" (H.264): encoding on Intel HD Graphics (hardware MFT) or the AMD Video Codec Engine, or in a UVC 1.5 camera; decoding through DXVA (`DXVA2_ModeH264_VLD_NoFGT`); without hardware the encoder size follows the CPU cores and the WinSAT VideoEncodeScore | [SFB-VIDRES] (Microsoft Learn, section "Windows desktop, Mac and tablet video requirements and capabilities", retrieved 2026-11-01) |
 
 ### Recomputed
 The XOR examples of §2.2.4 (pp. 15–16) are correct: 0x1122⊕0x4455 = 0x5577; 0x11223344⊕0xaabbccdd = 0xbb99ff99; IPv6 example = 0x31233efc444444cccccccc44444444cc ✓.
@@ -47,3 +48,6 @@ The XOR examples of §2.2.4 (pp. 15–16) are correct: 0x1122⊕0x4455 = 0x5577;
 
 ## Implementation (2026-11-01, rate adaptation)
 `media::rate`: the resolution steps of BW-17 (`STEPS`, `step_of`). The CLI picks, within a video source request, the largest size whose minimum bit rate the target reaches and keeps the bit rate below the size's maximum; the target is the smaller of the request and what the path allows (RT-30). Inference: our sizes are those of the table up to VGA (the camera's size); 160x120 takes the rates of 320x180. Status: tested-offline.
+
+## Implementation (2026-11-01, frame rate by size)
+BW-18: the CLI sends at most 15 fps below 640x360 (the highest of the request's lower rates: 15 or 7.5). Status: tested-offline.

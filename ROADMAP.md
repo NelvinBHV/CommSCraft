@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-01 | M5: at most 15 fps below 640x360 (BW-18, Microsoft Learn); evidence that the Windows client encodes and decodes video in hardware (D-13 confirmed, D-14 supported). |
 | 2026-11-01 | Alert sounds and music on hold (issues #82–#84): new crate `tones` (bounded PCM WAV reader, resampling, level matching, looping, own generated ringtone and notification sound); the CLI rings for incoming calls, plays a rate-limited notification for messages and streams music on hold (sendonly + `a=feature:MoH`, SD-07) from a WAV file of the user's – no third-party sound is bundled until its rights are cleared (research in the issues); fix: the jitter buffer starts over after a pause of the peer instead of dropping its resumed packets; `ATTRIBUTION.md` added (logo SVGs, generated tones, proposals). |
 | 2026-11-01 | M5: picture control (function 31) – SIP INFO `application/media_control+xml` after MS-XMLMC: `picture_fast_update` sends a key frame, `picture_freeze` from a meeting pauses our video until the next fast update (RTCP goes on); without negotiated PLI we ask the peer for a full picture through INFO. Owner decision D-14 (hardware decoding) proposed. |
 | 2026-11-01 | M5: a single bad camera picture (e.g. a truncated USB buffer) no longer ends the video of a call; only 30 failed reads in a row count as the camera being gone. |
