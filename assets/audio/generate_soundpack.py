@@ -48,7 +48,7 @@ class Score:
         self.events.append((b,0,channel,int(pitch),0))
     def chord(self, beat, channel, pitches, duration, velocity, spread=0):
         for k,n in enumerate(pitches):
-            self.add(beat+k*spread,channel,n,duration-k*spread,velocity-max(0,k-1)*3)
+            self.add(beat+k*spread,channel,n,duration-k*spread,velocity-(max(0,k-1)*3 if self.v4 else 0))
     def render(self, length, programs, volumes, pan, drums=False):
         st = settings_new()
         setnum(st,b"synth.sample-rate",RATE)
@@ -169,7 +169,10 @@ def build_hold():
     duration=24*4*60/112
     a=score.render(duration+2.2,{0:4,1:24,2:35,3:11},
              {0:66,1:67,2:81,3:85,9:60},{0:57,1:96,2:64,3:40},True)
-    a=a[:round(duration*RATE)]
+    n=round(duration*RATE)
+    overlap=min(round(.8*RATE),len(a)-n)
+    a[:overlap] += .55*a[n:n+overlap]
+    a=a[:n]
     return master_v5(a,-20,True)
 
 def build_ring():
