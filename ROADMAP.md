@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-01 | Decision D-12: video (M5) through the system's FFmpeg (capture, H.264 encoding/decoding), linked dynamically, no codec shipped; settles the H.264 implementation left open by D-05. |
 | 2026-11-01 | Security audit issue #70 closed: several emergency calls keep the forwarding suspended until the last ends, sign-out restores the rules first; responses matched by Via branch and From tag too; numeric SIP users count as numbers for transfers; 409 retries counted per operation. |
 | 2026-11-01 | Security audit issue #67 closed: emergency routing published only once the emergency call exists, emergency calls allowed beyond the call limit; on-behalf-of only for calls addressed to that person; transfers to numbers or other domains ask first (`/follow`, `/decline`); 409 retries bounded; verbose server bodies quoted. |
 | 2026-11-01 | M4 closed by owner decision (T-04): all functions of its scope implemented and tested-offline; next M5 (video). |
