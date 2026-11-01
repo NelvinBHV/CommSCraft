@@ -3689,3 +3689,185 @@ fn conflict_retries_per_operation() {
         "the delegate change still has its retries"
     );
 }
+
+fn video_local(port: u16, key_byte: u8) -> commscraft_sdp::video::VideoLocal {
+    commscraft_sdp::video::VideoLocal {
+        media: media_local(port, key_byte),
+        ssrc_range: (5000, 5099),
+    }
+}
+
+/// The peer's video line (H.264 UC, NI-TC, range 900–999) with key `key_byte`.
+fn peer_video(key_byte: u8) -> String {
+    let k = commscraft_sdp::Key::new(1, [key_byte; 30]);
+    format!("m=video 7002 RTP/SAVP 122\r\na=x-ssrc-range:900-999\r\na=rtcp-fb:* x-message app send:src,x-pli recv:src,x-pli\r\na=rtcp-rsize\r\na=label:main-video\r\na=crypto:{}\r\na=rtcp:7003\r\na=rtpmap:122 X-H264UC/90000\r\na=fmtp:122 packetization-mode=1;mst-mode=NI-TC\r\n", k.attribute())
+}
+
+/// Function 28, outgoing: the INVITE offers audio and video; the answer's video line becomes
+/// `CallVideo` after `CallAnswered`; re-INVITEs keep the video line with its key and follow
+/// hold; a later final description of the video replaces the candidates but not the key.
+#[test]
+fn outgoing_video_call() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::VideoCall {
+            to: "sip:bob@contoso.com".into(),
+            local: Box::new(media_local(40000, 7)),
+            video: Box::new(video_local(40002, 8)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    let offer = String::from_utf8(call::audio_sdp(&invite).unwrap()).unwrap();
+    assert!(
+        offer.contains("m=video 40002 RTP/SAVP 122") && offer.contains("a=x-ssrc-range:5000-5099")
+    );
+    let answer_sdp = format!("{}{}", peer_sdp(9, "RTP/SAVP"), peer_video(10));
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            &answer_sdp,
+            &[],
+        ),
+        NOW,
+    );
+    let ev = events(&out);
+    assert!(matches!(
+        ev.first(),
+        Some(Event::CallAnswered { call: 1, .. })
+    ));
+    let Some(Event::CallVideo { call: 1, video }) = ev.get(1) else {
+        panic!("{ev:?}")
+    };
+    assert_eq!(video.ssrc_range, (900, 999));
+    assert_eq!(video.remote_rtp.1, 7002);
+    // A new video description (final offer) keeps our key.
+    e.command(
+        Command::SetCallVideo {
+            call: 1,
+            video: Box::new(video_local(40010, 99)),
+        },
+        NOW,
+    );
+    let mut held = media_local(40000, 7);
+    held.direction = commscraft_sdp::Direction::Inactive;
+    let out = e.command(
+        Command::UpdateCall {
+            call: 1,
+            local: Box::new(held),
+        },
+        NOW,
+    );
+    let body = String::from_utf8(find(&out, "INVITE").body.clone()).unwrap();
+    let video_part = &body[body.find("m=video").unwrap()..];
+    assert!(
+        video_part.starts_with("m=video 40010 "),
+        "the newer candidates"
+    );
+    assert!(video_part.contains("a=inactive"), "hold covers video");
+    let our_video_key = commscraft_sdp::Key::new(1, [8; 30]).attribute();
+    assert!(
+        video_part.contains(&format!("a=crypto:{our_video_key}")),
+        "SD-13: same key"
+    );
+}
+
+/// Function 28: an answer without video (port 0) leaves an audio call and a notice.
+#[test]
+fn video_declined_by_peer() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::VideoCall {
+            to: "sip:bob@contoso.com".into(),
+            local: Box::new(media_local(40000, 7)),
+            video: Box::new(video_local(40002, 8)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    let answer_sdp = format!("{}m=video 0 RTP/SAVP 122\r\n", peer_sdp(9, "RTP/SAVP"));
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            &answer_sdp,
+            &[],
+        ),
+        NOW,
+    );
+    let ev = events(&out);
+    assert!(matches!(ev.first(), Some(Event::CallAnswered { .. })));
+    assert!(!ev.iter().any(|e| matches!(e, Event::CallVideo { .. })));
+    assert!(ev
+        .iter()
+        .any(|e| matches!(e, Event::Notice(n) if n.contains("no video"))));
+}
+
+/// Function 28, incoming: a video offer is seen before answering; accepting with video answers
+/// both lines and reports `CallVideo`; the peer's re-INVITE (its final offer) is answered with
+/// video again; accepting without video rejects the video line with port 0.
+#[test]
+fn incoming_video_call() {
+    let (mut e, mut server, _) = signed_in();
+    let offer = format!("{}{}", peer_sdp(9, "RTP/SAVP"), peer_video(10));
+    let first = incoming_invite(&mut server, &offer, false);
+    e.on_message(&first, NOW);
+    assert!(e.incoming_video(1));
+    let out = e.command(
+        Command::AcceptVideoCall {
+            call: 1,
+            local: Box::new(media_local(42000, 3)),
+            video: Box::new(video_local(42002, 4)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let ok = sends(&out).pop().unwrap();
+    let body = String::from_utf8(ok.body.clone()).unwrap();
+    assert!(body.contains("m=audio 42000 ") && body.contains("m=video 42002 RTP/SAVP 122"));
+    assert!(events(&out)
+        .iter()
+        .any(|e| matches!(e, Event::CallVideo { call: 1, .. })));
+    // The peer's re-INVITE (same dialog: our To tag, CSeq 2): answered with video again.
+    let to = ok.single("To").unwrap().unwrap().to_string();
+    let mut re = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    re.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKre");
+    re.push_header("From", first.single("From").unwrap().unwrap());
+    re.push_header("To", &to);
+    re.push_header("Call-ID", first.call_id().unwrap().unwrap());
+    re.push_header("CSeq", "2 INVITE");
+    re.push_header("Contact", "<sip:bob@contoso.com;opaque=user:epid:b;gruu>");
+    re.push_header("Content-Type", "application/sdp");
+    re.body = offer.clone().into_bytes();
+    let out = e.on_message(&server.sign(re), NOW);
+    let ok2 = sends(&out)
+        .into_iter()
+        .find(|m| m.status_code() == Some(200))
+        .expect("200 to the re-INVITE");
+    let body = String::from_utf8(ok2.body.clone()).unwrap();
+    assert!(body.contains("m=video 42002 RTP/SAVP 122"), "{body}");
+    assert!(events(&out)
+        .iter()
+        .any(|e| matches!(e, Event::CallVideo { call: 1, .. })));
+    // Plain accept of a video offer (another engine): video rejected with port 0.
+    let (mut e, mut server, _) = signed_in();
+    e.on_message(&incoming_invite(&mut server, &offer, false), NOW);
+    let out = e.command(
+        Command::AcceptCall {
+            call: 1,
+            local: Box::new(media_local(43000, 5)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let ok = sends(&out).pop().unwrap();
+    let body = String::from_utf8(ok.body.clone()).unwrap();
+    assert!(body.contains("m=video 0 RTP/SAVP 122"), "{body}");
+}

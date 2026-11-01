@@ -217,6 +217,25 @@ pub enum Command {
         local: Box<sdp::Local>,
         policy: sdp::Encryption,
     },
+    /// A call with audio and video (function 28).
+    VideoCall {
+        to: String,
+        local: Box<sdp::Local>,
+        video: Box<sdp::video::VideoLocal>,
+        policy: sdp::Encryption,
+    },
+    /// Accept an incoming call with video (if it offers video).
+    AcceptVideoCall {
+        call: CallId,
+        local: Box<sdp::Local>,
+        video: Box<sdp::video::VideoLocal>,
+        policy: sdp::Encryption,
+    },
+    /// A newer description of our video stream (final offer after ICE).
+    SetCallVideo {
+        call: CallId,
+        video: Box<sdp::video::VideoLocal>,
+    },
     /// A call as delegate on behalf of `boss` (p-session-on-behalf-of, AE-38).
     CallOnBehalf {
         to: String,
@@ -428,6 +447,12 @@ pub enum Event {
     TransferResult {
         call: CallId,
         status: u16,
+    },
+    /// The video stream of a call is negotiated (function 28): the adapter starts the video
+    /// media with these parameters; after a re-INVITE it comes again with the new ones.
+    CallVideo {
+        call: CallId,
+        video: Box<sdp::video::NegotiatedVideo>,
     },
     /// New media parameters after a re-INVITE (final offer, hold).
     CallUpdated {
@@ -1668,6 +1693,7 @@ impl<R: Random> Engine<R> {
                         call::Extras {
                             headers: &headers,
                             part: None,
+                            video: None,
                             emergency: false,
                         },
                         now,
@@ -1679,6 +1705,31 @@ impl<R: Random> Engine<R> {
                 ))),
             },
             Command::SetDelegate { uri, add } => self.set_delegate(&uri, add, now, &mut out),
+            Command::VideoCall {
+                to,
+                local,
+                video,
+                policy,
+            } => {
+                self.start_call_with(
+                    &to,
+                    *local,
+                    policy,
+                    call::Extras {
+                        video: Some(&video),
+                        ..call::Extras::default()
+                    },
+                    now,
+                    &mut out,
+                );
+            }
+            Command::AcceptVideoCall {
+                call,
+                local,
+                video,
+                policy,
+            } => self.accept_call_with_video(call, *local, Some(*video), policy, now, &mut out),
+            Command::SetCallVideo { call, video } => self.set_call_video(call, *video),
             Command::AcceptCall {
                 call,
                 local,

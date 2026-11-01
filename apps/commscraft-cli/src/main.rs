@@ -1587,6 +1587,7 @@ fn interactive(
                     // Calls: signalling is in the engine; the media path (and with it /call and
                     // /answer) follows. An incoming call rings and ends after 60 s with 480.
                     E::CallRinging { call } => println!("* call {call} ringing"),
+                    E::CallVideo { call, .. } => println!("* call {call}: video negotiated"),
                     E::IncomingCall { call, from } => {
                         // PS-02/PS-04/PS-07: number, gateway and anonymous callers.
                         // RE-72 / AE-38: meant for someone else, or a delegate calling for

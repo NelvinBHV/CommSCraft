@@ -154,6 +154,14 @@ pub fn offer_with_video(
     Ok(s)
 }
 
+/// Whether an offer has a video line we could take (H.264 UC with the NI-TC parameters and an
+/// SSRC range, SD-27).
+pub fn offered_video(offer: &[u8]) -> bool {
+    parse(offer)
+        .ok()
+        .is_some_and(|s| video_line(&s).is_some_and(|m| h264uc_pt(m).is_some()))
+}
+
 fn video_line(s: &Session) -> Option<&Media> {
     s.media.iter().find(|m| m.kind == "video" && m.port != 0)
 }
