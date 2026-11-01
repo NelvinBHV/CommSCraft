@@ -907,3 +907,35 @@ fn announcements_from_roster() {
     assert_eq!(r.settings.announcements, Some(true));
     assert_eq!(r.settings.announcements_modifiable, Some(true));
 }
+
+/// CA-12 ([MS-CONFAV] §2.2.2.1.2.3, example §4.1, pp. 52–53): the A/V endpoint's main video
+/// with its media source ID; a participant that only receives video names no source; the
+/// special VSR values are no sources.
+#[test]
+fn video_sources_from_roster() {
+    let focus = "sip:alice@fabrikam.com;gruu;opaque=app:conf:focus:id:5D3747C";
+    let user = |uri: &str, status: &str, msi: &str| {
+        format!("<user entity=\"{uri}\" state=\"full\"><endpoint entity=\"{{679A}}\" msci:session-type=\"audio-video\"><status>connected</status><media id=\"1\"><type>audio</type><label>main-audio</label><status>sendrecv</status><msci:media-source-id>2000000</msci:media-source-id></media><media id=\"2\"><type>video</type><label>main-video</label><status>{status}</status><cis:separator/><cis:separator/><cis:separator/><msci:media-source-id>{msi}</msci:media-source-id><msci:source-name>main-video</msci:source-name></media></endpoint></user>")
+    };
+    let doc = format!(
+        "<conference-info xmlns=\"urn:ietf:params:xml:ns:conference-info\" xmlns:msci=\"{NS_MSCI}\" xmlns:cis=\"urn:ietf:params:xml:ns:conference-info-separator\" entity=\"{focus}\" state=\"full\" version=\"1\"><users>{}{}{}</users></conference-info>",
+        user("sip:bob@fabrikam.com", "sendrecv", "2000256"),
+        user("sip:carol@fabrikam.com", "recvonly", "2000512"),
+        user("sip:dave@fabrikam.com", "sendrecv", "4294967295"),
+    );
+    let mut r = Roster::default();
+    r.apply(&doc, focus).unwrap();
+    let src = |u: &str| {
+        r.participants
+            .iter()
+            .find(|p| p.uri == u)
+            .and_then(|p| p.video_source())
+    };
+    assert_eq!(src("sip:bob@fabrikam.com"), Some(2_000_256));
+    assert_eq!(src("sip:carol@fabrikam.com"), None, "receives only");
+    assert_eq!(
+        src("sip:dave@fabrikam.com"),
+        None,
+        "SOURCE_NONE is no source"
+    );
+}

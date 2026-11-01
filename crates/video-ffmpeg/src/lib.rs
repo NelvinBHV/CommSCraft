@@ -440,6 +440,36 @@ impl Camera {
     }
 }
 
+/// Scales I420 pictures to another size (swscale), e.g. to what a video source request allows.
+pub struct Scaler {
+    ctx: ff::software::scaling::Context,
+    to: (u32, u32),
+}
+
+impl Scaler {
+    pub fn new(from: (u32, u32), to: (u32, u32)) -> Result<Scaler, Error> {
+        check_size(from.0, from.1)?;
+        check_size(to.0, to.1)?;
+        let ctx = ff::software::scaling::Context::get(
+            ff::format::Pixel::YUV420P,
+            from.0,
+            from.1,
+            ff::format::Pixel::YUV420P,
+            to.0,
+            to.1,
+            ff::software::scaling::Flags::BILINEAR,
+        )?;
+        Ok(Scaler { ctx, to })
+    }
+
+    pub fn scale(&mut self, picture: &Picture) -> Result<Picture, Error> {
+        let src = to_frame(picture)?;
+        let mut dst = ff::frame::Video::new(ff::format::Pixel::YUV420P, self.to.0, self.to.1);
+        self.ctx.run(&src, &mut dst)?;
+        from_frame(&dst)
+    }
+}
+
 /// A window showing pictures through FFmpeg's XVideo output device (libavdevice, D-12; under
 /// Wayland through Xwayland). Pictures of the window's size only.
 pub struct Display {

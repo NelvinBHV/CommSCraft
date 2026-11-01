@@ -152,7 +152,7 @@ fn small_idr_round_trip() {
     let pacsi = Pacsi::parse(stap.get(3..3 + len).unwrap()).unwrap();
     assert_eq!(
         (pacsi.donc, pacsi.layout.is_none(), pacsi.start, pacsi.end),
-        (Some(3), true, true, true)
+        (Some(4), true, false, true)
     );
     let got = feed(&mut d, &out, 101, 12000);
     assert!(matches!(
@@ -170,7 +170,8 @@ fn large_slice_fragmented() {
     let au = annex_b(&[&big]);
     let mut p = Packetizer::new(1200, 0, vga_layout()).unwrap();
     let out = p.packetize(&au).unwrap();
-    assert_eq!(nal_type(&out.first().unwrap().data), Some(NAL_PACSI));
+    // PACSI and the prefix NAL unit share a STAP-A; the slice follows in FU-A fragments.
+    assert_eq!(nal_type(&out.first().unwrap().data), Some(NAL_STAP_A));
     assert!(out
         .iter()
         .skip(1)
@@ -293,4 +294,60 @@ fn packetizer_bounds() {
     assert!(p.packetize(&annex_b(&[&[NAL_STAP_A, 0, 1]])).is_err());
     assert!(p.packetize(&[0, 0, 1]).is_err());
     assert!(StreamLayout::full(Vec::new()).is_err());
+}
+
+/// PL-13 ([MSFT-H264UCConfig] V1.1 §7.1, p. 11): a prefix NAL unit (type 14) with PRID, DID = QID
+/// = TID = 0 and N = D = O = 1 goes before the first slice of every frame; the receiver drops it
+/// before the decoder.
+#[test]
+fn prefix_nal_units() {
+    assert_eq!(
+        prefix_nal(&[0x65, 1], 0),
+        vec![0x6e, 0xc0, 0x80, 0x0f, 0x20]
+    );
+    assert_eq!(
+        prefix_nal(&[0x41, 1], 3),
+        vec![0x4e, 0x83, 0x80, 0x0f, 0x20]
+    );
+    assert_eq!(
+        prefix_nal(&[0x01, 1], 0),
+        vec![0x0e, 0x80, 0x80, 0x0f],
+        "nal_ref_idc 0: no body"
+    );
+    let mut p = Packetizer::new(1200, 0, vga_layout()).unwrap();
+    let sps: &[u8] = &[0x67, 0x42, 0xc0, 0x1e];
+    let slice: &[u8] = &[0x65, 0x88, 0x84];
+    let out = p.packetize(&annex_b(&[sps, slice])).unwrap();
+    let stap = &out[0].data;
+    // STAP-A: PACSI, SPS, prefix, slice.
+    let mut types = Vec::new();
+    let mut rest = &stap[1..];
+    while rest.len() >= 2 {
+        let len = usize::from(u16::from_be_bytes([rest[0], rest[1]]));
+        types.push(nal_type(&rest[2..2 + len]).unwrap());
+        rest = &rest[2 + len..];
+    }
+    assert_eq!(types, vec![NAL_PACSI, 7, NAL_PREFIX, 5]);
+    let mut d = Depacketizer::new();
+    let got = feed(&mut d, &out, 1, 0);
+    let [Output::AccessUnit { data, .. }] = got.as_slice() else {
+        panic!("{got:?}")
+    };
+    assert_eq!(
+        nal_types_of(data),
+        vec![7, 5],
+        "no prefix NAL unit for the decoder"
+    );
+    assert!(
+        p.packetize(&annex_b(&[&[0x0e, 0x80, 0x80, 0x0f]])).is_err(),
+        "no prefix in the input"
+    );
+}
+
+fn nal_types_of(au: &[u8]) -> Vec<u8> {
+    split_annex_b(au)
+        .unwrap()
+        .iter()
+        .filter_map(|n| nal_type(n))
+        .collect()
 }

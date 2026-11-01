@@ -15,6 +15,24 @@ pub const H264UC_PT: u8 = 122;
 pub const H264UC_FMTP: &str = "packetization-mode=1;mst-mode=NI-TC";
 /// Size of the SSRC range of a video send stream (SD-64, §3.1.5.31.2, p. 46).
 pub const VIDEO_SSRC_RANGE: u32 = 100;
+/// Our send and receive bandwidth for main video in kbit/s, declared at session level with
+/// `a=x-mediabw` (SD-61, §3.1.5.28, pp. 41–42): the peer keeps its video below our receive
+/// limit (design value: room for 720p).
+pub const MEDIABW_KBPS: u32 = 1500;
+
+/// Puts `a=x-mediabw:main-video` into the session part (before the first media line).
+fn with_mediabw(sdp: String) -> String {
+    match sdp.find("m=") {
+        Some(i) => {
+            let (head, media) = sdp.split_at(i);
+            format!(
+                "{head}a=x-mediabw:main-video send={MEDIABW_KBPS};recv={MEDIABW_KBPS}\r\n{media}"
+            )
+        }
+        None => sdp,
+    }
+}
+
 /// Largest value of an SSRC range (§3.1.5.31.1, p. 45).
 pub const SSRC_RANGE_MAX: u32 = 4_294_967_040;
 
@@ -151,7 +169,7 @@ pub fn offer_with_video(
         v.media.key = None;
     }
     s.push_str(&video_section(&v, proto, H264UC_PT)?);
-    Ok(s)
+    Ok(with_mediabw(s))
 }
 
 /// Whether an offer has a video line we could take (H.264 UC with the NI-TC parameters and an
@@ -268,6 +286,11 @@ pub fn answer_with_video(
             out.push_str(&rejected(m));
         }
     }
+    let out = if taken.is_some() {
+        with_mediabw(out)
+    } else {
+        out
+    };
     Ok((out, negotiated, taken.map(|(_, n)| n)))
 }
 

@@ -1107,6 +1107,13 @@ impl CallMedia {
         }
     }
 
+    /// Video: the stream layout of what we send changed (another size).
+    pub fn set_video_layout(&mut self, layout: commscraft_h264uc::StreamLayout) {
+        if let Some(v) = self.video.as_mut() {
+            let _ = v.set_layout(layout);
+        }
+    }
+
     /// Video: ask the peer for a key frame (PLI).
     pub fn request_key_frame(&mut self, now: u64) {
         if let Some(v) = self.video.as_mut() {

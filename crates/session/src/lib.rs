@@ -201,6 +201,15 @@ pub enum Command {
         /// Language of the entry and exit announcements (Accept-Language, CA-24).
         language: Option<String>,
     },
+    /// Join the conference's audio and video (function 28): audio and video offer to the A/V
+    /// MCU; the video comes back as `CallVideo` of the conference audio call.
+    JoinConferenceVideo {
+        conversation: ConversationId,
+        local: Box<sdp::Local>,
+        video: Box<sdp::video::VideoLocal>,
+        policy: sdp::Encryption,
+        language: Option<String>,
+    },
     /// A presenter command in a conference (CB-33, CB-35, CA-20, CA-22).
     ConferenceControl {
         conversation: ConversationId,
@@ -1664,7 +1673,27 @@ impl<R: Random> Engine<R> {
                 conversation,
                 *local,
                 policy,
-                language.as_deref(),
+                group::ConfMedia {
+                    language: language.as_deref(),
+                    video: None,
+                },
+                now,
+                &mut out,
+            ),
+            Command::JoinConferenceVideo {
+                conversation,
+                local,
+                video,
+                policy,
+                language,
+            } => self.join_conference_audio(
+                conversation,
+                *local,
+                policy,
+                group::ConfMedia {
+                    language: language.as_deref(),
+                    video: Some(&video),
+                },
                 now,
                 &mut out,
             ),

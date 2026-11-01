@@ -10,7 +10,7 @@
 use std::net::IpAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender, SyncSender};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use commscraft_call_media::{self as cm, CallMedia};
@@ -33,6 +33,8 @@ pub enum ToVideo {
         controlling: bool,
     },
     Hold(bool),
+    /// In a meeting: the media source ID of the video to watch (CA-12, CA-13).
+    Source(u32),
     Stop,
 }
 
@@ -65,19 +67,101 @@ fn ssrc_range() -> (u32, u32) {
     (start, start + sdp::video::VIDEO_SSRC_RANGE - 1)
 }
 
-fn layout() -> Option<uc::StreamLayout> {
+/// What we encode: size, frame rate, bit rate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Target {
+    pub width: u32,
+    pub height: u32,
+    pub fps: u32,
+    pub bitrate: u32,
+}
+
+const START: Target = Target {
+    width: WIDTH,
+    height: HEIGHT,
+    fps: FPS,
+    bitrate: BITRATE,
+};
+
+/// The sizes we can send (4:3 and 16:9, from the camera's VGA by scaling), largest first.
+const SIZES: [(u32, u32, u8); 8] = [
+    (640, 480, feedback::ASPECT_4_3),
+    (640, 360, feedback::ASPECT_16_9),
+    (480, 360, feedback::ASPECT_4_3),
+    (424, 240, feedback::ASPECT_16_9),
+    (320, 240, feedback::ASPECT_4_3),
+    (320, 180, feedback::ASPECT_16_9),
+    (256, 192, feedback::ASPECT_4_3),
+    (160, 120, feedback::ASPECT_4_3),
+];
+
+/// RT-25: what a video source request allows – the largest of our sizes within its maximum
+/// width, height and pixel count and one of its aspect ratios, the highest of its frame rates
+/// up to ours, a bit rate within its range. `None` if no entry asks for H.264 UC.
+pub fn fit(entries: &[feedback::VsrEntry]) -> Option<Target> {
+    let e = entries
+        .iter()
+        .find(|e| e.payload_type == sdp::video::H264UC_PT)?;
+    let aspects = if e.aspect_ratios == 0 {
+        feedback::ASPECT_4_3 | feedback::ASPECT_16_9
+    } else {
+        e.aspect_ratios
+    };
+    let max_pixels = if e.max_pixels == 0 {
+        u32::MAX
+    } else {
+        e.max_pixels
+    };
+    let (width, height, _) = SIZES.iter().copied().find(|(w, h, a)| {
+        aspects & a != 0
+            && *w <= u32::from(e.max_width.max(1))
+            && *h <= u32::from(e.max_height.max(1))
+            && w * h <= max_pixels
+    })?;
+    let fps = [
+        (feedback::FPS_30, 30),
+        (feedback::FPS_15, 15),
+        (feedback::FPS_7_5, 8),
+    ]
+    .iter()
+    .find(|(bit, _)| e.frame_rates & bit != 0)
+    .map_or(15, |(_, f)| *f)
+    .min(FPS);
+    // The histogram's highest requested level, at least the minimum, at most ours.
+    let top = e
+        .bitrate_histogram
+        .iter()
+        .rposition(|n| *n > 0)
+        .map_or(0, |i| i as u32 + 1);
+    let bitrate = e
+        .min_bitrate
+        .saturating_add(e.bitrate_per_level.saturating_mul(top))
+        .clamp(32_000, BITRATE);
+    Some(Target {
+        width,
+        height,
+        fps,
+        bitrate,
+    })
+}
+
+fn layout_for(t: Target) -> Option<uc::StreamLayout> {
     uc::StreamLayout::full(vec![uc::LayerDescription {
-        coded_width: WIDTH as u16,
-        coded_height: HEIGHT as u16,
-        display_width: WIDTH as u16,
-        display_height: HEIGHT as u16,
-        bitrate: BITRATE,
-        fps_idx: uc::fps_index(FPS * 10)?,
+        coded_width: t.width as u16,
+        coded_height: t.height as u16,
+        display_width: t.width as u16,
+        display_height: t.height as u16,
+        bitrate: t.bitrate,
+        fps_idx: uc::fps_index(if t.fps == 8 { 75 } else { t.fps * 10 })?,
         layer_type: 0,
         prid: 0,
         constrained_baseline: true,
     }])
     .ok()
+}
+
+fn layout() -> Option<uc::StreamLayout> {
+    layout_for(START)
 }
 
 /// What we ask the peer for (VSR entry, RT-25): H.264 UC up to VGA at 15 or 30 fps.
@@ -91,6 +175,8 @@ fn wanted() -> feedback::VsrEntry {
         max_height: HEIGHT as u16,
         min_bitrate: 100_000,
         bitrate_per_level: 100_000,
+        // One receiver (us) wanting 500 … 600 kbit/s: bucket 5 of min + i × level (RT-25).
+        bitrate_histogram: [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
         frame_rates: feedback::FPS_15 | feedback::FPS_30,
         must_instances: 1,
         max_pixels: WIDTH * HEIGHT,
@@ -173,17 +259,38 @@ fn run(
     }
     let stop = Arc::new(AtomicBool::new(false));
     let idr = Arc::new(AtomicBool::new(true));
+    // RT-25: what the peer's video source request allows (VGA at 30 fps until one arrives).
+    let target = Arc::new(Mutex::new(START));
     let (au_tx, au_rx) = mpsc::sync_channel::<(Vec<u8>, u32)>(4);
     let (dec_tx, dec_rx) = mpsc::sync_channel::<Vec<u8>>(8);
-    spawn_camera(camera, au_tx, stop.clone(), idr.clone(), events.clone(), id);
+    spawn_camera(
+        camera,
+        au_tx,
+        stop.clone(),
+        idr.clone(),
+        target.clone(),
+        events.clone(),
+        id,
+    );
     spawn_window(dec_rx, stop.clone(), events.clone(), id);
     let mut final_sent = false;
     let mut requested = false;
+    // The source to ask for: any (1:1) until a meeting names one (CA-13).
+    let mut source = feedback::SOURCE_ANY;
+    let mut watched_by_peer: Option<bool> = None;
     loop {
         let now = now_ms();
         match rx.try_recv() {
             Ok(ToVideo::Stop) | Err(mpsc::TryRecvError::Disconnected) => break,
             Ok(ToVideo::Hold(h)) => media.set_hold(h),
+            Ok(ToVideo::Source(msi)) => {
+                if msi != source {
+                    source = msi;
+                    if requested {
+                        media.request_video(source, wanted(), now);
+                    }
+                }
+            }
             // A re-INVITE answer with the same stream: nothing to rebuild here.
             Ok(ToVideo::Start { .. }) | Err(mpsc::TryRecvError::Empty) => {}
         }
@@ -196,7 +303,7 @@ fn run(
                     if !requested {
                         // RT-25: ask the peer for its video (a 1:1 call: any source).
                         requested = true;
-                        media.request_video(feedback::SOURCE_ANY, wanted(), now);
+                        media.request_video(source, wanted(), now);
                     }
                     if controlling && !final_sent {
                         final_sent = true;
@@ -216,13 +323,40 @@ fn run(
                 cm::Event::Video(VideoEvent::KeyFrameRequested) => {
                     idr.store(true, Ordering::Relaxed)
                 }
-                cm::Event::Video(VideoEvent::SourceRequested { msi, .. })
-                    if msi == feedback::SOURCE_NONE =>
-                {
-                    let _ = events.send(FromVideo::Notice(
-                        id,
-                        "the other side wants no video now".into(),
-                    ));
+                cm::Event::Video(VideoEvent::SourceRequested { msi, entries }) => {
+                    // RT-25: send what the request allows (size, frame rate, bit rate).
+                    if msi != feedback::SOURCE_NONE {
+                        if let Some(t) = fit(&entries) {
+                            let changed = target.lock().map(|mut cur| {
+                                let changed = *cur != t;
+                                *cur = t;
+                                changed
+                            });
+                            if changed.unwrap_or(false) {
+                                if let Some(l) = layout_for(t) {
+                                    media.set_video_layout(l);
+                                }
+                                idr.store(true, Ordering::Relaxed);
+                                let _ = events.send(FromVideo::Notice(
+                                    id,
+                                    format!("sending {}x{} at {} fps", t.width, t.height, t.fps),
+                                ));
+                            }
+                        }
+                    }
+                    // A VSR is repeated (RT-26): tell the user only when it changes.
+                    let watched = msi != feedback::SOURCE_NONE;
+                    if watched_by_peer != Some(watched) {
+                        watched_by_peer = Some(watched);
+                        let _ = events.send(FromVideo::Notice(
+                            id,
+                            if watched {
+                                "your video is watched".into()
+                            } else {
+                                "nobody watches your video now".into()
+                            },
+                        ));
+                    }
                 }
                 cm::Event::Video(VideoEvent::Bye) => {
                     let _ = events.send(FromVideo::Notice(
@@ -248,20 +382,14 @@ fn spawn_camera(
     out: SyncSender<(Vec<u8>, u32)>,
     stop: Arc<AtomicBool>,
     idr: Arc<AtomicBool>,
+    target: Arc<Mutex<Target>>,
     events: Sender<FromVideo>,
     id: u32,
 ) {
     std::thread::spawn(move || {
         let setup = vf::init().and_then(|()| {
             let cam = vf::Camera::open(&device, WIDTH, HEIGHT, FPS)?;
-            let enc = vf::Encoder::new(vf::EncoderConfig {
-                width: WIDTH,
-                height: HEIGHT,
-                fps: FPS,
-                bitrate: BITRATE,
-                idr_interval: 300,
-                hardware: true,
-            })?;
+            let enc = encoder_for(START)?;
             Ok((cam, enc))
         });
         let (mut cam, mut enc) = match setup {
@@ -281,7 +409,28 @@ fn spawn_camera(
                 }
             ),
         ));
+        let mut current = START;
+        let mut scaler: Option<vf::Scaler> = None;
+        let mut next_due = 0u64;
         while !stop.load(Ordering::Relaxed) {
+            let wanted = target.lock().map(|t| *t).unwrap_or(START);
+            if wanted != current {
+                match encoder_for(wanted) {
+                    Ok(e) => {
+                        enc = e;
+                        scaler = if (wanted.width, wanted.height) == (WIDTH, HEIGHT) {
+                            None
+                        } else {
+                            vf::Scaler::new((WIDTH, HEIGHT), (wanted.width, wanted.height)).ok()
+                        };
+                        current = wanted;
+                        idr.store(true, Ordering::Relaxed);
+                    }
+                    Err(e) => {
+                        let _ = events.send(FromVideo::Notice(id, format!("encoder: {e:?}")));
+                    }
+                }
+            }
             let picture = match cam.next_picture() {
                 Ok(p) => p,
                 Err(e) => {
@@ -289,8 +438,21 @@ fn spawn_camera(
                     return;
                 }
             };
+            // The requested frame rate: drop camera pictures in between.
+            let now = now_ms();
+            if now < next_due {
+                continue;
+            }
+            next_due = now + 1000 / u64::from(current.fps.max(1)) - 5;
+            let picture = match scaler.as_mut() {
+                Some(s) => match s.scale(&picture) {
+                    Ok(p) => p,
+                    Err(_) => continue,
+                },
+                None => picture,
+            };
             let key = idr.swap(false, Ordering::Relaxed);
-            let ts = (now_ms() as u32).wrapping_mul(90);
+            let ts = (now as u32).wrapping_mul(90);
             match enc.encode(&picture, key) {
                 Ok(units) => {
                     for au in units {
@@ -305,6 +467,18 @@ fn spawn_camera(
             }
         }
     });
+}
+
+/// An encoder for a target (GPU first, D-13).
+fn encoder_for(t: Target) -> Result<vf::Encoder, vf::Error> {
+    vf::Encoder::new(vf::EncoderConfig {
+        width: t.width,
+        height: t.height,
+        fps: t.fps.max(5),
+        bitrate: t.bitrate,
+        idr_interval: 300,
+        hardware: true,
+    })
 }
 
 /// Decoder → window (XVideo, D-12); the window opens with the first picture's size.

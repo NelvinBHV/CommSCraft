@@ -423,6 +423,11 @@ fn video_offer_and_spec_line() {
         assert!(v.contains(line), "{line}");
     }
     assert!(!v.contains("x-caps"), "SD-60: not for H.264 UC");
+    // SD-61: our video bandwidth at session level, before the first media line.
+    let bw = offer
+        .find("a=x-mediabw:main-video send=1500;recv=1500\r\n")
+        .unwrap();
+    assert!(bw < audio_at);
     // The example's video line as an answer to an offer with key tag 2.
     let answer = format!("{SPEC_OFFER}{SPEC_VIDEO}");
     let ours = Key::new(2, [9; 30]);
