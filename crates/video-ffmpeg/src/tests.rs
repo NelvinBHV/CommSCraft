@@ -295,3 +295,19 @@ fn encode_load() {
         enc.encode(&pictures[n % 30], false).unwrap();
     }
 }
+
+/// The window (only with COMMSCRAFT_DISPLAY=1; not in CI): a moving gradient for one second;
+/// a picture of another size is refused.
+#[test]
+fn display_shows_pictures() {
+    if std::env::var("COMMSCRAFT_DISPLAY").ok().as_deref() != Some("1") {
+        return;
+    }
+    init().unwrap();
+    let mut d = Display::open("CommSCraft test\u{1b}[2J", 320, 240).unwrap();
+    for n in 0..30 {
+        d.show(&gradient(320, 240, n)).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(33));
+    }
+    assert!(d.show(&gradient(160, 120, 0)).is_err());
+}

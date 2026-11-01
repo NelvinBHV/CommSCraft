@@ -29,6 +29,8 @@ pub enum Error {
     NoDecoder,
     /// No usable GPU encoder (VA-API device, surface pool or upload failed).
     NoHardware(String),
+    /// No window for the picture (no XVideo, no X server).
+    NoDisplay(String),
     /// The camera or its V4L2 input format is not available.
     NoCamera(String),
     /// A size or rate outside the supported range.
@@ -435,6 +437,74 @@ impl Camera {
             scaler.run(&raw, &mut yuv)?;
             return from_frame(&yuv);
         }
+    }
+}
+
+/// A window showing pictures through FFmpeg's XVideo output device (libavdevice, D-12; under
+/// Wayland through Xwayland). Pictures of the window's size only.
+pub struct Display {
+    output: ff::format::context::Output,
+    width: u32,
+    height: u32,
+    pts: i64,
+}
+
+impl Display {
+    /// Opens a window of `width × height` with `title` (control characters removed, at most 64
+    /// characters). The device writes no file: the output path is `/dev/null`, because the
+    /// binding opens the path even for devices.
+    pub fn open(title: &str, width: u32, height: u32) -> Result<Display, Error> {
+        check_size(width, height)?;
+        let mut output = ff::format::output_as("/dev/null", "xv")
+            .map_err(|e| Error::NoDisplay(e.to_string()))?;
+        let codec = ff::encoder::find(ff::codec::Id::RAWVIDEO).ok_or(Error::NoEncoder)?;
+        let mut ctx = ff::codec::context::Context::new_with_codec(codec)
+            .encoder()
+            .video()?;
+        ctx.set_width(width);
+        ctx.set_height(height);
+        ctx.set_format(ff::format::Pixel::YUV420P);
+        ctx.set_time_base((1, 30));
+        {
+            let mut stream = output.add_stream(codec)?;
+            stream.set_time_base((1, 30));
+            stream.set_parameters(&ctx);
+        }
+        let title: String = title.chars().filter(|c| !c.is_control()).take(64).collect();
+        let mut opts = ff::Dictionary::new();
+        opts.set("window_title", &title);
+        output
+            .write_header_with(opts)
+            .map_err(|e| Error::NoDisplay(e.to_string()))?;
+        Ok(Display {
+            output,
+            width,
+            height,
+            pts: 0,
+        })
+    }
+
+    /// Shows one picture (it must have the window's size).
+    pub fn show(&mut self, picture: &Picture) -> Result<(), Error> {
+        if picture.width != self.width
+            || picture.height != self.height
+            || picture.data.len() != Picture::i420_len(self.width, self.height)
+        {
+            return Err(Error::BadParameter("picture size differs from the window"));
+        }
+        let mut packet = ff::Packet::copy(&picture.data);
+        packet.set_stream(0);
+        packet.set_pts(Some(self.pts));
+        packet.set_dts(Some(self.pts));
+        self.pts += 1;
+        packet.write(&mut self.output)?;
+        Ok(())
+    }
+}
+
+impl Drop for Display {
+    fn drop(&mut self) {
+        let _ = self.output.write_trailer();
     }
 }
 

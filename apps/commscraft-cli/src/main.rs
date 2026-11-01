@@ -28,6 +28,7 @@ macro_rules! eprint {
 
 mod calls;
 mod term;
+mod video_call;
 
 use std::io::{BufRead, IsTerminal, Write};
 use std::path::PathBuf;
@@ -54,6 +55,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
           /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)
           /follow N | /decline N (a transfer to a number or another domain)
+          /videocall sip:URI (audio and video, camera COMMSCRAFT_CAMERA or /dev/video0)  /answervideo [N]
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
@@ -1450,6 +1452,15 @@ fn interactive(
     let local_ip = conn.local_addr().map_err(|e| e.to_string())?.ip();
     let (media_tx, media_rx) = mpsc::channel::<calls::FromMedia>();
     let mut handles: BTreeMap<u32, calls::MediaHandle> = BTreeMap::new();
+    // Function 28: video streams (own ids), the audio media id each belongs to, the video id of
+    // each call, and the descriptions waiting until both streams are ready.
+    let (video_tx, video_rx) = mpsc::channel::<video_call::FromVideo>();
+    let mut video_handles: BTreeMap<u32, video_call::VideoHandle> = BTreeMap::new();
+    let mut video_for_audio: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut video_of_call: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut ready_audio: BTreeMap<u32, Box<commscraft_sdp::Local>> = BTreeMap::new();
+    let mut ready_video: BTreeMap<u32, Box<commscraft_sdp::video::VideoLocal>> = BTreeMap::new();
+    let camera = std::env::var("COMMSCRAFT_CAMERA").unwrap_or_else(|_| "/dev/video0".into());
     let mut next_media: u32 = 1;
     let mut pending_out: BTreeMap<u32, String> = BTreeMap::new();
     // AE-38: media ids of calls placed as delegate, with the boss.
@@ -1587,7 +1598,16 @@ fn interactive(
                     // Calls: signalling is in the engine; the media path (and with it /call and
                     // /answer) follows. An incoming call rings and ends after 60 s with 480.
                     E::CallRinging { call } => println!("* call {call} ringing"),
-                    E::CallVideo { call, .. } => println!("* call {call}: video negotiated"),
+                    E::CallVideo { call, video } => {
+                        println!("* call {call}: video negotiated");
+                        if let Some(h) = video_of_call.get(&call).and_then(|v| video_handles.get(v))
+                        {
+                            let _ = h.tx.send(video_call::ToVideo::Start {
+                                video,
+                                controlling: outgoing.contains(&call),
+                            });
+                        }
+                    }
                     E::IncomingCall { call, from } => {
                         // PS-02/PS-04/PS-07: number, gateway and anonymous callers.
                         // RE-72 / AE-38: meant for someone else, or a delegate calling for
@@ -1732,6 +1752,11 @@ fn interactive(
                     }
                     E::CallEnded { call, status } => {
                         println!("* call {call} ended ({status})");
+                        if let Some(v) = video_of_call.remove(&call) {
+                            if let Some(h) = video_handles.remove(&v) {
+                                let _ = h.tx.send(video_call::ToVideo::Stop);
+                            }
+                        }
                         if let Some(m) = media_of_call.remove(&call) {
                             if ended_media.len() >= 16 {
                                 ended_media.pop_first();
@@ -2057,9 +2082,73 @@ fn interactive(
                 outputs.extend(engine.command(C::SetLocation(Box::new(loc)), t));
             }
         }
+        // Video streams: ready, selected, notices (function 28).
+        while let Ok(v) = video_rx.try_recv() {
+            match v {
+                video_call::FromVideo::Ready(vid, local) => {
+                    ready_video.insert(vid, local);
+                }
+                video_call::FromVideo::Selected(vid, local) => {
+                    if let Some((&call, _)) = video_of_call.iter().find(|(_, &v)| v == vid) {
+                        outputs
+                            .extend(engine.command(C::SetCallVideo { call, video: local }, now()));
+                    }
+                }
+                video_call::FromVideo::Notice(vid, n) => println!("* [video {vid}] {n}"),
+                video_call::FromVideo::Failed(vid, why) => {
+                    println!("* [video {vid}] video ended: {why}");
+                    video_handles.remove(&vid);
+                }
+            }
+        }
+        // A video call goes out (or is answered) once both of its streams are ready.
+        let both: Vec<(u32, u32)> = video_for_audio
+            .iter()
+            .filter(|(a, v)| ready_audio.contains_key(a) && ready_video.contains_key(v))
+            .map(|(a, v)| (*a, *v))
+            .collect();
+        for (aid, vid) in both {
+            video_for_audio.remove(&aid);
+            let (Some(local), Some(video)) = (ready_audio.remove(&aid), ready_video.remove(&vid))
+            else {
+                continue;
+            };
+            let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
+            if let Some(to) = pending_out.remove(&aid) {
+                let call = engine.next_call_id();
+                media_of_call.insert(call, aid);
+                video_of_call.insert(call, vid);
+                outgoing.insert(call);
+                outputs.extend(engine.command(
+                    C::VideoCall {
+                        to,
+                        local,
+                        video,
+                        policy,
+                    },
+                    now(),
+                ));
+            } else if let Some(call) = pending_in.remove(&aid) {
+                media_of_call.insert(call, aid);
+                video_of_call.insert(call, vid);
+                outputs.extend(engine.command(
+                    C::AcceptVideoCall {
+                        call,
+                        local,
+                        video,
+                        policy,
+                    },
+                    now(),
+                ));
+            }
+        }
         while let Ok(m) = media_rx.try_recv() {
             let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
             match m {
+                calls::FromMedia::Ready(id, local) if video_for_audio.contains_key(&id) => {
+                    // A video call waits for its video stream too.
+                    ready_audio.insert(id, local);
+                }
                 calls::FromMedia::Ready(id, local) => {
                     if let Some(to) = pending_out.remove(&id) {
                         let call = engine.next_call_id();
@@ -2185,7 +2274,7 @@ fn interactive(
                     }
                 },
                 "/chat" => Some(C::StartConversation { to: arg }),
-                "/call" | "/callback" | "/callfor" => {
+                "/call" | "/callback" | "/callfor" | "/videocall" => {
                     // AE-38: /callfor sip:BOSS TARGET calls as the boss's delegate.
                     let (boss, arg) = if cmd == "/callfor" {
                         let mut w = arg.splitn(2, ' ');
@@ -2242,6 +2331,22 @@ fn interactive(
                     );
                     handles.insert(id, h);
                     pending_out.insert(id, arg.clone());
+                    if cmd == "/videocall" && emergency.is_none() {
+                        let vid = next_media;
+                        next_media = next_media.wrapping_add(1).max(1);
+                        let relay = engine.media_relay().and_then(calls::relay_from);
+                        video_handles.insert(
+                            vid,
+                            video_call::spawn(
+                                vid,
+                                local_ip,
+                                relay,
+                                camera.clone(),
+                                video_tx.clone(),
+                            ),
+                        );
+                        video_for_audio.insert(id, vid);
+                    }
                     if let Some(b) = boss {
                         pending_behalf.insert(id, b);
                     }
@@ -2252,7 +2357,7 @@ fn interactive(
                     println!("* preparing the call (gathering media addresses) …");
                     None
                 }
-                "/answer" => match arg.parse::<u32>().ok().or(current_call) {
+                "/answer" | "/answervideo" => match arg.parse::<u32>().ok().or(current_call) {
                     Some(call) => {
                         let relay = engine.media_relay().and_then(calls::relay_from);
                         // The callee is the bandwidth-managing endpoint ([MS-ICE2BWM] §3.1.4).
@@ -2274,6 +2379,26 @@ fn interactive(
                         );
                         handles.insert(id, h);
                         pending_in.insert(id, call);
+                        if cmd == "/answervideo" {
+                            if engine.incoming_video(call) {
+                                let vid = next_media;
+                                next_media = next_media.wrapping_add(1).max(1);
+                                let relay = engine.media_relay().and_then(calls::relay_from);
+                                video_handles.insert(
+                                    vid,
+                                    video_call::spawn(
+                                        vid,
+                                        local_ip,
+                                        relay,
+                                        camera.clone(),
+                                        video_tx.clone(),
+                                    ),
+                                );
+                                video_for_audio.insert(id, vid);
+                            } else {
+                                println!("* call {call} offers no video – answering with audio");
+                            }
+                        }
                         None
                     }
                     None => {
@@ -2606,6 +2731,10 @@ fn interactive(
                         let hold = cmd == "/hold";
                         if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
                             let _ = h.tx.send(calls::ToMedia::Hold(hold));
+                        }
+                        if let Some(h) = video_of_call.get(&call).and_then(|v| video_handles.get(v))
+                        {
+                            let _ = h.tx.send(video_call::ToVideo::Hold(hold));
                         }
                         Some(C::Hold { call, hold })
                     }

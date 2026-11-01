@@ -7,9 +7,9 @@ Recommendations. It follows the conventions of the [storytold Crafting Apps](htt
 application, a ranked work list, and nothing copied from Microsoft products.
 
 > **Stage: M4 closed, M5 (video) next, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
-> address book search, audio calls, meetings and telephony (transfer, forwarding, park, delegates,
+> address book search, audio and video calls, meetings and telephony (transfer, forwarding, park, delegates,
 > emergency calls) exist as building blocks that pass offline tests (37 crates,
-> 388 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is marked as
+> 391 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is marked as
 > verified against a real server**; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
