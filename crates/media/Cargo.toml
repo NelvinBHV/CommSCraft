@@ -10,6 +10,7 @@ publish.workspace = true
 [dependencies]
 commscraft-g711 = { path = "../g711" }
 commscraft-g722 = { path = "../g722" }
+commscraft-h264uc = { path = "../h264uc" }
 commscraft-rtp = { path = "../rtp" }
 commscraft-sdp = { path = "../sdp" }
 commscraft-srtp = { path = "../srtp" }
