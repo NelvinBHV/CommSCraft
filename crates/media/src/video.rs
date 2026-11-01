@@ -24,6 +24,9 @@ use crate::{Error, PAIR_FAST_COUNT, PAIR_FAST_MS, RTCP_INTERVAL_MS};
 const LIMIT_REPEATS: u8 = 5;
 /// Packet loss notifications at most this often (§2.2.11.2).
 const LOSS_NOTE_MS: u64 = 500;
+/// Picture update requests through signalling at most this often (design value, like the
+/// PLI schedule of RT-26 not more than about once a second).
+const PICTURE_UPDATE_MS: u64 = 1000;
 /// A new target is reported to the encoder when it moved by this percentage (design value).
 const TARGET_STEP_PERCENT: u64 = 10;
 
@@ -43,6 +46,9 @@ pub enum VideoEvent {
     Bye,
     /// What the path to the peer carries now (RT-30): send at most this bit rate.
     SendRate(u32),
+    /// A picture was lost but the peer takes no PLI: ask for a full picture through signalling
+    /// instead (SIP INFO `picture_fast_update`, function 31, PL-50).
+    PictureUpdateNeeded,
 }
 
 /// The video stream of one call.
@@ -77,6 +83,8 @@ pub struct Video {
     /// The lost packet to report and when the last notification went out.
     lost_seq: Option<u16>,
     last_loss_note: Option<u64>,
+    /// When we last asked for a picture through signalling (no PLI negotiated).
+    last_picture_update: Option<u64>,
     expected_seq: Option<u16>,
     pub sent_units: u64,
     pub received_units: u64,
@@ -147,6 +155,7 @@ impl Video {
             fast_left: 0,
             lost_seq: None,
             last_loss_note: None,
+            last_picture_update: None,
             expected_seq: None,
             sent_units: 0,
             received_units: 0,
@@ -268,6 +277,14 @@ impl Video {
                 uc::Output::Lost { .. } => {
                     self.lost_units += 1;
                     self.request_key_frame(now_ms);
+                    if !self.peer_accepts.recv_pli
+                        && self
+                            .last_picture_update
+                            .is_none_or(|t| now_ms.saturating_sub(t) >= PICTURE_UPDATE_MS)
+                    {
+                        self.last_picture_update = Some(now_ms);
+                        events.push(VideoEvent::PictureUpdateNeeded);
+                    }
                 }
             }
         }

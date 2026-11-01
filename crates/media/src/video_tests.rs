@@ -335,3 +335,58 @@ fn packet_loss_notification() {
     let second = rtp::parse(&more[1]).unwrap().header.sequence;
     assert!(later.contains(&rtp::Extension::PacketLoss { sequence: second }));
 }
+
+/// Function 31 (PL-50): a lost picture from a peer that takes no PLI asks the application for a
+/// signalled picture update – at most once a second; with PLI negotiated it does not.
+#[test]
+fn picture_update_without_pli() {
+    let neg = |range, pli| sdp::video::NegotiatedVideo {
+        payload_type: 122,
+        remote_rtp: ("192.0.2.1".parse().unwrap(), 1),
+        remote_rtcp: ("192.0.2.1".parse().unwrap(), 2),
+        remote_key: None,
+        remote_ice: None,
+        direction: sdp::Direction::SendRecv,
+        ssrc_range: range,
+        feedback: sdp::video::Feedback {
+            recv_pli: pli,
+            ..all_feedback()
+        },
+    };
+    for pli in [false, true] {
+        let mut a = Video::new(
+            &neg((200, 299), true),
+            None,
+            (100, 199),
+            layout(),
+            [9; 10],
+            "a",
+        )
+        .unwrap();
+        let mut b = Video::new(
+            &neg((100, 199), pli),
+            None,
+            (200, 299),
+            layout(),
+            [7; 10],
+            "b",
+        )
+        .unwrap();
+        let mut asked = 0;
+        for (k, at) in [(0u32, 0u64), (1, 300), (2, 1300)] {
+            let packets = a.on_access_unit(&au(k == 0, 3000), k * 3000);
+            assert!(packets.len() >= 3);
+            for (i, p) in packets.iter().enumerate() {
+                if i != 1 {
+                    asked += b
+                        .on_rtp(p, 0, at)
+                        .iter()
+                        .filter(|e| **e == VideoEvent::PictureUpdateNeeded)
+                        .count();
+                }
+            }
+        }
+        // Three lost pictures at 0, 300 and 1300 ms: two requests without PLI, none with it.
+        assert_eq!(asked, if pli { 0 } else { 2 }, "pli negotiated: {pli}");
+    }
+}

@@ -1600,6 +1600,21 @@ fn interactive(
                     // Calls: signalling is in the engine; the media path (and with it /call and
                     // /answer) follows. An incoming call rings and ends after 60 s with 480.
                     E::CallRinging { call } => println!("* call {call} ringing"),
+                    E::CallVideoControl { call, control } => {
+                        // PL-50: a freeze comes only from an MCU (XMLMC §1.6) – ignored in 1:1
+                        // calls; a fast update always means a key frame (and resuming).
+                        let in_meeting = conf_video
+                            .values()
+                            .any(|(v, _)| video_of_call.get(&call) == Some(v));
+                        let freeze =
+                            control == commscraft_session::media_control::VideoControl::Freeze;
+                        if let Some(h) = video_of_call.get(&call).and_then(|v| video_handles.get(v))
+                        {
+                            if !freeze || in_meeting {
+                                let _ = h.tx.send(video_call::ToVideo::Control(control));
+                            }
+                        }
+                    }
                     E::CallVideo { call, video } => {
                         println!("* call {call}: video negotiated");
                         if let Some(h) = video_of_call.get(&call).and_then(|v| video_handles.get(v))
@@ -2118,6 +2133,11 @@ fn interactive(
                     }
                 }
                 video_call::FromVideo::Notice(vid, n) => println!("* [video {vid}] {n}"),
+                video_call::FromVideo::PictureUpdate(vid) => {
+                    if let Some((&call, _)) = video_of_call.iter().find(|(_, &v)| v == vid) {
+                        outputs.extend(engine.command(C::RequestPictureUpdate { call }, now()));
+                    }
+                }
                 video_call::FromVideo::Failed(vid, why) => {
                     println!("* [video {vid}] video ended: {why}");
                     video_handles.remove(&vid);

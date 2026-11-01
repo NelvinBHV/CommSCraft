@@ -1,6 +1,6 @@
 # Decisions
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-11-01 · **Change:** minor (D-13: VA-API with one bounded unsafe module)
+> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-11-01 · **Change:** minor (D-14 proposed: hardware decoding)
 
 Decisions that belong to the project owner. Agents propose, the owner decides; a decision is
 recorded here with date and reason before work depends on it.
@@ -9,7 +9,7 @@ recorded here with date and reason before work depends on it.
 
 | ID | Question | Proposal | Why it matters |
 |---|---|---|---|
-| – | – | – | – |
+| D-14 | Hardware video decoding (VA-API) – extend the one unsafe module of D-13 (`video-ffmpeg::hw`) from encoding to decoding: a VA-API device for the decoder, decoded surfaces downloaded to NV12 through FFmpeg's hardware context, the same SAFETY rules, software decoding as fallback | Allow it under the D-13 rules, or keep decoding on the CPU | D-13 allows `unsafe` only for encoding; decoding at VGA costs little CPU, at 720p and with several streams in meetings it matters |
 
 ## Taken
 
