@@ -16,7 +16,16 @@ use commscraft_sdp as sdp;
 use commscraft_srtp as srtp;
 use rtp::feedback::{self, Pli, Retransmit, Vsr, VsrEntry};
 
-use crate::{Error, RTCP_INTERVAL_MS};
+use crate::rate::{Estimator, SendRate};
+use crate::{Error, PAIR_FAST_COUNT, PAIR_FAST_MS, RTCP_INTERVAL_MS};
+
+/// The receiver-side limit is repeated in this many reports after a change (§3.2: "at least
+/// five times").
+const LIMIT_REPEATS: u8 = 5;
+/// Packet loss notifications at most this often (§2.2.11.2).
+const LOSS_NOTE_MS: u64 = 500;
+/// A new target is reported to the encoder when it moved by this percentage (design value).
+const TARGET_STEP_PERCENT: u64 = 10;
 
 /// Largest RTP payload of video (design: room for SRTP, TURN and IP headers in 1500 bytes).
 pub const VIDEO_MTU: usize = 1200;
@@ -32,6 +41,8 @@ pub enum VideoEvent {
     SourceRequested { msi: u32, entries: Vec<VsrEntry> },
     /// The peer ended its stream (RTCP BYE).
     Bye,
+    /// What the path to the peer carries now (RT-30): send at most this bit rate.
+    SendRate(u32),
 }
 
 /// The video stream of one call.
@@ -53,6 +64,20 @@ pub struct Video {
     next_request_id: u16,
     /// Whether the peer accepts our feedback (its `recv:` capabilities, SD-63).
     peer_accepts: sdp::video::Feedback,
+    /// Our view of the incoming stream (RT-28, RT-29) and the peer's view of ours (RT-30).
+    estimator: Estimator,
+    send_rate: SendRate,
+    reported_target: Option<u32>,
+    /// Peer info until the peer reported a positive estimate for us (§3.2).
+    peer_estimated: bool,
+    limit_left: u8,
+    /// Packet pair fast rate (§3.2.2): started once by a report about our stream.
+    fast_started: bool,
+    fast_left: u32,
+    /// The lost packet to report and when the last notification went out.
+    lost_seq: Option<u16>,
+    last_loss_note: Option<u64>,
+    expected_seq: Option<u16>,
     pub sent_units: u64,
     pub received_units: u64,
     pub lost_units: u64,
@@ -113,6 +138,16 @@ impl Video {
             pli: None,
             next_request_id: 1,
             peer_accepts: negotiated.feedback,
+            estimator: Estimator::new(sdp::video::MEDIABW_KBPS.saturating_mul(1000)),
+            send_rate: SendRate::default(),
+            reported_target: None,
+            peer_estimated: false,
+            limit_left: LIMIT_REPEATS,
+            fast_started: false,
+            fast_left: 0,
+            lost_seq: None,
+            last_loss_note: None,
+            expected_seq: None,
             sent_units: 0,
             received_units: 0,
             lost_units: 0,
@@ -125,6 +160,23 @@ impl Video {
         self.packetizer
             .set_layout(layout)
             .map_err(|_| Error::Video("stream layout"))
+    }
+
+    /// The most we can receive (bit/s): the start value of our estimate and our receiver-side
+    /// limit (default: our `x-mediabw` receive value).
+    pub fn set_receive_capacity(&mut self, bps: u32) {
+        self.estimator = Estimator::new(bps);
+        self.limit_left = LIMIT_REPEATS;
+    }
+
+    /// Our current estimate of the incoming path (bit/s).
+    pub fn receive_estimate(&self) -> u32 {
+        self.estimator.estimate()
+    }
+
+    /// The bit rate the peer's reports allow us to send, if it reported anything.
+    pub fn send_target(&self, now_ms: u64) -> Option<u32> {
+        self.send_rate.target(now_ms)
     }
 
     /// Our SSRC (the start of our range).
@@ -185,6 +237,21 @@ impl Video {
         }
         if !self.receiver.on_packet(&h, arrival, true) {
             return Vec::new();
+        }
+        self.estimator
+            .on_packet(packet.len(), h.sequence, h.timestamp, 90_000, now_ms);
+        // A gap in the sequence numbers: report the first missing packet (§2.2.11.2).
+        if let Some(e) = self.expected_seq {
+            let ahead = h.sequence.wrapping_sub(e);
+            if ahead > 0 && ahead < 0x8000 {
+                self.lost_seq = Some(e);
+            }
+        }
+        if self
+            .expected_seq
+            .is_none_or(|e| h.sequence.wrapping_sub(e) < 0x8000)
+        {
+            self.expected_seq = Some(h.sequence.wrapping_add(1));
         }
         let mut events = Vec::new();
         for out in self.depacketizer.push(uc::RtpIn {
@@ -283,8 +350,22 @@ impl Video {
                 }
             }
         }
-        if now_ms >= self.next_rtcp {
-            self.next_rtcp = now_ms + RTCP_INTERVAL_MS;
+        // One measurement interval per second; a change of the congestion state or a lost packet
+        // is reported at once, not with the next regular report (§4.11; ≤ every 500 ms).
+        self.estimator.update(now_ms);
+        let loss_due = self.lost_seq.is_some()
+            && self
+                .last_loss_note
+                .is_none_or(|t| now_ms.saturating_sub(t) >= LOSS_NOTE_MS);
+        let early = loss_due || self.estimator.congestion_changed();
+        if now_ms >= self.next_rtcp || early {
+            self.next_rtcp = now_ms
+                + if self.fast_left > 0 {
+                    self.fast_left -= 1;
+                    PAIR_FAST_MS
+                } else {
+                    RTCP_INTERVAL_MS
+                };
             let (lsr, dlsr) = self.last_sr.map_or((0, 0), |(mid, at)| {
                 (
                     mid,
@@ -302,12 +383,38 @@ impl Video {
                 packets: self.sender.packets,
                 octets: self.sender.octets,
             };
+            // RT-28: our estimate of the peer's stream in every report – also before it sends,
+            // so the peer (e.g. an A/V MCU) knows what it may send.
+            let mut extensions = vec![self.estimator.extension(self.media_ssrc())];
+            if self.limit_left > 0 {
+                self.limit_left -= 1;
+                extensions.push(rtp::Extension::ReceiverLimit(self.estimator.capacity()));
+            }
+            if !self.peer_estimated {
+                extensions.push(rtp::Extension::PeerInfo {
+                    ssrc: self.sender.ssrc,
+                    inbound: self.estimator.capacity(),
+                    outbound: self.estimator.capacity(),
+                    no_cache: true,
+                });
+            }
+            if let Some(c) = self.estimator.take_congestion(ntp) {
+                extensions.push(c);
+            }
+            if loss_due {
+                if let Some(seq) = self.lost_seq.take() {
+                    extensions.push(rtp::Extension::PacketLoss { sequence: seq });
+                    self.last_loss_note = Some(now_ms);
+                }
+            }
+            // Packet pair (§3.2.6): a probe right before the report.
+            plain.push(rtp::probe(self.sender.ssrc, info));
             plain.push(
                 rtp::Report {
                     ssrc: self.sender.ssrc,
                     info: Some(info),
                     reports: &reports,
-                    extensions: &[],
+                    extensions: &extensions,
                     cname: &self.cname,
                     quality: None,
                 }
@@ -329,12 +436,26 @@ impl Video {
         let Ok(items) = rtp::parse_rtcp(&plain) else {
             return Vec::new();
         };
-        let in_range = |s: u32| s >= self.remote_range.0 && s <= self.remote_range.1;
+        let (lo, hi) = self.remote_range;
+        let in_range = |s: u32| s >= lo && s <= hi;
         let mut events = Vec::new();
         for i in items {
             match i {
-                rtp::Rtcp::SenderReport { ssrc, info, .. } if in_range(ssrc) => {
+                rtp::Rtcp::SenderReport {
+                    ssrc,
+                    info,
+                    reports,
+                    extensions,
+                } if in_range(ssrc) => {
                     self.last_sr = Some(((info.ntp >> 16) as u32, now_ms));
+                    self.on_peer_report(&reports, &extensions, now_ms, &mut events);
+                }
+                rtp::Rtcp::ReceiverReport {
+                    ssrc,
+                    reports,
+                    extensions,
+                } if in_range(ssrc) => {
+                    self.on_peer_report(&reports, &extensions, now_ms, &mut events);
                 }
                 rtp::Rtcp::Bye { sources } if sources.iter().any(|s| in_range(*s)) => {
                     events.push(VideoEvent::Bye)
@@ -357,6 +478,42 @@ impl Video {
             }
         }
         events
+    }
+
+    /// The peer's report: a block about our stream starts the packet pair fast rate once
+    /// (§3.2.5); its extensions feed our send rate (RT-30); a packet loss notification asks for
+    /// a recovery (§3.2.5: e.g. an I-frame).
+    fn on_peer_report(
+        &mut self,
+        reports: &[rtp::ReportBlock],
+        extensions: &[rtp::Extension],
+        now_ms: u64,
+        events: &mut Vec<VideoEvent>,
+    ) {
+        if !self.fast_started && reports.iter().any(|r| r.ssrc == self.sender.ssrc) {
+            self.fast_started = true;
+            self.fast_left = PAIR_FAST_COUNT;
+            self.next_rtcp = self.next_rtcp.min(now_ms + PAIR_FAST_MS);
+        }
+        for e in extensions {
+            if self.send_rate.on_extension(e, self.sender.ssrc, now_ms) {
+                // A positive estimate ends peer info and the fast rate (§3.2, §3.2.5).
+                self.peer_estimated = true;
+                self.fast_left = 0;
+            }
+            if matches!(e, rtp::Extension::PacketLoss { .. }) {
+                events.push(VideoEvent::KeyFrameRequested);
+            }
+        }
+        if let Some(t) = self.send_rate.target(now_ms) {
+            let moved = self.reported_target.is_none_or(|r| {
+                u64::from(t.abs_diff(r)) * 100 >= u64::from(r) * TARGET_STEP_PERCENT
+            });
+            if moved {
+                self.reported_target = Some(t);
+                events.push(VideoEvent::SendRate(t));
+            }
+        }
     }
 
     /// RTCP BYE when the call ends.

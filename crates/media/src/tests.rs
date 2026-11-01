@@ -222,9 +222,14 @@ fn rtcp_profile() {
     let (blocks, ext) = report_of(&due[1]);
     assert_eq!(blocks[0].ssrc, a.sender.ssrc);
     assert_eq!((blocks[0].lsr, blocks[0].dlsr), (0x2345_6789, 32768));
-    assert!(
-        matches!(ext[..], [rtp::Extension::AudioHealer { ssrc, total: 6, .. }] if ssrc == a.sender.ssrc)
-    );
+    // RT-27 healer metrics and RT-28 our estimate of A's stream (capacity, low confidence).
+    assert!(matches!(
+        ext[..],
+        [
+            rtp::Extension::AudioHealer { ssrc, total: 6, .. },
+            rtp::Extension::Bandwidth { ssrc: about, bps: AUDIO_CAPACITY_BPS, confidence: Some(2) },
+        ] if ssrc == a.sender.ssrc && about == a.sender.ssrc
+    ));
     assert!(rtp::parse_rtcp(&due[1])
         .unwrap()
         .contains(&rtp::Rtcp::MediaQuality {
@@ -232,10 +237,31 @@ fn rtcp_profile() {
             quality: rtp::Quality::default()
         }));
 
-    // B's report about A's stream: A switches to the packet pair fast rate (250 ms × 40).
+    // B's report carries a positive estimate for A: no fast rate for A at all (§3.2.5).
     for p in &due {
         a.on_rtcp(p, 1600);
     }
+    assert_eq!(a.rate, Rate::Normal);
+    // A peer that reports no estimate: A switches to the packet pair fast rate (250 ms × 40).
+    let (mut a, _) = plain_pair();
+    let only_block = rtp::Report {
+        ssrc: 77,
+        info: None,
+        reports: &[rtp::ReportBlock {
+            ssrc: a.sender.ssrc,
+            fraction_lost: 0,
+            cumulative_lost: 0,
+            highest_sequence: 0,
+            jitter: 0,
+            lsr: 0,
+            dlsr: 0,
+        }],
+        extensions: &[],
+        cname: "x",
+        quality: None,
+    }
+    .build();
+    a.on_rtcp(&only_block, 1600);
     assert_eq!(a.rate, Rate::PairFast);
     let mut t = 5000;
     let mut fast = 0;
@@ -247,7 +273,7 @@ fn rtcp_profile() {
     }
     assert_eq!(fast, PAIR_FAST_COUNT);
     // Another report does not restart it.
-    a.on_rtcp(&due[1], t);
+    a.on_rtcp(&only_block, t);
     assert_eq!(a.rate, Rate::Normal);
 
     // A positive estimate ends the fast rate early.

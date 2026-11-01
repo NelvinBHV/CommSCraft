@@ -15,7 +15,7 @@ use std::time::Duration;
 
 use commscraft_call_media::{self as cm, CallMedia};
 use commscraft_h264uc as uc;
-use commscraft_media::VideoEvent;
+use commscraft_media::{rate, VideoEvent};
 use commscraft_rtp::feedback;
 use commscraft_sdp as sdp;
 use commscraft_video_ffmpeg as vf;
@@ -25,6 +25,8 @@ pub const WIDTH: u32 = 640;
 pub const HEIGHT: u32 = 480;
 pub const FPS: u32 = 30;
 pub const BITRATE: u32 = 600_000;
+/// The most we send: the maximum of VGA in the resolution table (BW-17).
+pub const BITRATE_MAX: u32 = 800_000;
 
 pub enum ToVideo {
     /// The negotiated video stream: start ICE, camera, decoder.
@@ -83,22 +85,26 @@ const START: Target = Target {
     bitrate: BITRATE,
 };
 
-/// The sizes we can send (4:3 and 16:9, from the camera's VGA by scaling), largest first.
-const SIZES: [(u32, u32, u8); 8] = [
+/// The sizes we can send (4:3 and 16:9, from the camera's VGA by scaling), largest first; all
+/// are steps of the resolution table (BW-17, `rate::STEPS`).
+const SIZES: [(u32, u32, u8); 9] = [
     (640, 480, feedback::ASPECT_4_3),
     (640, 360, feedback::ASPECT_16_9),
-    (480, 360, feedback::ASPECT_4_3),
+    (480, 270, feedback::ASPECT_16_9),
+    (424, 320, feedback::ASPECT_4_3),
     (424, 240, feedback::ASPECT_16_9),
     (320, 240, feedback::ASPECT_4_3),
     (320, 180, feedback::ASPECT_16_9),
-    (256, 192, feedback::ASPECT_4_3),
+    (212, 160, feedback::ASPECT_4_3),
     (160, 120, feedback::ASPECT_4_3),
 ];
 
-/// RT-25: what a video source request allows – the largest of our sizes within its maximum
-/// width, height and pixel count and one of its aspect ratios, the highest of its frame rates
-/// up to ours, a bit rate within its range. `None` if no entry asks for H.264 UC.
-pub fn fit(entries: &[feedback::VsrEntry]) -> Option<Target> {
+/// RT-25 and RT-30: what a video source request and the path allow – the highest of the
+/// request's frame rates up to ours, a bit rate within its range and at most `path_bps`, and
+/// the largest of our sizes within the request's width, height, pixel count and aspect ratios
+/// whose minimum bit rate (BW-17) that bit rate reaches (else the smallest allowed one); the
+/// bit rate then stays below the size's maximum. `None` if no entry asks for H.264 UC.
+pub fn fit(entries: &[feedback::VsrEntry], path_bps: Option<u32>) -> Option<Target> {
     let e = entries
         .iter()
         .find(|e| e.payload_type == sdp::video::H264UC_PT)?;
@@ -112,12 +118,17 @@ pub fn fit(entries: &[feedback::VsrEntry]) -> Option<Target> {
     } else {
         e.max_pixels
     };
-    let (width, height, _) = SIZES.iter().copied().find(|(w, h, a)| {
-        aspects & a != 0
-            && *w <= u32::from(e.max_width.max(1))
-            && *h <= u32::from(e.max_height.max(1))
-            && w * h <= max_pixels
-    })?;
+    let allowed: Vec<(u32, u32)> = SIZES
+        .iter()
+        .copied()
+        .filter(|(w, h, a)| {
+            aspects & a != 0
+                && *w <= u32::from(e.max_width.max(1))
+                && *h <= u32::from(e.max_height.max(1))
+                && w * h <= max_pixels
+        })
+        .map(|(w, h, _)| (w, h))
+        .collect();
     let fps = [
         (feedback::FPS_30, 30),
         (feedback::FPS_15, 15),
@@ -127,22 +138,69 @@ pub fn fit(entries: &[feedback::VsrEntry]) -> Option<Target> {
     .find(|(bit, _)| e.frame_rates & bit != 0)
     .map_or(15, |(_, f)| *f)
     .min(FPS);
-    // The histogram's highest requested level, at least the minimum, at most ours.
+    // The lower edge of the histogram's highest requested level (element i counts
+    // [min + (i − 1) × level, min + i × level], §2.2.12.2, p. 32): inside the range on any
+    // reading of its upper end, which a mixer may treat as excluded (inference, O-RT-2).
     let top = e
         .bitrate_histogram
         .iter()
         .rposition(|n| *n > 0)
-        .map_or(0, |i| i as u32 + 1);
+        .map_or(0, |i| i as u32);
     let bitrate = e
         .min_bitrate
         .saturating_add(e.bitrate_per_level.saturating_mul(top))
-        .clamp(32_000, BITRATE);
+        .min(path_bps.unwrap_or(u32::MAX))
+        .clamp(32_000, BITRATE_MAX);
+    let step = |(w, h): (u32, u32)| rate::step_of(w, h);
+    let (width, height) = allowed
+        .iter()
+        .copied()
+        .find(|s| step(*s).is_some_and(|st| st.min_bps <= bitrate))
+        .or_else(|| allowed.last().copied())?;
+    let bitrate = step((width, height)).map_or(bitrate, |st| bitrate.min(st.max_bps));
     Some(Target {
         width,
         height,
         fps,
         bitrate,
     })
+}
+
+/// A new target from the request and the path: the encoder follows (camera thread), the stream
+/// layout changes, the next picture is an IDR; the user hears of other sizes and rates.
+fn retarget(
+    media: &mut CallMedia,
+    target: &Mutex<Target>,
+    idr: &AtomicBool,
+    events: &Sender<FromVideo>,
+    id: u32,
+    request: &[feedback::VsrEntry],
+    path_bps: Option<u32>,
+) {
+    let Some(t) = fit(request, path_bps) else {
+        return;
+    };
+    let changed = target.lock().map(|mut cur| {
+        let changed = *cur != t;
+        *cur = t;
+        changed
+    });
+    if changed.unwrap_or(false) {
+        if let Some(l) = layout_for(t) {
+            media.set_video_layout(l);
+        }
+        idr.store(true, Ordering::Relaxed);
+        let _ = events.send(FromVideo::Notice(
+            id,
+            format!(
+                "sending {}x{} at {} fps, {} kbit/s",
+                t.width,
+                t.height,
+                t.fps,
+                t.bitrate / 1000
+            ),
+        ));
+    }
 }
 
 fn layout_for(t: Target) -> Option<uc::StreamLayout> {
@@ -175,8 +233,9 @@ fn wanted() -> feedback::VsrEntry {
         max_height: HEIGHT as u16,
         min_bitrate: 100_000,
         bitrate_per_level: 100_000,
-        // One receiver (us) wanting 500 … 600 kbit/s: bucket 5 of min + i × level (RT-25).
-        bitrate_histogram: [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+        // One receiver (us) wanting 500 … 600 kbit/s: element i = 5 (index 4) counts
+        // [min + (i − 1) × level, min + i × level] ([MS-RTP] §2.2.12.2, p. 32; RT-25).
+        bitrate_histogram: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
         frame_rates: feedback::FPS_15 | feedback::FPS_30,
         must_instances: 1,
         max_pixels: WIDTH * HEIGHT,
@@ -278,6 +337,9 @@ fn run(
     // The source to ask for: any (1:1) until a meeting names one (CA-13).
     let mut source = feedback::SOURCE_ANY;
     let mut watched_by_peer: Option<bool> = None;
+    // The peer's last request (none yet: our own limits) and what the path carries (RT-30).
+    let mut request: Vec<feedback::VsrEntry> = vec![wanted()];
+    let mut path_bps: Option<u32> = None;
     loop {
         let now = now_ms();
         match rx.try_recv() {
@@ -323,26 +385,16 @@ fn run(
                 cm::Event::Video(VideoEvent::KeyFrameRequested) => {
                     idr.store(true, Ordering::Relaxed)
                 }
+                cm::Event::Video(VideoEvent::SendRate(bps)) => {
+                    // RT-30: the path changed – the same request at another bit rate.
+                    path_bps = Some(bps);
+                    retarget(&mut media, &target, &idr, &events, id, &request, path_bps);
+                }
                 cm::Event::Video(VideoEvent::SourceRequested { msi, entries }) => {
                     // RT-25: send what the request allows (size, frame rate, bit rate).
-                    if msi != feedback::SOURCE_NONE {
-                        if let Some(t) = fit(&entries) {
-                            let changed = target.lock().map(|mut cur| {
-                                let changed = *cur != t;
-                                *cur = t;
-                                changed
-                            });
-                            if changed.unwrap_or(false) {
-                                if let Some(l) = layout_for(t) {
-                                    media.set_video_layout(l);
-                                }
-                                idr.store(true, Ordering::Relaxed);
-                                let _ = events.send(FromVideo::Notice(
-                                    id,
-                                    format!("sending {}x{} at {} fps", t.width, t.height, t.fps),
-                                ));
-                            }
-                        }
+                    if msi != feedback::SOURCE_NONE && !entries.is_empty() {
+                        request = entries;
+                        retarget(&mut media, &target, &idr, &events, id, &request, path_bps);
                     }
                     // A VSR is repeated (RT-26): tell the user only when it changes.
                     let watched = msi != feedback::SOURCE_NONE;
@@ -389,10 +441,12 @@ fn spawn_camera(
     std::thread::spawn(move || {
         let setup = vf::init().and_then(|()| {
             let cam = vf::Camera::open(&device, WIDTH, HEIGHT, FPS)?;
-            let enc = encoder_for(START)?;
-            Ok((cam, enc))
+            // What is asked for already (a request may come before the camera is open).
+            let first = target.lock().map(|t| *t).unwrap_or(START);
+            let enc = encoder_for(first, hardware_allowed())?;
+            Ok((cam, enc, first))
         });
-        let (mut cam, mut enc) = match setup {
+        let (mut cam, enc, first) = match setup {
             Ok(x) => x,
             Err(e) => {
                 let _ = events.send(FromVideo::Notice(id, format!("no camera picture: {e:?}")));
@@ -409,28 +463,47 @@ fn spawn_camera(
                 }
             ),
         ));
-        let mut current = START;
-        let mut scaler: Option<vf::Scaler> = None;
+        let mut hardware = enc.backend() == vf::Backend::Vaapi;
+        let mut enc = Some(enc);
+        let mut current = first;
+        let mut rebuilt_at = 0u64;
+        let mut scaler = scaler_for(first);
         let mut next_due = 0u64;
         while !stop.load(Ordering::Relaxed) {
             let wanted = target.lock().map(|t| *t).unwrap_or(START);
-            if wanted != current {
-                match encoder_for(wanted) {
+            if needs_rebuild(current, wanted, now_ms().saturating_sub(rebuilt_at)) {
+                // The old encoder (and its GPU session) goes before the new one is opened.
+                drop(enc.take());
+                let built = encoder_for(wanted, hardware).or_else(|e| {
+                    if hardware {
+                        hardware = false;
+                        let _ = events.send(FromVideo::Notice(
+                            id,
+                            format!("GPU encoder failed ({e:?}), encoding on the CPU"),
+                        ));
+                        encoder_for(wanted, false)
+                    } else {
+                        Err(e)
+                    }
+                });
+                match built {
                     Ok(e) => {
-                        enc = e;
-                        scaler = if (wanted.width, wanted.height) == (WIDTH, HEIGHT) {
-                            None
-                        } else {
-                            vf::Scaler::new((WIDTH, HEIGHT), (wanted.width, wanted.height)).ok()
-                        };
+                        enc = Some(e);
+                        scaler = scaler_for(wanted);
                         current = wanted;
+                        rebuilt_at = now_ms();
                         idr.store(true, Ordering::Relaxed);
                     }
                     Err(e) => {
-                        let _ = events.send(FromVideo::Notice(id, format!("encoder: {e:?}")));
+                        let _ =
+                            events.send(FromVideo::Notice(id, format!("encoder stopped: {e:?}")));
+                        return;
                     }
                 }
             }
+            let Some(enc) = enc.as_mut() else {
+                return;
+            };
             let picture = match cam.next_picture() {
                 Ok(p) => p,
                 Err(e) => {
@@ -470,15 +543,51 @@ fn spawn_camera(
 }
 
 /// An encoder for a target (GPU first, D-13).
-fn encoder_for(t: Target) -> Result<vf::Encoder, vf::Error> {
+fn encoder_for(t: Target, hardware: bool) -> Result<vf::Encoder, vf::Error> {
     vf::Encoder::new(vf::EncoderConfig {
         width: t.width,
         height: t.height,
         fps: t.fps.max(5),
         bitrate: t.bitrate,
         idr_interval: 300,
-        hardware: true,
+        hardware,
     })
+}
+
+/// Camera VGA to the target size (none when it is VGA).
+fn scaler_for(t: Target) -> Option<vf::Scaler> {
+    if (t.width, t.height) == (WIDTH, HEIGHT) {
+        None
+    } else {
+        vf::Scaler::new((WIDTH, HEIGHT), (t.width, t.height)).ok()
+    }
+}
+
+/// GPU encoding unless `COMMSCRAFT_VIDEO_HW=0` asks for the CPU (D-13).
+fn hardware_allowed() -> bool {
+    std::env::var("COMMSCRAFT_VIDEO_HW").map_or(true, |v| v.trim() != "0")
+}
+
+/// Shortest time between two encoder rebuilds for a higher bit rate alone, and the changes that
+/// are worth one (design values: a rebuild costs an IDR picture).
+const REBUILD_MS: u64 = 2000;
+const RAISE_PERCENT: u32 = 20;
+const LOWER_PERCENT: u32 = 5;
+
+/// Whether the encoder must be built again: another size or frame rate at once; a lower bit
+/// rate at once from 5 % on – we never send more than was asked for (a mixer may drop a stream
+/// above the request, inference); a higher one only from 20 % on and
+/// when the last rebuild is old enough.
+fn needs_rebuild(current: Target, wanted: Target, since_ms: u64) -> bool {
+    if (current.width, current.height, current.fps) != (wanted.width, wanted.height, wanted.fps) {
+        return true;
+    }
+    let diff = u64::from(current.bitrate.abs_diff(wanted.bitrate)) * 100;
+    let base = u64::from(current.bitrate);
+    if wanted.bitrate < current.bitrate {
+        return diff >= base * u64::from(LOWER_PERCENT);
+    }
+    diff >= base * u64::from(RAISE_PERCENT) && since_ms >= REBUILD_MS
 }
 
 /// Decoder → window (XVideo, D-12); the window opens with the first picture's size.
@@ -563,5 +672,100 @@ mod tests {
         assert_eq!((w.payload_type, w.ucconfig_mode), (122, 1));
         assert!(w.flags & feedback::FLAG_CONSTRAINED_BASELINE != 0);
         assert!(w.frame_rates & feedback::FPS_30 != 0);
+    }
+
+    fn size(t: Option<Target>) -> Option<(u32, u32, u32, u32)> {
+        t.map(|t| (t.width, t.height, t.fps, t.bitrate))
+    }
+
+    /// RT-25 + RT-30 + BW-17: our own request without a path limit gives VGA at 500 kbit/s;
+    /// a narrower path picks the largest size whose minimum bit rate it reaches.
+    #[test]
+    fn fit_follows_the_path() {
+        let ours = [wanted()];
+        // Our histogram asks for 500 … 600 kbit/s: the lower edge.
+        assert_eq!(size(fit(&ours, None)), Some((640, 480, 30, 500_000)));
+        assert_eq!(
+            size(fit(&ours, Some(2_000_000))),
+            Some((640, 480, 30, 500_000))
+        );
+        // An A/V MCU passing on that wish: 500 kbit/s, 10 kbit/s per level, first level.
+        let passed_on = feedback::VsrEntry {
+            min_bitrate: 500_000,
+            bitrate_per_level: 10_000,
+            bitrate_histogram: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ..wanted()
+        };
+        assert_eq!(size(fit(&[passed_on], None)), Some((640, 480, 30, 500_000)));
+        assert_eq!(
+            size(fit(&ours, Some(300_000))),
+            Some((640, 480, 30, 300_000))
+        );
+        assert_eq!(
+            size(fit(&ours, Some(250_000))),
+            Some((480, 270, 30, 250_000))
+        );
+        assert_eq!(
+            size(fit(&ours, Some(120_000))),
+            Some((424, 240, 30, 120_000))
+        );
+        assert_eq!(size(fit(&ours, Some(40_000))), Some((320, 180, 30, 40_000)));
+        assert_eq!(
+            size(fit(&ours, Some(1))),
+            Some((320, 180, 30, 32_000)),
+            "floor"
+        );
+        // An A/V MCU's request: at most 61440 pixels, 15 fps, 40 kbit/s and nothing above.
+        let mcu = feedback::VsrEntry {
+            payload_type: 122,
+            ucconfig_mode: 1,
+            aspect_ratios: feedback::ASPECT_16_9,
+            max_width: 640,
+            max_height: 480,
+            min_bitrate: 40_000,
+            frame_rates: feedback::FPS_15,
+            max_pixels: 61_440,
+            ..Default::default()
+        };
+        assert_eq!(size(fit(&[mcu], None)), Some((320, 180, 15, 40_000)));
+        // A wide request with a high histogram level stays below the size's maximum.
+        let wide = feedback::VsrEntry {
+            min_bitrate: 2_000_000,
+            ..wanted()
+        };
+        assert_eq!(size(fit(&[wide], None)), Some((640, 480, 30, 800_000)));
+        assert_eq!(size(fit(&[], None)), None);
+    }
+
+    /// A new size or frame rate rebuilds at once, a lower bit rate from 5 % on; a higher one
+    /// only from 20 % on and not within 2 s of the last rebuild.
+    #[test]
+    fn rebuild_hysteresis() {
+        let t = |width, height, fps, bitrate| Target {
+            width,
+            height,
+            fps,
+            bitrate,
+        };
+        let cur = t(640, 480, 30, 600_000);
+        assert!(needs_rebuild(cur, t(424, 240, 30, 600_000), 0));
+        assert!(needs_rebuild(cur, t(640, 480, 15, 600_000), 0));
+        assert!(!needs_rebuild(cur, cur, 10_000));
+        // Lower: at once from 5 %.
+        assert!(
+            !needs_rebuild(cur, t(640, 480, 30, 580_000), 0),
+            "under 5 %"
+        );
+        assert!(needs_rebuild(cur, t(640, 480, 30, 510_000), 0));
+        // Higher: from 20 % and not within 2 s.
+        assert!(
+            !needs_rebuild(cur, t(640, 480, 30, 700_000), 10_000),
+            "under 20 %"
+        );
+        assert!(
+            !needs_rebuild(cur, t(640, 480, 30, 720_000), 1_000),
+            "too soon"
+        );
+        assert!(needs_rebuild(cur, t(640, 480, 30, 720_000), 2_000));
     }
 }

@@ -205,3 +205,133 @@ fn feedback_loop() {
     assert!(events.contains(&VideoEvent::KeyFrameRequested));
     assert!(events.iter().any(|e| matches!(e, VideoEvent::SourceRequested { msi, entries } if *msi == rtp::feedback::SOURCE_ANY && entries.len() == 1)));
 }
+
+/// A pair without SRTP, so the tests can read the RTCP packets themselves.
+fn plain_pair() -> (Video, Video) {
+    let neg = |range| sdp::video::NegotiatedVideo {
+        payload_type: 122,
+        remote_rtp: ("192.0.2.1".parse().unwrap(), 1),
+        remote_rtcp: ("192.0.2.1".parse().unwrap(), 2),
+        remote_key: None,
+        remote_ice: None,
+        direction: sdp::Direction::SendRecv,
+        ssrc_range: range,
+        feedback: all_feedback(),
+    };
+    let a = Video::new(&neg((200, 299)), None, (100, 199), layout(), [9; 10], "a").unwrap();
+    let b = Video::new(&neg((100, 199)), None, (200, 299), layout(), [7; 10], "b").unwrap();
+    (a, b)
+}
+
+fn extensions_of(packets: &[Vec<u8>]) -> Vec<rtp::Extension> {
+    packets
+        .iter()
+        .flat_map(|p| rtp::parse_rtcp(p).unwrap())
+        .flat_map(|i| match i {
+            rtp::Rtcp::SenderReport { extensions, .. }
+            | rtp::Rtcp::ReceiverReport { extensions, .. } => extensions,
+            _ => Vec::new(),
+        })
+        .collect()
+}
+
+/// RT-28 … RT-30: every report carries our estimate of the peer's stream – also before it
+/// sends (about the start of its range) –, the receiver-side limit five times and peer info
+/// until the peer reported an estimate for us; a probe goes right before the report; the
+/// peer's estimate becomes our send rate.
+#[test]
+fn rate_feedback_in_reports() {
+    let (mut a, mut b) = plain_pair();
+    let first = a.rtcp_due(0, 0);
+    assert_eq!(first.len(), 2, "packet pair: probe + report");
+    assert_eq!(
+        rtp::parse_rtcp(&first[0]).unwrap().len(),
+        1,
+        "probe: a simple SR"
+    );
+    let ext = extensions_of(&first);
+    assert!(ext.contains(&rtp::Extension::Bandwidth {
+        ssrc: 200,
+        bps: 1_500_000,
+        confidence: Some(2)
+    }));
+    assert!(ext.contains(&rtp::Extension::ReceiverLimit(1_500_000)));
+    assert!(ext.iter().any(|e| matches!(
+        e,
+        rtp::Extension::PeerInfo {
+            ssrc: 100,
+            no_cache: true,
+            ..
+        }
+    )));
+    // B learns what it may send to A.
+    let mut events = Vec::new();
+    for p in &first {
+        events.extend(b.on_rtcp(p, 0));
+    }
+    assert_eq!(events, vec![VideoEvent::SendRate(1_500_000)]);
+    assert_eq!(b.send_target(0), Some(1_500_000));
+    // The same rate again is no new event.
+    assert!(b.on_rtcp(&first[1], 10).is_empty());
+    // B got an estimate for itself: no peer info from B; A still sends it.
+    let ext_b = extensions_of(&b.rtcp_due(0, 0));
+    assert!(!ext_b
+        .iter()
+        .any(|e| matches!(e, rtp::Extension::PeerInfo { .. })));
+    // The limit five times in all.
+    let mut limits = 1;
+    for k in 1..8u64 {
+        let ext = extensions_of(&a.rtcp_due(k * 5000, 0));
+        limits += ext
+            .iter()
+            .filter(|e| matches!(e, rtp::Extension::ReceiverLimit(_)))
+            .count();
+        assert!(ext
+            .iter()
+            .any(|e| matches!(e, rtp::Extension::Bandwidth { ssrc: 200, .. })));
+    }
+    assert_eq!(limits, 5);
+    // Our capacity can be set (start value and limit).
+    a.set_receive_capacity(600_000);
+    assert_eq!(a.receive_estimate(), 600_000);
+}
+
+/// §2.2.11.2: a gap in the sequence numbers is reported at once (not with the next regular
+/// report) and at most every 500 ms; the sender answers it with a key frame request.
+#[test]
+fn packet_loss_notification() {
+    let (mut a, mut b) = plain_pair();
+    let _ = b.rtcp_due(0, 0);
+    let mut sent = Vec::new();
+    for k in 0..3u32 {
+        sent.extend(a.on_access_unit(&au(k == 0, 100), k * 3000));
+    }
+    assert_eq!(sent.len(), 3);
+    let lost = rtp::parse(&sent[1]).unwrap().header.sequence;
+    b.on_rtp(&sent[0], 0, 100);
+    b.on_rtp(&sent[2], 0, 120);
+    let early = b.rtcp_due(130, 0);
+    let ext = extensions_of(&early);
+    assert!(
+        ext.contains(&rtp::Extension::PacketLoss { sequence: lost }),
+        "{ext:?}"
+    );
+    let mut events = Vec::new();
+    for p in &early {
+        events.extend(a.on_rtcp(p, 130));
+    }
+    assert!(events.contains(&VideoEvent::KeyFrameRequested));
+    // Another gap 200 ms later waits until 500 ms have passed.
+    let more: Vec<Vec<u8>> = (3..6u32)
+        .flat_map(|k| a.on_access_unit(&au(false, 100), k * 3000))
+        .collect();
+    b.on_rtp(&more[0], 0, 300);
+    b.on_rtp(&more[2], 0, 320);
+    let too_soon = extensions_of(&b.rtcp_due(330, 0));
+    assert!(!too_soon
+        .iter()
+        .any(|e| matches!(e, rtp::Extension::PacketLoss { .. })));
+    let later = extensions_of(&b.rtcp_due(640, 0));
+    let second = rtp::parse(&more[1]).unwrap().header.sequence;
+    assert!(later.contains(&rtp::Extension::PacketLoss { sequence: second }));
+}
