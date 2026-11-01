@@ -480,6 +480,9 @@ pub struct Local {
     /// Offer SRTP and client SSRTP (`a=cryptoscale:<tag+1> client`, SD-12) – towards an MCU,
     /// which may then answer with server SSRTP. Offers only; never in an answer.
     pub ssrtp: bool,
+    /// We stream music on hold: with `direction` sendonly the offer carries `a=feature:MoH`
+    /// (SD-07, MS-SDPEXT §3.1.5.27.2). Offers only; never in an answer.
+    pub music_on_hold: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -599,7 +602,14 @@ pub fn offer(local: &Local, policy: Encryption) -> String {
         l.key = None;
     }
     let codecs: Vec<(Codec, u8)> = OUR_CODECS.iter().map(|c| (*c, c.payload_type())).collect();
-    write(&l, proto, &codecs, Some(DTMF_PT))
+    let s = write(&l, proto, &codecs, Some(DTMF_PT));
+    // SD-07: music on hold needs a=sendonly and a=feature:MoH, only on the audio line (this
+    // description has only that one).
+    if l.music_on_hold && l.direction == Direction::SendOnly {
+        s.replacen("a=sendonly\r\n", "a=sendonly\r\na=feature:MoH\r\n", 1)
+    } else {
+        s
+    }
 }
 
 /// The negotiated audio stream.

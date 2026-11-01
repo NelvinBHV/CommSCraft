@@ -73,6 +73,7 @@ fn local() -> Local {
         direction: Direction::SendRecv,
         remote_candidates: Vec::new(),
         ssrtp: false,
+        music_on_hold: false,
     }
 }
 
@@ -309,6 +310,41 @@ fn hold_and_music_on_hold() {
     .unwrap();
     assert!(sdp.contains("a=inactive\r\n"), "{sdp}");
     assert_eq!((n.direction, n.music_on_hold), (Direction::Inactive, false));
+}
+
+/// SD-07 (MS-SDPEXT §3.1.5.27.2): our music on hold offer carries a=sendonly and
+/// a=feature:MoH on the audio line; without sendonly, or in an answer, there is no MoH line.
+#[test]
+fn our_music_on_hold_offer() {
+    let mut l = local();
+    l.music_on_hold = true;
+    l.direction = Direction::SendOnly;
+    let o = offer(&l, Encryption::Required);
+    assert!(o.contains("a=sendonly\r\na=feature:MoH\r\n"), "{o}");
+    assert_eq!(o.matches("a=feature:MoH").count(), 1);
+    // A peer reading our offer sees music on hold.
+    let (_, n) = answer(
+        o.as_bytes(),
+        &local(),
+        Key::new(9, [3; 30]),
+        Encryption::Required,
+    )
+    .unwrap();
+    assert_eq!((n.direction, n.music_on_hold), (Direction::SendOnly, true));
+    l.direction = Direction::Inactive;
+    assert!(!offer(&l, Encryption::Required).contains("feature:MoH"));
+    // An answer never carries it.
+    let moh = SPEC_OFFER.to_string() + "a=recvonly\r\n";
+    let mut ours = local();
+    ours.music_on_hold = true;
+    let (sdp, _) = answer(
+        moh.as_bytes(),
+        &ours,
+        Key::new(9, [3; 30]),
+        Encryption::Required,
+    )
+    .unwrap();
+    assert!(!sdp.contains("feature:MoH"), "{sdp}");
 }
 
 /// The offer's ICE parameters for the callee's bandwidth check; none without ICE.

@@ -205,6 +205,7 @@ pub struct CallMedia {
     remote_passive: Vec<SocketAddr>,
     /// We put the call on hold (MS-SDPEXT §3.1.5.23).
     local_hold: bool,
+    hold_music: bool,
     /// The peer's direction from the last offer or answer (hold, music on hold).
     remote_direction: sdp::Direction,
     /// Bandwidth management (call admission control), when the server enables it.
@@ -352,6 +353,7 @@ impl CallMedia {
             remote_ice: None,
             remote_key: None,
             local_hold: false,
+            hold_music: false,
             remote_direction: sdp::Direction::SendRecv,
             bwm: None,
             bac_events: Vec::new(),
@@ -526,6 +528,7 @@ impl CallMedia {
             direction: sdp::Direction::SendRecv,
             remote_candidates: Vec::new(),
             ssrtp: false,
+            music_on_hold: false,
         }
     }
 
@@ -973,22 +976,30 @@ impl CallMedia {
         self.apply_direction();
     }
 
-    /// RTP is sent only if we are not holding and the peer receives (RFC 3264 §6.1: its
-    /// `sendrecv` or `recvonly`); RTCP and ICE consent continue in every state.
+    /// While we hold, we stream music on hold (SD-07: our offer is sendonly): audio goes on
+    /// being sent; the application feeds the music instead of the microphone.
+    pub fn set_hold_music(&mut self, on: bool) {
+        self.hold_music = on;
+        self.apply_direction();
+    }
+
+    /// RTP is sent only if we are not holding (or hold with music) and the peer receives
+    /// (RFC 3264 §6.1: its `sendrecv` or `recvonly`); RTCP and ICE consent continue in every
+    /// state.
     fn apply_direction(&mut self) {
         let peer_receives = matches!(
             self.remote_direction,
             sdp::Direction::SendRecv | sdp::Direction::RecvOnly
         );
-        let sending = !self.local_hold && peer_receives;
+        let sending = (!self.local_hold || self.hold_music) && peer_receives;
         if let Some(a) = self.audio.as_mut() {
             a.set_sending(sending);
         }
     }
 
-    /// True while RTP is being sent (not on hold on either side).
+    /// True while RTP is being sent (not on hold on either side, or our hold with music).
     pub fn sending(&self) -> bool {
-        !self.local_hold
+        (!self.local_hold || self.hold_music)
             && matches!(
                 self.remote_direction,
                 sdp::Direction::SendRecv | sdp::Direction::RecvOnly

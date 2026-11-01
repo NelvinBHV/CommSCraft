@@ -464,3 +464,30 @@ fn quality_figures() {
     assert_eq!(inb.ssrc, qa.outbound.ssrc);
     assert!(inb.loss_max_ppm.unwrap() > 0 && inb.jitter_avg_ms.is_some());
 }
+
+/// A peer that pauses (hold, silence) and resumes: its sequence numbers continue where they
+/// stopped while our playout went on concealing – after an empty buffer the playout starts over,
+/// so the resumed audio is played instead of dropped as late.
+#[test]
+fn playout_resumes_after_a_pause() {
+    let (mut a, mut b) = pair(sdp::Codec::Pcmu, 0);
+    for f in 0..5 {
+        b.on_rtp(&a.on_capture(&tone(160, 8000.0, f * 160)).unwrap(), 0);
+    }
+    for _ in 0..5 {
+        assert!(energy(&b.playout()) > 1e6);
+    }
+    // 2 s without packets.
+    for _ in 0..100 {
+        b.playout();
+    }
+    let dropped = b.stats.dropped;
+    for f in 5..10 {
+        b.on_rtp(&a.on_capture(&tone(160, 8000.0, f * 160)).unwrap(), 0);
+    }
+    assert_eq!(b.stats.dropped, dropped, "resumed packets are not late");
+    assert!(
+        (0..5).map(|_| energy(&b.playout())).any(|e| e > 1e6),
+        "audio again"
+    );
+}

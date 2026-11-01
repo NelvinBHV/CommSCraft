@@ -10,8 +10,8 @@ application, a ranked work list, and nothing copied from Microsoft products.
 
 > **Stage: M4 closed, M5 (video) next, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search, audio and video calls, meetings and telephony (transfer, forwarding, park, delegates,
-> emergency calls) exist as building blocks that pass offline tests (37 crates,
-> 411 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is marked as
+> emergency calls) exist as building blocks that pass offline tests (38 crates,
+> 419 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is marked as
 > verified against a real server**; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
@@ -46,7 +46,7 @@ functions, 12 are implemented and tested offline as a whole, 18 in parts, 20 not
 | Sign-in | Autodiscover (HTTPS only), DNS SRV, TLS 1.2/1.3, NTLM with MS-SIPAE signing, registration with GRUU, home-pool redirect, keep-alive, in-band provisioning, sign-out | Kerberos, TLS-DSK |
 | Presence and contacts | own state, contacts' presence (live), contact list (read), address book search | editing the contact list, privacy/blocking, offline address book, photos |
 | Instant messaging | 1:1 with typing indicator, group conversations (ad-hoc conference, invitations, delivery reports) | rich text, file transfer |
-| Audio calls | G.722 and G.711, SRTP, ICE, MS-TURN relay over UDP and over TCP 443 (pseudo-TLS), DTMF, mute, hold/resume, early media, call admission control, ALSA/PipeWire devices | own music on hold |
+| Audio calls | G.722 and G.711, SRTP, ICE, MS-TURN relay over UDP and over TCP 443 (pseudo-TLS), DTMF, mute, hold/resume, early media, call admission control, ALSA/PipeWire devices; ringing, notification sound and music on hold (own generated tones or a WAV file of the user's) | bundled third-party sounds (issues #82–#84, rights open) |
 | Meetings | join by address or meeting link, lobby, roster, audio in the A/V MCU (SRTP/SSRTP), mute yourself; as presenter: admit, roles, lock, remove, mute others or the audience | scheduling, video |
 | Telephony | phone numbers with the dial plan (phone-context), calls from gateways with caller number, call back, anonymous callers, early media, call transfer (blind and with consultation), call forwarding and simultaneous ring | team/delegate calls, park, E911, voicemail |
 | Video, screen sharing, Exchange | – | everything (M5–M7) |

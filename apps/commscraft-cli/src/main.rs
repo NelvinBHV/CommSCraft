@@ -27,6 +27,7 @@ macro_rules! eprint {
 }
 
 mod calls;
+mod cues;
 mod term;
 mod video_call;
 
@@ -1461,6 +1462,11 @@ fn interactive(
     let mut ready_audio: BTreeMap<u32, Box<commscraft_sdp::Local>> = BTreeMap::new();
     let mut ready_video: BTreeMap<u32, Box<commscraft_sdp::video::VideoLocal>> = BTreeMap::new();
     let camera = std::env::var("COMMSCRAFT_CAMERA").unwrap_or_else(|_| "/dev/video0".into());
+    // Ringing, notification sound and music on hold (issues #82–#84).
+    let (mut cues, notices) = cues::Cues::from_env();
+    for n in notices {
+        println!("* {}", term::clean(&n));
+    }
     // Meetings with video: conversation → (video id, the source we watch).
     let mut conf_video: BTreeMap<u32, (u32, Option<u32>)> = BTreeMap::new();
     let mut next_media: u32 = 1;
@@ -1626,6 +1632,7 @@ fn interactive(
                         }
                     }
                     E::IncomingCall { call, from } => {
+                        cues.start_ring(call);
                         // PS-02/PS-04/PS-07: number, gateway and anonymous callers.
                         // RE-72 / AE-38: meant for someone else, or a delegate calling for
                         // someone (then the server's Referred-By names the same person).
@@ -1662,6 +1669,7 @@ fn interactive(
                         media,
                         continues_early,
                     } => {
+                        cues.stop_ring(call);
                         println!("* call {call} connected ({:?})", media.codec);
                         current_call = Some(call);
                         if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
@@ -1768,6 +1776,7 @@ fn interactive(
                         );
                     }
                     E::CallEnded { call, status } => {
+                        cues.stop_ring(call);
                         println!("* call {call} ended ({status})");
                         if let Some(v) = video_of_call.remove(&call) {
                             if let Some(h) = video_handles.remove(&v) {
@@ -1889,6 +1898,7 @@ fn interactive(
                         sender,
                         text,
                     } => {
+                        cues.notify(now());
                         let who = sender
                             .map(|s| {
                                 presence
@@ -2309,6 +2319,7 @@ fn interactive(
             let command = match cmd {
                 "" => None,
                 "/quit" => {
+                    cues.stop_all();
                     if quitting {
                         return Ok(());
                     }
@@ -2414,6 +2425,7 @@ fn interactive(
                 }
                 "/answer" | "/answervideo" => match arg.parse::<u32>().ok().or(current_call) {
                     Some(call) => {
+                        cues.stop_ring(call);
                         let relay = engine.media_relay().and_then(calls::relay_from);
                         // The callee is the bandwidth-managing endpoint ([MS-ICE2BWM] §3.1.4).
                         let bwm = calls::bandwidth_config(
@@ -2785,13 +2797,20 @@ fn interactive(
                     Some(call) => {
                         let hold = cmd == "/hold";
                         if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
-                            let _ = h.tx.send(calls::ToMedia::Hold(hold));
+                            let _ = h.tx.send(calls::ToMedia::Hold {
+                                hold,
+                                music: cues.hold_music(),
+                            });
                         }
                         if let Some(h) = video_of_call.get(&call).and_then(|v| video_handles.get(v))
                         {
                             let _ = h.tx.send(video_call::ToVideo::Hold(hold));
                         }
-                        Some(C::Hold { call, hold })
+                        Some(C::Hold {
+                            call,
+                            hold,
+                            music: cues.hold_music().is_some(),
+                        })
                     }
                     None => {
                         println!("* no active call");

@@ -104,6 +104,23 @@ fn loopback_call_media() {
         std::thread::sleep(std::time::Duration::from_millis(5));
     }
     assert!(held < 1e7, "no audio on hold: {held}");
+    // SD-07: holding with music on hold sends again (the peer still receives).
+    a.set_hold_music(true);
+    assert!(a.sending());
+    let mut music = 0f64;
+    for _ in 0..20 {
+        a.send_frame(&frame, now_ms());
+        b.poll(now_ms());
+        music += b
+            .playout()
+            .iter()
+            .map(|&s| f64::from(s).powi(2))
+            .sum::<f64>();
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    assert!(music > 1e9, "music on hold arrived: {music}");
+    a.set_hold_music(false);
+    assert!(!a.sending());
     a.set_hold(false);
     assert!(a.sending());
     a.stop(now_ms());

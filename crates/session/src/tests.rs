@@ -1287,6 +1287,7 @@ fn media_local(port: u16, key_byte: u8) -> commscraft_sdp::Local {
         direction: commscraft_sdp::Direction::SendRecv,
         remote_candidates: Vec::new(),
         ssrtp: false,
+        music_on_hold: false,
     }
 }
 
@@ -1382,6 +1383,7 @@ fn outgoing_call_flow() {
         Command::Hold {
             call: 1,
             hold: true,
+            music: false,
         },
         NOW,
     );
@@ -1409,6 +1411,7 @@ fn outgoing_call_flow() {
         Command::Hold {
             call: 1,
             hold: false,
+            music: false,
         },
         NOW,
     );

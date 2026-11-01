@@ -34,7 +34,12 @@ pub enum ToMedia {
     Update(Box<sdp::Negotiated>),
     Dtmf(char),
     Mute(bool),
-    Hold(bool),
+    /// Hold or resume; with music, it goes to the peer instead of the microphone while we
+    /// hold (SD-07).
+    Hold {
+        hold: bool,
+        music: Option<std::sync::Arc<commscraft_tones::Pcm>>,
+    },
     Stop,
 }
 
@@ -168,6 +173,7 @@ fn run(
     }
     device.rate = media.sample_rate();
     let rate = device.rate;
+    let mut hold_music: Option<commscraft_tones::Looper> = None;
     // The final offer (IC-07) is a re-INVITE: only once the call is answered.
     let mut answered = !early;
     let mut selected_early = false;
@@ -218,7 +224,13 @@ fn run(
                 }
             }
             Ok(ToMedia::Mute(m)) => media.set_muted(m),
-            Ok(ToMedia::Hold(h)) => media.set_hold(h),
+            Ok(ToMedia::Hold { hold, music }) => {
+                media.set_hold(hold);
+                media.set_hold_music(hold && music.is_some());
+                hold_music = music
+                    .filter(|_| hold)
+                    .map(|m| crate::cues::hold_looper(&m, rate));
+            }
             Err(mpsc::TryRecvError::Empty) => {}
         }
         match restarted {
@@ -243,7 +255,11 @@ fn run(
             }
         }
         while let Ok(frame) = cap_rx.try_recv() {
-            media.send_frame(&frame, now);
+            // The microphone paces the frames; while we hold with music, the music is sent.
+            match hold_music.as_mut() {
+                Some(m) => media.send_frame(&m.next_frame(frame.len()), now),
+                None => media.send_frame(&frame, now),
+            }
         }
         if now >= next_frame {
             next_frame = now + 20;

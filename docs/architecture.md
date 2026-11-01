@@ -1,6 +1,6 @@
 # CommSCraft architecture (planned)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (all 37 crates and the app listed)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (all 38 crates and the app listed: tones)
 
 Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 [`decisions.md`](decisions.md) are taken. Rules for working in the code are in
@@ -33,6 +33,7 @@ Proposal for M0; it becomes binding once decisions D-01, D-03 and D-07 in
 | `commscraft-avedgea` | L3 | Media relay credentials (MS-AVEDGEA): SERVICE body, checked answer with relays | AV-01…AV-09, K-AV-1 |
 | `commscraft-ice-agent` | L2 | ICE agent per media stream (MS-ICE2, UDP): pairs, checks in STUN-02 and RFC 5389, peer-reflexive learning, triggered checks, regular nomination, keep-alive, consent freshness | IC-01…IC-17, K-IC-2, O-IC-2 |
 | `commscraft-call-media` | L2 | Network side of a call's media: UDP sockets, MS-TURN relays, ICE agent, audio core; local and final SDP description, direct media for peers without ICE; also the video stream of a call (own sockets, relay allocations and ICE) | OCS-UC12, IC-07, IC-09, TU-24, TU-25 |
+| `commscraft-tones` | L1 | Alert sounds and music on hold: bounded PCM WAV reader, resampling, level matching, looping, generated ringtone and notification | SD-07 |
 | `commscraft-media` | L2 | Audio media core of a call: codec, RTP, SRTP, jitter buffer (60 ms, bounded), loss concealment, DTMF, RTCP reports and BYE, STUN/RTP/RTCP classification; the video core (H.264 UC through SRTP, PLI/VSR); bandwidth estimation and rate adaptation (`rate`) | RT-01…RT-10, RT-28…RT-30, BW-17, SR-*, PL-30, G7-*, G2-* |
 | `commscraft-turn` | L2 | MS-TURN client: Allocate with digest challenge, sequence numbers, Send/Data Indication, Set Active Destination, refresh, teardown, retransmission, TCP framing, pseudo-TLS | TU-02, TU-04, TU-10…TU-27 |
 | `commscraft-rtp` | L1 | RTP header, sender, reception statistics, RTCP SR/RR/SDES/BYE, telephone events | RT-01…RT-10, RT-20, RT-21, PL-30 |

@@ -806,12 +806,17 @@ impl<R: Random> Engine<R> {
         // offer (towards an MCU the client-SSRTP line stays).
         local.key = c.local.as_ref().and_then(|l| l.key.clone());
         local.ssrtp = c.local.as_ref().is_some_and(|l| l.ssrtp);
-        let hold = local.direction == sdp::Direction::Inactive;
-        // The video line stays in every re-INVITE, with the same direction (hold) and key.
+        let hold = local.direction != sdp::Direction::SendRecv;
+        // The video line stays in every re-INVITE, with the same direction (hold) and key; with
+        // music on hold it is inactive – a=feature:MoH belongs to the audio line only (SD-07).
         let body = match &c.video {
             Some(v) => {
                 let mut v = v.clone();
-                v.media.direction = local.direction;
+                v.media.direction = if local.music_on_hold {
+                    sdp::Direction::Inactive
+                } else {
+                    local.direction
+                };
                 sdp::video::offer_with_video(&local, &v, c.policy)
                     .unwrap_or_else(|_| sdp::offer(&local, c.policy))
             }
@@ -1326,17 +1331,26 @@ impl<R: Random> Engine<R> {
     }
 
     /// `Hold` / `Resume` (MS-SDPEXT §3.1.5.23): a re-INVITE with the current description and the
-    /// direction inactive (hold, sip.rendering="no") or sendrecv (resume).
-    pub(crate) fn hold_call(&mut self, id: CallId, hold: bool, now: u64, out: &mut Vec<Output>) {
+    /// direction inactive (hold, sip.rendering="no") or sendrecv (resume); holding with music on
+    /// hold offers sendonly with `a=feature:MoH` (§3.1.5.27.2, SD-07).
+    pub(crate) fn hold_call(
+        &mut self,
+        id: CallId,
+        hold: bool,
+        music: bool,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
         let Some(mut local) = self.calls.get(&id).and_then(|c| c.local.clone()) else {
             out.push(Output::Event(Event::Notice("no such call".into())));
             return;
         };
-        local.direction = if hold {
-            sdp::Direction::Inactive
-        } else {
-            sdp::Direction::SendRecv
+        local.direction = match (hold, music) {
+            (true, true) => sdp::Direction::SendOnly,
+            (true, false) => sdp::Direction::Inactive,
+            (false, _) => sdp::Direction::SendRecv,
         };
+        local.music_on_hold = hold && music;
         self.update_call(id, local, now, out);
     }
 
