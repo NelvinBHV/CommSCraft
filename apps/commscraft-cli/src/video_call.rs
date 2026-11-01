@@ -37,6 +37,8 @@ pub enum ToVideo {
     Hold(bool),
     /// In a meeting: the media source ID of the video to watch (CA-12, CA-13).
     Source(u32),
+    /// Picture control through signalling (function 31, PL-50).
+    Control(commscraft_session::media_control::VideoControl),
     Stop,
 }
 
@@ -47,6 +49,8 @@ pub enum FromVideo {
     Selected(u32, Box<sdp::video::VideoLocal>),
     /// Something the user should know (no camera, no window); the call goes on.
     Notice(u32, String),
+    /// The peer takes no PLI: ask it for a full picture through SIP INFO (PL-50).
+    PictureUpdate(u32),
     Failed(u32, String),
 }
 
@@ -337,6 +341,8 @@ fn run(
     // The source to ask for: any (1:1) until a meeting names one (CA-13).
     let mut source = feedback::SOURCE_ANY;
     let mut watched_by_peer: Option<bool> = None;
+    // An MCU asked us to stop sending video (picture_freeze, PL-50): RTCP goes on.
+    let mut frozen = false;
     // The peer's last request (none yet: our own limits) and what the path carries (RT-30).
     let mut request: Vec<feedback::VsrEntry> = vec![wanted()];
     let mut path_bps: Option<u32> = None;
@@ -345,6 +351,32 @@ fn run(
         match rx.try_recv() {
             Ok(ToVideo::Stop) | Err(mpsc::TryRecvError::Disconnected) => break,
             Ok(ToVideo::Hold(h)) => media.set_hold(h),
+            Ok(ToVideo::Control(control)) => {
+                use commscraft_session::media_control::VideoControl;
+                match control {
+                    // XMLMC §3.1.5.1: stop sending RTP video, keep RTCP.
+                    VideoControl::Freeze => {
+                        if !frozen {
+                            let _ = events.send(FromVideo::Notice(
+                                id,
+                                "the meeting paused your video".into(),
+                            ));
+                        }
+                        frozen = true;
+                    }
+                    // XMLSMC §4: a full picture now; it also ends a freeze (XMLMC §1.3).
+                    VideoControl::FastUpdate => {
+                        if frozen {
+                            let _ = events.send(FromVideo::Notice(
+                                id,
+                                "the meeting takes your video again".into(),
+                            ));
+                        }
+                        frozen = false;
+                        idr.store(true, Ordering::Relaxed);
+                    }
+                }
+            }
             Ok(ToVideo::Source(msi)) => {
                 if msi != source {
                     source = msi;
@@ -357,7 +389,9 @@ fn run(
             Ok(ToVideo::Start { .. }) | Err(mpsc::TryRecvError::Empty) => {}
         }
         while let Ok((au, ts)) = au_rx.try_recv() {
-            media.send_access_unit(&au, ts, now);
+            if !frozen {
+                media.send_access_unit(&au, ts, now);
+            }
         }
         for e in media.poll(now) {
             match e {
@@ -381,6 +415,9 @@ fn run(
                     if dec_tx.try_send(data).is_err() {
                         media.request_key_frame(now);
                     }
+                }
+                cm::Event::Video(VideoEvent::PictureUpdateNeeded) => {
+                    let _ = events.send(FromVideo::PictureUpdate(id));
                 }
                 cm::Event::Video(VideoEvent::KeyFrameRequested) => {
                     idr.store(true, Ordering::Relaxed)

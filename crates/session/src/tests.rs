@@ -3871,3 +3871,71 @@ fn incoming_video_call() {
     let body = String::from_utf8(ok.body.clone()).unwrap();
     assert!(body.contains("m=video 0 RTP/SAVP 122"), "{body}");
 }
+
+/// Function 31 (PL-50): a media control INFO in an active call becomes video control events and
+/// is answered with 200 OK – also when the body is broken (no error, nothing echoed); our
+/// fast update request is an INFO in the call's dialog.
+#[test]
+fn picture_control_through_info() {
+    let (mut e, mut server, _) = signed_in();
+    let invite = active_call(&mut e, &mut server, "sip:bob@contoso.com");
+    let freeze = "<media_control><vc_primitive><to_encoder><picture_freeze/></to_encoder></vc_primitive></media_control>";
+    let info = peer_request(
+        &mut server,
+        &invite,
+        "INFO",
+        2,
+        Some("application/media_control+xml"),
+        freeze,
+        &[],
+    );
+    let out = e.on_message(&info, NOW);
+    assert_eq!(sends(&out)[0].status_code(), Some(200));
+    assert!(events(&out).contains(&Event::CallVideoControl {
+        call: 1,
+        control: media_control::VideoControl::Freeze,
+    }));
+    let info = peer_request(
+        &mut server,
+        &invite,
+        "INFO",
+        3,
+        Some("application/media_control+xml"),
+        &media_control::fast_update(),
+        &[],
+    );
+    let out = e.on_message(&info, NOW);
+    assert!(events(&out).contains(&Event::CallVideoControl {
+        call: 1,
+        control: media_control::VideoControl::FastUpdate,
+    }));
+    // Broken body or another type: 200 OK, no event.
+    for (ct, body) in [
+        (
+            "application/media_control+xml",
+            "<media_control><vc_primitive>",
+        ),
+        ("text/plain", "picture_freeze"),
+    ] {
+        let info = peer_request(&mut server, &invite, "INFO", 4, Some(ct), body, &[]);
+        let out = e.on_message(&info, NOW);
+        assert_eq!(sends(&out)[0].status_code(), Some(200));
+        assert!(!events(&out)
+            .iter()
+            .any(|ev| matches!(ev, Event::CallVideoControl { .. })));
+    }
+    // Our request.
+    let out = e.command(Command::RequestPictureUpdate { call: 1 }, NOW);
+    let req = find(&out, "INFO");
+    assert_eq!(
+        req.single("Content-Type").unwrap(),
+        Some("application/media_control+xml")
+    );
+    assert_eq!(req.call_id().unwrap(), invite.call_id().unwrap());
+    assert_eq!(
+        media_control::parse(std::str::from_utf8(&req.body).unwrap()),
+        Ok(vec![media_control::VideoControl::FastUpdate])
+    );
+    // No call, no request.
+    assert!(sends(&e.command(Command::RequestPictureUpdate { call: 9 }, NOW)).is_empty());
+}

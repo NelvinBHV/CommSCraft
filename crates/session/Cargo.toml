@@ -19,6 +19,7 @@ commscraft-qoe = { path = "../qoe" }
 commscraft-lis = { path = "../lis" }
 commscraft-avedgea = { path = "../avedgea" }
 commscraft-sdp = { path = "../sdp" }
+commscraft-xml = { path = "../xml" }
 
 [dev-dependencies]
 commscraft-register = { path = "../register", features = ["testing"] }

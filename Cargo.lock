@@ -365,6 +365,7 @@ dependencies = [
  "commscraft-register",
  "commscraft-sdp",
  "commscraft-sip-msg",
+ "commscraft-xml",
 ]
 
 [[package]]

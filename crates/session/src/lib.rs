@@ -240,6 +240,11 @@ pub enum Command {
         video: Box<sdp::video::VideoLocal>,
         policy: sdp::Encryption,
     },
+    /// Ask the peer for a full picture through SIP INFO (function 31, PL-50): the fallback when
+    /// RTCP feedback (PLI) is not negotiated.
+    RequestPictureUpdate {
+        call: CallId,
+    },
     /// A newer description of our video stream (final offer after ICE).
     SetCallVideo {
         call: CallId,
@@ -462,6 +467,12 @@ pub enum Event {
     CallVideo {
         call: CallId,
         video: Box<sdp::video::NegotiatedVideo>,
+    },
+    /// The peer controls our video encoder through SIP INFO (function 31, PL-50): a full
+    /// picture now, or – from an MCU – stop sending video until the next fast update.
+    CallVideoControl {
+        call: CallId,
+        control: media_control::VideoControl,
     },
     /// New media parameters after a re-INVITE (final offer, hold).
     CallUpdated {
@@ -1759,6 +1770,9 @@ impl<R: Random> Engine<R> {
                 policy,
             } => self.accept_call_with_video(call, *local, Some(*video), policy, now, &mut out),
             Command::SetCallVideo { call, video } => self.set_call_video(call, *video),
+            Command::RequestPictureUpdate { call } => {
+                self.request_picture_update(call, now, &mut out)
+            }
             Command::AcceptCall {
                 call,
                 local,
@@ -2419,6 +2433,7 @@ impl<R: Random> Engine<R> {
 mod call;
 mod emergency;
 mod group;
+pub mod media_control;
 mod park;
 mod qoe;
 mod schedule;

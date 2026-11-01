@@ -746,6 +746,24 @@ impl<R: Random> Engine<R> {
         }
     }
 
+    /// `RequestPictureUpdate`: an INFO with `picture_fast_update` in the call's dialog (PL-50).
+    pub(crate) fn request_picture_update(&mut self, id: CallId, now: u64, out: &mut Vec<Output>) {
+        let Some(c) = self.calls.get_mut(&id) else {
+            return;
+        };
+        if c.state != CallState::Active {
+            return;
+        }
+        let Some(d) = c.dialog.as_mut() else {
+            return;
+        };
+        let mut m = d.request("INFO");
+        self.complete(&mut m);
+        m.push_header("Content-Type", media_control::CONTENT_TYPE);
+        m.body = media_control::fast_update().into_bytes();
+        self.send_request(m, Purpose::Ignore, now, out);
+    }
+
     /// Whether an incoming call offers video we could take (SD-27).
     pub fn incoming_video(&self, id: CallId) -> bool {
         self.calls
@@ -1207,7 +1225,27 @@ impl<R: Random> Engine<R> {
             {
                 self.on_refer_notify(id, req, now, out)
             }
-            "UPDATE" | "INFO" | "OPTIONS" => {
+            "INFO" => {
+                // PL-50: video control commands go to the application; the INFO itself is always
+                // answered with 200 OK (XMLSMC §6, XMLMC §3.1.5.2).
+                let is_control = req
+                    .single("Content-Type")
+                    .ok()
+                    .flatten()
+                    .is_some_and(media_control::is_media_control);
+                if is_control {
+                    let commands = std::str::from_utf8(&req.body)
+                        .ok()
+                        .and_then(|b| media_control::parse(b).ok())
+                        .unwrap_or_default();
+                    for control in commands {
+                        Self::call_event(out, Event::CallVideoControl { call: id, control });
+                    }
+                }
+                let r = response_to(req, 200, "OK");
+                self.send_plain(r, now, out);
+            }
+            "UPDATE" | "OPTIONS" => {
                 let r = response_to(req, 200, "OK");
                 self.send_plain(r, now, out);
             }
