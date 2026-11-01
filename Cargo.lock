@@ -186,6 +186,7 @@ dependencies = [
  "commscraft-session",
  "commscraft-sip-msg",
  "commscraft-sipae",
+ "commscraft-tones",
  "commscraft-turn-bwm",
  "commscraft-url",
  "commscraft-video-ffmpeg",
@@ -414,6 +415,10 @@ dependencies = [
  "sha2",
  "subtle",
 ]
+
+[[package]]
+name = "commscraft-tones"
+version = "0.0.1"
 
 [[package]]
 name = "commscraft-turn"

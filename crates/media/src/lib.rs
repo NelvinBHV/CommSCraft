@@ -28,6 +28,10 @@ pub const FRAME_MS: u32 = 20;
 /// Target jitter-buffer delay in frames (design: 60 ms) and its bound.
 pub const JITTER_FRAMES: u32 = 3;
 pub const MAX_BUFFERED: usize = 50;
+/// After this many frames played from an empty buffer the playout starts over and waits for
+/// the target delay again (design value: 100 ms) – a peer that paused (hold, silence) resumes
+/// with sequence numbers behind our playout position.
+pub const RESYNC_FRAMES: u32 = 5;
 /// RTCP report interval (RFC 3550 §6.2: minimum 5 s).
 pub const RTCP_INTERVAL_MS: u64 = 5000;
 /// What we can receive on an audio-only path, the start of the audio estimate (design value:
@@ -188,6 +192,8 @@ pub struct Audio {
     /// Jitter buffer: extended sequence → (timestamp, payload).
     buffer: BTreeMap<u64, Vec<u8>>,
     next_play: Option<u64>,
+    /// Frames in a row played without a packet.
+    starved: u32,
     highest: Option<u64>,
     last_frame: Vec<i16>,
     muted: bool,
@@ -280,6 +286,7 @@ impl Audio {
             estimator: rate::Estimator::new(AUDIO_CAPACITY_BPS),
             buffer: BTreeMap::new(),
             next_play: None,
+            starved: 0,
             highest: None,
             last_frame: Vec::new(),
             muted: false,
@@ -563,6 +570,7 @@ impl Audio {
         let mut out = Vec::with_capacity(n);
         match self.buffer.remove(&start) {
             Some(payload) => {
+                self.starved = 0;
                 match &mut self.decoder {
                     Decoder::G722(d) => d.decode(&payload, &mut out),
                     Decoder::G711(l) => l.decode(&payload, &mut out),
@@ -575,6 +583,12 @@ impl Audio {
                 out = self.last_frame.iter().map(|s| s / 2).collect();
                 out.resize(n, 0);
                 self.last_frame.clone_from(&out);
+                self.starved = self.starved.saturating_add(1);
+                if self.starved >= RESYNC_FRAMES && self.buffer.is_empty() {
+                    // Start over: the next packets set the playout position again.
+                    self.next_play = None;
+                    self.starved = 0;
+                }
             }
         }
         // Drop anything that can no longer be played.

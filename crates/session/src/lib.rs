@@ -317,10 +317,12 @@ pub enum Command {
         local: Box<sdp::Local>,
         policy: sdp::Encryption,
     },
-    /// Put the call on hold (`true`) or resume it (MS-SDPEXT §3.1.5.23).
+    /// Put the call on hold (`true`) or resume it (MS-SDPEXT §3.1.5.23); `music`: we stream
+    /// music on hold while holding (SD-07: sendonly with `a=feature:MoH` instead of inactive).
     Hold {
         call: CallId,
         hold: bool,
+        music: bool,
     },
     SignOut,
 }
@@ -1802,7 +1804,7 @@ impl<R: Random> Engine<R> {
                 local,
                 policy,
             } => self.follow_transfer(call, *local, policy, now, &mut out),
-            Command::Hold { call, hold } => self.hold_call(call, hold, now, &mut out),
+            Command::Hold { call, hold, music } => self.hold_call(call, hold, music, now, &mut out),
             Command::SignOut => {
                 self.signing_out = true;
                 self.end_all_calls(now, &mut out);
