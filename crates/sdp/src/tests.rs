@@ -370,3 +370,150 @@ fn ssrtp_offer_and_answers() {
     .unwrap();
     assert!(!a.contains("cryptoscale"), "answers name one encryption");
 }
+
+/// [MS-SDPEXT] §4.1.3 (p. 56): the video section of the same offer, printed line breaks joined.
+const SPEC_VIDEO: &str = "m=video 50002 RTP/SAVP 122 121 123\r
+a=rtcp-fb:* x-message app send:src,x-pli recv:src,x-pli\r
+a=rtcp-rsize\r
+a=ice-ufrag: tTaJ\r
+a=ice-pwd: 4jUT5Tp48gTR3iEvJiWVVDpG\r
+a=x-caps:121 263:1920:1080:30.0:2000000:1;4359:1280:720:30.0:1500000:1;8455:640:480:30.0:600000:1;12551:640:360:30.0:600000:1;16647:352:288:15.0:250000:1;20743:424:240:15.0:250000:1;24839:176:144:15.0:180000:1\r
+a=candidate:1 1 UDP 2130706431 172.24.32.125 50002 typ host\r
+a=candidate:1 2 UDP 2130705918 172.24.32.125 50008 typ host\r
+a=label:main-video\r
+a=crypto:2 AES_CM_128_HMAC_SHA1_80 inline:o6ZolyOppaJqBxlYQ9/R4ykPCjgKDJMisiVvXSMb|2^31|1:1\r
+a=remote-candidates:1 172.24.32.152 50012 2 172.24.32.152 50011\r
+a=rtcp:50008\r
+a=x-ssrc-range:101-200\r
+a=rtpmap:122 X-H264UC/90000\r
+a=fmtp:122 packetization-mode=1;mst-mode=NI-TC\r
+a=rtpmap:121 x-rtvc1/90000\r
+a=rtpmap:123 x-ulpfecuc/90000\r
+";
+
+fn video_local() -> video::VideoLocal {
+    let mut media = local();
+    media.rtp_port = 40002;
+    media.rtcp_port = 40003;
+    media.key = Some(Key::new(1, [9; 30]));
+    video::VideoLocal {
+        media,
+        ssrc_range: (1001, 1100),
+    }
+}
+
+/// SD-27 / SD-63 / SD-64: our offer has the video line of the example's shape after the audio
+/// line; the example's own video line read as an answer gives H.264 UC (PT 122, not RTVideo
+/// 121), the SSRC range, the feedback capabilities and the key of tag 2.
+#[test]
+fn video_offer_and_spec_line() {
+    let policy = Encryption::Required;
+    let offer = video::offer_with_video(&local(), &video_local(), policy).unwrap();
+    let audio_at = offer.find("m=audio").unwrap();
+    let video_at = offer.find("m=video 40002 RTP/SAVP 122\r\n").unwrap();
+    assert!(audio_at < video_at);
+    let v = &offer[video_at..];
+    for line in [
+        "a=x-ssrc-range:1001-1100\r\n",
+        "a=rtcp-fb:* x-message app send:src,x-pli recv:src,x-pli\r\na=rtcp-rsize\r\n",
+        "a=label:main-video\r\n",
+        "a=rtcp:40003\r\n",
+        "a=rtpmap:122 X-H264UC/90000\r\na=fmtp:122 packetization-mode=1;mst-mode=NI-TC\r\n",
+    ] {
+        assert!(v.contains(line), "{line}");
+    }
+    assert!(!v.contains("x-caps"), "SD-60: not for H.264 UC");
+    // The example's video line as an answer to an offer with key tag 2.
+    let answer = format!("{SPEC_OFFER}{SPEC_VIDEO}");
+    let ours = Key::new(2, [9; 30]);
+    let n = video::video_answer_to_offer(answer.as_bytes(), Some(&ours), policy)
+        .unwrap()
+        .unwrap();
+    assert_eq!(n.payload_type, 122);
+    assert_eq!(n.ssrc_range, (101, 200));
+    assert_eq!(n.remote_rtp, ("172.24.32.152".parse().unwrap(), 50002));
+    assert_eq!(n.remote_rtcp.1, 50008);
+    assert_eq!(n.remote_key.as_ref().map(|k| k.tag), Some(2));
+    assert!(n.feedback.send_src && n.feedback.recv_pli);
+    assert_eq!(n.remote_ice.unwrap().candidates.len(), 2);
+}
+
+/// SD-27: H.264 UC only with exactly the NI-TC parameters and an SSRC range; otherwise the
+/// video is treated as rejected.
+#[test]
+fn h264uc_conditions() {
+    let ours = Key::new(2, [9; 30]);
+    let p = Encryption::Required;
+    let without = |what: &str, by: &str| {
+        let a = format!("{SPEC_OFFER}{}", SPEC_VIDEO.replace(what, by));
+        video::video_answer_to_offer(a.as_bytes(), Some(&ours), p).unwrap()
+    };
+    assert!(without("mst-mode=NI-TC", "mst-mode=NI-T").is_none());
+    assert!(without("a=x-ssrc-range:101-200\r\n", "").is_none());
+    assert!(without("a=x-ssrc-range:101-200", "a=x-ssrc-range:200-101").is_none());
+    assert!(without("a=x-ssrc-range:101-200", "a=x-ssrc-range:0-5").is_none());
+    assert!(without("m=video 50002", "m=video 0").is_none());
+    // A reused key is an error, not a silent acceptance.
+    let a = format!("{SPEC_OFFER}{SPEC_VIDEO}");
+    let same = Key::parse(
+        "2 AES_CM_128_HMAC_SHA1_80 inline:o6ZolyOppaJqBxlYQ9/R4ykPCjgKDJMisiVvXSMb|2^31|1:1",
+    )
+    .unwrap();
+    assert!(video::video_answer_to_offer(a.as_bytes(), Some(&same), p).is_err());
+}
+
+/// RFC 3264 §6: the answer names every offered line in order – audio taken, video taken or
+/// rejected with port 0, application sharing rejected; the plain audio answer rejects video.
+#[test]
+fn answer_names_every_line() {
+    let appsharing = "m=applicationsharing 50010 TCP/RTP/AVP 127\r\na=rtpmap:127 x-data/90000\r\n";
+    let offer = format!("{SPEC_OFFER}{SPEC_VIDEO}{appsharing}");
+    let p = Encryption::Required;
+    let (sdp, n, v) = video::answer_with_video(
+        offer.as_bytes(),
+        &local(),
+        Key::new(0, [4; 30]),
+        Some((&video_local(), Key::new(0, [6; 30]))),
+        p,
+    )
+    .unwrap();
+    assert_eq!(n.payload_type, 9, "audio as before");
+    let v = v.unwrap();
+    assert_eq!(v.ssrc_range, (101, 200));
+    let lines: Vec<&str> = sdp.lines().filter(|l| l.starts_with("m=")).collect();
+    assert_eq!(
+        lines,
+        vec![
+            "m=audio 40000 RTP/SAVP 9 8 0 101",
+            "m=video 40002 RTP/SAVP 122",
+            "m=applicationsharing 0 TCP/RTP/AVP 127"
+        ]
+    );
+    assert!(
+        sdp.contains("a=crypto:2 AES_CM_128_HMAC_SHA1_80"),
+        "video key with the offer's tag"
+    );
+    // Without our video: the video line is rejected, still in place.
+    let (sdp, _) = answer(offer.as_bytes(), &local(), Key::new(0, [4; 30]), p).unwrap();
+    let lines: Vec<&str> = sdp.lines().filter(|l| l.starts_with("m=")).collect();
+    assert_eq!(
+        lines,
+        vec![
+            "m=audio 40000 RTP/SAVP 9 8 0 101",
+            "m=video 0 RTP/SAVP 122 121 123",
+            "m=applicationsharing 0 TCP/RTP/AVP 127"
+        ]
+    );
+    // SD-64: our range overlapping the peer's – video rejected.
+    let mut clash = video_local();
+    clash.ssrc_range = (150, 249);
+    let (sdp, _, v) = video::answer_with_video(
+        offer.as_bytes(),
+        &local(),
+        Key::new(0, [4; 30]),
+        Some((&clash, Key::new(0, [6; 30]))),
+        p,
+    )
+    .unwrap();
+    assert!(v.is_none() && sdp.contains("m=video 0 "));
+}
