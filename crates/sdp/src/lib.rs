@@ -514,20 +514,17 @@ impl Direction {
     }
 }
 
-fn write(local: &Local, proto: &str, codecs: &[(Codec, u8)], dtmf: Option<u8>) -> String {
+/// The session part of our SDP (v=, o=, s=, c=, t=).
+fn header(local: &Local) -> String {
     let (fam, addr) = match local.address {
         IpAddr::V4(a) => ("IP4", a.to_string()),
         IpAddr::V6(a) => ("IP6", a.to_string()),
     };
-    let mut fmts: Vec<String> = codecs.iter().map(|(_, pt)| pt.to_string()).collect();
-    if let Some(d) = dtmf {
-        fmts.push(d.to_string());
-    }
-    let mut s = format!(
-        "v=0\r\no=- 0 0 IN {fam} {addr}\r\ns=session\r\nc=IN {fam} {addr}\r\nt=0 0\r\nm=audio {} {proto} {}\r\n",
-        local.rtp_port,
-        fmts.join(" ")
-    );
+    format!("v=0\r\no=- 0 0 IN {fam} {addr}\r\ns=session\r\nc=IN {fam} {addr}\r\nt=0 0\r\n")
+}
+
+/// ICE parameters, candidates and remote candidates of one media description.
+fn transport_attributes(local: &Local, s: &mut String) {
     if let Some(ice) = &local.ice {
         s.push_str(&format!(
             "a=ice-ufrag:{}\r\na=ice-pwd:{}\r\n",
@@ -546,6 +543,22 @@ fn write(local: &Local, proto: &str, codecs: &[(Codec, u8)], dtmf: Option<u8>) -
             .collect();
         s.push_str(&format!("a=remote-candidates:{}\r\n", list.join(" ")));
     }
+}
+
+fn write(local: &Local, proto: &str, codecs: &[(Codec, u8)], dtmf: Option<u8>) -> String {
+    let mut s = header(local);
+    s.push_str(&audio_section(local, proto, codecs, dtmf));
+    s
+}
+
+/// The `m=audio` section.
+fn audio_section(local: &Local, proto: &str, codecs: &[(Codec, u8)], dtmf: Option<u8>) -> String {
+    let mut fmts: Vec<String> = codecs.iter().map(|(_, pt)| pt.to_string()).collect();
+    if let Some(d) = dtmf {
+        fmts.push(d.to_string());
+    }
+    let mut s = format!("m=audio {} {proto} {}\r\n", local.rtp_port, fmts.join(" "));
+    transport_attributes(local, &mut s);
     s.push_str("a=label:main-audio\r\n");
     if let Some(k) = &local.key {
         s.push_str(&format!("a=crypto:{}\r\n", k.attribute()));
@@ -728,8 +741,20 @@ pub fn answer_to_offer(
 }
 
 /// Our answer to the peer's offer (incoming call). `fresh_key` is our own new key; its tag is
-/// replaced by the tag of the accepted offer line. Returns the SDP and the negotiation.
+/// replaced by the tag of the accepted offer line. Returns the SDP and the negotiation. Media
+/// lines other than the audio one (video, application sharing, …) are rejected with port 0 in
+/// the offer's order ([RFC3264] §6); `video::answer_with_video` takes video too.
 pub fn answer(
+    offer: &[u8],
+    local: &Local,
+    fresh_key: Key,
+    policy: Encryption,
+) -> Result<(String, Negotiated), Error> {
+    video::answer_with_video(offer, local, fresh_key, None, policy).map(|(s, n, _)| (s, n))
+}
+
+/// The audio part of an answer (with session header).
+fn answer_audio(
     offer: &[u8],
     local: &Local,
     fresh_key: Key,
@@ -797,6 +822,8 @@ pub fn answer(
         },
     ))
 }
+
+pub mod video;
 
 #[cfg(test)]
 mod tests;
