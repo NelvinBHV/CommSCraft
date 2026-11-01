@@ -381,6 +381,22 @@ impl<R: Random> Engine<R> {
         self.send_request(m, Purpose::Ignore, now, out);
     }
 
+    /// `DeclineTransfer`: the user does not want to follow the REFER (issue #67) – the final
+    /// NOTIFY reports 603 (RFC 3515 §2.4.5) and the transfer is forgotten; our call stays.
+    pub(crate) fn decline_transfer(&mut self, id: CallId, now: u64, out: &mut Vec<Output>) {
+        let pending = self
+            .calls
+            .get_mut(&id)
+            .and_then(|c| c.transfer_in.take_if(|t| t.new_call.is_none()));
+        if pending.is_none() {
+            out.push(Output::Event(Event::Notice(
+                "no transfer to decline".into(),
+            )));
+            return;
+        }
+        self.notify_refer(id, "SIP/2.0 603 Declined", true, now, out);
+    }
+
     /// `FollowTransfer`: the call to the REFER's target with Referred-By, Replaces and
     /// Ms-Sensitivity (RFC 3892, RFC 3891, RE-64).
     pub(crate) fn follow_transfer(
@@ -412,6 +428,7 @@ impl<R: Random> Engine<R> {
             crate::call::Extras {
                 headers: &extra,
                 part: None,
+                emergency: false,
             },
             now,
             out,

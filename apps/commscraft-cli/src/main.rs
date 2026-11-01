@@ -53,6 +53,7 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
           /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)
+          /follow N | /decline N (a transfer to a number or another domain)
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
@@ -527,7 +528,7 @@ fn discover(
                             match String::from_utf8(r.body.clone()) {
                                 Ok(body) => {
                                     if verbose && r.status == 200 {
-                                        eprintln!("{body}");
+                                        eprintln!("{}", term::quoted(&body));
                                     }
                                     d::Response::Http {
                                         status: r.status,
@@ -1480,6 +1481,8 @@ fn interactive(
     let self_tx = tx.clone();
     // Media prepared for a transfer we follow: media id → the transferred call.
     let mut pending_transfer: BTreeMap<u32, u32> = BTreeMap::new();
+    // Issue #67: transfers waiting for the user's decision (call → target).
+    let mut transfer_offers: BTreeMap<u32, String> = BTreeMap::new();
     // The routing rules last asked for (forwarding and simultaneous ring are combined).
     let mut forwarding = commscraft_presence::Forwarding::default();
     // CB-43: the last meeting settings per conversation, so /options can change one part.
@@ -1672,8 +1675,15 @@ fn interactive(
                             let _ = h.tx.send(calls::ToMedia::Update(media));
                         }
                     }
+                    E::TransferRequested { call, to } if !auto_follow(&to, engine.own_aor()) => {
+                        // Issue #67: a phone number or another domain may cost money or reach
+                        // someone unexpected – the user decides.
+                        println!("* call {call}: the other side transfers you to {to} – /follow {call} or /decline {call}");
+                        transfer_offers.insert(call, to);
+                    }
                     E::TransferRequested { call, to } => {
-                        // RFC 3515: the peer transfers us; place the new call.
+                        // RFC 3515: the peer transfers us within our own domain; place the new
+                        // call.
                         println!("* call {call}: transferred to {to} – connecting …");
                         let relay = engine.media_relay().and_then(calls::relay_from);
                         let id = next_media;
@@ -2320,6 +2330,37 @@ fn interactive(
                     } else {
                         println!("* /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off");
                         None
+                    }
+                }
+                "/follow" | "/decline" => {
+                    let call = arg.trim().parse::<u32>().ok();
+                    match call.filter(|c| transfer_offers.contains_key(c)) {
+                        Some(call) if cmd == "/decline" => {
+                            transfer_offers.remove(&call);
+                            Some(C::DeclineTransfer { call })
+                        }
+                        Some(call) => {
+                            transfer_offers.remove(&call);
+                            println!("* call {call}: following the transfer – connecting …");
+                            let relay = engine.media_relay().and_then(calls::relay_from);
+                            let id = next_media;
+                            next_media = next_media.wrapping_add(1).max(1);
+                            let h = calls::spawn(
+                                id,
+                                local_ip,
+                                relay,
+                                None,
+                                commscraft_audio_alsa::Config::default(),
+                                media_tx.clone(),
+                            );
+                            handles.insert(id, h);
+                            pending_transfer.insert(id, call);
+                            None
+                        }
+                        None => {
+                            println!("* /follow N or /decline N – for a transfer that asks");
+                            None
+                        }
                     }
                 }
                 "/delegate" => {
@@ -3314,6 +3355,25 @@ fn lis_refresh_at(
     Some(now.saturating_add(u64::from(hours.min(168)) * 3600))
 }
 
+/// Issue #67: a transfer is followed without asking only to a SIP address (no phone number) in
+/// the user's own SIP domain.
+fn auto_follow(target: &str, own_aor: &str) -> bool {
+    let domain = |u: &str| {
+        u.split_once('@').map(|(_, d)| {
+            d.split([';', '?', '>', ':'])
+                .next()
+                .unwrap_or("")
+                .to_ascii_lowercase()
+        })
+    };
+    let lower = target.to_ascii_lowercase();
+    lower.starts_with("sip:")
+        && !lower.contains(";user=phone")
+        && !lower.trim_start_matches("sip:").starts_with('+')
+        && domain(target).is_some()
+        && domain(target) == domain(own_aor)
+}
+
 const MEETING_OPTIONS: &str = "OPTIONS: open|closed|anonymous, promote none|company|everyone, phone bypass|lobby, locked, presenter sip:URI, attendee sip:URI";
 
 /// Meeting options before the subject of /schedule and /changemeeting (PV-15): admission policy,
@@ -3477,5 +3537,21 @@ tun0\t000000CB\t00000000\t0001\t0\t0\t500\t000000FF\t0\t0\t0\n";
         assert_eq!(lis_refresh_at(Some(&p), 0), Some(168 * 3600));
         p.refresh_hours = Some(0);
         assert_eq!(lis_refresh_at(Some(&p), 0), None);
+    }
+
+    /// Issue #67: only own-domain SIP targets are followed without asking.
+    #[test]
+    fn transfer_auto_follow() {
+        let me = "sip:alice@contoso.com";
+        assert!(auto_follow("sip:bob@contoso.com", me));
+        assert!(auto_follow(
+            "sip:bob@CONTOSO.com;opaque=user:epid:x;gruu",
+            me
+        ));
+        assert!(!auto_follow("sip:+4940123456@contoso.com;user=phone", me));
+        assert!(!auto_follow("sip:+4940123456@contoso.com", me));
+        assert!(!auto_follow("sip:eve@fabrikam.com", me));
+        assert!(!auto_follow("sip:eve@contoso.com.evil.example", me));
+        assert!(!auto_follow("tel:+4940123456", me));
     }
 }
