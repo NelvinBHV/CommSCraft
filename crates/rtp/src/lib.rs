@@ -665,6 +665,8 @@ pub enum Rtcp {
     Bye {
         sources: Vec<u32>,
     },
+    /// Picture loss indication or video source request (RT-25).
+    Feedback(feedback::Feedback),
 }
 
 /// Most report blocks per packet ([MS-RTP] RT-21).
@@ -943,6 +945,11 @@ pub fn parse_rtcp(p: &[u8]) -> Result<Vec<Rtcp>, Error> {
                     .collect::<Result<Vec<_>, _>>()?;
                 out.push(Rtcp::Bye { sources });
             }
+            feedback::PT_PSFB => {
+                if let Some(f) = feedback::parse(pkt)? {
+                    out.push(Rtcp::Feedback(f));
+                }
+            }
             _ => {}
         }
         off += len;
@@ -1032,6 +1039,8 @@ pub fn dtmf_packets(event: u8, total: u16, step: u16, volume: u8) -> Vec<(bool, 
     }
     out
 }
+
+pub mod feedback;
 
 #[cfg(test)]
 mod tests;
