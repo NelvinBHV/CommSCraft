@@ -170,6 +170,7 @@ dependencies = [
  "commscraft-dlx",
  "commscraft-g711",
  "commscraft-g722",
+ "commscraft-h264uc",
  "commscraft-im",
  "commscraft-lis",
  "commscraft-media",
@@ -187,6 +188,7 @@ dependencies = [
  "commscraft-sipae",
  "commscraft-turn-bwm",
  "commscraft-url",
+ "commscraft-video-ffmpeg",
  "zeroize",
 ]
 

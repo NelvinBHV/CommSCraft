@@ -27,6 +27,8 @@ commscraft-park = { path = "../../crates/park" }
 commscraft-qoe = { path = "../../crates/qoe" }
 commscraft-lis = { path = "../../crates/lis" }
 commscraft-media = { path = "../../crates/media" }
+commscraft-h264uc = { path = "../../crates/h264uc" }
+commscraft-video-ffmpeg = { path = "../../crates/video-ffmpeg" }
 commscraft-turn-bwm = { path = "../../crates/turn-bwm" }
 commscraft-sdp = { path = "../../crates/sdp" }
 commscraft-rtp = { path = "../../crates/rtp" }
