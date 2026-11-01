@@ -469,6 +469,7 @@ fn spawn_camera(
         let mut rebuilt_at = 0u64;
         let mut scaler = scaler_for(first);
         let mut next_due = 0u64;
+        let mut camera_errors = 0u32;
         while !stop.load(Ordering::Relaxed) {
             let wanted = target.lock().map(|t| *t).unwrap_or(START);
             if needs_rebuild(current, wanted, now_ms().saturating_sub(rebuilt_at)) {
@@ -505,10 +506,20 @@ fn spawn_camera(
                 return;
             };
             let picture = match cam.next_picture() {
-                Ok(p) => p,
+                Ok(p) => {
+                    camera_errors = 0;
+                    p
+                }
+                // A single bad picture (e.g. a USB camera's truncated buffer) is skipped; only a
+                // run of failures means the camera is gone.
                 Err(e) => {
-                    let _ = events.send(FromVideo::Notice(id, format!("camera stopped: {e:?}")));
-                    return;
+                    camera_errors += 1;
+                    if camera_gone(camera_errors) {
+                        let _ =
+                            events.send(FromVideo::Notice(id, format!("camera stopped: {e:?}")));
+                        return;
+                    }
+                    continue;
                 }
             };
             // The requested frame rate: drop camera pictures in between.
@@ -552,6 +563,14 @@ fn encoder_for(t: Target, hardware: bool) -> Result<vf::Encoder, vf::Error> {
         idr_interval: 300,
         hardware,
     })
+}
+
+/// Failed camera reads in a row after which the camera counts as gone (design value: about a
+/// second of pictures).
+const CAMERA_ERRORS: u32 = 30;
+
+fn camera_gone(errors_in_a_row: u32) -> bool {
+    errors_in_a_row >= CAMERA_ERRORS
 }
 
 /// Camera VGA to the target size (none when it is VGA).
@@ -735,6 +754,14 @@ mod tests {
         };
         assert_eq!(size(fit(&[wide], None)), Some((640, 480, 30, 800_000)));
         assert_eq!(size(fit(&[], None)), None);
+    }
+
+    /// A bad picture now and then does not end the video; a run of failures does.
+    #[test]
+    fn camera_errors_tolerated() {
+        assert!(!camera_gone(1));
+        assert!(!camera_gone(CAMERA_ERRORS - 1));
+        assert!(camera_gone(CAMERA_ERRORS));
     }
 
     /// A new size or frame rate rebuilds at once, a lower bit rate from 5 % on; a higher one
