@@ -321,7 +321,11 @@ fn tcp_write_buffer_bounded() {
     };
     let mut t = TcpRelay {
         stream,
-        client: Box::new(turn_client(&relay, turn::Transport::Tcp)),
+        client: Box::new(turn_client(
+            &relay,
+            turn::Transport::Tcp,
+            turn::Stream::Audio,
+        )),
         frames: turn::Deframer::default(),
         out: Vec::new(),
         allocated: None,
@@ -626,4 +630,129 @@ fn commit_update_cancel_without_ice() {
         ],
         "commit, update, cancel"
     );
+}
+
+fn video_layout() -> commscraft_h264uc::StreamLayout {
+    commscraft_h264uc::StreamLayout::full(vec![commscraft_h264uc::LayerDescription {
+        coded_width: 640,
+        coded_height: 480,
+        display_width: 640,
+        display_height: 480,
+        bitrate: 600_000,
+        fps_idx: 4,
+        layer_type: 0,
+        prid: 0,
+        constrained_baseline: true,
+    }])
+    .unwrap()
+}
+
+fn video_negotiated_from(other: &CallMedia, range: (u32, u32)) -> sdp::video::NegotiatedVideo {
+    let d = other.local_description();
+    sdp::video::NegotiatedVideo {
+        payload_type: 122,
+        remote_rtp: (d.address, d.rtp_port),
+        remote_rtcp: (d.address, d.rtcp_port),
+        remote_key: Some(other.key().clone()),
+        remote_ice: d.ice.clone(),
+        direction: sdp::Direction::SendRecv,
+        ssrc_range: range,
+        feedback: sdp::video::Feedback {
+            send_src: true,
+            recv_src: true,
+            send_pli: true,
+            recv_pli: true,
+        },
+    }
+}
+
+/// Function 28: two video streams over loopback UDP – ICE on their own sockets, then a VSR
+/// from B arrives at A as a source and key-frame request, and access units from A arrive at B
+/// through SRTP; RTCP BYE ends it.
+#[test]
+fn loopback_video_stream() {
+    let ip: IpAddr = "127.0.0.1".parse().unwrap();
+    let t0 = now_ms();
+    let (mut a, _) = CallMedia::prepare_video(ip, None, t0).unwrap();
+    let (mut b, _) = CallMedia::prepare_video(ip, None, t0).unwrap();
+    let (na, nb) = (
+        video_negotiated_from(&b, (2000, 2099)),
+        video_negotiated_from(&a, (1000, 1099)),
+    );
+    a.start_video(&na, (1000, 1099), video_layout(), true, "a@test", t0)
+        .unwrap();
+    b.start_video(&nb, (2000, 2099), video_layout(), false, "b@test", t0)
+        .unwrap();
+    let mut selected = (false, false);
+    let deadline = t0 + 15_000;
+    while !(selected.0 && selected.1) && now_ms() < deadline {
+        let now = now_ms();
+        selected.0 |= a.poll(now).contains(&Event::Selected);
+        selected.1 |= b.poll(now).contains(&Event::Selected);
+        std::thread::sleep(std::time::Duration::from_millis(2));
+    }
+    assert_eq!(selected, (true, true));
+
+    // B asks for video.
+    let entry = commscraft_rtp::feedback::VsrEntry {
+        payload_type: 122,
+        ucconfig_mode: 1,
+        max_width: 640,
+        max_height: 480,
+        frame_rates: commscraft_rtp::feedback::FPS_30,
+        ..Default::default()
+    };
+    b.request_video(commscraft_rtp::feedback::SOURCE_ANY, entry, now_ms());
+    let mut asked = (false, false);
+    for _ in 0..100 {
+        let now = now_ms();
+        b.poll(now);
+        for e in a.poll(now) {
+            match e {
+                Event::Video(media::VideoEvent::SourceRequested { .. }) => asked.0 = true,
+                Event::Video(media::VideoEvent::KeyFrameRequested) => asked.1 = true,
+                _ => {}
+            }
+        }
+        if asked == (true, true) {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    assert_eq!(asked, (true, true), "VSR with key-frame flag arrived");
+
+    // A sends an IDR (fragmented) and a P access unit.
+    let mut idr = vec![
+        0, 0, 0, 1, 0x67, 0x42, 0xc0, 0x1e, 0, 0, 0, 1, 0x68, 0xce, 0x3c, 0, 0, 0, 1, 0x65,
+    ];
+    idr.extend((0..4000u32).map(|i| (i % 250) as u8 + 1));
+    let p = vec![0, 0, 0, 1, 0x41, 9, 8, 7];
+    let mut got = Vec::new();
+    for (n, au) in [idr.clone(), p.clone()].iter().enumerate() {
+        a.send_access_unit(au, 3000 * n as u32, now_ms());
+    }
+    for _ in 0..100 {
+        a.poll(now_ms());
+        for e in b.poll(now_ms()) {
+            if let Event::Video(media::VideoEvent::AccessUnit { data, idr }) = e {
+                got.push((data, idr));
+            }
+        }
+        if got.len() == 2 {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(2));
+    }
+    assert_eq!(got.len(), 2, "both access units arrived");
+    assert!(got[0].1 && !got[1].1);
+    assert_eq!(got[1].0, p);
+    a.stop(now_ms());
+    let mut bye = false;
+    for _ in 0..50 {
+        bye |= b
+            .poll(now_ms())
+            .contains(&Event::Video(media::VideoEvent::Bye));
+        std::thread::sleep(std::time::Duration::from_millis(2));
+    }
+    assert!(bye, "RTCP BYE of the video stream");
 }

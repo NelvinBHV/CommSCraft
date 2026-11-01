@@ -178,6 +178,8 @@ pub enum Event {
     Failed(String),
     /// The peer sent RTCP BYE.
     PeerBye,
+    /// Video: an access unit, a key frame or source request (function 28).
+    Video(media::VideoEvent),
 }
 
 pub struct CallMedia {
@@ -189,6 +191,8 @@ pub struct CallMedia {
     key: sdp::Key,
     ice: Option<Agent>,
     audio: Option<Audio>,
+    /// The video core when this is the video stream of a call (function 28).
+    video: Option<media::Video>,
     /// Peer without ICE (IC-09): RTP/RTCP straight to the default addresses.
     direct: Option<(SocketAddr, SocketAddr)>,
     selected: Option<(Path, Option<Path>)>,
@@ -226,14 +230,14 @@ fn bind(ip: IpAddr) -> std::io::Result<UdpSocket> {
     Ok(s)
 }
 
-fn turn_client(r: &Relay, transport: turn::Transport) -> turn::Client {
+fn turn_client(r: &Relay, transport: turn::Transport, stream: turn::Stream) -> turn::Client {
     turn::Client::new(
         turn::Credentials {
             username: r.username.clone(),
             password: r.password.clone(),
         },
         transport,
-        turn::Stream::Audio,
+        stream,
         Box::new(os_random),
     )
 }
@@ -268,6 +272,25 @@ impl CallMedia {
         relay: Option<&Relay>,
         now: u64,
     ) -> std::io::Result<(Self, InitialAllocates)> {
+        Self::prepare_stream(local_ip, relay, turn::Stream::Audio, now)
+    }
+
+    /// As [`prepare`](Self::prepare) for the video stream of a call (its own sockets, ICE and
+    /// relay allocations – every media line has its own candidates, SD-66 without multiplexing).
+    pub fn prepare_video(
+        local_ip: IpAddr,
+        relay: Option<&Relay>,
+        now: u64,
+    ) -> std::io::Result<(Self, InitialAllocates)> {
+        Self::prepare_stream(local_ip, relay, turn::Stream::Video, now)
+    }
+
+    fn prepare_stream(
+        local_ip: IpAddr,
+        relay: Option<&Relay>,
+        stream: turn::Stream,
+        now: u64,
+    ) -> std::io::Result<(Self, InitialAllocates)> {
         let mut sockets = vec![Socket::Host(bind(local_ip)?), Socket::Host(bind(local_ip)?)];
         let mut first = Vec::new();
         if let Some(r) = relay {
@@ -277,7 +300,7 @@ impl CallMedia {
                 } else {
                     local_ip
                 })?;
-                let mut client = turn_client(r, turn::Transport::Udp);
+                let mut client = turn_client(r, turn::Transport::Udp, stream);
                 if let Some(w) = client.start(now) {
                     first.push((sockets.len(), w));
                 }
@@ -292,14 +315,14 @@ impl CallMedia {
             }
             // The TCP relay is optional: without it, calls still work over UDP.
             if let Some(tcp) = r.tcp_server {
-                if let Ok(stream) = connect_tcp_relay(tcp, now) {
-                    let mut client = turn_client(r, turn::Transport::Tcp);
+                if let Ok(connection) = connect_tcp_relay(tcp, now) {
+                    let mut client = turn_client(r, turn::Transport::Tcp, stream);
                     let mut out = Vec::new();
                     if let Some(w) = client.start(now) {
                         out.extend_from_slice(&w);
                     }
                     sockets.push(Socket::Tcp(Box::new(TcpRelay {
-                        stream,
+                        stream: connection,
                         client: Box::new(client),
                         frames: turn::Deframer::default(),
                         out,
@@ -321,6 +344,7 @@ impl CallMedia {
             key: sdp::Key::new(1, raw),
             ice: None,
             audio: None,
+            video: None,
             direct: None,
             selected: None,
             usable: None,
@@ -554,12 +578,47 @@ impl CallMedia {
         self.audio = Some(Audio::new(n, key, random, cname).map_err(|e| format!("{e:?}"))?);
         self.remote_direction = n.direction;
         self.apply_direction();
-        self.remote_ice = n.remote_ice.clone();
         self.remote_key = n.remote_key.clone();
+        self.start_transport(&n.remote_ice, n.remote_rtp, n.remote_rtcp, controlling, now)
+    }
+
+    /// The video stream is answered: start ICE and the video core. `our_range` is the SSRC
+    /// range we declared, `layout` the stream layout of what we send.
+    pub fn start_video(
+        &mut self,
+        n: &sdp::video::NegotiatedVideo,
+        our_range: (u32, u32),
+        layout: commscraft_h264uc::StreamLayout,
+        controlling: bool,
+        cname: &str,
+        now: u64,
+    ) -> Result<(), String> {
+        let mut random = [0u8; 10];
+        os_random(&mut random);
+        let key = n.remote_key.as_ref().map(|_| &self.key);
+        self.video = Some(
+            media::Video::new(n, key, our_range, layout, random, cname)
+                .map_err(|e| format!("{e:?}"))?,
+        );
+        self.remote_direction = n.direction;
+        self.remote_key = n.remote_key.clone();
+        self.start_transport(&n.remote_ice, n.remote_rtp, n.remote_rtcp, controlling, now)
+    }
+
+    /// ICE towards the peer's candidates, or its default addresses without ICE (IC-09).
+    fn start_transport(
+        &mut self,
+        remote_ice: &Option<sdp::Ice>,
+        remote_rtp: sdp::Endpoint,
+        remote_rtcp: sdp::Endpoint,
+        controlling: bool,
+        now: u64,
+    ) -> Result<(), String> {
+        self.remote_ice = remote_ice.clone();
         self.selected = None;
         self.usable = None;
         self.direct = None;
-        match &n.remote_ice {
+        match remote_ice {
             Some(remote) => {
                 let mut agent = Agent::new(
                     controlling,
@@ -612,7 +671,7 @@ impl CallMedia {
                 self.ice = Some(agent);
             }
             None => {
-                self.set_direct(n)?;
+                self.set_direct(remote_rtp, remote_rtcp)?;
                 // §3.1.4.4.2: towards a peer without ICE the managing endpoint commits the path
                 // from our host socket to the peer's address.
                 if let (Some(local), Some((rtp, _))) = (self.host_address(0), self.direct) {
@@ -888,7 +947,7 @@ impl CallMedia {
     pub fn update(&mut self, n: &sdp::Negotiated) {
         if self.ice.is_none() {
             // A refused new address keeps the old one (the call goes on as before).
-            let _ = self.set_direct(n);
+            let _ = self.set_direct(n.remote_rtp, n.remote_rtcp);
         }
         self.remote_direction = n.direction;
         self.apply_direction();
@@ -896,8 +955,8 @@ impl CallMedia {
 
     /// Peer without ICE (IC-09): its default addresses, unless they point at this host or the
     /// local link (issue #42).
-    fn set_direct(&mut self, n: &sdp::Negotiated) -> Result<(), String> {
-        let (rtp, rtcp): (SocketAddr, SocketAddr) = (n.remote_rtp.into(), n.remote_rtcp.into());
+    fn set_direct(&mut self, rtp: sdp::Endpoint, rtcp: sdp::Endpoint) -> Result<(), String> {
+        let (rtp, rtcp): (SocketAddr, SocketAddr) = (rtp.into(), rtcp.into());
         let ours = [self.local_ip];
         if !commscraft_ice::usable_peer_address(rtp, &ours)
             || !commscraft_ice::usable_peer_address(rtcp, &ours)
@@ -1026,6 +1085,42 @@ impl CallMedia {
         }
     }
 
+    /// One encoded access unit (Annex B) of the video stream, captured at `timestamp` (90 kHz).
+    /// Nothing is sent while we hold or the peer does not receive.
+    pub fn send_access_unit(&mut self, au: &[u8], timestamp: u32, now: u64) {
+        if !self.sending() {
+            return;
+        }
+        let Some(v) = self.video.as_mut() else {
+            return;
+        };
+        let packets = v.on_access_unit(au, timestamp);
+        for packet in packets {
+            if let Some((rtp, _)) = self.direct {
+                self.send_socket(0, rtp, &packet);
+            } else if let Some((l, r)) = self.rtp_path() {
+                self.send_from(l, r, &packet);
+            }
+        }
+        if let Some(a) = self.ice.as_mut() {
+            a.on_media_sent(now);
+        }
+    }
+
+    /// Video: ask the peer for a key frame (PLI).
+    pub fn request_key_frame(&mut self, now: u64) {
+        if let Some(v) = self.video.as_mut() {
+            v.request_key_frame(now);
+        }
+    }
+
+    /// Video: ask the peer for video with these parameters (VSR).
+    pub fn request_video(&mut self, msi: u32, entry: commscraft_rtp::feedback::VsrEntry, now: u64) {
+        if let Some(v) = self.video.as_mut() {
+            v.request_source(msi, entry, now);
+        }
+    }
+
     /// One frame for the speaker.
     pub fn playout(&mut self) -> Vec<i16> {
         self.audio.as_mut().map(Audio::playout).unwrap_or_default()
@@ -1087,7 +1182,12 @@ impl CallMedia {
                 now,
             );
         }
-        if let Some(bye) = self.audio.as_mut().and_then(Audio::bye) {
+        let bye = self
+            .audio
+            .as_mut()
+            .and_then(Audio::bye)
+            .or_else(|| self.video.as_mut().and_then(media::Video::bye));
+        if let Some(bye) = bye {
             if let Some((_, rtcp)) = self.direct {
                 self.send_socket(1, rtcp, &bye);
             } else if let Some((l, r)) = self.rtcp_path() {
@@ -1241,11 +1341,14 @@ impl CallMedia {
         // RTCP reports; NTP timestamp (RFC 3550 §4) from Unix time in ms.
         let ntp = ((now / 1000 + 2_208_988_800) << 32) | (((now % 1000) << 32) / 1000);
         // Probe, report and train packets back to back ([MS-RTP] §3.2.6).
-        let due = self
+        let mut due = self
             .audio
             .as_mut()
             .map(|a| a.rtcp_due(now, ntp))
             .unwrap_or_default();
+        if let Some(v) = self.video.as_mut() {
+            due.extend(v.rtcp_due(now, ntp));
+        }
         for p in due {
             if let Some((_, rtcp)) = self.direct {
                 self.send_socket(1, rtcp, &p);
@@ -1479,6 +1582,15 @@ impl CallMedia {
                         .is_some_and(|((_, r), c)| peer == r || c.is_some_and(|(_, c)| peer == c))
                     || self.usable.is_some_and(|(_, r)| peer == r);
                 if !known {
+                    return;
+                }
+                if let Some(video) = self.video.as_mut() {
+                    let evs = if media::classify(payload) == Kind::Rtcp {
+                        video.on_rtcp(payload, now)
+                    } else {
+                        video.on_rtp(payload, (now as u32).wrapping_mul(90), now)
+                    };
+                    events.extend(evs.into_iter().map(Event::Video));
                     return;
                 }
                 let Some(audio) = self.audio.as_mut() else {
