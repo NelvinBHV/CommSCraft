@@ -30,6 +30,9 @@ pub const JITTER_FRAMES: u32 = 3;
 pub const MAX_BUFFERED: usize = 50;
 /// RTCP report interval (RFC 3550 §6.2: minimum 5 s).
 pub const RTCP_INTERVAL_MS: u64 = 5000;
+/// What we can receive on an audio-only path, the start of the audio estimate (design value:
+/// the video capacity we declare, `sdp::video::MEDIABW_KBPS`).
+pub const AUDIO_CAPACITY_BPS: u32 = sdp::video::MEDIABW_KBPS * 1000;
 /// [MS-RTP] §3.2.2/§3.2.6: packet pair fast rate (250 ms, 40 times), packet train fast rate
 /// (1 s, 21 times), five packet train packets after the pair (§2.2.7).
 pub const PAIR_FAST_MS: u64 = 250;
@@ -180,6 +183,8 @@ pub struct Audio {
     sender: rtp::Sender,
     receiver: rtp::Receiver,
     remote_ssrc: Option<u32>,
+    /// Our estimate of the incoming path, reported in every report (RT-28, RT-29).
+    estimator: rate::Estimator,
     /// Jitter buffer: extended sequence → (timestamp, payload).
     buffer: BTreeMap<u64, Vec<u8>>,
     next_play: Option<u64>,
@@ -272,6 +277,7 @@ impl Audio {
             sender: rtp::Sender::new(random),
             receiver: rtp::Receiver::default(),
             remote_ssrc: None,
+            estimator: rate::Estimator::new(AUDIO_CAPACITY_BPS),
             buffer: BTreeMap::new(),
             next_play: None,
             highest: None,
@@ -481,6 +487,14 @@ impl Audio {
             return None;
         }
         self.stats.received += 1;
+        // Arrival in 8 kHz ticks (wrapping; the estimator restarts its delay reference then).
+        self.estimator.on_packet(
+            packet.len(),
+            h.sequence,
+            h.timestamp,
+            8000,
+            u64::from(arrival_ticks / 8),
+        );
         if is_dtmf {
             let ev = rtp::TelephoneEvent::decode(parsed.payload)?;
             // Report each digit once: on the first end packet (it is sent three times).
@@ -594,6 +608,7 @@ impl Audio {
     /// The RTCP packets due now (RFC 3550 §6.2, [MS-RTP] §3.2.6), protected, to be sent back to
     /// back: probe + report (packet pair), plus five packet train packets in train mode.
     pub fn rtcp_due(&mut self, now_ms: u64, ntp: u64) -> Vec<Vec<u8>> {
+        self.estimator.update(now_ms);
         if now_ms < self.next_rtcp {
             return Vec::new();
         }
@@ -647,6 +662,8 @@ impl Audio {
                     quality: 0,
                     fec_distance: 0,
                 });
+                // RT-28: our estimate of the peer's stream (§3.2: "MUST be sent").
+                extensions.push(self.estimator.extension(s));
                 let rb = self.receiver.report(s, lsr, dlsr);
                 self.q_in_jitter.add(u64::from(rb.jitter));
                 self.q_in_loss.add(u64::from(rb.fraction_lost));
@@ -659,6 +676,9 @@ impl Audio {
             *slot = ((ntp >> 16) as u32, now_ms);
         }
         self.sr_next = self.sr_next.wrapping_add(1);
+        if let Some(c) = self.estimator.take_congestion(ntp) {
+            extensions.push(c);
+        }
         if let Some((bps, left)) = self.turn_bps.as_mut() {
             if *left > 0 {
                 *left -= 1;
@@ -822,9 +842,12 @@ impl Audio {
     }
 }
 
+pub mod rate;
 pub mod video;
 pub use video::{Video, VideoEvent};
 
+#[cfg(test)]
+mod rate_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
