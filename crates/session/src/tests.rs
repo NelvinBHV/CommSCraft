@@ -2678,7 +2678,7 @@ fn emergency_call_with_location() {
     assert!(events(&out)
         .iter()
         .any(|ev| matches!(ev, Event::Notice(n) if n.contains("WITHOUT location"))));
-    e.command(Command::Hangup { call: 1 }, NOW);
+    let first_invite = invite;
 
     let loc = commscraft_lis::Location {
         country: "US".into(),
@@ -2742,6 +2742,12 @@ fn emergency_call_with_location() {
     // publication that could overwrite rules set elsewhere (O-RE-3).
     e.command(Command::Hangup { call: 2 }, NOW);
     e.on_message(&answer(&mut server, &invite, 487, None, "", &[]), NOW);
+    // Issue #70: call 1 still exists – the suspension stays while any emergency call does.
+    let out = e.on_tick(NOW + 1);
+    assert!(!sends(&out).iter().any(|m| m.method() == Some("SERVICE")));
+    assert!(events(&out).is_empty());
+    e.command(Command::Hangup { call: 1 }, NOW);
+    e.on_message(&answer(&mut server, &first_invite, 487, None, "", &[]), NOW);
     let out = e.on_tick(NOW + 1);
     assert!(!sends(&out).iter().any(|m| m.method() == Some("SERVICE")));
     assert!(events(&out)
@@ -3557,4 +3563,129 @@ fn declined_transfer() {
     assert!(!sends(&out).iter().any(|m| m.method() == Some("BYE")));
     let out = e.command(Command::DeclineTransfer { call: 1 }, NOW);
     assert!(sends(&out).is_empty(), "nothing left to decline");
+}
+
+/// Issue #70, finding 2: signing out during an emergency call publishes the user's rules again
+/// before the REGISTER that ends the registration.
+#[test]
+fn sign_out_restores_routing_after_emergency() {
+    let (mut e, mut server, out) = signed_in();
+    let sub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    let doc = r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="locationPolicy"><propertyEntryList><property name="EnhancedEmergencyServicesEnabled">true</property><property name="EmergencyNumbers">112</property></propertyEntryList></provisionGroup></provisionGroupList>"#;
+    e.on_message(
+        &answer(
+            &mut server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            doc,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+    // The user's rules are known (published in this session).
+    let out = e.command(Command::SetForwarding(pres::Forwarding::default()), NOW);
+    let publish = sends(&out).pop().unwrap();
+    e.on_message(&answer(&mut server, &publish, 200, None, "", &[]), NOW);
+    e.command(
+        Command::EmergencyCall {
+            dialled: "112".into(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let out = e.command(Command::SignOut, NOW);
+    let methods: Vec<_> = sends(&out)
+        .iter()
+        .filter_map(|m| m.method().map(str::to_string))
+        .collect();
+    let service = methods
+        .iter()
+        .position(|m| m == "SERVICE")
+        .expect("rules restored");
+    let register = methods
+        .iter()
+        .position(|m| m == "REGISTER")
+        .expect("unregister");
+    assert!(service < register, "{methods:?}");
+    let restored = sends(&out)
+        .into_iter()
+        .find(|m| m.method() == Some("SERVICE"))
+        .unwrap();
+    assert!(!String::from_utf8_lossy(&restored.body).contains("e911active"));
+}
+
+/// Issue #70, finding 3 (RFC 3261 §17.1.3): a response with the right Call-ID and CSeq but
+/// another Via branch or From tag does not complete the transaction.
+#[test]
+fn responses_match_the_transaction() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(Command::SetForwarding(pres::Forwarding::default()), NOW);
+    let req = sends(&out).pop().unwrap();
+    let mut forged = answer(&mut server, &req, 200, None, "", &[]);
+    for h in &mut forged.headers {
+        if h.name.eq_ignore_ascii_case("Via") {
+            h.value = h.value.replace("branch=", "branch=other");
+        }
+    }
+    let forged = server.sign(forged);
+    let out = e.on_message(&forged, NOW);
+    assert!(
+        !events(&out)
+            .iter()
+            .any(|ev| matches!(ev, Event::Forwarding(_))),
+        "other branch"
+    );
+    let out = e.on_message(&answer(&mut server, &req, 200, None, "", &[]), NOW);
+    assert!(
+        events(&out)
+            .iter()
+            .any(|ev| matches!(ev, Event::Forwarding(_))),
+        "the real answer"
+    );
+}
+
+/// Issue #70, finding 5: retry counters are per operation – an exhausted routing publication
+/// leaves the delegate change its own retries.
+#[test]
+fn conflict_retries_per_operation() {
+    let (mut e, mut server, _) = signed_in();
+    let conflict = |e: &mut Engine<Counter>, server: &mut Server, req: &Message, v: u32| {
+        let fault = format!(
+            r#"<Fault><Faultcode>Client.BadCall.WrongDelta</Faultcode><details><operation index="1" version="0" curVersion="{v}"/></details></Fault>"#
+        );
+        e.on_message(
+            &answer(
+                server,
+                req,
+                409,
+                Some("application/msrtc-fault+xml"),
+                &fault,
+                &[],
+            ),
+            NOW,
+        )
+    };
+    let mut out = e.command(Command::SetForwarding(pres::Forwarding::default()), NOW);
+    for v in 1..10 {
+        let Some(req) = sends(&out).pop() else { break };
+        out = conflict(&mut e, &mut server, &req, v);
+    }
+    let out = e.command(
+        Command::SetDelegate {
+            uri: "sip:john@contoso.com".into(),
+            add: true,
+        },
+        NOW,
+    );
+    let req = sends(&out).pop().unwrap();
+    let out = conflict(&mut e, &mut server, &req, 5);
+    assert!(
+        sends(&out).iter().any(|m| m.method() == Some("SERVICE")),
+        "the delegate change still has its retries"
+    );
 }

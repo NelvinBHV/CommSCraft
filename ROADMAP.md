@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **26** (23 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **35 crates + 1 app** (`commscraft-cli`), **357 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **35 crates + 1 app** (`commscraft-cli`), **360 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **private owner lab** (D-08, since 2026-10-31): the agent may test there; results are not published, public statuses stay `tested-offline` | owner decision |
 
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-01 | Security audit issue #70 closed: several emergency calls keep the forwarding suspended until the last ends, sign-out restores the rules first; responses matched by Via branch and From tag too; numeric SIP users count as numbers for transfers; 409 retries counted per operation. |
 | 2026-11-01 | Security audit issue #67 closed: emergency routing published only once the emergency call exists, emergency calls allowed beyond the call limit; on-behalf-of only for calls addressed to that person; transfers to numbers or other domains ask first (`/follow`, `/decline`); 409 retries bounded; verbose server bodies quoted. |
 | 2026-11-01 | M4 closed by owner decision (T-04): all functions of its scope implemented and tested-offline; next M5 (video). |
 | 2026-11-01 | Delegates (functions 34/36): delegate list from the self subscription and setDelegates with version retry (PR-21, K-PR-3), calls as delegate and answering for the boss with p-session-on-behalf-of (AE-38), ms-referee-uri in transfers of retargeted calls (AE-37); CLI `/delegate`, `/callfor`. |

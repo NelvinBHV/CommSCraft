@@ -114,7 +114,9 @@ impl<R: Random> Engine<R> {
             let mut rules = self.routing_rules.clone();
             rules.e911_active = true;
             self.publish_routing(rules, now, out);
-            self.emergency_call = Some(id);
+            if !self.emergency_calls.contains(&id) {
+                self.emergency_calls.push(id);
+            }
             out.extend(call_out);
             out.push(Output::Event(Event::Notice(format!(
                 "emergency call {id} to {dial}, {with}"
@@ -127,15 +129,23 @@ impl<R: Random> Engine<R> {
         }
     }
 
-    /// After the emergency call: the user's own routing rules again (static).
+    /// After the last emergency call: the user's own routing rules again (static). While any
+    /// emergency call exists the suspension stays (issue #70).
     pub(crate) fn emergency_tick(&mut self, now: u64, out: &mut Vec<Output>) {
-        let Some(id) = self.emergency_call else {
-            return;
-        };
-        if self.calls.contains_key(&id) {
+        if self.emergency_calls.is_empty() {
             return;
         }
-        self.emergency_call = None;
+        let calls = &self.calls;
+        self.emergency_calls.retain(|id| calls.contains_key(id));
+        if self.emergency_calls.is_empty() {
+            self.restore_routing(now, out);
+        }
+    }
+
+    /// The user's rules again after the emergency suspension (or a notice when they are not
+    /// known, O-RE-3). If the registration is lost before this runs, the time-bound
+    /// publication ends on the server after [`E911_ROUTING_SECONDS`].
+    pub(crate) fn restore_routing(&mut self, now: u64, out: &mut Vec<Output>) {
         if self.routing_known {
             let rules: pres::Forwarding = self.routing_rules.clone();
             self.publish_routing(rules, now, out);
