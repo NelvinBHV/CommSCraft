@@ -3356,7 +3356,8 @@ fn lis_refresh_at(
 }
 
 /// Issue #67: a transfer is followed without asking only to a SIP address (no phone number) in
-/// the user's own SIP domain.
+/// the user's own SIP domain. Issue #70: the user part must contain a letter – a numeric user
+/// (`sip:900123@…`) may be a phone number in the server's dial plan.
 fn auto_follow(target: &str, own_aor: &str) -> bool {
     let domain = |u: &str| {
         u.split_once('@').map(|(_, d)| {
@@ -3367,7 +3368,13 @@ fn auto_follow(target: &str, own_aor: &str) -> bool {
         })
     };
     let lower = target.to_ascii_lowercase();
+    let user = lower
+        .trim_start_matches("sip:")
+        .split('@')
+        .next()
+        .unwrap_or("");
     lower.starts_with("sip:")
+        && user.chars().any(|c| c.is_ascii_alphabetic())
         && !lower.contains(";user=phone")
         && !lower.trim_start_matches("sip:").starts_with('+')
         && domain(target).is_some()
@@ -3553,5 +3560,9 @@ tun0\t000000CB\t00000000\t0001\t0\t0\t500\t000000FF\t0\t0\t0\n";
         assert!(!auto_follow("sip:eve@fabrikam.com", me));
         assert!(!auto_follow("sip:eve@contoso.com.evil.example", me));
         assert!(!auto_follow("tel:+4940123456", me));
+        // Issue #70: numeric users may be dial-plan numbers.
+        assert!(!auto_follow("sip:900123@contoso.com", me));
+        assert!(!auto_follow("sip:0049-40-123@contoso.com", me));
+        assert!(auto_follow("sip:room42@contoso.com", me));
     }
 }

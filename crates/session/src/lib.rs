@@ -54,6 +54,40 @@ pub struct Config {
     pub machine_name: String,
 }
 
+/// The top Via branch of a message.
+fn top_branch(m: &Message) -> Option<&str> {
+    m.header_values("Via")
+        .next()
+        .and_then(|v| v.split(',').next())
+        .and_then(|v| v.split(';').find_map(|p| p.trim().strip_prefix("branch=")))
+}
+
+/// RFC 3261 §17.1.3 (and the From tag, as the registrar checks it): `resp` answers `req`.
+fn same_transaction(req: &Message, resp: &Message, cseq_method: &str) -> bool {
+    let method = req
+        .method()
+        .is_some_and(|m| m.eq_ignore_ascii_case(cseq_method));
+    let branch = top_branch(req).is_some() && top_branch(req) == top_branch(resp);
+    let tag = |m: &Message| {
+        m.from()
+            .ok()
+            .flatten()
+            .and_then(|f| f.param("tag").map(str::to_string))
+    };
+    method && branch && tag(req) == tag(resp)
+}
+
+/// The retry counter of an operation that 409 conflicts can hit (issue #70).
+fn conflict_slot(p: &Purpose) -> Option<usize> {
+    match p {
+        Purpose::PublishEndpoint => Some(0),
+        Purpose::PublishStatus(_) => Some(1),
+        Purpose::PublishRouting(_) => Some(2),
+        Purpose::SetDelegate { .. } => Some(3),
+        _ => None,
+    }
+}
+
 /// Most 409 retries in a row before a publication is given up (issue #67, design).
 const MAX_CONFLICT_RETRIES: u8 = 3;
 
@@ -514,8 +548,9 @@ pub struct Engine<R: Random> {
     routing_versions: [u32; 5],
     /// Our delegate list (PR-21), from the self subscription.
     delegates: Option<pres::Delegates>,
-    /// 409 retries since the last successful publication (issue #67: bounded).
-    conflict_retries: u8,
+    /// 409 retries per kind of operation since its last success (issues #67, #70: bounded and
+    /// kept apart – endpoint, status, routing, delegates).
+    conflict_retries: [u8; 4],
     /// The routing rules the user published last (restored after an emergency call).
     routing_rules: pres::Forwarding,
     /// The rules above were published by this session (only then they are restored).
@@ -523,8 +558,9 @@ pub struct Engine<R: Random> {
     /// locationPolicy from provisioning (RG-51) and the current location (E9-04).
     location_policy: Option<commscraft_provisioning::LocationPolicy>,
     location: Option<commscraft_lis::Location>,
-    /// The emergency call in progress (RE-67).
-    emergency_call: Option<CallId>,
+    /// The emergency calls in progress (RE-67); forwarding stays suspended while any of them
+    /// exists (issue #70).
+    emergency_calls: Vec<CallId>,
     /// Focus factory URI from provisioning (PV-01).
     focus_factory: Option<String>,
     /// Call park server from provisioning (callParkServerUri, CK-01).
@@ -589,12 +625,12 @@ impl<R: Random> Engine<R> {
             status_versions: [0, 0],
             routing_versions: [0; 5],
             delegates: None,
-            conflict_retries: 0,
+            conflict_retries: [0; 4],
             routing_rules: pres::Forwarding::default(),
             routing_known: false,
             location_policy: None,
             location: None,
-            emergency_call: None,
+            emergency_calls: Vec::new(),
             focus_factory: None,
             call_park: None,
             parks: Vec::new(),
@@ -1676,6 +1712,12 @@ impl<R: Random> Engine<R> {
             Command::SignOut => {
                 self.signing_out = true;
                 self.end_all_calls(now, &mut out);
+                // Issue #70: the user's routing back before we leave – the tick that normally
+                // does it does not run once unregistered.
+                if !self.emergency_calls.is_empty() {
+                    self.emergency_calls.clear();
+                    self.restore_routing(now, &mut out);
+                }
                 self.leave_parks(now, &mut out);
                 for i in (0..self.subs.len()).rev() {
                     self.unsubscribe(i, now, &mut out);
@@ -1775,6 +1817,15 @@ impl<R: Random> Engine<R> {
         let Some(code) = resp.status_code() else {
             return;
         };
+        // Issue #70 / RFC 3261 §17.1.3: a response belongs to a client transaction only with the
+        // same top Via branch, CSeq method and From tag as the request.
+        if !self
+            .pending
+            .get(&key)
+            .is_some_and(|p| same_transaction(&p.request, resp, cseq.method))
+        {
+            return;
+        }
         if code < 200 {
             if let Some((purpose, request)) = self
                 .pending
@@ -1788,14 +1839,6 @@ impl<R: Random> Engine<R> {
         let Some(p) = self.pending.remove(&key) else {
             return;
         };
-        if !p
-            .request
-            .method()
-            .is_some_and(|m| m.eq_ignore_ascii_case(cseq.method))
-        {
-            self.pending.insert(key, p);
-            return;
-        }
         if (200..300).contains(&code) {
             self.on_success(p, resp, now, out);
         } else {
@@ -1831,10 +1874,12 @@ impl<R: Random> Engine<R> {
     fn on_conflict(&mut self, p: &Pending, resp: &Message) -> Option<Purpose> {
         // Issue #67: a server that keeps reporting new versions gets at most this many retries
         // until a publication succeeds.
-        if self.conflict_retries >= MAX_CONFLICT_RETRIES {
+        let slot = conflict_slot(&p.purpose)?;
+        let used = self.conflict_retries.get_mut(slot)?;
+        if *used >= MAX_CONFLICT_RETRIES {
             return None;
         }
-        self.conflict_retries += 1;
+        *used += 1;
         let body = std::str::from_utf8(&resp.body).ok()?;
         let conflicts = pres::parse_fault(body).ok()?;
         let target = match p.purpose {
@@ -1866,14 +1911,9 @@ impl<R: Random> Engine<R> {
     }
 
     fn on_success(&mut self, p: Pending, resp: &Message, now: u64, out: &mut Vec<Output>) {
-        if matches!(
-            p.purpose,
-            Purpose::PublishEndpoint
-                | Purpose::PublishStatus(_)
-                | Purpose::PublishRouting(_)
-                | Purpose::SetDelegate { .. }
-        ) {
-            self.conflict_retries = 0;
+        if let Some(used) = conflict_slot(&p.purpose).and_then(|i| self.conflict_retries.get_mut(i))
+        {
+            *used = 0;
         }
         match p.purpose {
             Purpose::Subscribe(i) | Purpose::Refresh(i) => {
