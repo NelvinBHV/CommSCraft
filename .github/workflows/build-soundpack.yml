@@ -32,5 +32,6 @@ jobs:
             echo "Audio assets unchanged"
           else
             git commit -m "Build approved CommSCraft Pulse, Beat Call and Signal Message audio assets"
+            git pull --rebase origin main
             git push origin HEAD:main
           fi
