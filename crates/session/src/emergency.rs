@@ -105,6 +105,7 @@ impl<R: Random> Engine<R> {
             Extras {
                 headers: &extra,
                 part: part.as_ref(),
+                video: None,
                 emergency: true,
             },
             now,

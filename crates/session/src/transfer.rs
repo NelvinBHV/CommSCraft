@@ -428,6 +428,7 @@ impl<R: Random> Engine<R> {
             crate::call::Extras {
                 headers: &extra,
                 part: None,
+                video: None,
                 emergency: false,
             },
             now,

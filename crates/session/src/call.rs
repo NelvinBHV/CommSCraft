@@ -44,6 +44,8 @@ const MIXED_BOUNDARY: &str = "CommSCraft_e911";
 pub(crate) struct Extras<'a> {
     pub headers: &'a [(String, String)],
     pub part: Option<&'a ExtraPart>,
+    /// Our video stream: the INVITE offers audio and video (function 28).
+    pub video: Option<&'a sdp::video::VideoLocal>,
     /// An emergency call: it may exceed [`MAX_CALLS`] by one (issue #67 – an emergency call is
     /// never refused for the number of calls in progress).
     pub emergency: bool,
@@ -100,6 +102,9 @@ pub(crate) struct Call {
     pub transferred_from: Option<CallId>,
     /// This incoming call replaces that call (RFC 3891).
     pub replaces: Option<CallId>,
+    /// Our video stream, if the call carries video (function 28); its key stays for the whole
+    /// call like the audio key (SD-13).
+    pub video: Option<sdp::video::VideoLocal>,
 }
 
 /// The caller of an incoming call as far as the signalling tells (PS-02, PS-04, PS-07).
@@ -257,7 +262,16 @@ impl<R: Random> Engine<R> {
             )));
             return None;
         }
-        let offer = sdp::offer(&local, policy);
+        let offer = match extras.video {
+            Some(v) => match sdp::video::offer_with_video(&local, v, policy) {
+                Ok(o) => o,
+                Err(_) => {
+                    out.push(Output::Event(Event::Notice("unusable video stream".into())));
+                    return None;
+                }
+            },
+            None => sdp::offer(&local, policy),
+        };
         let mut m = self.request("INVITE", &peer, &peer);
         // SD-51: 100rel is supported (never required in a request); PS-06: gateways may send
         // the answer in an unreliable 183.
@@ -317,6 +331,7 @@ impl<R: Random> Engine<R> {
                 transfer_in: None,
                 transferred_from: None,
                 replaces: None,
+                video: extras.video.cloned(),
             },
         );
         self.send_request(m, Purpose::CallInvite(id), now, out);
@@ -627,9 +642,20 @@ impl<R: Random> Engine<R> {
             return;
         }
         let key = c.local.as_ref().and_then(|l| l.key.clone());
-        let negotiated = audio_sdp(resp)
+        let answer = audio_sdp(resp);
+        let negotiated = answer
+            .as_deref()
             .ok_or(sdp::Error::NoAudio)
-            .and_then(|s| sdp::answer_to_offer(&s, key.as_ref(), c.policy));
+            .and_then(|s| sdp::answer_to_offer(s, key.as_ref(), c.policy));
+        // Function 28: the video line of the answer, if we offered video.
+        let video = match (&c.video, answer.as_deref()) {
+            (Some(v), Some(s)) => Some(sdp::video::video_answer_to_offer(
+                s,
+                v.media.key.as_ref(),
+                c.policy,
+            )),
+            _ => None,
+        };
         match negotiated {
             Ok(n) => {
                 let transferred = c.transferred_from.is_some();
@@ -646,6 +672,7 @@ impl<R: Random> Engine<R> {
                         continues_early,
                     },
                 );
+                self.report_video(id, video, out);
                 if transferred {
                     self.transferred_call_result(id, 200, now, out);
                 }
@@ -669,6 +696,61 @@ impl<R: Random> Engine<R> {
                 );
             }
         }
+    }
+
+    /// The video outcome of an answer: `CallVideo`, or a notice when the peer took no video
+    /// (the call goes on with audio).
+    fn report_video(
+        &mut self,
+        id: CallId,
+        video: Option<Result<Option<sdp::video::NegotiatedVideo>, sdp::Error>>,
+        out: &mut Vec<Output>,
+    ) {
+        match video {
+            Some(Ok(Some(v))) => Self::call_event(
+                out,
+                Event::CallVideo {
+                    call: id,
+                    video: Box::new(v),
+                },
+            ),
+            Some(Ok(None)) => {
+                if let Some(c) = self.calls.get_mut(&id) {
+                    c.video = None;
+                }
+                out.push(Output::Event(Event::Notice(format!(
+                    "call {id}: the other side takes no video"
+                ))));
+            }
+            Some(Err(e)) => {
+                if let Some(c) = self.calls.get_mut(&id) {
+                    c.video = None;
+                }
+                out.push(Output::Event(Event::Notice(format!(
+                    "call {id}: unusable video answer ({e:?}), audio only"
+                ))));
+            }
+            None => {}
+        }
+    }
+
+    /// `SetCallVideo`: a newer description of our video stream (the final offer after ICE);
+    /// the key stays (SD-13).
+    pub(crate) fn set_call_video(&mut self, id: CallId, mut video: sdp::video::VideoLocal) {
+        if let Some(c) = self.calls.get_mut(&id) {
+            if let Some(old) = &c.video {
+                video.media.key = old.media.key.clone();
+                video.ssrc_range = old.ssrc_range;
+                c.video = Some(video);
+            }
+        }
+    }
+
+    /// Whether an incoming call offers video we could take (SD-27).
+    pub fn incoming_video(&self, id: CallId) -> bool {
+        self.calls
+            .get(&id)
+            .is_some_and(|c| sdp::video::offered_video(&c.offer))
     }
 
     pub(crate) fn on_call_failed(&mut self, id: CallId, code: u16, out: &mut Vec<Output>) {
@@ -707,7 +789,16 @@ impl<R: Random> Engine<R> {
         local.key = c.local.as_ref().and_then(|l| l.key.clone());
         local.ssrtp = c.local.as_ref().is_some_and(|l| l.ssrtp);
         let hold = local.direction == sdp::Direction::Inactive;
-        let body = sdp::offer(&local, c.policy);
+        // The video line stays in every re-INVITE, with the same direction (hold) and key.
+        let body = match &c.video {
+            Some(v) => {
+                let mut v = v.clone();
+                v.media.direction = local.direction;
+                sdp::video::offer_with_video(&local, &v, c.policy)
+                    .unwrap_or_else(|_| sdp::offer(&local, c.policy))
+            }
+            None => sdp::offer(&local, c.policy),
+        };
         c.local = Some(local);
         let mut m = d.request("INVITE");
         c.dialog = Some(d);
@@ -891,6 +982,7 @@ impl<R: Random> Engine<R> {
                 transfer_in: None,
                 transferred_from: None,
                 replaces,
+                video: None,
             },
         );
         Self::call_event(out, Event::IncomingCall { call: id, from });
@@ -901,6 +993,19 @@ impl<R: Random> Engine<R> {
         &mut self,
         id: CallId,
         local: sdp::Local,
+        policy: sdp::Encryption,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        self.accept_call_with_video(id, local, None, policy, now, out);
+    }
+
+    /// `AcceptCall` / `AcceptVideoCall`: with `video`, an offered H.264 UC line is taken.
+    pub(crate) fn accept_call_with_video(
+        &mut self,
+        id: CallId,
+        local: sdp::Local,
+        video: Option<sdp::video::VideoLocal>,
         policy: sdp::Encryption,
         now: u64,
         out: &mut Vec<Output>,
@@ -916,13 +1021,23 @@ impl<R: Random> Engine<R> {
             .key
             .clone()
             .unwrap_or_else(|| sdp::Key::new(0, [0; 30]));
+        let video_key = video
+            .as_ref()
+            .and_then(|v| v.media.key.clone())
+            .unwrap_or_else(|| sdp::Key::new(0, [0; 30]));
         let answered = if policy != sdp::Encryption::Off && local.key.is_none() {
             Err(sdp::Error::Crypto("no media key"))
         } else {
-            sdp::answer(&c.offer, &local, fresh, policy)
+            sdp::video::answer_with_video(
+                &c.offer,
+                &local,
+                fresh,
+                video.as_ref().map(|v| (v, video_key)),
+                policy,
+            )
         };
         match answered {
-            Ok((body, n)) => {
+            Ok((body, n, nv)) => {
                 let mut ok = response_to(&invite, 200, "OK");
                 for rr in invite.header_values("Record-Route") {
                     ok.push_header("Record-Route", rr);
@@ -946,10 +1061,23 @@ impl<R: Random> Engine<R> {
                 {
                     k.tag = tag;
                 }
+                // Our video key under the tag the peer offered for video.
+                let kept_video = match (video, &nv) {
+                    (Some(mut v), Some(n)) => {
+                        if let (Some(k), Some(tag)) =
+                            (v.media.key.as_mut(), n.remote_key.as_ref().map(|r| r.tag))
+                        {
+                            k.tag = tag;
+                        }
+                        Some(v)
+                    }
+                    _ => None,
+                };
                 if let Some(c) = self.calls.get_mut(&id) {
                     c.state = CallState::Active;
                     c.local = Some(kept);
                     c.policy = policy;
+                    c.video = kept_video;
                 }
                 if let Some(invite) = self.calls.get(&id).map(|c| c.invite.clone()) {
                     self.keep_for_quality(id, &invite, now);
@@ -966,6 +1094,15 @@ impl<R: Random> Engine<R> {
                         continues_early: false,
                     },
                 );
+                if let Some(v) = nv {
+                    Self::call_event(
+                        out,
+                        Event::CallVideo {
+                            call: id,
+                            video: Box::new(v),
+                        },
+                    );
+                }
             }
             Err(e) => {
                 self.calls.remove(&id);
@@ -1018,9 +1155,20 @@ impl<R: Random> Engine<R> {
                     .key
                     .clone()
                     .unwrap_or_else(|| sdp::Key::new(0, [0; 30]));
-                match sdp::answer(&offer, &local, key, c.policy) {
+                let video = c.video.as_ref().map(|v| {
+                    (
+                        v,
+                        v.media
+                            .key
+                            .clone()
+                            .unwrap_or_else(|| sdp::Key::new(0, [0; 30])),
+                    )
+                });
+                match sdp::video::answer_with_video(&offer, &local, key, video, c.policy) {
                     // SD-13: the peer must keep its key as well.
-                    Ok((body, n)) if c.policy == sdp::Encryption::Off || n.remote_key.is_some() => {
+                    Ok((body, n, nv))
+                        if c.policy == sdp::Encryption::Off || n.remote_key.is_some() =>
+                    {
                         let mut ok = response_to(req, 200, "OK");
                         ok.push_header("Contact", &format!("<{}>", self.gruu));
                         ok.push_header("Content-Type", "application/sdp");
@@ -1033,6 +1181,15 @@ impl<R: Random> Engine<R> {
                                 media: Box::new(n),
                             },
                         );
+                        if let Some(v) = nv {
+                            Self::call_event(
+                                out,
+                                Event::CallVideo {
+                                    call: id,
+                                    video: Box::new(v),
+                                },
+                            );
+                        }
                     }
                     _ => {
                         let r = response_to(req, 488, "Not Acceptable Here");
