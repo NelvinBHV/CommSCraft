@@ -13,6 +13,8 @@ Sources (all edition 20250520): [MS-H264PF] 33 pp.; [MS-RTVPF] 36 pp.; [MS-RTPRA
 | PL-05 | Simulcast (several resolutions/codecs), at most one RTVideo simulcast stream with its own SSRC; the mixer forwards exactly one | §3.1.5.3, p. 23 |
 | PL-06 | FEC (x-ulpfecuc) per RFC 5109 with its own SN offset instead of SN base and an FEC level extension header (HR1/HR2, count, index); XOR with 1 FEC packet, otherwise Reed-Solomon (not specified) | §2.2.8, pp. 17–20; §3.1.5.2, pp. 22–23; §3.2.5.2, pp. 25–26 |
 | PL-07 | Consistency check of example §4.1 (p. 27): payloadSize 0x3A = 58 = 16 (UUID) + 8 (LPB) + 1 + 1 + 2×16 ✓ | p. 27 |
+| PL-08 | Packetization of one layer (implementation rules): the PACSI ([RFC6190] §4.9, type 30) leads every access unit – inside a STAP-A with as many leading NAL units as fit the MTU, otherwise alone before FU-A fragments; its 4-byte header for an H.264 base layer is R=1, I=IDR, PRID, N=1, DID=QID=TID=0, U=D=0, O=1, RR=3 (N=1 for the base layer is an inference); flags X=1 with A=C=IDR, P=0, Y=0, T=1 with DONC = CS-DON of the first following NAL unit (NI-TC, [RFC6190] §6.2); S/E for the first/last NAL unit after the PACSI being the first/last VCL NAL unit; the full stream layout in the first PACSI and in that of every IDR access unit; marker on the last packet of the access unit | [RFC6190] §4.9, §6.2; [RFC6184] §5.6–5.8; H264PF §2.2.4–2.2.5.1, pp. 10–13; §3.1.5.1, p. 21 |
+| PL-09 | Depacketization: [RFC6184] §7.1 plus §3.2.5.1 – the first packet of a timestamp must be a PACSI or a STAP-A led by one, otherwise all packets of that timestamp are discarded; nothing is accepted before a full stream layout and for a PRID without description; an update layout may not add layers. Note <2>: Lync Server 2013 and SfB Server 2015/2019 do not support RTP sequence number 0 – the video sender must skip it | H264PF §3.2.5.1, p. 24; §2.2.5.1, p. 13; endnote <2>, p. 31 |
 
 ## RTVideo (MS-RTVPF)
 
@@ -83,3 +85,6 @@ The base codec set of M3 (K-RT-1: G.711/G.722 are the safe base) was not in the 
 - Base RFCs 6184/6190/5109/2198/4733 obtained.
 - Comparison of MS-RTVPF §3.1.5.5 (p. 21) with FFmpeg's VC-1 decoder suggests that RTVideo signals cached frames and SP-frames with picture type codes beyond the VC-1 code `1111` (skipped picture); a standard VC-1 decoder would therefore misread them (inference).
 - L-07 **closed by decision** D-05 (OB-51): no RTVideo/VC-1 codec.
+
+## Implementation (2026-11-01, crate `h264uc`)
+Sans-I/O packetizer and depacketizer of one H.264 UC layer (PL-01 … PL-04, PL-08, PL-09): Annex B splitting, stream layout SEI (example §4.1 byte for byte), PACSI build/parse, STAP-A/FU-A, bounded reassembly (2 MiB per access unit, 1024 NAL units), sequence gaps and malformed packets lose the access unit instead of passing parts to the decoder. Not yet: FEC (PL-06), simulcast (PL-05), cropping/bitstream info SEI. Status: tested-offline.
