@@ -60,6 +60,7 @@ Source: [MS-PRES] "Presence Protocol", edition 20250520, rev. 13.0, 257 pp. Appl
 | PR-52 | Contact with a phone number: `contactExtension/phone/uri tel:` | §4.14.1, p. 198 |
 
 ## Open points / follow-up checks
+- K-PR-3: The delegates document requires `uri` to be "the SIP URI of the delegate" (§2.2.2.10.1, p. 81), the examples write it without scheme (`john@contoso.com`, pp. 36, 81). The client completes a missing `sip:` and checks the result (inference); it sends full SIP URIs.
 
 - K-PR-1 (found 2026-10-27): §3.2.5.1.2/§2.2.2.2.3 name the fault code `Client.BadCall.WrongDelta`; the 409 example §4.2.1 (p. 138) prints `Protocol client.BadCall.WrongDelta` (evidently a global replacement of "client" in the document). The example's batch answer §4.5 (p. 179) also lacks the multipart close delimiter, and the contact list example §4.14.1 (p. 197) has a space inside a SIP URI (`+14252057570@ contoso.com`). Decision: accept any fault code ending in `BadCall.WrongDelta`; tolerate a missing close delimiter at the end of a Content-Length-framed body; skip contact entries with unusable URIs (`crates/presence`).
 - K-PR-2 (found 2026-10-31): §2.2.2.2 (p. 35) describes the publication attribute `expires` as "the time, in Coordinated Universal Time (UTC) as prescribed by [ISO-8601]", while the schema types it `xs:unsignedInt` for publications (§6, p. 209) and `xs:integer` for categories. Authoritative: the schema – a time-bound publication carries its lifetime in seconds (used for the `e911active` routing publication, file 06 RE-67).
@@ -77,3 +78,6 @@ Source: [MS-PRES] "Presence Protocol", edition 20250520, rev. 13.0, 257 pp. Appl
 
 ## Implementation (2026-11-01, self subscription for the routing category)
 `presence::self_subscribe` (PR-13: Event/Accept/Content-Type `vnd-microsoft-roaming-self`, `roamingList` with `roaming type="categories"` only) and `parse_self_routing`: the routing category instance 0 per container gives the versions for the next publication (PR-05) and, through `Forwarding::from_routing`, the user's rules (version 1 and 2 preamble; unknown flags, lists and waits ignored, O-TU-1; an unsafe target makes the rules unknown). The session subscribes after sign-in next to the contact list and keeps the rules current, also those set by another client (O-RE-3 closed). Not used yet: containers, subscribers, delegates in the self document. Status: tested-offline.
+
+## Implementation (2026-11-01, delegates)
+`presence::set_delegate_body` (PR-21: add with publish and redelegate denied – least privilege, design – or remove, at the list version) and `parse_delegates` (roaming-self or bare delegates document, K-PR-3, at most 32). The self subscription asks for `roamingEx type="delegates"` too; the session keeps the list and its version, retries a 409 once with `curVersion` (§2.2.2.10.4) and reports the list from the 200 (§2.2.2.10.3). CLI `/delegate add|remove`. Status: tested-offline.

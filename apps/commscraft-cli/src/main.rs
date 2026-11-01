@@ -53,6 +53,7 @@ presence  signs in, reads the contact list, queries the presence of up to N cont
 interactive  signs in and stays signed in: contacts with live presence, own state, several
           conversations. Commands: /contacts  /status online|busy|dnd|away  /chat sip:URI
           /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)
+          /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
           /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
@@ -1450,6 +1451,8 @@ fn interactive(
     let mut handles: BTreeMap<u32, calls::MediaHandle> = BTreeMap::new();
     let mut next_media: u32 = 1;
     let mut pending_out: BTreeMap<u32, String> = BTreeMap::new();
+    // AE-38: media ids of calls placed as delegate, with the boss.
+    let mut pending_behalf: BTreeMap<u32, String> = BTreeMap::new();
     // Media ids of calls being prepared that are emergency calls (function 39).
     let mut pending_emergency: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
     // The location policy enables emergency services: ask the location service (E9-03).
@@ -1583,11 +1586,16 @@ fn interactive(
                     E::CallRinging { call } => println!("* call {call} ringing"),
                     E::IncomingCall { call, from } => {
                         // PS-02/PS-04/PS-07: number, gateway and anonymous callers.
-                        let for_whom = engine
-                            .caller(call)
-                            .and_then(|c| c.on_behalf_of)
-                            .map(|u| format!(" for {u}"))
-                            .unwrap_or_default();
+                        // RE-72 / AE-38: meant for someone else, or a delegate calling for
+                        // someone (then the server's Referred-By names the same person).
+                        let for_whom = match engine.caller(call) {
+                            Some(c) => match (c.acting_for, c.on_behalf_of) {
+                                (Some(a), _) => format!(" on behalf of {a}"),
+                                (None, Some(b)) => format!(" for {b}"),
+                                (None, None) => String::new(),
+                            },
+                            None => String::new(),
+                        };
                         let who = match engine.caller(call) {
                             Some(c) if c.anonymous => "an anonymous caller".to_string(),
                             Some(c) => match (c.number, c.gateway) {
@@ -1761,6 +1769,8 @@ fn interactive(
                     }
                     E::OwnStatus(s) => println!("* your state: {s:?} (until you sign out)"),
                     E::OwnStatusFailed(c) => println!("* setting your state failed ({c})"),
+                    E::Delegates(list) if list.is_empty() => println!("* delegates: none"),
+                    E::Delegates(list) => println!("* delegates: {}", list.join(", ")),
                     E::Forwarding(f) => {
                         // PR-13: the server's rules – also those set by another client – are
                         // the base for the next /forward, /team or /delegates.
@@ -2050,6 +2060,13 @@ fn interactive(
                                 local,
                                 policy,
                             }
+                        } else if let Some(boss) = pending_behalf.remove(&id) {
+                            C::CallOnBehalf {
+                                to,
+                                boss,
+                                local,
+                                policy,
+                            }
                         } else {
                             C::Call { to, local, policy }
                         };
@@ -2123,6 +2140,7 @@ fn interactive(
                     } else if let Some(h) = handles.remove(&id) {
                         let _ = h.tx.send(calls::ToMedia::Stop);
                         pending_out.remove(&id);
+                        pending_behalf.remove(&id);
                         pending_in.remove(&id);
                     }
                 }
@@ -2156,7 +2174,20 @@ fn interactive(
                     }
                 },
                 "/chat" => Some(C::StartConversation { to: arg }),
-                "/call" | "/callback" => {
+                "/call" | "/callback" | "/callfor" => {
+                    // AE-38: /callfor sip:BOSS TARGET calls as the boss's delegate.
+                    let (boss, arg) = if cmd == "/callfor" {
+                        let mut w = arg.splitn(2, ' ');
+                        let boss = w.next().unwrap_or("").to_string();
+                        let rest = w.next().unwrap_or("").trim().to_string();
+                        if !boss.starts_with("sip:") || rest.is_empty() {
+                            println!("* /callfor sip:BOSS sip:URI|number");
+                            continue;
+                        }
+                        (Some(boss), rest)
+                    } else {
+                        (None, arg)
+                    };
                     // A phone number becomes a SIP URI with the dial plan (PS-01); /callback N
                     // calls the asserted identity of call N (PS-02).
                     // Function 39: a number of the location policy is an emergency call.
@@ -2200,6 +2231,9 @@ fn interactive(
                     );
                     handles.insert(id, h);
                     pending_out.insert(id, arg.clone());
+                    if let Some(b) = boss {
+                        pending_behalf.insert(id, b);
+                    }
                     if let Some(dial) = &emergency {
                         pending_emergency.insert(id);
                         println!("* EMERGENCY CALL to {dial} – preparing …");
@@ -2286,6 +2320,22 @@ fn interactive(
                     } else {
                         println!("* /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off");
                         None
+                    }
+                }
+                "/delegate" => {
+                    // PR-21: who may call for us and take our calls.
+                    let mut w = arg.split_whitespace();
+                    match (w.next(), w.next()) {
+                        (Some(a @ ("add" | "remove")), Some(u)) if u.starts_with("sip:") => {
+                            Some(C::SetDelegate {
+                                uri: u.to_string(),
+                                add: a == "add",
+                            })
+                        }
+                        _ => {
+                            println!("* /delegate add|remove sip:URI");
+                            None
+                        }
                     }
                 }
                 "/team" | "/delegates" => {
