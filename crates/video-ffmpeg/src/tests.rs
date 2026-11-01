@@ -35,6 +35,7 @@ fn config() -> EncoderConfig {
         fps: 30,
         bitrate: 400_000,
         idr_interval: 300,
+        hardware: false,
     }
 }
 
@@ -219,5 +220,78 @@ fn camera_delivers_pictures() {
         let p = cam.next_picture().unwrap();
         assert_eq!(p.data.len(), Picture::i420_len(640, 480));
         enc.encode(&p, false).unwrap();
+    }
+}
+
+/// D-13: with `hardware` the GPU encodes if a VA-API device works (skipped otherwise); the
+/// result is the same kind of stream – constrained baseline, IDR first and on request, SPS/PPS
+/// with every IDR – and decodes like the software one.
+#[test]
+fn vaapi_encoder_when_available() {
+    init().unwrap();
+    let mut enc = Encoder::new(EncoderConfig {
+        hardware: true,
+        ..config()
+    })
+    .unwrap();
+    eprintln!("encoder backend: {:?}", enc.backend());
+    if enc.backend() == Backend::Software {
+        return; // no VA-API here (CI): the fallback is what the user gets
+    }
+    let mut dec = Decoder::new().unwrap();
+    let mut aus = Vec::new();
+    let mut decoded = 0;
+    for n in 0..12 {
+        for au in enc.encode(&gradient(320, 240, n), n == 8).unwrap() {
+            decoded += dec.decode(&au).unwrap().len();
+            aus.push(au);
+        }
+    }
+    assert!(aus.len() >= 10);
+    let first = nal_types(aus.first().unwrap());
+    assert!(
+        first.contains(&7) && first.contains(&8) && first.contains(&5),
+        "{first:?}"
+    );
+    let sps = uc::split_annex_b(aus.first().unwrap())
+        .unwrap()
+        .into_iter()
+        .find(|n| uc::nal_type(n) == Some(7))
+        .unwrap()
+        .to_vec();
+    assert_eq!(sps[1], 66, "baseline profile_idc");
+    assert!(sps[2] & 0x40 != 0, "constraint_set1_flag");
+    let idrs: Vec<usize> = aus
+        .iter()
+        .enumerate()
+        .filter(|(_, a)| nal_types(a).contains(&5))
+        .map(|(i, _)| i)
+        .collect();
+    assert!(idrs.len() >= 2, "IDR first and on request: {idrs:?}");
+    for i in &idrs {
+        assert!(nal_types(&aus[*i]).contains(&7), "SPS with every IDR");
+    }
+    assert!(decoded >= 10);
+}
+
+/// CPU load of the two paths (manual: `cargo test -p commscraft-video-ffmpeg encode_load --
+/// --ignored` with COMMSCRAFT_HW=1 or 0, timed from outside).
+#[test]
+#[ignore]
+fn encode_load() {
+    init().unwrap();
+    let hardware = std::env::var("COMMSCRAFT_HW").is_ok_and(|v| v == "1");
+    let mut enc = Encoder::new(EncoderConfig {
+        width: 1280,
+        height: 720,
+        bitrate: 1_500_000,
+        hardware,
+        ..config()
+    })
+    .unwrap();
+    eprintln!("encoder backend: {:?}", enc.backend());
+    let pictures: Vec<Picture> = (0..30).map(|n| gradient(1280, 720, n)).collect();
+    for n in 0..300 {
+        enc.encode(&pictures[n % 30], false).unwrap();
     }
 }
