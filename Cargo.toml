@@ -26,6 +26,7 @@ members = [
     "crates/g711",
     "crates/g722",
     "crates/audio-alsa",
+    "crates/video-ffmpeg",
     "crates/rtp",
     "crates/sdp",
     "crates/stun",

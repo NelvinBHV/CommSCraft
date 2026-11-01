@@ -1,0 +1,17 @@
+[package]
+name = "commscraft-video-ffmpeg"
+description = "Video adapter through the system's FFmpeg (decision D-12): camera capture over V4L2, H.264 encoding and decoding, pixel format conversion"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ffmpeg-next = { version = "=9.0.0", default-features = false, features = ["codec", "device", "format", "software-scaling"] }
+
+[dev-dependencies]
+commscraft-h264uc = { path = "../h264uc" }
+
+[lints]
+workspace = true

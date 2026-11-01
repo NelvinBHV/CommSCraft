@@ -23,6 +23,8 @@ jobs:
         run: rustup toolchain install stable --profile minimal --component rustfmt,clippy && rustup default stable
       - name: ALSA headers for the audio device adapter (decision D-11)
         run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends libasound2-dev
+      - name: FFmpeg libraries and headers for the video adapter (decision D-12)
+        run: sudo apt-get install -y -q --no-install-recommends pkg-config clang libclang-dev libavcodec-dev libavformat-dev libavdevice-dev libavutil-dev libswscale-dev
       - name: Format
         run: cargo fmt --all -- --check
       - name: Clippy
