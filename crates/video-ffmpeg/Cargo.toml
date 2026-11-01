@@ -13,5 +13,18 @@ ffmpeg-next = { version = "=9.0.0", default-features = false, features = ["codec
 [dev-dependencies]
 commscraft-h264uc = { path = "../h264uc" }
 
-[lints]
-workspace = true
+# D-13: the workspace forbids unsafe code; this crate denies it instead, so that exactly one
+# module (`hw`, VA-API through FFmpeg's hardware context) can allow it. The other lints are
+# those of the workspace.
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+unimplemented = "deny"
+todo = "deny"
+unreachable = "deny"
+indexing_slicing = "deny"
+undocumented_unsafe_blocks = "deny"

@@ -1,6 +1,6 @@
 # Security by design
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (static audits, issues #67 and #70: emergency routing lifecycle, on-behalf-of identity, transfers that ask, transaction matching, bounded retries per operation, quoted verbose output)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (D-13: the one unsafe module)
 
 CommSCraft handles passwords, Kerberos tickets, NTLM session keys and SRTP keys. It talks to
 servers and peers it cannot trust. Security is part of every design decision, not a later review.
@@ -59,6 +59,7 @@ This page lists the rules every crate follows and how each is enforced. The gene
 | Emergency calls are never blocked, never half-done | An emergency call may exceed the call limit by one; the time-bound e911active routing is published (before the INVITE, MS-SIPRE §3.17.5.1, without waiting) only once the emergency call exists, so forwarding is never suspended without a call that ends the suspension; a call that cannot start is reported loudly (issue #67). The suspension lasts while any emergency call exists, and signing out restores the user's rules before unregistering; if the registration is lost, the time-bound publication ends on the server after one hour (issue #70) |
 | Identity claims only where the routing shows them | A call counts as meant for someone else ("for X", answered with p-session-on-behalf-of) only when it was addressed to X (`To`) and Referred-By names the same X – a transferred call (Referred-By = the transferor, addressed to us) is ours (issue #67) |
 | Transfers that may cost ask first | A REFER is followed automatically only to a SIP address in the user's own domain whose user part contains a letter (a numeric user may be a dial-plan number, issue #70); phone numbers and other domains wait for `/follow` or `/decline` (NOTIFY 603) (issue #67) |
+| Unsafe code in one place only | `unsafe_code` is forbidden everywhere except the module `video-ffmpeg::hw` (D-13): VA-API device, surface pool and upload through FFmpeg's hardware context, each `unsafe` block with a SAFETY comment (enforced by clippy), pointers from FFmpeg's allocators checked for null, buffers released once in `Drop`; without a working device the encoder falls back to libx264 |
 | Responses only to their transaction | A response completes a client transaction only with the request's top Via branch, CSeq number and method, Call-ID and From tag (RFC 3261 §17.1.3; issue #70) |
 | Bounded retries | 409 version conflicts of publications and delegate changes: at most three retries in a row per kind of operation until that operation succeeds (issues #67, #70) |
 | Untrusted text cannot pose as CLI output | Multi-line server content in verbose output (Autodiscover bodies) is printed as a quoted block (`  | ` per line) after control and bidi escaping (issue #67) |

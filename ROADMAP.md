@@ -2,7 +2,7 @@
 
 **Stage: M4 closed, M5 next** · M0 done · M1 and M2 built and tested offline · M3 built, waiting for the owner's audio runs · M4 closed by owner decision (T-04, tested-offline)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (M5: video-ffmpeg, numbers)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (M5: VA-API encoding, numbers)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **26** (23 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **37 crates + 1 app** (`commscraft-cli`), **373 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **37 crates + 1 app** (`commscraft-cli`), **374 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **private owner lab** (D-08, since 2026-10-31): the agent may test there; results are not published, public statuses stay `tested-offline` | owner decision |
 
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-01 | M5: hardware encoding (D-13) – `h264_vaapi` with a VA-API surface pool in the only unsafe module (`video-ffmpeg::hw`), fallback to libx264; the same constrained-baseline stream; about a quarter of the CPU time at 1280×720. |
 | 2026-11-01 | M5: crate `video-ffmpeg` (D-12) – camera capture over V4L2, H.264 encoding with libx264 in constrained baseline (SPS/PPS before every IDR, IDR on request) and decoding through the system's FFmpeg; the whole path encoder → h264uc → decoder tested; CI installs the FFmpeg development packages. |
 | 2026-11-01 | M5 start – crate `h264uc`: H.264 UC RTP payload of one layer after MS-H264PF (PACSI with the stream layout SEI, STAP-A/FU-A, NI-TC CS-DON) and a bounded depacketizer with the discard rules of §3.2.5.1 (PL-08, PL-09). |
 | 2026-11-01 | Decision D-12: video (M5) through the system's FFmpeg (capture, H.264 encoding/decoding), linked dynamically, no codec shipped; settles the H.264 implementation left open by D-05. |

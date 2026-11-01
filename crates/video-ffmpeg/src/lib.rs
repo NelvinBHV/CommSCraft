@@ -12,6 +12,8 @@
 
 use ffmpeg_next as ff;
 
+mod hw;
+
 /// Largest access unit handed to the decoder (as `commscraft-h264uc`).
 pub const MAX_ACCESS_UNIT: usize = 2 * 1024 * 1024;
 /// Largest picture accepted (design: 1920 × 1088).
@@ -25,6 +27,8 @@ pub enum Error {
     /// No usable H.264 encoder in the system's FFmpeg.
     NoEncoder,
     NoDecoder,
+    /// No usable GPU encoder (VA-API device, surface pool or upload failed).
+    NoHardware(String),
     /// The camera or its V4L2 input format is not available.
     NoCamera(String),
     /// A size or rate outside the supported range.
@@ -159,6 +163,25 @@ pub struct EncoderConfig {
     pub bitrate: u32,
     /// Distance between IDR pictures in frames (besides those requested).
     pub idr_interval: u32,
+    /// Try the GPU first (VA-API, D-13); without usable hardware libx264 is used.
+    pub hardware: bool,
+}
+
+/// How the encoder works.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Backend {
+    /// libx264 on the CPU.
+    Software,
+    /// `h264_vaapi` on the GPU (D-13).
+    Vaapi,
+}
+
+enum Path {
+    Software,
+    Vaapi {
+        frames: hw::VaapiFrames,
+        to_nv12: ff::software::scaling::Context,
+    },
 }
 
 /// H.264 encoder (libx264 through FFmpeg, D-12): constrained baseline profile (PL-03: the CB bit
@@ -168,6 +191,7 @@ pub struct Encoder {
     enc: ff::encoder::Video,
     config: EncoderConfig,
     pts: i64,
+    path: Path,
 }
 
 impl Encoder {
@@ -178,6 +202,12 @@ impl Encoder {
             || !(1..=600).contains(&config.idr_interval)
         {
             return Err(Error::BadParameter("encoder settings"));
+        }
+        if config.hardware {
+            // D-13: the GPU if it works, otherwise the CPU – never no video.
+            if let Ok(e) = Encoder::new_vaapi(config) {
+                return Ok(e);
+            }
         }
         let codec = ff::encoder::find_by_name("libx264").ok_or(Error::NoEncoder)?;
         let mut enc = ff::codec::context::Context::new_with_codec(codec)
@@ -204,7 +234,54 @@ impl Encoder {
             enc,
             config,
             pts: 0,
+            path: Path::Software,
         })
+    }
+
+    /// `h264_vaapi` with a VA-API surface pool (D-13): constrained baseline, no B frames, the
+    /// same rate and IDR settings as the software path; SPS/PPS come with every IDR.
+    fn new_vaapi(config: EncoderConfig) -> Result<Encoder, Error> {
+        let codec = ff::encoder::find_by_name("h264_vaapi").ok_or(Error::NoEncoder)?;
+        let frames = hw::VaapiFrames::new(config.width, config.height)?;
+        let mut ctx = ff::codec::context::Context::new_with_codec(codec);
+        frames.attach(&mut ctx)?;
+        let mut enc = ctx.encoder().video()?;
+        enc.set_width(config.width);
+        enc.set_height(config.height);
+        enc.set_format(ff::format::Pixel::VAAPI);
+        let fps = i32::try_from(config.fps).map_err(|_| Error::BadParameter("fps"))?;
+        enc.set_time_base((1, fps));
+        enc.set_frame_rate(Some((fps, 1)));
+        enc.set_bit_rate(config.bitrate as usize);
+        enc.set_max_b_frames(0);
+        enc.set_gop(config.idr_interval);
+        let mut opts = ff::Dictionary::new();
+        opts.set("profile", "constrained_baseline");
+        opts.set("aud", "0");
+        let enc = enc.open_as_with(codec, opts)?;
+        let to_nv12 = ff::software::scaling::Context::get(
+            ff::format::Pixel::YUV420P,
+            config.width,
+            config.height,
+            ff::format::Pixel::NV12,
+            config.width,
+            config.height,
+            ff::software::scaling::Flags::BILINEAR,
+        )?;
+        Ok(Encoder {
+            enc,
+            config,
+            pts: 0,
+            path: Path::Vaapi { frames, to_nv12 },
+        })
+    }
+
+    /// Whether the GPU or the CPU encodes.
+    pub fn backend(&self) -> Backend {
+        match self.path {
+            Path::Software => Backend::Software,
+            Path::Vaapi { .. } => Backend::Vaapi,
+        }
     }
 
     pub fn config(&self) -> EncoderConfig {
@@ -220,6 +297,12 @@ impl Encoder {
         let mut frame = to_frame(picture)?;
         frame.set_pts(Some(self.pts));
         self.pts += 1;
+        if let Path::Vaapi { frames, to_nv12 } = &mut self.path {
+            let mut nv12 = ff::frame::Video::empty();
+            to_nv12.run(&frame, &mut nv12)?;
+            nv12.set_pts(frame.pts());
+            frame = frames.upload(&nv12)?;
+        }
         if idr {
             frame.set_kind(ff::picture::Type::I);
         }

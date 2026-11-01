@@ -56,7 +56,7 @@ Security by design: threat model and the binding rules per crate are in
 
 ## Never crash (once code exists)
 - No panics in non-test code: no `unwrap()`, `expect()`, `panic!`, `unreachable!`, `todo!`,
-  `unimplemented!`; `unsafe_code = "forbid"` unless an owner decision allows a reviewed FFI crate.
+  `unimplemented!`; `unsafe_code = "forbid"` unless an owner decision allows a reviewed FFI crate (so far only D-13: the module `video-ffmpeg::hw`).
 - Errors are `Result<T, E>`; unfinished features return an error or are disabled.
 - Every crash fix lands with a regression test.
 
