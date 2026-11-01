@@ -1,6 +1,6 @@
 # Decisions
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-10-31 · **Change:** minor (D-08 changed: owner lab)
+> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-11-01 · **Change:** minor (D-12: video through the system's FFmpeg)
 
 Decisions that belong to the project owner. Agents propose, the owner decides; a decision is
 recorded here with date and reason before work depends on it.
@@ -26,6 +26,7 @@ recorded here with date and reason before work depends on it.
 | D-09 | 2026-10-26 | CI only on runners that cause no costs: standard GitHub-hosted runners in this public repository. No larger, custom or self-hosted runners, no paid external CI services. If the repository ever becomes private, no workflow runs without new owner approval (private repositories consume paid minutes) | Owner rule |
 | D-10 | 2026-10-27 | Autodiscover over HTTPS only, deviating from the MUST in MS-OCDISCWS §3.2.1.1 to also try `http://` (switch `allow_plain_http` stays off) | Plain HTTP would send the SIP URI unencrypted and accept spoofable redirects; owner followed the proposal |
 | D-11 | 2026-10-28 | Audio devices on Linux through ALSA/PipeWire: the adapter crate `audio-alsa` uses the ALSA API (crate `alsa` 0.9.1, links libasound); on PipeWire systems the ALSA device `default` is served by PipeWire's ALSA plugin. No other crate links audio libraries | Owner decision; one backend covers ALSA and PipeWire; safe Rust API, `unsafe_code` stays forbidden in CommSCraft code (D-03) |
+| D-12 | 2026-11-01 | Video (M5) through the system's FFmpeg libraries: one adapter crate links libavcodec/libavutil/libswscale (H.264 encoding and decoding; the encoder is chosen at run time from what the system offers, e.g. `h264_vaapi`, `libx264`) and libavdevice (camera capture over V4L2). CommSCraft ships no codec and no FFmpeg; it is linked dynamically. A binary built against an FFmpeg configured with `--enable-gpl` is under the GPL as a whole, one built against `--enable-nonfree` must not be redistributed – the project makes no releases (T-02); a future release needs a new owner decision. No other crate links media libraries | Owner decision; settles the open H.264 implementation of D-05; safe Rust API, `unsafe_code` stays forbidden in CommSCraft code (D-03) |
 | T-01 | 2026-10-26 | Repository restarted; the previous history is archived outside the repository | Owner decision |
 | T-02 | 2026-10-26, changed 2026-10-31 | Work on branches and pull requests; no direct pushes to `main`. Since 2026-10-31 the agent merges its own pull requests into `main` regularly once CI is green (merge commits, history kept). No releases | Owner rule; changed by the owner ("Merge aber immer wieder alles zusammen") |
 | T-04 | 2026-11-01 | Milestone M4 (conferences and telephony) is closed by owner decision with the functions of its scope implemented and `tested-offline`; the gate's "verified" is not claimed publicly (D-08). Remaining optional parts stay in `docs/gaps.md` | Owner decision |
