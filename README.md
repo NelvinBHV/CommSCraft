@@ -1,5 +1,7 @@
 # CommSCraft
 
+<img src="assets/branding/CommSCraft-flat-icon.svg" width="152" alt="CommSCraft fox wearing a communications headset" />
+
 CommSCraft is a **clean-room, open-source Linux client for Skype for Business Server** (and Lync
 Server 2013 and later), built from Microsoft's public Open Specifications, IETF RFCs and ITU-T
 Recommendations. It follows the conventions of the [storytold Crafting Apps](https://github.com/storytold)
