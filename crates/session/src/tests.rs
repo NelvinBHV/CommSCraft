@@ -3058,14 +3058,14 @@ fn forwarding_publication() {
 #[test]
 fn incoming_call_on_behalf_of() {
     let (mut e, mut server, _) = signed_in();
-    let invite = |referred: &str, id: &str| {
+    let invite = |to: &str, referred: &str, id: &str| {
         let mut m = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
         m.push_header(
             "Via",
             &format!("SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bK{id}"),
         );
         m.push_header("From", "<sip:carol@contoso.com>;tag=c1");
-        m.push_header("To", "<sip:alice@contoso.com>");
+        m.push_header("To", to);
         m.push_header("Call-ID", id);
         m.push_header("CSeq", "1 INVITE");
         m.push_header("Contact", "<sip:carol@contoso.com;opaque=user:epid:c;gruu>");
@@ -3075,7 +3075,11 @@ fn incoming_call_on_behalf_of() {
         m
     };
     e.on_message(
-        &server.sign(invite("<sip:bob@contoso.com>;ms-identity=\"x\"", "t1")),
+        &server.sign(invite(
+            "<sip:bob@contoso.com>",
+            "<sip:bob@contoso.com>;ms-identity=\"x\"",
+            "t1",
+        )),
         NOW,
     );
     assert_eq!(
@@ -3083,16 +3087,38 @@ fn incoming_call_on_behalf_of() {
         Some("sip:bob@contoso.com")
     );
     e.on_message(
-        &server.sign(invite("<sip:bob@contoso.com\"><x>", "t2")),
+        &server.sign(invite(
+            "<sip:bob@contoso.com>",
+            "<sip:bob@contoso.com\"><x>",
+            "t2",
+        )),
         NOW,
     );
     assert_eq!(e.caller(2).unwrap().on_behalf_of, None);
-    e.on_message(&server.sign(invite("<sip:alice@contoso.com>", "t3")), NOW);
+    e.on_message(
+        &server.sign(invite(
+            "<sip:alice@contoso.com>",
+            "<sip:alice@contoso.com>",
+            "t3",
+        )),
+        NOW,
+    );
     assert_eq!(
         e.caller(3).unwrap().on_behalf_of,
         None,
         "never our own address"
     );
+    // Issue #67: a transferred call (addressed to us, Referred-By = the transferor) is not
+    // somebody else's call.
+    e.on_message(
+        &server.sign(invite(
+            "<sip:alice@contoso.com>",
+            "<sip:bob@contoso.com>",
+            "t4",
+        )),
+        NOW,
+    );
+    assert_eq!(e.caller(4).unwrap().on_behalf_of, None);
 }
 
 /// CB-42/CB-43: the reported settings arrive as an event; options the focus does not allow are
@@ -3403,4 +3429,132 @@ fn delegate_calls_and_referee() {
         find(&out, "REFER").single("Referred-By").unwrap(),
         Some("<sip:alice@contoso.com>;ms-referee-uri=\"sip:alice@contoso.com\"")
     );
+}
+
+/// Issue #67, finding 1: an emergency call is placed even with the maximum of calls in progress
+/// (one more is allowed); the e911active routing goes out before the INVITE, and only if the
+/// call exists – a call that cannot start leaves the forwarding untouched.
+#[test]
+fn emergency_call_at_the_call_limit() {
+    let (mut e, mut server, out) = signed_in();
+    let sub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    let doc = r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="locationPolicy"><propertyEntryList><property name="EnhancedEmergencyServicesEnabled">true</property><property name="EmergencyNumbers">112</property></propertyEntryList></provisionGroup></provisionGroupList>"#;
+    e.on_message(
+        &answer(
+            &mut server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            doc,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+    for i in 0..crate::call::MAX_CALLS {
+        e.command(
+            Command::Call {
+                to: format!("sip:peer{i}@contoso.com"),
+                local: Box::new(media_local(40000, 7)),
+                policy: commscraft_sdp::Encryption::Required,
+            },
+            NOW,
+        );
+    }
+    let emergency = |e: &mut Engine<Counter>| {
+        e.command(
+            Command::EmergencyCall {
+                dialled: "112".into(),
+                local: Box::new(media_local(40000, 7)),
+                policy: commscraft_sdp::Encryption::Required,
+            },
+            NOW,
+        )
+    };
+    let out = emergency(&mut e);
+    let methods: Vec<_> = sends(&out)
+        .iter()
+        .filter_map(|m| m.method().map(str::to_string))
+        .collect();
+    let service = methods
+        .iter()
+        .position(|m| m == "SERVICE")
+        .expect("e911active published");
+    let invite = methods
+        .iter()
+        .position(|m| m == "INVITE")
+        .expect("emergency INVITE");
+    assert!(service < invite, "§3.17.5.1: routing before the INVITE");
+    // Beyond the one extra call nothing is published for a call that does not exist.
+    let out = emergency(&mut e);
+    assert!(sends(&out).is_empty());
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("COULD NOT BE STARTED"))));
+}
+
+/// Issue #67, finding 4: a server that keeps answering 409 with new versions gets a bounded
+/// number of retries.
+#[test]
+fn conflict_retries_are_bounded() {
+    let (mut e, mut server, _) = signed_in();
+    let mut out = e.command(Command::SetForwarding(pres::Forwarding::default()), NOW);
+    let mut sent = 1;
+    for v in 1..20u32 {
+        let Some(req) = sends(&out).pop() else { break };
+        let fault = format!(
+            r#"<Fault><Faultcode>Client.BadCall.WrongDelta</Faultcode><details><operation index="1" version="0" curVersion="{v}"/></details></Fault>"#
+        );
+        out = e.on_message(
+            &answer(
+                &mut server,
+                &req,
+                409,
+                Some("application/msrtc-fault+xml"),
+                &fault,
+                &[],
+            ),
+            NOW,
+        );
+        if sends(&out).iter().any(|m| m.method() == Some("SERVICE")) {
+            sent += 1;
+        }
+    }
+    assert_eq!(sent, 1 + 3, "the first request and three retries");
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("forwarding not set (409)"))));
+}
+
+/// Issue #67, finding 3: a transfer the user declines ends with NOTIFY 603; our call stays.
+#[test]
+fn declined_transfer() {
+    let (mut e, mut server, _) = signed_in();
+    let invite = active_call(&mut e, &mut server, "sip:bob@contoso.com");
+    let refer = peer_request(
+        &mut server,
+        &invite,
+        "REFER",
+        2,
+        None,
+        "",
+        &[("Refer-To", "<sip:+19005551234@contoso.com;user=phone>")],
+    );
+    let out = e.on_message(&refer, NOW);
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::TransferRequested { .. })));
+    let out = e.command(Command::DeclineTransfer { call: 1 }, NOW);
+    let notify = find(&out, "NOTIFY");
+    assert!(String::from_utf8_lossy(&notify.body).contains("603"));
+    assert!(notify
+        .single("Subscription-State")
+        .unwrap()
+        .unwrap()
+        .starts_with("terminated"));
+    assert!(!sends(&out).iter().any(|m| m.method() == Some("BYE")));
+    let out = e.command(Command::DeclineTransfer { call: 1 }, NOW);
+    assert!(sends(&out).is_empty(), "nothing left to decline");
 }

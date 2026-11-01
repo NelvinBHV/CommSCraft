@@ -18,9 +18,25 @@ pub fn clean(s: &str) -> String {
     out
 }
 
+/// Untrusted multi-line text (an HTTP body in verbose output) as a quoted block: every line
+/// starts with `  | `, so no line of it can pass for a line of the CLI (issue #67). Escaping
+/// follows when the block is printed through [`clean`].
+pub fn quoted(s: &str) -> String {
+    s.lines()
+        .map(|l| format!("  | {l}"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 #[cfg(test)]
 mod tests {
-    use super::clean;
+    use super::{clean, quoted};
+
+    #[test]
+    fn quoted_blocks_cannot_pass_for_cli_lines() {
+        assert_eq!(quoted("<a>\n* signed in\r\n"), "  | <a>\n  | * signed in");
+        assert_eq!(clean(&quoted("x\u{1b}[2J")), "  | x\\u{1b}[2J");
+    }
 
     #[test]
     fn control_sequences_are_escaped() {

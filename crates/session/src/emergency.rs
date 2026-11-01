@@ -57,10 +57,6 @@ impl<R: Random> Engine<R> {
             )));
             return;
         };
-        // All forwarding is suspended for the time of the emergency (e911active).
-        let mut rules = self.routing_rules.clone();
-        rules.e911_active = true;
-        self.publish_routing(rules, now, out);
         let aor = self.cfg.aor.clone();
         let cid = lis::content_id(&aor);
         let mut extra = vec![
@@ -97,20 +93,36 @@ impl<R: Random> Engine<R> {
         } else {
             "WITHOUT location (none known)"
         };
-        if let Some(id) = self.start_call_with(
+        // §3.17.5.1: compose the INVITE, publish the time-bound e911active preamble (all
+        // forwarding suspended), send the INVITE – without waiting for the publication, so the
+        // emergency call is never delayed. The routing is published only once the call exists
+        // (issue #67: no suspended forwarding without an emergency call to end it).
+        let mut call_out = Vec::new();
+        let started = self.start_call_with(
             &uri,
             local,
             policy,
             Extras {
                 headers: &extra,
                 part: part.as_ref(),
+                emergency: true,
             },
             now,
-            out,
-        ) {
+            &mut call_out,
+        );
+        if let Some(id) = started {
+            let mut rules = self.routing_rules.clone();
+            rules.e911_active = true;
+            self.publish_routing(rules, now, out);
             self.emergency_call = Some(id);
+            out.extend(call_out);
             out.push(Output::Event(Event::Notice(format!(
                 "emergency call {id} to {dial}, {with}"
+            ))));
+        } else {
+            out.extend(call_out);
+            out.push(Output::Event(Event::Notice(format!(
+                "EMERGENCY CALL to {dial} COULD NOT BE STARTED"
             ))));
         }
     }

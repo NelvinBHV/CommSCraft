@@ -54,6 +54,9 @@ pub struct Config {
     pub machine_name: String,
 }
 
+/// Most 409 retries in a row before a publication is given up (issue #67, design).
+const MAX_CONFLICT_RETRIES: u8 = 3;
+
 pub type ConversationId = u32;
 
 /// Presenter commands (CB-35, CA-20, CA-22).
@@ -236,6 +239,10 @@ pub enum Command {
     Transfer {
         call: CallId,
         to: TransferTarget,
+    },
+    /// Do not follow the REFER of `call`'s peer (issue #67).
+    DeclineTransfer {
+        call: CallId,
     },
     /// Place the call a REFER of `call`'s peer asked for (after `Event::TransferRequested`).
     FollowTransfer {
@@ -507,6 +514,8 @@ pub struct Engine<R: Random> {
     routing_versions: [u32; 5],
     /// Our delegate list (PR-21), from the self subscription.
     delegates: Option<pres::Delegates>,
+    /// 409 retries since the last successful publication (issue #67: bounded).
+    conflict_retries: u8,
     /// The routing rules the user published last (restored after an emergency call).
     routing_rules: pres::Forwarding,
     /// The rules above were published by this session (only then they are restored).
@@ -580,6 +589,7 @@ impl<R: Random> Engine<R> {
             status_versions: [0, 0],
             routing_versions: [0; 5],
             delegates: None,
+            conflict_retries: 0,
             routing_rules: pres::Forwarding::default(),
             routing_known: false,
             location_policy: None,
@@ -1622,6 +1632,7 @@ impl<R: Random> Engine<R> {
                         call::Extras {
                             headers: &headers,
                             part: None,
+                            emergency: false,
                         },
                         now,
                         &mut out,
@@ -1655,6 +1666,7 @@ impl<R: Random> Engine<R> {
                 feedback,
             } => self.rate_call(call, stars, feedback.as_deref(), now, &mut out),
             Command::Transfer { call, to } => self.transfer(call, to, now, &mut out),
+            Command::DeclineTransfer { call } => self.decline_transfer(call, now, &mut out),
             Command::FollowTransfer {
                 call,
                 local,
@@ -1817,6 +1829,12 @@ impl<R: Random> Engine<R> {
 
     /// PR-05: a 409 with `curVersion` – remember the versions and retry once.
     fn on_conflict(&mut self, p: &Pending, resp: &Message) -> Option<Purpose> {
+        // Issue #67: a server that keeps reporting new versions gets at most this many retries
+        // until a publication succeeds.
+        if self.conflict_retries >= MAX_CONFLICT_RETRIES {
+            return None;
+        }
+        self.conflict_retries += 1;
         let body = std::str::from_utf8(&resp.body).ok()?;
         let conflicts = pres::parse_fault(body).ok()?;
         let target = match p.purpose {
@@ -1848,6 +1866,15 @@ impl<R: Random> Engine<R> {
     }
 
     fn on_success(&mut self, p: Pending, resp: &Message, now: u64, out: &mut Vec<Output>) {
+        if matches!(
+            p.purpose,
+            Purpose::PublishEndpoint
+                | Purpose::PublishStatus(_)
+                | Purpose::PublishRouting(_)
+                | Purpose::SetDelegate { .. }
+        ) {
+            self.conflict_retries = 0;
+        }
         match p.purpose {
             Purpose::Subscribe(i) | Purpose::Refresh(i) => {
                 self.on_subscribed(i, &p.request, resp, now, out)

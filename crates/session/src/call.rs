@@ -44,6 +44,9 @@ const MIXED_BOUNDARY: &str = "CommSCraft_e911";
 pub(crate) struct Extras<'a> {
     pub headers: &'a [(String, String)],
     pub part: Option<&'a ExtraPart>,
+    /// An emergency call: it may exceed [`MAX_CALLS`] by one (issue #67 – an emergency call is
+    /// never refused for the number of calls in progress).
+    pub emergency: bool,
 }
 
 /// One more MIME part of an outgoing INVITE (the PIDF-LO of an emergency call). The fields come
@@ -233,13 +236,18 @@ impl<R: Random> Engine<R> {
         out: &mut Vec<Output>,
     ) -> Option<CallId> {
         let (extra, part) = (extras.headers, extras.part);
+        let limit = if extras.emergency {
+            MAX_CALLS + 1
+        } else {
+            MAX_CALLS
+        };
         let Ok(peer) = pres::checked_sip_uri(to) else {
             out.push(Output::Event(Event::Notice(
                 "not a usable SIP address".into(),
             )));
             return None;
         };
-        if self.calls.len() >= MAX_CALLS {
+        if self.calls.len() >= limit {
             out.push(Output::Event(Event::Notice("too many calls".into())));
             return None;
         }
@@ -410,6 +418,16 @@ impl<R: Random> Engine<R> {
             .invite
             .header_values("Contact")
             .any(|v| v.to_ascii_lowercase().contains(";isgateway"));
+        // Issue #67: only a call that was addressed to that person and retargeted to us (team,
+        // delegate, forwarding: To = Referred-By ≠ us). A transferred call also carries
+        // Referred-By (the transferor) but is addressed to us – it is nobody's call but ours.
+        let addressed_to = c
+            .invite
+            .single("To")
+            .ok()
+            .flatten()
+            .and_then(|v| commscraft_sip_msg::parse_name_addr(v).ok())
+            .map(|n| n.uri);
         let on_behalf_of = c
             .invite
             .single("Referred-By")
@@ -417,7 +435,12 @@ impl<R: Random> Engine<R> {
             .flatten()
             .and_then(|v| commscraft_sip_msg::parse_name_addr(v).ok())
             .and_then(|n| pres::checked_sip_uri(&n.uri).ok())
-            .filter(|u| !u.eq_ignore_ascii_case(&self.cfg.aor));
+            .filter(|u| !u.eq_ignore_ascii_case(&self.cfg.aor))
+            .filter(|u| {
+                addressed_to
+                    .as_deref()
+                    .is_some_and(|t| t.eq_ignore_ascii_case(u))
+            });
         let acting_for = c
             .invite
             .single("P-Session-On-Behalf-Of")
