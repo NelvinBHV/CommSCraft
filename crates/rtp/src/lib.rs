@@ -194,6 +194,19 @@ impl Sender {
         Ok(p)
     }
 
+    /// The sequence number of the next packet.
+    pub fn sequence(&self) -> u16 {
+        self.sequence
+    }
+
+    /// Lync Server 2013 and SfB Server 2015/2019 do not support sequence number 0 on video
+    /// ([MS-H264PF] endnote <2>, PL-09): the next packet takes 1 instead.
+    pub fn skip_sequence_zero(&mut self) {
+        if self.sequence == 0 {
+            self.sequence = 1;
+        }
+    }
+
     /// Advances the timestamp without sending (silence, or audio replaced by events).
     pub fn skip(&mut self, samples: u32) {
         self.timestamp = self.timestamp.wrapping_add(samples);

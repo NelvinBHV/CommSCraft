@@ -257,6 +257,7 @@ version = "0.0.1"
 dependencies = [
  "commscraft-g711",
  "commscraft-g722",
+ "commscraft-h264uc",
  "commscraft-rtp",
  "commscraft-sdp",
  "commscraft-srtp",

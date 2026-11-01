@@ -65,6 +65,8 @@ pub fn classify(p: &[u8]) -> Kind {
 pub enum Error {
     /// The negotiated codec is not one we implement.
     Codec,
+    /// The video stream cannot be set up (the reason).
+    Video(&'static str),
 }
 
 enum Encoder {
@@ -820,5 +822,10 @@ impl Audio {
     }
 }
 
+pub mod video;
+pub use video::{Video, VideoEvent};
+
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod video_tests;
