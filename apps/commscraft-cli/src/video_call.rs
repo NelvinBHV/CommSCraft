@@ -162,6 +162,15 @@ pub fn fit(entries: &[feedback::VsrEntry], path_bps: Option<u32>) -> Option<Targ
         .find(|s| step(*s).is_some_and(|st| st.min_bps <= bitrate))
         .or_else(|| allowed.last().copied())?;
     let bitrate = step((width, height)).map_or(bitrate, |st| bitrate.min(st.max_bps));
+    // BW-18: below 640x360 at most 15 fps – the highest of the request's lower rates.
+    let fps = if fps > 15 && width * height < 640 * 360 {
+        [(feedback::FPS_15, 15), (feedback::FPS_7_5, 8)]
+            .iter()
+            .find(|(bit, _)| e.frame_rates & bit != 0)
+            .map_or(15, |(_, f)| *f)
+    } else {
+        fps
+    };
     Some(Target {
         width,
         height,
@@ -734,7 +743,8 @@ mod tests {
         t.map(|t| (t.width, t.height, t.fps, t.bitrate))
     }
 
-    /// RT-25 + RT-30 + BW-17: our own request without a path limit gives VGA at 500 kbit/s;
+    /// RT-25 + RT-30 + BW-17/18: our own request without a path limit gives VGA at 500 kbit/s;
+    /// below 640x360 at most 15 fps;
     /// a narrower path picks the largest size whose minimum bit rate it reaches.
     #[test]
     fn fit_follows_the_path() {
@@ -759,16 +769,16 @@ mod tests {
         );
         assert_eq!(
             size(fit(&ours, Some(250_000))),
-            Some((480, 270, 30, 250_000))
+            Some((480, 270, 15, 250_000))
         );
         assert_eq!(
             size(fit(&ours, Some(120_000))),
-            Some((424, 240, 30, 120_000))
+            Some((424, 240, 15, 120_000))
         );
-        assert_eq!(size(fit(&ours, Some(40_000))), Some((320, 180, 30, 40_000)));
+        assert_eq!(size(fit(&ours, Some(40_000))), Some((320, 180, 15, 40_000)));
         assert_eq!(
             size(fit(&ours, Some(1))),
-            Some((320, 180, 30, 32_000)),
+            Some((320, 180, 15, 32_000)),
             "floor"
         );
         // An A/V MCU's request: at most 61440 pixels, 15 fps, 40 kbit/s and nothing above.
