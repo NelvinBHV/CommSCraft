@@ -175,6 +175,10 @@ name = "commscraft-g722"
 version = "0.0.1"
 
 [[package]]
+name = "commscraft-h264uc"
+version = "0.0.1"
+
+[[package]]
 name = "commscraft-ice"
 version = "0.0.1"
 

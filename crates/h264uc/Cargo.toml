@@ -1,0 +1,13 @@
+[package]
+name = "commscraft-h264uc"
+description = "H.264 UC RTP payload (MS-H264PF, RFC 6184, RFC 6190): packetization with PACSI and stream layout, bounded depacketization"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

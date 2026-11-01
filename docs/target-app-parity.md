@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (functions 34/36: delegates, calls on behalf, ms-referee-uri)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (function 28: H.264 UC payload)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -52,7 +52,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 25 | RTP/RTCP, bandwidth, video source requests | MS-RTP | B | parts tested-offline (RTP header, sender, reception statistics, SR/RR/SDES/BYE, all MS-RTP profile extensions, SDES "MS-EVT", probe/pair/train packets: `rtp`; audio media core with jitter buffer and concealment, packet pair and train sending rates, audio healer metrics, TURN bandwidth to the peer: `media`); bandwidth estimation from received pairs, peer info exchange, video feedback (PLI, VSR) – |
 | 26 | Audio codecs G.711, G.722 | MS-RTP, MS-SDPEXT, ITU-T G.711, G.722 | B | tested-offline (G.711 against Tables 1–6; G.722 ADPCM bit-exact against all ITU digital test sequences, QMF round trip; used in calls: `g711`, `g722`, `media`) |
 | 27 | Audio codecs RTAudio, Siren, G.722.1 | MS-SDPEXT, MS-RTP, ITU-T G.722.1 | T | – |
-| 28 | Video H.264 UC/SVC | MS-H264PF, MS-SDPEXT | B | – |
+| 28 | Video H.264 UC/SVC | MS-H264PF, MS-SDPEXT | B | parts tested-offline (RTP payload of one layer: PACSI with stream layout, STAP-A/FU-A, bounded depacketization with the discard rules: `h264uc`); camera, encoding/decoding (D-12), video SDP, calls, simulcast, FEC – |
 | 29 | Video RTVideo | MS-RTVPF | N | not planned |
 | 30 | DTMF, redundancy | MS-DTMF, MS-RTPRADEX | B | parts tested-offline (DTMF per RFC 4733 within MS-DTMF, sending and receiving, CLI `/dtmf`: `rtp`, `media`, `call-media`); redundancy (MS-RTPRADEX) – |
 | 31 | Picture control (freeze/refresh) | MS-XMLMC | B | – |
@@ -78,4 +78,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-11-01, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **13** tested-offline as a whole, **17** in parts, **20** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).
+**Totals (2026-11-01, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **13** tested-offline as a whole, **18** in parts, **19** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)).
