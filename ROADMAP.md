@@ -2,7 +2,7 @@
 
 **Stage: M4 closed, M5 next** · M0 done · M1 and M2 built and tested offline · M3 built, waiting for the owner's audio runs · M4 closed by owner decision (T-04, tested-offline)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (M5: rate adaptation, numbers)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (camera robustness, numbers)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (23 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **37 crates + 1 app** (`commscraft-cli`), **405 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **37 crates + 1 app** (`commscraft-cli`), **406 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **private owner lab** (D-08, since 2026-10-31): the agent may test there; results are not published, public statuses stay `tested-offline` | owner decision |
 
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-01 | M5: a single bad camera picture (e.g. a truncated USB buffer) no longer ends the video of a call; only 30 failed reads in a row count as the camera being gone. |
 | 2026-11-01 | M5: bandwidth estimation and rate adaptation (`media::rate`) – every audio and video report carries our estimate of the incoming stream (MS-RTP §3.2: MUST), video reports also the receiver-side limit, peer info, congestion and packet loss notifications (RT-28/RT-29); the sender follows the peer's estimate, limits and congestion notifications (RT-30) over the resolution steps of Skype for Business (BW-17); VSR bit-rate ranges are answered at their lower edge (O-RT-2); encoder rebuilds with hysteresis, CPU fallback. |
 | 2026-11-01 | M5: video in meetings – `/confvideo` joins the A/V MCU with video and names the source by its MSI (CA-12/CA-13); the sender follows VSRs (size, frame rate, bit rate); prefix NAL units of UCConfig mode 0 (PL-13); `a=x-mediabw` (SD-61). Forwarding by the MCU is open (O-CA-1). |
 | 2026-11-01 | M5: 1:1 video calls in the CLI – `/videocall`, `/answervideo`: a video media thread per call (ICE, SRTP, VSR, IDR on request), camera with GPU (VA-API) or CPU encoding, decoding into an XVideo window (FFmpeg device, D-12); a missing camera or window does not end the call. |
