@@ -1,0 +1,36 @@
+name: Build approved CommSCraft sounds
+
+on:
+  push:
+    paths:
+      - "assets/audio/generate_soundpack.py"
+      - ".github/workflows/build-soundpack.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-and-commit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install render dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y timgm6mb-soundfont libfluidsynth3 python3-numpy python3-scipy python3-soundfile ffmpeg
+      - name: Render Pulse V5, Beat Call V5, Signal Message V4
+        run: /usr/bin/python3 assets/audio/generate_soundpack.py
+      - name: Commit generated WAV, Opus and MP3 assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/audio/*.wav assets/audio/*.opus assets/audio/*.mp3 assets/audio/SHA256SUMS.txt
+          if git diff --cached --quiet; then
+            echo "Audio assets unchanged"
+          else
+            git commit -m "Build approved CommSCraft Pulse, Beat Call and Signal Message audio assets"
+            git push origin HEAD:main
+          fi
