@@ -483,7 +483,7 @@ fn self_routing() {
     );
     assert_eq!(
         String::from_utf8_lossy(&m.body),
-        "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/></roamingList>"
+        "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/><roamingEx xmlns=\"http://schemas.microsoft.com/2007/09/sip/roaming-self-ex\" type=\"delegates\"/></roamingList>"
     );
     let routing = "<routing xmlns=\"http://schemas.microsoft.com/02/2006/sip/routing\" name=\"rtcdefault\" version=\"2\"><preamble><list name=\"forwardto\"><target uri=\"sip:carol@contoso.com\"/></list><list name=\"team\"><target uri=\"sip:alice@contoso.com\"/><target uri=\"sip:bob2@contoso.com\"/></list><flags name=\"clientflags\" value=\"enablecf team_ring future_flag\"/><wait name=\"user\" seconds=\"12\"/><wait name=\"team2\" seconds=\"8\"/><wait name=\"other\" seconds=\"1\"/></preamble></routing>";
     let doc = |routing: &str| {
@@ -515,4 +515,37 @@ fn self_routing() {
         .unwrap(),
         SelfRouting::default()
     );
+}
+
+/// PR-21 ([MS-PRES] §2.2.2.10, pp. 81–84; K-PR-3): the delegate list from a roaming-self
+/// document (URIs without `sip:` as in the example are completed, unsafe ones skipped) and the
+/// setDelegates body with least privilege.
+#[test]
+fn delegates() {
+    let doc = "<roamingData xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><delegates xmlns=\"http://schemas.microsoft.com/2007/09/sip/delegates\" version=\"2\"><delegate uri=\"john@contoso.com\" publish=\"false\" redelegate=\"false\"/><delegate uri=\"sip:x@y&quot;&gt;\" publish=\"false\" redelegate=\"false\"/></delegates></roamingData>";
+    let d = parse_delegates(doc).unwrap().unwrap();
+    assert_eq!(d.version, 2);
+    assert_eq!(d.uris, vec!["sip:john@contoso.com".to_string()]);
+    assert_eq!(
+        parse_delegates(
+            "<roamingData xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"/>"
+        )
+        .unwrap(),
+        None
+    );
+    assert!(
+        parse_delegates(
+            "<delegates xmlns=\"http://schemas.microsoft.com/2007/09/sip/delegates\"/>"
+        )
+        .is_err(),
+        "version required"
+    );
+    assert_eq!(
+        set_delegate_body(1, "sip:john@contoso.com", true).unwrap(),
+        "<setDelegates xmlns=\"http://schemas.microsoft.com/2007/09/sip/delegate-management\" version=\"1\"><delegate uri=\"sip:john@contoso.com\" action=\"add\"><publishOperation authorization=\"deny\"/><redelegateOperation authorization=\"deny\"/></delegate></setDelegates>"
+    );
+    assert!(set_delegate_body(3, "sip:john@contoso.com", false)
+        .unwrap()
+        .contains("action=\"remove\"></delegate>"));
+    assert!(set_delegate_body(1, "sip:x@y\"/><evil", true).is_err());
 }

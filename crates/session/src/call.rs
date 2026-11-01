@@ -111,6 +111,9 @@ pub struct Caller {
     /// Whom the call was meant for when it reaches us through team or delegate ringing or a
     /// forwarding: the checked `Referred-By` address (RFC 3892 §3; RE-72, inference).
     pub on_behalf_of: Option<String>,
+    /// The caller is a delegate calling for this person (`p-session-on-behalf-of`, AE-38,
+    /// [MS-SIPAE] §3.2.5.4), checked.
+    pub acting_for: Option<String>,
 }
 
 /// Most early dialogs (forks) tracked per call.
@@ -415,12 +418,20 @@ impl<R: Random> Engine<R> {
             .and_then(|v| commscraft_sip_msg::parse_name_addr(v).ok())
             .and_then(|n| pres::checked_sip_uri(&n.uri).ok())
             .filter(|u| !u.eq_ignore_ascii_case(&self.cfg.aor));
+        let acting_for = c
+            .invite
+            .single("P-Session-On-Behalf-Of")
+            .ok()
+            .flatten()
+            .and_then(|v| commscraft_sip_msg::parse_name_addr(v).ok())
+            .and_then(|n| pres::checked_sip_uri(&n.uri).ok());
         Some(Caller {
             uri: sip.unwrap_or_else(|| c.peer.clone()),
             number,
             anonymous,
             gateway,
             on_behalf_of,
+            acting_for,
         })
     }
 
@@ -871,6 +882,8 @@ impl<R: Random> Engine<R> {
         now: u64,
         out: &mut Vec<Output>,
     ) {
+        // AE-38: a call meant for someone else (Referred-By, RE-72) is answered on their behalf.
+        let behalf = self.caller(id).and_then(|c| c.on_behalf_of);
         let Some(c) = self.calls.get(&id) else { return };
         if !matches!(c.state, CallState::Ringing { .. }) {
             return;
@@ -893,6 +906,9 @@ impl<R: Random> Engine<R> {
                 }
                 ok.push_header("Contact", &format!("<{}>", self.gruu));
                 ok.push_header("Supported", "ms-safe-transfer");
+                if let Some(b) = &behalf {
+                    ok.push_header("P-Session-On-Behalf-Of", &format!("<{b}>"));
+                }
                 // PS-09: name the offer part we answer.
                 if let Some(cid) = c.content_id.clone() {
                     ok.push_header("ms-accepted-content-id", &cid);

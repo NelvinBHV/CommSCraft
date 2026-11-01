@@ -330,6 +330,75 @@ impl Forwarding {
 pub const NS_ROAMING_SELF: &str = "http://schemas.microsoft.com/2006/09/sip/roaming-self";
 pub const ROAMING_SELF_TYPE: &str = "application/vnd-microsoft-roaming-self+xml";
 pub const ROAMING_SELF_EVENT: &str = "vnd-microsoft-roaming-self";
+pub const NS_ROAMING_SELF_EX: &str = "http://schemas.microsoft.com/2007/09/sip/roaming-self-ex";
+/// Delegate management ([MS-PRES] §2.2.2.10, pp. 81–84; PR-21).
+pub const NS_DELEGATES: &str = "http://schemas.microsoft.com/2007/09/sip/delegates";
+pub const NS_DELEGATE_MANAGEMENT: &str =
+    "http://schemas.microsoft.com/2007/09/sip/delegate-management";
+pub const SET_DELEGATE_TYPE: &str = "application/msrtc-setDelegate+xml";
+/// Most delegates taken from one document (design).
+pub const MAX_DELEGATES: usize = 32;
+
+/// The delegate list as the server keeps it (§2.2.2.10.1).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Delegates {
+    pub version: u32,
+    /// Checked SIP URIs of the delegates.
+    pub uris: Vec<String>,
+}
+
+/// The delegate list in a roaming-self document or a bare `delegates` document; `None` if the
+/// document has none. The example writes delegate URIs without `sip:` – they are completed
+/// (K-PR-3); entries that are no safe SIP URI are skipped.
+pub fn parse_delegates(xml: &str) -> Result<Option<Delegates>, Error> {
+    let root = commscraft_xml::parse(xml, &Limits::default())?;
+    let list = match (root.name.as_str(), root.namespace.as_deref()) {
+        ("roamingData", Some(NS_ROAMING_SELF)) => root
+            .elements()
+            .find(|e| e.name == "delegates" && e.namespace.as_deref() == Some(NS_DELEGATES)),
+        ("delegates", Some(NS_DELEGATES)) => Some(&root),
+        _ => return Err(Error::WrongDocument("roamingData")),
+    };
+    let Some(list) = list else {
+        return Ok(None);
+    };
+    let version = list
+        .attr("version")
+        .and_then(|v| v.trim().parse::<u32>().ok())
+        .ok_or(Error::WrongDocument("delegates version"))?;
+    let uris = list
+        .children_named("delegate")
+        .filter_map(|d| d.attr("uri"))
+        .map(|u| {
+            let u = u.trim();
+            if u.get(..4).is_some_and(|p| p.eq_ignore_ascii_case("sip:")) {
+                u.to_string()
+            } else {
+                format!("sip:{u}")
+            }
+        })
+        .filter_map(|u| checked_sip_uri(&u).ok())
+        .take(MAX_DELEGATES)
+        .collect();
+    Ok(Some(Delegates { version, uris }))
+}
+
+/// setDelegates SERVICE body (PR-21; §2.2.2.10.2, p. 82): add or remove one delegate at the
+/// list's current `version`; the delegate may neither publish nor redelegate for us (design:
+/// least privilege).
+pub fn set_delegate_body(version: u32, delegate: &str, add: bool) -> Result<String, Error> {
+    let d = checked_sip_uri(delegate)?;
+    let inner = if add {
+        "<publishOperation authorization=\"deny\"/><redelegateOperation authorization=\"deny\"/>"
+    } else {
+        ""
+    };
+    Ok(format!(
+        "<setDelegates xmlns=\"{NS_DELEGATE_MANAGEMENT}\" version=\"{version}\"><delegate uri=\"{}\" action=\"{}\">{inner}</delegate></setDelegates>",
+        escape(&d),
+        if add { "add" } else { "remove" }
+    ))
+}
 
 /// Headers and body of the self SUBSCRIBE (PR-13, §2.2.2.3.1): only the own category instances
 /// are asked for (`roaming type="categories"`).
@@ -338,8 +407,9 @@ pub fn self_subscribe(m: &mut Message) {
     m.push_header("Accept", ROAMING_SELF_TYPE);
     m.push_header("Supported", "ms-piggyback-first-notify");
     m.push_header("Content-Type", ROAMING_SELF_TYPE);
+    // PR-21: also the delegate list (roamingEx type="delegates", §2.2.2.3.1).
     m.body = format!(
-        "<roamingList xmlns=\"{NS_ROAMING_SELF}\"><roaming type=\"categories\"/></roamingList>"
+        "<roamingList xmlns=\"{NS_ROAMING_SELF}\"><roaming type=\"categories\"/><roamingEx xmlns=\"{NS_ROAMING_SELF_EX}\" type=\"delegates\"/></roamingList>"
     )
     .into_bytes();
 }

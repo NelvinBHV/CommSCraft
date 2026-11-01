@@ -180,6 +180,18 @@ pub enum Command {
         local: Box<sdp::Local>,
         policy: sdp::Encryption,
     },
+    /// A call as delegate on behalf of `boss` (p-session-on-behalf-of, AE-38).
+    CallOnBehalf {
+        to: String,
+        boss: String,
+        local: Box<sdp::Local>,
+        policy: sdp::Encryption,
+    },
+    /// Add or remove a delegate of ours (setDelegates, PR-21).
+    SetDelegate {
+        uri: String,
+        add: bool,
+    },
     AcceptCall {
         call: CallId,
         local: Box<sdp::Local>,
@@ -267,6 +279,8 @@ pub enum Event {
     OwnStatus(pres::UserStatus),
     /// The routing preamble was published (forwarding is in effect on the server).
     Forwarding(pres::Forwarding),
+    /// Our delegates as the server keeps them (PR-21).
+    Delegates(Vec<String>),
     OwnStatusFailed(u16),
     ConversationStarted {
         conversation: ConversationId,
@@ -439,6 +453,7 @@ enum Purpose {
     Provisioning,
     PublishStatus(pres::UserStatus),
     PublishRouting(Box<pres::Forwarding>),
+    SetDelegate { uri: String, add: bool },
     Invite(ConversationId),
     Message(ConversationId),
     CreateConference(ConversationId),
@@ -490,6 +505,8 @@ pub struct Engine<R: Random> {
     status_versions: [u32; 2],
     /// Versions of the routing publications per container (PR-05).
     routing_versions: [u32; 5],
+    /// Our delegate list (PR-21), from the self subscription.
+    delegates: Option<pres::Delegates>,
     /// The routing rules the user published last (restored after an emergency call).
     routing_rules: pres::Forwarding,
     /// The rules above were published by this session (only then they are restored).
@@ -562,6 +579,7 @@ impl<R: Random> Engine<R> {
             endpoint_versions: [0, 0],
             status_versions: [0, 0],
             routing_versions: [0; 5],
+            delegates: None,
             routing_rules: pres::Forwarding::default(),
             routing_known: false,
             location_policy: None,
@@ -854,6 +872,42 @@ impl<R: Random> Engine<R> {
         }
     }
 
+    /// PR-21: our delegate list changed (self document or setDelegates answer).
+    fn on_delegates(&mut self, d: pres::Delegates, out: &mut Vec<Output>) {
+        if self.delegates.as_ref() != Some(&d) {
+            out.push(Output::Event(Event::Delegates(d.uris.clone())));
+            self.delegates = Some(d);
+        }
+    }
+
+    /// `SetDelegate` (PR-21): setDelegates at the list's current version; without a known list
+    /// version the server corrects it with a 409 (retried once).
+    fn set_delegate(&mut self, uri: &str, add: bool, now: u64, out: &mut Vec<Output>) {
+        let version = self.delegates.as_ref().map(|d| d.version).unwrap_or(0);
+        let body = match pres::set_delegate_body(version, uri, add) {
+            Ok(b) => b,
+            Err(_) => {
+                out.push(Output::Event(Event::Notice(
+                    "not a usable SIP address".into(),
+                )));
+                return;
+            }
+        };
+        let aor = self.cfg.aor.clone();
+        let mut m = self.request("SERVICE", &aor, &aor);
+        m.push_header("Content-Type", pres::SET_DELEGATE_TYPE);
+        m.body = body.into_bytes();
+        self.send_request(
+            m,
+            Purpose::SetDelegate {
+                uri: uri.to_string(),
+                add,
+            },
+            now,
+            out,
+        );
+    }
+
     /// RE-50: the routing preamble into the routing category (private, [MS-PRES] §2.2.2.7.7).
     fn publish_routing(&mut self, rules: pres::Forwarding, now: u64, out: &mut Vec<Output>) {
         // RE-67: during an emergency call the preamble with e911active is time-bound.
@@ -1047,6 +1101,9 @@ impl<R: Random> Engine<R> {
                     Err(e) => out.push(Output::Event(Event::Notice(format!(
                         "unusable self document ({e:?})"
                     )))),
+                }
+                if let Ok(Some(d)) = pres::parse_delegates(body) {
+                    self.on_delegates(d, out);
                 }
             }
             SubKind::Presence { .. } => match pres::parse_batch(m) {
@@ -1550,6 +1607,31 @@ impl<R: Random> Engine<R> {
             Command::Call { to, local, policy } => {
                 self.start_call(&to, *local, policy, now, &mut out)
             }
+            Command::CallOnBehalf {
+                to,
+                boss,
+                local,
+                policy,
+            } => match pres::checked_sip_uri(&boss) {
+                Ok(boss) => {
+                    let headers = vec![("P-Session-On-Behalf-Of".to_string(), format!("<{boss}>"))];
+                    self.start_call_with(
+                        &to,
+                        *local,
+                        policy,
+                        call::Extras {
+                            headers: &headers,
+                            part: None,
+                        },
+                        now,
+                        &mut out,
+                    );
+                }
+                Err(_) => out.push(Output::Event(Event::Notice(
+                    "not a usable SIP address".into(),
+                ))),
+            },
+            Command::SetDelegate { uri, add } => self.set_delegate(&uri, add, now, &mut out),
             Command::AcceptCall {
                 call,
                 local,
@@ -1715,6 +1797,7 @@ impl<R: Random> Engine<R> {
                         Purpose::PublishEndpoint => self.publish_endpoint(now, out),
                         Purpose::PublishStatus(s) => self.publish_status(s, now, out),
                         Purpose::PublishRouting(f) => self.publish_routing(*f, now, out),
+                        Purpose::SetDelegate { uri, add } => self.set_delegate(&uri, add, now, out),
                         _ => {}
                     }
                     return;
@@ -1740,6 +1823,16 @@ impl<R: Random> Engine<R> {
             Purpose::PublishEndpoint => &mut self.endpoint_versions,
             Purpose::PublishStatus(_) => &mut self.status_versions[..],
             Purpose::PublishRouting(_) => &mut self.routing_versions[..],
+            Purpose::SetDelegate { .. } => {
+                // PR-21 / §2.2.2.10.4: one list version.
+                let cur = conflicts.first()?.cur_version;
+                let d = self.delegates.get_or_insert_with(pres::Delegates::default);
+                if d.version == cur {
+                    return None;
+                }
+                d.version = cur;
+                return Some(p.purpose.clone());
+            }
             _ => return None,
         };
         let mut changed = false;
@@ -1809,6 +1902,15 @@ impl<R: Random> Engine<R> {
             Purpose::PublishStatus(s) => {
                 self.status_versions = self.status_versions.map(|v| v + 1);
                 out.push(Output::Event(Event::OwnStatus(s)));
+            }
+            Purpose::SetDelegate { .. } => {
+                // §2.2.2.10.3: the 200 carries the complete delegate list.
+                if let Some(d) = std::str::from_utf8(&resp.body)
+                    .ok()
+                    .and_then(|b| pres::parse_delegates(b).ok().flatten())
+                {
+                    self.on_delegates(d, out);
+                }
             }
             Purpose::PublishRouting(f) => {
                 self.routing_versions = self.routing_versions.map(|v| v + 1);
@@ -1920,6 +2022,9 @@ impl<R: Random> Engine<R> {
             Purpose::PublishStatus(_) => out.push(Output::Event(Event::OwnStatusFailed(code))),
             Purpose::PublishRouting(_) => out.push(Output::Event(Event::Notice(format!(
                 "forwarding not set ({code})"
+            )))),
+            Purpose::SetDelegate { .. } => out.push(Output::Event(Event::Notice(format!(
+                "delegate not changed ({code})"
             )))),
             Purpose::PublishEndpoint => out.push(Output::Event(Event::Notice(format!(
                 "endpoint publication failed ({code})"

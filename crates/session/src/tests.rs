@@ -3272,3 +3272,135 @@ fn self_subscription_routing() {
     let body = String::from_utf8_lossy(&sends(&out).pop().unwrap().body).to_string();
     assert!(body.contains("container=\"400\" version=\"8\""), "{body}");
 }
+
+/// PR-21: setDelegates at the known version; a 409 with curVersion is retried once; the 200's
+/// list is reported.
+#[test]
+fn set_delegate_with_version_retry() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::SetDelegate {
+            uri: "sip:john@contoso.com".into(),
+            add: true,
+        },
+        NOW,
+    );
+    let first = sends(&out).pop().unwrap();
+    assert_eq!(
+        first.single("Content-Type").unwrap(),
+        Some("application/msrtc-setDelegate+xml")
+    );
+    assert!(String::from_utf8_lossy(&first.body).contains("version=\"0\""));
+    let fault = r#"<Fault><Faultcode>Client.BadCall.WrongDelta</Faultcode><details><operation index="1" version="0" curVersion="2"/></details></Fault>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &first,
+            409,
+            Some("application/msrtc-fault+xml"),
+            fault,
+            &[],
+        ),
+        NOW,
+    );
+    let retry = sends(&out).pop().unwrap();
+    assert!(String::from_utf8_lossy(&retry.body).contains("version=\"2\""));
+    let list = r#"<roamingData xmlns="http://schemas.microsoft.com/2006/09/sip/roaming-self"><delegates xmlns="http://schemas.microsoft.com/2007/09/sip/delegates" version="3"><delegate uri="sip:john@contoso.com" publish="false" redelegate="false"/></delegates></roamingData>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &retry,
+            200,
+            Some("application/vnd-microsoft-roaming-self+xml"),
+            list,
+            &[],
+        ),
+        NOW,
+    );
+    assert_eq!(
+        events(&out),
+        vec![Event::Delegates(vec!["sip:john@contoso.com".into()])]
+    );
+}
+
+/// AE-38 ([MS-SIPAE] §3.2.4.5, §3.2.5.4): a call as delegate carries p-session-on-behalf-of with
+/// the boss; a call meant for someone else is answered on their behalf; a delegate's call shows
+/// whom it is for. AE-37 (§3.2.4.4): a REFER in a call that reached us under another address
+/// names us in ms-referee-uri.
+#[test]
+fn delegate_calls_and_referee() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::CallOnBehalf {
+            to: "sip:carol@contoso.com".into(),
+            boss: "sip:boss@contoso.com".into(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    assert_eq!(
+        find(&out, "INVITE")
+            .single("P-Session-On-Behalf-Of")
+            .unwrap(),
+        Some("<sip:boss@contoso.com>")
+    );
+    let bad = e.command(
+        Command::CallOnBehalf {
+            to: "sip:carol@contoso.com".into(),
+            boss: "sip:x@y\"><z".into(),
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    assert!(sends(&bad).is_empty());
+
+    // An incoming call for the boss (To = boss, Referred-By = boss) from a delegate of someone.
+    let mut m = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    m.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKdel1");
+    m.push_header("From", "<sip:carol@contoso.com>;tag=c1");
+    m.push_header("To", "<sip:boss@contoso.com>");
+    m.push_header("Call-ID", "del1");
+    m.push_header("CSeq", "1 INVITE");
+    m.push_header("Contact", "<sip:carol@contoso.com;opaque=user:epid:c;gruu>");
+    m.push_header("Referred-By", "<sip:boss@contoso.com>");
+    m.push_header("P-Session-On-Behalf-Of", "<sip:chief@contoso.com>");
+    m.push_header("Content-Type", "application/sdp");
+    m.body = peer_sdp(9, "RTP/SAVP").into_bytes();
+    let out = e.on_message(&server.sign(m), NOW);
+    let call = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::IncomingCall { call, .. } => Some(*call),
+            _ => None,
+        })
+        .unwrap();
+    let who = e.caller(call).unwrap();
+    assert_eq!(who.acting_for.as_deref(), Some("sip:chief@contoso.com"));
+    let out = e.command(
+        Command::AcceptCall {
+            call,
+            local: Box::new(media_local(42000, 3)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let ok = sends(&out).pop().unwrap();
+    assert_eq!(ok.status_code(), Some(200));
+    assert_eq!(
+        ok.single("P-Session-On-Behalf-Of").unwrap(),
+        Some("<sip:boss@contoso.com>")
+    );
+    let out = e.command(
+        Command::Transfer {
+            call,
+            to: TransferTarget::Address("sip:dave@contoso.com".into()),
+        },
+        NOW,
+    );
+    assert_eq!(
+        find(&out, "REFER").single("Referred-By").unwrap(),
+        Some("<sip:alice@contoso.com>;ms-referee-uri=\"sip:alice@contoso.com\"")
+    );
+}

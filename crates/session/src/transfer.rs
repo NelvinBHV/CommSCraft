@@ -197,7 +197,20 @@ impl<R: Random> Engine<R> {
         });
         self.complete(&mut m);
         m.push_header("Refer-To", &format!("<{refer_to}>"));
-        m.push_header("Referred-By", &format!("<{aor}>"));
+        // AE-37: the call reached us under another address (forwarded, team, delegate) – the
+        // dialog's own URI is not ours; name the real recipient in ms-referee-uri.
+        let own_uri = m
+            .single("From")
+            .ok()
+            .flatten()
+            .and_then(|v| commscraft_sip_msg::parse_name_addr(v).ok())
+            .map(|n| n.uri);
+        let retargeted = own_uri.is_some_and(|u| !u.eq_ignore_ascii_case(&aor));
+        if retargeted {
+            m.push_header("Referred-By", &format!("<{aor}>;ms-referee-uri=\"{aor}\""));
+        } else {
+            m.push_header("Referred-By", &format!("<{aor}>"));
+        }
         self.send_request(m, Purpose::Refer(id), now, out);
     }
 

@@ -2,7 +2,7 @@
 
 **Stage: M3 (audio 1:1)** · M0 done · M1 and M2 built and tested offline · M3 in progress
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (E911 city addresses, numbers)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (delegates, numbers)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,11 +16,11 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **12** tested-offline as a whole, **18** in parts, **20** not started, 2 not planned/needs captures | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
-| Conflicts / gaps / open points in the generated list | **58** / **19** (16 closed or no evidence problem) / **26** (23 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
+| Implementation status of the 52 functions | **13** tested-offline as a whole, **17** in parts, **20** not started, 2 not planned/needs captures | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **26** (23 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **35 crates + 1 app** (`commscraft-cli`), **349 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **35 crates + 1 app** (`commscraft-cli`), **352 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **private owner lab** (D-08, since 2026-10-31): the agent may test there; results are not published, public statuses stay `tested-offline` | owner decision |
 
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-01 | Delegates (functions 34/36): delegate list from the self subscription and setDelegates with version retry (PR-21, K-PR-3), calls as delegate and answering for the boss with p-session-on-behalf-of (AE-38), ms-referee-uri in transfers of retargeted calls (AE-37); CLI `/delegate`, `/callfor`. |
 | 2026-11-01 | Emergency location (function 39): addresses of a city from the location service to pick from (E9-08), LocationRequired prompts with the administrator's disclaimer and the periodic lookup (E9-09); CLI `/location city`, `/location pick`. |
 | 2026-11-01 | Self subscription (PR-13): the client reads its routing category from the server – rules set on another device are known, publications use the server's versions, and after an emergency call the user's real rules are restored (O-RE-3 closed). |
 | 2026-11-01 | Conference audio (function 42): entry/exit announcements on/off with the A/V MCU's state (CA-21), the announcement language as Accept-Language (CA-24), dialling a phone number into the meeting (CA-23); CLI `/announcements`, `/dialout`, `/confaudio LANGUAGE`. |
