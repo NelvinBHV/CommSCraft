@@ -385,3 +385,161 @@ fn probe_pair_and_train() {
         );
     }
 }
+
+/// RT-25 ([MS-RTP] §2.2.12.1, p. 27): standard PLI (12 bytes) and extended PLI with request ID
+/// and sync-frame bits (SFR0 = priority IDs 0 … 7, its most significant bit ID 7).
+#[test]
+fn picture_loss_indication() {
+    use feedback::*;
+    let std = Pli {
+        sender_ssrc: 0x11,
+        media_ssrc: 0x22,
+        extended: None,
+    };
+    let b = std.to_bytes().unwrap();
+    assert_eq!(b, vec![0x81, 206, 0, 2, 0, 0, 0, 0x11, 0, 0, 0, 0x22]);
+    assert_eq!(parse(&b).unwrap(), Some(Feedback::Pli(std)));
+    let ext = Pli {
+        extended: Some((7, 1 << 7 | 1 << 56)),
+        ..std
+    };
+    let b = ext.to_bytes().unwrap();
+    assert_eq!(b.len(), 24);
+    assert_eq!(&b[2..4], &[0, 5]);
+    assert_eq!(&b[12..16], &[0, 7, 0, 0]);
+    assert_eq!(
+        b[16], 0x80,
+        "SFR0: priority ID 7 is the most significant bit"
+    );
+    assert_eq!(
+        b[23], 0x01,
+        "SFR7: priority ID 56 is the least significant bit"
+    );
+    assert_eq!(parse(&b).unwrap(), Some(Feedback::Pli(ext)));
+}
+
+fn vga_entry() -> feedback::VsrEntry {
+    feedback::VsrEntry {
+        payload_type: 122,
+        ucconfig_mode: 1,
+        flags: feedback::FLAG_CONSTRAINED_BASELINE,
+        aspect_ratios: feedback::ASPECT_4_3 | feedback::ASPECT_16_9,
+        max_width: 640,
+        max_height: 480,
+        min_bitrate: 100_000,
+        bitrate_per_level: 50_000,
+        bitrate_histogram: [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+        frame_rates: feedback::FPS_15 | feedback::FPS_30,
+        must_instances: 1,
+        may_instances: 0,
+        quality_histogram: [0; 8],
+        max_pixels: 640 * 480,
+    }
+}
+
+/// RT-25 (§2.2.12.2, pp. 28–32): VSR header of 20 bytes, entries of 0x44 bytes, the length field
+/// counting the FCI with AFB type and length; round trip; SOURCE_NONE without entries; inside
+/// a compound packet after a receiver report.
+#[test]
+fn video_source_request() {
+    use feedback::*;
+    let vsr = Vsr {
+        sender_ssrc: 0x0100_0001,
+        media_ssrc: 0,
+        msi: SOURCE_ANY,
+        request_id: 3,
+        key_frame: true,
+        entries: vec![vga_entry()],
+    };
+    let b = vsr.to_bytes().unwrap();
+    assert_eq!(b.len(), 12 + 20 + 68);
+    assert_eq!(b[0], 0x80 | 15);
+    assert_eq!(
+        usize::from(u16::from_be_bytes([b[2], b[3]])),
+        b.len() / 4 - 1
+    );
+    assert_eq!(&b[12..16], &[0, 1, 0, 88], "AFB type 1, length 20 + 68");
+    assert_eq!(
+        &b[24..28],
+        &[0, 0x80, 1, 0x44],
+        "version, key frame flag, 1 entry of 0x44"
+    );
+    assert_eq!(parse(&b).unwrap(), Some(Feedback::Vsr(vsr.clone())));
+    let none = Vsr {
+        msi: SOURCE_NONE,
+        key_frame: false,
+        entries: Vec::new(),
+        ..vsr.clone()
+    };
+    assert_eq!(
+        parse(&none.to_bytes().unwrap()).unwrap(),
+        Some(Feedback::Vsr(none))
+    );
+    // In a compound packet after an RR.
+    let mut compound = vec![0x80, 201, 0, 1, 0, 0, 0, 9];
+    compound.extend_from_slice(&b);
+    let parsed = parse_rtcp(&compound).unwrap();
+    assert!(parsed
+        .iter()
+        .any(|r| matches!(r, Rtcp::Feedback(Feedback::Vsr(v)) if v.request_id == 3)));
+    // Too many entries refused when building.
+    let many = Vsr {
+        entries: vec![vga_entry(); 21],
+        ..vsr
+    };
+    assert!(many.to_bytes().is_err());
+}
+
+/// Hostile feedback packets: entry counts above 20, entries shorter than 0x44, a length beyond
+/// the packet – all errors, never a panic.
+#[test]
+fn hostile_feedback() {
+    use feedback::*;
+    let good = Vsr {
+        sender_ssrc: 1,
+        media_ssrc: 2,
+        msi: 5,
+        request_id: 1,
+        key_frame: false,
+        entries: vec![vga_entry()],
+    }
+    .to_bytes()
+    .unwrap();
+    let mut too_many = good.clone();
+    too_many[26] = 21;
+    assert!(parse(&too_many).is_err());
+    let mut short_entry = good.clone();
+    short_entry[27] = 0x10;
+    assert!(parse(&short_entry).is_err());
+    let mut long = good.clone();
+    long[14] = 0xff;
+    assert!(parse(&long).is_err());
+    assert!(parse(&good[..10]).is_err());
+    let _ = parse_rtcp(&too_many);
+}
+
+/// RT-26 (§3.2.2, p. 41): sent at once, then 4 times every 190 ms; a VSR then 5 more times
+/// every 3 s; a PLI stops after the fast phase.
+#[test]
+fn feedback_retransmission() {
+    use feedback::Retransmit;
+    let mut pli = Retransmit::new(1000, false);
+    let mut times = Vec::new();
+    for t in (1000..20_000).step_by(10) {
+        if pli.due(t) {
+            times.push(t);
+        }
+    }
+    assert_eq!(times, vec![1000, 1190, 1380, 1570, 1760]);
+    assert!(pli.finished());
+    let mut vsr = Retransmit::new(0, true);
+    let mut times = Vec::new();
+    for t in (0..40_000).step_by(10) {
+        if vsr.due(t) {
+            times.push(t);
+        }
+    }
+    assert_eq!(times.len(), 10);
+    assert_eq!(times[4], 760);
+    assert_eq!(&times[5..], &[3760, 6760, 9760, 12_760, 15_760]);
+}

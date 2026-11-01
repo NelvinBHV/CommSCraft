@@ -36,6 +36,7 @@ STATUS = {
     "O-RD-1": "normative precondition vs. secondary observation (OB-46, OB-18); interop test IT-02", "O-RD-2": "closed (OB-45, normative: viewer capabilities decide); interop test IT-03",
     "O-EX-1": "closed (OB-48, normative server interface)", "O-EX-2": "closed (OB-48, normative server interface)",
     "O-EX-3": "closed by design (OB-49); optional interop test IT-13", "O-EX-4": "closed (OB-48, normative server interface)", "O-EX-5": "closed (OB-48, normative: Autodiscover AuthPackage)",
+    "O-RT-1": "open: interop test (media source SSRC of a VSR; the builder takes it as a parameter)",
     "O-RG-1": "secondary evidence (SIPE), implemented fail-closed; interop test IT-17",
     "O-RE-3": "closed (self subscription PR-13 reads the routing category, 2026-11-01)",
     "O-TU-1": "closed (OB-41, normative: ignore unknown optional attributes)",
