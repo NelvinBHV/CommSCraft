@@ -41,6 +41,6 @@ Not IETF and therefore not part of this closure: L-10, L-11, L-12, L-15, L-16, L
 
 ## Remaining or narrowed open points
 - **O-IC-1 (narrowed):** The "normal" FINGERPRINT is now documented (IE-03). The table printed in MS-ICE2 is identical to the standard CRC-32 table except **entry 90** (`8BBE8EA` instead of `8BBEB8EA`). **Inference:** if the table were correct, the "additional" packet would be bit-identical to the original and pointless; the printed value 0x08BBE8EA probably reproduces the faulty table of old implementations. Whether it is also XORed with 0x5354554E was later confirmed by a secondary source (file 39, OB-09).
-- **SILK:** The reference code is under a BSD-like Skype licence that explicitly excludes patent licences ("NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS", draft-vos-silk-02 appendix A) – check before use (decision D-05).
+- **SILK:** The reference code is under a BSD-like Skype licence that explicitly excludes patent licences ("NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS", draft-vos-silk-02 appendix A) – check before use.
 - **[MSFT-H264UCConfig]**: terms of use "You may copy and use this document for your internal, reference purposes" (p. 1) – internal use only, not redistributed.
 - RFCs/drafts are under the terms of the IETF Trust; like all other sources they are kept outside the repository.

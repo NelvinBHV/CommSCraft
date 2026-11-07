@@ -10,8 +10,8 @@ Crafting Apps (WordCraft, GridCraft, DeckCraft).
    A local, gitignored `plan/` directory may hold longer notes; it is never committed.
 2. Check open PRs (`gh pr list`) before starting overlapping work.
 3. Stop and ask the owner only for owner decisions: licensing, publishing, pushing to new remotes,
-   secrets, anything listed as open in [`docs/decisions.md`](docs/decisions.md), and any test that
-   touches a real server outside the owner's lab (D-08).
+   secrets, anything listed as open in the local `plan/decisions.md`, and any test that
+   touches a real server outside the owner's lab.
 
 ## Evidence first
 - Every protocol behaviour is backed by a citation: document, edition/version, section, PDF page
@@ -22,7 +22,7 @@ Crafting Apps (WordCraft, GridCraft, DeckCraft).
 - Source ranking: (1) Microsoft Open Specifications, IETF, ITU-T; (2) official Microsoft
   documentation (Microsoft Learn, archived SDK docs); (3) secondary sources (open-source
   implementations, observation notes) — confirm only, never copy; (4) patents — understanding only,
-  never evidence, and patent notes are not committed (decision D-04).
+  never evidence, and patent notes are not committed.
 - Every normative requirement maps to source path, test fixture and executed test result.
   Published test vectors (MS-NLMP, MS-SRTP, …) become automated tests.
 - Distinguish `source-only`, `tested-offline` and `verified-interoperable` status. Only the owner's
@@ -41,6 +41,11 @@ Crafting Apps (WordCraft, GridCraft, DeckCraft).
   texts may be read for understanding only; nothing from them is implemented without the owner's
   legal clearance.
 
+## Decisions stay local
+The owner's decisions are kept only in the gitignored `plan/decisions.md`: no decision list, no
+decision numbers and no decision texts in the repository, in commit messages, pull requests or
+issues (owner rule; the docs job checks the files). Write the rule or the fact itself instead.
+
 ## Security
 Security by design: threat model and the binding rules per crate are in
 [`docs/security.md`](docs/security.md); every new parser or protocol state machine follows them.
@@ -56,7 +61,7 @@ Security by design: threat model and the binding rules per crate are in
 
 ## Never crash (once code exists)
 - No panics in non-test code: no `unwrap()`, `expect()`, `panic!`, `unreachable!`, `todo!`,
-  `unimplemented!`; `unsafe_code = "forbid"` unless an owner decision allows a reviewed FFI crate (so far only D-13: the module `video-ffmpeg::hw`).
+  `unimplemented!`; `unsafe_code = "forbid"` unless an owner decision allows a reviewed FFI crate (so far only the module `video-ffmpeg::hw`).
 - Errors are `Result<T, E>`; unfinished features return an error or are disabled.
 - Every crash fix lands with a regression test.
 
@@ -67,16 +72,16 @@ sockets, the OS or the UI; transport and OS adapters are separate crates.
 ## Quality gates and CI
 - Before every commit (once code exists): `cargo fmt --check`, `cargo clippy -- -D warnings`,
   `cargo test`.
-- **Never use runners or services that cause costs** (decision D-09): only standard GitHub-hosted
+- **Never use runners or services that cause costs**: only standard GitHub-hosted
   runners (`ubuntu-latest`, `windows-latest`) in this public repository. No larger, custom or
   self-hosted runners, no paid external CI. If the repository becomes private, run no workflow
   without new owner approval.
-- Interop testing (decision D-08, changed 2026-10-31): the owner operates an isolated lab; you may
+- Interop testing: the owner operates an isolated lab; you may
   test against that lab on your own once its connections are set up. Never publish anything about
   the lab (hosts, addresses, captures, logs, results); keep notes in the gitignored `plan/`. Never
   connect to any other real server. Public statuses stay at `tested-offline`.
 - Work on branches and open pull requests; never push to `main` directly. Merge your own pull
-  requests into `main` regularly once CI is green (owner instruction T-02, 2026-10-31); no releases.
+  requests into `main` regularly once CI is green; no releases.
 
 ## Progress docs
 With every change that lands, bring the four status documents in line with the actual code (owner

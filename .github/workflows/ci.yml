@@ -1,4 +1,4 @@
-# CI on standard GitHub-hosted runners only (decision D-09: no runners or services that cause costs).
+# CI on standard GitHub-hosted runners only (no runners or services that cause costs).
 name: ci
 
 on:
@@ -21,9 +21,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Toolchain
         run: rustup toolchain install stable --profile minimal --component rustfmt,clippy && rustup default stable
-      - name: ALSA headers for the audio device adapter (decision D-11)
+      - name: ALSA headers for the audio device adapter
         run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends libasound2-dev
-      - name: FFmpeg libraries and headers for the video adapter (decision D-12)
+      - name: FFmpeg libraries and headers for the video adapter
         run: sudo apt-get install -y -q --no-install-recommends pkg-config clang libclang-dev libavcodec-dev libavformat-dev libavdevice-dev libavutil-dev libswscale-dev
       - name: Format
         run: cargo fmt --all -- --check
@@ -41,6 +41,11 @@ jobs:
         run: |
           python3 -I scripts/collect_open_points.py
           git diff --exit-code docs/protocol/conflicts-gaps-open-points.md
+      - name: Decisions stay local (only in the gitignored plan/)
+        run: |
+          if git grep -nIE '(^|[^A-Za-z0-9-])[DT]-[0-9]{2}\b' || git ls-files | grep -E '(^|/)decisions\.md$'; then
+            echo "decision references do not belong into the repository"; exit 1
+          fi
       - name: Sound files match their checksums
         run: cd assets/audio && sha256sum -c --quiet SHA256SUMS.txt
       - name: Workflows cannot change the repository

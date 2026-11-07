@@ -1,9 +1,9 @@
-//! VA-API hardware frames through FFmpeg's hardware context (decision D-13): the only module of
+//! VA-API hardware frames through FFmpeg's hardware context: the only module of
 //! CommSCraft with `unsafe` code. It creates a VA-API device and a pool of VA-API surfaces,
 //! attaches the pool to an encoder context and uploads NV12 pictures into surfaces. Everything
 //! else stays in the safe binding.
 //!
-//! Rules (D-13): every `unsafe` block names why it is sound; pointers come only from FFmpeg's
+//! Rules: every `unsafe` block names why it is sound; pointers come only from FFmpeg's
 //! own allocation functions and are checked for null; reference-counted buffers are released
 //! exactly once in `Drop`; return codes are checked before anything is used; no pointer leaves
 //! this module.

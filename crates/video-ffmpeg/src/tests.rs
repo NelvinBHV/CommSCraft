@@ -64,7 +64,7 @@ fn picture_frame_round_trip() {
     assert!(to_frame(&Picture::filled(4096, 48, 0, 0, 0)).is_err());
 }
 
-/// D-12 / PL-03: libx264 in constrained baseline – the first access unit is an IDR with SPS and
+/// PL-03: libx264 in constrained baseline – the first access unit is an IDR with SPS and
 /// PPS (Annex B), later ones are not, until an IDR is requested; decoding gives back pictures
 /// close to the originals.
 #[test]
@@ -223,7 +223,7 @@ fn camera_delivers_pictures() {
     }
 }
 
-/// D-13: with `hardware` the GPU encodes if a VA-API device works (skipped otherwise); the
+/// With `hardware` the GPU encodes if a VA-API device works (skipped otherwise); the
 /// result is the same kind of stream – constrained baseline, IDR first and on request, SPS/PPS
 /// with every IDR – and decodes like the software one.
 #[test]

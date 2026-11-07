@@ -1,6 +1,6 @@
 [package]
 name = "commscraft-audio-alsa"
-description = "Audio device adapter (ALSA API; PipeWire through its ALSA plugin), decision D-11"
+description = "Audio device adapter (ALSA API; PipeWire through its ALSA plugin)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

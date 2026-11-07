@@ -13,7 +13,7 @@ Sources (Windows package): [MS-RDPBCGR] "Remote Desktop Protocol: Basic Connecti
 
 ## Gaps / open points
 - O-RD-1: Whether and with which values SfB sends the Pre-Connection PDU (RDPEPS) inside the RTP transport is **not** stated in MS-RTASPF/MS-CONFAS (RDPEMC mentions it only in general). Interop capture needed.
-- O-RD-2: Which graphics capabilities/codecs (bitmap, RemoteFX MS-RDPRFX, graphics pipeline MS-RDPEGFX, NSCodec MS-RDPNSC) SfB sharers offer is not fixed in the SfB specifications; the viewer must support those offered in Demand Active. The specifications themselves are complete; an existing RDP library is a candidate implementation basis (behind an adapter crate, decision D-03).
+- O-RD-2: Which graphics capabilities/codecs (bitmap, RemoteFX MS-RDPRFX, graphics pipeline MS-RDPEGFX, NSCodec MS-RDPNSC) SfB sharers offer is not fixed in the SfB specifications; the viewer must support those offered in Demand Active. The specifications themselves are complete; an existing RDP library is a candidate implementation basis (behind an adapter crate).
 - Note: MS-CONFAS speaks of an "Attendee Connected PDU", MS-RDPEMC calls the structure "Participant Created PDU" (same section number §2.2.4.1) – naming difference.
 
 ## Later findings (file 39)

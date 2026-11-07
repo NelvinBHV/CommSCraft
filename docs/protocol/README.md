@@ -24,10 +24,10 @@ Each requirement has an ID made of a prefix per protocol and a number, e.g. `AE-
 - **official** – Microsoft documentation outside the Open Specifications;
 - **secondary** – confirmed only by an open-source implementation or observation; needs interop confirmation;
 - **inference** – technically justified, not literally documented; always marked;
-- **open** – only an interop capture can clarify it (lab runs stay private, decision D-08).
+- **open** – only an interop capture can clarify it (lab runs stay private).
 
 ## What is not here
 
-- No specification PDFs, RFC texts, ITU packages or third-party source code – they are cited and registered with SHA-256 only (decision D-04).
-- No patent notes (decision D-04).
-- The analysis was originally written in German (2026-10-26) and translated during import (decision D-02).
+- No specification PDFs, RFC texts, ITU packages or third-party source code – they are cited and registered with SHA-256 only.
+- No patent notes.
+- The analysis was originally written in German (2026-10-26) and translated during import.

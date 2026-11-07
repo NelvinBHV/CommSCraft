@@ -4,8 +4,8 @@
 
 After the fourth search ([`protocol/evidence/39-evidence-for-open-points.md`](protocol/evidence/39-evidence-for-open-points.md),
 OB-39 … OB-51) no open point needs more document research. What is left is the observable behaviour
-of a real server or of the Windows client. The owner runs these tests on authorized systems
-(T-03, D-08). Since 2026-10-31 the agent may also run them in the owner's isolated lab; lab results
+of a real server or of the Windows client. The owner runs these tests on authorized systems.
+Since 2026-10-31 the agent may also run them in the owner's isolated lab; lab results
 stay private. Agents connect to no other server; they turn a sanitized result into evidence and code.
 
 Each case states what the sources already fix, so a capture only has to decide the remaining
@@ -46,7 +46,7 @@ of the tested deployment.
 | IT-12 | O-CP-1 (optional) | Compression is negotiated only by the client (MS-SIPCOMP §3.1.5, p. 11); MPPC is tested offline | Byte order of the 16-bit "Uncompressed size" and bit order of the MPPC stream | Compression off; never negotiated | optional |
 | IT-14 | O-NL-1 design (OB-43) | MS-NLMP defines all variants; the MS-SIPREGE example (p. 94) shows NTLMv1 without ESS from OCS 2007 times | Do current servers offer EXTENDED_SESSIONSECURITY, 128-bit and KEY_EXCH in the SIP NTLM CHALLENGE (flags of the base64 `gssapi-data`)? | Refuse weaker offers (fail closed) | M1 |
 | IT-15 | RG-08, RG-50 | Version filter answers 403 + Warning 310/311 (MS-SIPREGE §3.4.2.5) | Does the server's client version policy accept the User-Agent `CommSCraft/<version>`? Which rule matches? | Report `VersionBlocked` to the user | M1 |
-| IT-16 | AD-10, D-10 | The Domain resource needs no authentication and contains SipAccess "if present" (MS-OCDISCWS §3.1.5.4) | Does the unauthenticated Domain resource of the server contain `SipClientInternalAccess`/`SipClientExternalAccess`? Does `https://lyncdiscover[internal].<domain>` answer with a valid certificate? | Fall back to DNS SRV | M1 |
+| IT-16 | AD-10 | The Domain resource needs no authentication and contains SipAccess "if present" (MS-OCDISCWS §3.1.5.4) | Does the unauthenticated Domain resource of the server contain `SipClientInternalAccess`/`SipClientExternalAccess`? Does `https://lyncdiscover[internal].<domain>` answer with a valid certificate? | Fall back to DNS SRV | M1 |
 | IT-17 | O-RG-1 | Generic SIP redirect (RFC 3261); SIPE handles a 301 to REGISTER (secondary) | Does a pool that is not the user's home pool answer the authenticated REGISTER with 301 and a Contact `sip:host:port;transport=tls`, signed? | Follow only a signed TLS redirect; ask for foreign domains | M1 |
 | IT-18 | TLS ([SFB-TLS], evidence 02) | TLS 1.2 from SfB 2015 CU9 / 2019 CU1; ECDHE + AES-GCM suites in the supported order | Does the TLS handshake with your pool succeed (version and suite)? `commscraft-cli` prints the version | No TLS 1.0/1.1, no fallback | M1 |
 | IT-20 | Invitation INVITE of the Windows client (K-CI-3) | MS-SIPRE §3.9.5.1 (p. 58) names `application/ms-conf-invite` and an `audio` element; the rest of the body is only secondary (SIPE) | When a Windows client adds you to a conversation: does an INVITE with `application/ms-conf-invite+xml` arrive (element names `Conferencing`, `focus-uri`), or does the IM MCU call you (dial-out, `Ms-Focus-Uri`)? `interactive` prints "invitation N" or a new conversation | Invitation is only reported; joining with `/join N` | M2 |
@@ -77,7 +77,7 @@ cargo build --release -p commscraft-cli
     [--ca-file enterprise-root.pem] [--verbose] --authorized
 ```
 
-Discovery order (OB-06, D-10): `https://lyncdiscoverinternal.<domain>`, then
+Discovery order (OB-06): `https://lyncdiscoverinternal.<domain>`, then
 `https://lyncdiscover.<domain>` (Root → Domain resource, no credentials), then DNS SRV
 `_sipinternaltls._tcp` and `_sip._tls` via the name servers in `/etc/resolv.conf`, then
 `sipinternal`, `sip`, `sipexternal.<domain>:443`. Every step is printed. A target that Autodiscover names outside

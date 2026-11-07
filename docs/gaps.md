@@ -1,6 +1,6 @@
 # Where CommSCraft falls short of the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (default sounds exist)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (references cleaned up)
 
 The work list, ranked by how much each item blocks the alpha gate in
 [`roadmap.md`](roadmap.md#alpha-gate-core-workflows) (**A** = blocks alpha). Each entry says what is
@@ -16,14 +16,14 @@ what is still missing per milestone, followed by the open points found in the an
 
 | # | Gap | Evidence / tracking | Milestone |
 |---|---|---|---|
-| 1 | No published interop results (D-08): lab runs stay private, nothing is marked verified; the remaining questions are owner test cases IT-01 … IT-33 | [`decisions.md`](decisions.md), [`interop-tests.md`](interop-tests.md) | all |
+| 1 | No published interop results: lab runs stay private, nothing is marked verified; the remaining questions are owner test cases IT-01 … IT-33 | [`interop-tests.md`](interop-tests.md) | all |
 | 2 | Sign-in: Kerberos (function 5) and TLS-DSK with client certificate (function 6) are missing; NTLM, discovery, TLS, registration, provisioning and sign-out exist (tested-offline) | functions 1–8, 50 | M1 |
 | 3 | Presence and IM: contact list editing (add/remove contacts and groups), privacy relationships and blocking (12), offline address book (13), contact photos (15), Exchange unified contact store (11); presence, 1:1 and group IM, typing and address book search exist | functions 9–19 | M2 |
 | 4 | Audio 1:1: TCP-only mode and the artificial active TCP server-reflexive candidate (MS-ICE2 §3.1.4.8.1.3, SHOULD), the peer info exchange of MS-RTP (needs link bandwidths), bandwidth management for video and PSTN failover (32, M4/M5), redundant audio (MS-RTPRADEX, 30), as the callee a reliable 183 with an early answer (SD-51, SHOULD) and early media of forked calls (SD-50, SHOULD); calls with ICE over UDP and the TCP relay (443), TURN, SRTP, G.722/G.711 and DTMF exist | functions 21–26, 30, 32, 35 | M3 |
 | 5 | Conferences and telephony: recording, PSTN dial-in details of meetings, PSTN media bypass, the rest of E911 (WLAN/LLDP identifiers); scheduling meetings (create, list, change, cancel; presenters, invitees and options; the static meeting), joining meetings (address or link), lobby, conference audio (SRTP sent, SRTP/SSRTP received), muting, announcements and their language, dialling phone numbers into meetings, the presenter commands with meeting options in the running meeting, PSTN calling, call transfer, forwarding, call park, quality reports, emergency calls with location and team/delegate ringing, delegates and calls on behalf of the boss exist | functions 33–34, 36–37, 39–42, 45 | M4 |
-| 6 | Video H.264 UC: interop confirmation of meeting video (O-CA-1), hardware decoding (owner decision D-14 open), simulcast, FEC; the RTP payload of one layer (`h264uc`), camera capture, H.264 encoding on the GPU (VA-API) or with libx264, and decoding (`video-ffmpeg`), the video media description (`sdp::video`), PLI and VSR (`rtp::feedback`), the video stream core (`media::video`) and its transport in `call-media`, video calls in the session, bandwidth estimation and rate adaptation (`media::rate`), picture control through SIP INFO (`session::media_control`) exist | functions 28, 31 | M5 |
+| 6 | Video H.264 UC: interop confirmation of meeting video (O-CA-1), hardware decoding, simulcast, FEC; the RTP payload of one layer (`h264uc`), camera capture, H.264 encoding on the GPU (VA-API) or with libx264, and decoding (`video-ffmpeg`), the video media description (`sdp::video`), PLI and VSR (`rtp::feedback`), the video stream core (`media::video`) and its transport in `call-media`, video calls in the session, bandwidth estimation and rate adaptation (`media::rate`), picture control through SIP INFO (`session::media_control`) exist | functions 28, 31 | M5 |
 | 7 | Viewing shared screens (RDP over RTP) | function 43 | M6 |
-| 8 | Graphical user interface (egui, D-07); today only the command-line tool exists | [`decisions.md`](decisions.md) | not yet in a milestone |
+| 8 | Graphical user interface (egui); today only the command-line tool exists | – | not yet in a milestone |
 
 ## Open points from the analysis – closed (2026-10-31)
 
@@ -41,7 +41,7 @@ Windows-client behaviour that only a capture can show. These are the owner test 
 |---|---|
 | Normative source found (fourth pass) | O-AW-1 (OB-39), O-TU-1 (OB-41), O-IC-1 (OB-42), O-NL-1 (OB-43), O-DL-1 + K-DL-1 (OB-44), O-RD-2 (OB-45), O-QE-1 (OB-47), O-EX-1/2/4/5 + L-15 (OB-48) |
 | Not needed by the client | O-CP-1, O-CP-3 (OB-40: compression is only negotiated by the client; CommSCraft does not) |
-| By design or owner decision | O-EX-3 (OB-49), L-03 and L-07 (D-05, OB-51) |
+| By design | O-EX-3 (OB-49), L-03 and L-07 (OB-51) |
 | Earlier passes | O-SIP-1, O-PR-1, O-AD-1, O-AD-2, O-CP-2, O-PV-3, O-BW-1, L-01 … L-10, L-12, L-14, L-17, L-18 |
 | Sources obtained during development | L-19 (ITU-T G.711/G.722 incl. digital test sequences, 2026-10-28) |
 
@@ -57,7 +57,7 @@ Windows-client behaviour that only a capture can show. These are the owner test 
 | IT-12, IT-13 | O-CP-1 (optional), O-EX-3 (optional) | Compression off; own layout |
 | IT-14 | NTLM flags offered by current servers (OB-43) | Refuse weaker offers |
 | IT-15 | Client version policy and the CommSCraft User-Agent (RG-50) | Report the block to the user |
-| IT-16 | SIP access points in the unauthenticated Autodiscover Domain resource; HTTPS on lyncdiscover (D-10) | DNS SRV |
+| IT-16 | SIP access points in the unauthenticated Autodiscover Domain resource; HTTPS on lyncdiscover | DNS SRV |
 | IT-17 | Registrar redirect to the home pool (O-RG-1) | Signed TLS redirect only |
 | IT-18 | TLS 1.2 handshake with the pool (SfB 2015 CU9+/2019 CU1+) | No TLS 1.0/1.1 |
 | IT-19 | First complete sign-in with `commscraft-cli` | – |
@@ -76,7 +76,7 @@ Windows-client behaviour that only a capture can show. These are the owner test 
 | IT-32 | Call transfer (blind, with consultation, being transferred) | REFER only in a call dialog; Replaces only for our own calls |
 | IT-33 | Call forwarding and simultaneous ring | Only checked targets published; private category |
 
-## Not planned without an owner decision
+## Not planned for now
 
 | Function | Reason |
 |---|---|

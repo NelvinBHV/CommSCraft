@@ -1,5 +1,5 @@
 //! Calls in the interactive mode: one media thread per call (gathering, ICE, SRTP, codec) with
-//! two device threads (ALSA capture and playback, decision D-11). The SIP side stays in the
+//! two device threads (ALSA capture and playback). The SIP side stays in the
 //! engine; this module only moves media and reports to the main loop.
 //!
 //! Security by design: devices are opened only for an answered call and closed when it ends;

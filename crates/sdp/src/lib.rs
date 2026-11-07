@@ -157,7 +157,7 @@ pub fn parse(body: &[u8]) -> Result<Session, Error> {
 
 // ----- codecs -----------------------------------------------------------------------------------
 
-/// The audio codecs CommSCraft implements (D-05; SD-21, SD-30).
+/// The audio codecs CommSCraft implements (SD-21, SD-30).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Codec {
     G722,

@@ -2,7 +2,7 @@
 """Fails if a GitHub Actions workflow could change the repository (issue #92).
 
 Workflows run with read-only tokens and never push: everything reaches main through a pull
-request (T-02). Checked line by line, comments ignored: write permissions, `permissions:
+request. Checked line by line, comments ignored: write permissions, `permissions:
 write-all`, git push, the privileged pull_request_target trigger and persisted credentials.
 """
 import pathlib

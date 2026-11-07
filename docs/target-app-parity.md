@@ -25,7 +25,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 
 | # | Function | Main specifications | Evidence | Implemented |
 |---|---|---|---|---|
-| 1 | Server discovery | MS-OCDISCWS, MS-CONMGMT | B | tested-offline (Autodiscover over HTTPS only (D-10) with trust model, DNS SRV and fallback host names: `discovery`, `url`, `net`; used by `commscraft-cli`) |
+| 1 | Server discovery | MS-OCDISCWS, MS-CONMGMT | B | tested-offline (Autodiscover over HTTPS only with trust model, DNS SRV and fallback host names: `discovery`, `url`, `net`; used by `commscraft-cli`) |
 | 2 | TLS connection, keep-alive | MS-CONMGMT | B | tested-offline (TLS 1.2/1.3 adapter with loopback test, stream framing, keep-alive negotiation and CRLF keep-alive: `net`, `sip-msg`, `register`) |
 | 3 | SIP compression (optional) | MS-SIPCOMP | B\* | – |
 | 4 | Sign-in with NTLM | MS-SIPAE, MS-NLMP | B\* | tested-offline (NTLMv2 incl. MIC, MS-SIPAE signing and verification up to version 4, offline sign-in against a test registrar: `ntlm`, `sipae`, `register`) |

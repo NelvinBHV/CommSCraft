@@ -32,7 +32,7 @@ Status: **B** = fully documented (implementable on the protocol side from the so
 | 26 | Audio codecs G.711, G.722 | MS-RTP, MS-SDPEXT | RT-04/05, SD-21 | B | the codecs themselves are ITU standards |
 | 27 | Audio codecs RTAudio, Siren, G.722.1 | MS-SDPEXT, MS-RTP, ITU-T G.722.1 | SD-20, RT-04 | T | G.722.1/Annex C: ITU package obtained (OB-26); Siren7 frame format secondary (OB-34); RTAudio only with a Microsoft licence (OB-27) |
 | 28 | Video H.264 UC/SVC | MS-H264PF, MS-SDPEXT | PL-01…07, SD-27/28, IE-08 | B | UCConfig specification obtained via archive search (internal reference only) |
-| 29 | Video RTVideo | MS-RTVPF | PL-10…12 | N | VC-1 codec (SMPTE ST 421) only for purchase (OB-29); only RTP RFC 4425 obtained (L-07); not planned (D-05) |
+| 29 | Video RTVideo | MS-RTVPF | PL-10…12 | N | VC-1 codec (SMPTE ST 421) only for purchase (OB-29); only RTP RFC 4425 obtained (L-07); not planned |
 | 30 | DTMF, redundancy | MS-DTMF, MS-RTPRADEX | PL-20, PL-30 | B | |
 | 31 | Picture control (freeze/refresh) | MS-XMLMC | PL-50, IE-07 | B | Content-Type documented (IE-07) |
 | 32 | Bandwidth management (CAC) | MS-ICE2BWM, MS-TURNBWM | BW-01…16 | B | XOR ✓; O-BW-1 closed (OB-10) |
