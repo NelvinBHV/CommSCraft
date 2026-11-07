@@ -2,7 +2,7 @@
 
 **Stage: M5 in progress** · M0 done · M1, M2, M3 built · M4 closed · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (video window in its own process)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (meeting picture of the later joiner)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **39 crates + 1 app** (`commscraft-cli`), **440 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **39 crates + 1 app** (`commscraft-cli`), **441 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -46,6 +46,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-07 | Meeting video: the later joiner got no picture when the roster arrived before its video stream had started, because the named source was lost; it is now kept. |
 | 2026-11-07 | The video window runs in a process of its own, and the GPU decodes again by default on all GPUs, also in meetings. This ends a hang of the video engine on an integrated AMD GPU (VCN 4), which only occurred with encoder and decoder in one process. A decoder or driver failing on received video now ends only this process: the call goes on and the helper starts again on the CPU. Measured in a video call, client and helper together: about 18 % less CPU time on AMD, about 29 % on Intel. |
 | 2026-11-07 | Sounds rendered again with a SoundFont under the MIT licence (Fluid R3), same scores and mastering: the question whether the GPL-2.0 of the earlier SoundFont reaches the embedded audio no longer arises. The sounds now have a stated licence (`assets/audio/LICENSE.md`). |
 | 2026-11-07 | New subscribers: the user is told once when someone adds them, and acknowledges it (`/seen`); adding a contact now tells the other side too. A blocked user is acknowledged without a notice. Also `tested-in-lab`. |

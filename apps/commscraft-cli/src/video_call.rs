@@ -268,6 +268,24 @@ pub fn spawn(
     VideoHandle { tx }
 }
 
+/// Waits for the negotiated stream. Returns it with the source to ask for: any (1:1) until a meeting
+/// names one (CA-13). A meeting's roster often comes before our stream starts, and the MCU chooses no
+/// source for us, so a name that arrives now must not get lost. `None`: the video was stopped.
+fn wait_for_start(
+    rx: &Receiver<ToVideo>,
+    mut idle: impl FnMut(),
+) -> Option<(Box<sdp::video::NegotiatedVideo>, bool, u32)> {
+    let mut source = feedback::SOURCE_ANY;
+    loop {
+        match rx.recv_timeout(Duration::from_millis(20)) {
+            Ok(ToVideo::Start { video, controlling }) => return Some((video, controlling, source)),
+            Ok(ToVideo::Source(msi)) => source = msi,
+            Ok(ToVideo::Stop) | Err(mpsc::RecvTimeoutError::Disconnected) => return None,
+            Ok(_) | Err(mpsc::RecvTimeoutError::Timeout) => idle(),
+        }
+    }
+}
+
 fn run(
     id: u32,
     local_ip: IpAddr,
@@ -302,17 +320,11 @@ fn run(
         id,
         Box::new(local(&media, media.local_description())),
     ));
-    let (negotiated, controlling) = loop {
-        match rx.recv_timeout(Duration::from_millis(20)) {
-            Ok(ToVideo::Start { video, controlling }) => break (video, controlling),
-            Ok(ToVideo::Stop) | Err(mpsc::RecvTimeoutError::Disconnected) => {
-                media.stop(now_ms());
-                return;
-            }
-            Ok(_) | Err(mpsc::RecvTimeoutError::Timeout) => {
-                media.poll(now_ms());
-            }
-        }
+    let Some((negotiated, controlling, mut source)) = wait_for_start(&rx, || {
+        media.poll(now_ms());
+    }) else {
+        media.stop(now_ms());
+        return;
     };
     let Some(layout) = layout() else {
         let _ = events.send(FromVideo::Failed(id, "stream layout".into()));
@@ -347,8 +359,6 @@ fn run(
     crate::video_window::spawn(dec_rx, stop.clone(), events.clone(), id);
     let mut final_sent = false;
     let mut requested = false;
-    // The source to ask for: any (1:1) until a meeting names one (CA-13).
-    let mut source = feedback::SOURCE_ANY;
     let mut watched_by_peer: Option<bool> = None;
     // An MCU asked us to stop sending video (picture_freeze, PL-50): RTCP goes on.
     let mut frozen = false;
@@ -658,6 +668,42 @@ fn needs_rebuild(current: Target, wanted: Target, since_ms: u64) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// CA-13: the source a meeting names before our stream has started is not lost.
+    #[test]
+    fn source_named_before_the_start() {
+        let negotiated = || sdp::video::NegotiatedVideo {
+            payload_type: 122,
+            remote_rtp: ("192.0.2.1".parse().unwrap(), 1),
+            remote_rtcp: ("192.0.2.1".parse().unwrap(), 2),
+            remote_key: None,
+            remote_ice: None,
+            direction: sdp::Direction::SendRecv,
+            ssrc_range: (100, 199),
+            feedback: sdp::video::Feedback::default(),
+        };
+        let (tx, rx) = mpsc::channel();
+        tx.send(ToVideo::Source(7)).unwrap();
+        tx.send(ToVideo::Hold(true)).unwrap();
+        tx.send(ToVideo::Start {
+            video: Box::new(negotiated()),
+            controlling: true,
+        })
+        .unwrap();
+        let (_, controlling, source) = wait_for_start(&rx, || {}).unwrap();
+        assert!(controlling);
+        assert_eq!(source, 7);
+        // Without a name: any source, as in a 1:1 call.
+        tx.send(ToVideo::Start {
+            video: Box::new(negotiated()),
+            controlling: false,
+        })
+        .unwrap();
+        assert_eq!(wait_for_start(&rx, || {}).unwrap().2, feedback::SOURCE_ANY);
+        // Stopped before it started.
+        tx.send(ToVideo::Stop).unwrap();
+        assert!(wait_for_start(&rx, || {}).is_none());
+    }
 
     /// SD-64: 100 SSRCs, never 0, within the allowed maximum.
     #[test]
