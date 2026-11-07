@@ -1125,6 +1125,13 @@ impl CallMedia {
         }
     }
 
+    /// Video: access units received, access units lost, packets recovered by FEC.
+    pub fn video_stats(&self) -> Option<(u64, u64, u64)> {
+        self.video
+            .as_ref()
+            .map(|v| (v.received_units, v.lost_units, v.recovered_packets()))
+    }
+
     /// Video: ask the peer for a key frame (PLI).
     pub fn request_key_frame(&mut self, now: u64) {
         if let Some(v) = self.video.as_mut() {
