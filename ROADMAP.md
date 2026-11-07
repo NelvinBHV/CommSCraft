@@ -2,7 +2,7 @@
 
 **Stage: M5 in progress** · M0 done · M1, M2, M3 built · M4 closed · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (new subscribers)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (sounds under a permissive licence)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -46,6 +46,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-07 | Sounds rendered again with a SoundFont under the MIT licence (Fluid R3), same scores and mastering: the question whether the GPL-2.0 of the earlier SoundFont reaches the embedded audio no longer arises. The sounds now have a stated licence (`assets/audio/LICENSE.md`). |
 | 2026-11-07 | New subscribers: the user is told once when someone adds them, and acknowledges it (`/seen`); adding a contact now tells the other side too. A blocked user is acknowledged without a notice. Also `tested-in-lab`. |
 | 2026-11-07 | GPU video decoding, shown directly: on a Wayland compositor decoded pictures go to the screen as DMA-BUF, without being copied back (new crate `video-wayland`, no C library, no `unsafe`). In a real video call the whole client needs about 28 % less CPU time on an integrated Intel GPU and 8 to 43 % less on an integrated AMD GPU. Without a compositor or with `COMMSCRAFT_VIDEO_DECODE=cpu` the CPU decodes. |
 | 2026-11-07 | Privacy relationships and blocking (`/privacy`): a blocked user sees the user as offline and cannot reach them, enforced at the server and in the client; also `tested-in-lab`. |

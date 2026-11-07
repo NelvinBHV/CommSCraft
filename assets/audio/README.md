@@ -15,7 +15,8 @@ The sources for reproducible rendering are in [`generate_soundpack.py`](generate
 ## Instrument provenance
 
 - These three arrangements were originally authored as CommSCraft sound concepts in this conversation.
-- Rendered instrument timbres are supplied by **TimGM6mb.sf2**, attributed to Tim Brechbill and contributors; upstream package `timgm6mb-soundfont` is published under **GPL-2.0** (see [Ubuntu package listing](https://packages.ubuntu.com/noble/timgm6mb-soundfont)).
+- Instrument samples come from the **Fluid (R3) General MIT SoundFont** by Frank Wen (Debian package `fluid-soundfont-gm`, MIT licence). The sounds were rendered with it again on 2026-11-07, with the same scores and mastering, because the earlier rendering used a SoundFont under GPL-2.0.
+- Licence of the sounds: [`LICENSE.md`](LICENSE.md).
 - Audio encoding tools: FluidSynth and FFmpeg.
 
 ## UI behavior

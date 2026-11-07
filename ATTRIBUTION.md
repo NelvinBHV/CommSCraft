@@ -29,8 +29,8 @@ The owner-approved CommSCraft sound pack (issues #82–#84, `assets/audio/README
 
 | Sound | File | SHA-256 | Origin | Licence / terms |
 |---|---|---|---|---|
-| Pulse V5 (music on hold) | `assets/audio/CommsCraft-Pulse-hold-loop.wav` | `61004785a19df7fdfcd001ff0cf28d930b78047f721b982eaeaf534f8f7a5a86` | Composed as a CommSCraft sound concept for the owner, rendered by `assets/audio/generate_soundpack.py` with FluidSynth; instrument timbres from TimGM6mb.sf2 (Tim Brechbill and contributors; packaged under GPL-2.0) | The licence of the rendered audio is not stated yet; the source-code licence is not assumed to apply |
-| Beat Call V5 (ringtone) | `assets/audio/CommsCraft-Beat-call-loop.wav` | `96cc154c5e93533385cc5686f949dc8c3094f1bbf46bc35cbba44ccbedee4af8` | as above | as above |
-| Signal Message V4 (notification) | `assets/audio/CommsCraft-Signal-message-unchanged.wav` | `419cbcde4f89123719b5f7f67e21447a5728c3ec016b491452f6b36dd824a86c` | as above | as above |
+| Pulse V5 (music on hold) | `assets/audio/CommsCraft-Pulse-hold-loop.wav` | `e74aee37b484f5b6943d00e63d884d1b0a212085299d3f2eadcb53b564e4c0d4` | Composed as a CommSCraft sound concept for the owner, rendered by `assets/audio/generate_soundpack.py` with FluidSynth; instrument samples from the Fluid (R3) SoundFont (Frank Wen, MIT) | MIT, `assets/audio/LICENSE.md` |
+| Beat Call V5 (ringtone) | `assets/audio/CommsCraft-Beat-call-loop.wav` | `f7ea306684eb3495878ba7bc651f741e1a1c511dbee47849fe160def3e1411b8` | as above | as above |
+| Signal Message V4 (notification) | `assets/audio/CommsCraft-Signal-message-unchanged.wav` | `3daf8f99f0c06f89b3b1e22a155daad9c5ea7d7718bcecbb62511f62fd5d8296` | as above | as above |
 
 The Opus and MP3 versions are listed in `assets/audio/SHA256SUMS.txt`; the CI checks all of them. A user's own sound (`COMMSCRAFT_RINGTONE`, `COMMSCRAFT_NOTIFY_SOUND`, `COMMSCRAFT_HOLD_MUSIC`) is not distributed with the program.
