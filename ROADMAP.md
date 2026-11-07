@@ -1,8 +1,8 @@
 # CommSCraft roadmap
 
-**Stage: M4 closed, M5 next** · M0 done · M1 and M2 built and tested offline · M3 built, waiting for the owner's audio runs · M4 closed (tested-offline)
+**Stage: M5 in progress** · M0 done · M1, M2, M3 built · M4 closed · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (logo assets and terms)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (tested-in-lab status)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,12 +16,12 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **13** tested-offline as a whole, **18** in parts, **19** not started, 2 not planned/needs captures | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
-| Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (23 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
+| Implementation status of the 52 functions | **13** tested-offline as a whole, **18** in parts, **19** not started, 2 not planned/needs captures; **24** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
 | Program code | **38 crates + 1 app** (`commscraft-cli`), **428 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
-| Interop test environment | **private owner lab** (since 2026-10-31): results are not published, public statuses stay `tested-offline` | – |
+| Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
 interop check; **T** partly documented; **N** not documented (or not implementable without a
@@ -46,6 +46,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-07 | New status `tested-in-lab`: 24 functions are marked as also tested in the owner's private lab (feature matrix); meeting video through the A/V MCU is among them, so O-CA-1 is closed. Details stay private; `verified-interoperable` stays reserved for the owner's runs. |
 | 2026-11-07 | Logo: PNG app icons, a simplified 16 px icon, a check on light and dark backgrounds, and terms of use (`assets/branding/BRAND-POLICY.md`) based on a review of the generator's terms and of case law on AI-generated logos. |
 | 2026-11-07 | Approved sounds (issues #82–#84): Pulse as music on hold, Beat Call as ringtone, Signal Message as notification – embedded, with `off`, a WAV file and a volume per sound; band-limited, seamless resampling; no music on hold into meetings; the user's mute does not silence it. Fix in every call: the audio playout ran slower than 50 frames per second (a schedule relative to "now"), so packets piled up and the speaker starved; the schedule is absolute now. |
 | 2026-11-07 | Security, issue #93: the H.264 decoder refuses pictures above 1920×1088 before allocating them (`max_pixels`); measured before the fix: a 47-byte stream announcing 8192×8192 raised the memory peak by more than 300 MB. |

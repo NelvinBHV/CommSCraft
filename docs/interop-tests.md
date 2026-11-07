@@ -5,8 +5,8 @@
 After the fourth search ([`protocol/evidence/39-evidence-for-open-points.md`](protocol/evidence/39-evidence-for-open-points.md),
 OB-39 … OB-51) no open point needs more document research. What is left is the observable behaviour
 of a real server or of the Windows client. The owner runs these tests on authorized systems.
-Since 2026-10-31 the agent may also run them in the owner's isolated lab; lab results
-stay private. Agents connect to no other server; they turn a sanitized result into evidence and code.
+Since 2026-10-31 the agent may also run them in the owner's isolated lab; what ran there is
+shown as `tested-in-lab`, the details stay private. Agents connect to no other server; they turn a sanitized result into evidence and code.
 
 Each case states what the sources already fix, so a capture only has to decide the remaining
 question. Until a case is run, the client follows the **default** column. That keeps every case

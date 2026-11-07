@@ -25,7 +25,8 @@ Crafting Apps (WordCraft, GridCraft, DeckCraft).
   never evidence, and patent notes are not committed.
 - Every normative requirement maps to source path, test fixture and executed test result.
   Published test vectors (MS-NLMP, MS-SRTP, …) become automated tests.
-- Distinguish `source-only`, `tested-offline` and `verified-interoperable` status. Only the owner's
+- Distinguish `source-only`, `tested-offline`, `tested-in-lab` (the owner's private lab) and
+  `verified-interoperable` status. Only the owner's
   interop runs on authorized servers can grant `verified-interoperable`.
 
 ## Clean room
@@ -79,7 +80,8 @@ sockets, the OS or the UI; transport and OS adapters are separate crates.
 - Interop testing: the owner operates an isolated lab; you may
   test against that lab on your own once its connections are set up. Never publish anything about
   the lab (hosts, addresses, captures, logs, results); keep notes in the gitignored `plan/`. Never
-  connect to any other real server. Public statuses stay at `tested-offline`.
+  connect to any other real server. Public statuses may say `tested-offline` and `tested-in-lab`;
+  `tested-in-lab` only for what really ran there, and only the status, no details.
 - Work on branches and open pull requests; never push to `main` directly. Merge your own pull
   requests into `main` regularly once CI is green; no releases.
 
