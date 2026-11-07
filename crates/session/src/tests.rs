@@ -3635,6 +3635,125 @@ fn transferor_leaves_before_the_new_call() {
     assert_eq!(e.left_transfers.len(), 4);
 }
 
+/// SIP-08: a change at the list's delta, one at a time; the list fetched after the change carries
+/// the next delta; a refused change is not repeated; what must not be changed is not.
+#[test]
+fn contact_list_changes() {
+    const EVENT: &str = "vnd-microsoft-roaming-contacts";
+    let (mut e, mut server, out) = signed_in();
+    let add = |name: &str| Command::EditContacts(pres::ContactEdit::AddGroup { name: name.into() });
+    let notices = |out: &[Output]| {
+        events(out)
+            .iter()
+            .filter(|ev| matches!(ev, Event::Notice(_)))
+            .count()
+    };
+    let subscribe = |out: &[Output]| {
+        sends(out)
+            .into_iter()
+            .find(|m| m.single("Event").unwrap() == Some(EVENT))
+            .expect("the list is fetched")
+    };
+    let list = |e: &mut Engine<Counter>, server: &mut Server, sub: &Message, doc: &str| {
+        e.on_message(
+            &answer(
+                server,
+                sub,
+                200,
+                Some("application/vnd-microsoft-roaming-contacts+xml"),
+                doc,
+                &[("Expires", "600")],
+            ),
+            NOW,
+        )
+    };
+    // Not before the list is known.
+    let early = e.command(add("Team"), NOW);
+    assert!(sends(&early).is_empty());
+    assert_eq!(notices(&early), 1);
+
+    let sub = subscribe(&out);
+    list(&mut e, &mut server, &sub, CONTACTS);
+    assert_eq!(e.contact_list().unwrap().delta_num, Some(7));
+
+    let out = e.command(add("Team"), NOW);
+    let service = sends(&out).pop().unwrap();
+    assert_eq!(service.method(), Some("SERVICE"));
+    assert_eq!(
+        service.single("Content-Type").unwrap(),
+        Some("application/SOAP+xml")
+    );
+    let body = String::from_utf8_lossy(&service.body).to_string();
+    assert!(
+        body.contains("<m:addGroup ") && body.contains("<m:deltaNum>7<"),
+        "{body}"
+    );
+    // One at a time.
+    let busy = e.command(add("Other"), NOW);
+    assert!(sends(&busy).is_empty());
+    assert_eq!(notices(&busy), 1);
+
+    // Accepted, but no notification comes: the list is fetched after a while.
+    e.on_message(&answer(&mut server, &service, 200, None, "", &[]), NOW);
+    let again = subscribe(&e.on_tick(NOW + 10));
+    list(
+        &mut e,
+        &mut server,
+        &again,
+        r#"<contactList deltaNum="8"><group id="1" name="~"/><group id="2" name="Team"/></contactList>"#,
+    );
+    assert_eq!(e.contact_list().unwrap().groups.len(), 2);
+
+    // Refused: told once, not repeated, the list is read again.
+    let out = e.command(add("Late"), NOW);
+    let service = sends(&out).pop().unwrap();
+    assert!(String::from_utf8_lossy(&service.body).contains("<m:deltaNum>8<"));
+    let out = e.on_message(&answer(&mut server, &service, 409, None, "", &[]), NOW);
+    assert_eq!(notices(&out), 1);
+    assert!(sends(&out).iter().all(|m| m.method() != Some("SERVICE")));
+    let again = subscribe(&out);
+
+    // An entry with data this client does not keep is not rewritten.
+    let out = list(
+        &mut e,
+        &mut server,
+        &again,
+        r#"<contactList deltaNum="9"><contact uri="sip:p@contoso.com"><contactExtension/></contact></contactList>"#,
+    );
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::ContactList(_))));
+    let out = e.command(
+        Command::EditContacts(pres::ContactEdit::Set {
+            uri: "sip:p@contoso.com".into(),
+            name: "P".into(),
+            groups: vec![],
+            subscribed: true,
+        }),
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+    assert_eq!(notices(&out), 1);
+    // Bad input does not block the next change.
+    let out = e.command(add(" "), NOW);
+    assert!(sends(&out).is_empty());
+    let out = e.command(add("Ok"), NOW);
+    let service = sends(&out).pop().unwrap();
+    let out = e.on_message(&answer(&mut server, &service, 500, None, "", &[]), NOW);
+    let again = subscribe(&out);
+
+    // A list kept in Exchange is not changed here (PR-51).
+    list(
+        &mut e,
+        &mut server,
+        &again,
+        r#"<contactList deltaNum="10" ucsMode="migrated"/>"#,
+    );
+    let out = e.command(add("X"), NOW);
+    assert!(sends(&out).is_empty());
+    assert_eq!(notices(&out), 1);
+}
+
 /// Issue #70, finding 2: signing out during an emergency call publishes the user's rules again
 /// before the REGISTER that ends the registration.
 #[test]

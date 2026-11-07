@@ -1004,6 +1004,10 @@ pub struct Contact {
     pub uri: String,
     pub name: String,
     pub groups: Vec<u32>,
+    pub subscribed: bool,
+    /// The entry carries a `contactExtension` (e.g. a phone number, PR-52) this client does not
+    /// keep: changing the entry would lose it.
+    pub extension: bool,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -1050,11 +1054,134 @@ pub fn parse_contact_list(xml: &str) -> Result<ContactList, Error> {
                     .split_whitespace()
                     .filter_map(|g| g.parse().ok())
                     .collect(),
+                // xs:boolean, default true ([MS-SIP] §9.1).
+                subscribed: !matches!(c.attr("subscribed"), Some("false" | "0")),
+                extension: c.children_named("contactExtension").next().is_some(),
             }),
             Err(_) => l.skipped.push(printable(raw)),
         }
     }
     Ok(l)
+}
+
+/// `Content-Type` of a contact list change ([MS-SIP] §4.6, p. 60).
+pub const CONTACT_EDIT_TYPE: &str = "application/SOAP+xml";
+const NS_WINRTC: &str = "http://schemas.microsoft.com/winrtc/2002/11/sip";
+/// Group and contact names: at most 256 bytes ([MS-SIP] §9.1, p. 81).
+const MAX_CONTACT_NAME: usize = 256;
+/// Group IDs are 1–63 (§3.7.4.4, p. 44).
+const MAX_GROUP: u32 = 63;
+
+/// One change of the contact list (SIP-08; [MS-SIP] §2.2.4.2, pp. 18–19).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ContactEdit {
+    /// Adds or replaces a contact.
+    Set {
+        uri: String,
+        name: String,
+        groups: Vec<u32>,
+        subscribed: bool,
+    },
+    Delete {
+        uri: String,
+    },
+    AddGroup {
+        name: String,
+    },
+    RenameGroup {
+        id: u32,
+        name: String,
+    },
+    /// The group must be empty (§3.7.4.4).
+    DeleteGroup {
+        id: u32,
+    },
+}
+
+/// A user-given name: not over the limit, free of control characters.
+fn checked_contact_name(name: &str) -> Result<String, Error> {
+    if name.len() > MAX_CONTACT_NAME || name.chars().any(char::is_control) {
+        return Err(Error::OutOfRange);
+    }
+    Ok(escape(name))
+}
+
+/// A group name must also say something.
+fn checked_group_name(name: &str) -> Result<String, Error> {
+    if name.trim().is_empty() {
+        return Err(Error::OutOfRange);
+    }
+    checked_contact_name(name)
+}
+
+fn checked_group(id: u32) -> Result<u32, Error> {
+    if (1..=MAX_GROUP).contains(&id) {
+        Ok(id)
+    } else {
+        Err(Error::OutOfRange)
+    }
+}
+
+/// The SOAP body of a contact list change at the list's current `delta` (SIP-08; examples
+/// [MS-SIP] §4.6–§4.9, pp. 60–64; element order §9.2–§9.5).
+pub fn contact_edit_body(edit: &ContactEdit, delta: u64) -> Result<String, Error> {
+    let (name, inner) = match edit {
+        ContactEdit::Set {
+            uri,
+            name,
+            groups,
+            subscribed,
+        } => {
+            let uri = escape(&checked_sip_uri(uri)?);
+            let name = checked_contact_name(name)?;
+            if groups.len() > MAX_GROUP as usize {
+                return Err(Error::OutOfRange);
+            }
+            let groups = groups
+                .iter()
+                .map(|g| checked_group(*g).map(|g| g.to_string()))
+                .collect::<Result<Vec<_>, _>>()?
+                .join(" ");
+            (
+                "setContact",
+                format!(
+                    "<m:displayName>{name}</m:displayName><m:groups>{groups}</m:groups>\
+                     <m:subscribed>{subscribed}</m:subscribed><m:URI>{uri}</m:URI><m:externalURI/>"
+                ),
+            )
+        }
+        ContactEdit::Delete { uri } => (
+            "deleteContact",
+            format!("<m:URI>{}</m:URI>", escape(&checked_sip_uri(uri)?)),
+        ),
+        ContactEdit::AddGroup { name } => (
+            "addGroup",
+            format!(
+                "<m:name>{}</m:name><m:externalURI/>",
+                checked_group_name(name)?
+            ),
+        ),
+        ContactEdit::RenameGroup { id, name } => (
+            "modifyGroup",
+            format!(
+                "<m:groupID>{}</m:groupID><m:name>{}</m:name><m:externalURI/>",
+                checked_group(*id)?,
+                checked_group_name(name)?
+            ),
+        ),
+        // §3.7.4.4 calls group 1 the default group the user must not delete, but its own examples
+        // add and delete a group with this ID (§4.8, §4.9): which group is protected is left to
+        // the server.
+        ContactEdit::DeleteGroup { id } => (
+            "deleteGroup",
+            format!("<m:groupID>{}</m:groupID>", checked_group(*id)?),
+        ),
+    };
+    Ok(format!(
+        "<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">\
+         <SOAP-ENV:Body><m:{name} xmlns:m=\"{NS_WINRTC}\">{inner}\
+         <m:deltaNum>{delta}</m:deltaNum></m:{name}></SOAP-ENV:Body></SOAP-ENV:Envelope>"
+    ))
 }
 
 #[cfg(test)]

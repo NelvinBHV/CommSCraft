@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (tested-in-lab status)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (contact list editing, current focus)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -8,7 +8,7 @@ A milestone is done when its gate passes offline; "verified" always means an int
 owner on an authorized server. Runs in the owner's private lab are shown as `tested-in-lab`; their
 details are not published.
 
-## Current focus (M3 – audio 1:1)
+## Current focus (M5 – video, and the gaps of M2)
 
 **Offline first**: every gate ends at `tested-offline`; what also ran in the owner's lab is `tested-in-lab`, and
 "verified" waits for the owner's runs ([`interop-tests.md`](interop-tests.md)).
@@ -23,8 +23,8 @@ details are not published.
 | M5 | in progress | H.264 UC RTP payload (`h264uc`), camera capture, H.264 encoding on the GPU or CPU and decoding (`video-ffmpeg`), video SDP (`sdp::video`), PLI/VSR (`rtp::feedback`), video core (`media::video`) and transport (`call-media`), 1:1 video calls (session and CLI), video in meetings, bandwidth estimation and rate adaptation (`media::rate`), picture control (function 31) | hardware decoding, 1:1 and conference video |
 | M6 – M7 | not started | building blocks only: PSOM/ABS/MPPC test vectors | everything else |
 
-Next steps in order: telephony (park, team
-and delegate calls); the M3 remainders above are optional or need captures.
+Next steps in order: privacy relationships and blocking (function 12), the remaining video parts
+(simulcast, FEC); the M3 remainders above are optional or need captures.
 
 ## Milestones
 
@@ -45,8 +45,8 @@ transfer — needs captures) stay outside the milestones for now.
 ## Alpha gate (core workflows)
 
 What a typical Skype for Business user does every day, end to end on Linux against an on-premises
-server. Status: **in progress** – the first four workflows exist in `commscraft-cli interactive`
-and pass offline tests; none is verified against a real server yet.
+server. Status: **in progress** – the first five workflows exist in `commscraft-cli interactive`;
+none is `verified-interoperable` yet.
 
 | Core workflow | Works end to end? |
 |---|---|
@@ -54,5 +54,5 @@ and pass offline tests; none is verified against a real server yet.
 | See colleagues' presence and set your own | built, tested-offline, own state tested-in-lab |
 | Chat 1:1 and in a group | built, tested-offline, tested-in-lab |
 | Call a colleague with audio (incl. through the Edge server) | built, tested-offline (UDP loopback test, TCP relay against a TURN test server), direct calls tested-in-lab |
-| Join a scheduled meeting with audio and see who is speaking | no |
+| Join a scheduled meeting with audio and see who is in it | built, tested-offline, tested-in-lab |
 | Watch a colleague's shared screen | no |
