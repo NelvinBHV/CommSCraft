@@ -673,6 +673,7 @@ fn video_negotiated_from(other: &CallMedia, range: (u32, u32)) -> sdp::video::Ne
         remote_key: Some(other.key().clone()),
         remote_ice: d.ice.clone(),
         direction: sdp::Direction::SendRecv,
+        fec_payload_type: None,
         ssrc_range: range,
         feedback: sdp::video::Feedback {
             send_src: true,

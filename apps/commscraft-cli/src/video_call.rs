@@ -341,6 +341,12 @@ fn run(
         let _ = events.send(FromVideo::Failed(id, e));
         return;
     }
+    if negotiated.fec_payload_type.is_some() {
+        let _ = events.send(FromVideo::Notice(
+            id,
+            "forward error correction agreed".into(),
+        ));
+    }
     let stop = Arc::new(AtomicBool::new(false));
     let idr = Arc::new(AtomicBool::new(true));
     // RT-25: what the peer's video source request allows (VGA at 30 fps until one arrives).
@@ -479,6 +485,14 @@ fn run(
             }
         }
         std::thread::sleep(Duration::from_millis(3));
+    }
+    if let Some((received, lost, recovered)) = media.video_stats() {
+        let _ = events.send(FromVideo::Notice(
+            id,
+            format!(
+                "received {received} pictures, {lost} lost, {recovered} packets recovered by FEC"
+            ),
+        ));
     }
     stop.store(true, Ordering::Relaxed);
     media.stop(now_ms());
@@ -679,6 +693,7 @@ mod tests {
             remote_key: None,
             remote_ice: None,
             direction: sdp::Direction::SendRecv,
+            fec_payload_type: None,
             ssrc_range: (100, 199),
             feedback: sdp::video::Feedback::default(),
         };

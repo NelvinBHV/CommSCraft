@@ -446,7 +446,7 @@ fn video_offer_and_spec_line() {
     let policy = Encryption::Required;
     let offer = video::offer_with_video(&local(), &video_local(), policy).unwrap();
     let audio_at = offer.find("m=audio").unwrap();
-    let video_at = offer.find("m=video 40002 RTP/SAVP 122\r\n").unwrap();
+    let video_at = offer.find("m=video 40002 RTP/SAVP 122 123\r\n").unwrap();
     assert!(audio_at < video_at);
     let v = &offer[video_at..];
     for line in [
@@ -526,7 +526,7 @@ fn answer_names_every_line() {
         lines,
         vec![
             "m=audio 40000 RTP/SAVP 9 8 0 101",
-            "m=video 40002 RTP/SAVP 122",
+            "m=video 40002 RTP/SAVP 122 123",
             "m=applicationsharing 0 TCP/RTP/AVP 127"
         ]
     );
@@ -557,4 +557,46 @@ fn answer_names_every_line() {
     )
     .unwrap();
     assert!(v.is_none() && sdp.contains("m=video 0 "));
+}
+
+/// SD-28: FEC in our offer, in an answer only if offered, and taken from the peer's answer.
+#[test]
+fn ulpfec_negotiation() {
+    let offer = video::offer_with_video(&local(), &video_local(), Encryption::Off).unwrap();
+    assert!(offer.contains(" 122 123\r\n"), "{offer}");
+    assert!(
+        offer.contains("a=rtpmap:123 x-ulpfecuc/90000\r\n"),
+        "{offer}"
+    );
+    let mut other = video_local();
+    other.ssrc_range = (900_000, 900_099);
+    let key = Key::new(1, [3; 30]);
+    let answer_to = |offer: &str| {
+        video::answer_with_video(
+            offer.as_bytes(),
+            &local(),
+            key.clone(),
+            Some((&other, key.clone())),
+            Encryption::Off,
+        )
+        .unwrap()
+    };
+    let (answer, _, neg) = answer_to(&offer);
+    assert_eq!(neg.unwrap().fec_payload_type, Some(123));
+    assert!(answer.contains("a=rtpmap:123 x-ulpfecuc/90000\r\n"));
+    let back = video::video_answer_to_offer(answer.as_bytes(), None, Encryption::Off)
+        .unwrap()
+        .unwrap();
+    assert_eq!(back.fec_payload_type, Some(123));
+    // An offer without FEC: none in the answer.
+    let without = offer
+        .replace(" 122 123\r\n", " 122\r\n")
+        .replace("a=rtpmap:123 x-ulpfecuc/90000\r\n", "");
+    let (answer, _, neg) = answer_to(&without);
+    assert_eq!(neg.unwrap().fec_payload_type, None);
+    assert!(!answer.contains("ulpfec"));
+    // A name without its format in the line does not count.
+    let stray = offer.replace(" 122 123\r\n", " 122\r\n");
+    let (_, _, neg) = answer_to(&stray);
+    assert_eq!(neg.unwrap().fec_payload_type, None);
 }

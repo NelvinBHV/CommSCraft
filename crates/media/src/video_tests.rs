@@ -38,6 +38,7 @@ fn pair(seq_zero: bool) -> (Video, Video) {
         remote_key: Some(key.clone()),
         remote_ice: None,
         direction: sdp::Direction::SendRecv,
+        fec_payload_type: None,
         ssrc_range: range,
         feedback: all_feedback(),
     };
@@ -138,6 +139,7 @@ fn foreign_packets_dropped() {
         remote_key: None,
         remote_ice: None,
         direction: sdp::Direction::SendRecv,
+        fec_payload_type: None,
         ssrc_range: (100, 199),
         feedback: all_feedback(),
     };
@@ -215,6 +217,7 @@ fn plain_pair() -> (Video, Video) {
         remote_key: None,
         remote_ice: None,
         direction: sdp::Direction::SendRecv,
+        fec_payload_type: None,
         ssrc_range: range,
         feedback: all_feedback(),
     };
@@ -347,6 +350,7 @@ fn picture_update_without_pli() {
         remote_key: None,
         remote_ice: None,
         direction: sdp::Direction::SendRecv,
+        fec_payload_type: None,
         ssrc_range: range,
         feedback: sdp::video::Feedback {
             recv_pli: pli,
@@ -389,4 +393,104 @@ fn picture_update_without_pli() {
         // Three lost pictures at 0, 300 and 1300 ms: two requests without PLI, none with it.
         assert_eq!(asked, if pli { 0 } else { 2 }, "pli negotiated: {pli}");
     }
+}
+
+/// PL-06: a pair with FEC. An IDR picture gets a FEC packet behind its data, with the marker, and a
+/// lost packet of it comes back without a key frame request; an ordinary picture gets FEC only
+/// after the peer reported loss.
+#[test]
+fn fec_recovers_a_lost_packet() {
+    let ka = sdp::Key::new(1, [1; 30]);
+    let kb = sdp::Key::new(1, [2; 30]);
+    let neg = |range, key: &sdp::Key, fec| sdp::video::NegotiatedVideo {
+        payload_type: 122,
+        remote_rtp: ("192.0.2.1".parse().unwrap(), 1),
+        remote_rtcp: ("192.0.2.1".parse().unwrap(), 2),
+        remote_key: Some(key.clone()),
+        remote_ice: None,
+        direction: sdp::Direction::SendRecv,
+        fec_payload_type: fec,
+        ssrc_range: range,
+        feedback: all_feedback(),
+    };
+    let mut a = Video::new(
+        &neg((200, 299), &kb, Some(123)),
+        Some(&ka),
+        (100, 199),
+        layout(),
+        [9; 10],
+        "a",
+    )
+    .unwrap();
+    let mut b = Video::new(
+        &neg((100, 199), &ka, Some(123)),
+        Some(&kb),
+        (200, 299),
+        layout(),
+        [8; 10],
+        "b",
+    )
+    .unwrap();
+    let plain_type = |p: &[u8]| p.get(1).map(|b| b & 0x7f);
+    let idr = |n: usize| {
+        let mut au = vec![0, 0, 0, 1, 0x65];
+        au.extend((0..n).map(|i| (i % 200 + 1) as u8));
+        au
+    };
+    // A large IDR picture (the stream layout goes with the first one).
+    let mut packets = a.on_access_unit(&idr(4000), 9000);
+    assert!(packets.len() >= 3);
+    let fec = packets.last().unwrap().clone();
+    assert_eq!(plain_type(&fec), Some(123));
+    assert_eq!(
+        fec[1] & 0x80,
+        0x80,
+        "the last FEC packet of the unit has the marker"
+    );
+    // One lost in the middle: nothing is lost in the end, no key frame request is due.
+    packets.remove(1);
+    let mut units = Vec::new();
+    for (i, p) in packets.iter().enumerate() {
+        for e in b.on_rtp(p, i as u32, 1000) {
+            if let VideoEvent::AccessUnit { data, idr } = e {
+                assert!(idr);
+                units.push(data);
+            }
+        }
+    }
+    assert_eq!(units.len(), 1, "recovered");
+    assert_eq!(b.lost_units, 0);
+    assert_eq!(b.recovered_packets(), 1);
+    // An ordinary picture has no FEC ...
+    let inter = |n: usize| {
+        let mut au = vec![0, 0, 0, 1, 0x41];
+        au.extend((0..n).map(|i| (i % 200 + 1) as u8));
+        au
+    };
+    let before = a.on_access_unit(&inter(4000), 12000);
+    assert!(before.iter().all(|p| plain_type(p) == Some(122)));
+    // ... until the peer reports loss (it saw the gap, also of the recovered packet).
+    for report in b.rtcp_due(100_000, 1 << 40) {
+        let _ = a.on_rtcp(&report, 100_000);
+    }
+    let after = a.on_access_unit(&inter(4000), 15000);
+    assert_eq!(plain_type(after.last().unwrap()), Some(123));
+    // A single small packet gets none.
+    let small = a.on_access_unit(&inter(20), 18000);
+    assert!(small.iter().all(|p| plain_type(p) == Some(122)));
+
+    // Without FEC negotiated its packets are not taken.
+    let mut c = Video::new(
+        &neg((100, 199), &ka, None),
+        Some(&kb),
+        (200, 299),
+        layout(),
+        [7; 10],
+        "c",
+    )
+    .unwrap();
+    for (i, p) in after.iter().enumerate() {
+        let _ = c.on_rtp(p, i as u32, 3000);
+    }
+    assert_eq!(c.recovered_packets(), 0);
 }
