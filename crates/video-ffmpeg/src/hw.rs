@@ -1,8 +1,9 @@
 //! VA-API hardware frames through FFmpeg's hardware context: the only module of
 //! CommSCraft with `unsafe` code. It creates a VA-API device and a pool of VA-API surfaces,
 //! attaches the pool to an encoder context and uploads NV12 pictures into surfaces; for decoding
-//! it gives a decoder context the device and downloads decoded surfaces. Everything else stays in
-//! the safe binding.
+//! it gives a decoder context the device, maps decoded surfaces to DMA-BUF descriptors for the
+//! window and downloads them where no such window exists. Everything else stays in the safe
+//! binding.
 //!
 //! Rules: every `unsafe` block names why it is sound; pointers come only from FFmpeg's
 //! own allocation functions and are checked for null; reference-counted buffers are released
@@ -10,6 +11,7 @@
 //! this module.
 #![allow(unsafe_code)]
 
+use std::os::fd::BorrowedFd;
 use std::ptr;
 
 use ff::ffi;
@@ -68,6 +70,93 @@ pub(crate) fn download(surface: &ff::frame::Video) -> Result<ff::frame::Video, E
         )));
     }
     Ok(picture)
+}
+
+/// A decoded surface as a DMA-BUF picture. Every number read from FFmpeg's descriptor is checked;
+/// the file descriptors are duplicated, so that nothing refers to the descriptor afterwards.
+pub(crate) fn map_dmabuf(surface: &ff::frame::Video) -> Result<crate::DmaBuf, Error> {
+    if surface.format() != ff::format::Pixel::VAAPI {
+        return Err(Error::BadParameter("mapping needs a VA-API surface"));
+    }
+    let mut mapped = ff::frame::Video::empty();
+    // SAFETY: `mapped` is an empty, owned AVFrame whose format we set to ask for DRM PRIME;
+    // `surface` is a valid hardware frame that the decoder returned. `av_hwframe_map` makes
+    // `mapped` hold a reference to the surface.
+    let r = unsafe {
+        let m = mapped.as_mut_ptr();
+        (*m).format = ffi::AVPixelFormat::AV_PIX_FMT_DRM_PRIME as i32;
+        ffi::av_hwframe_map(m, surface.as_ptr(), ffi::AV_HWFRAME_MAP_READ as i32)
+    };
+    if r < 0 {
+        return Err(Error::NoHardware(format!(
+            "no DMA-BUF of the surface ({r})"
+        )));
+    }
+    // SAFETY: after a successful map to DRM PRIME, `data[0]` is null or points to the
+    // AVDRMFrameDescriptor (FFmpeg's documented layout), which lives as long as `mapped`.
+    let descriptor = unsafe {
+        let d = (*mapped.as_ptr()).data[0].cast::<ffi::AVDRMFrameDescriptor>();
+        d.as_ref()
+            .ok_or(Error::NoHardware("DMA-BUF without descriptor".into()))?
+    };
+    let objects = descriptor
+        .objects
+        .get(..usize::try_from(descriptor.nb_objects).unwrap_or(0))
+        .ok_or(Error::NoHardware("too many DMA-BUF objects".into()))?;
+    let layers = descriptor
+        .layers
+        .get(..usize::try_from(descriptor.nb_layers).unwrap_or(0))
+        .ok_or(Error::NoHardware("too many DMA-BUF layers".into()))?;
+    let mut planes = Vec::new();
+    let mut modifier = None;
+    for layer in layers {
+        let in_layer = layer
+            .planes
+            .get(..usize::try_from(layer.nb_planes).unwrap_or(0))
+            .ok_or(Error::NoHardware("too many DMA-BUF planes".into()))?;
+        for plane in in_layer {
+            let object = usize::try_from(plane.object_index)
+                .ok()
+                .and_then(|i| objects.get(i))
+                .ok_or(Error::NoHardware("DMA-BUF plane without object".into()))?;
+            if *modifier.get_or_insert(object.format_modifier) != object.format_modifier {
+                return Err(Error::NoHardware("mixed DMA-BUF modifiers".into()));
+            }
+            if object.fd < 0 {
+                return Err(Error::NoHardware("DMA-BUF without file".into()));
+            }
+            // SAFETY: the descriptor owns this open file descriptor while `mapped` lives, and
+            // it is only borrowed here to duplicate it.
+            let fd = unsafe { BorrowedFd::borrow_raw(object.fd) }
+                .try_clone_to_owned()
+                .map_err(|e| Error::NoHardware(e.to_string()))?;
+            planes.push(crate::DmaBufPlane {
+                fd,
+                offset: u32::try_from(plane.offset)
+                    .map_err(|_| Error::NoHardware("DMA-BUF plane offset".into()))?,
+                stride: u32::try_from(plane.pitch)
+                    .map_err(|_| Error::NoHardware("DMA-BUF plane pitch".into()))?,
+            });
+        }
+    }
+    // One composed NV12 layer, or the two layers R8 and GR88 that make up NV12.
+    let fourcc = match layers {
+        [one] => one.format,
+        [y, uv] if (y.format, uv.format) == (crate::DRM_R8, crate::DRM_GR88) => crate::DRM_NV12,
+        _ => 0,
+    };
+    let modifier = modifier.ok_or(Error::NoHardware("DMA-BUF without planes".into()))?;
+    if fourcc != crate::DRM_NV12 || planes.len() != 2 {
+        return Err(Error::NoHardware("DMA-BUF is not NV12".into()));
+    }
+    Ok(crate::DmaBuf::new(
+        surface.width(),
+        surface.height(),
+        fourcc,
+        modifier,
+        planes,
+        mapped,
+    ))
 }
 
 /// A VA-API device and a pool of NV12 surfaces of one size.

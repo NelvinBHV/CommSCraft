@@ -28,6 +28,7 @@ members = [
     "crates/tones",
     "crates/audio-alsa",
     "crates/video-ffmpeg",
+    "crates/video-wayland",
     "crates/rtp",
     "crates/sdp",
     "crates/stun",

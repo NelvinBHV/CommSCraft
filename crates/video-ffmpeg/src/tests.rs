@@ -432,6 +432,67 @@ fn decode_load() {
     );
 }
 
+/// Where the time of GPU decoding goes: decoding alone, then download, then the conversion (not a
+/// regular test).
+#[test]
+#[ignore]
+fn decode_phases() {
+    init().unwrap();
+    let big = std::env::var("COMMSCRAFT_1080").is_ok();
+    let (w, h) = if big { (1920u32, 1080u32) } else { (1280, 720) };
+    let mut enc = Encoder::new(EncoderConfig {
+        width: w,
+        height: h,
+        bitrate: if big { 6_000_000 } else { 3_000_000 },
+        ..config()
+    })
+    .unwrap();
+    let mut seed = 1u32;
+    let texture: Vec<u8> = (0..(w * h * 2))
+        .map(|_| {
+            seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+            (seed >> 24) as u8
+        })
+        .collect();
+    let mut units = Vec::new();
+    for n in 0..120u32 {
+        let mut p = Picture::filled(w, h, 128, 128, 128);
+        let shift = (n * 4) as usize;
+        let (y, _) = p.data.split_at_mut((w * h) as usize);
+        y.copy_from_slice(&texture[shift..shift + (w * h) as usize]);
+        units.extend(enc.encode(&p, n == 0).unwrap());
+    }
+    for phase in ["decode only", "decode+download", "decode+download+convert"] {
+        let mut dec = open_decoder(true).unwrap();
+        let (cpu, wall) = (cpu_ticks(), std::time::Instant::now());
+        let (mut n, mut hw) = (0, 0);
+        let mut frame = ff::frame::Video::empty();
+        for _ in 0..3 {
+            for au in &units {
+                dec.send_packet(&ff::Packet::copy(au)).unwrap();
+                while dec.receive_frame(&mut frame).is_ok() {
+                    n += 1;
+                    if frame.format() != ff::format::Pixel::VAAPI {
+                        continue;
+                    }
+                    hw += 1;
+                    if phase != "decode only" {
+                        let sw = hw::download(&frame).unwrap();
+                        if phase == "decode+download+convert" {
+                            from_nv12(&sw).unwrap();
+                        }
+                    }
+                }
+            }
+        }
+        eprintln!(
+            "{phase}: {n} pictures ({hw} on the GPU), {:?}, {} CPU ticks",
+            wall.elapsed(),
+            cpu_ticks() - cpu
+        );
+    }
+}
+
 /// The window (only with COMMSCRAFT_DISPLAY=1; not in CI): a moving gradient for one second;
 /// a picture of another size is refused.
 #[test]

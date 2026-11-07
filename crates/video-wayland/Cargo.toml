@@ -1,0 +1,19 @@
+[package]
+name = "commscraft-video-wayland"
+description = "A video window that hands GPU pictures (DMA-BUF) directly to the Wayland compositor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+# The Rust implementation of the Wayland protocol: no C library is linked.
+wayland-client = "=0.31.15"
+wayland-protocols = { version = "=0.32.13", features = ["client", "unstable"] }
+
+[dev-dependencies]
+commscraft-video-ffmpeg = { path = "../video-ffmpeg" }
+
+[lints]
+workspace = true

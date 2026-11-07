@@ -12,6 +12,8 @@
 //! A decoder on the GPU keeps these limits and moves to the CPU for good when input or driver keep
 //! failing or the picture size keeps changing: a hostile stream cannot keep working on the driver.
 
+use std::os::fd::OwnedFd;
+
 use ffmpeg_next as ff;
 
 mod hw;
@@ -356,6 +358,59 @@ impl Encoder {
     }
 }
 
+/// DRM format codes (drm_fourcc.h).
+const DRM_NV12: u32 = u32::from_le_bytes(*b"NV12");
+const DRM_R8: u32 = u32::from_le_bytes(*b"R8  ");
+const DRM_GR88: u32 = u32::from_le_bytes(*b"GR88");
+
+/// One plane of a [`DmaBuf`].
+#[derive(Debug)]
+pub struct DmaBufPlane {
+    pub fd: OwnedFd,
+    pub offset: u32,
+    pub stride: u32,
+}
+
+/// A decoded picture in GPU memory, for a window that shows it without copying.
+pub struct DmaBuf {
+    pub width: u32,
+    pub height: u32,
+    /// DRM format code.
+    pub fourcc: u32,
+    pub modifier: u64,
+    pub planes: Vec<DmaBufPlane>,
+    /// Keeps the surface from being reused while the picture is in use.
+    _mapped: ff::frame::Video,
+}
+
+impl DmaBuf {
+    fn new(
+        width: u32,
+        height: u32,
+        fourcc: u32,
+        modifier: u64,
+        planes: Vec<DmaBufPlane>,
+        mapped: ff::frame::Video,
+    ) -> DmaBuf {
+        DmaBuf {
+            width,
+            height,
+            fourcc,
+            modifier,
+            planes,
+            _mapped: mapped,
+        }
+    }
+}
+
+/// A decoded picture.
+pub enum Decoded {
+    /// In memory.
+    Picture(Picture),
+    /// In GPU memory.
+    Surface(DmaBuf),
+}
+
 /// Failed access units before a GPU decoder moves to the CPU (design: a stream that starts between
 /// two IDR pictures or loses packets fails a few times without any hardware problem).
 const MAX_GPU_ERRORS: u32 = 16;
@@ -372,6 +427,8 @@ fn open_decoder(hardware: bool) -> Result<ff::decoder::Video, Error> {
     let mut ctx = ff::codec::context::Context::new_with_codec(codec);
     if hardware {
         hw::attach_decoder_device(&mut ctx)?;
+        // Pictures on their way to the window keep their surfaces.
+        opts.set("extra_hw_frames", "6");
     }
     Ok(ctx.decoder().open_as_with(codec, opts)?.video()?)
 }
@@ -416,13 +473,29 @@ impl Decoder {
         self.backend
     }
 
-    /// Decodes one Annex B access unit; returns the pictures that became ready. Pictures in
-    /// another pixel format than YUV 4:2:0 or above the size limit are refused.
+    /// Decodes one Annex B access unit; returns the pictures that became ready, in memory.
+    /// Pictures in another pixel format than YUV 4:2:0 or above the size limit are refused.
     pub fn decode(&mut self, access_unit: &[u8]) -> Result<Vec<Picture>, Error> {
+        let decoded = self.decode_as(access_unit, false)?;
+        Ok(decoded
+            .into_iter()
+            .filter_map(|d| match d {
+                Decoded::Picture(p) => Some(p),
+                Decoded::Surface(_) => None,
+            })
+            .collect())
+    }
+
+    /// Like [`Decoder::decode`], but pictures on the GPU stay there where that works.
+    pub fn decode_to_surfaces(&mut self, access_unit: &[u8]) -> Result<Vec<Decoded>, Error> {
+        self.decode_as(access_unit, true)
+    }
+
+    fn decode_as(&mut self, access_unit: &[u8], surfaces: bool) -> Result<Vec<Decoded>, Error> {
         if access_unit.len() > MAX_ACCESS_UNIT {
             return Err(Error::TooLarge);
         }
-        let result = self.decode_checked(access_unit);
+        let result = self.decode_checked(access_unit, surfaces);
         if self.gpu {
             if result.is_err() {
                 self.errors = self.errors.saturating_add(1);
@@ -442,22 +515,32 @@ impl Decoder {
         Ok(())
     }
 
-    fn decode_checked(&mut self, access_unit: &[u8]) -> Result<Vec<Picture>, Error> {
+    fn decode_checked(
+        &mut self,
+        access_unit: &[u8],
+        surfaces: bool,
+    ) -> Result<Vec<Decoded>, Error> {
         self.dec.send_packet(&ff::Packet::copy(access_unit))?;
         let mut out = Vec::new();
         let mut frame = ff::frame::Video::empty();
         while self.dec.receive_frame(&mut frame).is_ok() {
-            let size = (frame.width(), frame.height());
-            if self.size.is_some_and(|s| s != size) {
+            let (width, height) = (frame.width(), frame.height());
+            check_size(width, height)?;
+            if self.size.is_some_and(|s| s != (width, height)) {
                 self.resizes = self.resizes.saturating_add(1);
             }
-            self.size = Some(size);
+            self.size = Some((width, height));
             if frame.format() == ff::format::Pixel::VAAPI {
                 self.backend = Backend::Vaapi;
-                out.push(from_nv12(&hw::download(&frame)?)?);
+                // A surface that cannot be mapped is still a picture, through the copy.
+                let surface = surfaces.then(|| hw::map_dmabuf(&frame).ok()).flatten();
+                out.push(match surface {
+                    Some(s) => Decoded::Surface(s),
+                    None => Decoded::Picture(from_nv12(&hw::download(&frame)?)?),
+                });
             } else {
                 self.backend = Backend::Software;
-                out.push(from_frame(&frame)?);
+                out.push(Decoded::Picture(from_frame(&frame)?));
             }
         }
         Ok(out)
