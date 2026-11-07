@@ -261,10 +261,11 @@ pub fn spawn(
     local_ip: IpAddr,
     relay: Option<cm::Relay>,
     camera: String,
+    meeting: bool,
     events: Sender<FromVideo>,
 ) -> VideoHandle {
     let (tx, rx) = mpsc::channel::<ToVideo>();
-    std::thread::spawn(move || run(id, local_ip, relay, camera, rx, events));
+    std::thread::spawn(move || run(id, local_ip, relay, camera, meeting, rx, events));
     VideoHandle { tx }
 }
 
@@ -273,6 +274,7 @@ fn run(
     local_ip: IpAddr,
     relay: Option<cm::Relay>,
     camera: String,
+    meeting: bool,
     rx: Receiver<ToVideo>,
     events: Sender<FromVideo>,
 ) {
@@ -344,7 +346,7 @@ fn run(
         events.clone(),
         id,
     );
-    spawn_window(dec_rx, stop.clone(), events.clone(), id);
+    spawn_window(dec_rx, stop.clone(), events.clone(), id, meeting);
     let mut final_sent = false;
     let mut requested = false;
     // The source to ask for: any (1:1) until a meeting names one (CA-13).
@@ -633,12 +635,18 @@ fn hardware_allowed() -> bool {
     std::env::var("COMMSCRAFT_VIDEO_HW").map_or(true, |v| v.trim() != "0")
 }
 
-/// GPU decoding where the pictures can go to the screen directly, unless
-/// `COMMSCRAFT_VIDEO_DECODE=cpu` asks for the CPU: copying them back would cost more than decoding
-/// on the CPU (measured, evidence file 23).
-fn gpu_decoding_wanted() -> bool {
+/// GPU decoding where the pictures can go to the screen directly: copying them back would cost more
+/// than decoding on the CPU (measured, evidence file 23). By default only in a 1:1 call and not on
+/// an AMD GPU: its video engine hung next to a changing GPU encoder, and in meetings the picture did
+/// not reliably arrive. `COMMSCRAFT_VIDEO_DECODE=cpu` or `gpu` decides.
+fn gpu_decoding_wanted(meeting: bool) -> bool {
+    let choice = std::env::var("COMMSCRAFT_VIDEO_DECODE").unwrap_or_default();
     commscraft_video_wayland::Window::in_wayland_session()
-        && std::env::var("COMMSCRAFT_VIDEO_DECODE").map_or(true, |v| v.trim() != "cpu")
+        && match choice.trim() {
+            "cpu" => false,
+            "gpu" => true,
+            _ => !meeting && !vf::gpu_decoding_hazard(),
+        }
 }
 
 /// A GPU picture in the window; the window keeps it until the compositor is done with it.
@@ -707,9 +715,10 @@ fn spawn_window(
     stop: Arc<AtomicBool>,
     events: Sender<FromVideo>,
     id: u32,
+    meeting: bool,
 ) {
     std::thread::spawn(move || {
-        let mut surfaces = gpu_decoding_wanted();
+        let mut surfaces = gpu_decoding_wanted(meeting);
         let mut decoder = match vf::init().and_then(|()| vf::Decoder::with_hardware(surfaces)) {
             Ok(d) => d,
             Err(e) => {

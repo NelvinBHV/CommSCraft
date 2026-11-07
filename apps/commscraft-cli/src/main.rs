@@ -2474,6 +2474,7 @@ fn interactive(
                                 local_ip,
                                 relay,
                                 camera.clone(),
+                                false,
                                 video_tx.clone(),
                             ),
                         );
@@ -2524,6 +2525,7 @@ fn interactive(
                                         local_ip,
                                         relay,
                                         camera.clone(),
+                                        false,
                                         video_tx.clone(),
                                     ),
                                 );
@@ -2961,6 +2963,7 @@ fn interactive(
                                     local_ip,
                                     relay,
                                     camera.clone(),
+                                    true,
                                     video_tx.clone(),
                                 ),
                             );

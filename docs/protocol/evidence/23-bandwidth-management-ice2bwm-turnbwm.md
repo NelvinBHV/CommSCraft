@@ -57,3 +57,11 @@ Hardware decoding (2026-11-07, `video-ffmpeg`, `video-wayland`, measured, not a 
 - A player with the same mechanism, 8 s of 720p, CPU seconds of the player: CPU decoding with XVideo AMD 0.69, Intel 2.24; GPU with copy 1.19 and 3.63; GPU directly to the compositor 0.40 and 0.68; GPU through OpenGL 0.70 and 1.58.
 - A real video call (640x480 both ways, GPU encoding, whole client process, 20 s, two runs each): AMD direct 66 and 66 ticks, CPU decoding 72 and 115; Intel direct 229 and 228, CPU decoding 318 and 322.
 - Not measured: the compositor's own CPU time and power. **Inference:** GPU decoding is only worthwhile when the picture is not copied back, so it runs only where a compositor takes it directly; otherwise the CPU decodes.
+
+GPU decoding next to a GPU encoder (2026-11-07, measured, not a protocol rule; test `gpu_encoder_resizing_next_to_a_decoder` and earlier variants of it; integrated AMD 780M, VCN 4, Mesa 26.1.8, and Intel i5-10310U).
+- AMD: a GPU encoder changing size next to a GPU decoder in the same process hangs the video engine within about 3 s (`ring vcn_unified_0 timeout`); the driver then aborts the process. This happened in a real meeting too.
+- AMD, no hang in these runs: encoder changing size with a CPU decoder; GPU decoder without encoder changes; encoder rebuilt at the same size; encoder changing size with the GPU decoding in another process; encoders kept open per size, also built while the decoder runs (2 × 220 changes with the final code).
+- AMD, still a hang: pauses of 300 ms, locks around all encoder and decoder calls, one shared VA-API device; and with keeping encoders open, closing them all, or changing the bit rate as well. Why it remains with changing bit rates is **open**.
+- Intel: no hang in the same test, also with changing bit rates. In a meeting the receiver on this GPU got no picture in most runs with GPU decoding and one with CPU decoding (few runs, another build was running on that machine); the cause is **open**. 1:1 calls worked.
+- Consequence (**inference**, design): by default the GPU decodes only in 1:1 calls and not on AMD GPUs; every AMD GPU counts, one model was measured. The earlier figures for AMD above apply only with `COMMSCRAFT_VIDEO_DECODE=gpu`.
+- Related public reports of VCN 4 hangs on this GPU generation exist; none confirmed this cause or a fix.

@@ -364,7 +364,7 @@ fn hardware_decoder_gives_up_on_bad_input() {
     dec.errors = MAX_GPU_ERRORS - 1;
     dec.resizes = MAX_GPU_RESIZES;
     let _ = dec.decode(&junk);
-    assert!(!dec.gpu);
+    assert!(dec.gate.is_none());
     assert_eq!(dec.backend(), Backend::Software);
     let mut enc = Encoder::new(config()).unwrap();
     let mut decoded = 0;
@@ -491,6 +491,118 @@ fn decode_phases() {
             cpu_ticks() - cpu
         );
     }
+}
+
+/// While a GPU decoder lives, a GPU encoder that is dropped stays open, the same settings use it
+/// again, and the last decoder's end closes the kept ones.
+#[test]
+fn encoders_stay_open_next_to_a_gpu_decoder() {
+    init().unwrap();
+    let cfg = EncoderConfig {
+        hardware: true,
+        ..config()
+    };
+    let gate = GpuDecoderGate::new();
+    let first = Encoder::new(cfg).unwrap();
+    if first.backend() == Backend::Software {
+        return; // no GPU here (CI)
+    }
+    let other_decoders = with_gpu(|g| g.decoders).unwrap();
+    drop(first);
+    if other_decoders == 1 {
+        assert_eq!(with_gpu(|g| g.kept.len()), Some(1));
+        let again = Encoder::new(cfg).unwrap();
+        assert_eq!(with_gpu(|g| g.kept.len()), Some(0), "used again");
+        assert_eq!(again.backend(), Backend::Vaapi);
+        drop(again);
+        assert_eq!(with_gpu(|g| g.kept.len()), Some(1));
+        drop(gate);
+        assert_eq!(
+            with_gpu(|g| g.kept.len()),
+            Some(0),
+            "closed with the last decoder"
+        );
+    }
+}
+
+/// A GPU encoder that changes size next to a GPU decoder of another stream, as in a meeting. Without
+/// keeping the encoders this hung an AMD GPU within seconds. Not a regular test: it can hang a
+/// GPU; `COMMSCRAFT_SECONDS` long; `COMMSCRAFT_STRESS_RATES=yes` also changes the bit rate, which
+/// fills the encoders up and moves the decoder to the CPU.
+#[test]
+#[ignore]
+fn gpu_encoder_resizing_next_to_a_decoder() {
+    use std::sync::mpsc;
+    init().unwrap();
+    let seconds: u64 = std::env::var("COMMSCRAFT_SECONDS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(30);
+    let rates = std::env::var("COMMSCRAFT_STRESS_RATES").is_ok_and(|v| v == "yes");
+    let (tx, rx) = mpsc::sync_channel::<Vec<u8>>(8);
+    let decoder = std::thread::spawn(move || {
+        let mut dec = Decoder::with_hardware(true).unwrap();
+        let mut held = std::collections::VecDeque::new();
+        let (mut pictures, mut errors, mut gpu) = (0u64, 0u64, 0u64);
+        while let Ok(au) = rx.recv() {
+            match dec.decode_to_surfaces(&au) {
+                Ok(list) => {
+                    for d in list {
+                        pictures += 1;
+                        gpu += u64::from(dec.backend() == Backend::Vaapi);
+                        // As the window: a few pictures stay in use.
+                        held.push_back(d);
+                        if held.len() > 3 {
+                            held.pop_front();
+                        }
+                    }
+                }
+                Err(_) => errors += 1,
+            }
+        }
+        (pictures, gpu, errors)
+    });
+    let start = std::time::Instant::now();
+    let sizes = [(320, 180), (640, 480), (640, 360), (320, 240)];
+    let mut stream = Encoder::new(EncoderConfig {
+        width: 320,
+        height: 180,
+        ..config()
+    })
+    .unwrap();
+    let (mut changes, mut frame) = (0u32, 0u32);
+    while start.elapsed().as_secs() < seconds {
+        let (w, h) = sizes[changes as usize % sizes.len()];
+        let bitrate = if rates {
+            300_000 + changes * 7_000
+        } else {
+            500_000
+        };
+        changes += 1;
+        let mut enc = Encoder::new(EncoderConfig {
+            width: w,
+            height: h,
+            bitrate,
+            hardware: true,
+            ..config()
+        })
+        .unwrap();
+        let picture = gradient(w, h, frame);
+        for n in 0..12 {
+            frame += 1;
+            enc.encode(&picture, n == 0).unwrap();
+            for au in stream
+                .encode(&gradient(320, 180, frame), frame == 1)
+                .unwrap()
+            {
+                tx.send(au).unwrap();
+            }
+            std::thread::sleep(std::time::Duration::from_millis(16));
+        }
+    }
+    drop(tx);
+    let (pictures, gpu, errors) = decoder.join().unwrap();
+    eprintln!("changes {changes}, pictures {pictures}, on the GPU {gpu}, decode errors {errors}");
 }
 
 /// The window (only with COMMSCRAFT_DISPLAY=1; not in CI): a moving gradient for one second;
