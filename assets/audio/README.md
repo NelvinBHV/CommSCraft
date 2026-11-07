@@ -23,6 +23,7 @@ The sources for reproducible rendering are in [`generate_soundpack.py`](generate
 - Pulse: loop for remote-party music on hold.
 - Beat Call: loop during incoming-call alerting; stop on answer/decline.
 - Signal Message: play exactly once for incoming instant messages or other suitable events.
-- Expose volume, mute and custom-audio selection for each type.
+- Volume, mute and a custom file per type, by environment variables of `commscraft-cli`: `COMMSCRAFT_HOLD_MUSIC`, `COMMSCRAFT_RINGTONE` and `COMMSCRAFT_NOTIFY_SOUND` take a PCM WAV file or `off`; `COMMSCRAFT_HOLD_VOLUME`, `COMMSCRAFT_RINGTONE_VOLUME` and `COMMSCRAFT_NOTIFY_VOLUME` take 0 to 100.
+- The WAV files are embedded in the program (`commscraft_tones::soundpack`) and played as mastered, mono; the alerts at 44.1 kHz where the device offers it, music on hold at the codec's rate.
 
 Implementation tracked in [#82](https://github.com/NelvinBHV/CommSCraft/issues/82), [#83](https://github.com/NelvinBHV/CommSCraft/issues/83) and [#84](https://github.com/NelvinBHV/CommSCraft/issues/84).

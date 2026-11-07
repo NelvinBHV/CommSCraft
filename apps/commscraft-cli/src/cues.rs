@@ -1,14 +1,16 @@
 //! Ringing, notification sound and music on hold in the interactive mode (issues #82–#84).
 //!
-//! Each sound is chosen by an environment variable – a PCM WAV file, or `off`:
-//! `COMMSCRAFT_RINGTONE` and `COMMSCRAFT_NOTIFY_SOUND` default to our own generated tones
-//! (`commscraft-tones`), `COMMSCRAFT_HOLD_MUSIC` is off unless a file is named. No third-party
-//! sound is bundled until its rights are cleared.
+//! The defaults are the owner-approved sounds (Beat Call, Signal Message, Pulse; embedded by
+//! `commscraft-tones`). Each can be replaced or switched off by an environment variable – a PCM
+//! WAV file, or `off` – and has a volume in percent:
+//! `COMMSCRAFT_RINGTONE` / `COMMSCRAFT_RINGTONE_VOLUME`,
+//! `COMMSCRAFT_NOTIFY_SOUND` / `COMMSCRAFT_NOTIFY_VOLUME`,
+//! `COMMSCRAFT_HOLD_MUSIC` / `COMMSCRAFT_HOLD_VOLUME`.
 //!
 //! Security by design: a sound file is read with a size limit and parsed by the bounded WAV
 //! reader; the ringtone and the notification play on their own playback stream, never into the
-//! call (only music on hold goes to the peer, and only while we hold); notifications are rate
-//! limited; every playback thread ends with its stop flag or its sound.
+//! call; only music on hold goes to the peer, only while we hold and never into a meeting;
+//! notifications are rate limited; every playback thread ends with its stop flag or its sound.
 
 use std::collections::BTreeMap;
 use std::io::Read;
@@ -18,37 +20,88 @@ use std::sync::Arc;
 use commscraft_audio_alsa as alsa;
 use commscraft_tones as tones;
 
-/// The rate the alert sounds are played at.
-const RATE: u32 = 16000;
+/// The rates the alert sounds are played at: the masters' rate, else a rate every device has.
+const ALERT_RATES: [u32; 2] = [44100, 16000];
 /// At most one notification sound in this time (milliseconds).
 const NOTIFY_GAP_MS: u64 = 2000;
 
-/// A sound chosen by an environment variable.
-fn load(var: &str, default: Option<fn(u32) -> Vec<i16>>) -> (Option<tones::Pcm>, Option<String>) {
-    match std::env::var(var) {
-        Ok(v) if v.trim().eq_ignore_ascii_case("off") => (None, None),
-        Ok(path) => match read_wav(&path) {
-            Ok(p) => (Some(p), None),
-            Err(e) => (
-                default.map(generated),
-                Some(format!(
-                    "{var}: {e}; {}",
-                    if default.is_some() {
-                        "using the built-in sound"
-                    } else {
-                        "off"
-                    }
-                )),
-            ),
-        },
-        Err(_) => (default.map(generated), None),
+/// A sound ready to be played: the approved master or a user's file, at a volume.
+#[derive(Debug, Clone)]
+pub struct Sound {
+    pcm: Arc<tones::Pcm>,
+    own_file: bool,
+    volume: u32,
+}
+
+impl Sound {
+    /// One cycle of a looped sound at `rate`, level-matched if it is a user's file.
+    fn looped_at(&self, rate: u32) -> tones::Looper {
+        let mut samples = tones::resample_loop(&self.pcm, rate);
+        self.level(&mut samples);
+        tones::Looper::new(samples, rate, self.own_file)
+    }
+
+    fn once_at(&self, rate: u32) -> Vec<i16> {
+        let mut samples = tones::resample(&self.pcm, rate);
+        self.level(&mut samples);
+        samples
+    }
+
+    fn level(&self, samples: &mut [i16]) {
+        if self.own_file {
+            tones::normalize(samples);
+        }
+        tones::set_volume(samples, self.volume);
     }
 }
 
-fn generated(f: fn(u32) -> Vec<i16>) -> tones::Pcm {
-    tones::Pcm {
-        rate: RATE,
-        samples: f(RATE),
+/// The sound for a setting: unset = the built-in sound, `off` = none, else a WAV file (an
+/// unusable file gives the built-in sound and a notice).
+fn choose(
+    name: &str,
+    setting: Option<&str>,
+    builtin: fn() -> Result<tones::Pcm, tones::Error>,
+    volume: u32,
+    notices: &mut Vec<String>,
+) -> Option<Sound> {
+    let own = match setting.map(str::trim) {
+        Some(v) if v.eq_ignore_ascii_case("off") => return None,
+        Some(path) => match read_wav(path) {
+            Ok(p) => Some(p),
+            Err(e) => {
+                notices.push(format!("{name}: {e}; using the built-in sound"));
+                None
+            }
+        },
+        None => None,
+    };
+    let own_file = own.is_some();
+    let pcm = match own {
+        Some(p) => p,
+        None => match builtin() {
+            Ok(p) => p,
+            Err(e) => {
+                notices.push(format!("{name}: built-in sound: {e}"));
+                return None;
+            }
+        },
+    };
+    Some(Sound {
+        pcm: Arc::new(pcm),
+        own_file,
+        volume,
+    })
+}
+
+/// A volume in percent; anything but 0 … 100 gives full volume and a notice.
+fn volume_of(name: &str, setting: Option<&str>, notices: &mut Vec<String>) -> u32 {
+    match setting.map(|v| v.trim().parse::<u32>()) {
+        None => 100,
+        Some(Ok(v)) if v <= 100 => v,
+        Some(_) => {
+            notices.push(format!("{name}: expected 0 to 100; using 100"));
+            100
+        }
     }
 }
 
@@ -62,54 +115,65 @@ fn read_wav(path: &str) -> Result<tones::Pcm, String> {
     tones::parse_wav(&data).map_err(|e| e.to_string())
 }
 
-/// Samples at `rate`, level-matched.
-fn prepared(p: &tones::Pcm, rate: u32) -> Vec<i16> {
-    let mut s = tones::resample(p, rate);
-    tones::normalize(&mut s);
-    s
+/// A playback stream for an alert: at the masters' rate if the device has it.
+fn open_alert() -> Option<(alsa::Playback, u32)> {
+    ALERT_RATES.iter().find_map(|&rate| {
+        alsa::Playback::open(&alsa::Config {
+            rate,
+            ..alsa::Config::default()
+        })
+        .ok()
+        .map(|p| (p, rate))
+    })
 }
 
 pub struct Cues {
-    ring: Option<Arc<Vec<i16>>>,
-    ring_is_file: bool,
-    notify: Option<Arc<Vec<i16>>>,
-    hold: Option<Arc<tones::Pcm>>,
+    ring: Option<Sound>,
+    notify: Option<Sound>,
+    hold: Option<Sound>,
     last_notify: Option<u64>,
     ringing: BTreeMap<u32, Arc<AtomicBool>>,
 }
 
 impl Cues {
-    /// The sounds from the environment, and notices for the user (unusable files).
+    /// The sounds from the environment, and notices for the user (unusable settings).
     pub fn from_env() -> (Cues, Vec<String>) {
+        let var = |name: &str| std::env::var(name).ok();
         let mut notices = Vec::new();
-        let ring_var = std::env::var("COMMSCRAFT_RINGTONE").ok();
-        let (ring, n) = load("COMMSCRAFT_RINGTONE", Some(tones::ringtone));
-        notices.extend(n);
-        let (notify, n) = load("COMMSCRAFT_NOTIFY_SOUND", Some(tones::notification));
-        notices.extend(n);
-        let (hold, n) = load("COMMSCRAFT_HOLD_MUSIC", None);
-        notices.extend(n);
-        let ring_is_file = ring_var.is_some_and(|v| !v.trim().eq_ignore_ascii_case("off"))
-            && notices
-                .iter()
-                .all(|n| !n.starts_with("COMMSCRAFT_RINGTONE"));
+        let mut sound = |name: &str, volume_name: &str, builtin| {
+            let volume = volume_of(volume_name, var(volume_name).as_deref(), &mut notices);
+            choose(name, var(name).as_deref(), builtin, volume, &mut notices)
+        };
         let cues = Cues {
-            ring: ring.map(|p| Arc::new(prepared(&p, RATE))),
-            ring_is_file,
-            notify: notify.map(|p| Arc::new(prepared(&p, RATE))),
-            hold: hold.map(Arc::new),
+            ring: sound(
+                "COMMSCRAFT_RINGTONE",
+                "COMMSCRAFT_RINGTONE_VOLUME",
+                tones::soundpack::beat_call,
+            ),
+            notify: sound(
+                "COMMSCRAFT_NOTIFY_SOUND",
+                "COMMSCRAFT_NOTIFY_VOLUME",
+                tones::soundpack::signal_message,
+            ),
+            hold: sound(
+                "COMMSCRAFT_HOLD_MUSIC",
+                "COMMSCRAFT_HOLD_VOLUME",
+                tones::soundpack::pulse,
+            ),
             last_notify: None,
             ringing: BTreeMap::new(),
         };
         (cues, notices)
     }
 
-    /// Music on hold for the call's media (resampled there to the codec's rate).
-    pub fn hold_music(&self) -> Option<Arc<tones::Pcm>> {
-        self.hold.clone()
+    /// Music on hold for a call we put on hold – none in a meeting: it would play into the
+    /// meeting for everybody (and a=feature:MoH is about a held peer, SD-07).
+    pub fn hold_music(&self, in_meeting: bool) -> Option<Sound> {
+        self.hold.clone().filter(|_| !in_meeting)
     }
 
-    /// An incoming call alerts: the ringtone loops until `stop_ring`.
+    /// An incoming call alerts: the ringtone loops until `stop_ring`, the device's clock keeps
+    /// the beat (frame after frame without a gap).
     pub fn start_ring(&mut self, call: u32) {
         let Some(ring) = self.ring.clone() else {
             return;
@@ -119,18 +183,18 @@ impl Cues {
         }
         let stop = Arc::new(AtomicBool::new(false));
         self.ringing.insert(call, stop.clone());
-        let fade = self.ring_is_file;
         std::thread::spawn(move || {
-            let Ok(mut out) = alsa::Playback::open(&alsa::Config::default()) else {
+            let Some((mut out, rate)) = open_alert() else {
                 return;
             };
             let frame = out.frame_samples();
-            let mut looper = tones::Looper::new(ring.to_vec(), RATE, fade);
+            let mut looper = ring.looped_at(rate);
             while !stop.load(Ordering::Relaxed) {
                 if out.write(&looper.next_frame(frame)).is_err() {
                     return;
                 }
             }
+            // Closing the stream discards what is queued: no ringing after the answer.
         });
     }
 
@@ -157,17 +221,19 @@ impl Cues {
         }
         self.last_notify = Some(now_ms);
         std::thread::spawn(move || {
-            let Ok(mut out) = alsa::Playback::open(&alsa::Config::default()) else {
+            let Some((mut out, rate)) = open_alert() else {
                 return;
             };
+            let samples = sound.once_at(rate);
             let frame = out.frame_samples().max(1);
-            for chunk in sound.chunks(frame) {
+            for chunk in samples.chunks(frame) {
                 let mut f = chunk.to_vec();
                 f.resize(frame, 0);
                 if out.write(&f).is_err() {
                     return;
                 }
             }
+            let _ = out.drain();
         });
     }
 }
@@ -176,15 +242,67 @@ fn notify_due(last: Option<u64>, now_ms: u64) -> bool {
     last.is_none_or(|t| now_ms.saturating_sub(t) >= NOTIFY_GAP_MS)
 }
 
-/// Music on hold at the codec's rate, looped in frames (with a fade at the loop boundary).
-pub fn hold_looper(music: &tones::Pcm, rate: u32) -> tones::Looper {
-    tones::Looper::new(prepared(music, rate), rate, true)
+/// What goes to the peer while a call is held or not (#82): the microphone, or – while we hold
+/// with music – only the music, never a mix. The microphone's frames only pace it.
+#[derive(Debug, Default)]
+pub struct HoldMedia {
+    music: Option<tones::Looper>,
+    user_muted: bool,
+}
+
+impl HoldMedia {
+    /// Hold or resume; the music starts over at every hold.
+    pub fn set_hold(&mut self, hold: bool, music: Option<&Sound>, rate: u32) {
+        self.music = music.filter(|_| hold).map(|m| m.looped_at(rate));
+    }
+
+    pub fn set_user_muted(&mut self, muted: bool) {
+        self.user_muted = muted;
+    }
+
+    pub fn has_music(&self) -> bool {
+        self.music.is_some()
+    }
+
+    /// The media's mute: the user's, but it does not silence the music on hold.
+    pub fn muted(&self) -> bool {
+        self.user_muted && self.music.is_none()
+    }
+
+    pub fn frame(&mut self, microphone: &[i16]) -> Vec<i16> {
+        match self.music.as_mut() {
+            Some(m) => m.next_frame(microphone.len()),
+            None => microphone.to_vec(),
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+    fn test_sound(own_file: bool, volume: u32) -> Sound {
+        Sound {
+            pcm: Arc::new(tones::Pcm {
+                rate: 8000,
+                samples: vec![1000; 8000],
+            }),
+            own_file,
+            volume,
+        }
+    }
+
+    fn cues_with_hold() -> Cues {
+        Cues {
+            ring: None,
+            notify: None,
+            hold: Some(test_sound(false, 100)),
+            last_notify: None,
+            ringing: BTreeMap::new(),
+        }
+    }
+
+    /// #84: burst throttling.
     #[test]
     fn notifications_rate_limited() {
         assert!(notify_due(None, 0));
@@ -193,15 +311,87 @@ mod tests {
         assert!(!notify_due(Some(5000), 1000), "a clock that went back");
     }
 
+    /// #82–#84: the defaults are the approved sounds; `off` mutes; a user's file replaces them;
+    /// an unusable file falls back with a notice.
     #[test]
-    fn hold_music_at_the_codec_rate() {
-        let music = tones::Pcm {
-            rate: 44100,
-            samples: vec![1000; 44100],
-        };
-        let mut l = hold_looper(&music, 8000);
-        let f = l.next_frame(160);
-        assert_eq!(f.len(), 160);
-        assert!(f.iter().skip(80).all(|s| s.abs() > 10_000), "level-matched");
+    fn choosing_a_sound() {
+        let mut notices = Vec::new();
+        let builtin = tones::soundpack::signal_message;
+        let default = choose("X", None, builtin, 100, &mut notices).unwrap();
+        assert_eq!(default.pcm.samples.len(), 52_920);
+        assert!(!default.own_file);
+        assert!(choose("X", Some(" OFF "), builtin, 100, &mut notices).is_none());
+        assert!(notices.is_empty());
+        let missing = choose("X", Some("/no/such/file.wav"), builtin, 100, &mut notices).unwrap();
+        assert!(!missing.own_file);
+        assert_eq!(notices.len(), 1);
+        assert!(notices[0].starts_with("X: "), "{notices:?}");
+        // A file that is not WAV.
+        let mut notices = Vec::new();
+        let dir = std::env::temp_dir().join(format!("commscraft-cues-{}", std::process::id()));
+        std::fs::write(&dir, b"not a sound").unwrap();
+        let bad = choose("X", dir.to_str(), builtin, 100, &mut notices).unwrap();
+        std::fs::remove_file(&dir).unwrap();
+        assert!(!bad.own_file);
+        assert_eq!(notices.len(), 1);
+    }
+
+    #[test]
+    fn volumes() {
+        let mut notices = Vec::new();
+        assert_eq!(volume_of("V", None, &mut notices), 100);
+        assert_eq!(volume_of("V", Some(" 40 "), &mut notices), 40);
+        assert_eq!(volume_of("V", Some("0"), &mut notices), 0);
+        assert!(notices.is_empty());
+        assert_eq!(volume_of("V", Some("140"), &mut notices), 100);
+        assert_eq!(volume_of("V", Some("loud"), &mut notices), 100);
+        assert_eq!(notices.len(), 2);
+    }
+
+    /// The approved master keeps its level; a user's file is matched; the volume applies to
+    /// both.
+    #[test]
+    fn levels() {
+        let peak = |s: &Sound| s.once_at(8000).iter().map(|x| x.abs()).max().unwrap();
+        assert_eq!(peak(&test_sound(false, 100)), 1000);
+        assert_eq!(peak(&test_sound(false, 50)), 500);
+        assert!(peak(&test_sound(true, 100)) > 20_000);
+    }
+
+    /// #82: while held with music only the music goes out, never the microphone; on resume the
+    /// microphone again; a mute of the user does not silence the music but holds afterwards.
+    #[test]
+    fn hold_routing() {
+        let mic = [7i16; 160];
+        let music = test_sound(false, 100);
+        let mut h = HoldMedia::default();
+        assert_eq!(h.frame(&mic), mic.to_vec(), "no hold: the microphone");
+        h.set_user_muted(true);
+        assert!(h.muted());
+        h.set_hold(true, Some(&music), 8000);
+        assert!(h.has_music());
+        assert!(!h.muted(), "the music is not muted");
+        let out = h.frame(&mic);
+        assert_eq!(out.len(), 160);
+        assert!(
+            out.iter().all(|s| *s == 1000),
+            "only the music: {:?}",
+            &out[..4]
+        );
+        h.set_hold(false, Some(&music), 8000);
+        assert!(!h.has_music());
+        assert!(h.muted(), "the user's mute holds again");
+        assert_eq!(h.frame(&mic), mic.to_vec());
+        // Holding without music: nothing changes here, the media stops sending.
+        h.set_hold(true, None, 8000);
+        assert!(!h.has_music());
+    }
+
+    /// No music into a meeting.
+    #[test]
+    fn no_music_in_a_meeting() {
+        let c = cues_with_hold();
+        assert!(c.hold_music(false).is_some());
+        assert!(c.hold_music(true).is_none());
     }
 }
