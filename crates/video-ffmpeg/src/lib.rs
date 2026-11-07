@@ -11,14 +11,8 @@
 //! panics on an out-of-range plane; every FFmpeg error is returned, never unwrapped.
 //! A decoder on the GPU keeps these limits and moves to the CPU for good when input or driver keep
 //! failing or the picture size keeps changing: a hostile stream cannot keep working on the driver.
-//! Next to a GPU decoder no GPU encoder is ever closed (see [`GpuState`]): a remote peer decides when
-//! the encoder changes size, and that hung the video engine of an AMD GPU. That alone does not cover
-//! every case there, so applications do not decode on an AMD GPU by default
-//! ([`gpu_decoding_hazard`]).
 
 use std::os::fd::OwnedFd;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
 
 use ffmpeg_next as ff;
 
@@ -54,20 +48,6 @@ impl From<ff::Error> for Error {
     fn from(e: ff::Error) -> Error {
         Error::Ffmpeg(e.to_string())
     }
-}
-
-/// Whether a GPU of this system is known to hang its video engine when a GPU encoder changes next
-/// to a GPU decoder: any AMD GPU counts, one model was measured (evidence file 23). Reads which
-/// render devices the kernel lists; a system where that cannot be read counts as not affected.
-pub fn gpu_decoding_hazard() -> bool {
-    let Ok(entries) = std::fs::read_dir("/sys/class/drm") else {
-        return false;
-    };
-    entries.flatten().any(|e| {
-        e.file_name().to_string_lossy().starts_with("renderD")
-            && std::fs::read_to_string(e.path().join("device/vendor"))
-                .is_ok_and(|v| v.trim() == "0x1002")
-    })
 }
 
 /// Initialises FFmpeg once (codecs and devices).
@@ -248,118 +228,10 @@ enum Path {
 /// of the layer description), no B frames, zero latency, Annex B with SPS/PPS repeated before
 /// every IDR so a receiver can start at any IDR.
 pub struct Encoder {
-    config: EncoderConfig,
-    /// Only `Drop` takes it out.
-    inner: Option<EncoderInner>,
-}
-
-struct EncoderInner {
     enc: ff::encoder::Video,
     config: EncoderConfig,
     pts: i64,
     path: Path,
-}
-
-/// GPU encoders next to GPU decoders. Measured on an integrated AMD GPU (VCN 4, Mesa 26.1, evidence
-/// file 23): with a GPU decoder running in the process, closing a GPU encoder and opening one of
-/// another size hangs the video engine within seconds, and the driver then aborts the process. Pauses and
-/// locks do not help; encoders that stay open do; another process is not affected. So while a GPU
-/// decoder lives, an encoder that is no longer needed stays open and is used again for the same
-/// settings. At [`MAX_OPEN_ENCODERS`] the decoders move to the CPU, and then the encoders close.
-#[derive(Default)]
-struct GpuState {
-    decoders: usize,
-    /// GPU encoders open, those in use and those kept.
-    open: usize,
-    kept: Vec<KeptEncoder>,
-}
-
-/// An open GPU encoder nobody uses; its picture converter is made again when it is used.
-struct KeptEncoder {
-    enc: ff::encoder::Video,
-    config: EncoderConfig,
-    pts: i64,
-    frames: hw::VaapiFrames,
-}
-
-fn nv12_converter(config: EncoderConfig) -> Result<ff::software::scaling::Context, Error> {
-    Ok(ff::software::scaling::Context::get(
-        ff::format::Pixel::YUV420P,
-        config.width,
-        config.height,
-        ff::format::Pixel::NV12,
-        config.width,
-        config.height,
-        ff::software::scaling::Flags::BILINEAR,
-    )?)
-}
-
-/// GPU encoders kept open next to a decoder (design: sizes of a meeting and some rate changes).
-const MAX_OPEN_ENCODERS: usize = 8;
-
-static GPU: Mutex<Option<GpuState>> = Mutex::new(None);
-/// No more GPU decoders in this process: too many encoders had to stay open.
-static GPU_DECODING_OFF: AtomicBool = AtomicBool::new(false);
-
-fn with_gpu<T>(f: impl FnOnce(&mut GpuState) -> T) -> Option<T> {
-    let mut guard = GPU.lock().ok()?;
-    Some(f(guard.get_or_insert_with(GpuState::default)))
-}
-
-/// Held by a decoder that uses the GPU. It goes after the decoder context.
-struct GpuDecoderGate;
-
-impl GpuDecoderGate {
-    fn new() -> Option<GpuDecoderGate> {
-        if GPU_DECODING_OFF.load(Ordering::Relaxed) {
-            return None;
-        }
-        with_gpu(|g| g.decoders += 1)?;
-        Some(GpuDecoderGate)
-    }
-}
-
-impl Drop for GpuDecoderGate {
-    fn drop(&mut self) {
-        // The last GPU decoder is gone: now the kept encoders can close, outside the lock.
-        let kept = with_gpu(|g| {
-            g.decoders = g.decoders.saturating_sub(1);
-            if g.decoders > 0 {
-                return Vec::new();
-            }
-            g.open = g.open.saturating_sub(g.kept.len());
-            std::mem::take(&mut g.kept)
-        });
-        drop(kept);
-    }
-}
-
-impl Drop for Encoder {
-    fn drop(&mut self) {
-        let Some(EncoderInner {
-            enc,
-            config,
-            pts,
-            path: Path::Vaapi { frames, .. },
-        }) = self.inner.take()
-        else {
-            return;
-        };
-        let mut slot = Some(KeptEncoder {
-            enc,
-            config,
-            pts,
-            frames,
-        });
-        let _ = with_gpu(|g| {
-            if g.decoders > 0 {
-                g.kept.extend(slot.take());
-            } else {
-                g.open = g.open.saturating_sub(1);
-            }
-        });
-        drop(slot);
-    }
 }
 
 impl Encoder {
@@ -372,46 +244,9 @@ impl Encoder {
             return Err(Error::BadParameter("encoder settings"));
         }
         if config.hardware {
-            // A kept encoder of the same settings, if there is one.
-            let kept = with_gpu(|g| {
-                let i = g.kept.iter().position(|e| e.config == config)?;
-                Some(g.kept.swap_remove(i))
-            })
-            .flatten();
-            if let Some(k) = kept {
-                let to_nv12 = nv12_converter(config)?;
-                return Ok(Encoder {
-                    config,
-                    inner: Some(EncoderInner {
-                        enc: k.enc,
-                        config,
-                        pts: k.pts,
-                        path: Path::Vaapi {
-                            frames: k.frames,
-                            to_nv12,
-                        },
-                    }),
-                });
-            }
-            // Too many open next to a decoder: it moves to the CPU, until then the CPU encodes,
-            // so that the number stays bounded.
-            let allowed = with_gpu(|g| {
-                if g.decoders > 0 && g.open >= MAX_OPEN_ENCODERS {
-                    GPU_DECODING_OFF.store(true, Ordering::Relaxed);
-                    return false;
-                }
-                g.open += 1;
-                true
-            })
-            .unwrap_or(false);
-            if allowed {
-                // The GPU if it works, otherwise the CPU – never no video.
-                match Encoder::new_vaapi(config) {
-                    Ok(e) => return Ok(e),
-                    Err(_) => {
-                        let _ = with_gpu(|g| g.open = g.open.saturating_sub(1));
-                    }
-                }
+            // The GPU if it works, otherwise the CPU – never no video.
+            if let Ok(e) = Encoder::new_vaapi(config) {
+                return Ok(e);
             }
         }
         let codec = ff::encoder::find_by_name("libx264").ok_or(Error::NoEncoder)?;
@@ -436,13 +271,10 @@ impl Encoder {
         opts.set("x264-params", "repeat-headers=1:annexb=1:aud=0");
         let enc = enc.open_as_with(codec, opts)?;
         Ok(Encoder {
+            enc,
             config,
-            inner: Some(EncoderInner {
-                enc,
-                config,
-                pts: 0,
-                path: Path::Software,
-            }),
+            pts: 0,
+            path: Path::Software,
         })
     }
 
@@ -467,23 +299,28 @@ impl Encoder {
         opts.set("profile", "constrained_baseline");
         opts.set("aud", "0");
         let enc = enc.open_as_with(codec, opts)?;
-        let to_nv12 = nv12_converter(config)?;
+        let to_nv12 = ff::software::scaling::Context::get(
+            ff::format::Pixel::YUV420P,
+            config.width,
+            config.height,
+            ff::format::Pixel::NV12,
+            config.width,
+            config.height,
+            ff::software::scaling::Flags::BILINEAR,
+        )?;
         Ok(Encoder {
+            enc,
             config,
-            inner: Some(EncoderInner {
-                enc,
-                config,
-                pts: 0,
-                path: Path::Vaapi { frames, to_nv12 },
-            }),
+            pts: 0,
+            path: Path::Vaapi { frames, to_nv12 },
         })
     }
 
     /// Whether the GPU or the CPU encodes.
     pub fn backend(&self) -> Backend {
-        match self.inner.as_ref().map(|i| &i.path) {
-            Some(Path::Vaapi { .. }) => Backend::Vaapi,
-            _ => Backend::Software,
+        match self.path {
+            Path::Software => Backend::Software,
+            Path::Vaapi { .. } => Backend::Vaapi,
         }
     }
 
@@ -497,11 +334,10 @@ impl Encoder {
         if picture.width != self.config.width || picture.height != self.config.height {
             return Err(Error::BadParameter("picture size differs from the encoder"));
         }
-        let inner = self.inner.as_mut().ok_or(Error::NoEncoder)?;
         let mut frame = to_frame(picture)?;
-        frame.set_pts(Some(inner.pts));
-        inner.pts += 1;
-        if let Path::Vaapi { frames, to_nv12 } = &mut inner.path {
+        frame.set_pts(Some(self.pts));
+        self.pts += 1;
+        if let Path::Vaapi { frames, to_nv12 } = &mut self.path {
             let mut nv12 = ff::frame::Video::empty();
             to_nv12.run(&frame, &mut nv12)?;
             nv12.set_pts(frame.pts());
@@ -510,10 +346,10 @@ impl Encoder {
         if idr {
             frame.set_kind(ff::picture::Type::I);
         }
-        inner.enc.send_frame(&frame)?;
+        self.enc.send_frame(&frame)?;
         let mut out = Vec::new();
         let mut packet = ff::Packet::empty();
-        while inner.enc.receive_packet(&mut packet).is_ok() {
+        while self.enc.receive_packet(&mut packet).is_ok() {
             if let Some(d) = packet.data() {
                 out.push(d.to_vec());
             }
@@ -600,8 +436,8 @@ fn open_decoder(hardware: bool) -> Result<ff::decoder::Video, Error> {
 /// H.264 decoder (FFmpeg's own `h264` decoder, on the GPU through its VA-API path if wanted).
 pub struct Decoder {
     dec: ff::decoder::Video,
-    /// The context has a VA-API device; dropped after the context.
-    gate: Option<GpuDecoderGate>,
+    /// The context has a VA-API device.
+    gpu: bool,
     backend: Backend,
     errors: u32,
     resizes: u32,
@@ -616,19 +452,14 @@ impl Decoder {
 
     /// A decoder on the GPU if `hardware` is set and a device works, otherwise on the CPU.
     pub fn with_hardware(hardware: bool) -> Result<Decoder, Error> {
-        let gate = if hardware {
-            GpuDecoderGate::new()
-        } else {
-            None
-        };
-        let (dec, gate) = match open_decoder(gate.is_some()) {
-            Ok(dec) => (dec, gate),
-            Err(_) if gate.is_some() => (open_decoder(false)?, None),
+        let (dec, gpu) = match open_decoder(hardware) {
+            Ok(dec) => (dec, hardware),
+            Err(_) if hardware => (open_decoder(false)?, false),
             Err(e) => return Err(e),
         };
         Ok(Decoder {
             dec,
-            gate,
+            gpu,
             backend: Backend::Software,
             errors: 0,
             resizes: 0,
@@ -665,14 +496,11 @@ impl Decoder {
             return Err(Error::TooLarge);
         }
         let result = self.decode_checked(access_unit, surfaces);
-        if self.gate.is_some() {
+        if self.gpu {
             if result.is_err() {
                 self.errors = self.errors.saturating_add(1);
             }
-            if self.errors >= MAX_GPU_ERRORS
-                || self.resizes >= MAX_GPU_RESIZES
-                || GPU_DECODING_OFF.load(Ordering::Relaxed)
-            {
+            if self.errors >= MAX_GPU_ERRORS || self.resizes >= MAX_GPU_RESIZES {
                 self.use_cpu()?;
             }
         }
@@ -682,7 +510,7 @@ impl Decoder {
     /// The CPU from here on; it starts with the stream's next IDR picture.
     fn use_cpu(&mut self) -> Result<(), Error> {
         self.dec = open_decoder(false)?;
-        self.gate = None;
+        self.gpu = false;
         self.backend = Backend::Software;
         Ok(())
     }
