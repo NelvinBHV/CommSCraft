@@ -6,8 +6,8 @@
 //! turns pictures into Annex B access units and back.
 //!
 //! Security by design: decoder input is bounded (an access unit above [`MAX_ACCESS_UNIT`], the
-//! limit of `commscraft-h264uc`, is refused before FFmpeg sees it); picture
-//! sizes are bounded; plane accesses are checked against the plane count, because the binding
+//! limit of `commscraft-h264uc`, is refused before FFmpeg sees it); picture sizes are bounded –
+//! the decoder refuses pictures above [`MAX_PIXELS`] before it allocates them; plane accesses are checked against the plane count, because the binding
 //! panics on an out-of-range plane; every FFmpeg error is returned, never unwrapped.
 
 use ffmpeg_next as ff;
@@ -19,6 +19,8 @@ pub const MAX_ACCESS_UNIT: usize = 2 * 1024 * 1024;
 /// Largest picture accepted (design: 1920 × 1088).
 pub const MAX_WIDTH: u32 = 1920;
 pub const MAX_HEIGHT: u32 = 1088;
+/// Largest picture the decoder accepts, in pixels.
+pub const MAX_PIXELS: u64 = MAX_WIDTH as u64 * MAX_HEIGHT as u64;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
@@ -328,8 +330,13 @@ pub struct Decoder {
 impl Decoder {
     pub fn new() -> Result<Decoder, Error> {
         let codec = ff::decoder::find(ff::codec::Id::H264).ok_or(Error::NoDecoder)?;
+        // Issue #93: FFmpeg itself refuses pictures above our size before it allocates them
+        // (AVCodecContext.max_pixels); the check of the decoded frame alone comes too late.
+        let mut opts = ff::Dictionary::new();
+        opts.set("max_pixels", &MAX_PIXELS.to_string());
         let dec = ff::codec::context::Context::new_with_codec(codec)
             .decoder()
+            .open_as_with(codec, opts)?
             .video()?;
         Ok(Decoder { dec })
     }
