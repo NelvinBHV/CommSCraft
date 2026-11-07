@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render the three user-approved CommSCraft sounds.
 
-Scores: Pulse and Beat Call V5, Signal Message V4. Requires TimGM6mb,
+Scores: Pulse and Beat Call V5, Signal Message V4. Requires FluidR3_GM,
 FluidSynth, NumPy, SciPy, soundfile and ffmpeg. This rebuild is intended to
 preserve the arrangements of the approved audio.
 """
@@ -14,9 +14,9 @@ import soundfile as sf
 from scipy import signal
 
 OUT = Path(__file__).resolve().parent
-SOUNDFONT = "/usr/share/sounds/sf2/TimGM6mb.sf2"
+SOUNDFONT = "/usr/share/sounds/sf2/FluidR3_GM.sf2"
 RATE = 44100
-assert Path(SOUNDFONT).is_file(), "Install timgm6mb-soundfont"
+assert Path(SOUNDFONT).is_file(), "Install fluid-soundfont-gm"
 lib = C.CDLL("libfluidsynth.so.3")
 ptr = C.c_void_p
 def api(name, ret, types):

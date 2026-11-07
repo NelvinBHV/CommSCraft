@@ -23,7 +23,7 @@ jobs:
       - name: Install render dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y timgm6mb-soundfont libfluidsynth3 python3-numpy python3-scipy python3-soundfile ffmpeg
+          sudo apt-get install -y fluid-soundfont-gm libfluidsynth3 python3-numpy python3-scipy python3-soundfile ffmpeg
       - name: Render Pulse V5, Beat Call V5, Signal Message V4
         run: /usr/bin/python3 assets/audio/generate_soundpack.py
       - name: Compare with the files in the repository
