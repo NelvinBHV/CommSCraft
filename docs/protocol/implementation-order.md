@@ -1,6 +1,6 @@
 # Implementation order (derived from the evidence dependencies)
 
-The milestones in [`../roadmap.md`](../roadmap.md) follow this order. Each stage ends offline (`tested-offline`, decision D-08); interop tests are run by the owner, lab runs stay private (D-08).
+The milestones in [`../roadmap.md`](../roadmap.md) follow this order. Each stage ends offline (`tested-offline`); interop tests are run by the owner, lab runs stay private.
 
 | Stage | Content | Basis (evidence IDs) | Checkable without a server by |
 |---|---|---|---|
@@ -16,4 +16,4 @@ The milestones in [`../roadmap.md`](../roadmap.md) follow this order. Each stage
 | 9 | Screen sharing (viewer first) via RDP in RTP | CS-*, PL-40…42, RD-* | specification examples |
 | 10 | Optional: PSOM content, persistent chat, response groups, bandwidth management, compression, TLS-DSK | PO-*, XC-*, WS-01, BW-*, CP-*, AE-26/27, AW-* | specification examples |
 
-Decided before stage 1 (see [`../decisions.md`](../decisions.md)): licence (D-01), dependency policy for TLS, Kerberos/GSS-API, SRTP, H.264 and RDP (D-03), codec scope without RTAudio/RTVideo (D-05).
+Scope: a licence, a dependency policy for TLS, Kerberos/GSS-API, SRTP, H.264 and RDP, and codecs without RTAudio/RTVideo.

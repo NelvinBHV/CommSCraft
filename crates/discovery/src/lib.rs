@@ -8,7 +8,7 @@
 //!
 //! Security by design (`docs/security.md`, rule "Discovery"):
 //! - HTTPS only by default: MS-OCDISCWS §3.2.1.1 also asks for `http://` requests, which would send
-//!   the SIP URI in plain text and accept spoofable answers; that is decision proposal D-10
+//!   the SIP URI in plain text and accept spoofable answers; so it is optional
 //!   (`Config::allow_plain_http`, default off);
 //! - discovery sends no credentials: it uses the unauthenticated Domain resource (AD-10), never the
 //!   User or OAuth resources;
@@ -112,7 +112,7 @@ enum Stage {
 #[derive(Debug, Clone)]
 pub struct Config {
     pub aor: String,
-    /// D-10 (proposal): also try `http://` as MS-OCDISCWS §3.2.1.1 asks. Default: off.
+    /// Also try `http://` as MS-OCDISCWS §3.2.1.1 asks. Default: off.
     pub allow_plain_http: bool,
 }
 

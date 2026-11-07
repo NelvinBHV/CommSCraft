@@ -78,7 +78,6 @@ are allowed to test. In `interactive` mode the commands are `/contacts`, `/statu
 | [`docs/target-app-parity.md`](docs/target-app-parity.md) | The target client and the 52 functions with their evidence status |
 | [`docs/architecture.md`](docs/architecture.md) | Layers and crates |
 | [`docs/protocol/`](docs/protocol/) | The protocol analysis: evidence per protocol, function matrix, conflicts/gaps/open points, source registers |
-| [`docs/decisions.md`](docs/decisions.md) | Decisions the owner has to take, and decisions already taken |
 | [`AGENTS.md`](AGENTS.md) | Rules for contributors and AI agents (clean room, evidence, security) |
 
 ## Clean room and sources

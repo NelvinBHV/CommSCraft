@@ -17,9 +17,9 @@ OUT = ROOT / "docs" / "protocol" / "conflicts-gaps-open-points.md"
 
 STATUS = {
     "L-01": "closed (file 38)", "L-02": "closed (file 38)",
-    "L-03": "closed by decision D-05 (OB-51); G.722.1 package obtained (OB-26), RTAudio only with a Microsoft licence (OB-27)",
+    "L-03": "closed (OB-51); G.722.1 package obtained (OB-26), RTAudio only with a Microsoft licence (OB-27)",
     "L-04": "closed (file 38)", "L-05": "closed (file 38)", "L-06": "closed (archive search, file 38)",
-    "L-07": "closed by decision D-05 (OB-51); SMPTE ST 421 only for purchase (OB-29)",
+    "L-07": "closed (OB-51); SMPTE ST 421 only for purchase (OB-29)",
     "L-08": "closed (file 38)", "L-09": "closed (file 38)",
     "L-10": "no evidence problem (MS-SDPEXT authoritative)", "L-11": "secondary evidence (OB-16), MCU does not interpret the body (OB-50); interop test IT-04",
     "L-12": "no evidence problem (RDP specifications available)",

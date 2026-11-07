@@ -1,4 +1,4 @@
-//! Video adapter through the system's FFmpeg (decision D-12; function 28): camera capture over
+//! Video adapter through the system's FFmpeg (function 28): camera capture over
 //! V4L2 (libavdevice), H.264 encoding for H.264 UC (libx264 in constrained baseline, no B frames,
 //! SPS/PPS before every IDR, IDR on request) and H.264 decoding, all frames as planar YUV 4:2:0.
 //!
@@ -167,7 +167,7 @@ pub struct EncoderConfig {
     pub bitrate: u32,
     /// Distance between IDR pictures in frames (besides those requested).
     pub idr_interval: u32,
-    /// Try the GPU first (VA-API, D-13); without usable hardware libx264 is used.
+    /// Try the GPU first (VA-API); without usable hardware libx264 is used.
     pub hardware: bool,
 }
 
@@ -176,7 +176,7 @@ pub struct EncoderConfig {
 pub enum Backend {
     /// libx264 on the CPU.
     Software,
-    /// `h264_vaapi` on the GPU (D-13).
+    /// `h264_vaapi` on the GPU.
     Vaapi,
 }
 
@@ -188,7 +188,7 @@ enum Path {
     },
 }
 
-/// H.264 encoder (libx264 through FFmpeg, D-12): constrained baseline profile (PL-03: the CB bit
+/// H.264 encoder (libx264 through FFmpeg): constrained baseline profile (PL-03: the CB bit
 /// of the layer description), no B frames, zero latency, Annex B with SPS/PPS repeated before
 /// every IDR so a receiver can start at any IDR.
 pub struct Encoder {
@@ -208,7 +208,7 @@ impl Encoder {
             return Err(Error::BadParameter("encoder settings"));
         }
         if config.hardware {
-            // D-13: the GPU if it works, otherwise the CPU – never no video.
+            // The GPU if it works, otherwise the CPU – never no video.
             if let Ok(e) = Encoder::new_vaapi(config) {
                 return Ok(e);
             }
@@ -242,7 +242,7 @@ impl Encoder {
         })
     }
 
-    /// `h264_vaapi` with a VA-API surface pool (D-13): constrained baseline, no B frames, the
+    /// `h264_vaapi` with a VA-API surface pool: constrained baseline, no B frames, the
     /// same rate and IDR settings as the software path; SPS/PPS come with every IDR.
     fn new_vaapi(config: EncoderConfig) -> Result<Encoder, Error> {
         let codec = ff::encoder::find_by_name("h264_vaapi").ok_or(Error::NoEncoder)?;
@@ -477,7 +477,7 @@ impl Scaler {
     }
 }
 
-/// A window showing pictures through FFmpeg's XVideo output device (libavdevice, D-12; under
+/// A window showing pictures through FFmpeg's XVideo output device (libavdevice; under
 /// Wayland through Xwayland). Pictures of the window's size only.
 pub struct Display {
     output: ff::format::context::Output,

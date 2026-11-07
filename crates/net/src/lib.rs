@@ -1,6 +1,6 @@
 //! Network adapter: TLS connections for SIP, the OS random source and a blocking SIP connection.
 //!
-//! This is the first adapter crate (decision D-03): protocol crates stay sans-I/O, this crate owns
+//! This is the first adapter crate: protocol crates stay sans-I/O, this crate owns
 //! sockets and TLS. Evidence: MS-CONMGMT CON-01 … CON-04 (`docs/protocol/evidence/02-conmgmt-connection.md`).
 //!
 //! Security by design (`docs/security.md`, rule "TLS"):

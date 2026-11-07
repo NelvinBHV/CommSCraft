@@ -85,7 +85,7 @@ The base codec set of M3 (K-RT-1: G.711/G.722 are the safe base) was not in the 
 - L-08 **closed**: draft-levin-mmusic-xml-media-control-12 obtained; INFO body `Content-Type: application/media_control+xml` (IE-07).
 - Base RFCs 6184/6190/5109/2198/4733 obtained.
 - Comparison of MS-RTVPF §3.1.5.5 (p. 21) with FFmpeg's VC-1 decoder suggests that RTVideo signals cached frames and SP-frames with picture type codes beyond the VC-1 code `1111` (skipped picture); a standard VC-1 decoder would therefore misread them (inference).
-- L-07 **closed by decision** D-05 (OB-51): no RTVideo/VC-1 codec.
+- L-07 **closed** (OB-51): no RTVideo/VC-1 codec.
 
 ## Implementation (2026-11-01, crate `h264uc`)
 Sans-I/O packetizer and depacketizer of one H.264 UC layer (PL-01 … PL-04, PL-08, PL-09): Annex B splitting, stream layout SEI (example §4.1 byte for byte), PACSI build/parse, STAP-A/FU-A, bounded reassembly (2 MiB per access unit, 1024 NAL units), sequence gaps and malformed packets lose the access unit instead of passing parts to the decoder. Not yet: FEC (PL-06), simulcast (PL-05), cropping/bitstream info SEI. Status: tested-offline.

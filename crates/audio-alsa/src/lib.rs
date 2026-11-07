@@ -1,8 +1,8 @@
 //! Audio device adapter (L2) for Linux: microphone and speaker through the ALSA API.
 //!
-//! Decision D-11 (owner, 2026-10-28): ALSA/PipeWire. On PipeWire systems the ALSA device
+//! ALSA/PipeWire: on PipeWire systems the ALSA device
 //! `default` is routed to PipeWire by its ALSA plugin (pipewire-alsa), so one backend covers both;
-//! sample-rate conversion is left to ALSA `plug`/PipeWire. Decision D-03: system libraries only
+//! sample-rate conversion is left to ALSA `plug`/PipeWire. System libraries only
 //! behind adapter crates – this is the only crate that links libasound (through the safe API of
 //! the `alsa` crate; `unsafe_code` stays forbidden here as everywhere).
 //!

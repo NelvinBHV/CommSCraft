@@ -2,7 +2,7 @@
 //!
 //! `sign-in` connects to a Skype for Business server, registers with NTLM, fetches in-band
 //! provisioning, prints a summary and signs out again. It contacts a server only when started with
-//! `--authorized` (rule T-03: interop runs only by the owner, on authorized systems).
+//! `--authorized` (interop runs only by the owner, on authorized systems).
 //!
 //! Security by design (`docs/security.md`): the password is read without echo and kept in a wiped
 //! container; verbose output redacts every authentication header; TLS is always verified (system
@@ -402,7 +402,7 @@ fn print_provisioning(p: &prov::Provisioning, user_domain: &str) {
     }
 }
 
-/// Server discovery (OB-06): Autodiscover over HTTPS first (D-10), then DNS SRV and the fallback
+/// Server discovery (OB-06): Autodiscover over HTTPS first, then DNS SRV and the fallback
 /// host names. Targets outside the user's SIP domain are not used automatically.
 /// Server domains the user trusts for this SIP domain (like `TrustModelData` of the Windows client,
 /// Microsoft KB 2531068): from `--trust-domain` and from `~/.config/commscraft/trusted-domains`.

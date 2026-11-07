@@ -27,7 +27,7 @@ Test vectors §4.2.4 (pp. 80–83): NTOWFv2 `0c868a40…2e3f` ✓, NTProofStr `6
 
 ## Notes / open points
 - O-NL-1: Which NTLM variant (with/without ESS, with key exchange) SfB actually negotiates follows from the NegotiateFlags of the server CHALLENGE; the SIPAE examples (`response="01000000…"`) cannot be recomputed without key material. Notably, in MS-OCER/MS-CONFBAS examples the last 4 bytes of the client signatures are identical for different cnum (`42032bdb`), which fits NL-05 (fixed SeqNum 100, RC4 re-keyed per message) – inference.
-- On Linux, RFC-conformant Kerberos libraries (GSS-API) can be used (decision D-03: behind an adapter crate).
+- On Linux, RFC-conformant Kerberos libraries (GSS-API) can be used (behind an adapter crate).
 
 ## Gap
 - L-18: RFC 4120/4121/3961/4757/2743/4559 were not in the Microsoft package.

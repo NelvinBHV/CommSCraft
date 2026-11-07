@@ -49,7 +49,7 @@ Overall picture and use cases UC01–UC21: file 01 (MS-OCSPROT §2.5).
 5. End: BYE, release TURN (OCS-UC15), then a **QoE report** via SERVICE (QE-01…QE-05).
 6. Dialog recovery after connection loss (`ms-dialog-route-set-update`, 430, RE-30…RE-34).
 
-**Codec situation (decision D-05):** G.711, G.722, H.264 (SVC extension and UCConfig modes 0/1/2q/2s/3 documented, IE-08) and RFC DTMF can be implemented openly. **SILK** is described by draft-vos-silk-02 with reference code (IE-10; patent licence explicitly excluded). **G.722.1 including Annex C (Siren14)** is freely available from the ITU-T with reference code (OB-20/OB-26). **RTAudio** needs a Microsoft licence (OB-27); **RTVideo** (VC-1 based) and **Siren7** are not available as public bitstream specifications (L-03, L-07); SILK/OPUS support is documented contradictorily (K-RT-1).
+**Codec situation:** G.711, G.722, H.264 (SVC extension and UCConfig modes 0/1/2q/2s/3 documented, IE-08) and RFC DTMF can be implemented openly. **SILK** is described by draft-vos-silk-02 with reference code (IE-10; patent licence explicitly excluded). **G.722.1 including Annex C (Siren14)** is freely available from the ITU-T with reference code (OB-20/OB-26). **RTAudio** needs a Microsoft licence (OB-27); **RTVideo** (VC-1 based) and **Siren7** are not available as public bitstream specifications (L-03, L-07); SILK/OPUS support is documented contradictorily (K-RT-1).
 
 ## 6. Telephony
 

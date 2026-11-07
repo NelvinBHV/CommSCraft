@@ -97,7 +97,7 @@ Source: [MS-SDPEXT] "Session Description Protocol (SDP) Version 2.0 Extensions",
 - OB-20/OB-26: ITU-T G.722.1 including Annex C (Siren14) is freely available from the ITU with reference code and test vectors (package obtained).
 - OB-27: RTAudio – Microsoft's official overview contains no bitstream and states that a licence from Microsoft is needed to implement it.
 - OB-34: Siren7 **secondary evidence** (libsiren): 2-bit rate code + 4-bit checksum per 20 ms frame; SDP `SIREN/16000 bitrate=16000`.
-- L-03 **closed by decision** D-05 (OB-51): RTAudio, RTVideo and Siren are not implemented; G.722.1 only after legal clearance.
+- L-03 **closed** (OB-51): RTAudio, RTVideo and Siren are not implemented; G.722.1 only after legal clearance.
 
 ## Implementation (2026-10-28, `crates/sdp`)
 Bounded SDP parser (16 KiB, 512 lines, 16 media sections, 64 candidates), audio offer and answer with G.722/PCMU/PCMA and telephone-event 101 (SD-21, SD-25, SD-30), payload order and numbers of the offer kept (SD-03), `o=` versions fixed at 0 (SD-02), `a=label:main-audio`, `a=rtcp` (SD-04, SD-05), `a=crypto` with the single suite, inline 30-octet key, lifetime 2^31 and 1-byte MKI (SD-10), optional/required encryption (SD-11/SD-14), ICE-19 credentials and candidates (SD-41), direction attributes. Checked against the offer of §4.1.3 (parsed, answered, own output parsed again). Design (security by design): plaintext media only by explicit policy; a peer that echoes our key is refused (MS-SRTP §5.1); keys are never printed and are zeroised. Not yet: `a=cryptoscale` (SSRTP with MCUs, M4), early media (SD-50/SD-51), ICE-06 format (SD-40). Status: tested-offline.

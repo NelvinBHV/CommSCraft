@@ -1,6 +1,6 @@
 //! The video of a call in the interactive mode (function 28): one media thread per video stream
 //! (gathering, ICE, SRTP, H.264 UC payload, feedback) with a camera/encoder thread and a
-//! decoder/window thread (decisions D-12, D-13).
+//! decoder/window thread.
 //!
 //! Security by design: the camera is opened only once the video stream is negotiated and closed
 //! when it ends; every queue between threads is bounded (pictures and access units are dropped,
@@ -474,7 +474,7 @@ fn run(
     media.stop(now_ms());
 }
 
-/// Camera → encoder (GPU if available, D-13) → access units for the media thread.
+/// Camera → encoder (GPU if available) → access units for the media thread.
 fn spawn_camera(
     device: String,
     out: SyncSender<(Vec<u8>, u32)>,
@@ -599,7 +599,7 @@ fn spawn_camera(
     });
 }
 
-/// An encoder for a target (GPU first, D-13).
+/// An encoder for a target (GPU first).
 fn encoder_for(t: Target, hardware: bool) -> Result<vf::Encoder, vf::Error> {
     vf::Encoder::new(vf::EncoderConfig {
         width: t.width,
@@ -628,7 +628,7 @@ fn scaler_for(t: Target) -> Option<vf::Scaler> {
     }
 }
 
-/// GPU encoding unless `COMMSCRAFT_VIDEO_HW=0` asks for the CPU (D-13).
+/// GPU encoding unless `COMMSCRAFT_VIDEO_HW=0` asks for the CPU.
 fn hardware_allowed() -> bool {
     std::env::var("COMMSCRAFT_VIDEO_HW").map_or(true, |v| v.trim() != "0")
 }
@@ -655,7 +655,7 @@ fn needs_rebuild(current: Target, wanted: Target, since_ms: u64) -> bool {
     diff >= base * u64::from(RAISE_PERCENT) && since_ms >= REBUILD_MS
 }
 
-/// Decoder → window (XVideo, D-12); the window opens with the first picture's size.
+/// Decoder → window (XVideo); the window opens with the first picture's size.
 fn spawn_window(
     input: Receiver<Vec<u8>>,
     stop: Arc<AtomicBool>,
