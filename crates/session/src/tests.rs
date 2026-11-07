@@ -3568,6 +3568,73 @@ fn declined_transfer() {
     assert!(sends(&out).is_empty(), "nothing left to decline");
 }
 
+/// An unattended transferor hangs up right after 202, before the application has its media ready:
+/// the transfer is still followed, for a limited time and number.
+#[test]
+fn transferor_leaves_before_the_new_call() {
+    let (mut e, mut server, _) = signed_in();
+    let leave = |e: &mut Engine<Counter>, server: &mut _, first: &Message, now| {
+        let refer = peer_request(
+            server,
+            first,
+            "REFER",
+            4,
+            None,
+            "",
+            &[("Refer-To", "<sip:carol@contoso.com>")],
+        );
+        e.on_message(&refer, now);
+        let bye = peer_request(server, first, "BYE", 5, None, "", &[]);
+        let out = e.on_message(&bye, now);
+        assert_eq!(sends(&out)[0].status_code(), Some(200));
+    };
+    let follow = |e: &mut Engine<Counter>, call, now| {
+        e.command(
+            Command::FollowTransfer {
+                call,
+                local: Box::new(media_local(41000, 8)),
+                policy: commscraft_sdp::Encryption::Required,
+            },
+            now,
+        )
+    };
+    let first = active_call(&mut e, &mut server, "sip:bob@contoso.com");
+    leave(&mut e, &mut server, &first, NOW);
+    let out = follow(&mut e, 1, NOW + 2);
+    let invite = find(&out, "INVITE");
+    assert_eq!(
+        Engine::<Counter>::request_uri(&invite),
+        Some("sip:carol@contoso.com")
+    );
+    assert!(
+        !sends(&out).iter().any(|m| m.method() == Some("NOTIFY")),
+        "no dialog left to report in"
+    );
+    // Only once.
+    let out = follow(&mut e, 1, NOW + 2);
+    assert!(sends(&out).is_empty());
+
+    // Too late.
+    let second = active_call(&mut e, &mut server, "sip:dave@contoso.com");
+    let id = e.next_call_id() - 1;
+    leave(&mut e, &mut server, &second, NOW);
+    assert!(sends(&follow(&mut e, id, NOW + 60)).is_empty());
+
+    // Declined after the call ended: nothing is sent and nothing stays.
+    let third = active_call(&mut e, &mut server, "sip:erin@contoso.com");
+    let id = e.next_call_id() - 1;
+    leave(&mut e, &mut server, &third, NOW);
+    assert!(sends(&e.command(Command::DeclineTransfer { call: id }, NOW)).is_empty());
+    assert!(sends(&follow(&mut e, id, NOW)).is_empty());
+
+    // A peer cannot pile them up.
+    for _ in 0..10 {
+        let c = active_call(&mut e, &mut server, "sip:frank@contoso.com");
+        leave(&mut e, &mut server, &c, NOW);
+    }
+    assert_eq!(e.left_transfers.len(), 4);
+}
+
 /// Issue #70, finding 2: signing out during an emergency call publishes the user's rules again
 /// before the REGISTER that ends the registration.
 #[test]

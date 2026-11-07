@@ -13,7 +13,8 @@
 //! (the server-signed request), with exactly one checked `sip:` Refer-To; of the URI headers only
 //! Replaces and Ms-Sensitivity are taken, both checked; Referred-By is checked or replaced by the
 //! peer's URI; a Replaces header is honoured only if it names one of our established calls
-//! exactly (otherwise 481); one transfer per call at a time.
+//! exactly (otherwise 481); one transfer per call at a time; a transfer whose call has ended is
+//! kept only briefly and for a few calls.
 
 use super::*;
 use crate::call::CallState;
@@ -45,6 +46,12 @@ pub(crate) struct Incoming {
     /// The call placed to the target.
     pub new_call: Option<CallId>,
 }
+
+/// How long a transfer can still be followed after the transferor ended the call, as the refer
+/// subscription we announce (`expires=60`).
+const LEFT_TRANSFER_SECS: u64 = 60;
+/// At most this many of them: a peer cannot pile them up.
+const LEFT_TRANSFER_MAX: usize = 4;
 
 /// Ms-Sensitivity values (RE-53).
 const SENSITIVITY: [&str; 4] = [
@@ -351,6 +358,19 @@ impl<R: Random> Engine<R> {
         );
     }
 
+    /// The transferor ended the call. An unattended transferor does that right after 202 (OB-25),
+    /// usually while the application still prepares the new call's media: the transfer stays
+    /// valid. Its result can no longer be reported, the dialog is gone.
+    pub(crate) fn keep_left_transfer(&mut self, id: CallId, c: call::Call, now: u64) {
+        self.left_transfers.retain(|_, (_, until)| now < *until);
+        if let Some(t) = c.transfer_in.filter(|t| t.new_call.is_none()) {
+            if self.left_transfers.len() < LEFT_TRANSFER_MAX {
+                self.left_transfers
+                    .insert(id, (t, now.saturating_add(LEFT_TRANSFER_SECS)));
+            }
+        }
+    }
+
     /// NOTIFY in the transferred call's dialog (RFC 3515 §2.4.4–2.4.5).
     fn notify_refer(
         &mut self,
@@ -384,6 +404,9 @@ impl<R: Random> Engine<R> {
     /// `DeclineTransfer`: the user does not want to follow the REFER (issue #67) – the final
     /// NOTIFY reports 603 (RFC 3515 §2.4.5) and the transfer is forgotten; our call stays.
     pub(crate) fn decline_transfer(&mut self, id: CallId, now: u64, out: &mut Vec<Output>) {
+        if self.left_transfers.remove(&id).is_some() {
+            return;
+        }
         let pending = self
             .calls
             .get_mut(&id)
@@ -407,7 +430,13 @@ impl<R: Random> Engine<R> {
         now: u64,
         out: &mut Vec<Output>,
     ) {
-        let Some(t) = self.calls.get(&id).and_then(|c| c.transfer_in.clone()) else {
+        let left = self
+            .left_transfers
+            .remove(&id)
+            .filter(|(_, until)| now < *until)
+            .map(|(t, _)| t);
+        let current = self.calls.get(&id).and_then(|c| c.transfer_in.clone());
+        let Some(t) = current.or(left) else {
             out.push(Output::Event(Event::Notice("no transfer to follow".into())));
             return;
         };

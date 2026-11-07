@@ -1158,7 +1158,9 @@ impl<R: Random> Engine<R> {
             "BYE" => {
                 let r = response_to(req, 200, "OK");
                 self.send_plain(r, now, out);
-                self.calls.remove(&id);
+                if let Some(c) = self.calls.remove(&id) {
+                    self.keep_left_transfer(id, c, now);
+                }
                 Self::call_event(
                     out,
                     Event::CallEnded {
