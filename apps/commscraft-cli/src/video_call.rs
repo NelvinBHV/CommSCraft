@@ -268,6 +268,24 @@ pub fn spawn(
     VideoHandle { tx }
 }
 
+/// Waits for the negotiated stream. Returns it with the source to ask for: any (1:1) until a meeting
+/// names one (CA-13). A meeting's roster often comes before our stream starts, and the MCU chooses no
+/// source for us, so a name that arrives now must not get lost. `None`: the video was stopped.
+fn wait_for_start(
+    rx: &Receiver<ToVideo>,
+    mut idle: impl FnMut(),
+) -> Option<(Box<sdp::video::NegotiatedVideo>, bool, u32)> {
+    let mut source = feedback::SOURCE_ANY;
+    loop {
+        match rx.recv_timeout(Duration::from_millis(20)) {
+            Ok(ToVideo::Start { video, controlling }) => return Some((video, controlling, source)),
+            Ok(ToVideo::Source(msi)) => source = msi,
+            Ok(ToVideo::Stop) | Err(mpsc::RecvTimeoutError::Disconnected) => return None,
+            Ok(_) | Err(mpsc::RecvTimeoutError::Timeout) => idle(),
+        }
+    }
+}
+
 fn run(
     id: u32,
     local_ip: IpAddr,
@@ -302,17 +320,11 @@ fn run(
         id,
         Box::new(local(&media, media.local_description())),
     ));
-    let (negotiated, controlling) = loop {
-        match rx.recv_timeout(Duration::from_millis(20)) {
-            Ok(ToVideo::Start { video, controlling }) => break (video, controlling),
-            Ok(ToVideo::Stop) | Err(mpsc::RecvTimeoutError::Disconnected) => {
-                media.stop(now_ms());
-                return;
-            }
-            Ok(_) | Err(mpsc::RecvTimeoutError::Timeout) => {
-                media.poll(now_ms());
-            }
-        }
+    let Some((negotiated, controlling, mut source)) = wait_for_start(&rx, || {
+        media.poll(now_ms());
+    }) else {
+        media.stop(now_ms());
+        return;
     };
     let Some(layout) = layout() else {
         let _ = events.send(FromVideo::Failed(id, "stream layout".into()));
@@ -344,11 +356,9 @@ fn run(
         events.clone(),
         id,
     );
-    spawn_window(dec_rx, stop.clone(), events.clone(), id);
+    crate::video_window::spawn(dec_rx, stop.clone(), events.clone(), id);
     let mut final_sent = false;
     let mut requested = false;
-    // The source to ask for: any (1:1) until a meeting names one (CA-13).
-    let mut source = feedback::SOURCE_ANY;
     let mut watched_by_peer: Option<bool> = None;
     // An MCU asked us to stop sending video (picture_freeze, PL-50): RTCP goes on.
     let mut frozen = false;
@@ -633,52 +643,6 @@ fn hardware_allowed() -> bool {
     std::env::var("COMMSCRAFT_VIDEO_HW").map_or(true, |v| v.trim() != "0")
 }
 
-/// GPU decoding where the pictures can go to the screen directly, unless
-/// `COMMSCRAFT_VIDEO_DECODE=cpu` asks for the CPU: copying them back would cost more than decoding
-/// on the CPU (measured, evidence file 23).
-fn gpu_decoding_wanted() -> bool {
-    commscraft_video_wayland::Window::in_wayland_session()
-        && std::env::var("COMMSCRAFT_VIDEO_DECODE").map_or(true, |v| v.trim() != "cpu")
-}
-
-/// A GPU picture in the window; the window keeps it until the compositor is done with it.
-fn show_surface(
-    window: &mut commscraft_video_wayland::Window,
-    surface: vf::DmaBuf,
-) -> Result<(), commscraft_video_wayland::Error> {
-    use commscraft_video_wayland::{Error, Frame, Plane};
-    use std::os::fd::AsFd;
-    use std::os::unix::fs::MetadataExt;
-    let surface = std::rc::Rc::new(surface);
-    // The memory's inode tells whether the window knows this buffer already.
-    let first = surface.planes.first().ok_or(Error::Unsupported)?;
-    let key = first
-        .fd
-        .try_clone()
-        .and_then(|fd| std::fs::File::from(fd).metadata())
-        .map_err(|e| Error::Connection(e.to_string()))?
-        .ino();
-    let planes: Vec<Plane<'_>> = surface
-        .planes
-        .iter()
-        .map(|p| Plane {
-            fd: p.fd.as_fd(),
-            offset: p.offset,
-            stride: p.stride,
-        })
-        .collect();
-    let frame = Frame {
-        width: surface.width,
-        height: surface.height,
-        fourcc: surface.fourcc,
-        modifier: surface.modifier,
-        planes: &planes,
-        key,
-    };
-    window.show(&frame, Box::new(std::rc::Rc::clone(&surface)))?;
-    Ok(())
-}
-
 /// Shortest time between two encoder rebuilds for a higher bit rate alone, and the changes that
 /// are worth one (design values: a rebuild costs an IDR picture).
 const REBUILD_MS: u64 = 2000;
@@ -701,133 +665,45 @@ fn needs_rebuild(current: Target, wanted: Target, since_ms: u64) -> bool {
     diff >= base * u64::from(RAISE_PERCENT) && since_ms >= REBUILD_MS
 }
 
-/// Decoder → window (XVideo); the window opens with the first picture's size.
-fn spawn_window(
-    input: Receiver<Vec<u8>>,
-    stop: Arc<AtomicBool>,
-    events: Sender<FromVideo>,
-    id: u32,
-) {
-    std::thread::spawn(move || {
-        let mut surfaces = gpu_decoding_wanted();
-        let mut decoder = match vf::init().and_then(|()| vf::Decoder::with_hardware(surfaces)) {
-            Ok(d) => d,
-            Err(e) => {
-                let _ = events.send(FromVideo::Notice(id, format!("no video decoder: {e:?}")));
-                return;
-            }
-        };
-        let mut surface_window: Option<commscraft_video_wayland::Window> = None;
-        let mut window: Option<vf::Display> = None;
-        let mut failed = false;
-        let mut announced = false;
-        let mut closed = false;
-        while !stop.load(Ordering::Relaxed) {
-            let Ok(au) = input.recv_timeout(Duration::from_millis(100)) else {
-                continue;
-            };
-            let decoded = if surfaces {
-                decoder.decode_to_surfaces(&au)
-            } else {
-                decoder
-                    .decode(&au)
-                    .map(|p| p.into_iter().map(vf::Decoded::Picture).collect())
-            };
-            let Ok(decoded) = decoded else {
-                continue;
-            };
-            for d in decoded {
-                let p = match d {
-                    vf::Decoded::Surface(s) => {
-                        use commscraft_video_wayland::{Error, Window};
-                        if closed {
-                            continue;
-                        }
-                        if !announced {
-                            announced = true;
-                            let _ = events.send(FromVideo::Notice(
-                                id,
-                                format!(
-                                    "receiving video {}x{}, decoded on the GPU, shown directly",
-                                    s.width, s.height
-                                ),
-                            ));
-                        }
-                        let shown = match surface_window.as_mut() {
-                            Some(w) => show_surface(w, s),
-                            None => Window::open(&format!("CommSCraft – call {id}")).and_then(
-                                |mut w| {
-                                    let r = show_surface(&mut w, s);
-                                    surface_window = Some(w);
-                                    r
-                                },
-                            ),
-                        };
-                        match shown {
-                            Ok(()) => {}
-                            Err(Error::Closed) => {
-                                closed = true;
-                                surface_window = None;
-                            }
-                            Err(e) => {
-                                // The next pictures come through the copy, to the other window.
-                                let _ = events.send(FromVideo::Notice(
-                                    id,
-                                    format!("no direct video window: {e:?}"),
-                                ));
-                                surface_window = None;
-                                surfaces = false;
-                            }
-                        }
-                        continue;
-                    }
-                    vf::Decoded::Picture(p) => p,
-                };
-                if !announced {
-                    announced = true;
-                    let _ = events.send(FromVideo::Notice(
-                        id,
-                        format!(
-                            "receiving video {}x{}, decoded on the {}",
-                            p.width,
-                            p.height,
-                            match decoder.backend() {
-                                vf::Backend::Vaapi => "GPU, copied back",
-                                vf::Backend::Software => "CPU",
-                            }
-                        ),
-                    ));
-                }
-                if window.as_ref().is_none() && !failed {
-                    match vf::Display::open(&format!("CommSCraft – call {id}"), p.width, p.height)
-                    {
-                        Ok(w) => window = Some(w),
-                        Err(e) => {
-                            failed = true;
-                            let _ = events
-                                .send(FromVideo::Notice(id, format!("no video window: {e:?}")));
-                        }
-                    }
-                }
-                if let Some(w) = window.as_mut() {
-                    if w.show(&p).is_err() {
-                        // Another size: a new window.
-                        window = vf::Display::open(
-                            &format!("CommSCraft – call {id}"),
-                            p.width,
-                            p.height,
-                        )
-                        .ok();
-                    }
-                }
-            }
-        }
-    });
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// CA-13: the source a meeting names before our stream has started is not lost.
+    #[test]
+    fn source_named_before_the_start() {
+        let negotiated = || sdp::video::NegotiatedVideo {
+            payload_type: 122,
+            remote_rtp: ("192.0.2.1".parse().unwrap(), 1),
+            remote_rtcp: ("192.0.2.1".parse().unwrap(), 2),
+            remote_key: None,
+            remote_ice: None,
+            direction: sdp::Direction::SendRecv,
+            ssrc_range: (100, 199),
+            feedback: sdp::video::Feedback::default(),
+        };
+        let (tx, rx) = mpsc::channel();
+        tx.send(ToVideo::Source(7)).unwrap();
+        tx.send(ToVideo::Hold(true)).unwrap();
+        tx.send(ToVideo::Start {
+            video: Box::new(negotiated()),
+            controlling: true,
+        })
+        .unwrap();
+        let (_, controlling, source) = wait_for_start(&rx, || {}).unwrap();
+        assert!(controlling);
+        assert_eq!(source, 7);
+        // Without a name: any source, as in a 1:1 call.
+        tx.send(ToVideo::Start {
+            video: Box::new(negotiated()),
+            controlling: false,
+        })
+        .unwrap();
+        assert_eq!(wait_for_start(&rx, || {}).unwrap().2, feedback::SOURCE_ANY);
+        // Stopped before it started.
+        tx.send(ToVideo::Stop).unwrap();
+        assert!(wait_for_start(&rx, || {}).is_none());
+    }
 
     /// SD-64: 100 SSRCs, never 0, within the allowed maximum.
     #[test]

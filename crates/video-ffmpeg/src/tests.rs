@@ -493,6 +493,76 @@ fn decode_phases() {
     }
 }
 
+/// A GPU encoder changing size and bit rate next to a GPU decoder of another stream, as in a
+/// meeting. Not a regular test: in one process (`COMMSCRAFT_STRESS_ROLE` unset) this hangs the
+/// video engine of an integrated AMD GPU with VCN 4 within seconds. With `encoder` and `decoder` in
+/// two processes it does not: that is why the decoder has a process of its own.
+#[test]
+#[ignore]
+fn gpu_encoder_changing_next_to_a_decoder() {
+    use std::sync::mpsc;
+    init().unwrap();
+    let var = |n: &str| std::env::var(n).unwrap_or_default();
+    let seconds: u64 = var("COMMSCRAFT_SECONDS").parse().unwrap_or(30);
+    let role = var("COMMSCRAFT_STRESS_ROLE");
+    let (dec_gpu, enc_gpu) = (role != "encoder", role != "decoder");
+    let (tx, rx) = mpsc::sync_channel::<Vec<u8>>(8);
+    let decoder = std::thread::spawn(move || {
+        let mut dec = Decoder::with_hardware(dec_gpu).unwrap();
+        let mut held = std::collections::VecDeque::new();
+        let (mut pictures, mut gpu) = (0u64, 0u64);
+        while let Ok(au) = rx.recv() {
+            for d in dec.decode_to_surfaces(&au).unwrap_or_default() {
+                pictures += 1;
+                gpu += u64::from(dec.backend() == Backend::Vaapi);
+                // As the window: a few pictures stay in use.
+                held.push_back(d);
+                if held.len() > 3 {
+                    held.pop_front();
+                }
+            }
+        }
+        (pictures, gpu)
+    });
+    let start = std::time::Instant::now();
+    let sizes = [(320, 180), (640, 480), (640, 360), (320, 240)];
+    let mut stream = Encoder::new(EncoderConfig {
+        width: 320,
+        height: 180,
+        ..config()
+    })
+    .unwrap();
+    let (mut changes, mut frame, mut on_gpu) = (0u32, 0u32, 0u32);
+    while start.elapsed().as_secs() < seconds {
+        let (w, h) = sizes[changes as usize % sizes.len()];
+        changes += 1;
+        let mut enc = Encoder::new(EncoderConfig {
+            width: w,
+            height: h,
+            bitrate: 300_000 + changes % 50 * 7_000,
+            hardware: enc_gpu,
+            ..config()
+        })
+        .unwrap();
+        on_gpu += u32::from(enc.backend() == Backend::Vaapi);
+        let picture = gradient(w, h, frame);
+        for n in 0..12 {
+            frame += 1;
+            enc.encode(&picture, n == 0).unwrap();
+            for au in stream
+                .encode(&gradient(320, 180, frame), frame == 1)
+                .unwrap()
+            {
+                tx.send(au).unwrap();
+            }
+            std::thread::sleep(std::time::Duration::from_millis(16));
+        }
+    }
+    drop(tx);
+    let (pictures, gpu) = decoder.join().unwrap();
+    eprintln!("changes {changes} ({on_gpu} on the GPU), pictures {pictures} ({gpu} on the GPU)");
+}
+
 /// The window (only with COMMSCRAFT_DISPLAY=1; not in CI): a moving gradient for one second;
 /// a picture of another size is refused.
 #[test]

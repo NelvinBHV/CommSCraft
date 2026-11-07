@@ -30,6 +30,7 @@ mod calls;
 mod cues;
 mod term;
 mod video_call;
+mod video_window;
 
 use std::io::{BufRead, IsTerminal, Write};
 use std::path::PathBuf;
@@ -3627,6 +3628,9 @@ fn contact_group_command(arg: &str) -> Option<ContactEdit> {
 }
 
 fn main() {
+    if std::env::args().nth(1).as_deref() == Some(video_window::COMMAND) {
+        std::process::exit(video_window::helper_main(std::env::args().skip(2)));
+    }
     if std::env::args().nth(1).as_deref() == Some("audio-check") {
         let code = match audio_check() {
             Ok(()) => 0,
