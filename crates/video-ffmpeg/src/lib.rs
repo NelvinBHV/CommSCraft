@@ -9,6 +9,10 @@
 //! limit of `commscraft-h264uc`, is refused before FFmpeg sees it); picture sizes are bounded –
 //! the decoder refuses pictures above [`MAX_PIXELS`] before it allocates them; plane accesses are checked against the plane count, because the binding
 //! panics on an out-of-range plane; every FFmpeg error is returned, never unwrapped.
+//! A decoder on the GPU keeps these limits and moves to the CPU for good when input or driver keep
+//! failing or the picture size keeps changing: a hostile stream cannot keep working on the driver.
+
+use std::os::fd::OwnedFd;
 
 use ffmpeg_next as ff;
 
@@ -156,6 +160,38 @@ fn from_frame(f: &ff::frame::Video) -> Result<Picture, Error> {
     })
 }
 
+/// Copies an NV12 frame (what a VA-API surface downloads to) into a packed I420 picture.
+fn from_nv12(f: &ff::frame::Video) -> Result<Picture, Error> {
+    if f.format() != ff::format::Pixel::NV12 || f.planes() < 2 {
+        return Err(Error::Ffmpeg("unexpected frame format".into()));
+    }
+    let (width, height) = (f.width(), f.height());
+    check_size(width, height)?;
+    let (w, h) = (width as usize, height as usize);
+    let mut data = Vec::with_capacity(Picture::i420_len(width, height));
+    let (stride, src) = (f.stride(0), f.data(0));
+    for row in 0..h {
+        let line = src
+            .get(row * stride..row * stride + w)
+            .ok_or(Error::Ffmpeg("frame smaller than its size".into()))?;
+        data.extend_from_slice(line);
+    }
+    let (stride, src) = (f.stride(1), f.data(1));
+    for offset in [0, 1] {
+        for row in 0..h / 2 {
+            let line = src
+                .get(row * stride..row * stride + w)
+                .ok_or(Error::Ffmpeg("frame smaller than its size".into()))?;
+            data.extend(line.iter().skip(offset).step_by(2));
+        }
+    }
+    Ok(Picture {
+        width,
+        height,
+        data,
+    })
+}
+
 /// Encoder settings for one H.264 UC layer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EncoderConfig {
@@ -171,12 +207,12 @@ pub struct EncoderConfig {
     pub hardware: bool,
 }
 
-/// How the encoder works.
+/// Where video is encoded or decoded.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Backend {
-    /// libx264 on the CPU.
+    /// On the CPU (libx264, FFmpeg's H.264 decoder).
     Software,
-    /// `h264_vaapi` on the GPU.
+    /// On the GPU through VA-API.
     Vaapi,
 }
 
@@ -322,36 +358,190 @@ impl Encoder {
     }
 }
 
-/// H.264 decoder (FFmpeg's own `h264` decoder).
+/// DRM format codes (drm_fourcc.h).
+const DRM_NV12: u32 = u32::from_le_bytes(*b"NV12");
+const DRM_R8: u32 = u32::from_le_bytes(*b"R8  ");
+const DRM_GR88: u32 = u32::from_le_bytes(*b"GR88");
+
+/// One plane of a [`DmaBuf`].
+#[derive(Debug)]
+pub struct DmaBufPlane {
+    pub fd: OwnedFd,
+    pub offset: u32,
+    pub stride: u32,
+}
+
+/// A decoded picture in GPU memory, for a window that shows it without copying.
+pub struct DmaBuf {
+    pub width: u32,
+    pub height: u32,
+    /// DRM format code.
+    pub fourcc: u32,
+    pub modifier: u64,
+    pub planes: Vec<DmaBufPlane>,
+    /// Keeps the surface from being reused while the picture is in use.
+    _mapped: ff::frame::Video,
+}
+
+impl DmaBuf {
+    fn new(
+        width: u32,
+        height: u32,
+        fourcc: u32,
+        modifier: u64,
+        planes: Vec<DmaBufPlane>,
+        mapped: ff::frame::Video,
+    ) -> DmaBuf {
+        DmaBuf {
+            width,
+            height,
+            fourcc,
+            modifier,
+            planes,
+            _mapped: mapped,
+        }
+    }
+}
+
+/// A decoded picture.
+pub enum Decoded {
+    /// In memory.
+    Picture(Picture),
+    /// In GPU memory.
+    Surface(DmaBuf),
+}
+
+/// Failed access units before a GPU decoder moves to the CPU (design: a stream that starts between
+/// two IDR pictures or loses packets fails a few times without any hardware problem).
+const MAX_GPU_ERRORS: u32 = 16;
+/// Picture size changes before a GPU decoder moves to the CPU (design: each one rebuilds surfaces
+/// in the driver; a call changes size now and then, not all the time).
+const MAX_GPU_RESIZES: u32 = 32;
+
+fn open_decoder(hardware: bool) -> Result<ff::decoder::Video, Error> {
+    let codec = ff::decoder::find(ff::codec::Id::H264).ok_or(Error::NoDecoder)?;
+    // Issue #93: FFmpeg itself refuses pictures above our size before it allocates them
+    // (AVCodecContext.max_pixels); the check of the decoded frame alone comes too late.
+    let mut opts = ff::Dictionary::new();
+    opts.set("max_pixels", &MAX_PIXELS.to_string());
+    let mut ctx = ff::codec::context::Context::new_with_codec(codec);
+    if hardware {
+        hw::attach_decoder_device(&mut ctx)?;
+        // Pictures on their way to the window keep their surfaces.
+        opts.set("extra_hw_frames", "6");
+    }
+    Ok(ctx.decoder().open_as_with(codec, opts)?.video()?)
+}
+
+/// H.264 decoder (FFmpeg's own `h264` decoder, on the GPU through its VA-API path if wanted).
 pub struct Decoder {
     dec: ff::decoder::Video,
+    /// The context has a VA-API device.
+    gpu: bool,
+    backend: Backend,
+    errors: u32,
+    resizes: u32,
+    size: Option<(u32, u32)>,
 }
 
 impl Decoder {
+    /// A decoder on the CPU.
     pub fn new() -> Result<Decoder, Error> {
-        let codec = ff::decoder::find(ff::codec::Id::H264).ok_or(Error::NoDecoder)?;
-        // Issue #93: FFmpeg itself refuses pictures above our size before it allocates them
-        // (AVCodecContext.max_pixels); the check of the decoded frame alone comes too late.
-        let mut opts = ff::Dictionary::new();
-        opts.set("max_pixels", &MAX_PIXELS.to_string());
-        let dec = ff::codec::context::Context::new_with_codec(codec)
-            .decoder()
-            .open_as_with(codec, opts)?
-            .video()?;
-        Ok(Decoder { dec })
+        Decoder::with_hardware(false)
     }
 
-    /// Decodes one Annex B access unit; returns the pictures that became ready. Pictures in
-    /// another pixel format than YUV 4:2:0 or above the size limit are refused.
+    /// A decoder on the GPU if `hardware` is set and a device works, otherwise on the CPU.
+    pub fn with_hardware(hardware: bool) -> Result<Decoder, Error> {
+        let (dec, gpu) = match open_decoder(hardware) {
+            Ok(dec) => (dec, hardware),
+            Err(_) if hardware => (open_decoder(false)?, false),
+            Err(e) => return Err(e),
+        };
+        Ok(Decoder {
+            dec,
+            gpu,
+            backend: Backend::Software,
+            errors: 0,
+            resizes: 0,
+            size: None,
+        })
+    }
+
+    /// Where the last picture was decoded (FFmpeg also uses the CPU for a stream the device
+    /// cannot decode).
+    pub fn backend(&self) -> Backend {
+        self.backend
+    }
+
+    /// Decodes one Annex B access unit; returns the pictures that became ready, in memory.
+    /// Pictures in another pixel format than YUV 4:2:0 or above the size limit are refused.
     pub fn decode(&mut self, access_unit: &[u8]) -> Result<Vec<Picture>, Error> {
+        let decoded = self.decode_as(access_unit, false)?;
+        Ok(decoded
+            .into_iter()
+            .filter_map(|d| match d {
+                Decoded::Picture(p) => Some(p),
+                Decoded::Surface(_) => None,
+            })
+            .collect())
+    }
+
+    /// Like [`Decoder::decode`], but pictures on the GPU stay there where that works.
+    pub fn decode_to_surfaces(&mut self, access_unit: &[u8]) -> Result<Vec<Decoded>, Error> {
+        self.decode_as(access_unit, true)
+    }
+
+    fn decode_as(&mut self, access_unit: &[u8], surfaces: bool) -> Result<Vec<Decoded>, Error> {
         if access_unit.len() > MAX_ACCESS_UNIT {
             return Err(Error::TooLarge);
         }
+        let result = self.decode_checked(access_unit, surfaces);
+        if self.gpu {
+            if result.is_err() {
+                self.errors = self.errors.saturating_add(1);
+            }
+            if self.errors >= MAX_GPU_ERRORS || self.resizes >= MAX_GPU_RESIZES {
+                self.use_cpu()?;
+            }
+        }
+        result
+    }
+
+    /// The CPU from here on; it starts with the stream's next IDR picture.
+    fn use_cpu(&mut self) -> Result<(), Error> {
+        self.dec = open_decoder(false)?;
+        self.gpu = false;
+        self.backend = Backend::Software;
+        Ok(())
+    }
+
+    fn decode_checked(
+        &mut self,
+        access_unit: &[u8],
+        surfaces: bool,
+    ) -> Result<Vec<Decoded>, Error> {
         self.dec.send_packet(&ff::Packet::copy(access_unit))?;
         let mut out = Vec::new();
         let mut frame = ff::frame::Video::empty();
         while self.dec.receive_frame(&mut frame).is_ok() {
-            out.push(from_frame(&frame)?);
+            let (width, height) = (frame.width(), frame.height());
+            check_size(width, height)?;
+            if self.size.is_some_and(|s| s != (width, height)) {
+                self.resizes = self.resizes.saturating_add(1);
+            }
+            self.size = Some((width, height));
+            if frame.format() == ff::format::Pixel::VAAPI {
+                self.backend = Backend::Vaapi;
+                // A surface that cannot be mapped is still a picture, through the copy.
+                let surface = surfaces.then(|| hw::map_dmabuf(&frame).ok()).flatten();
+                out.push(match surface {
+                    Some(s) => Decoded::Surface(s),
+                    None => Decoded::Picture(from_nv12(&hw::download(&frame)?)?),
+                });
+            } else {
+                self.backend = Backend::Software;
+                out.push(Decoded::Picture(from_frame(&frame)?));
+            }
         }
         Ok(out)
     }

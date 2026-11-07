@@ -296,6 +296,203 @@ fn encode_load() {
     }
 }
 
+/// NV12 to I420: the chroma planes are separated, the strides of the frame do not leak in.
+#[test]
+fn nv12_to_i420() {
+    let mut f = ff::frame::Video::new(ff::format::Pixel::NV12, 16, 16);
+    let stride = f.stride(0);
+    for (i, b) in f.data_mut(0).iter_mut().enumerate() {
+        *b = if i % stride < 16 { 10 } else { 99 };
+    }
+    let stride = f.stride(1);
+    for (i, b) in f.data_mut(1).iter_mut().enumerate() {
+        *b = match (i % stride < 16, i % 2) {
+            (false, _) => 99,
+            (true, 0) => 20,
+            (true, _) => 30,
+        };
+    }
+    let p = from_nv12(&f).unwrap();
+    assert_eq!(p.data.len(), Picture::i420_len(16, 16));
+    assert!(p.data[..256].iter().all(|b| *b == 10));
+    assert!(p.data[256..320].iter().all(|b| *b == 20));
+    assert!(p.data[320..384].iter().all(|b| *b == 30));
+    let other = ff::frame::Video::new(ff::format::Pixel::YUV420P, 16, 16);
+    assert!(from_nv12(&other).is_err());
+}
+
+/// Decoding on the GPU where a device exists gives the same pictures as on the CPU, also at a
+/// height that is cropped from the coded size; without a device the CPU decodes.
+#[test]
+fn hardware_decoder_when_available() {
+    init().unwrap();
+    let mut enc = Encoder::new(EncoderConfig {
+        width: 640,
+        height: 360,
+        ..config()
+    })
+    .unwrap();
+    let mut gpu = Decoder::with_hardware(true).unwrap();
+    let mut cpu = Decoder::new().unwrap();
+    let (mut compared, mut used_gpu) = (0, false);
+    let mut from_gpu = std::collections::VecDeque::new();
+    let mut from_cpu = std::collections::VecDeque::new();
+    for n in 0..30 {
+        for au in enc.encode(&gradient(640, 360, n), n == 0).unwrap() {
+            from_gpu.extend(gpu.decode(&au).unwrap());
+            used_gpu |= gpu.backend() == Backend::Vaapi;
+            from_cpu.extend(cpu.decode(&au).unwrap());
+        }
+        while let (Some(g), Some(c)) = (from_gpu.front(), from_cpu.front()) {
+            assert_eq!((g.width, g.height), (640, 360));
+            assert!(mean_abs_diff(g, c) < 2.0, "{}", mean_abs_diff(g, c));
+            compared += 1;
+            from_gpu.pop_front();
+            from_cpu.pop_front();
+        }
+    }
+    eprintln!("decoded on the GPU: {used_gpu}, compared {compared}");
+    assert!(compared >= 10);
+}
+
+/// A stream of failures moves a GPU decoder to the CPU for good, and it still decodes.
+#[test]
+fn hardware_decoder_gives_up_on_bad_input() {
+    init().unwrap();
+    let mut dec = Decoder::with_hardware(true).unwrap();
+    let junk = [0, 0, 0, 1, 0x65, 0xff, 0xff, 0xff];
+    dec.errors = MAX_GPU_ERRORS - 1;
+    dec.resizes = MAX_GPU_RESIZES;
+    let _ = dec.decode(&junk);
+    assert!(!dec.gpu);
+    assert_eq!(dec.backend(), Backend::Software);
+    let mut enc = Encoder::new(config()).unwrap();
+    let mut decoded = 0;
+    for n in 0..10 {
+        for au in enc.encode(&gradient(320, 240, n), n == 0).unwrap() {
+            decoded += dec.decode(&au).unwrap().len();
+        }
+    }
+    assert!(decoded > 0);
+}
+
+/// The CPU time of this process so far, in clock ticks (user and system).
+fn cpu_ticks() -> u64 {
+    let stat = std::fs::read_to_string("/proc/self/stat").unwrap();
+    let after = stat.rsplit(')').next().unwrap();
+    let f: Vec<&str> = after.split_whitespace().collect();
+    f[11].parse::<u64>().unwrap() + f[12].parse::<u64>().unwrap()
+}
+
+/// CPU and wall time of decoding 720p with fine detail, all of it on this side of the test (not a
+/// regular test; `cargo test --release decode_load -- --ignored --nocapture`, COMMSCRAFT_HW=1 or 0).
+#[test]
+#[ignore]
+fn decode_load() {
+    init().unwrap();
+    let hardware = std::env::var("COMMSCRAFT_HW").is_ok_and(|v| v == "1");
+    let big = std::env::var("COMMSCRAFT_1080").is_ok();
+    let (w, h) = if big { (1920u32, 1080u32) } else { (1280, 720) };
+    let mut enc = Encoder::new(EncoderConfig {
+        width: w,
+        height: h,
+        bitrate: if big { 6_000_000 } else { 3_000_000 },
+        ..config()
+    })
+    .unwrap();
+    // Texture that moves: much harder to code than the gradient.
+    let mut seed = 1u32;
+    let texture: Vec<u8> = (0..(w * h * 2))
+        .map(|_| {
+            seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+            (seed >> 24) as u8
+        })
+        .collect();
+    let mut units = Vec::new();
+    for n in 0..120u32 {
+        let mut p = Picture::filled(w, h, 128, 128, 128);
+        let shift = (n * 4) as usize;
+        let (y, _) = p.data.split_at_mut((w * h) as usize);
+        y.copy_from_slice(&texture[shift..shift + (w * h) as usize]);
+        units.extend(enc.encode(&p, n == 0).unwrap());
+    }
+    let mut dec = Decoder::with_hardware(hardware).unwrap();
+    let (cpu, wall) = (cpu_ticks(), std::time::Instant::now());
+    let mut pictures = 0;
+    for _ in 0..3 {
+        for au in &units {
+            pictures += dec.decode(au).unwrap().len();
+        }
+    }
+    eprintln!(
+        "decoder backend {:?}: {pictures} pictures, {:?}, {} CPU ticks",
+        dec.backend(),
+        wall.elapsed(),
+        cpu_ticks() - cpu
+    );
+}
+
+/// Where the time of GPU decoding goes: decoding alone, then download, then the conversion (not a
+/// regular test).
+#[test]
+#[ignore]
+fn decode_phases() {
+    init().unwrap();
+    let big = std::env::var("COMMSCRAFT_1080").is_ok();
+    let (w, h) = if big { (1920u32, 1080u32) } else { (1280, 720) };
+    let mut enc = Encoder::new(EncoderConfig {
+        width: w,
+        height: h,
+        bitrate: if big { 6_000_000 } else { 3_000_000 },
+        ..config()
+    })
+    .unwrap();
+    let mut seed = 1u32;
+    let texture: Vec<u8> = (0..(w * h * 2))
+        .map(|_| {
+            seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+            (seed >> 24) as u8
+        })
+        .collect();
+    let mut units = Vec::new();
+    for n in 0..120u32 {
+        let mut p = Picture::filled(w, h, 128, 128, 128);
+        let shift = (n * 4) as usize;
+        let (y, _) = p.data.split_at_mut((w * h) as usize);
+        y.copy_from_slice(&texture[shift..shift + (w * h) as usize]);
+        units.extend(enc.encode(&p, n == 0).unwrap());
+    }
+    for phase in ["decode only", "decode+download", "decode+download+convert"] {
+        let mut dec = open_decoder(true).unwrap();
+        let (cpu, wall) = (cpu_ticks(), std::time::Instant::now());
+        let (mut n, mut hw) = (0, 0);
+        let mut frame = ff::frame::Video::empty();
+        for _ in 0..3 {
+            for au in &units {
+                dec.send_packet(&ff::Packet::copy(au)).unwrap();
+                while dec.receive_frame(&mut frame).is_ok() {
+                    n += 1;
+                    if frame.format() != ff::format::Pixel::VAAPI {
+                        continue;
+                    }
+                    hw += 1;
+                    if phase != "decode only" {
+                        let sw = hw::download(&frame).unwrap();
+                        if phase == "decode+download+convert" {
+                            from_nv12(&sw).unwrap();
+                        }
+                    }
+                }
+            }
+        }
+        eprintln!(
+            "{phase}: {n} pictures ({hw} on the GPU), {:?}, {} CPU ticks",
+            wall.elapsed(),
+            cpu_ticks() - cpu
+        );
+    }
+}
+
 /// The window (only with COMMSCRAFT_DISPLAY=1; not in CI): a moving gradient for one second;
 /// a picture of another size is refused.
 #[test]

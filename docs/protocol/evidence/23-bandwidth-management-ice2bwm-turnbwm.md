@@ -51,3 +51,9 @@ The XOR examples of §2.2.4 (pp. 15–16) are correct: 0x1122⊕0x4455 = 0x5577;
 
 ## Implementation (2026-11-01, frame rate by size)
 BW-18: the CLI sends at most 15 fps below 640x360 (the highest of the request's lower rates: 15 or 7.5). Status: tested-offline.
+
+Hardware decoding (2026-11-07, `video-ffmpeg`, `video-wayland`, measured, not a protocol rule; integrated AMD 780M and Intel i5-10310U GPUs).
+- Where the time goes (`decode_phases`, 360 pictures 720p, CPU ticks at 100/s): AMD decoding on the GPU alone 3, with download 24; Intel 5 and 46. On the CPU (`decode_load`): AMD 19, Intel 36–37. With conversion to I420 the copy path costs more than the CPU decoder (AMD 21–23, Intel 58–59). So copying back is the cost, not decoding.
+- A player with the same mechanism, 8 s of 720p, CPU seconds of the player: CPU decoding with XVideo AMD 0.69, Intel 2.24; GPU with copy 1.19 and 3.63; GPU directly to the compositor 0.40 and 0.68; GPU through OpenGL 0.70 and 1.58.
+- A real video call (640x480 both ways, GPU encoding, whole client process, 20 s, two runs each): AMD direct 66 and 66 ticks, CPU decoding 72 and 115; Intel direct 229 and 228, CPU decoding 318 and 322.
+- Not measured: the compositor's own CPU time and power. **Inference:** GPU decoding is only worthwhile when the picture is not copied back, so it runs only where a compositor takes it directly; otherwise the CPU decodes.
