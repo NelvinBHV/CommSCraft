@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (GPU video decoding shown directly)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (new subscribers)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -37,7 +37,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | **lab**, tested-offline (endpoint and own state publication, long-lived batch subscriptions with NOTIFY, refresh and pool resubscribe: `presence`, `session`) |
 | 10 | Contact list (server) | MS-SIP, MS-PRES | B | **lab**, tested-offline (read the contact list with a live subscription and delta updates; add, change, move and remove contacts; add, rename and remove groups: `presence`, `session`, CLI `/contact`, `/contactgroup`) |
 | 11 | Contact list (Exchange unified contact store) | MS-PRES, MS-OXWSCOS, MS-OXWSPERS | B\* | – |
-| 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | **lab**, tested-offline (set the relationship per user, block at the server and in the client: `presence`, `session`, CLI `/privacy`) |
+| 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | **lab**, tested-offline (set the relationship per user, block at the server and in the client; the notice that someone added the user, with acknowledgement: `presence`, `session`, CLI `/privacy`, `/seen`) |
 | 13 | Offline address book | MS-ABS | B\* | – |
 | 14 | Address book and distribution list search | MS-DLX, MS-NTHT | B\* | **lab**, parts tested-offline (SearchAbEntry basic search with checked answer: `dlx`; NTLM over HTTP on a kept-alive connection: `ntlm`, `net`; CLI `/search`); distribution list expansion – |
 | 15 | Contact photos | MS-OXWSPHOTO | B | – |

@@ -20,7 +20,7 @@
 //! - content from the network reaches the UI only through the checked parsers of `presence` and
 //!   `im` (plain text, control characters removed).
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use commscraft_avedgea as avedgea;
 use commscraft_conf as conf;
@@ -261,6 +261,10 @@ pub enum Command {
     /// Add or remove a delegate of ours (setDelegates, PR-21).
     /// Changes the contact list (SIP-08): one change at a time.
     EditContacts(pres::ContactEdit),
+    /// Tells the server the user has seen this new subscriber (PR-19).
+    AcknowledgeSubscriber {
+        uri: String,
+    },
     /// Sets a user's privacy relationship (`None`: none, the default of the server applies).
     SetRelationship {
         uri: String,
@@ -365,6 +369,11 @@ pub enum Event {
     Forwarding(pres::Forwarding),
     /// Our delegates as the server keeps them (PR-21).
     Delegates(Vec<String>),
+    /// Someone added the user to their contact list and was not acknowledged yet (PR-19).
+    NewSubscriber {
+        uri: String,
+        name: String,
+    },
     OwnStatusFailed(u16),
     ConversationStarted {
         conversation: ConversationId,
@@ -553,6 +562,7 @@ enum Purpose {
     ContactEdit,
     SetMembers,
     PublishBlock,
+    AcknowledgeSubscriber,
     Invite(ConversationId),
     Message(ConversationId),
     CreateConference(ConversationId),
@@ -640,6 +650,8 @@ pub struct Engine<R: Random> {
     left_transfers: HashMap<CallId, (transfer::Incoming, u64)>,
     contact_list: Option<pres::ContactList>,
     containers: Option<BTreeMap<u32, pres::Container>>,
+    /// Subscribers the user was already told about in this session.
+    told_subscribers: HashSet<String>,
     /// A membership change is under way until the changed containers arrive, at most until then.
     privacy_edit_until: Option<u64>,
     /// Version of the blocking routing instance, once published.
@@ -714,6 +726,7 @@ impl<R: Random> Engine<R> {
             left_transfers: HashMap::new(),
             contact_list: None,
             containers: None,
+            told_subscribers: HashSet::new(),
             privacy_edit_until: None,
             block_version: None,
             contact_edit_until: None,
@@ -1106,7 +1119,7 @@ impl<R: Random> Engine<R> {
                 }
                 let mut id = [0u8; 4];
                 self.reg.fill_random(&mut id);
-                match pres::batch_body(&aor, uris, u32::from_be_bytes(id) & 0x7fff_ffff) {
+                match pres::batch_body(&aor, uris, u32::from_be_bytes(id) & 0x7fff_ffff, true) {
                     Ok(b) => m.body = b.into_bytes(),
                     Err(_) => return,
                 }
@@ -1147,9 +1160,12 @@ impl<R: Random> Engine<R> {
                 m.push_header("Content-Type", "application/msrtc-adrl-categorylist+xml");
                 let mut id = [0u8; 4];
                 self.reg.fill_random(&mut id);
-                if let Ok(b) =
-                    pres::batch_body(&self.cfg.aor, uris, u32::from_be_bytes(id) & 0x7fff_ffff)
-                {
+                if let Ok(b) = pres::batch_body(
+                    &self.cfg.aor,
+                    uris,
+                    u32::from_be_bytes(id) & 0x7fff_ffff,
+                    true,
+                ) {
                     m.body = b.into_bytes();
                 }
             }
@@ -1214,6 +1230,9 @@ impl<R: Random> Engine<R> {
                 }
                 if let Ok(Some(c)) = pres::parse_containers(body) {
                     self.on_containers(c);
+                }
+                if let Ok(Some(l)) = pres::parse_subscribers(body) {
+                    self.on_subscribers(l, now, out);
                 }
             }
             SubKind::Presence { .. } => match pres::parse_batch(m) {
@@ -1771,6 +1790,9 @@ impl<R: Random> Engine<R> {
             },
             Command::SetDelegate { uri, add } => self.set_delegate(&uri, add, now, &mut out),
             Command::EditContacts(edit) => self.edit_contacts(edit, now, &mut out),
+            Command::AcknowledgeSubscriber { uri } => {
+                self.acknowledge_subscriber(&uri, now, &mut out)
+            }
             Command::SetRelationship { uri, relationship } => {
                 self.set_relationship(&uri, relationship, now, &mut out)
             }
@@ -2105,7 +2127,7 @@ impl<R: Random> Engine<R> {
                 out.push(Output::Event(Event::OwnStatus(s)));
             }
             Purpose::ContactEdit => self.on_contact_edit_answered(resp, now, out),
-            Purpose::SetMembers => {}
+            Purpose::SetMembers | Purpose::AcknowledgeSubscriber => {}
             Purpose::PublishBlock => self.block_version = Some(self.block_version.unwrap_or(0) + 1),
             Purpose::SetDelegate { .. } => {
                 // §2.2.2.10.3: the 200 carries the complete delegate list.
@@ -2229,6 +2251,9 @@ impl<R: Random> Engine<R> {
             )))),
             Purpose::ContactEdit => self.on_contact_edit_failed(code, now, out),
             Purpose::SetMembers => self.on_set_members_failed(code, now, out),
+            Purpose::AcknowledgeSubscriber => out.push(Output::Event(Event::Notice(format!(
+                "subscriber not acknowledged ({code})"
+            )))),
             Purpose::PublishBlock => out.push(Output::Event(Event::Notice(format!(
                 "calls of blocked users are refused only here, not at the server ({code})"
             )))),
