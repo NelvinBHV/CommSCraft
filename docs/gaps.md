@@ -1,6 +1,6 @@
 # Where CommSCraft falls short of the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (references cleaned up)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (tested-in-lab status)
 
 The work list, ranked by how much each item blocks the alpha gate in
 [`roadmap.md`](roadmap.md#alpha-gate-core-workflows) (**A** = blocks alpha). Each entry says what is
@@ -16,12 +16,12 @@ what is still missing per milestone, followed by the open points found in the an
 
 | # | Gap | Evidence / tracking | Milestone |
 |---|---|---|---|
-| 1 | No published interop results: lab runs stay private, nothing is marked verified; the remaining questions are owner test cases IT-01 … IT-33 | [`interop-tests.md`](interop-tests.md) | all |
+| 1 | No `verified-interoperable` results: what ran in the owner's lab is marked `tested-in-lab` in the feature matrix, its details stay private; the remaining questions are owner test cases IT-01 … IT-33 | [`interop-tests.md`](interop-tests.md) | all |
 | 2 | Sign-in: Kerberos (function 5) and TLS-DSK with client certificate (function 6) are missing; NTLM, discovery, TLS, registration, provisioning and sign-out exist (tested-offline) | functions 1–8, 50 | M1 |
 | 3 | Presence and IM: contact list editing (add/remove contacts and groups), privacy relationships and blocking (12), offline address book (13), contact photos (15), Exchange unified contact store (11); presence, 1:1 and group IM, typing and address book search exist | functions 9–19 | M2 |
 | 4 | Audio 1:1: TCP-only mode and the artificial active TCP server-reflexive candidate (MS-ICE2 §3.1.4.8.1.3, SHOULD), the peer info exchange of MS-RTP (needs link bandwidths), bandwidth management for video and PSTN failover (32, M4/M5), redundant audio (MS-RTPRADEX, 30), as the callee a reliable 183 with an early answer (SD-51, SHOULD) and early media of forked calls (SD-50, SHOULD); calls with ICE over UDP and the TCP relay (443), TURN, SRTP, G.722/G.711 and DTMF exist | functions 21–26, 30, 32, 35 | M3 |
 | 5 | Conferences and telephony: recording, PSTN dial-in details of meetings, PSTN media bypass, the rest of E911 (WLAN/LLDP identifiers); scheduling meetings (create, list, change, cancel; presenters, invitees and options; the static meeting), joining meetings (address or link), lobby, conference audio (SRTP sent, SRTP/SSRTP received), muting, announcements and their language, dialling phone numbers into meetings, the presenter commands with meeting options in the running meeting, PSTN calling, call transfer, forwarding, call park, quality reports, emergency calls with location and team/delegate ringing, delegates and calls on behalf of the boss exist | functions 33–34, 36–37, 39–42, 45 | M4 |
-| 6 | Video H.264 UC: interop confirmation of meeting video (O-CA-1), hardware decoding, simulcast, FEC; the RTP payload of one layer (`h264uc`), camera capture, H.264 encoding on the GPU (VA-API) or with libx264, and decoding (`video-ffmpeg`), the video media description (`sdp::video`), PLI and VSR (`rtp::feedback`), the video stream core (`media::video`) and its transport in `call-media`, video calls in the session, bandwidth estimation and rate adaptation (`media::rate`), picture control through SIP INFO (`session::media_control`) exist | functions 28, 31 | M5 |
+| 6 | Video H.264 UC: hardware decoding, simulcast, FEC; the RTP payload of one layer (`h264uc`), camera capture, H.264 encoding on the GPU (VA-API) or with libx264, and decoding (`video-ffmpeg`), the video media description (`sdp::video`), PLI and VSR (`rtp::feedback`), the video stream core (`media::video`) and its transport in `call-media`, video calls in the session, bandwidth estimation and rate adaptation (`media::rate`), picture control through SIP INFO (`session::media_control`) exist | functions 28, 31 | M5 |
 | 7 | Viewing shared screens (RDP over RTP) | function 43 | M6 |
 | 8 | Graphical user interface (egui); today only the command-line tool exists | – | not yet in a milestone |
 

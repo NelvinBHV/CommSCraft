@@ -1,25 +1,25 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (references cleaned up)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (tested-in-lab status)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
 A milestone is done when its gate passes offline; "verified" always means an interop run by the
-owner on an authorized server. Runs in the owner's private lab inform the work but are not
-published.
+owner on an authorized server. Runs in the owner's private lab are shown as `tested-in-lab`; their
+details are not published.
 
 ## Current focus (M3 – audio 1:1)
 
-**Offline first**: every gate ends at `tested-offline`; lab runs stay private and
+**Offline first**: every gate ends at `tested-offline`; what also ran in the owner's lab is `tested-in-lab`, and
 "verified" waits for the owner's runs ([`interop-tests.md`](interop-tests.md)).
 
 | Milestone | State (2026-11-01) | What exists | Missing before the gate |
 |---|---|---|---|
 | M0 | done | analysis in [`protocol/`](protocol/), workspace, CI, specification test vectors | – |
-| M1 | built, tested-offline | discovery (Autodiscover HTTPS-only, DNS SRV, trust model), TLS adapter, NTLM + MS-SIPAE, REGISTER (GRUU, refresh, redirect, deregister), keep-alive, provisioning, sign-out, `commscraft-cli` | Kerberos, TLS-DSK; owner verification |
-| M2 | built, tested-offline | presence (publish, batch subscriptions, pool resubscribe), contact list (read, live), 1:1 IM with typing, group IM (ad-hoc conference, invitations, IMDN), address book search (MS-DLX over NTLM/HTTP), session engine, CLI `interactive` | contact list editing, privacy/blocking, offline address book, photos; owner verification |
+| M1 | built, tested-offline, tested-in-lab | discovery (Autodiscover HTTPS-only, DNS SRV, trust model), TLS adapter, NTLM + MS-SIPAE, REGISTER (GRUU, refresh, redirect, deregister), keep-alive, provisioning, sign-out, `commscraft-cli` | Kerberos, TLS-DSK; owner verification |
+| M2 | built, tested-offline, tested-in-lab | presence (publish, batch subscriptions, pool resubscribe), contact list (read, live), 1:1 IM with typing, group IM (ad-hoc conference, invitations, IMDN), address book search (MS-DLX over NTLM/HTTP), session engine, CLI `interactive` | contact list editing, privacy/blocking, offline address book, photos; owner verification |
 | M3 | in progress | G.711, G.722, ALSA/PipeWire adapter, RTP/RTCP, DTMF, SRTP, SDP, STUN, MS-TURN, MS-AVEDGEA, ICE agent (UDP and TCP relay on 443 with pseudo-TLS), call signalling incl. hold/resume and early media, media core with the MS-RTP RTCP profile, bandwidth management (call admission control) and runtime, CLI `/call` `/answer` `/hangup` `/dtmf` `/mute` `/hold` `/resume` | redundancy, early answer as the callee, TCP-only mode, own music on hold, bandwidth management for video; owner verification (IT-23 … IT-29) |
-| M4 | done (tested-offline) | meetings: scheduling (create, list, change, cancel; options, presenters, static meeting), join (focus URI, meeting link), lobby, roster, conference audio via the A/V MCU (SRTP sent, SRTP/SSRTP received), muting ourselves, presenter commands, announcements, dialling out to phones, PSTN calling, call transfer, forwarding, call park, quality reports, emergency calls with location, team and delegate ringing, delegates and calls on behalf of the boss, meeting options in the running meeting | E911 rest (WLAN/LLDP identifiers), PSTN dial-in details |
+| M4 | done (tested-offline, tested-in-lab) | meetings: scheduling (create, list, change, cancel; options, presenters, static meeting), join (focus URI, meeting link), lobby, roster, conference audio via the A/V MCU (SRTP sent, SRTP/SSRTP received), muting ourselves, presenter commands, announcements, dialling out to phones, PSTN calling, call transfer, forwarding, call park, quality reports, emergency calls with location, team and delegate ringing, delegates and calls on behalf of the boss, meeting options in the running meeting | E911 rest (WLAN/LLDP identifiers), PSTN dial-in details |
 | M5 | in progress | H.264 UC RTP payload (`h264uc`), camera capture, H.264 encoding on the GPU or CPU and decoding (`video-ffmpeg`), video SDP (`sdp::video`), PLI/VSR (`rtp::feedback`), video core (`media::video`) and transport (`call-media`), 1:1 video calls (session and CLI), video in meetings, bandwidth estimation and rate adaptation (`media::rate`), picture control (function 31) | hardware decoding, 1:1 and conference video |
 | M6 – M7 | not started | building blocks only: PSOM/ABS/MPPC test vectors | everything else |
 
@@ -50,9 +50,9 @@ and pass offline tests; none is verified against a real server yet.
 
 | Core workflow | Works end to end? |
 |---|---|
-| Sign in automatically (discovery, authentication, registration) and sign out | built, tested-offline (NTLM only) |
-| See colleagues' presence and set your own | built, tested-offline |
-| Chat 1:1 and in a group | built, tested-offline |
-| Call a colleague with audio (incl. through the Edge server) | built, tested-offline (UDP loopback test, TCP relay against a TURN test server) |
+| Sign in automatically (discovery, authentication, registration) and sign out | built, tested-offline (NTLM only), sign-in tested-in-lab |
+| See colleagues' presence and set your own | built, tested-offline, own state tested-in-lab |
+| Chat 1:1 and in a group | built, tested-offline, tested-in-lab |
+| Call a colleague with audio (incl. through the Edge server) | built, tested-offline (UDP loopback test, TCP relay against a TURN test server), direct calls tested-in-lab |
 | Join a scheduled meeting with audio and see who is speaking | no |
 | Watch a colleague's shared screen | no |

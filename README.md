@@ -10,9 +10,9 @@ application, a ranked work list, and nothing copied from Microsoft products.
 
 > **Stage: M4 closed, M5 (video) next, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search, audio and video calls, meetings and telephony (transfer, forwarding, park, delegates,
-> emergency calls) exist as building blocks that pass offline tests (38 crates,
-> 428 tests) and can be used through the command-line tool `commscraft-cli`. **Nothing is marked as
-> verified against a real server**; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
+> emergency calls) exist as building blocks that pass offline tests and, in their main flows, runs in the owner's private lab (38 crates,
+> 428 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
+> for the owner's runs on authorized servers; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
 CommSCraft is not affiliated with, endorsed by or sponsored by Microsoft. "Skype for Business",
