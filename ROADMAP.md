@@ -2,7 +2,7 @@
 
 **Stage: M4 closed, M5 next** · M0 done · M1 and M2 built and tested offline · M3 built, waiting for the owner's audio runs · M4 closed (tested-offline)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (no decision records in the repository)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (logo assets and terms)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -46,6 +46,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-07 | Logo: PNG app icons, a simplified 16 px icon, a check on light and dark backgrounds, and terms of use (`assets/branding/BRAND-POLICY.md`) based on a review of the generator's terms and of case law on AI-generated logos. |
 | 2026-11-07 | Approved sounds (issues #82–#84): Pulse as music on hold, Beat Call as ringtone, Signal Message as notification – embedded, with `off`, a WAV file and a volume per sound; band-limited, seamless resampling; no music on hold into meetings; the user's mute does not silence it. Fix in every call: the audio playout ran slower than 50 frames per second (a schedule relative to "now"), so packets piled up and the speaker starved; the schedule is absolute now. |
 | 2026-11-07 | Security, issue #93: the H.264 decoder refuses pictures above 1920×1088 before allocating them (`max_pixels`); measured before the fix: a 47-byte stream announcing 8192×8192 raised the memory peak by more than 300 MB. |
 | 2026-11-07 | Security, issue #92: the soundpack workflow no longer has write access and no longer pushes to `main` – it renders read-only on pull requests and by hand and offers the result as an artifact; the CI now fails on any workflow with write permissions, `git push`, `pull_request_target` or persisted credentials (`scripts/check_workflows.py`). |

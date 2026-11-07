@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CommSCraft fox wearing a headset, simplified for small sizes">
+<title>CommSCraft – Fox with headset, small sizes</title>
+<rect width="64" height="64" rx="14" fill="#007F89"/>
+<!-- ears and head -->
+<path d="M12 6 L27 21 H37 L52 6 L53 36 Q48 54 32 60 Q16 54 11 36Z" fill="#FFF4DE"/>
+<!-- inner ears -->
+<path d="M17 15 L24 23 L17 27Z M47 15 L40 23 L47 27Z" fill="#10242A"/>
+<!-- eyes and nose -->
+<rect x="20" y="31" width="8" height="8" fill="#10242A"/>
+<rect x="36" y="31" width="8" height="8" fill="#10242A"/>
+<rect x="28" y="44" width="8" height="8" fill="#10242A"/>
+<!-- headset: ear cup and microphone -->
+<rect x="4" y="28" width="9" height="18" rx="3" fill="#10242A"/>
+<rect x="51" y="28" width="9" height="18" rx="3" fill="#10242A"/>
+</svg>

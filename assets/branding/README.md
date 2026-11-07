@@ -9,7 +9,10 @@ This directory contains the independent fox-with-headset identity for CommSCraft
 | [CommSCraft-flat-icon.svg](CommSCraft-flat-icon.svg) | Main flat icon: rounded teal background |
 | [CommSCraft-flat-transparent.svg](CommSCraft-flat-transparent.svg) | Vector logo with transparent background |
 | [CommSCraft-monochrome.svg](CommSCraft-monochrome.svg) | Monochrome/vector asset |
-| [export_icons.py](export_icons.py) | Generate common-size PNG app icons locally from the flat SVG |
+| [CommSCraft-small-icon.svg](CommSCraft-small-icon.svg) | Simplified fox for 16 px, where the flat icon loses its silhouette |
+| `CommSCraft-icon-{16,32,64,128,256,512,1024}.png` | App icons (16 px from the small icon, the others from the flat icon) |
+| [export_icons.py](export_icons.py) | Generates the PNG app icons from the SVGs |
+| [BRAND-POLICY.md](BRAND-POLICY.md) | Terms of use for the logo and the name |
 
 **Important:** The original detailed raster illustration and the high-resolution transparent raster are not yet committed here. They have been prepared outside GitHub; see [tracking issue #85](https://github.com/NelvinBHV/CommSCraft/issues/85). The vector designs are simplified derivatives, not pixel-identical replicas.
 
@@ -21,16 +24,18 @@ This directory contains the independent fox-with-headset identity for CommSCraft
 
 ## Export PNG app icons
 
-Install CairoSVG (for example, `python -m pip install cairosvg`) and run:
+With `rsvg-convert` (librsvg) installed, run:
 
 ```bash
-python assets/branding/export_icons.py
+python3 assets/branding/export_icons.py
 ```
 
-The script exports 16, 32, 64, 128, 256, 512 and 1024 px icons next to the SVG.
+## Backgrounds
+
+Checked on light and dark backgrounds. Use the flat icon on **dark** backgrounds: the transparent and the monochrome version are drawn with dark lines, which disappear there together with the sound waves. They are for light backgrounds only.
 
 ## Rights and usage
 
-Provenance: original logo artwork generated through ChatGPT for the project user. Do not assume that the source-code license automatically applies to these branding assets; maintainers should publish a separate explicit logo/brand use policy before release. AI-generated visual output is not automatically guaranteed to be exclusive or copyrightable.
+The terms are in [BRAND-POLICY.md](BRAND-POLICY.md). Provenance: original logo artwork generated through ChatGPT for the project user; the source-code license does not apply to these assets.
 
 These files are **not** copied from or endorsed by Microsoft.
