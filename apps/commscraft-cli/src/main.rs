@@ -57,6 +57,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)
           /follow N | /decline N (a transfer to a number or another domain)
           /videocall sip:URI (audio and video, camera COMMSCRAFT_CAMERA or /dev/video0)  /answervideo [N]
+          /contact add sip:URI [NAME] | remove sip:URI | move sip:URI GROUP …   /contactgroup add NAME | rename ID NAME | remove ID
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
@@ -1808,6 +1809,7 @@ fn interactive(
                                 .entry(c.uri.clone())
                                 .or_insert_with(|| (c.name.clone(), "?".into()));
                         }
+                        presence.retain(|uri, _| l.contacts.iter().any(|c| c.uri == *uri));
                         println!("* {} contacts", l.contacts.len());
                     }
                     E::Presence(p) => {
@@ -2333,7 +2335,34 @@ fn interactive(
                     for (uri, (name, state)) in &presence {
                         println!("  {state:<14} {uri:<40} {name}");
                     }
+                    if let Some(l) = engine.contact_list() {
+                        for g in &l.groups {
+                            let members: Vec<&str> = l
+                                .contacts
+                                .iter()
+                                .filter(|c| c.groups.contains(&g.id))
+                                .map(|c| c.uri.as_str())
+                                .collect();
+                            println!("  group {} {}: {}", g.id, g.name, members.join(" "));
+                        }
+                    }
                     None
+                }
+                "/contact" => {
+                    let edit = contact_command(&arg, engine.contact_list());
+                    if edit.is_none() {
+                        println!(
+                            "* /contact add sip:URI [NAME] | remove sip:URI | move sip:URI GROUP …"
+                        );
+                    }
+                    edit.map(C::EditContacts)
+                }
+                "/contactgroup" => {
+                    let edit = contact_group_command(&arg);
+                    if edit.is_none() {
+                        println!("* /contactgroup add NAME | rename ID NAME | remove ID");
+                    }
+                    edit.map(C::EditContacts)
                 }
                 "/status" => match commscraft_presence::UserStatus::parse(&arg) {
                     Some(s) => Some(C::SetStatus(s)),
@@ -3498,6 +3527,69 @@ fn audio_check() -> Result<(), String> {
     speaker.drain().map_err(|e| e.to_string())?;
     println!("done");
     Ok(())
+}
+
+use commscraft_presence::{ContactEdit, ContactList};
+
+/// `/contact add|remove|move …`: a change of the list; an entry's other values stay as they are.
+fn contact_command(arg: &str, list: Option<&ContactList>) -> Option<ContactEdit> {
+    let (action, rest) = arg.trim().split_once(' ')?;
+    let (uri, rest) = match rest.trim().split_once(' ') {
+        Some((u, r)) => (u, r.trim()),
+        None => (rest.trim(), ""),
+    };
+    if !uri.starts_with("sip:") {
+        return None;
+    }
+    let known = list.and_then(|l| l.contacts.iter().find(|c| c.uri == uri));
+    match action {
+        "add" => Some(ContactEdit::Set {
+            uri: uri.into(),
+            name: if rest.is_empty() {
+                known.map(|c| c.name.clone()).unwrap_or_default()
+            } else {
+                rest.into()
+            },
+            groups: known.map(|c| c.groups.clone()).unwrap_or_default(),
+            subscribed: known.is_none_or(|c| c.subscribed),
+        }),
+        "remove" if rest.is_empty() => Some(ContactEdit::Delete { uri: uri.into() }),
+        "move" => {
+            let known = known?;
+            let groups = rest
+                .split_whitespace()
+                .map(|g| g.parse().ok())
+                .collect::<Option<Vec<u32>>>()
+                .filter(|g| !g.is_empty())?;
+            Some(ContactEdit::Set {
+                uri: uri.into(),
+                name: known.name.clone(),
+                groups,
+                subscribed: known.subscribed,
+            })
+        }
+        _ => None,
+    }
+}
+
+/// `/contactgroup add|rename|remove …`.
+fn contact_group_command(arg: &str) -> Option<ContactEdit> {
+    let (action, rest) = arg.trim().split_once(' ')?;
+    let rest = rest.trim();
+    match action {
+        "add" => Some(ContactEdit::AddGroup { name: rest.into() }),
+        "rename" => {
+            let (id, name) = rest.split_once(' ')?;
+            Some(ContactEdit::RenameGroup {
+                id: id.parse().ok()?,
+                name: name.trim().into(),
+            })
+        }
+        "remove" => Some(ContactEdit::DeleteGroup {
+            id: rest.parse().ok()?,
+        }),
+        _ => None,
+    }
 }
 
 fn main() {

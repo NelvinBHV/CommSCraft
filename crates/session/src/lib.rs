@@ -258,6 +258,8 @@ pub enum Command {
         policy: sdp::Encryption,
     },
     /// Add or remove a delegate of ours (setDelegates, PR-21).
+    /// Changes the contact list (SIP-08): one change at a time.
+    EditContacts(pres::ContactEdit),
     SetDelegate {
         uri: String,
         add: bool,
@@ -542,6 +544,7 @@ enum Purpose {
     PublishStatus(pres::UserStatus),
     PublishRouting(Box<pres::Forwarding>),
     SetDelegate { uri: String, add: bool },
+    ContactEdit,
     Invite(ConversationId),
     Message(ConversationId),
     CreateConference(ConversationId),
@@ -627,6 +630,9 @@ pub struct Engine<R: Random> {
     calls: HashMap<CallId, call::Call>,
     /// Accepted transfers whose call the transferor already ended.
     left_transfers: HashMap<CallId, (transfer::Incoming, u64)>,
+    contact_list: Option<pres::ContactList>,
+    /// A contact list change is under way until the changed list arrives, at most until then.
+    contact_edit_until: Option<u64>,
     next_call: CallId,
 }
 
@@ -693,6 +699,8 @@ impl<R: Random> Engine<R> {
             media_relay_refresh_at: None,
             calls: HashMap::new(),
             left_transfers: HashMap::new(),
+            contact_list: None,
+            contact_edit_until: None,
             next_call: 1,
         }
     }
@@ -1168,24 +1176,8 @@ impl<R: Random> Engine<R> {
         };
         match kind {
             SubKind::ContactList => {
-                let Ok(body) = std::str::from_utf8(&m.body) else {
-                    return;
-                };
-                match pres::contact_document_kind(body) {
-                    pres::ContactDocument::Full => match pres::parse_contact_list(body) {
-                        Ok(list) => {
-                            let uris: Vec<String> =
-                                list.contacts.iter().map(|c| c.uri.clone()).collect();
-                            out.push(Output::Event(Event::ContactList(list)));
-                            self.replace_presence_subscriptions(uris, now, out);
-                        }
-                        Err(e) => out.push(Output::Event(Event::Notice(format!(
-                            "unusable contact list ({e:?})"
-                        )))),
-                    },
-                    // A change: fetch the full list again with a new subscription (MS-SIP §3.7.5.2).
-                    pres::ContactDocument::Delta => self.resubscribe_now(index, now, out),
-                    pres::ContactDocument::Other => {}
+                if let Ok(body) = std::str::from_utf8(&m.body) {
+                    self.on_contact_document(index, body, now, out);
                 }
             }
             SubKind::SelfRoaming => {
@@ -1750,6 +1742,7 @@ impl<R: Random> Engine<R> {
                 ))),
             },
             Command::SetDelegate { uri, add } => self.set_delegate(&uri, add, now, &mut out),
+            Command::EditContacts(edit) => self.edit_contacts(edit, now, &mut out),
             Command::VideoCall {
                 to,
                 local,
@@ -1847,6 +1840,7 @@ impl<R: Random> Engine<R> {
         let mut out = Vec::new();
         let events = self.reg.on_tick(now);
         self.on_registrar_events(events, now, &mut out);
+        self.contact_edit_tick(now, &mut out);
         if let Some(k) = &mut self.keepalive {
             if let Some(bytes) = k.on_tick(now) {
                 out.push(Output::SendRaw(bytes));
@@ -2069,6 +2063,7 @@ impl<R: Random> Engine<R> {
                 self.status_versions = self.status_versions.map(|v| v + 1);
                 out.push(Output::Event(Event::OwnStatus(s)));
             }
+            Purpose::ContactEdit => self.on_contact_edit_answered(resp, now, out),
             Purpose::SetDelegate { .. } => {
                 // §2.2.2.10.3: the 200 carries the complete delegate list.
                 if let Some(d) = std::str::from_utf8(&resp.body)
@@ -2189,6 +2184,7 @@ impl<R: Random> Engine<R> {
             Purpose::PublishRouting(_) => out.push(Output::Event(Event::Notice(format!(
                 "forwarding not set ({code})"
             )))),
+            Purpose::ContactEdit => self.on_contact_edit_failed(code, now, out),
             Purpose::SetDelegate { .. } => out.push(Output::Event(Event::Notice(format!(
                 "delegate not changed ({code})"
             )))),
@@ -2436,6 +2432,7 @@ impl<R: Random> Engine<R> {
 }
 
 mod call;
+mod contacts;
 mod emergency;
 mod group;
 pub mod media_control;

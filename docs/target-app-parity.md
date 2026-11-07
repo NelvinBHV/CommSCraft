@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (tested-in-lab status)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (contact list editing)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -35,7 +35,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 7 | Registration, GRUU, endpoint ID | MS-SIPREGE, MS-SIPRE | B | **lab**, tested-offline (REGISTER with GRUU, refresh, signed 301 redirect to the home pool, deregistration NOTIFY, version block, keep-alive: `register`, `sip-identity`) |
 | 8 | In-band provisioning | MS-SIPREGE | B\* | **lab**, tested-offline (SUBSCRIBE with piggyback, provisionGroupList, validated ServerConfiguration; used for the address book, conference and media relay URIs: `provisioning`, `xml`, `session`) |
 | 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | **lab**, tested-offline (endpoint and own state publication, long-lived batch subscriptions with NOTIFY, refresh and pool resubscribe: `presence`, `session`) |
-| 10 | Contact list (server) | MS-SIP, MS-PRES | B | parts tested-offline (read the contact list with a live subscription and delta updates: `presence`, `session`); adding/removing contacts and groups – |
+| 10 | Contact list (server) | MS-SIP, MS-PRES | B | **lab**, tested-offline (read the contact list with a live subscription and delta updates; add, change, move and remove contacts; add, rename and remove groups: `presence`, `session`, CLI `/contact`, `/contactgroup`) |
 | 11 | Contact list (Exchange unified contact store) | MS-PRES, MS-OXWSCOS, MS-OXWSPERS | B\* | – |
 | 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | – |
 | 13 | Offline address book | MS-ABS | B\* | – |
@@ -79,4 +79,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-11-01, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **13** tested-offline as a whole, **18** in parts, **19** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **26** of them also `tested-in-lab`
+**Totals (2026-11-01, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **14** tested-offline as a whole, **17** in parts, **19** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **27** of them also `tested-in-lab`

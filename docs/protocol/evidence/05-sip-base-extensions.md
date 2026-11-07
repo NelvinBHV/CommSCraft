@@ -22,3 +22,5 @@ Source: [MS-SIP] "Session Initiation Protocol Extensions", Windows package, edit
 
 ## Later finding (file 39)
 - O-SIP-1 **closed** (OB-03, normative: PR-50/PR-51).
+- Conflict inside [MS-SIP]: §3.7.4.4 (p. 44) calls group 1 the default group that the user MUST NOT create or delete, while the examples §4.8 and §4.9 (pp. 62–64) add and delete a group with ID 1. **Inference:** the client does not protect an ID itself and leaves the rule to the server.
+- Implementation (2026-11-07, `crates/presence`, `crates/session::contacts`, CLI `/contact`, `/contactgroup`): SIP-08 with the element order of §9.2–§9.5. **Inference (design):** a refused change is not repeated, the list is read again; entries with a `contactExtension` (PR-52) are not rewritten because this client does not keep it; no change while `ucsMode="migrated"` (PR-51).

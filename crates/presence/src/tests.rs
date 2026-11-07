@@ -549,3 +549,97 @@ fn delegates() {
         .contains("action=\"remove\"></delegate>"));
     assert!(set_delegate_body(1, "sip:x@y\"/><evil", true).is_err());
 }
+
+/// SIP-08: the elements of [MS-SIP] §4.6–§4.9 at the given delta; hostile input never reaches XML.
+#[test]
+fn contact_edits() {
+    let set = ContactEdit::Set {
+        uri: "sip:user4@contoso.com".into(),
+        name: "Buddy <1>".into(),
+        groups: vec![1, 3],
+        subscribed: true,
+    };
+    let body = contact_edit_body(&set, 12).unwrap();
+    assert!(
+        body.contains("<m:setContact xmlns:m=\"http://schemas.microsoft.com/winrtc/2002/11/sip\">")
+    );
+    assert!(body.contains(
+        "<m:displayName>Buddy &lt;1&gt;</m:displayName><m:groups>1 3</m:groups><m:subscribed>true</m:subscribed><m:URI>sip:user4@contoso.com</m:URI><m:externalURI/><m:deltaNum>12</m:deltaNum>"
+    ));
+    commscraft_xml::parse(&body, &commscraft_xml::Limits::default()).unwrap();
+    let body = contact_edit_body(&ContactEdit::DeleteGroup { id: 5 }, 17).unwrap();
+    assert!(body.contains("<m:deleteGroup "));
+    assert!(body.contains("<m:groupID>5</m:groupID><m:deltaNum>17</m:deltaNum>"));
+    let body = contact_edit_body(
+        &ContactEdit::AddGroup {
+            name: "Friends".into(),
+        },
+        16,
+    )
+    .unwrap();
+    assert!(body.contains("<m:name>Friends</m:name><m:externalURI/><m:deltaNum>16</m:deltaNum>"));
+    let rename = ContactEdit::RenameGroup {
+        id: 2,
+        name: "Team".into(),
+    };
+    assert!(contact_edit_body(&rename, 1)
+        .unwrap()
+        .contains("<m:modifyGroup "));
+    let delete = ContactEdit::Delete {
+        uri: "sip:a@b.c".into(),
+    };
+    assert!(contact_edit_body(&delete, 1)
+        .unwrap()
+        .contains("<m:URI>sip:a@b.c</m:URI><m:deltaNum>1<"));
+
+    let long = "x".repeat(257);
+    for bad in [
+        ContactEdit::Delete {
+            uri: "sip:a@b\r\nVia: x".into(),
+        },
+        ContactEdit::Delete {
+            uri: "tel:+49".into(),
+        },
+        ContactEdit::AddGroup { name: " ".into() },
+        ContactEdit::AddGroup { name: long.clone() },
+        ContactEdit::AddGroup {
+            name: "a\nb".into(),
+        },
+        ContactEdit::RenameGroup {
+            id: 64,
+            name: "x".into(),
+        },
+        ContactEdit::RenameGroup {
+            id: 0,
+            name: "x".into(),
+        },
+        ContactEdit::DeleteGroup { id: 64 },
+        ContactEdit::Set {
+            uri: "sip:a@b.c".into(),
+            name: long,
+            groups: vec![],
+            subscribed: true,
+        },
+        ContactEdit::Set {
+            uri: "sip:a@b.c".into(),
+            name: String::new(),
+            groups: vec![64],
+            subscribed: true,
+        },
+        ContactEdit::Set {
+            uri: "sip:a@b.c".into(),
+            name: String::new(),
+            groups: vec![1; 64],
+            subscribed: true,
+        },
+    ] {
+        assert!(contact_edit_body(&bad, 1).is_err(), "{bad:?}");
+    }
+
+    let list = parse_contact_list(
+        r#"<contactList deltaNum="3"><contact uri="sip:a@b.c" subscribed="false"/><contact uri="sip:d@b.c"><contactExtension><phone/></contactExtension></contact></contactList>"#,
+    )
+    .unwrap();
+    assert!(!list.contacts[0].subscribed && !list.contacts[0].extension);
+    assert!(list.contacts[1].subscribed && list.contacts[1].extension);
+}
