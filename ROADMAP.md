@@ -2,7 +2,7 @@
 
 **Stage: M4 closed, M5 next** · M0 done · M1 and M2 built and tested offline · M3 built, waiting for the owner's audio runs · M4 closed by owner decision (T-04, tested-offline)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (issue #92: read-only workflows)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (issues #92, #93: read-only workflows, decoder picture limit)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (23 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **38 crates + 1 app** (`commscraft-cli`), **419 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **38 crates + 1 app** (`commscraft-cli`), **420 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Owner decisions | **all taken** (D-01 … D-11; [`docs/decisions.md`](docs/decisions.md)) | measured |
 | Interop test environment | **private owner lab** (D-08, since 2026-10-31): the agent may test there; results are not published, public statuses stay `tested-offline` | owner decision |
 
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-07 | Security, issue #93: the H.264 decoder refuses pictures above 1920×1088 before allocating them (`max_pixels`); measured before the fix: a 47-byte stream announcing 8192×8192 raised the memory peak by more than 300 MB. |
 | 2026-11-07 | Security, issue #92: the soundpack workflow no longer has write access and no longer pushes to `main` – it renders read-only on pull requests and by hand and offers the result as an artifact; the CI now fails on any workflow with write permissions, `git push`, `pull_request_target` or persisted credentials (`scripts/check_workflows.py`). |
 | 2026-11-01 | M5: at most 15 fps below 640x360 (BW-18, Microsoft Learn); evidence that the Windows client encodes and decodes video in hardware (D-13 confirmed, D-14 supported). |
 | 2026-11-01 | Alert sounds and music on hold (issues #82–#84): new crate `tones` (bounded PCM WAV reader, resampling, level matching, looping, own generated ringtone and notification sound); the CLI rings for incoming calls, plays a rate-limited notification for messages and streams music on hold (sendonly + `a=feature:MoH`, SD-07) from a WAV file of the user's – no third-party sound is bundled until its rights are cleared (research in the issues); fix: the jitter buffer starts over after a pause of the peer instead of dropping its resumed packets; `ATTRIBUTION.md` added (logo SVGs, generated tones, proposals). |
