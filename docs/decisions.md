@@ -1,6 +1,6 @@
 # Decisions
 
-> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-11-01 · **Change:** minor (D-13 evidence, D-14 evidence)
+> **Last reviewed:** 2026-10-26 · **Last updated:** 2026-11-07 · **Change:** minor (D-15 proposed: licence of the sound pack)
 
 Decisions that belong to the project owner. Agents propose, the owner decides; a decision is
 recorded here with date and reason before work depends on it.
@@ -10,6 +10,7 @@ recorded here with date and reason before work depends on it.
 | ID | Question | Proposal | Why it matters |
 |---|---|---|---|
 | D-14 | Hardware video decoding (VA-API) – extend the one unsafe module of D-13 (`video-ffmpeg::hw`) from encoding to decoding: a VA-API device for the decoder, decoded surfaces downloaded to NV12 through FFmpeg's hardware context, the same SAFETY rules, software decoding as fallback | Allow it under the D-13 rules, or keep decoding on the CPU | D-13 allows `unsafe` only for encoding; decoding at VGA costs little CPU, at 720p and with several streams in meetings it matters; the Windows client decodes in hardware through DXVA (BW-18) |
+| D-15 | Licence of the approved sound pack (#82–#84): it is rendered with the SoundFont TimGM6mb.sf2, packaged under GPL-2.0, and now embedded in the program, whose code is MIT OR Apache-2.0. Whether rendered audio is covered by the SoundFont's licence could not be settled from the available sources | State the sounds' licence in `ATTRIBUTION.md` (for example the sounds as a separately licensed asset, taking legal advice if needed), or re-render them with a SoundFont under a permissive licence (then listen again) | The issues ask for distribution-ready audio; there are no releases yet, so nothing is decided by this for now |
 
 ## Taken
 

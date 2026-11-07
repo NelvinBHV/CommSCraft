@@ -41,6 +41,8 @@ jobs:
         run: |
           python3 -I scripts/collect_open_points.py
           git diff --exit-code docs/protocol/conflicts-gaps-open-points.md
+      - name: Sound files match their checksums
+        run: cd assets/audio && sha256sum -c --quiet SHA256SUMS.txt
       - name: Workflows cannot change the repository
         run: python3 -I scripts/check_workflows.py
       - name: No specification documents or captures committed

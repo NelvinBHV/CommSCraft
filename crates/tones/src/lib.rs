@@ -1,8 +1,9 @@
-//! Alert tones, ringing and music on hold (issues #82–#84): a bounded reader for PCM WAV files,
-//! conversion to mono at the codec's rate, level matching, seamless looping, and tones generated
-//! here – so the client needs no third-party sound file until one is cleared for distribution.
+//! The sounds of the client (issues #82–#84): the owner-approved sound pack embedded in the
+//! program (`assets/audio`: Pulse, Beat Call, Signal Message), a bounded reader for PCM WAV
+//! files – the embedded sounds and a user's own –, band-limited resampling, level matching and
+//! seamless looping.
 //!
-//! Sans-I/O: the caller reads the file (with a size limit) and plays the samples.
+//! Sans-I/O: the caller reads a user's file (with a size limit) and plays the samples.
 //!
 //! Security by design: a sound file is untrusted input – the reader walks a bounded number of
 //! chunks with checked lengths, accepts only PCM with 1–2 channels, 8–48 kHz and 16 or 24 bits,
@@ -162,25 +163,87 @@ pub fn parse_wav(file: &[u8]) -> Result<Pcm, Error> {
     Ok(Pcm { rate, samples })
 }
 
-/// The sound at another rate (linear interpolation; enough for alerts and hold music over a
-/// telephone codec).
-pub fn resample(pcm: &Pcm, to: u32) -> Vec<i16> {
-    if pcm.rate == to || pcm.samples.is_empty() || to == 0 {
+/// Zero crossings of the windowed sinc on each side, and the phases of its table.
+const SINC_ZEROS: usize = 16;
+const SINC_PHASES: usize = 256;
+
+fn sinc(x: f64) -> f64 {
+    if x.abs() < 1e-9 {
+        1.0
+    } else {
+        (PI * x).sin() / (PI * x)
+    }
+}
+
+/// Band-limited resampling with a Hann-windowed sinc from a table of phases: nothing above the
+/// lower Nyquist frequency folds back into the sound. `cyclic`: the sound repeats, so the filter
+/// reads across the ends and the output has an exact whole number of samples per cycle – one
+/// repetition follows the other without a gap or a drift against its own beat.
+fn resampled(pcm: &Pcm, to: u32, cyclic: bool) -> Vec<i16> {
+    let n_in = pcm.samples.len();
+    if pcm.rate == to || n_in == 0 || to == 0 || pcm.rate == 0 {
         return pcm.samples.clone();
     }
-    let out_len = (pcm.samples.len() as u64 * u64::from(to) / u64::from(pcm.rate)) as usize;
-    let step = f64::from(pcm.rate) / f64::from(to);
-    let last = pcm.samples.len() - 1;
-    (0..out_len)
+    let n_out =
+        ((n_in as u64 * u64::from(to) + u64::from(pcm.rate) / 2) / u64::from(pcm.rate)).max(1);
+    let step = n_in as f64 / n_out as f64;
+    // Against aliasing the cut-off follows the lower of the two rates.
+    let cutoff = (1.0 / step).min(1.0);
+    let half = ((SINC_ZEROS as f64 / cutoff).ceil() as usize).max(1);
+    let width = half as f64;
+    let taps = 2 * half;
+    let mut table = vec![0f64; (SINC_PHASES + 1) * taps];
+    for (phase, row) in table.chunks_exact_mut(taps).enumerate() {
+        let frac = phase as f64 / SINC_PHASES as f64;
+        for (t, h) in row.iter_mut().enumerate() {
+            // The distance of tap t from the sampling point.
+            let x = t as f64 - (half as f64 - 1.0) - frac;
+            let window = 0.5 + 0.5 * (PI * (x / width).clamp(-1.0, 1.0)).cos();
+            *h = cutoff * sinc(cutoff * x) * window;
+        }
+    }
+    let n = n_in as i64;
+    (0..n_out)
         .map(|i| {
             let pos = i as f64 * step;
-            let k = (pos as usize).min(last);
-            let frac = pos - k as f64;
-            let a = f64::from(pcm.samples.get(k).copied().unwrap_or(0));
-            let b = f64::from(pcm.samples.get((k + 1).min(last)).copied().unwrap_or(0));
-            (a + (b - a) * frac) as i16
+            let whole = pos.floor();
+            let phase = ((pos - whole) * SINC_PHASES as f64).round() as usize;
+            let row = table
+                .get(phase * taps..(phase + 1) * taps)
+                .unwrap_or_default();
+            let first = whole as i64 - (half as i64 - 1);
+            let mut sum = 0.0;
+            for (t, h) in row.iter().enumerate() {
+                let k = first + t as i64;
+                let index = if cyclic { k.rem_euclid(n) } else { k };
+                if let Some(s) = usize::try_from(index).ok().and_then(|x| pcm.samples.get(x)) {
+                    sum += f64::from(*s) * h;
+                }
+            }
+            sum.round().clamp(-32768.0, 32767.0) as i16
         })
         .collect()
+}
+
+/// A sound played once, at another rate.
+pub fn resample(pcm: &Pcm, to: u32) -> Vec<i16> {
+    resampled(pcm, to, false)
+}
+
+/// A repeating sound at another rate: one cycle of a whole number of samples.
+pub fn resample_loop(pcm: &Pcm, to: u32) -> Vec<i16> {
+    resampled(pcm, to, true)
+}
+
+/// Scales the samples to a volume in percent (at most 100).
+pub fn set_volume(samples: &mut [i16], percent: u32) {
+    let percent = i32::try_from(percent.min(100)).unwrap_or(100);
+    if percent == 100 {
+        return;
+    }
+    for s in samples.iter_mut() {
+        *s = (i32::from(*s) * percent / 100) as i16;
+    }
 }
 
 /// Scales the samples so that the peak is about −3 dBFS (quiet files get louder, loud ones
@@ -200,8 +263,8 @@ pub fn normalize(samples: &mut [i16]) {
     }
 }
 
-/// Plays samples in frames, from the start again at the end. A file gets a short fade in and
-/// out so that the loop boundary does not click.
+/// Plays samples in frames, from the start again at the end. A user's file gets a short fade in
+/// and out so that the loop boundary does not click.
 #[derive(Debug, Clone)]
 pub struct Looper {
     samples: Vec<i16>,
@@ -209,7 +272,8 @@ pub struct Looper {
 }
 
 impl Looper {
-    /// `fade`: fade the ends in and out (for files; generated tones are silent at the ends).
+    /// `fade`: fade the ends in and out (for a user's file; the sound pack's loops join by
+    /// themselves).
     pub fn new(mut samples: Vec<i16>, rate: u32, fade: bool) -> Looper {
         if fade {
             let n = (rate as usize * LOOP_FADE_MS / 1000).min(samples.len() / 2);
@@ -245,43 +309,32 @@ impl Looper {
     }
 }
 
-fn tone(rate: u32, ms: u32, hz: &[f64], level: f64) -> Vec<i16> {
-    let n = (rate as usize * ms as usize) / 1000;
-    let attack = (rate as usize * 5 / 1000).max(1);
-    (0..n)
-        .map(|i| {
-            let t = i as f64 / f64::from(rate);
-            let v: f64 = hz.iter().map(|f| (2.0 * PI * f * t).sin()).sum::<f64>() / hz.len() as f64;
-            // A short attack and an exponential decay: a soft, bell-like note.
-            let env = (i as f64 / attack as f64).min(1.0) * (-3.0 * i as f64 / n as f64).exp();
-            (v * env * level) as i16
-        })
-        .collect()
-}
+/// The owner-approved sound pack (issues #82–#84, `assets/audio/README.md`), embedded so that
+/// the program needs no installed files; the CI checks the files against `SHA256SUMS.txt`.
+/// The masters are played as mastered: not level-matched, the loops without a fade (they were
+/// made to join without a jump).
+pub mod soundpack {
+    use super::{parse_wav, Error, Pcm};
 
-fn silence(rate: u32, ms: u32) -> Vec<i16> {
-    vec![0; (rate as usize * ms as usize) / 1000]
-}
+    const PULSE: &[u8] = include_bytes!("../../../assets/audio/CommsCraft-Pulse-hold-loop.wav");
+    const BEAT_CALL: &[u8] = include_bytes!("../../../assets/audio/CommsCraft-Beat-call-loop.wav");
+    const SIGNAL_MESSAGE: &[u8] =
+        include_bytes!("../../../assets/audio/CommsCraft-Signal-message-unchanged.wav");
 
-/// Our own ringtone (generated here, no third-party material): two short rising chimes, then a
-/// pause – one cycle of 3 s, meant to be looped while a call is alerting.
-pub fn ringtone(rate: u32) -> Vec<i16> {
-    let mut s = Vec::new();
-    for _ in 0..2 {
-        s.extend(tone(rate, 180, &[659.25, 1318.5], PEAK));
-        s.extend(tone(rate, 180, &[783.99, 1567.98], PEAK));
-        s.extend(tone(rate, 260, &[987.77, 1975.5], PEAK));
-        s.extend(silence(rate, 120));
+    /// Music on hold: Pulse V5, a loop of 24 bars at 112 BPM.
+    pub fn pulse() -> Result<Pcm, Error> {
+        parse_wav(PULSE)
     }
-    s.extend(silence(rate, 3000u32.saturating_sub(2 * 740)));
-    s
-}
 
-/// Our own notification sound (generated here): two short notes, played once.
-pub fn notification(rate: u32) -> Vec<i16> {
-    let mut s = tone(rate, 110, &[880.0], PEAK * 0.8);
-    s.extend(tone(rate, 220, &[1318.5], PEAK * 0.8));
-    s
+    /// Ringtone: Beat Call V5, a loop of 2 bars at 112 BPM.
+    pub fn beat_call() -> Result<Pcm, Error> {
+        parse_wav(BEAT_CALL)
+    }
+
+    /// Notification sound: Signal Message V4, played once.
+    pub fn signal_message() -> Result<Pcm, Error> {
+        parse_wav(SIGNAL_MESSAGE)
+    }
 }
 
 #[cfg(test)]

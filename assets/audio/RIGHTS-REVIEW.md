@@ -1,5 +1,7 @@
 # Third-party UI sound rights review — 2026-11-01
 
+> **Superseded:** the sounds reviewed here were not adopted; the owner chose the CommSCraft sound pack (`README.md`, issues #82–#84). Kept as a record.
+
 This document records source-based research for two **proposed** CommSCraft sounds. It is **not** a certificate from GEMA, legal counsel, Freesound or the creators. The actual source audio files have **not** been downloaded, auditioned, hashed or bundled in this change.
 
 ## Ringtone — issue #83

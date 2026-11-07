@@ -48,7 +48,7 @@ fn dev(e: alsa::Error) -> Error {
 pub struct Config {
     /// ALSA device name; `default` follows the system (PipeWire on current desktops).
     pub device: String,
-    /// 8000 (G.711) or 16000 (G.722).
+    /// 8000 (G.711), 16000 (G.722) or 44100 (the alert sounds' master rate).
     pub rate: u32,
     /// Frame duration in milliseconds (RTP packet time, [MS-RTP] §2.2.1: 20 ms usual).
     pub frame_ms: u32,
@@ -75,8 +75,8 @@ impl Config {
         if !name_ok {
             return Err(Error::BadConfig("device name"));
         }
-        if !matches!(self.rate, 8000 | 16000) {
-            return Err(Error::BadConfig("rate must be 8000 or 16000"));
+        if !matches!(self.rate, 8000 | 16000 | 44100) {
+            return Err(Error::BadConfig("rate must be 8000, 16000 or 44100"));
         }
         if !matches!(self.frame_ms, 10 | 20 | 30 | 40 | 60) {
             return Err(Error::BadConfig("frame must be 10, 20, 30, 40 or 60 ms"));
@@ -236,7 +236,7 @@ mod tests {
                 ..Config::default()
             },
             Config {
-                rate: 44100,
+                rate: 48000,
                 ..Config::default()
             },
             Config {

@@ -1463,6 +1463,7 @@ fn interactive(
     let mut ready_video: BTreeMap<u32, Box<commscraft_sdp::video::VideoLocal>> = BTreeMap::new();
     let camera = std::env::var("COMMSCRAFT_CAMERA").unwrap_or_else(|_| "/dev/video0".into());
     // Ringing, notification sound and music on hold (issues #82–#84).
+    let mut meeting_calls: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
     let (mut cues, notices) = cues::Cues::from_env();
     for n in notices {
         println!("* {}", term::clean(&n));
@@ -1777,6 +1778,7 @@ fn interactive(
                     }
                     E::CallEnded { call, status } => {
                         cues.stop_ring(call);
+                        meeting_calls.remove(&call);
                         println!("* call {call} ended ({status})");
                         if let Some(v) = video_of_call.remove(&call) {
                             if let Some(h) = video_handles.remove(&v) {
@@ -2008,6 +2010,7 @@ fn interactive(
                         }
                     }
                     E::ConferenceAudio { conversation, call } => {
+                        meeting_calls.insert(call);
                         if let Some((vid, _)) = conf_video.get(&conversation) {
                             video_of_call.insert(call, *vid);
                         }
@@ -2796,11 +2799,10 @@ fn interactive(
                 "/hold" | "/resume" => match current_call {
                     Some(call) => {
                         let hold = cmd == "/hold";
+                        let music = cues.hold_music(meeting_calls.contains(&call));
+                        let with_music = music.is_some();
                         if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
-                            let _ = h.tx.send(calls::ToMedia::Hold {
-                                hold,
-                                music: cues.hold_music(),
-                            });
+                            let _ = h.tx.send(calls::ToMedia::Hold { hold, music });
                         }
                         if let Some(h) = video_of_call.get(&call).and_then(|v| video_handles.get(v))
                         {
@@ -2809,7 +2811,7 @@ fn interactive(
                         Some(C::Hold {
                             call,
                             hold,
-                            music: cues.hold_music().is_some(),
+                            music: with_music,
                         })
                     }
                     None => {

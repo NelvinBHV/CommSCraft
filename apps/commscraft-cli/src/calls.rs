@@ -38,7 +38,7 @@ pub enum ToMedia {
     /// hold (SD-07).
     Hold {
         hold: bool,
-        music: Option<std::sync::Arc<commscraft_tones::Pcm>>,
+        music: Option<crate::cues::Sound>,
     },
     Stop,
 }
@@ -173,7 +173,7 @@ fn run(
     }
     device.rate = media.sample_rate();
     let rate = device.rate;
-    let mut hold_music: Option<commscraft_tones::Looper> = None;
+    let mut hold_media = crate::cues::HoldMedia::default();
     // The final offer (IC-07) is a re-INVITE: only once the call is answered.
     let mut answered = !early;
     let mut selected_early = false;
@@ -183,7 +183,7 @@ fn run(
     spawn_capture(device.clone(), cap_tx, stop.clone(), events.clone(), id);
     spawn_playback(device, play_rx, stop.clone(), events.clone(), id);
 
-    let mut next_frame = now_ms();
+    let mut playout_clock = FrameClock::new(now_ms(), 20);
     let mut final_sent = false;
     let mut dtmf: std::collections::VecDeque<char> = std::collections::VecDeque::new();
     loop {
@@ -223,13 +223,15 @@ fn run(
                     dtmf.push_back(d);
                 }
             }
-            Ok(ToMedia::Mute(m)) => media.set_muted(m),
+            Ok(ToMedia::Mute(m)) => {
+                hold_media.set_user_muted(m);
+                media.set_muted(hold_media.muted());
+            }
             Ok(ToMedia::Hold { hold, music }) => {
+                hold_media.set_hold(hold, music.as_ref(), rate);
                 media.set_hold(hold);
-                media.set_hold_music(hold && music.is_some());
-                hold_music = music
-                    .filter(|_| hold)
-                    .map(|m| crate::cues::hold_looper(&m, rate));
+                media.set_hold_music(hold_media.has_music());
+                media.set_muted(hold_media.muted());
             }
             Err(mpsc::TryRecvError::Empty) => {}
         }
@@ -255,14 +257,10 @@ fn run(
             }
         }
         while let Ok(frame) = cap_rx.try_recv() {
-            // The microphone paces the frames; while we hold with music, the music is sent.
-            match hold_music.as_mut() {
-                Some(m) => media.send_frame(&m.next_frame(frame.len()), now),
-                None => media.send_frame(&frame, now),
-            }
+            // The microphone paces the frames; while we hold with music, only the music is sent.
+            media.send_frame(&hold_media.frame(&frame), now);
         }
-        if now >= next_frame {
-            next_frame = now + 20;
+        while playout_clock.due(now) {
             // Bounded: if the speaker falls behind, the frame is dropped.
             let _ = play_tx.try_send(media.playout());
         }
@@ -323,6 +321,40 @@ pub fn audio_line(q: &cm::QualitySnapshot) -> commscraft_qoe::AudioLine {
     }
 }
 
+/// The rhythm of the frames: an absolute schedule, so that the frames keep their rate however
+/// late the loop looks at the clock (a schedule relative to "now" would run slow by the loop's
+/// lateness and let the peer's packets pile up while the speaker starves). Lateness is caught up
+/// frame by frame; after a real stall it starts over instead of bursting.
+#[derive(Debug, Clone, Copy)]
+struct FrameClock {
+    next: u64,
+    period: u64,
+}
+
+/// Further behind than this (milliseconds), the clock starts over.
+const MAX_CATCH_UP_MS: u64 = 200;
+
+impl FrameClock {
+    fn new(now: u64, period: u64) -> FrameClock {
+        FrameClock {
+            next: now,
+            period: period.max(1),
+        }
+    }
+
+    /// True for each frame due at `now`.
+    fn due(&mut self, now: u64) -> bool {
+        if now < self.next {
+            return false;
+        }
+        if now - self.next > MAX_CATCH_UP_MS {
+            self.next = now;
+        }
+        self.next += self.period;
+        true
+    }
+}
+
 fn spawn_capture(
     device: alsa::Config,
     tx: SyncSender<Vec<i16>>,
@@ -355,10 +387,12 @@ fn spawn_capture(
         // Without a microphone the call goes on: silence in the packet rhythm keeps the media
         // flowing for the peer (the speaker side is unaffected).
         let silence = silence_frame(&device);
-        let pace = Duration::from_millis(u64::from(device.frame_ms.max(1)));
+        let mut clock = FrameClock::new(now_ms(), u64::from(device.frame_ms.max(1)));
         while !stop.load(Ordering::Relaxed) {
-            let _ = tx.try_send(silence.clone());
-            std::thread::sleep(pace);
+            while clock.due(now_ms()) {
+                let _ = tx.try_send(silence.clone());
+            }
+            std::thread::sleep(Duration::from_millis(2));
         }
     });
 }
@@ -458,6 +492,40 @@ pub fn bandwidth_config(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A loop that looks at the clock every 4 ms still gets exactly 50 frames per second – a
+    /// schedule relative to "now" would give 20–24 ms per frame, and the peer's packets would
+    /// pile up while the speaker starves.
+    #[test]
+    fn frames_keep_their_rate() {
+        let mut c = FrameClock::new(1000, 20);
+        let mut frames = 0;
+        for now in (1000..11_000).step_by(4) {
+            while c.due(now) {
+                frames += 1;
+            }
+        }
+        assert_eq!(frames, 500);
+        // Lateness is caught up …
+        let mut c = FrameClock::new(0, 20);
+        assert!(c.due(0));
+        let mut caught = 0;
+        while c.due(100) {
+            caught += 1;
+        }
+        assert_eq!(caught, 5);
+        assert!(!c.due(100));
+        // … but after a stall it starts over instead of bursting.
+        let mut burst = 0;
+        while c.due(10_000) {
+            burst += 1;
+        }
+        assert_eq!(burst, 1);
+        assert!(!c.due(10_019));
+        assert!(c.due(10_020));
+        // A clock that goes back gives nothing, it does not panic.
+        assert!(!c.due(5));
+    }
 
     #[test]
     fn bandwidth_config_rules() {

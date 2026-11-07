@@ -1,11 +1,11 @@
 # Attribution and provenance of assets
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** new (assets register)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (approved sound pack)
 
 Every non-code asset of CommSCraft – images, icons, sounds, fonts – has a row here, added in the
 same commit as the asset (rule in `AGENTS.md` / `CLAUDE.md`). No asset is taken from Microsoft
-products. Third-party sounds proposed in issues #82–#84 are **not** bundled until their licence
-and collecting-society (GEMA) status are documented and the owner has cleared them.
+products. The third-party sounds first proposed in issues #82–#84 (Starlight, Simple ringtone, Magical
+UI Selection Stinger) were superseded by the owner's own sound pack and are not bundled.
 
 ## Images and icons
 
@@ -17,16 +17,12 @@ and collecting-society (GEMA) status are documented and the owner has cleared th
 
 ## Sounds
 
-| Sound | Origin | Licence / terms |
-|---|---|---|
-| Built-in ringtone (`commscraft_tones::ringtone`) | Generated at run time by CommSCraft's own code (sine tones with an envelope); no recording, no third-party material | The project's licence (part of the source code) |
-| Built-in notification sound (`commscraft_tones::notification`) | as above | as above |
-| Music on hold | None bundled; off unless the user names a WAV file (`COMMSCRAFT_HOLD_MUSIC`) | The user's own file |
+The owner-approved CommSCraft sound pack (issues #82–#84, `assets/audio/README.md`). The WAV files are embedded in the program; Opus and MP3 are kept in the repository only.
 
-## Proposed, not bundled
+| Sound | File | SHA-256 | Origin | Licence / terms |
+|---|---|---|---|---|
+| Pulse V5 (music on hold) | `assets/audio/CommsCraft-Pulse-hold-loop.wav` | `61004785a19df7fdfcd001ff0cf28d930b78047f721b982eaeaf534f8f7a5a86` | Composed as a CommSCraft sound concept for the owner, rendered by `assets/audio/generate_soundpack.py` with FluidSynth; instrument timbres from TimGM6mb.sf2 (Tim Brechbill and contributors; packaged under GPL-2.0) | Owner decision D-15 pending: the licence of audio rendered with a GPL-2.0 SoundFont; the source-code licence is not assumed to apply |
+| Beat Call V5 (ringtone) | `assets/audio/CommsCraft-Beat-call-loop.wav` | `96cc154c5e93533385cc5686f949dc8c3094f1bbf46bc35cbba44ccbedee4af8` | as above | as above |
+| Signal Message V4 (notification) | `assets/audio/CommsCraft-Signal-message-unchanged.wav` | `419cbcde4f89123719b5f7f67e21447a5728c3ec016b491452f6b36dd824a86c` | as above | as above |
 
-| Proposal | Licence found (2026-11-01) | Open before bundling |
-|---|---|---|
-| "Starlight" – Ronald Kah (issue #82) | CC BY 4.0 linked, with extra wishes (no sale, excluded uses) | written confirmation, GEMA status |
-| "Simple ringtone" – TheZero, Freesound 273540 (issue #83) | CC0 1.0 | GEMA status |
-| "Magical UI Selection Stinger" – TommasoMotteran, Freesound 875968 (issue #84) | CC BY 4.0 | GEMA status, attribution text |
+The Opus and MP3 versions are listed in `assets/audio/SHA256SUMS.txt`; the CI checks all of them. A user's own sound (`COMMSCRAFT_RINGTONE`, `COMMSCRAFT_NOTIFY_SOUND`, `COMMSCRAFT_HOLD_MUSIC`) is not distributed with the program.
