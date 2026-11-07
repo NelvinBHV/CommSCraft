@@ -3867,9 +3867,9 @@ fn privacy_and_blocking() {
         m.push_header("Via", "SIP/2.0/TLS 192.0.2.1;branch=z9hG4bKx");
         m
     };
-    assert!(e.from_blocked_user(&invite("sip:BOB@contoso.com;x=1")));
-    assert!(e.from_blocked_user(&invite("sip:anyone@spam.example")));
-    assert!(!e.from_blocked_user(&invite("sip:carol@contoso.com")));
+    assert!(e.invite_is_blocked(&invite("sip:BOB@contoso.com;x=1")));
+    assert!(e.invite_is_blocked(&invite("sip:anyone@spam.example")));
+    assert!(!e.invite_is_blocked(&invite("sip:carol@contoso.com")));
     let mut out = Vec::new();
     e.on_invite(&invite("sip:bob@contoso.com"), NOW, &mut out);
     assert_eq!(sends(&out)[0].status_code(), Some(480));

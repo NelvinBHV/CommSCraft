@@ -122,7 +122,7 @@ impl<R: Random> Engine<R> {
     }
 
     /// Whether an INVITE comes from a member of the Blocked Contacts container, by user or domain.
-    pub(crate) fn from_blocked_user(&self, req: &Message) -> bool {
+    pub(crate) fn invite_is_blocked(&self, req: &Message) -> bool {
         let Some(blocked) = self
             .containers
             .as_ref()

@@ -1461,7 +1461,7 @@ impl<R: Random> Engine<R> {
 
     /// An INVITE of a peer (out of dialog): accept IM sessions, refuse everything else.
     fn on_invite(&mut self, req: &Message, now: u64, out: &mut Vec<Output>) {
-        if self.from_blocked_user(req) {
+        if self.invite_is_blocked(req) {
             // The same answer as the server's block flag ([MS-SIPRE] §3.9.5.2, step 1).
             let r = response_to(req, 480, "Temporarily Unavailable");
             self.send_plain(r, now, out);
