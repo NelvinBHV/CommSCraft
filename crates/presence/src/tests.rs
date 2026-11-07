@@ -158,6 +158,7 @@ fn batch_request_body() {
         "sip:alice@contoso.com",
         &["sip:john@contoso.com".into(), "bob@contoso.com".into()],
         1177624,
+        false,
     )
     .unwrap();
     let root = commscraft_xml::parse(&b, &Limits::default()).unwrap();
@@ -179,14 +180,14 @@ fn batch_request_body() {
         .collect();
     assert_eq!(cats, CATEGORIES);
     assert_eq!(
-        batch_body("sip:a@b.c", &["sip:x@y.z\"/><evil/>".into()], 1),
+        batch_body("sip:a@b.c", &["sip:x@y.z\"/><evil/>".into()], 1, false),
         Err(Error::UnsafeUri)
     );
     let too_many: Vec<String> = (0..=MAX_BATCH)
         .map(|i| format!("sip:u{i}@contoso.com"))
         .collect();
     assert_eq!(
-        batch_body("sip:a@b.c", &too_many, 1),
+        batch_body("sip:a@b.c", &too_many, 1, false),
         Err(Error::TooManyResources)
     );
     let mut m = Message::request("SUBSCRIBE", "sip:alice@contoso.com");
@@ -483,7 +484,7 @@ fn self_routing() {
     );
     assert_eq!(
         String::from_utf8_lossy(&m.body),
-        "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/><roaming type=\"containers\"/><roamingEx xmlns=\"http://schemas.microsoft.com/2007/09/sip/roaming-self-ex\" type=\"delegates\"/></roamingList>"
+        "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/><roaming type=\"containers\"/><roaming type=\"subscribers\"/><roamingEx xmlns=\"http://schemas.microsoft.com/2007/09/sip/roaming-self-ex\" type=\"delegates\"/></roamingList>"
     );
     let routing = "<routing xmlns=\"http://schemas.microsoft.com/02/2006/sip/routing\" name=\"rtcdefault\" version=\"2\"><preamble><list name=\"forwardto\"><target uri=\"sip:carol@contoso.com\"/></list><list name=\"team\"><target uri=\"sip:alice@contoso.com\"/><target uri=\"sip:bob2@contoso.com\"/></list><flags name=\"clientflags\" value=\"enablecf team_ring future_flag\"/><wait name=\"user\" seconds=\"12\"/><wait name=\"team2\" seconds=\"8\"/><wait name=\"other\" seconds=\"1\"/></preamble></routing>";
     let doc = |routing: &str| {
@@ -701,4 +702,24 @@ fn privacy_relationships() {
         Relationship::parse("family").map(Relationship::container),
         Some(400)
     );
+}
+
+/// PR-18, PR-19: the context in the subscription, the list of subscribers and the acknowledgement.
+#[test]
+fn new_subscribers() {
+    let b = batch_body("sip:a@b.c", &["sip:x@y.z".into()], 1, true).unwrap();
+    assert!(b.contains(r#"<resource uri="sip:x@y.z"><context><subscriptionContext xmlns="http://schemas.microsoft.com/2008/09/sip/SubscriptionContext" majorVersion="1" minorVersion="0"><watcher><contactList/></watcher></subscriptionContext></context></resource>"#));
+    let doc = r#"<roamingData xmlns="http://schemas.microsoft.com/2006/09/sip/roaming-self"><subscribers xmlns="http://schemas.microsoft.com/2006/09/sip/presence-subscribers"><subscriber user="bob@contoso.com" displayName="Bob&#10;* signed out" acknowledged="false" type="sameEnterprise"/><subscriber user="sip:c@contoso.com" displayName="C" acknowledged="true"/><subscriber user="tel:+49" displayName="X" acknowledged="false"/></subscribers></roamingData>"#;
+    let l = parse_subscribers(doc).unwrap().unwrap();
+    assert_eq!(l.len(), 2, "no safe URI, no entry");
+    assert_eq!(l[0].uri, "sip:bob@contoso.com");
+    assert!(!l[0].acknowledged && l[1].acknowledged);
+    assert!(!l[0].name.contains('\n'), "a name cannot fake a line");
+    let none = r#"<roamingData xmlns="http://schemas.microsoft.com/2006/09/sip/roaming-self"/>"#;
+    assert_eq!(parse_subscribers(none).unwrap(), None);
+    assert_eq!(
+        set_subscriber_body("sip:John@contoso.com").unwrap(),
+        r#"<setSubscribers xmlns="http://schemas.microsoft.com/2006/09/sip/presence-subscribers"><subscriber user="john@contoso.com" acknowledged="true"/></setSubscribers>"#
+    );
+    assert!(set_subscriber_body("tel:+49").is_err());
 }

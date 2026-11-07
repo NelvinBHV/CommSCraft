@@ -3876,6 +3876,69 @@ fn privacy_and_blocking() {
     assert!(events(&out).is_empty(), "silently");
 }
 
+/// PR-19: a new subscriber is reported once and stays unacknowledged until the user decides; a
+/// blocked one is acknowledged without a word.
+#[test]
+fn new_subscribers_are_reported_once() {
+    let (mut e, _, _) = signed_in();
+    let list = |users: &[(&str, bool)]| -> Vec<pres::Subscriber> {
+        users
+            .iter()
+            .map(|(u, a)| pres::Subscriber {
+                uri: (*u).into(),
+                name: "N".into(),
+                acknowledged: *a,
+            })
+            .collect()
+    };
+    e.on_containers(vec![pres::Container {
+        id: pres::BLOCKED_CONTAINER,
+        version: 1,
+        members: vec![pres::Member {
+            kind: "user".into(),
+            value: Some("spam@contoso.com".into()),
+        }],
+    }]);
+    let mut out = Vec::new();
+    let first = list(&[
+        ("sip:new@contoso.com", false),
+        ("sip:old@contoso.com", true),
+        ("sip:spam@contoso.com", false),
+    ]);
+    e.on_subscribers(first.clone(), NOW, &mut out);
+    assert_eq!(
+        events(&out),
+        vec![Event::NewSubscriber {
+            uri: "sip:new@contoso.com".into(),
+            name: "N".into()
+        }]
+    );
+    let sent = sends(&out);
+    assert_eq!(sent.len(), 1, "only the blocked one is acknowledged");
+    assert!(String::from_utf8_lossy(&sent[0].body).contains(r#"user="spam@contoso.com""#));
+    // The list always comes complete: nothing is reported twice.
+    let mut out = Vec::new();
+    e.on_subscribers(first, NOW, &mut out);
+    assert!(out.is_empty());
+    let out = e.command(
+        Command::AcknowledgeSubscriber {
+            uri: "sip:new@contoso.com".into(),
+        },
+        NOW,
+    );
+    let ack = sends(&out).pop().unwrap();
+    assert_eq!(
+        ack.single("Content-Type").unwrap(),
+        Some("application/msrtc-presence-setsubscriber+xml")
+    );
+    // Many subscribers cannot flood the user.
+    let many: Vec<String> = (0..1000).map(|i| format!("sip:u{i}@contoso.com")).collect();
+    let refs: Vec<(&str, bool)> = many.iter().map(|u| (u.as_str(), false)).collect();
+    let mut out = Vec::new();
+    e.on_subscribers(list(&refs), NOW, &mut out);
+    assert!(events(&out).len() <= 256);
+}
+
 /// Issue #70, finding 2: signing out during an emergency call publishes the user's rules again
 /// before the REGISTER that ends the registration.
 #[test]

@@ -401,7 +401,8 @@ pub fn set_delegate_body(version: u32, delegate: &str, add: bool) -> Result<Stri
 }
 
 /// Headers and body of the self SUBSCRIBE (PR-13, §2.2.2.3.1): only the own category instances
-/// and containers are asked for (`roaming type="categories"`, `"containers"`).
+/// containers and subscribers are asked for (`roaming type="categories"`, `"containers"`,
+/// `"subscribers"`).
 pub fn self_subscribe(m: &mut Message) {
     m.push_header("Event", ROAMING_SELF_EVENT);
     m.push_header("Accept", ROAMING_SELF_TYPE);
@@ -409,7 +410,7 @@ pub fn self_subscribe(m: &mut Message) {
     m.push_header("Content-Type", ROAMING_SELF_TYPE);
     // PR-21: also the delegate list (roamingEx type="delegates", §2.2.2.3.1).
     m.body = format!(
-        "<roamingList xmlns=\"{NS_ROAMING_SELF}\"><roaming type=\"categories\"/><roaming type=\"containers\"/><roamingEx xmlns=\"{NS_ROAMING_SELF_EX}\" type=\"delegates\"/></roamingList>"
+        "<roamingList xmlns=\"{NS_ROAMING_SELF}\"><roaming type=\"categories\"/><roaming type=\"containers\"/><roaming type=\"subscribers\"/><roamingEx xmlns=\"{NS_ROAMING_SELF_EX}\" type=\"delegates\"/></roamingList>"
     )
     .into_bytes();
 }
@@ -699,7 +700,12 @@ pub fn parse_fault(body: &str) -> Result<Vec<VersionConflict>, Error> {
 pub const CATEGORIES: &[&str] = &["contactCard", "note", "services", "state"];
 
 /// Body of a batch category SUBSCRIBE (PR-14; §2.2.2.4.1; example §4.5).
-pub fn batch_body(aor: &str, resources: &[String], action_id: u32) -> Result<String, Error> {
+pub fn batch_body(
+    aor: &str,
+    resources: &[String],
+    action_id: u32,
+    context: bool,
+) -> Result<String, Error> {
     if resources.len() > MAX_BATCH {
         return Err(Error::TooManyResources);
     }
@@ -709,10 +715,15 @@ pub fn batch_body(aor: &str, resources: &[String], action_id: u32) -> Result<Str
         escape(&aor)
     );
     for r in resources {
-        b.push_str(&format!(
-            "<resource uri=\"{}\"/>",
-            escape(&checked_sip_uri(r)?)
-        ));
+        let uri = escape(&checked_sip_uri(r)?);
+        if context {
+            // PR-18: this subscription is for our contact list, so that the user is told once.
+            b.push_str(&format!(
+                "<resource uri=\"{uri}\"><context><subscriptionContext xmlns=\"{NS_SUBSCRIPTION_CONTEXT}\" majorVersion=\"1\" minorVersion=\"0\"><watcher><contactList/></watcher></subscriptionContext></context></resource>"
+            ));
+        } else {
+            b.push_str(&format!("<resource uri=\"{uri}\"/>"));
+        }
     }
     b.push_str(&format!(
         "</adhocList><categoryList xmlns=\"{NS_CATEGORY_LIST}\">"
@@ -1069,6 +1080,53 @@ pub fn parse_contact_list(xml: &str) -> Result<ContactList, Error> {
         }
     }
     Ok(l)
+}
+
+const NS_SUBSCRIPTION_CONTEXT: &str =
+    "http://schemas.microsoft.com/2008/09/sip/SubscriptionContext";
+const NS_SUBSCRIBERS: &str = "http://schemas.microsoft.com/2006/09/sip/presence-subscribers";
+pub const SET_SUBSCRIBER_TYPE: &str = "application/msrtc-presence-setsubscriber+xml";
+
+/// Someone who subscribed to our presence (PR-19; [MS-PRES] §2.2.2.6.1, pp. 48–49).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Subscriber {
+    pub uri: String,
+    /// As the subscriber sent it: not a proof of who it is, unlike the URI.
+    pub name: String,
+    pub acknowledged: bool,
+}
+
+/// The subscriber list in a self document, always complete (§1.3.1.4); `None` if it carries none.
+/// Entries without a safe URI are left out.
+pub fn parse_subscribers(xml: &str) -> Result<Option<Vec<Subscriber>>, Error> {
+    let root = commscraft_xml::parse(xml, &Limits::default())?;
+    let list = match (root.name.as_str(), root.namespace.as_deref()) {
+        ("roamingData", Some(NS_ROAMING_SELF)) => root.child("subscribers"),
+        ("subscribers", Some(NS_SUBSCRIBERS)) => Some(&root),
+        _ => None,
+    };
+    let Some(list) = list else {
+        return Ok(None);
+    };
+    Ok(Some(
+        list.children_named("subscriber")
+            .filter_map(|s| {
+                Some(Subscriber {
+                    uri: checked_sip_uri(s.attr("user")?).ok()?,
+                    name: printable(s.attr("displayName").unwrap_or("").trim()),
+                    acknowledged: matches!(s.attr("acknowledged"), Some("true" | "1")),
+                })
+            })
+            .collect(),
+    ))
+}
+
+/// setSubscribers SERVICE body: one subscriber is acknowledged (§2.2.2.6.2, pp. 49–50).
+pub fn set_subscriber_body(uri: &str) -> Result<String, Error> {
+    Ok(format!(
+        "<setSubscribers xmlns=\"{NS_SUBSCRIBERS}\"><subscriber user=\"{}\" acknowledged=\"true\"/></setSubscribers>",
+        escape(&member_value(uri)?)
+    ))
 }
 
 /// Namespace of the container list in the self document ([MS-PRES] §2.2.2.5.1).

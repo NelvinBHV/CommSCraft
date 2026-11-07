@@ -14,6 +14,8 @@ use super::*;
 
 /// How long a change waits for the changed containers before they are fetched anyway (seconds).
 const EDIT_WAIT: u64 = 10;
+/// New subscribers reported per session: anyone can subscribe, so they cannot flood the user.
+const MAX_TOLD: usize = 256;
 
 impl<R: Random> Engine<R> {
     /// The users with a set relationship.
@@ -123,6 +125,14 @@ impl<R: Random> Engine<R> {
 
     /// Whether an INVITE comes from a member of the Blocked Contacts container, by user or domain.
     pub(crate) fn invite_is_blocked(&self, req: &Message) -> bool {
+        req.single("From")
+            .ok()
+            .flatten()
+            .and_then(|v| commscraft_sip_msg::parse_name_addr(v).ok())
+            .is_some_and(|n| self.user_is_blocked(&n.uri))
+    }
+
+    fn user_is_blocked(&self, uri: &str) -> bool {
         let Some(blocked) = self
             .containers
             .as_ref()
@@ -130,24 +140,59 @@ impl<R: Random> Engine<R> {
         else {
             return false;
         };
-        let Some(from) = req
-            .single("From")
-            .ok()
-            .flatten()
-            .and_then(|v| commscraft_sip_msg::parse_name_addr(v).ok())
-            .and_then(|n| pres::member_value(&n.uri).ok())
-        else {
+        let Ok(user) = pres::member_value(uri) else {
             return false;
         };
-        let domain = from.rsplit('@').next().unwrap_or("");
+        let domain = user.rsplit('@').next().unwrap_or("");
         blocked.members.iter().any(|m| {
             let value = m.value.as_deref().unwrap_or("");
             match m.kind.as_str() {
-                "user" => value.trim_start_matches("sip:").eq_ignore_ascii_case(&from),
+                "user" => value.trim_start_matches("sip:").eq_ignore_ascii_case(&user),
                 "domain" => value.eq_ignore_ascii_case(domain),
                 _ => false,
             }
         })
+    }
+
+    /// The subscriber list. Each unacknowledged subscriber is reported once per session; it stays
+    /// unacknowledged until the user decides, so that it comes back at the next sign-in or on
+    /// another device (§1.3.1.4). A blocked user is not reported (`blockRule subscriberPrompt`,
+    /// [MS-SIPREGE] §4.2.2) and acknowledged right away.
+    pub(crate) fn on_subscribers(
+        &mut self,
+        list: Vec<pres::Subscriber>,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        for s in list.into_iter().filter(|s| !s.acknowledged) {
+            if self.told_subscribers.len() >= MAX_TOLD || self.told_subscribers.contains(&s.uri) {
+                continue;
+            }
+            self.told_subscribers.insert(s.uri.clone());
+            if self.user_is_blocked(&s.uri) {
+                self.acknowledge_subscriber(&s.uri, now, out);
+            } else {
+                out.push(Output::Event(Event::NewSubscriber {
+                    uri: s.uri,
+                    name: s.name,
+                }));
+            }
+        }
+    }
+
+    /// `AcknowledgeSubscriber`: one subscriber per request (PR-19).
+    pub(crate) fn acknowledge_subscriber(&mut self, uri: &str, now: u64, out: &mut Vec<Output>) {
+        let Ok(body) = pres::set_subscriber_body(uri) else {
+            out.push(Output::Event(Event::Notice(
+                "not a usable SIP address".into(),
+            )));
+            return;
+        };
+        let aor = self.cfg.aor.clone();
+        let mut m = self.request("SERVICE", &aor, &aor);
+        m.push_header("Content-Type", pres::SET_SUBSCRIBER_TYPE);
+        m.body = body.into_bytes();
+        self.send_request(m, Purpose::AcknowledgeSubscriber, now, out);
     }
 
     /// Refused, for example because of a change elsewhere: read the containers again.

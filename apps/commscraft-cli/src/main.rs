@@ -57,6 +57,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)
           /follow N | /decline N (a transfer to a number or another domain)
           /videocall sip:URI (audio and video, camera COMMSCRAFT_CAMERA or /dev/video0)  /answervideo [N]
+          /seen sip:URI (you saw that this person added you)
           /privacy [sip:URI external|colleagues|workgroup|family|blocked|auto] (privacy relationships)
           /contact add sip:URI [NAME] | remove sip:URI | move sip:URI GROUP …   /contactgroup add NAME | rename ID NAME | remove ID
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
@@ -1836,6 +1837,10 @@ fn interactive(
                     }
                     E::OwnStatus(s) => println!("* your state: {s:?} (until you sign out)"),
                     E::OwnStatusFailed(c) => println!("* setting your state failed ({c})"),
+                    E::NewSubscriber { uri, name } => {
+                        // The URI comes from the server, the name from the other person.
+                        println!("* {uri} (\"{name}\") added you to their contact list – /seen {uri}, /contact add {uri} or /privacy {uri} blocked");
+                    }
                     E::Delegates(list) if list.is_empty() => println!("* delegates: none"),
                     E::Delegates(list) => println!("* delegates: {}", list.join(", ")),
                     E::Forwarding(f) => {
@@ -2385,6 +2390,7 @@ fn interactive(
                         }
                     }
                 }
+                "/seen" if arg.starts_with("sip:") => Some(C::AcknowledgeSubscriber { uri: arg }),
                 "/contactgroup" => {
                     let edit = contact_group_command(&arg);
                     if edit.is_none() {
@@ -3240,7 +3246,7 @@ fn query_presence(
     }
     let mut id = [0u8; 4];
     s.rng.fill(&mut id);
-    req.body = pres::batch_body(&a.aor, uris, u32::from_be_bytes(id) & 0x7fff_ffff)
+    req.body = pres::batch_body(&a.aor, uris, u32::from_be_bytes(id) & 0x7fff_ffff, false)
         .map_err(|e| format!("{e:?}"))?
         .into_bytes();
     reg.sign_request(&mut req).map_err(|e| format!("{e:?}"))?;
