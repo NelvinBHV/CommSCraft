@@ -625,6 +625,8 @@ pub struct Engine<R: Random> {
     media_relay: Option<avedgea::Credentials>,
     media_relay_refresh_at: Option<u64>,
     calls: HashMap<CallId, call::Call>,
+    /// Accepted transfers whose call the transferor already ended.
+    left_transfers: HashMap<CallId, (transfer::Incoming, u64)>,
     next_call: CallId,
 }
 
@@ -690,6 +692,7 @@ impl<R: Random> Engine<R> {
             media_relay: None,
             media_relay_refresh_at: None,
             calls: HashMap::new(),
+            left_transfers: HashMap::new(),
             next_call: 1,
         }
     }
