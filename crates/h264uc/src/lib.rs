@@ -827,5 +827,7 @@ impl Depacketizer {
     }
 }
 
+pub mod fec;
+
 #[cfg(test)]
 mod tests;

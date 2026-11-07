@@ -51,6 +51,15 @@ pub enum VideoEvent {
     PictureUpdateNeeded,
 }
 
+/// NAL unit type of an IDR slice.
+const NAL_IDR: u8 = 5;
+/// Access units below this number of packets get no FEC (design).
+const FEC_MIN_PACKETS: usize = 2;
+/// Reported loss from which ordinary pictures get FEC, of 256 (design: about 1 %).
+const FEC_LOSS: u8 = 3;
+/// For how many reports after that (design: reports come every few seconds).
+const FEC_REPORTS: u8 = 5;
+
 /// The video stream of one call.
 pub struct Video {
     pt: u8,
@@ -62,6 +71,11 @@ pub struct Video {
     remote_ssrc: Option<u32>,
     packetizer: uc::Packetizer,
     depacketizer: uc::Depacketizer,
+    /// The payload type of FEC, if negotiated (PL-06, SD-28).
+    fec_pt: Option<u8>,
+    recovery: uc::fec::Recovery,
+    /// Reports of the peer for which we go on protecting ordinary pictures after it reported loss.
+    fec_reports: u8,
     cname: String,
     next_rtcp: u64,
     last_sr: Option<(u32, u64)>,
@@ -135,6 +149,11 @@ impl Video {
             remote_ssrc: None,
             packetizer,
             depacketizer: uc::Depacketizer::new(),
+            fec_pt: negotiated
+                .fec_payload_type
+                .filter(|f| *f != negotiated.payload_type),
+            recovery: uc::fec::Recovery::default(),
+            fec_reports: 0,
             cname: cname
                 .chars()
                 .filter(|c| c.is_ascii_graphic())
@@ -198,23 +217,61 @@ impl Video {
         let Ok(payloads) = self.packetizer.packetize(au) else {
             return Vec::new();
         };
+        // FEC costs at least one packet per access unit, so it is sent where it is worth that
+        // (design): always for IDR pictures, whose loss costs the most, otherwise after the peer
+        // reported loss; never for a single packet, whose copy would help little more.
+        let idr = uc::split_annex_b(au)
+            .is_ok_and(|nals| nals.iter().any(|n| uc::nal_type(n) == Some(NAL_IDR)));
+        let protect = self
+            .fec_pt
+            .filter(|_| payloads.len() >= FEC_MIN_PACKETS && (idr || self.fec_reports > 0));
+        let mut sources = Vec::new();
         let mut out = Vec::with_capacity(payloads.len());
         for p in payloads {
             self.sender.skip_sequence_zero();
+            if protect.is_some() {
+                sources.push(uc::fec::Media {
+                    seq: self.sender.sequence(),
+                    timestamp,
+                    marker: p.marker,
+                    payload_type: self.pt,
+                    payload: p.data.clone(),
+                });
+            }
             let Ok(packet) = self.sender.packet_at(self.pt, p.marker, &p.data, timestamp) else {
                 return Vec::new();
             };
-            let protected = match self.tx_srtp.as_mut() {
-                Some(c) => match c.protect_rtp(&packet) {
-                    Ok(p) => p,
-                    Err(_) => return Vec::new(),
-                },
-                None => packet,
+            let Some(protected) = self.protect(packet) else {
+                return Vec::new();
             };
             out.push(protected);
         }
+        if let Some(pt) = protect {
+            // §2.2.8.1.1: behind the data of the access unit, the last with the marker.
+            let chunks: Vec<&[uc::fec::Media]> = sources.chunks(uc::fec::MAX_PROTECTED).collect();
+            let last = chunks.len().saturating_sub(1);
+            for (i, chunk) in chunks.into_iter().enumerate() {
+                self.sender.skip_sequence_zero();
+                let Ok(fec) = uc::fec::protect(chunk, self.sender.sequence()) else {
+                    continue;
+                };
+                let Ok(packet) = self.sender.packet_at(pt, i == last, &fec, timestamp) else {
+                    continue;
+                };
+                if let Some(protected) = self.protect(packet) {
+                    out.push(protected);
+                }
+            }
+        }
         self.sent_units += 1;
         out
+    }
+
+    fn protect(&mut self, packet: Vec<u8>) -> Option<Vec<u8>> {
+        match self.tx_srtp.as_mut() {
+            Some(c) => c.protect_rtp(&packet).ok(),
+            None => Some(packet),
+        }
     }
 
     /// A received RTP/SRTP packet; `arrival` in 90 kHz ticks. A lost access unit asks the
@@ -235,7 +292,10 @@ impl Video {
         };
         let h = parsed.header;
         // SD-64: only SSRCs from the peer's range; then the first one is the stream.
-        if h.ssrc < self.remote_range.0 || h.ssrc > self.remote_range.1 || h.payload_type != self.pt
+        let is_fec = self.fec_pt == Some(h.payload_type);
+        if h.ssrc < self.remote_range.0
+            || h.ssrc > self.remote_range.1
+            || (h.payload_type != self.pt && !is_fec)
         {
             return Vec::new();
         }
@@ -262,28 +322,53 @@ impl Video {
         {
             self.expected_seq = Some(h.sequence.wrapping_add(1));
         }
+        let packets = if is_fec {
+            self.recovery
+                .push_fec(h.sequence, h.timestamp, parsed.payload)
+        } else if self.fec_pt.is_some() {
+            self.recovery.push(uc::fec::Media {
+                seq: h.sequence,
+                timestamp: h.timestamp,
+                marker: h.marker,
+                payload_type: h.payload_type,
+                payload: parsed.payload.to_vec(),
+            })
+        } else {
+            vec![uc::fec::Media {
+                seq: h.sequence,
+                timestamp: h.timestamp,
+                marker: h.marker,
+                payload_type: h.payload_type,
+                payload: parsed.payload.to_vec(),
+            }]
+        };
         let mut events = Vec::new();
-        for out in self.depacketizer.push(uc::RtpIn {
-            seq: h.sequence,
-            timestamp: h.timestamp,
-            marker: h.marker,
-            payload: parsed.payload,
-        }) {
-            match out {
-                uc::Output::AccessUnit { data, idr, .. } => {
-                    self.received_units += 1;
-                    events.push(VideoEvent::AccessUnit { data, idr });
-                }
-                uc::Output::Lost { .. } => {
-                    self.lost_units += 1;
-                    self.request_key_frame(now_ms);
-                    if !self.peer_accepts.recv_pli
-                        && self
-                            .last_picture_update
-                            .is_none_or(|t| now_ms.saturating_sub(t) >= PICTURE_UPDATE_MS)
-                    {
-                        self.last_picture_update = Some(now_ms);
-                        events.push(VideoEvent::PictureUpdateNeeded);
+        // A recovered packet can claim another format: it counts as lost then.
+        let pt = self.pt;
+        for p in packets.into_iter().filter(|p| p.payload_type == pt) {
+            let outputs = self.depacketizer.push(uc::RtpIn {
+                seq: p.seq,
+                timestamp: p.timestamp,
+                marker: p.marker,
+                payload: &p.payload,
+            });
+            for out in outputs {
+                match out {
+                    uc::Output::AccessUnit { data, idr, .. } => {
+                        self.received_units += 1;
+                        events.push(VideoEvent::AccessUnit { data, idr });
+                    }
+                    uc::Output::Lost { .. } => {
+                        self.lost_units += 1;
+                        self.request_key_frame(now_ms);
+                        if !self.peer_accepts.recv_pli
+                            && self
+                                .last_picture_update
+                                .is_none_or(|t| now_ms.saturating_sub(t) >= PICTURE_UPDATE_MS)
+                        {
+                            self.last_picture_update = Some(now_ms);
+                            events.push(VideoEvent::PictureUpdateNeeded);
+                        }
                     }
                 }
             }
@@ -295,6 +380,11 @@ impl Video {
         let id = self.next_request_id;
         self.next_request_id = self.next_request_id.wrapping_add(1).max(1);
         id
+    }
+
+    /// Packets recovered by FEC so far.
+    pub fn recovered_packets(&self) -> u64 {
+        self.recovery.recovered
     }
 
     /// The SSRC the feedback is about: the peer's stream, or before it sends the start of its
@@ -507,6 +597,14 @@ impl Video {
         now_ms: u64,
         events: &mut Vec<VideoEvent>,
     ) {
+        let ours = reports.iter().find(|r| r.ssrc == self.sender.ssrc);
+        if let Some(r) = ours {
+            self.fec_reports = if r.fraction_lost >= FEC_LOSS {
+                FEC_REPORTS
+            } else {
+                self.fec_reports.saturating_sub(1)
+            };
+        }
         if !self.fast_started && reports.iter().any(|r| r.ssrc == self.sender.ssrc) {
             self.fast_started = true;
             self.fast_left = PAIR_FAST_COUNT;

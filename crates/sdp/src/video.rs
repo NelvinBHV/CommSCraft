@@ -11,6 +11,9 @@ use super::*;
 
 /// Payload type of H.264 UC in the examples (SD-27).
 pub const H264UC_PT: u8 = 122;
+/// Payload type of the FEC format in the examples (§4.1, p. 55; SD-28).
+pub const ULPFEC_PT: u8 = 123;
+const ULPFEC_NAME: &str = "x-ulpfecuc/90000";
 /// The only accepted format parameters of H.264 UC (SD-27, §3.1.5.19, pp. 23–24).
 pub const H264UC_FMTP: &str = "packetization-mode=1;mst-mode=NI-TC";
 /// Size of the SSRC range of a video send stream (SD-64, §3.1.5.31.2, p. 46).
@@ -63,6 +66,8 @@ pub struct NegotiatedVideo {
     pub remote_key: Option<Key>,
     pub remote_ice: Option<Ice>,
     pub direction: Direction,
+    /// The payload type of FEC, if both sides take it (SD-28).
+    pub fec_payload_type: Option<u8>,
     /// The peer's SSRC range (its send stream uses SSRCs from it).
     pub ssrc_range: (u32, u32),
     /// What the peer declared (its `send` is what we receive and vice versa).
@@ -127,13 +132,31 @@ fn h264uc_pt(m: &Media) -> Option<u8> {
     })
 }
 
+/// The payload type of ULPFEC-UC in a video line (SD-28).
+fn ulpfec_pt(m: &Media) -> Option<u8> {
+    m.attrs("rtpmap").find_map(|v| {
+        let (p, name) = v.split_once(' ')?;
+        let pt = p.trim().parse::<u8>().ok()?;
+        (name.trim().eq_ignore_ascii_case(ULPFEC_NAME) && m.formats.contains(&pt)).then_some(pt)
+    })
+}
+
 /// Our `m=video` section (example §4.1, p. 56).
-pub fn video_section(v: &VideoLocal, proto: &str, pt: u8) -> Result<String, Error> {
+pub fn video_section(
+    v: &VideoLocal,
+    proto: &str,
+    pt: u8,
+    fec: Option<u8>,
+) -> Result<String, Error> {
     if !valid_range(v.ssrc_range) {
         return Err(Error::Syntax("SSRC range"));
     }
     let l = &v.media;
-    let mut s = format!("m=video {} {proto} {pt}\r\n", l.rtp_port);
+    let formats = match fec {
+        Some(f) => format!("{pt} {f}"),
+        None => pt.to_string(),
+    };
+    let mut s = format!("m=video {} {proto} {formats}\r\n", l.rtp_port);
     s.push_str(&format!(
         "a=x-ssrc-range:{}-{}\r\n",
         v.ssrc_range.0, v.ssrc_range.1
@@ -150,6 +173,9 @@ pub fn video_section(v: &VideoLocal, proto: &str, pt: u8) -> Result<String, Erro
     s.push_str(&format!(
         "a=rtpmap:{pt} X-H264UC/90000\r\na=fmtp:{pt} {H264UC_FMTP}\r\n"
     ));
+    if let Some(f) = fec {
+        s.push_str(&format!("a=rtpmap:{f} {ULPFEC_NAME}\r\n"));
+    }
     Ok(s)
 }
 
@@ -168,7 +194,7 @@ pub fn offer_with_video(
     if policy == Encryption::Off {
         v.media.key = None;
     }
-    s.push_str(&video_section(&v, proto, H264UC_PT)?);
+    s.push_str(&video_section(&v, proto, H264UC_PT, Some(ULPFEC_PT))?);
     Ok(with_mediabw(s))
 }
 
@@ -226,6 +252,7 @@ pub fn video_answer_to_offer(
         remote_key,
         remote_ice: ice_of(m),
         direction: Direction::of(m),
+        fec_payload_type: ulpfec_pt(m),
         ssrc_range: range,
         feedback: feedback_of(m),
     }))
@@ -344,7 +371,8 @@ fn answer_video_line(
         Direction::Inactive => Direction::Inactive,
         Direction::SendRecv => ours.media.direction,
     };
-    let section = video_section(&v, proto, pt).ok()?;
+    let fec = ulpfec_pt(m);
+    let section = video_section(&v, proto, pt, fec).ok()?;
     Some((
         section,
         NegotiatedVideo {
@@ -354,6 +382,7 @@ fn answer_video_line(
             remote_key,
             remote_ice: ice_of(m),
             direction: remote_direction,
+            fec_payload_type: fec,
             ssrc_range: range,
             feedback: feedback_of(m),
         },
