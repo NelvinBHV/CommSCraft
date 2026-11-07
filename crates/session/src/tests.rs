@@ -3754,6 +3754,128 @@ fn contact_list_changes() {
     assert_eq!(notices(&out), 1);
 }
 
+/// Function 12: moving a user between relationships in one request, blocking with the routing
+/// instance; invitations from a blocked user or domain end with the server's answer.
+#[test]
+fn privacy_and_blocking() {
+    let (mut e, mut server, out) = signed_in();
+    let set = |uri: &str, r| Command::SetRelationship {
+        uri: uri.into(),
+        relationship: r,
+    };
+    let notices = |out: &[Output]| {
+        events(out)
+            .iter()
+            .filter(|ev| matches!(ev, Event::Notice(_)))
+            .count()
+    };
+    let early = e.command(
+        set("sip:bob@contoso.com", Some(pres::Relationship::Family)),
+        NOW,
+    );
+    assert!(sends(&early).is_empty());
+    assert_eq!(notices(&early), 1);
+    let sub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-roaming-self"))
+        .unwrap();
+    assert!(String::from_utf8_lossy(&sub.body).contains("<roaming type=\"containers\"/>"));
+    let doc = |containers: &str| {
+        format!(
+            r#"<roamingData xmlns="http://schemas.microsoft.com/2006/09/sip/roaming-self"><containers xmlns="http://schemas.microsoft.com/2006/09/sip/containers">{containers}</containers></roamingData>"#
+        )
+    };
+    e.on_message(
+        &answer(
+            &mut server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-self+xml"),
+            &doc(r#"<container id="300" version="4"><member type="user" value="bob@contoso.com"/></container><container id="32000" version="2"><member type="domain" value="spam.example"/></container>"#),
+            &[("Expires", "600")],
+        ),
+        NOW,
+    );
+
+    // Blocking: first the routing instance, then out of 300 and into 32000.
+    let out = e.command(
+        set("sip:Bob@contoso.com", Some(pres::Relationship::Blocked)),
+        NOW,
+    );
+    let sent = sends(&out);
+    assert_eq!(sent.len(), 2);
+    let publish = String::from_utf8_lossy(&sent[0].body);
+    assert!(publish.contains(r#"container="32000" version="0""#) && publish.contains("block"));
+    let members = String::from_utf8_lossy(&sent[1].body);
+    assert!(members.contains(r#"<container id="300" version="4"><member action="remove" type="user" value="bob@contoso.com"/>"#));
+    assert!(members.contains(r#"<container id="32000" version="2"><member action="add" type="user" value="bob@contoso.com"/>"#));
+    assert_eq!(
+        sent[1].single("Content-Type").unwrap(),
+        Some("application/msrtc-setcontainermembers+xml")
+    );
+    // One at a time.
+    let busy = e.command(
+        set("sip:c@contoso.com", Some(pres::Relationship::Family)),
+        NOW,
+    );
+    assert!(sends(&busy).is_empty());
+    assert_eq!(notices(&busy), 1);
+    e.on_message(&answer(&mut server, &sent[0], 200, None, "", &[]), NOW);
+    e.on_message(&answer(&mut server, &sent[1], 200, None, "", &[]), NOW);
+    // The notification with only the changed containers.
+    let selfdoc = doc(
+        r#"<container id="300" version="5"/><container id="32000" version="3"><member type="user" value="bob@contoso.com"/><member type="domain" value="spam.example"/></container>"#,
+    );
+    e.on_containers(pres::parse_containers(&selfdoc).unwrap().unwrap());
+    assert_eq!(
+        e.relationships()
+            .into_iter()
+            .find(|(r, _)| *r == pres::Relationship::Blocked)
+            .unwrap()
+            .1,
+        vec!["bob@contoso.com".to_string()]
+    );
+
+    // Nothing to do; moving back removes it without publishing again.
+    let again = e.command(
+        set("sip:bob@contoso.com", Some(pres::Relationship::Blocked)),
+        NOW,
+    );
+    assert!(sends(&again).is_empty());
+    let out = e.command(set("sip:bob@contoso.com", None), NOW);
+    let sent = sends(&out);
+    assert_eq!(
+        sent.len(),
+        1,
+        "the routing instance stays, it only concerns members"
+    );
+    assert!(String::from_utf8_lossy(&sent[0].body)
+        .contains(r#"id="32000" version="3"><member action="remove""#));
+    let refused = e.on_message(&answer(&mut server, &sent[0], 409, None, "", &[]), NOW);
+    assert_eq!(notices(&refused), 1);
+    assert!(sends(&refused)
+        .iter()
+        .any(|m| m.single("Event").unwrap() == Some("vnd-microsoft-roaming-self")));
+
+    // Invitations of blocked users and domains.
+    let invite = |from: &str| {
+        let mut m = Message::request("INVITE", "sip:me@contoso.com");
+        m.push_header("From", &format!("<{from}>;tag=1"));
+        m.push_header("To", "<sip:me@contoso.com>");
+        m.push_header("Call-ID", "c1");
+        m.push_header("CSeq", "1 INVITE");
+        m.push_header("Via", "SIP/2.0/TLS 192.0.2.1;branch=z9hG4bKx");
+        m
+    };
+    assert!(e.invite_is_blocked(&invite("sip:BOB@contoso.com;x=1")));
+    assert!(e.invite_is_blocked(&invite("sip:anyone@spam.example")));
+    assert!(!e.invite_is_blocked(&invite("sip:carol@contoso.com")));
+    let mut out = Vec::new();
+    e.on_invite(&invite("sip:bob@contoso.com"), NOW, &mut out);
+    assert_eq!(sends(&out)[0].status_code(), Some(480));
+    assert!(events(&out).is_empty(), "silently");
+}
+
 /// Issue #70, finding 2: signing out during an emergency call publishes the user's rules again
 /// before the REGISTER that ends the registration.
 #[test]

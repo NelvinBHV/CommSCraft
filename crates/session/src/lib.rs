@@ -20,7 +20,7 @@
 //! - content from the network reaches the UI only through the checked parsers of `presence` and
 //!   `im` (plain text, control characters removed).
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use commscraft_avedgea as avedgea;
 use commscraft_conf as conf;
@@ -84,6 +84,7 @@ fn conflict_slot(p: &Purpose) -> Option<usize> {
         Purpose::PublishStatus(_) => Some(1),
         Purpose::PublishRouting(_) => Some(2),
         Purpose::SetDelegate { .. } => Some(3),
+        Purpose::PublishBlock => Some(4),
         _ => None,
     }
 }
@@ -260,6 +261,11 @@ pub enum Command {
     /// Add or remove a delegate of ours (setDelegates, PR-21).
     /// Changes the contact list (SIP-08): one change at a time.
     EditContacts(pres::ContactEdit),
+    /// Sets a user's privacy relationship (`None`: none, the default of the server applies).
+    SetRelationship {
+        uri: String,
+        relationship: Option<pres::Relationship>,
+    },
     SetDelegate {
         uri: String,
         add: bool,
@@ -545,6 +551,8 @@ enum Purpose {
     PublishRouting(Box<pres::Forwarding>),
     SetDelegate { uri: String, add: bool },
     ContactEdit,
+    SetMembers,
+    PublishBlock,
     Invite(ConversationId),
     Message(ConversationId),
     CreateConference(ConversationId),
@@ -600,7 +608,7 @@ pub struct Engine<R: Random> {
     delegates: Option<pres::Delegates>,
     /// 409 retries per kind of operation since its last success (issues #67, #70: bounded and
     /// kept apart – endpoint, status, routing, delegates).
-    conflict_retries: [u8; 4],
+    conflict_retries: [u8; 5],
     /// The routing rules the user published last (restored after an emergency call).
     routing_rules: pres::Forwarding,
     /// The rules above were published by this session (only then they are restored).
@@ -631,6 +639,11 @@ pub struct Engine<R: Random> {
     /// Accepted transfers whose call the transferor already ended.
     left_transfers: HashMap<CallId, (transfer::Incoming, u64)>,
     contact_list: Option<pres::ContactList>,
+    containers: Option<BTreeMap<u32, pres::Container>>,
+    /// A membership change is under way until the changed containers arrive, at most until then.
+    privacy_edit_until: Option<u64>,
+    /// Version of the blocking routing instance, once published.
+    block_version: Option<u32>,
     /// A contact list change is under way until the changed list arrives, at most until then.
     contact_edit_until: Option<u64>,
     next_call: CallId,
@@ -680,7 +693,7 @@ impl<R: Random> Engine<R> {
             status_versions: [0, 0],
             routing_versions: [0; 5],
             delegates: None,
-            conflict_retries: [0; 4],
+            conflict_retries: [0; 5],
             routing_rules: pres::Forwarding::default(),
             routing_known: false,
             location_policy: None,
@@ -700,6 +713,9 @@ impl<R: Random> Engine<R> {
             calls: HashMap::new(),
             left_transfers: HashMap::new(),
             contact_list: None,
+            containers: None,
+            privacy_edit_until: None,
+            block_version: None,
             contact_edit_until: None,
             next_call: 1,
         }
@@ -962,6 +978,9 @@ impl<R: Random> Engine<R> {
     /// for the next publication (PR-05) and the user's rules (set here or by another client).
     /// Rules with e911active are those of an emergency call and are not taken as the user's.
     fn on_self_routing(&mut self, r: pres::SelfRouting, out: &mut Vec<Output>) {
+        if r.block_version.is_some() {
+            self.block_version = r.block_version;
+        }
         for (slot, v) in self.routing_versions.iter_mut().zip(r.versions) {
             if let Some(v) = v {
                 *slot = v;
@@ -1192,6 +1211,9 @@ impl<R: Random> Engine<R> {
                 }
                 if let Ok(Some(d)) = pres::parse_delegates(body) {
                     self.on_delegates(d, out);
+                }
+                if let Ok(Some(c)) = pres::parse_containers(body) {
+                    self.on_containers(c);
                 }
             }
             SubKind::Presence { .. } => match pres::parse_batch(m) {
@@ -1439,6 +1461,12 @@ impl<R: Random> Engine<R> {
 
     /// An INVITE of a peer (out of dialog): accept IM sessions, refuse everything else.
     fn on_invite(&mut self, req: &Message, now: u64, out: &mut Vec<Output>) {
+        if self.invite_is_blocked(req) {
+            // The same answer as the server's block flag ([MS-SIPRE] §3.9.5.2, step 1).
+            let r = response_to(req, 480, "Temporarily Unavailable");
+            self.send_plain(r, now, out);
+            return;
+        }
         if header_token(req, "Content-Type").as_deref() == Some(conf::INVITATION_TYPE) {
             self.on_invitation(req, now, out);
             return;
@@ -1743,6 +1771,9 @@ impl<R: Random> Engine<R> {
             },
             Command::SetDelegate { uri, add } => self.set_delegate(&uri, add, now, &mut out),
             Command::EditContacts(edit) => self.edit_contacts(edit, now, &mut out),
+            Command::SetRelationship { uri, relationship } => {
+                self.set_relationship(&uri, relationship, now, &mut out)
+            }
             Command::VideoCall {
                 to,
                 local,
@@ -1841,6 +1872,7 @@ impl<R: Random> Engine<R> {
         let events = self.reg.on_tick(now);
         self.on_registrar_events(events, now, &mut out);
         self.contact_edit_tick(now, &mut out);
+        self.privacy_tick(now, &mut out);
         if let Some(k) = &mut self.keepalive {
             if let Some(bytes) = k.on_tick(now) {
                 out.push(Output::SendRaw(bytes));
@@ -1946,6 +1978,7 @@ impl<R: Random> Engine<R> {
                         Purpose::PublishStatus(s) => self.publish_status(s, now, out),
                         Purpose::PublishRouting(f) => self.publish_routing(*f, now, out),
                         Purpose::SetDelegate { uri, add } => self.set_delegate(&uri, add, now, out),
+                        Purpose::PublishBlock => self.publish_block(now, out),
                         _ => {}
                     }
                     return;
@@ -1979,6 +2012,14 @@ impl<R: Random> Engine<R> {
             Purpose::PublishEndpoint => &mut self.endpoint_versions,
             Purpose::PublishStatus(_) => &mut self.status_versions[..],
             Purpose::PublishRouting(_) => &mut self.routing_versions[..],
+            Purpose::PublishBlock => {
+                let cur = conflicts.first()?.cur_version;
+                if self.block_version == Some(cur) {
+                    return None;
+                }
+                self.block_version = Some(cur);
+                return Some(p.purpose.clone());
+            }
             Purpose::SetDelegate { .. } => {
                 // PR-21 / §2.2.2.10.4: one list version.
                 let cur = conflicts.first()?.cur_version;
@@ -2064,6 +2105,8 @@ impl<R: Random> Engine<R> {
                 out.push(Output::Event(Event::OwnStatus(s)));
             }
             Purpose::ContactEdit => self.on_contact_edit_answered(resp, now, out),
+            Purpose::SetMembers => {}
+            Purpose::PublishBlock => self.block_version = Some(self.block_version.unwrap_or(0) + 1),
             Purpose::SetDelegate { .. } => {
                 // §2.2.2.10.3: the 200 carries the complete delegate list.
                 if let Some(d) = std::str::from_utf8(&resp.body)
@@ -2185,6 +2228,10 @@ impl<R: Random> Engine<R> {
                 "forwarding not set ({code})"
             )))),
             Purpose::ContactEdit => self.on_contact_edit_failed(code, now, out),
+            Purpose::SetMembers => self.on_set_members_failed(code, now, out),
+            Purpose::PublishBlock => out.push(Output::Event(Event::Notice(format!(
+                "calls of blocked users are refused only here, not at the server ({code})"
+            )))),
             Purpose::SetDelegate { .. } => out.push(Output::Event(Event::Notice(format!(
                 "delegate not changed ({code})"
             )))),
@@ -2437,6 +2484,7 @@ mod emergency;
 mod group;
 pub mod media_control;
 mod park;
+mod privacy;
 mod qoe;
 mod schedule;
 mod transfer;

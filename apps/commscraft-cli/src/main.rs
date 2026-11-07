@@ -57,6 +57,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /call sip:URI|+491234…|0401234…  /callback N  /transfer N sip:URI|number  /transfer N M (consult)
           /follow N | /decline N (a transfer to a number or another domain)
           /videocall sip:URI (audio and video, camera COMMSCRAFT_CAMERA or /dev/video0)  /answervideo [N]
+          /privacy [sip:URI external|colleagues|workgroup|family|blocked|auto] (privacy relationships)
           /contact add sip:URI [NAME] | remove sip:URI | move sip:URI GROUP …   /contactgroup add NAME | rename ID NAME | remove ID
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
@@ -2356,6 +2357,33 @@ fn interactive(
                         );
                     }
                     edit.map(C::EditContacts)
+                }
+                "/privacy" => {
+                    let mut w = arg.split_whitespace();
+                    match (w.next(), w.next()) {
+                        (None, _) => {
+                            for (r, users) in engine.relationships() {
+                                println!("  {:<12} {}", r.name(), users.join(" "));
+                            }
+                            None
+                        }
+                        (Some(u), Some(r)) if u.starts_with("sip:") => {
+                            let relationship = commscraft_presence::Relationship::parse(r);
+                            if relationship.is_some() || r == "auto" {
+                                Some(C::SetRelationship {
+                                    uri: u.to_string(),
+                                    relationship,
+                                })
+                            } else {
+                                println!("* /privacy sip:URI external|colleagues|workgroup|family|blocked|auto");
+                                None
+                            }
+                        }
+                        _ => {
+                            println!("* /privacy sip:URI external|colleagues|workgroup|family|blocked|auto");
+                            None
+                        }
+                    }
                 }
                 "/contactgroup" => {
                     let edit = contact_group_command(&arg);

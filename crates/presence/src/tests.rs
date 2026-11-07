@@ -483,7 +483,7 @@ fn self_routing() {
     );
     assert_eq!(
         String::from_utf8_lossy(&m.body),
-        "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/><roamingEx xmlns=\"http://schemas.microsoft.com/2007/09/sip/roaming-self-ex\" type=\"delegates\"/></roamingList>"
+        "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\"><roaming type=\"categories\"/><roaming type=\"containers\"/><roamingEx xmlns=\"http://schemas.microsoft.com/2007/09/sip/roaming-self-ex\" type=\"delegates\"/></roamingList>"
     );
     let routing = "<routing xmlns=\"http://schemas.microsoft.com/02/2006/sip/routing\" name=\"rtcdefault\" version=\"2\"><preamble><list name=\"forwardto\"><target uri=\"sip:carol@contoso.com\"/></list><list name=\"team\"><target uri=\"sip:alice@contoso.com\"/><target uri=\"sip:bob2@contoso.com\"/></list><flags name=\"clientflags\" value=\"enablecf team_ring future_flag\"/><wait name=\"user\" seconds=\"12\"/><wait name=\"team2\" seconds=\"8\"/><wait name=\"other\" seconds=\"1\"/></preamble></routing>";
     let doc = |routing: &str| {
@@ -642,4 +642,63 @@ fn contact_edits() {
     .unwrap();
     assert!(!list.contacts[0].subscribed && !list.contacts[0].extension);
     assert!(list.contacts[1].subscribed && list.contacts[1].extension);
+}
+
+/// PR-20, OB-05: containers from the self document, membership changes, the block publication.
+#[test]
+fn privacy_relationships() {
+    let doc = r#"<roamingData xmlns="http://schemas.microsoft.com/2006/09/sip/roaming-self"><containers xmlns="http://schemas.microsoft.com/2006/09/sip/containers"><container id="32000" version="2"><member type="user" value="john@contoso.com"/></container><container id="200" version="4"><member type="sameEnterprise"/></container><container version="1"/></containers></roamingData>"#;
+    let c = parse_containers(doc).unwrap().unwrap();
+    assert_eq!(c.len(), 2, "an entry without an ID is skipped");
+    assert_eq!((c[0].id, c[0].version), (32000, 2));
+    assert_eq!(c[0].members[0].value.as_deref(), Some("john@contoso.com"));
+    assert_eq!(c[1].members[0].kind, "sameEnterprise");
+    let none = r#"<roamingData xmlns="http://schemas.microsoft.com/2006/09/sip/roaming-self"/>"#;
+    assert_eq!(parse_containers(none).unwrap(), None);
+
+    assert_eq!(
+        member_value("sip:John@Contoso.com;gruu").unwrap(),
+        "john@contoso.com"
+    );
+    assert!(member_value("tel:+49").is_err());
+    let body = set_container_members_body(&[
+        MemberChange {
+            container: 200,
+            version: 4,
+            add: false,
+            user: "a&b@c.d".into(),
+        },
+        MemberChange {
+            container: 32000,
+            version: 2,
+            add: true,
+            user: "e@c.d".into(),
+        },
+    ])
+    .unwrap();
+    assert!(body.contains(
+        r#"<container id="200" version="4"><member action="remove" type="user" value="a&amp;b@c.d"/></container><container id="32000" version="2"><member action="add" type="user" value="e@c.d"/></container>"#
+    ));
+    assert!(set_container_members_body(&[MemberChange {
+        container: 0,
+        version: 0,
+        add: true,
+        user: "e@c.d".into()
+    }])
+    .is_err());
+
+    let block = publish_block_routing_body("sip:me@c.d", 3).unwrap();
+    assert!(block.contains(r#"container="32000" version="3" expireType="static""#));
+    assert!(block.contains(r#"<flags name="clientflags" value="block"/>"#));
+    // The block instance is not taken for the user's forwarding rules.
+    let selfdoc = format!(
+        r#"<roamingData xmlns="http://schemas.microsoft.com/2006/09/sip/roaming-self"><categories xmlns="http://schemas.microsoft.com/2006/09/sip/categories"><category name="routing" instance="0" container="32000" version="5"><routing xmlns="{NS_ROUTING}" name="rtcdefault" version="1"><preamble><flags name="clientflags" value="block"/></preamble></routing></category></categories></roamingData>"#
+    );
+    let r = parse_self_routing(&selfdoc).unwrap();
+    assert_eq!(r.block_version, Some(5));
+    assert_eq!(r.rules, None);
+    assert_eq!(
+        Relationship::parse("family").map(Relationship::container),
+        Some(400)
+    );
 }
