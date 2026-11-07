@@ -2,7 +2,7 @@
 
 **Stage: M5 in progress** · M0 done · M1, M2, M3 built · M4 closed · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (privacy relationships and blocking)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (optional GPU decoding)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **38 crates + 1 app** (`commscraft-cli`), **433 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **38 crates + 1 app** (`commscraft-cli`), **436 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -46,6 +46,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-07 | Optional GPU video decoding (`COMMSCRAFT_VIDEO_DECODE=gpu`), off by default: measured at 720p and 1080p on integrated AMD and Intel GPUs it costs 1.3 to 1.9 times the CPU time of decoding on the CPU, because the pictures are copied back. |
 | 2026-11-07 | Privacy relationships and blocking (`/privacy`): a blocked user sees the user as offline and cannot reach them, enforced at the server and in the client; also `tested-in-lab`. |
 | 2026-11-07 | Contact list editing: add, change, move and remove contacts; add, rename and remove groups (`/contact`, `/contactgroup`), each at the list's current version; also `tested-in-lab`. |
 | 2026-11-07 | A transfer stays valid when the unattended transferor ends the call before the new call is ready (bounded in time and number). Transfer and sign-out are now also `tested-in-lab`. |

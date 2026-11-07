@@ -1,7 +1,8 @@
 //! VA-API hardware frames through FFmpeg's hardware context: the only module of
 //! CommSCraft with `unsafe` code. It creates a VA-API device and a pool of VA-API surfaces,
-//! attaches the pool to an encoder context and uploads NV12 pictures into surfaces. Everything
-//! else stays in the safe binding.
+//! attaches the pool to an encoder context and uploads NV12 pictures into surfaces; for decoding
+//! it gives a decoder context the device and downloads decoded surfaces. Everything else stays in
+//! the safe binding.
 //!
 //! Rules: every `unsafe` block names why it is sound; pointers come only from FFmpeg's
 //! own allocation functions and are checked for null; reference-counted buffers are released
@@ -15,6 +16,59 @@ use ff::ffi;
 use ffmpeg_next as ff;
 
 use crate::Error;
+
+/// The default VA-API device: a reference the caller owns and must hand on or release.
+fn create_device() -> Result<*mut ffi::AVBufferRef, Error> {
+    let mut device: *mut ffi::AVBufferRef = ptr::null_mut();
+    // SAFETY: `device` is a valid out-pointer; a null device name and options select the default
+    // VA-API render node; on failure FFmpeg leaves `device` null.
+    let r = unsafe {
+        ffi::av_hwdevice_ctx_create(
+            &mut device,
+            ffi::AVHWDeviceType::AV_HWDEVICE_TYPE_VAAPI,
+            ptr::null(),
+            ptr::null_mut(),
+            0,
+        )
+    };
+    if r < 0 || device.is_null() {
+        return Err(Error::NoHardware(format!("no VA-API device ({r})")));
+    }
+    Ok(device)
+}
+
+/// Gives a decoder context (not yet opened) the VA-API device. FFmpeg's default format choice then
+/// takes VA-API if the device can decode the stream, and its software path otherwise.
+pub(crate) fn attach_decoder_device(ctx: &mut ff::codec::context::Context) -> Result<(), Error> {
+    let device = create_device()?;
+    // SAFETY: `ctx` is a live codec context owned by the caller and not yet opened; the field
+    // takes ownership of our only reference, and FFmpeg releases it with the context.
+    unsafe {
+        let c = ctx.as_mut_ptr();
+        if !(*c).hw_device_ctx.is_null() {
+            ffi::av_buffer_unref(&mut (*c).hw_device_ctx);
+        }
+        (*c).hw_device_ctx = device;
+    }
+    Ok(())
+}
+
+/// A software copy of a decoded VA-API surface, in the format the driver prefers.
+pub(crate) fn download(surface: &ff::frame::Video) -> Result<ff::frame::Video, Error> {
+    if surface.format() != ff::format::Pixel::VAAPI {
+        return Err(Error::BadParameter("download needs a VA-API surface"));
+    }
+    let mut picture = ff::frame::Video::empty();
+    // SAFETY: `picture` is an empty, owned AVFrame, for which FFmpeg allocates the buffers itself;
+    // `surface` is a valid hardware frame that the decoder returned.
+    let r = unsafe { ffi::av_hwframe_transfer_data(picture.as_mut_ptr(), surface.as_ptr(), 0) };
+    if r < 0 {
+        return Err(Error::NoHardware(format!(
+            "download from the GPU failed ({r})"
+        )));
+    }
+    Ok(picture)
+}
 
 /// A VA-API device and a pool of NV12 surfaces of one size.
 pub(crate) struct VaapiFrames {
@@ -32,21 +86,7 @@ impl VaapiFrames {
     pub(crate) fn new(width: u32, height: u32) -> Result<VaapiFrames, Error> {
         let w = i32::try_from(width).map_err(|_| Error::BadParameter("width"))?;
         let h = i32::try_from(height).map_err(|_| Error::BadParameter("height"))?;
-        let mut device: *mut ffi::AVBufferRef = ptr::null_mut();
-        // SAFETY: `device` is a valid out-pointer; a null device name and options select the
-        // default VA-API render node; on failure FFmpeg leaves `device` null.
-        let r = unsafe {
-            ffi::av_hwdevice_ctx_create(
-                &mut device,
-                ffi::AVHWDeviceType::AV_HWDEVICE_TYPE_VAAPI,
-                ptr::null(),
-                ptr::null_mut(),
-                0,
-            )
-        };
-        if r < 0 || device.is_null() {
-            return Err(Error::NoHardware(format!("no VA-API device ({r})")));
-        }
+        let device = create_device()?;
         // From here on `Drop` releases what was allocated.
         let mut this = VaapiFrames {
             device,

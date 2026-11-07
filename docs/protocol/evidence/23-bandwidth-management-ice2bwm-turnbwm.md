@@ -51,3 +51,5 @@ The XOR examples of §2.2.4 (pp. 15–16) are correct: 0x1122⊕0x4455 = 0x5577;
 
 ## Implementation (2026-11-01, frame rate by size)
 BW-18: the CLI sends at most 15 fps below 640x360 (the highest of the request's lower rates: 15 or 7.5). Status: tested-offline.
+
+Hardware decoding (2026-11-07, `video-ffmpeg`, measured, not a protocol rule): `decode_load` with fine moving detail, CPU ticks for 360 pictures. Integrated AMD GPU: 720p 34–35 on the GPU, 19 on the CPU; 1080p 57–58 and 45. Intel i5-10310U with integrated GPU: 720p 246–257 and 127–138; 1080p 497–506 and 281–284. Download and conversion of the pictures are included, because the window needs them in memory. Not measured: power, several streams at once. Conclusion: GPU decoding stays off by default until a display can show surfaces without copying them back (**inference**: the copy is the cost; it was not measured separately).

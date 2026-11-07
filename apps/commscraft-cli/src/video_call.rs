@@ -633,6 +633,13 @@ fn hardware_allowed() -> bool {
     std::env::var("COMMSCRAFT_VIDEO_HW").map_or(true, |v| v.trim() != "0")
 }
 
+/// GPU decoding only if `COMMSCRAFT_VIDEO_DECODE=gpu` asks for it: decoded pictures are copied back
+/// for the window, and measured (720p, 1080p, AMD and Intel) that costs more CPU time than decoding
+/// on the CPU.
+fn gpu_decoding_wanted() -> bool {
+    std::env::var("COMMSCRAFT_VIDEO_DECODE").is_ok_and(|v| v.trim() == "gpu")
+}
+
 /// Shortest time between two encoder rebuilds for a higher bit rate alone, and the changes that
 /// are worth one (design values: a rebuild costs an IDR picture).
 const REBUILD_MS: u64 = 2000;
@@ -663,13 +670,14 @@ fn spawn_window(
     id: u32,
 ) {
     std::thread::spawn(move || {
-        let mut decoder = match vf::init().and_then(|()| vf::Decoder::new()) {
-            Ok(d) => d,
-            Err(e) => {
-                let _ = events.send(FromVideo::Notice(id, format!("no video decoder: {e:?}")));
-                return;
-            }
-        };
+        let mut decoder =
+            match vf::init().and_then(|()| vf::Decoder::with_hardware(gpu_decoding_wanted())) {
+                Ok(d) => d,
+                Err(e) => {
+                    let _ = events.send(FromVideo::Notice(id, format!("no video decoder: {e:?}")));
+                    return;
+                }
+            };
         let mut window: Option<vf::Display> = None;
         let mut failed = false;
         while !stop.load(Ordering::Relaxed) {
@@ -687,7 +695,15 @@ fn spawn_window(
                             window = Some(w);
                             let _ = events.send(FromVideo::Notice(
                                 id,
-                                format!("receiving video {}x{}", p.width, p.height),
+                                format!(
+                                    "receiving video {}x{}, decoding on the {}",
+                                    p.width,
+                                    p.height,
+                                    match decoder.backend() {
+                                        vf::Backend::Vaapi => "GPU (VA-API)",
+                                        vf::Backend::Software => "CPU",
+                                    }
+                                ),
                             ));
                         }
                         Err(e) => {
