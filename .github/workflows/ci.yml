@@ -41,6 +41,8 @@ jobs:
         run: |
           python3 -I scripts/collect_open_points.py
           git diff --exit-code docs/protocol/conflicts-gaps-open-points.md
+      - name: Workflows cannot change the repository
+        run: python3 -I scripts/check_workflows.py
       - name: No specification documents or captures committed
         run: |
           if git ls-files | grep -i -E '\.(pdf|pcap|pcapng|etl|docx?)$'; then

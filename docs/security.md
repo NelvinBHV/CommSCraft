@@ -1,6 +1,6 @@
 # Security by design
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-01 · **Change:** minor (D-13: the one unsafe module)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (issue #92: CI cannot change the repository)
 
 CommSCraft handles passwords, Kerberos tickets, NTLM session keys and SRTP keys. It talks to
 servers and peers it cannot trust. Security is part of every design decision, not a later review.
@@ -54,6 +54,7 @@ This page lists the rules every crate follows and how each is enforced. The gene
 | Media sockets accept only known peers | Call media: non-blocking sockets, receives bounded to 1500 octets; relay sockets accept only the TURN server; RTP/RTCP only from the ICE-selected/usable peer or the direct address; ICE credentials and SRTP keys from the OS CSPRNG (abort if unavailable) | `call-media` |
 | No traffic to this host or the local link | ICE candidates, peer-reflexive addresses, mapped addresses and the default addresses of a peer without ICE must not be loopback or link-local (unless we use such an address ourselves, i.e. a local test), unspecified, multicast, broadcast or port 0 (issue #42) | `ice::usable_peer_address`, `ice-agent`, `call-media` |
 | Bounded TCP relay buffer | One way into the TCP relay's write buffer (64 KiB): media that does not fit is dropped like a lost datagram, a TURN control message that does not fit gives the relay up (issue #42) | `call-media` |
+| CI cannot change the repository | Workflows run with read-only tokens, without persisted credentials, `pull_request_target` or `git push`; the docs job enforces it (issue #92) | `scripts/check_workflows.py` |
 | Sound files are untrusted | WAV files read with a 16 MiB limit, only PCM with 1–2 channels, 8–48 kHz and 16/24 bits, at most 64 chunks with checked lengths and 10 min; alert sounds play on their own stream, never into a call; only music on hold goes to the peer and only while we hold | `tones`, CLI `cues` |
 | Media authenticated before decoding | Media core: SRTP authentication before any parsing of the payload; only the peer's first SSRC and the negotiated payload types; jitter buffer bounded (50 packets) and windowed; packets > 1500 octets dropped; playout never blocks; rate figures from the network saturate and stay between a floor and our capacity, the estimator's state does not grow with the input (`media::rate`) | `media` |
 | Calls only by the user | Calls: an incoming call only rings (60 s, then 480) until the user accepts; every SDP passes the bounded parser and the encryption policy (a plaintext answer to a required offer ends the call with BYE); keys are never renegotiated in a re-INVITE (SD-13); at most 4 calls | `session` |

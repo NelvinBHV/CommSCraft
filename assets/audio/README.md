@@ -10,7 +10,7 @@ The CommSCraft project owner has selected these sounds as the default user-inter
 
 The short notification retains the V4 composition and arrangement. Pulse and Beat Call use a common 112 BPM, 4/4 grid.
 
-The sources for reproducible rendering are in [`generate_soundpack.py`](generate_soundpack.py); the [GitHub Actions workflow](../../.github/workflows/build-soundpack.yml) renders the audio using the supplied sources and commits WAV, Opus, MP3 and SHA-256 checksums to this directory. Re-rendered encodings may differ byte-for-byte from the initially auditioned preview files depending on the installed renderer and codec versions.
+The sources for reproducible rendering are in [`generate_soundpack.py`](generate_soundpack.py); the [GitHub Actions workflow](../../.github/workflows/build-soundpack.yml) renders the audio read-only using the supplied sources and offers WAV, Opus, MP3 and SHA-256 checksums as an artifact; a new rendering reaches this directory through a pull request. Re-rendered encodings may differ byte-for-byte from the initially auditioned preview files depending on the installed renderer and codec versions.
 
 ## Instrument provenance
 
