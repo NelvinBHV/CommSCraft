@@ -401,7 +401,7 @@ pub fn set_delegate_body(version: u32, delegate: &str, add: bool) -> Result<Stri
 }
 
 /// Headers and body of the self SUBSCRIBE (PR-13, §2.2.2.3.1): only the own category instances
-/// are asked for (`roaming type="categories"`).
+/// and containers are asked for (`roaming type="categories"`, `"containers"`).
 pub fn self_subscribe(m: &mut Message) {
     m.push_header("Event", ROAMING_SELF_EVENT);
     m.push_header("Accept", ROAMING_SELF_TYPE);
@@ -409,7 +409,7 @@ pub fn self_subscribe(m: &mut Message) {
     m.push_header("Content-Type", ROAMING_SELF_TYPE);
     // PR-21: also the delegate list (roamingEx type="delegates", §2.2.2.3.1).
     m.body = format!(
-        "<roamingList xmlns=\"{NS_ROAMING_SELF}\"><roaming type=\"categories\"/><roamingEx xmlns=\"{NS_ROAMING_SELF_EX}\" type=\"delegates\"/></roamingList>"
+        "<roamingList xmlns=\"{NS_ROAMING_SELF}\"><roaming type=\"categories\"/><roaming type=\"containers\"/><roamingEx xmlns=\"{NS_ROAMING_SELF_EX}\" type=\"delegates\"/></roamingList>"
     )
     .into_bytes();
 }
@@ -421,6 +421,8 @@ pub struct SelfRouting {
     pub rules: Option<Forwarding>,
     /// Current versions of the routing instance per [`ROUTING_CONTAINERS`] entry (PR-05).
     pub versions: [Option<u32>; 5],
+    /// Current version of the routing instance in the Blocked Contacts container.
+    pub block_version: Option<u32>,
 }
 
 /// The routing category instances in a roaming-self document (`roamingData/categories`, or a
@@ -445,6 +447,11 @@ pub fn parse_self_routing(xml: &str) -> Result<SelfRouting, Error> {
             .attr("container")
             .and_then(|v| v.trim().parse::<u32>().ok());
         let version = c.attr("version").and_then(|v| v.trim().parse::<u32>().ok());
+        // The instance in the Blocked Contacts container only blocks; it is not the user's rules.
+        if container == Some(BLOCKED_CONTAINER) {
+            out.block_version = version;
+            continue;
+        }
         if let (Some(container), Some(version)) = (container, version) {
             if let Some(i) = ROUTING_CONTAINERS.iter().position(|x| *x == container) {
                 if let Some(slot) = out.versions.get_mut(i) {
@@ -1062,6 +1069,154 @@ pub fn parse_contact_list(xml: &str) -> Result<ContactList, Error> {
         }
     }
     Ok(l)
+}
+
+/// Namespace of the container list in the self document ([MS-PRES] §2.2.2.5.1).
+pub const NS_CONTAINERS: &str = "http://schemas.microsoft.com/2006/09/sip/containers";
+const NS_CONTAINER_MANAGEMENT: &str =
+    "http://schemas.microsoft.com/2006/09/sip/container-management";
+/// The removing action: `remove` in the schema (§6.11) and the example (§4.9.2); the prose of
+/// §2.2.2.5.2 says `delete`. The schema is authoritative.
+const MEMBER_REMOVE: &str = "remove";
+pub const SET_CONTAINER_MEMBERS_TYPE: &str = "application/msrtc-setcontainermembers+xml";
+/// The Blocked Contacts container (OB-05, PR-60).
+pub const BLOCKED_CONTAINER: u32 = 32000;
+
+/// The privacy relationships: the containers of OB-05.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Relationship {
+    External,
+    Colleagues,
+    Workgroup,
+    Family,
+    Blocked,
+}
+
+impl Relationship {
+    pub const ALL: [Relationship; 5] = [
+        Relationship::External,
+        Relationship::Colleagues,
+        Relationship::Workgroup,
+        Relationship::Family,
+        Relationship::Blocked,
+    ];
+
+    pub fn container(self) -> u32 {
+        match self {
+            Relationship::External => 100,
+            Relationship::Colleagues => 200,
+            Relationship::Workgroup => 300,
+            Relationship::Family => 400,
+            Relationship::Blocked => BLOCKED_CONTAINER,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Relationship::External => "external",
+            Relationship::Colleagues => "colleagues",
+            Relationship::Workgroup => "workgroup",
+            Relationship::Family => "family",
+            Relationship::Blocked => "blocked",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|r| r.name() == s)
+    }
+}
+
+/// One member of a container ([MS-PRES] §2.2.2.5.1).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Member {
+    pub kind: String,
+    pub value: Option<String>,
+}
+
+/// A container with its membership version.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Container {
+    pub id: u32,
+    pub version: u32,
+    pub members: Vec<Member>,
+}
+
+/// The containers in a self document; `None` if it carries none.
+pub fn parse_containers(xml: &str) -> Result<Option<Vec<Container>>, Error> {
+    let root = commscraft_xml::parse(xml, &Limits::default())?;
+    let list = match (root.name.as_str(), root.namespace.as_deref()) {
+        ("roamingData", Some(NS_ROAMING_SELF)) => root.child("containers"),
+        ("containers", Some(NS_CONTAINERS)) => Some(&root),
+        _ => None,
+    };
+    let Some(list) = list else {
+        return Ok(None);
+    };
+    let num = |e: &Element, a: &str| e.attr(a).and_then(|v| v.trim().parse::<u32>().ok());
+    let mut out = Vec::new();
+    for c in list.children_named("container") {
+        if let (Some(id), Some(version)) = (num(c, "id"), num(c, "version")) {
+            out.push(Container {
+                id,
+                version,
+                members: c
+                    .children_named("member")
+                    .map(|m| Member {
+                        kind: printable(m.attr("type").unwrap_or("")),
+                        value: m.attr("value").map(printable),
+                    })
+                    .collect(),
+            });
+        }
+    }
+    Ok(Some(out))
+}
+
+/// A user's address as a container member: `user@domain`, in lower case (examples [MS-PRES] §4.9).
+pub fn member_value(uri: &str) -> Result<String, Error> {
+    let uri = checked_sip_uri(uri)?;
+    let base = uri.split(';').next().unwrap_or("");
+    Ok(base.trim_start_matches("sip:").to_ascii_lowercase())
+}
+
+/// One user added to or removed from a container at its current version.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MemberChange {
+    pub container: u32,
+    pub version: u32,
+    pub add: bool,
+    pub user: String,
+}
+
+/// setContainerMembers SERVICE body (PR-20; [MS-PRES] §2.2.2.5.2, pp. 46–47): several changes in
+/// one request (§3.5.5.1). Container 0 cannot be changed.
+pub fn set_container_members_body(changes: &[MemberChange]) -> Result<String, Error> {
+    let mut b = format!("<setContainerMembers xmlns=\"{NS_CONTAINER_MANAGEMENT}\">");
+    for c in changes {
+        if c.container == 0 {
+            return Err(Error::OutOfRange);
+        }
+        b.push_str(&format!(
+            "<container id=\"{}\" version=\"{}\"><member action=\"{}\" type=\"user\" value=\"{}\"/></container>",
+            c.container,
+            c.version,
+            if c.add { "add" } else { MEMBER_REMOVE },
+            escape(&c.user)
+        ));
+    }
+    b.push_str("</setContainerMembers>");
+    Ok(b)
+}
+
+/// SERVICE body publishing the blocking routing instance into the Blocked Contacts container
+/// (Lync SDK "Blocked Contacts container"; [MS-SIPRE] §3.9.5.1 example, pp. 84–85): calls of its
+/// members fail at the server.
+pub fn publish_block_routing_body(aor: &str, version: u32) -> Result<String, Error> {
+    let aor = checked_sip_uri(aor)?;
+    Ok(format!(
+        "<publish xmlns=\"{NS_PUBLISH}\"><publications uri=\"{}\"><publication categoryName=\"routing\" instance=\"0\" container=\"{BLOCKED_CONTAINER}\" version=\"{version}\" expireType=\"static\"><routing xmlns=\"{NS_ROUTING}\" name=\"rtcdefault\" version=\"1\"><preamble><flags name=\"clientflags\" value=\"block\"/></preamble></routing></publication></publications></publish>",
+        escape(&aor)
+    ))
 }
 
 /// `Content-Type` of a contact list change ([MS-SIP] §4.6, p. 60).

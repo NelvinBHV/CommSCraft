@@ -2,7 +2,7 @@
 
 **Stage: M5 in progress** · M0 done · M1, M2, M3 built · M4 closed · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (contact list editing)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-07 · **Change:** minor (privacy relationships and blocking)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,11 +16,11 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **14** tested-offline as a whole, **17** in parts, **19** not started, 2 not planned/needs captures; **27** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Implementation status of the 52 functions | **15** tested-offline as a whole, **17** in parts, **18** not started, 2 not planned/needs captures; **28** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **38 crates + 1 app** (`commscraft-cli`), **431 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **38 crates + 1 app** (`commscraft-cli`), **433 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -46,6 +46,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-07 | Privacy relationships and blocking (`/privacy`): a blocked user sees the user as offline and cannot reach them, enforced at the server and in the client; also `tested-in-lab`. |
 | 2026-11-07 | Contact list editing: add, change, move and remove contacts; add, rename and remove groups (`/contact`, `/contactgroup`), each at the list's current version; also `tested-in-lab`. |
 | 2026-11-07 | A transfer stays valid when the unattended transferor ends the call before the new call is ready (bounded in time and number). Transfer and sign-out are now also `tested-in-lab`. |
 | 2026-11-07 | New status `tested-in-lab`: 24 functions are marked as also tested in the owner's private lab (feature matrix); meeting video through the A/V MCU is among them, so O-CA-1 is closed. Details stay private; `verified-interoperable` stays reserved for the owner's runs. |
