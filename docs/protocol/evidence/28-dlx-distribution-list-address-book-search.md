@@ -24,3 +24,10 @@ Source: [MS-DLX] "Distribution List Expansion Protocol", edition 20250520, 70 pp
 ## Later finding (file 39)
 - O-DL-1 **secondary evidence** (OB-12): endpoint = the provisioned `dlxInternalUrl`/`dlxExternalUrl`; SOAPAction `DistributionListExpander/IAddressBook/SearchAbEntry`.
 - O-DL-1 **closed** (OB-44, normative): the provisioned `dlx*`/`abwq*` URLs are the MS-DLX endpoint (MS-SIPREGE §2.2.2.5.1, pp. 27–28). K-DL-1 resolved: the `AddressBookWinNegotiate` binding (p. 65) prints `DistributionListExpander/ExpandDistributionList` without the space.
+
+## Implementation (2026-11-08, ExpandDistributionList)
+- **Request (DL-04):** `dlx::expand_request` with exactly one escaped `groupMailAddress`, SOAPAction `"DistributionListExpander/ExpandDistributionList"` (K-DL-1, also `tested-in-lab`).
+- **Answer:** `parse_expand_response` reads ResponseStatus (unknown values count as Invalid), Users and NestedGroups with displayName, mail, mailNickname and a checked `sipUri`. At most 1000 members are read; text is cleaned.
+- **CLI:** `/expand LIST@DOMAIN`, over the same NTLM/HTTP call as the search.
+- **Status:** `tested-offline`, `tested-in-lab`.
+

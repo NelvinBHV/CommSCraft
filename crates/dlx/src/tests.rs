@@ -97,3 +97,84 @@ fn faults_and_hostile_documents() {
         Err(Error::WrongDocument("namespace"))
     );
 }
+
+/// DL-04: the expansion request carries exactly one escaped `groupMailAddress` in the
+/// `DistributionListExpander` namespace; empty and over-long addresses are refused.
+#[test]
+fn expand_request_form() {
+    let r = expand_request(" team&co@contoso.com ").unwrap();
+    assert!(r.contains(r#"<ExpandDistributionList xmlns="DistributionListExpander"><groupMailAddress>team&amp;co@contoso.com</groupMailAddress></ExpandDistributionList>"#), "{r}");
+    assert_eq!(
+        EXPAND_SOAP_ACTION,
+        "\"DistributionListExpander/ExpandDistributionList\""
+    );
+    assert_eq!(expand_request("  "), Err(Error::EmptyQuery));
+    assert_eq!(expand_request(&"a".repeat(300)), Err(Error::QueryTooLong));
+    assert_eq!(expand_request("a\r\nb"), Err(Error::QueryTooLong));
+}
+
+fn expansion(result: &str) -> String {
+    format!(
+        r#"<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><ExpandDistributionListResponse xmlns="DistributionListExpander"><ExpandDistributionListResult>{result}</ExpandDistributionListResult></ExpandDistributionListResponse></s:Body></s:Envelope>"#
+    )
+}
+
+/// DL-04: status, users and nested lists (§3.1.4.1.3.3–§3.1.4.1.3.5); unusable SIP URIs are
+/// dropped, display text cleaned, unknown states are Invalid.
+#[test]
+fn expand_answers() {
+    let x = parse_expand_response(&expansion(
+        r#"<ResponseStatus>Success</ResponseStatus><Users><ActiveDirectoryObjectInfo><displayName>Alice&#x202e;</displayName><mail>alice@contoso.com</mail><mailNickname>alice</mailNickname><sipUri>sip:alice@contoso.com</sipUri></ActiveDirectoryObjectInfo><ActiveDirectoryObjectInfo><displayName>Mallory</displayName><sipUri>sip:m@x.com&gt;;evil</sipUri></ActiveDirectoryObjectInfo></Users><NestedGroups><ActiveDirectoryObjectInfo><displayName>Sub</displayName><mail>sub@contoso.com</mail></ActiveDirectoryObjectInfo></NestedGroups>"#,
+    ))
+    .unwrap();
+    assert_eq!(x.status, ExpandStatus::Success);
+    assert_eq!(x.users.len(), 2);
+    assert_eq!(x.users[0].display_name.as_deref(), Some("Alice"));
+    assert_eq!(x.users[0].sip_uri.as_deref(), Some("sip:alice@contoso.com"));
+    assert_eq!(x.users[1].sip_uri, None);
+    assert_eq!(x.nested_groups[0].mail.as_deref(), Some("sub@contoso.com"));
+    for (state, want) in [
+        ("NotFound", ExpandStatus::NotFound),
+        ("NotAuthorized", ExpandStatus::NotAuthorized),
+        (
+            "MemberCountLimitExceeded",
+            ExpandStatus::MemberCountLimitExceeded,
+        ),
+        (
+            "SimultaneousRequestLimitExceeded",
+            ExpandStatus::SimultaneousRequestLimitExceeded,
+        ),
+        ("Something", ExpandStatus::Invalid),
+    ] {
+        let x = parse_expand_response(&expansion(&format!(
+            "<ResponseStatus>{state}</ResponseStatus>"
+        )))
+        .unwrap();
+        assert_eq!((x.status, x.users.len()), (want, 0));
+    }
+}
+
+/// Security by design: wrong envelope or namespace, a fault, and too many members.
+#[test]
+fn expand_hostile_answers() {
+    assert!(matches!(
+        parse_expand_response("<a/>"),
+        Err(Error::WrongDocument(_))
+    ));
+    let other_ns = expansion("<ResponseStatus>Success</ResponseStatus>")
+        .replace("DistributionListExpander", "urn:other");
+    assert!(matches!(
+        parse_expand_response(&other_ns),
+        Err(Error::WrongDocument(_))
+    ));
+    let fault = r#"<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><s:Fault><faultstring>no</faultstring></s:Fault></s:Body></s:Envelope>"#;
+    assert_eq!(parse_expand_response(fault), Err(Error::Fault("no".into())));
+    let many: String = (0..1500)
+        .map(|i| format!("<ActiveDirectoryObjectInfo><mail>u{i}@contoso.com</mail></ActiveDirectoryObjectInfo>"))
+        .collect();
+    let x = parse_expand_response(&expansion(&format!(
+        "<ResponseStatus>Success</ResponseStatus><Users>{many}</Users>"
+    )))
+    .unwrap();
+    assert_eq!(x.users.len(), MAX_MEMBERS);
+}

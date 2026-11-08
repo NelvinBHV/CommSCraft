@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (error diagnostics)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (distribution list expansion)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -39,7 +39,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 11 | Contact list (Exchange unified contact store) | MS-PRES, MS-OXWSCOS, MS-OXWSPERS | B\* | – |
 | 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | **lab**, tested-offline (set the relationship per user, block at the server and in the client; the notice that someone added the user, with acknowledgement: `presence`, `session`, CLI `/privacy`, `/seen`) |
 | 13 | Offline address book | MS-ABS | B\* | **lab**, parts tested-offline (newest full file from the provisioned address book service over HTTPS with NTLM, decompressed with a size bound, header, normalization rules, attributes and contacts read and checked against the trailer, search by name and address, reverse lookup of a caller's number: `abs`, `net::http`; CLI `/addressbook`, `/lookup`); delta files, a disk cache and the .NET regular expressions of the normalization rules – |
-| 14 | Address book and distribution list search | MS-DLX, MS-NTHT | B\* | **lab**, parts tested-offline (SearchAbEntry basic search with checked answer: `dlx`; NTLM over HTTP on a kept-alive connection: `ntlm`, `net`; CLI `/search`); distribution list expansion – |
+| 14 | Address book and distribution list search | MS-DLX, MS-NTHT | B\* | **lab**, tested-offline (SearchAbEntry basic search with checked answer; ExpandDistributionList with status, members and nested lists: `dlx`; NTLM over HTTP on a kept-alive connection: `ntlm`, `net`; CLI `/search`, `/expand`) |
 | 15 | Contact photos | MS-OXWSPHOTO | B | – |
 | 16 | Calendar and out-of-office state | MS-PRES (format) | T | – |
 | 17 | Instant messaging 1:1 | MS-SIPRE, MS-OCSPROT | B | **lab**, tested-offline (incoming and outgoing sessions, queued text, delivery state: `im`, `session`) |
@@ -79,4 +79,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **17** tested-offline as a whole, **18** in parts, **15** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **30** of them also `tested-in-lab`
+**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **18** tested-offline as a whole, **17** in parts, **15** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **30** of them also `tested-in-lab`
