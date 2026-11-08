@@ -37,6 +37,8 @@ use commscraft_sip_msg::{Header, Message, StartLine};
 pub const TRANSACTION_TIMEOUT: u64 = 32;
 /// Upper bound of simultaneous conversations (design).
 pub const MAX_CONVERSATIONS: usize = 64;
+/// Open INVITEs whose progress diagnostics are kept for an error report (ER-04; design).
+const MAX_PROGRESS_CALLS: usize = 16;
 /// Upper bound of presence subscriptions (batches and single ones; design).
 pub const MAX_SUBSCRIPTIONS: usize = 128;
 /// Retry delay after a subscription ended or failed (design).
@@ -515,6 +517,13 @@ pub enum Event {
         call: CallId,
         status: u16,
     },
+    /// Function 46 (ER-01, ER-02, ER-07): the server's diagnostics for a failed request of ours
+    /// (`method`, final `status`) or in a BYE/CANCEL it sent (`status` 0).
+    Diagnostic {
+        method: String,
+        status: u16,
+        diagnostic: commscraft_ocer::Diagnostic,
+    },
     /// Something the user should know but that is not an error of theirs.
     Notice(String),
 }
@@ -564,6 +573,8 @@ enum Purpose {
     },
     ContactEdit,
     SetMembers,
+    /// ER-04: a reportError SERVICE.
+    ReportError,
     /// The network members the container manifest requires (RG-45).
     ManifestMembers,
     PublishBlock,
@@ -664,6 +675,10 @@ pub struct Engine<R: Random> {
     /// RG-45: the server's container manifest, and how often its members were tried to set up.
     container_manifest: Option<prov::ContainerManifest>,
     manifest_tries: u8,
+    /// ER-04: diagnostics of progress responses per open INVITE (bounded), and whether the
+    /// server still takes error reports in this session (ER-05).
+    progress_diagnostics: HashMap<(String, u32), Vec<String>>,
+    report_errors: bool,
     /// Version of the blocking routing instance, once published.
     block_version: Option<u32>,
     /// A contact list change is under way until the changed list arrives, at most until then.
@@ -738,6 +753,8 @@ impl<R: Random> Engine<R> {
             containers: None,
             container_manifest: None,
             manifest_tries: 0,
+            progress_diagnostics: HashMap::new(),
+            report_errors: true,
             told_subscribers: HashSet::new(),
             privacy_edit_until: None,
             block_version: None,
@@ -1995,10 +2012,24 @@ impl<R: Random> Engine<R> {
                 .get(&key)
                 .map(|p| (p.purpose.clone(), p.request.clone()))
             {
+                // ER-04: progress reports (e.g. 101) of an INVITE, kept for a report.
+                if request.method() == Some("INVITE") {
+                    if let Some(v) = resp.header_values("ms-diagnostics").next() {
+                        if self.progress_diagnostics.contains_key(&key)
+                            || self.progress_diagnostics.len() < MAX_PROGRESS_CALLS
+                        {
+                            let list = self.progress_diagnostics.entry(key.clone()).or_default();
+                            if list.len() < commscraft_ocer::MAX_PROGRESS {
+                                list.push(v.chars().take(commscraft_ocer::MAX_HEADER).collect());
+                            }
+                        }
+                    }
+                }
                 self.on_call_provisional(&purpose, &request, resp, now, out);
             }
             return;
         }
+        let progress = self.progress_diagnostics.remove(&key).unwrap_or_default();
         let Some(p) = self.pending.remove(&key) else {
             return;
         };
@@ -2009,6 +2040,14 @@ impl<R: Random> Engine<R> {
                 let ack = im::ack_for_failure(&p.request, resp);
                 self.send_plain(ack, now, out);
             }
+            if p.purpose == Purpose::ReportError {
+                // ER-05: whether the server takes further reports.
+                let diag = commscraft_ocer::Diagnostic::from_message(resp);
+                let retry = resp.single("Retry-After").ok().flatten().is_some();
+                self.report_errors = commscraft_ocer::keep_reporting(code, retry, diag.as_ref());
+                return;
+            }
+            self.on_diagnostics(&p.request, resp, code, progress, now, out);
             if code == 409 {
                 if let Some(retry) = self.on_conflict(&p, resp) {
                     match retry {
@@ -2032,6 +2071,78 @@ impl<R: Random> Engine<R> {
             }
             self.on_failure(p, code, now, out);
         }
+    }
+
+    /// Function 46: the diagnostics of a failed request are shown (ER-01, ER-07); a failed
+    /// INVITE that the server explains is reported to it with its progress reports (ER-04),
+    /// unless the peer simply did not take the call or the server takes no reports any more
+    /// (ER-05).
+    fn on_diagnostics(
+        &mut self,
+        request: &Message,
+        resp: &Message,
+        code: u16,
+        progress: Vec<String>,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let method = request.method().unwrap_or("").to_string();
+        let raw = resp.header_values("ms-diagnostics").next().map(|v| {
+            v.chars()
+                .take(commscraft_ocer::MAX_HEADER)
+                .collect::<String>()
+        });
+        if let Some(d) = commscraft_ocer::Diagnostic::from_message(resp) {
+            out.push(Output::Event(Event::Diagnostic {
+                method: method.clone(),
+                status: code,
+                diagnostic: d,
+            }));
+        }
+        // Only what the server explains: an INVITE without diagnostics, or one the peer simply
+        // did not take (offline, busy, cancelled, declined), is not reported (design).
+        if method != "INVITE"
+            || raw.is_none()
+            || matches!(code, 480 | 486 | 487 | 600 | 603)
+            || !self.report_errors
+        {
+            return;
+        }
+        let tag = |v: Option<&str>| {
+            v.and_then(|v| {
+                v.split(';')
+                    .find_map(|p| p.trim().strip_prefix("tag="))
+                    .map(str::to_string)
+            })
+        };
+        let uri = |v: Option<&str>| {
+            v.and_then(|v| commscraft_sip_msg::parse_name_addr(v).ok())
+                .map(|n| n.uri)
+        };
+        let report = commscraft_ocer::Report {
+            from_uri: None,
+            to_uri: uri(request.single("To").ok().flatten()),
+            call_id: request.call_id().ok().flatten().unwrap_or("").to_string(),
+            from_tag: tag(request.single("From").ok().flatten()),
+            to_tag: tag(resp.single("To").ok().flatten()),
+            request_type: method,
+            content_type: request
+                .single("Content-Type")
+                .ok()
+                .flatten()
+                .map(str::to_string),
+            response_code: code,
+            diag_header: raw,
+            progress,
+        };
+        let Ok(body) = commscraft_ocer::report_error_body(&report) else {
+            return;
+        };
+        let aor = self.cfg.aor.clone();
+        let mut m = self.request("SERVICE", &aor, &aor);
+        m.push_header("Content-Type", commscraft_ocer::REPORT_ERROR_TYPE);
+        m.body = body.into_bytes();
+        self.send_request(m, Purpose::ReportError, now, out);
     }
 
     /// PR-05: a 409 with `curVersion` – remember the versions and retry once.
@@ -2145,7 +2256,10 @@ impl<R: Random> Engine<R> {
                 out.push(Output::Event(Event::OwnStatus(s)));
             }
             Purpose::ContactEdit => self.on_contact_edit_answered(resp, now, out),
-            Purpose::SetMembers | Purpose::ManifestMembers | Purpose::AcknowledgeSubscriber => {}
+            Purpose::SetMembers
+            | Purpose::ManifestMembers
+            | Purpose::ReportError
+            | Purpose::AcknowledgeSubscriber => {}
             Purpose::PublishBlock => self.block_version = Some(self.block_version.unwrap_or(0) + 1),
             Purpose::SetDelegate { .. } => {
                 // §2.2.2.10.3: the 200 carries the complete delegate list.
@@ -2366,12 +2480,24 @@ impl<R: Random> Engine<R> {
             // The dial-out of the same invitee reports the outcome; a client that takes no
             // invitation answers it with an error and is reached that way.
             Purpose::ConfInvitation => {}
+            // An optional report that timed out is not repeated.
+            Purpose::ReportError => {}
             Purpose::Ignore => {}
         }
     }
 
     fn on_request(&mut self, req: &Message, now: u64, out: &mut Vec<Output>) {
         let method = req.method().unwrap_or("").to_ascii_uppercase();
+        // ER-01: the server may say in a BYE or CANCEL why it ends a session (§2.2.1.1).
+        if method == "BYE" || method == "CANCEL" {
+            if let Some(d) = commscraft_ocer::Diagnostic::from_message(req) {
+                out.push(Output::Event(Event::Diagnostic {
+                    method: method.clone(),
+                    status: 0,
+                    diagnostic: d,
+                }));
+            }
+        }
         // SIP-05: a BENOTIFY is never answered (we do not offer it, but a server may send it).
         if method == "BENOTIFY" {
             if let Some(i) = self

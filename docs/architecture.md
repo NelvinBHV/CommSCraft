@@ -47,6 +47,7 @@ Rules for working in the code are in
 | `commscraft-net` | adapter | TLS client (rustls + ring, system trust store, optional enterprise CA), blocking SIP connection over the bounded decoder, OS random source, HTTPS GET for Autodiscover, DNS SRV client | CON-01…CON-04, CON-11, AD-02…AD-04, [SFB-TLS] |
 | `commscraft-cli` | app | Owner's interop tool: discovery (Autodiscover, DNS SRV), sign in, keep-alive, provisioning summary, presence, IM, interactive mode on the session engine (incl. audio calls), sign out; `--discover-only`; `--authorized` required | IT-16, IT-19 |
 | `commscraft-presence` | L3 | Enhanced presence: publish own userState, batch presence queries (multipart/RLMI/categories), roaming contact list | PR-05, PR-10…PR-17, PR-30…PR-36, SIP-01/02/04/07, K-PR-1 |
+| `commscraft-ocer` | L3 | Client error reporting: `ms-diagnostics` headers, explanations of handled error identifiers, `reportError` document | ER-01 … ER-07 |
 | `commscraft-dlx` | L3 | Address book search (MS-DLX SearchAbEntry): SOAP request, bounded answer parser with SIP URI check | DL-01…DL-10, K-DL-3, OB-44 |
 | `commscraft-conf` | L3 | Group IM and meetings: C3P addConference/addUser (join, dial-out), scheduling (`schedule`: add/get/list/modify/delete), roster (RFC 4575 merge, bounded), IMDN, Ms-Sender, invitations | CB-10…CB-37, PV-01…PV-14, CI-01…CI-14, K-CI-3, K-CA-3 |
 | `commscraft-park` | L3 | Call park: park request, park response, unpark notification (MS-SIPAPP) | CK-01…CK-07 |

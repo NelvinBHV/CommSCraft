@@ -295,6 +295,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "commscraft-ocer"
+version = "0.0.1"
+dependencies = [
+ "commscraft-sip-msg",
+ "commscraft-xml",
+]
+
+[[package]]
 name = "commscraft-park"
 version = "0.0.1"
 dependencies = [
@@ -362,6 +370,7 @@ dependencies = [
  "commscraft-conf",
  "commscraft-im",
  "commscraft-lis",
+ "commscraft-ocer",
  "commscraft-park",
  "commscraft-presence",
  "commscraft-provisioning",

@@ -4541,3 +4541,93 @@ fn container_manifest_already_satisfied() {
             == Some("application/msrtc-setcontainermembers+xml")));
     }
 }
+
+/// Function 46: a failed INVITE's ms-diagnostics become an event (ER-01, ER-07) and, with the
+/// diagnostics of its progress responses, a reportError SERVICE to our own URI (ER-04); after a
+/// 503 without diagnostics to that report no further reports go out (ER-05).
+#[test]
+fn diagnostics_and_error_reports() {
+    let (mut e, mut server, _) = signed_in();
+    let start = |e: &mut Engine<Counter>, to: &str| {
+        let out = e.command(Command::StartConversation { to: to.into() }, NOW);
+        sends(&out).pop().unwrap()
+    };
+    let invite = start(&mut e, "sip:bob@contoso.com");
+    let progress = r#"12006;reason="Trying next hop";appName="OutboundRouting""#;
+    e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            101,
+            None,
+            "",
+            &[("ms-diagnostics", progress)],
+        ),
+        NOW,
+    );
+    let diag = r#"1008;reason="Unable to resolve DNS SRV record";source="pool.contoso.com""#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            504,
+            None,
+            "",
+            &[("ms-diagnostics", diag)],
+        ),
+        NOW,
+    );
+    let shown = events(&out)
+        .into_iter()
+        .find_map(|ev| match ev {
+            Event::Diagnostic {
+                method,
+                status,
+                diagnostic,
+            } => Some((method, status, diagnostic)),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(
+        (shown.0.as_str(), shown.1, shown.2.id),
+        ("INVITE", 504, 1008)
+    );
+    assert_eq!(shown.2.source.as_deref(), Some("pool.contoso.com"));
+    let report = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Content-Type").unwrap() == Some("application/msrtc-reporterror+xml"))
+        .unwrap();
+    assert_eq!(report.method(), Some("SERVICE"));
+    let b = String::from_utf8(report.body.clone()).unwrap();
+    assert!(
+        b.contains(r#"responseCode="504" requestType="INVITE""#),
+        "{b}"
+    );
+    assert!(b.contains("<diagHeader>1008;") && b.contains("<progressReport><diagHeader>12006;"));
+    // The server has no error reporting: no more reports in this session.
+    e.on_message(&answer(&mut server, &report, 503, None, "", &[]), NOW);
+    let invite = start(&mut e, "sip:carol@contoso.com");
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            504,
+            None,
+            "",
+            &[("ms-diagnostics", diag)],
+        ),
+        NOW,
+    );
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Diagnostic { .. })));
+    assert!(!sends(&out)
+        .iter()
+        .any(|m| m.single("Content-Type").unwrap() == Some("application/msrtc-reporterror+xml")));
+    // Busy without diagnostics: nothing shown, nothing reported.
+    let invite = start(&mut e, "sip:dave@contoso.com");
+    let out = e.on_message(&answer(&mut server, &invite, 486, None, "", &[]), NOW);
+    assert!(!events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Diagnostic { .. })));
+}
