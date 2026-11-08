@@ -260,7 +260,27 @@ fn sender_of_forwarded_messages() {
     assert_eq!(ms_sender("<sip:bad\"@x.y>"), None);
 }
 
-/// Invitation (secondary evidence, K-CI-3).
+/// CI-30: the invitation we send reads back as sent; `audio` only when asked for; the subject is
+/// escaped and cleaned; only a focus URI is invited to.
+#[test]
+fn invitation_documents() {
+    let b = invitation_body(FOCUS, Some("Plan <&> \u{202e}"), true).unwrap();
+    assert!(b.starts_with(r#"<Conferencing version="2.0"><focus-uri>"#));
+    assert!(b.contains(r#"<audio available="true"/>"#));
+    assert!(b.contains("Plan &lt;&amp;&gt;"));
+    let i = parse_invitation(&b).unwrap();
+    assert_eq!(i.focus, FOCUS);
+    assert!(i.im);
+    let plain = invitation_body(FOCUS, None, false).unwrap();
+    assert!(!plain.contains("audio") && plain.contains("<subject></subject>"));
+    assert_eq!(invitation_body(CHAT, None, false), Err(Error::UnsafeUri));
+    assert_eq!(
+        invitation_body("sip:x@y>\r\n", None, false),
+        Err(Error::UnsafeUri)
+    );
+}
+
+/// Invitation document of another client (CI-30, K-CI-3).
 #[test]
 fn invitations() {
     let x = format!("<Conferencing version=\"2.0\"><focus-uri>{FOCUS}</focus-uri><subject>Plan\u{202e}</subject><im available=\"true\"><first-im/></im></Conferencing>");

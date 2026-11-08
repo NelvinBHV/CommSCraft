@@ -745,6 +745,33 @@ fn group_conversation_flow() {
     );
     let b = String::from_utf8(dial_out.body.clone()).unwrap();
     assert!(b.contains("sip:bob@contoso.com") && b.contains("dialed-out") && b.contains(CHAT));
+    // CI-30: and the invitation to bob himself, naming the focus; accepted, it is acknowledged
+    // and ended at once.
+    let invitation = sends(&out)
+        .into_iter()
+        .find(|m| {
+            m.method() == Some("INVITE")
+                && m.single("Content-Type").unwrap() == Some("application/ms-conf-invite+xml")
+        })
+        .unwrap();
+    assert!(
+        matches!(&invitation.start, commscraft_sip_msg::StartLine::Request { uri, .. } if uri == "sip:bob@contoso.com")
+    );
+    let ib = String::from_utf8(invitation.body.clone()).unwrap();
+    assert!(
+        ib.contains(&format!("<focus-uri>{FOCUS}</focus-uri>")),
+        "{ib}"
+    );
+    assert!(invitation
+        .header_values("Supported")
+        .any(|v| v == "ms-sender"));
+    let accepted = e.on_message(&answer(&mut server, &invitation, 200, None, "", &[]), NOW);
+    let acked: Vec<String> = sends(&accepted)
+        .iter()
+        .filter_map(|m| m.method().map(str::to_string))
+        .collect();
+    assert_eq!(acked, ["ACK", "BYE"]);
+    assert!(events(&accepted).is_empty());
     assert!(
         events(&e.on_message(&answer(&mut server, &dial_out, 202, None, "", &[]), NOW)).is_empty()
     );
