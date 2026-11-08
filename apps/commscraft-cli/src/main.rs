@@ -1900,6 +1900,32 @@ fn interactive(
                             target.map(|t| format!(" ({t})")).unwrap_or_default()
                         );
                     }
+                    // Function 46 (ER-07): what the server says about a failure, with our
+                    // explanation of its error identifier; unknown ones with their number
+                    // (§9.3). The source is shown only in verbose mode (OCS-SEC3: internal).
+                    E::Diagnostic {
+                        method,
+                        status,
+                        diagnostic: d,
+                    } => {
+                        let what = d.explanation().map_or_else(
+                            || format!("error {}", d.id),
+                            |e| format!("error {}: {e}", d.id),
+                        );
+                        let context = if status == 0 {
+                            format!("in its {method}")
+                        } else {
+                            format!("for {method} ({status})")
+                        };
+                        println!(
+                            "* server diagnostics {context}: {what}{}{}",
+                            d.reason.map(|r| format!(" – \"{r}\"")).unwrap_or_default(),
+                            d.source
+                                .filter(|_| verbose)
+                                .map(|s| format!(" [{s}]"))
+                                .unwrap_or_default()
+                        );
+                    }
                     E::CallEnded { call, status } => {
                         cues.stop_ring(call);
                         meeting_calls.remove(&call);

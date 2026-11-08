@@ -15,3 +15,10 @@ Source: [MS-OCER] "Client Error Reporting Protocol", edition 20250520, 213 pp.
 ## Notes
 - The catalogues (ER-06/ER-07) are directly usable as a data table for CommSCraft's error display; the English texts are Microsoft product texts – adopt only the meaning and write our own texts.
 - For interop tests the ms-diagnostics codes are the most important source of error information; the client should log them completely.
+
+## Implementation (2026-11-08, crate `ocer`, `session`, CLI)
+- **Reading (ER-01, ER-02):** `ms-diagnostics` and `ms-diagnostics-public` are read from failed responses and from the server's BYE/CANCEL. `;` inside quoted strings is respected, and values are bounded. The client acts on the ErrorId; the reason is only shown.
+- **Display (ER-07):** the handled identifiers of §9.2.2 get our own explanation of their meaning; unknown ones are shown by number (§9.3).
+- **Reporting (ER-04, ER-05):** a failed INVITE whose final response carries `ms-diagnostics` is reported with `reportError` to our own URI, including up to 8 progress diagnostics of its provisional responses. Calls the peer did not take (480, 486, 487, 600, 603) are not reported (design). After a 503 without diagnostics or with 2019 and without Retry-After, no further reports go out in the session.
+- **Status:** `tested-offline`, `tested-in-lab`.
+

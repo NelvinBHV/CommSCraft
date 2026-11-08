@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (offline address book)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (error diagnostics)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -71,7 +71,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 43 | Desktop and application sharing | MS-CONFAS, MS-RTASPF, MS-RDPBCGR, MS-RDPEMC | T | – |
 | 44 | Whiteboard, PowerPoint, polls | MS-PSOM | T | – |
 | 45 | Quality reports and call rating | MS-QoE | B\* | **lab**, tested-offline (VQReportEvent after every call with the measured network figures – jitter, loss, round trip, packets – of both directions, LocalPAI, selected media path; call rating 1–5 with text: `qoe`, `media`, `call-media`, `session`, CLI automatic report and `/rate`); MOS estimates are optional and not computed (OB-47) |
-| 46 | Error diagnostics and display | MS-OCER | B | – |
+| 46 | Error diagnostics and display | MS-OCER | B | **lab**, tested-offline (`ms-diagnostics` and `ms-diagnostics-public` of failed requests and of the server's BYE/CANCEL read with bounds and shown with our explanation of the handled error identifiers, unknown ones by number; failed INVITEs that the server explains reported with `reportError` including progress reports, stopped as the server's answers ask: `ocer`, `session`, CLI) |
 | 47 | Response group agent | MS-RGSWS | B | – |
 | 48 | UCWA web services | MS-CVWREST, MS-ECREST, MS-OCSMP | B | – |
 | 49 | Conversation history in Exchange | MS-OXWSCDATA, MS-OXWSSRCH | T | – |
@@ -79,4 +79,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **16** tested-offline as a whole, **18** in parts, **16** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **29** of them also `tested-in-lab`
+**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **17** tested-offline as a whole, **18** in parts, **15** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **30** of them also `tested-in-lab`
