@@ -643,6 +643,8 @@ struct Pending {
 pub struct Depacketizer {
     layout: Option<StreamLayout>,
     cur: Option<Pending>,
+    /// The priority ID of the last PACSI: the stream that arrives.
+    prid: Option<u8>,
 }
 
 impl Depacketizer {
@@ -653,6 +655,20 @@ impl Depacketizer {
     /// The last full stream layout received, with updates applied.
     pub fn layout(&self) -> Option<&StreamLayout> {
         self.layout.as_ref()
+    }
+
+    /// The priority ID of the stream that arrives (from its last PACSI).
+    pub fn prid(&self) -> Option<u8> {
+        self.prid
+    }
+
+    /// The stream goes on from another RTP source (another SSRC, e.g. another simulcast stream
+    /// forwarded by a mixer): the access unit in progress is dropped and the priority ID is
+    /// learnt again; the stream layout stays, as it describes all streams of the sender
+    /// (§2.2.5, p. 10) and a full one comes only with the next IDR (§2.2.5.1).
+    pub fn restart(&mut self) {
+        self.cur = None;
+        self.prid = None;
     }
 
     /// Feeds one packet; returns what became complete or was given up.
@@ -774,6 +790,7 @@ impl Depacketizer {
             if !known {
                 return Err(());
             }
+            self.prid = Some(pacsi.prid);
             if let Some(c) = self.cur.as_mut() {
                 c.idr |= pacsi.idr;
             }

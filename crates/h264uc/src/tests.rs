@@ -351,3 +351,53 @@ fn nal_types_of(au: &[u8]) -> Vec<u8> {
         .filter_map(|n| nal_type(n))
         .collect()
 }
+
+/// §2.2.5 / §3.2.5.1: a depacketizer learns the priority ID of the stream from its PACSI; after
+/// a restart (another RTP source of the same sender) it keeps the stream layout, so the next
+/// stream's ordinary access units are taken before its next IDR, and learns the PRID again.
+#[test]
+fn restart_keeps_the_layout() {
+    let two = StreamLayout::full(vec![
+        vga_layout().layers[0],
+        LayerDescription {
+            coded_width: 320,
+            coded_height: 180,
+            display_width: 320,
+            display_height: 180,
+            bitrate: 200_000,
+            fps_idx: 2,
+            layer_type: 0,
+            prid: 1,
+            constrained_baseline: true,
+        },
+    ])
+    .unwrap();
+    let mut big = Packetizer::new(1200, 0, two.clone()).unwrap();
+    let mut small = Packetizer::new(1200, 1, two.clone()).unwrap();
+    let idr = annex_b(&[&[0x65, 0x88, 0x84]]);
+    let p_frame = annex_b(&[&[0x41, 0x9a, 0x02]]);
+    let mut d = Depacketizer::new();
+    assert_eq!(d.prid(), None);
+    let got = feed(&mut d, &big.packetize(&idr).unwrap(), 10, 0);
+    assert!(matches!(got.as_slice(), [Output::AccessUnit { .. }]));
+    assert_eq!(d.prid(), Some(0));
+    // The small stream's first access unit (full layout, sent once) goes elsewhere; its next
+    // one carries no layout.
+    small.packetize(&idr).unwrap();
+    let later = small.packetize(&p_frame).unwrap();
+    d.restart();
+    assert_eq!(d.prid(), None);
+    assert_eq!(d.layout(), Some(&two));
+    let got = feed(&mut d, &later, 500, 3000);
+    assert!(
+        matches!(got.as_slice(), [Output::AccessUnit { idr: false, .. }]),
+        "{got:?}"
+    );
+    assert_eq!(d.prid(), Some(1));
+    // A fresh depacketizer without the layout discards it (§3.2.5.1).
+    let mut fresh = Depacketizer::new();
+    assert!(matches!(
+        feed(&mut fresh, &later, 500, 3000).as_slice(),
+        [Output::Lost { .. }]
+    ));
+}

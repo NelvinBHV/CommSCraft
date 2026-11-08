@@ -114,6 +114,11 @@ pub fn fit(entries: &[feedback::VsrEntry], path_bps: Option<u32>) -> Option<Targ
     let e = entries
         .iter()
         .find(|e| e.payload_type == sdp::video::H264UC_PT)?;
+    fit_entry(e, path_bps)
+}
+
+/// What one request entry and the path allow (see [`fit`]).
+fn fit_entry(e: &feedback::VsrEntry, path_bps: Option<u32>) -> Option<Target> {
     let aspects = if e.aspect_ratios == 0 {
         feedback::ASPECT_4_3 | feedback::ASPECT_16_9
     } else {
@@ -181,60 +186,150 @@ pub fn fit(entries: &[feedback::VsrEntry], path_bps: Option<u32>) -> Option<Targ
     })
 }
 
-/// A new target from the request and the path: the encoder follows (camera thread), the stream
-/// layout changes, the next picture is an IDR; the user hears of other sizes and rates.
+/// The most simulcast streams we send at once (design: every stream is an encoder of its own).
+const MAX_SIMULCAST: usize = 3;
+/// A further stream is only added while the path leaves this much for it (design).
+const MIN_LAYER_BPS: u32 = 64_000;
+
+/// The pixels an entry allows at most.
+fn requested_pixels(e: &feedback::VsrEntry) -> u32 {
+    let area = u32::from(e.max_width).saturating_mul(u32::from(e.max_height));
+    if e.max_pixels == 0 {
+        area
+    } else {
+        area.min(e.max_pixels)
+    }
+}
+
+/// The streams we send for a request (MS-H264PF §3.1.5.3, p. 23: simulcast of the same camera
+/// in several sizes; MS-RTP §2.2.12.2, p. 29: an A/V MCU's aggregated request may have several
+/// entries), largest first – the first gets priority ID 0. Up to `max_layers` streams, one per
+/// size; the smallest requests are served first from the path, so a narrow path takes size
+/// from the large stream and never leaves the small receivers without a picture (design).
+/// With one entry or one stream allowed, as [`fit`].
+pub fn plan(
+    entries: &[feedback::VsrEntry],
+    path_bps: Option<u32>,
+    max_layers: usize,
+) -> Vec<Target> {
+    let mut asked: Vec<&feedback::VsrEntry> = entries
+        .iter()
+        .filter(|e| e.payload_type == sdp::video::H264UC_PT)
+        .collect();
+    if max_layers <= 1 || asked.len() <= 1 {
+        return fit(entries, path_bps).into_iter().collect();
+    }
+    asked.sort_by_key(|e| requested_pixels(e));
+    let mut out: Vec<Target> = Vec::new();
+    let mut used = 0u32;
+    for e in asked {
+        if out.len() >= max_layers {
+            break;
+        }
+        let budget = path_bps.map(|p| p.saturating_sub(used));
+        if !out.is_empty() && budget.is_some_and(|b| b < MIN_LAYER_BPS) {
+            break;
+        }
+        let Some(t) = fit_entry(e, budget) else {
+            continue;
+        };
+        if out
+            .iter()
+            .any(|o| (o.width, o.height) == (t.width, t.height))
+        {
+            continue;
+        }
+        used = used.saturating_add(t.bitrate);
+        out.push(t);
+    }
+    out.sort_by_key(|t| std::cmp::Reverse(t.width * t.height));
+    out
+}
+
+/// How many streams we may send: one if `COMMSCRAFT_SIMULCAST=0` or a further encoder failed.
+fn max_layers(simulcast_ok: &AtomicBool) -> usize {
+    let off = std::env::var("COMMSCRAFT_SIMULCAST").is_ok_and(|v| v.trim() == "0");
+    if off || !simulcast_ok.load(Ordering::Relaxed) {
+        1
+    } else {
+        MAX_SIMULCAST
+    }
+}
+
+/// New targets from the request and the path: the encoders follow (camera thread), the stream
+/// layout changes, the next pictures are IDRs; the user hears of other sizes and rates.
+#[allow(clippy::too_many_arguments)]
 fn retarget(
     media: &mut CallMedia,
-    target: &Mutex<Target>,
+    targets: &Mutex<Vec<Target>>,
     idr: &AtomicBool,
     events: &Sender<FromVideo>,
     id: u32,
     request: &[feedback::VsrEntry],
     path_bps: Option<u32>,
+    layers: usize,
 ) {
-    let Some(t) = fit(request, path_bps) else {
+    let t = plan(request, path_bps, layers);
+    if t.is_empty() || targets.lock().map_or(true, |cur| *cur == t) {
+        return;
+    }
+    // The layout first: the media core takes no access unit of a stream not in it.
+    let Some(l) = layout_for(&t) else {
         return;
     };
-    let changed = target.lock().map(|mut cur| {
-        let changed = *cur != t;
-        *cur = t;
-        changed
-    });
-    if changed.unwrap_or(false) {
-        if let Some(l) = layout_for(t) {
-            media.set_video_layout(l);
-        }
-        idr.store(true, Ordering::Relaxed);
-        let _ = events.send(FromVideo::Notice(
-            id,
+    if !media.set_video_layout(l) {
+        return;
+    }
+    if let Ok(mut cur) = targets.lock() {
+        cur.clone_from(&t);
+    }
+    idr.store(true, Ordering::Relaxed);
+    let sizes: Vec<String> = t
+        .iter()
+        .map(|t| {
             format!(
-                "sending {}x{} at {} fps, {} kbit/s",
+                "{}x{} at {} fps, {} kbit/s",
                 t.width,
                 t.height,
                 t.fps,
                 t.bitrate / 1000
-            ),
-        ));
-    }
+            )
+        })
+        .collect();
+    let _ = events.send(FromVideo::Notice(
+        id,
+        format!(
+            "sending {}{}",
+            sizes.join(" and "),
+            if t.len() > 1 { " (simulcast)" } else { "" }
+        ),
+    ));
 }
 
-fn layout_for(t: Target) -> Option<uc::StreamLayout> {
-    uc::StreamLayout::full(vec![uc::LayerDescription {
-        coded_width: t.width as u16,
-        coded_height: t.height as u16,
-        display_width: t.width as u16,
-        display_height: t.height as u16,
-        bitrate: t.bitrate,
-        fps_idx: uc::fps_index(if t.fps == 8 { 75 } else { t.fps * 10 })?,
-        layer_type: 0,
-        prid: 0,
-        constrained_baseline: true,
-    }])
-    .ok()
+/// The stream layout of our streams: stream i has priority ID i (PL-03; §2.2.5, pp. 11–12).
+fn layout_for(targets: &[Target]) -> Option<uc::StreamLayout> {
+    let layers = targets
+        .iter()
+        .enumerate()
+        .map(|(i, t)| {
+            Some(uc::LayerDescription {
+                coded_width: u16::try_from(t.width).ok()?,
+                coded_height: u16::try_from(t.height).ok()?,
+                display_width: u16::try_from(t.width).ok()?,
+                display_height: u16::try_from(t.height).ok()?,
+                bitrate: t.bitrate,
+                fps_idx: uc::fps_index(if t.fps == 8 { 75 } else { t.fps * 10 })?,
+                layer_type: 0,
+                prid: u8::try_from(i).ok()?,
+                constrained_baseline: true,
+            })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    uc::StreamLayout::full(layers).ok()
 }
 
 fn layout() -> Option<uc::StreamLayout> {
-    layout_for(START)
+    layout_for(&[START])
 }
 
 /// What we ask the peer for (VSR entry, RT-25): H.264 UC up to VGA at 15 or 30 fps.
@@ -382,9 +477,11 @@ fn run(
     }
     let stop = Arc::new(AtomicBool::new(false));
     let idr = Arc::new(AtomicBool::new(true));
-    // RT-25: what the peer's video source request allows (VGA at 30 fps until one arrives).
-    let target = Arc::new(Mutex::new(START));
-    let (au_tx, au_rx) = mpsc::sync_channel::<(Vec<u8>, u32)>(4);
+    // RT-25: what the peer's video source request allows (VGA at 30 fps until one arrives),
+    // one target per simulcast stream.
+    let targets = Arc::new(Mutex::new(vec![START]));
+    let simulcast_ok = Arc::new(AtomicBool::new(true));
+    let (au_tx, au_rx) = mpsc::sync_channel::<(u8, Vec<u8>, u32)>(8);
     let (dec_tx, dec_rx) = mpsc::sync_channel::<Vec<u8>>(8);
     if camera_works {
         spawn_camera(
@@ -392,7 +489,8 @@ fn run(
             au_tx,
             stop.clone(),
             idr.clone(),
-            target.clone(),
+            targets.clone(),
+            simulcast_ok.clone(),
             events.clone(),
             id,
         );
@@ -409,6 +507,7 @@ fn run(
     // The peer's last request (none yet: our own limits) and what the path carries (RT-30).
     let mut request: Vec<feedback::VsrEntry> = vec![wanted()];
     let mut path_bps: Option<u32> = None;
+    let mut layers = max_layers(&simulcast_ok);
     loop {
         let now = now_ms();
         match rx.try_recv() {
@@ -460,9 +559,16 @@ fn run(
             stall_reported = true;
             let _ = events.send(FromVideo::Stalled(id));
         }
-        while let Ok((au, ts)) = au_rx.try_recv() {
+        // A further encoder failed: one stream again.
+        if max_layers(&simulcast_ok) != layers {
+            layers = max_layers(&simulcast_ok);
+            retarget(
+                &mut media, &targets, &idr, &events, id, &request, path_bps, layers,
+            );
+        }
+        while let Ok((prid, au, ts)) = au_rx.try_recv() {
             if !frozen {
-                media.send_access_unit(&au, ts, now);
+                media.send_layer_access_unit(prid, &au, ts, now);
             }
         }
         for e in media.poll(now) {
@@ -498,7 +604,9 @@ fn run(
                 cm::Event::Video(VideoEvent::SendRate(bps)) => {
                     // RT-30: the path changed – the same request at another bit rate.
                     path_bps = Some(bps);
-                    retarget(&mut media, &target, &idr, &events, id, &request, path_bps);
+                    retarget(
+                        &mut media, &targets, &idr, &events, id, &request, path_bps, layers,
+                    );
                 }
                 cm::Event::Video(VideoEvent::SourceRequested { msi, entries }) => {
                     // RT-25: send what the request allows (size, frame rate, bit rate).
@@ -512,7 +620,7 @@ fn run(
                             .iter()
                             .filter(|e| e.payload_type == sdp::video::H264UC_PT)
                             .count();
-                        if sizes.len() > 1 && before != sizes.len() {
+                        if sizes.len() > 1 && before != sizes.len() && layers == 1 {
                             let _ = events.send(FromVideo::Notice(
                                 id,
                                 format!(
@@ -523,7 +631,9 @@ fn run(
                             ));
                         }
                         request = entries;
-                        retarget(&mut media, &target, &idr, &events, id, &request, path_bps);
+                        retarget(
+                            &mut media, &targets, &idr, &events, id, &request, path_bps, layers,
+                        );
                     }
                     // A VSR is repeated (RT-26): tell the user only when it changes.
                     let watched = msi != feedback::SOURCE_NONE;
@@ -573,20 +683,62 @@ fn camera_available(device: &str) -> bool {
         .is_ok()
 }
 
+/// One simulcast stream of the camera thread: its encoder, scaler and frame rate clock.
+struct LayerEncoder {
+    target: Target,
+    enc: vf::Encoder,
+    scaler: Option<vf::Scaler>,
+    rebuilt_at: u64,
+    next_due: u64,
+    key: bool,
+}
+
+impl LayerEncoder {
+    fn new(target: Target, enc: vf::Encoder) -> LayerEncoder {
+        LayerEncoder {
+            target,
+            enc,
+            scaler: scaler_for(target),
+            rebuilt_at: now_ms(),
+            next_due: 0,
+            key: true,
+        }
+    }
+}
+
+/// Every camera picture goes to each stream that is due by its frame rate; the first stream
+/// (priority ID 0) encodes on the GPU if allowed, further ones on the CPU (design: small
+/// pictures, and one GPU encoder session per process). A further encoder that fails ends
+/// simulcast, not the video.
+#[allow(clippy::too_many_arguments)]
 fn spawn_camera(
     device: String,
-    out: SyncSender<(Vec<u8>, u32)>,
+    out: SyncSender<(u8, Vec<u8>, u32)>,
     stop: Arc<AtomicBool>,
     idr: Arc<AtomicBool>,
-    target: Arc<Mutex<Target>>,
+    targets: Arc<Mutex<Vec<Target>>>,
+    simulcast_ok: Arc<AtomicBool>,
     events: Sender<FromVideo>,
     id: u32,
 ) {
     std::thread::spawn(move || {
+        let wanted_now = || {
+            let mut t = targets
+                .lock()
+                .map(|t| t.clone())
+                .unwrap_or_else(|_| vec![START]);
+            if !simulcast_ok.load(Ordering::Relaxed) {
+                t.truncate(1);
+            }
+            if t.is_empty() {
+                t.push(START);
+            }
+            t
+        };
         let setup = vf::init().and_then(|()| {
             let cam = vf::Camera::open(&device, WIDTH, HEIGHT, FPS)?;
             // What is asked for already (a request may come before the camera is open).
-            let first = target.lock().map(|t| *t).unwrap_or(START);
+            let first = wanted_now().first().copied().unwrap_or(START);
             let enc = encoder_for(first, hardware_allowed())?;
             Ok((cam, enc, first))
         });
@@ -608,47 +760,56 @@ fn spawn_camera(
             ),
         ));
         let mut hardware = enc.backend() == vf::Backend::Vaapi;
-        let mut enc = Some(enc);
-        let mut current = first;
-        let mut rebuilt_at = 0u64;
-        let mut scaler = scaler_for(first);
-        let mut next_due = 0u64;
+        let mut layers = vec![LayerEncoder::new(first, enc)];
         let mut camera_errors = 0u32;
         while !stop.load(Ordering::Relaxed) {
-            let wanted = target.lock().map(|t| *t).unwrap_or(START);
-            if needs_rebuild(current, wanted, now_ms().saturating_sub(rebuilt_at)) {
-                // The old encoder (and its GPU session) goes before the new one is opened.
-                drop(enc.take());
-                let built = encoder_for(wanted, hardware).or_else(|e| {
-                    if hardware {
-                        hardware = false;
-                        let _ = events.send(FromVideo::Notice(
-                            id,
-                            format!("GPU encoder failed ({e:?}), encoding on the CPU"),
-                        ));
-                        encoder_for(wanted, false)
-                    } else {
-                        Err(e)
-                    }
+            let wanted = wanted_now();
+            layers.truncate(wanted.len());
+            for (i, w) in wanted.iter().enumerate() {
+                let rebuild = layers.get(i).is_none_or(|l| {
+                    needs_rebuild(l.target, *w, now_ms().saturating_sub(l.rebuilt_at))
                 });
+                if !rebuild {
+                    continue;
+                }
+                // The old encoder (and its GPU session) goes before the new one is opened.
+                layers.truncate(i);
+                let built = if i == 0 {
+                    encoder_for(*w, hardware).or_else(|e| {
+                        if hardware {
+                            hardware = false;
+                            let _ = events.send(FromVideo::Notice(
+                                id,
+                                format!("GPU encoder failed ({e:?}), encoding on the CPU"),
+                            ));
+                            encoder_for(*w, false)
+                        } else {
+                            Err(e)
+                        }
+                    })
+                } else {
+                    encoder_for(*w, false)
+                };
                 match built {
-                    Ok(e) => {
-                        enc = Some(e);
-                        scaler = scaler_for(wanted);
-                        current = wanted;
-                        rebuilt_at = now_ms();
-                        idr.store(true, Ordering::Relaxed);
-                    }
-                    Err(e) => {
+                    Ok(e) => layers.push(LayerEncoder::new(*w, e)),
+                    Err(e) if i == 0 => {
                         let _ =
                             events.send(FromVideo::Notice(id, format!("encoder stopped: {e:?}")));
                         return;
                     }
+                    Err(e) => {
+                        let _ = events.send(FromVideo::Notice(
+                            id,
+                            format!("no second video size ({e:?}): sending one size"),
+                        ));
+                        simulcast_ok.store(false, Ordering::Relaxed);
+                        break;
+                    }
                 }
             }
-            let Some(enc) = enc.as_mut() else {
+            if layers.is_empty() {
                 return;
-            };
+            }
             let picture = match cam.next_picture() {
                 Ok(p) => {
                     camera_errors = 0;
@@ -666,32 +827,58 @@ fn spawn_camera(
                     continue;
                 }
             };
-            // The requested frame rate: drop camera pictures in between.
-            let now = now_ms();
-            if now < next_due {
-                continue;
+            // A key frame asked for: on the next picture of every stream.
+            if idr.swap(false, Ordering::Relaxed) {
+                for l in &mut layers {
+                    l.key = true;
+                }
             }
-            next_due = now + 1000 / u64::from(current.fps.max(1)) - 5;
-            let picture = match scaler.as_mut() {
-                Some(s) => match s.scale(&picture) {
-                    Ok(p) => p,
-                    Err(_) => continue,
-                },
-                None => picture,
-            };
-            let key = idr.swap(false, Ordering::Relaxed);
+            let now = now_ms();
             let ts = (now as u32).wrapping_mul(90);
-            match enc.encode(&picture, key) {
-                Ok(units) => {
-                    for au in units {
-                        // Bounded: a slow network drops pictures here, not memory.
-                        let _ = out.try_send((au, ts));
+            let mut failed = None;
+            for (prid, l) in (0u8..).zip(layers.iter_mut()) {
+                // The stream's frame rate: camera pictures in between are dropped.
+                if now < l.next_due {
+                    continue;
+                }
+                l.next_due = now + 1000 / u64::from(l.target.fps.max(1)) - 5;
+                let scaled;
+                let input = match l.scaler.as_mut() {
+                    Some(s) => match s.scale(&picture) {
+                        Ok(p) => {
+                            scaled = p;
+                            &scaled
+                        }
+                        Err(_) => continue,
+                    },
+                    None => &picture,
+                };
+                let key = std::mem::take(&mut l.key);
+                match l.enc.encode(input, key) {
+                    Ok(units) => {
+                        for au in units {
+                            // Bounded: a slow network drops pictures here, not memory.
+                            let _ = out.try_send((prid, au, ts));
+                        }
+                    }
+                    Err(e) if prid == 0 => {
+                        let _ =
+                            events.send(FromVideo::Notice(id, format!("encoder stopped: {e:?}")));
+                        return;
+                    }
+                    Err(e) => {
+                        let _ = events.send(FromVideo::Notice(
+                            id,
+                            format!("second video size stopped ({e:?}): sending one size"),
+                        ));
+                        failed = Some(usize::from(prid));
+                        break;
                     }
                 }
-                Err(e) => {
-                    let _ = events.send(FromVideo::Notice(id, format!("encoder stopped: {e:?}")));
-                    return;
-                }
+            }
+            if let Some(i) = failed {
+                simulcast_ok.store(false, Ordering::Relaxed);
+                layers.truncate(i);
             }
         }
     });
@@ -881,6 +1068,59 @@ mod tests {
         };
         assert_eq!(size(fit(&[wide], None)), Some((640, 480, 30, 800_000)));
         assert_eq!(size(fit(&[], None)), None);
+    }
+
+    /// MS-H264PF §3.1.5.3 / MS-RTP §2.2.12.2: an A/V MCU's request with a VGA and a 320x180
+    /// entry gives two streams, largest first, with priority IDs 0 and 1 in the layout; one
+    /// stream allowed, one entry or two entries of the same size give one; a narrow path is
+    /// served smallest first and drops a stream it cannot carry.
+    #[test]
+    fn simulcast_plan() {
+        let small = feedback::VsrEntry {
+            payload_type: 122,
+            ucconfig_mode: 1,
+            aspect_ratios: feedback::ASPECT_16_9,
+            max_width: 640,
+            max_height: 480,
+            min_bitrate: 40_000,
+            frame_rates: feedback::FPS_15,
+            max_pixels: 61_440,
+            ..Default::default()
+        };
+        let big = wanted();
+        let two = [big, small];
+        let p = plan(&two, None, MAX_SIMULCAST);
+        assert_eq!(
+            p.iter().map(|t| size(Some(*t))).collect::<Vec<_>>(),
+            vec![Some((640, 480, 30, 500_000)), Some((320, 180, 15, 40_000))]
+        );
+        let l = layout_for(&p).unwrap();
+        assert_eq!(l.present, 0b11);
+        assert_eq!(
+            (l.layer(1).unwrap().coded_width, l.layer(1).unwrap().fps_idx),
+            (320, 2)
+        );
+        // The order of the entries does not matter.
+        assert_eq!(plan(&[small, big], None, MAX_SIMULCAST), p);
+        // One stream allowed: the first entry, as before.
+        assert_eq!(
+            plan(&two, None, 1),
+            fit(&two, None).into_iter().collect::<Vec<_>>()
+        );
+        assert_eq!(plan(&[big], Some(300_000), MAX_SIMULCAST).len(), 1);
+        assert_eq!(plan(&[big, big], None, MAX_SIMULCAST).len(), 1);
+        // 520 kbit/s: 40 for the small stream, 480 for the large one.
+        let p = plan(&two, Some(520_000), MAX_SIMULCAST);
+        assert_eq!(p.iter().map(|t| t.bitrate).sum::<u32>(), 520_000, "{p:?}");
+        // 80 kbit/s: no room for a second stream beside the small one.
+        let p = plan(&two, Some(80_000), MAX_SIMULCAST);
+        assert_eq!(p.len(), 1, "{p:?}");
+        assert_eq!((p[0].width, p[0].height), (320, 180));
+        // Never more than allowed, at most one per entry.
+        let many = [big, small, small, small];
+        assert!(plan(&many, None, 2).len() <= 2);
+        assert!(plan(&[], None, MAX_SIMULCAST).is_empty());
+        assert!(layout_for(&[]).is_none());
     }
 
     /// A bad picture now and then does not end the video; a run of failures does.

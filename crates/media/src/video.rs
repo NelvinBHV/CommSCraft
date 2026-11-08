@@ -30,6 +30,10 @@ const PICTURE_UPDATE_MS: u64 = 1000;
 /// A new target is reported to the encoder when it moved by this percentage (design value).
 const TARGET_STEP_PERCENT: u64 = 10;
 
+/// The peer's stream moves to another SSRC of its range only after this much silence on the
+/// current one (design: above the gap between two pictures at 7.5 fps).
+const SSRC_SWITCH_MS: u64 = 200;
+
 /// Largest RTP payload of video (design: room for SRTP, TURN and IP headers in 1500 bytes).
 pub const VIDEO_MTU: usize = 1200;
 
@@ -60,6 +64,15 @@ const FEC_LOSS: u8 = 3;
 /// For how many reports after that (design: reports come every few seconds).
 const FEC_REPORTS: u8 = 5;
 
+/// A further simulcast stream we send (MS-H264PF §3.1.5.3, p. 23): its own priority ID and
+/// SSRC, sequence numbers and packetizer; the first stream (priority ID 0) is the one of
+/// [`Video`] itself.
+struct Layer {
+    prid: u8,
+    sender: rtp::Sender,
+    packetizer: uc::Packetizer,
+}
+
 /// The video stream of one call.
 pub struct Video {
     pt: u8,
@@ -69,7 +82,13 @@ pub struct Video {
     receiver: rtp::Receiver,
     remote_range: (u32, u32),
     remote_ssrc: Option<u32>,
+    /// When the last packet of that SSRC arrived.
+    remote_seen_ms: u64,
     packetizer: uc::Packetizer,
+    /// Further simulcast streams (priority ID ≥ 1), from the stream layout.
+    layers: Vec<Layer>,
+    our_range: (u32, u32),
+    random: [u8; 10],
     depacketizer: uc::Depacketizer,
     /// The payload type of FEC, if negotiated (PL-06, SD-28).
     fec_pt: Option<u8>,
@@ -147,7 +166,11 @@ impl Video {
             receiver: rtp::Receiver::default(),
             remote_range: negotiated.ssrc_range,
             remote_ssrc: None,
+            remote_seen_ms: 0,
             packetizer,
+            layers: Vec::new(),
+            our_range,
+            random,
             depacketizer: uc::Depacketizer::new(),
             fec_pt: negotiated
                 .fec_payload_type
@@ -182,12 +205,65 @@ impl Video {
         })
     }
 
-    /// A new stream layout of what we send (another size after a video source request): the
-    /// next access unit carries the full layout (§2.2.5.1: on the IDR that should follow).
+    /// A new stream layout of what we send (another size after a video source request, or
+    /// another set of simulcast streams): the next access unit of every stream carries the full
+    /// layout (§2.2.5.1: on the IDR that should follow). Priority ID 0 must be in it; every other
+    /// priority ID becomes a stream of its own with the SSRC `range start + PRID` (inference:
+    /// MS-RTP §3.1 lets related streams share the session by SSRC, MS-H264PF tells them apart by
+    /// PRID, neither says which SSRC a stream takes), streams no longer in it end.
     pub fn set_layout(&mut self, layout: uc::StreamLayout) -> Result<(), Error> {
+        let bad = Error::Video("stream layout");
+        let span = self.our_range.1.saturating_sub(self.our_range.0);
+        if layout.layers.iter().any(|l| u32::from(l.prid) > span) {
+            return Err(bad);
+        }
         self.packetizer
-            .set_layout(layout)
-            .map_err(|_| Error::Video("stream layout"))
+            .set_layout(layout.clone())
+            .map_err(|_| bad)?;
+        self.layers.retain(|l| layout.layer(l.prid).is_some());
+        for l in &mut self.layers {
+            l.packetizer.set_layout(layout.clone()).map_err(|_| bad)?;
+        }
+        let mut prids: Vec<u8> = layout
+            .layers
+            .iter()
+            .map(|l| l.prid)
+            .filter(|p| *p != 0)
+            .collect();
+        prids.sort_unstable();
+        for prid in prids {
+            if self.layers.iter().any(|l| l.prid == prid) {
+                continue;
+            }
+            // Its own start of the sequence numbers (MS-SRTP §5.1: not close to 65535).
+            let mut random = self.random;
+            for (i, b) in random.iter_mut().enumerate().skip(4).take(2) {
+                *b ^= prid.wrapping_mul(0x5b).wrapping_add(i as u8);
+            }
+            let mut sender = rtp::Sender::new(random);
+            sender.ssrc = self.sender.ssrc.saturating_add(u32::from(prid));
+            sender.skip_sequence_zero();
+            let packetizer =
+                uc::Packetizer::new(VIDEO_MTU, prid, layout.clone()).map_err(|_| bad)?;
+            self.layers.push(Layer {
+                prid,
+                sender,
+                packetizer,
+            });
+        }
+        self.layers.sort_by_key(|l| l.prid);
+        Ok(())
+    }
+
+    /// The priority IDs of the streams we send now.
+    pub fn prids(&self) -> Vec<u8> {
+        std::iter::once(0)
+            .chain(self.layers.iter().map(|l| l.prid))
+            .collect()
+    }
+
+    fn is_ours(&self, ssrc: u32) -> bool {
+        ssrc == self.sender.ssrc || self.layers.iter().any(|l| l.sender.ssrc == ssrc)
     }
 
     /// The most we can receive (bit/s): the start value of our estimate and our receiver-side
@@ -214,64 +290,39 @@ impl Video {
 
     /// One access unit (Annex B) captured at `timestamp` (90 kHz) → the protected RTP packets.
     pub fn on_access_unit(&mut self, au: &[u8], timestamp: u32) -> Vec<Vec<u8>> {
-        let Ok(payloads) = self.packetizer.packetize(au) else {
-            return Vec::new();
-        };
+        self.on_layer_access_unit(0, au, timestamp)
+    }
+
+    /// One access unit of the simulcast stream with priority ID `prid`; nothing for a stream
+    /// that is not in the stream layout (§3.1.5.3: no NAL unit of a removed layer).
+    pub fn on_layer_access_unit(&mut self, prid: u8, au: &[u8], timestamp: u32) -> Vec<Vec<u8>> {
         // FEC costs at least one packet per access unit, so it is sent where it is worth that
         // (design): always for IDR pictures, whose loss costs the most, otherwise after the peer
         // reported loss; never for a single packet, whose copy would help little more.
         let idr = uc::split_annex_b(au)
             .is_ok_and(|nals| nals.iter().any(|n| uc::nal_type(n) == Some(NAL_IDR)));
-        let protect = self
-            .fec_pt
-            .filter(|_| payloads.len() >= FEC_MIN_PACKETS && (idr || self.fec_reports > 0));
-        let mut sources = Vec::new();
-        let mut out = Vec::with_capacity(payloads.len());
-        for p in payloads {
-            self.sender.skip_sequence_zero();
-            if protect.is_some() {
-                sources.push(uc::fec::Media {
-                    seq: self.sender.sequence(),
-                    timestamp,
-                    marker: p.marker,
-                    payload_type: self.pt,
-                    payload: p.data.clone(),
-                });
+        let fec = self.fec_pt.filter(|_| idr || self.fec_reports > 0);
+        let (sender, packetizer) = if prid == 0 {
+            (&mut self.sender, &mut self.packetizer)
+        } else {
+            match self.layers.iter_mut().find(|l| l.prid == prid) {
+                Some(l) => (&mut l.sender, &mut l.packetizer),
+                None => return Vec::new(),
             }
-            let Ok(packet) = self.sender.packet_at(self.pt, p.marker, &p.data, timestamp) else {
-                return Vec::new();
-            };
-            let Some(protected) = self.protect(packet) else {
-                return Vec::new();
-            };
-            out.push(protected);
+        };
+        let out = send_unit(
+            sender,
+            packetizer,
+            &mut self.tx_srtp,
+            self.pt,
+            fec,
+            au,
+            timestamp,
+        );
+        if prid == 0 && !out.is_empty() {
+            self.sent_units += 1;
         }
-        if let Some(pt) = protect {
-            // §2.2.8.1.1: behind the data of the access unit, the last with the marker.
-            let chunks: Vec<&[uc::fec::Media]> = sources.chunks(uc::fec::MAX_PROTECTED).collect();
-            let last = chunks.len().saturating_sub(1);
-            for (i, chunk) in chunks.into_iter().enumerate() {
-                self.sender.skip_sequence_zero();
-                let Ok(fec) = uc::fec::protect(chunk, self.sender.sequence()) else {
-                    continue;
-                };
-                let Ok(packet) = self.sender.packet_at(pt, i == last, &fec, timestamp) else {
-                    continue;
-                };
-                if let Some(protected) = self.protect(packet) {
-                    out.push(protected);
-                }
-            }
-        }
-        self.sent_units += 1;
         out
-    }
-
-    fn protect(&mut self, packet: Vec<u8>) -> Option<Vec<u8>> {
-        match self.tx_srtp.as_mut() {
-            Some(c) => c.protect_rtp(&packet).ok(),
-            None => Some(packet),
-        }
     }
 
     /// A received RTP/SRTP packet; `arrival` in 90 kHz ticks. A lost access unit asks the
@@ -291,7 +342,8 @@ impl Video {
             return Vec::new();
         };
         let h = parsed.header;
-        // SD-64: only SSRCs from the peer's range; then the first one is the stream.
+        // SD-64: only SSRCs from the peer's range (MS-RTP §3.1, p. 37: with a range set, SSRC
+        // throttling is off and anything outside it is dropped).
         let is_fec = self.fec_pt == Some(h.payload_type);
         if h.ssrc < self.remote_range.0
             || h.ssrc > self.remote_range.1
@@ -299,11 +351,21 @@ impl Video {
         {
             return Vec::new();
         }
+        // Within the range the stream may change its SSRC: an A/V MCU forwards another simulcast
+        // stream or source from another one (MS-H264PF §3.1.5.3: it forwards one of the streams). The new SSRC takes over once the
+        // current one has been silent for a while, so two streams at once do not take turns
+        // (design).
         match self.remote_ssrc {
             None => self.remote_ssrc = Some(h.ssrc),
-            Some(s) if s != h.ssrc => return Vec::new(),
+            Some(s) if s != h.ssrc => {
+                if now_ms.saturating_sub(self.remote_seen_ms) < SSRC_SWITCH_MS {
+                    return Vec::new();
+                }
+                self.follow_ssrc(h.ssrc, now_ms);
+            }
             _ => {}
         }
+        self.remote_seen_ms = now_ms;
         if !self.receiver.on_packet(&h, arrival, true) {
             return Vec::new();
         }
@@ -376,6 +438,22 @@ impl Video {
         events
     }
 
+    /// Another SSRC of the peer's range is the stream now: its own sequence numbers, packets and
+    /// access units start afresh, and a key frame is asked for at once (the new stream may
+    /// start between two of them).
+    fn follow_ssrc(&mut self, ssrc: u32, now_ms: u64) {
+        self.remote_ssrc = Some(ssrc);
+        self.receiver = rtp::Receiver::default();
+        self.depacketizer.restart();
+        let recovered = self.recovery.recovered;
+        self.recovery = uc::fec::Recovery::default();
+        self.recovery.recovered = recovered;
+        self.expected_seq = None;
+        self.lost_seq = None;
+        self.pli = None;
+        self.request_key_frame(now_ms);
+    }
+
     fn next_id(&mut self) -> u16 {
         let id = self.next_request_id;
         self.next_request_id = self.next_request_id.wrapping_add(1).max(1);
@@ -393,8 +471,19 @@ impl Video {
         self.remote_ssrc.unwrap_or(self.remote_range.0)
     }
 
-    /// Ask the peer for a key frame (extended PLI with a new request ID for priority ID 0),
-    /// unless one is still being repeated or the peer does not accept PLI.
+    /// The sync frame request bits of a PLI (§2.2.12.1, p. 27: bit n = priority ID n): the
+    /// stream that arrives; not known yet, every stream of the sender's layout – a mixer
+    /// forwards one of them (MS-H264PF §3.1.5.3), maybe not the one with priority ID 0.
+    fn sync_frame_bits(&self) -> u64 {
+        match (self.depacketizer.prid(), self.depacketizer.layout()) {
+            (Some(p), _) if p < 64 => 1 << p,
+            (_, Some(l)) if l.present != 0 => l.present,
+            _ => 1,
+        }
+    }
+
+    /// Ask the peer for a key frame (extended PLI with a new request ID for the stream that
+    /// arrives), unless one is still being repeated or the peer does not accept PLI.
     pub fn request_key_frame(&mut self, now_ms: u64) {
         if !self.peer_accepts.recv_pli || self.pli.as_ref().is_some_and(|(_, r)| !r.finished()) {
             return;
@@ -404,7 +493,7 @@ impl Video {
             Pli {
                 sender_ssrc: self.sender.ssrc,
                 media_ssrc: self.media_ssrc(),
-                extended: Some((id, 1)),
+                extended: Some((id, self.sync_frame_bits())),
             },
             Retransmit::new(now_ms, false),
         ));
@@ -484,11 +573,18 @@ impl Video {
                 .remote_ssrc
                 .map(|s| vec![self.receiver.report(s, lsr, dlsr)])
                 .unwrap_or_default();
+            // MS-RTP §2.2.8: one sender report, from the lowest SSRC, counting all streams.
             let info = rtp::SenderInfo {
                 ntp,
                 rtp_timestamp: self.sender.timestamp(),
-                packets: self.sender.packets,
-                octets: self.sender.octets,
+                packets: self
+                    .layers
+                    .iter()
+                    .fold(self.sender.packets, |n, l| n.wrapping_add(l.sender.packets)),
+                octets: self
+                    .layers
+                    .iter()
+                    .fold(self.sender.octets, |n, l| n.wrapping_add(l.sender.octets)),
             };
             // RT-28: our estimate of the peer's stream in every report – also before it sends,
             // so the peer (e.g. an A/V MCU) knows what it may send.
@@ -568,7 +664,7 @@ impl Video {
                     events.push(VideoEvent::Bye)
                 }
                 rtp::Rtcp::Feedback(feedback::Feedback::Pli(p))
-                    if in_range(p.sender_ssrc) && p.media_ssrc == self.sender.ssrc =>
+                    if in_range(p.sender_ssrc) && self.is_ours(p.media_ssrc) =>
                 {
                     events.push(VideoEvent::KeyFrameRequested)
                 }
@@ -597,9 +693,14 @@ impl Video {
         now_ms: u64,
         events: &mut Vec<VideoEvent>,
     ) {
-        let ours = reports.iter().find(|r| r.ssrc == self.sender.ssrc);
-        if let Some(r) = ours {
-            self.fec_reports = if r.fraction_lost >= FEC_LOSS {
+        // The worst of our streams decides.
+        let ours = reports
+            .iter()
+            .filter(|r| self.is_ours(r.ssrc))
+            .map(|r| r.fraction_lost)
+            .max();
+        if let Some(lost) = ours {
+            self.fec_reports = if lost >= FEC_LOSS {
                 FEC_REPORTS
             } else {
                 self.fec_reports.saturating_sub(1)
@@ -636,4 +737,67 @@ impl Video {
         let p = rtp::bye(self.sender.ssrc, &self.cname);
         self.protect_rtcp(&p)
     }
+}
+
+fn protect_rtp(srtp: &mut Option<srtp::Context>, packet: Vec<u8>) -> Option<Vec<u8>> {
+    match srtp.as_mut() {
+        Some(c) => c.protect_rtp(&packet).ok(),
+        None => Some(packet),
+    }
+}
+
+/// The protected RTP packets of one access unit of one stream, with FEC of payload type `fec`
+/// behind them (§2.2.8.1.1: on the same SSRC, the last with the marker) when it has enough
+/// packets; nothing if the access unit cannot be sent.
+fn send_unit(
+    sender: &mut rtp::Sender,
+    packetizer: &mut uc::Packetizer,
+    srtp: &mut Option<srtp::Context>,
+    pt: u8,
+    fec: Option<u8>,
+    au: &[u8],
+    timestamp: u32,
+) -> Vec<Vec<u8>> {
+    let Ok(payloads) = packetizer.packetize(au) else {
+        return Vec::new();
+    };
+    let protect = fec.filter(|_| payloads.len() >= FEC_MIN_PACKETS);
+    let mut sources = Vec::new();
+    let mut out = Vec::with_capacity(payloads.len());
+    for p in payloads {
+        sender.skip_sequence_zero();
+        if protect.is_some() {
+            sources.push(uc::fec::Media {
+                seq: sender.sequence(),
+                timestamp,
+                marker: p.marker,
+                payload_type: pt,
+                payload: p.data.clone(),
+            });
+        }
+        let Ok(packet) = sender.packet_at(pt, p.marker, &p.data, timestamp) else {
+            return Vec::new();
+        };
+        let Some(protected) = protect_rtp(srtp, packet) else {
+            return Vec::new();
+        };
+        out.push(protected);
+    }
+    if let Some(fec_pt) = protect {
+        let chunks: Vec<&[uc::fec::Media]> = sources.chunks(uc::fec::MAX_PROTECTED).collect();
+        let last = chunks.len().saturating_sub(1);
+        for (i, chunk) in chunks.into_iter().enumerate() {
+            sender.skip_sequence_zero();
+            let Ok(fec) = uc::fec::protect(chunk, sender.sequence()) else {
+                continue;
+            };
+            let Ok(packet) = sender.packet_at(fec_pt, i == last, &fec, timestamp) else {
+                continue;
+            };
+            if let Some(protected) = protect_rtp(srtp, packet) {
+                out.push(protected);
+            }
+        }
+    }
+    out
 }

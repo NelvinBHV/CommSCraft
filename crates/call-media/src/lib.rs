@@ -1099,13 +1099,18 @@ impl CallMedia {
     /// One encoded access unit (Annex B) of the video stream, captured at `timestamp` (90 kHz).
     /// Nothing is sent while we hold or the peer does not receive.
     pub fn send_access_unit(&mut self, au: &[u8], timestamp: u32, now: u64) {
+        self.send_layer_access_unit(0, au, timestamp, now);
+    }
+
+    /// Video: one access unit of the simulcast stream with priority ID `prid`.
+    pub fn send_layer_access_unit(&mut self, prid: u8, au: &[u8], timestamp: u32, now: u64) {
         if !self.sending() {
             return;
         }
         let Some(v) = self.video.as_mut() else {
             return;
         };
-        let packets = v.on_access_unit(au, timestamp);
+        let packets = v.on_layer_access_unit(prid, au, timestamp);
         for packet in packets {
             if let Some((rtp, _)) = self.direct {
                 self.send_socket(0, rtp, &packet);
@@ -1118,11 +1123,12 @@ impl CallMedia {
         }
     }
 
-    /// Video: the stream layout of what we send changed (another size).
-    pub fn set_video_layout(&mut self, layout: commscraft_h264uc::StreamLayout) {
-        if let Some(v) = self.video.as_mut() {
-            let _ = v.set_layout(layout);
-        }
+    /// Video: the stream layout of what we send changed (another size, other simulcast
+    /// streams); `false` if the layout was refused and the old one stays.
+    pub fn set_video_layout(&mut self, layout: commscraft_h264uc::StreamLayout) -> bool {
+        self.video
+            .as_mut()
+            .is_some_and(|v| v.set_layout(layout).is_ok())
     }
 
     /// Video: access units received, access units lost, packets recovered by FEC.
