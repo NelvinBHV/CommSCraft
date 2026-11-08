@@ -2,7 +2,7 @@
 
 **Stage: M5 in progress** · M0 done · M1, M2, M3 built · M4 closed · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (sandbox of the video window)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (title bar of the video window)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **39 crates + 1 app** (`commscraft-cli`), **450 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **39 crates + 1 app** (`commscraft-cli`), **451 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -46,6 +46,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-08 | The direct video window has a title bar: from the compositor where it offers one, otherwise its own bar above the picture (drag to move, cross to close). |
 | 2026-11-08 | The video window process restricts itself with Landlock before it reads any video: no access to the user's files, no writing, no TCP, no new privileges. |
 | 2026-11-07 | Video FEC (XOR, x-ulpfecuc): negotiated, sent for IDR pictures and after the peer reported loss, lost packets recovered at the receiver; also `tested-in-lab`. |
 | 2026-11-07 | Meeting video: the later joiner got no picture when the roster arrived before its video stream had started, because the named source was lost; it is now kept. |

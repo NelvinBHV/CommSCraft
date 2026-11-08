@@ -451,6 +451,7 @@ name = "commscraft-video-wayland"
 version = "0.0.1"
 dependencies = [
  "commscraft-video-ffmpeg",
+ "rustix",
  "wayland-client",
  "wayland-protocols",
 ]
