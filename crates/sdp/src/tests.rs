@@ -600,3 +600,15 @@ fn ulpfec_negotiation() {
     let (_, _, neg) = answer_to(&stray);
     assert_eq!(neg.unwrap().fec_payload_type, None);
 }
+
+/// What a video line may do when the audio line is on hold or the video line only receives.
+#[test]
+fn direction_intersection() {
+    use Direction::*;
+    assert_eq!(SendRecv.intersect(SendRecv), SendRecv);
+    assert_eq!(RecvOnly.intersect(SendRecv), RecvOnly);
+    assert_eq!(SendRecv.intersect(SendOnly), SendOnly);
+    assert_eq!(RecvOnly.intersect(SendOnly), Inactive);
+    assert_eq!(SendRecv.intersect(Inactive), Inactive);
+    assert_eq!(SendOnly.intersect(RecvOnly), Inactive);
+}

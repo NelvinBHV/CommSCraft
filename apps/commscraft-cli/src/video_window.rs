@@ -182,6 +182,7 @@ pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
     let mut failed = false;
     let mut announced = false;
     let mut closed = false;
+    let mut size = (0, 0);
     while let Ok(Some(unit)) = read_unit(&mut input) {
         let decoded = if surfaces {
             decoder.decode_to_surfaces(&unit)
@@ -205,7 +206,10 @@ pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
                             "receiving video {}x{}, decoded on the GPU, shown directly",
                             s.width, s.height
                         );
+                    } else if size != (s.width, s.height) {
+                        println!("the video is now {}x{}", s.width, s.height);
                     }
+                    size = (s.width, s.height);
                     let shown = match surface_window.as_mut() {
                         Some(w) => show_surface(w, s),
                         None => Window::open(&title).and_then(|mut w| {
@@ -231,6 +235,10 @@ pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
                 }
                 vf::Decoded::Picture(p) => p,
             };
+            if announced && size != (p.width, p.height) {
+                println!("the video is now {}x{}", p.width, p.height);
+            }
+            size = (p.width, p.height);
             if !announced {
                 announced = true;
                 println!(

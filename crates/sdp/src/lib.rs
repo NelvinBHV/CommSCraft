@@ -494,6 +494,22 @@ pub enum Direction {
 }
 
 impl Direction {
+    /// Both at once: sending only where both send, receiving only where both receive (a line on
+    /// hold and a line that only receives make an inactive one).
+    pub fn intersect(self, other: Direction) -> Direction {
+        let sends = |d| matches!(d, Direction::SendRecv | Direction::SendOnly);
+        let receives = |d| matches!(d, Direction::SendRecv | Direction::RecvOnly);
+        match (
+            sends(self) && sends(other),
+            receives(self) && receives(other),
+        ) {
+            (true, true) => Direction::SendRecv,
+            (true, false) => Direction::SendOnly,
+            (false, true) => Direction::RecvOnly,
+            (false, false) => Direction::Inactive,
+        }
+    }
+
     fn as_str(self) -> &'static str {
         match self {
             Direction::SendRecv => "sendrecv",

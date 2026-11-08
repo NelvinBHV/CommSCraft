@@ -1474,6 +1474,8 @@ fn interactive(
     }
     // Meetings with video: conversation → (video id, the source we watch).
     let mut conf_video: BTreeMap<u32, (u32, Option<u32>)> = BTreeMap::new();
+    // Per meeting: the others that send video, in roster order (CA-13).
+    let mut video_candidates: BTreeMap<u32, Vec<(u32, String)>> = BTreeMap::new();
     let mut next_media: u32 = 1;
     let mut pending_out: BTreeMap<u32, String> = BTreeMap::new();
     // AE-38: media ids of calls placed as delegate, with the boss.
@@ -1968,23 +1970,26 @@ fn interactive(
                         conversation,
                         participants,
                     } => {
-                        // CA-13: the client names the video to watch – the first other
-                        // participant that sends video.
+                        // CA-13: the client names the video to watch – the others that send
+                        // video are the candidates; the one watched stays while it sends.
                         if let Some((vid, current)) = conf_video.get_mut(&conversation) {
                             let me = engine.own_aor().to_ascii_lowercase();
-                            let pick = participants
+                            let candidates: Vec<(u32, String)> = participants
                                 .iter()
                                 .filter(|p| p.uri.to_ascii_lowercase() != me)
-                                .find_map(|p| p.video_source().map(|m| (m, p.uri.clone())));
-                            if let Some((msi, who)) = pick {
-                                if *current != Some(msi) {
-                                    *current = Some(msi);
-                                    if let Some(h) = video_handles.get(vid) {
-                                        let _ = h.tx.send(video_call::ToVideo::Source(msi));
-                                    }
-                                    println!("* [{conversation}] watching the video of {who}");
+                                .filter_map(|p| p.video_source().map(|m| (m, p.uri.clone())))
+                                .take(MAX_VIDEO_CANDIDATES)
+                                .collect();
+                            let keep =
+                                current.is_some_and(|c| candidates.iter().any(|(m, _)| *m == c));
+                            if let (false, Some((msi, who))) = (keep, candidates.first()) {
+                                *current = Some(*msi);
+                                if let Some(h) = video_handles.get(vid) {
+                                    let _ = h.tx.send(video_call::ToVideo::Source(*msi));
                                 }
+                                println!("* [{conversation}] watching the video of {who}");
                             }
+                            video_candidates.insert(conversation, candidates);
                         }
                         let names: Vec<String> = participants
                             .iter()
@@ -2155,6 +2160,35 @@ fn interactive(
                     }
                 }
                 video_call::FromVideo::Notice(vid, n) => println!("* [video {vid}] {n}"),
+                video_call::FromVideo::Stalled(vid) => {
+                    // No picture from the watched source: the next candidate, if there is one.
+                    let watched = conf_video
+                        .iter_mut()
+                        .find(|(_, (v, _))| *v == vid)
+                        .map(|(c, (_, current))| (*c, current));
+                    if let Some((conversation, current)) = watched {
+                        let candidates = video_candidates.get(&conversation);
+                        let next = candidates.and_then(|list| {
+                            let at = list.iter().position(|(m, _)| Some(*m) == *current)?;
+                            list.get((at + 1) % list.len())
+                                .filter(|(m, _)| Some(*m) != *current)
+                        });
+                        match next {
+                            Some((msi, who)) => {
+                                *current = Some(*msi);
+                                if let Some(h) = video_handles.get(&vid) {
+                                    let _ = h.tx.send(video_call::ToVideo::Source(*msi));
+                                }
+                                println!(
+                                    "* [{conversation}] no picture: watching the video of {who}"
+                                );
+                            }
+                            None => {
+                                println!("* [{conversation}] no picture from the watched video")
+                            }
+                        }
+                    }
+                }
                 video_call::FromVideo::PictureUpdate(vid) => {
                     if let Some((&call, _)) = video_of_call.iter().find(|(_, &v)| v == vid) {
                         outputs.extend(engine.command(C::RequestPictureUpdate { call }, now()));
@@ -3565,6 +3599,9 @@ fn audio_check() -> Result<(), String> {
 }
 
 use commscraft_presence::{ContactEdit, ContactList};
+
+/// Video sources of a meeting kept to choose from (a roster can be large).
+const MAX_VIDEO_CANDIDATES: usize = 64;
 
 /// `/contact add|remove|move …`: a change of the list; an entry's other values stay as they are.
 fn contact_command(arg: &str, list: Option<&ContactList>) -> Option<ContactEdit> {

@@ -807,15 +807,16 @@ impl<R: Random> Engine<R> {
         local.key = c.local.as_ref().and_then(|l| l.key.clone());
         local.ssrtp = c.local.as_ref().is_some_and(|l| l.ssrtp);
         let hold = local.direction != sdp::Direction::SendRecv;
-        // The video line stays in every re-INVITE, with the same direction (hold) and key; with
-        // music on hold it is inactive – a=feature:MoH belongs to the audio line only (SD-07).
+        // The video line stays in every re-INVITE with its key; its direction is its own (a client
+        // without a camera only receives) as far as the audio line's allows (hold); with music on
+        // hold it is inactive – a=feature:MoH belongs to the audio line only (SD-07).
         let body = match &c.video {
             Some(v) => {
                 let mut v = v.clone();
                 v.media.direction = if local.music_on_hold {
                     sdp::Direction::Inactive
                 } else {
-                    local.direction
+                    v.media.direction.intersect(local.direction)
                 };
                 sdp::video::offer_with_video(&local, &v, c.policy)
                     .unwrap_or_else(|_| sdp::offer(&local, c.policy))
