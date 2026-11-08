@@ -208,9 +208,8 @@ fn feedback_loop() {
     assert!(events.iter().any(|e| matches!(e, VideoEvent::SourceRequested { msi, entries } if *msi == rtp::feedback::SOURCE_ANY && entries.len() == 1)));
 }
 
-/// A pair without SRTP, so the tests can read the RTCP packets themselves.
-fn plain_pair() -> (Video, Video) {
-    let neg = |range| sdp::video::NegotiatedVideo {
+fn plain_neg(range: (u32, u32)) -> sdp::video::NegotiatedVideo {
+    sdp::video::NegotiatedVideo {
         payload_type: 122,
         remote_rtp: ("192.0.2.1".parse().unwrap(), 1),
         remote_rtcp: ("192.0.2.1".parse().unwrap(), 2),
@@ -220,7 +219,12 @@ fn plain_pair() -> (Video, Video) {
         fec_payload_type: None,
         ssrc_range: range,
         feedback: all_feedback(),
-    };
+    }
+}
+
+/// A pair without SRTP, so the tests can read the RTCP packets themselves.
+fn plain_pair() -> (Video, Video) {
+    let neg = plain_neg;
     let a = Video::new(&neg((200, 299)), None, (100, 199), layout(), [9; 10], "a").unwrap();
     let b = Video::new(&neg((100, 199)), None, (200, 299), layout(), [7; 10], "b").unwrap();
     (a, b)
@@ -493,4 +497,226 @@ fn fec_recovers_a_lost_packet() {
         let _ = c.on_rtp(p, i as u32, 3000);
     }
     assert_eq!(c.recovered_packets(), 0);
+}
+
+fn layer(prid: u8, width: u16, height: u16) -> uc::LayerDescription {
+    uc::LayerDescription {
+        coded_width: width,
+        coded_height: height,
+        display_width: width,
+        display_height: height,
+        bitrate: 200_000,
+        fps_idx: 2,
+        layer_type: 0,
+        prid,
+        constrained_baseline: true,
+    }
+}
+
+/// MS-H264PF §3.1.5.3 / MS-RTP §3.1: a second simulcast stream goes out on its own SSRC (the
+/// start of our range + its priority ID; inference) with its own sequence numbers and PRID 1 in
+/// PACSI and prefix NAL unit, and both carry the full stream layout of both streams. A stream
+/// not in the layout sends nothing; the one sender report comes from the lowest SSRC and counts
+/// both streams (§2.2.8); a PLI about the second stream asks for a key frame.
+#[test]
+fn simulcast_streams() {
+    let (mut a, mut b) = plain_pair();
+    assert!(a.on_layer_access_unit(1, &au(true, 100), 0).is_empty());
+    let both = uc::StreamLayout::full(vec![layout().layers[0], layer(1, 320, 180)]).unwrap();
+    a.set_layout(both.clone()).unwrap();
+    assert_eq!(a.prids(), vec![0, 1]);
+    let big = a.on_layer_access_unit(0, &au(true, 3000), 9000);
+    let small = a.on_layer_access_unit(1, &au(true, 300), 9000);
+    let ssrcs = |ps: &[Vec<u8>]| -> Vec<u32> {
+        ps.iter()
+            .map(|p| rtp::parse(p).unwrap().header.ssrc)
+            .collect()
+    };
+    assert!(ssrcs(&big).iter().all(|s| *s == 100));
+    assert!(ssrcs(&small).iter().all(|s| *s == 101));
+    assert_eq!(a.sent_units, 1, "an access unit counts once per picture");
+    // Each stream decodes on its own and names its PRID and the whole layout.
+    for (packets, prid) in [(&big, 0u8), (&small, 1)] {
+        let mut d = uc::Depacketizer::new();
+        let mut units = Vec::new();
+        for p in packets.iter() {
+            let r = rtp::parse(p).unwrap();
+            let pacsi = match uc::nal_type(r.payload) {
+                Some(uc::NAL_STAP_A) => {
+                    let len = usize::from(u16::from_be_bytes([r.payload[1], r.payload[2]]));
+                    Some(uc::Pacsi::parse(&r.payload[3..3 + len]).unwrap())
+                }
+                _ => None,
+            };
+            if let Some(p) = pacsi {
+                assert_eq!(p.prid, prid);
+                assert_eq!(p.layout.as_ref(), Some(&both));
+            }
+            units.extend(d.push(uc::RtpIn {
+                seq: r.header.sequence,
+                timestamp: r.header.timestamp,
+                marker: r.header.marker,
+                payload: r.payload,
+            }));
+        }
+        assert!(
+            matches!(units.as_slice(), [uc::Output::AccessUnit { idr: true, .. }]),
+            "{units:?}"
+        );
+    }
+    // Our peer takes the first stream it sees (the A/V MCU forwards one, §3.1.5.3.1).
+    let got: Vec<VideoEvent> = big.iter().flat_map(|p| b.on_rtp(p, 0, 0)).collect();
+    assert_eq!(got.len(), 1);
+    // One sender report from SSRC 100 with the packets of both streams.
+    let reports: Vec<rtp::Rtcp> = a
+        .rtcp_due(0, 0)
+        .iter()
+        .flat_map(|p| rtp::parse_rtcp(p).unwrap())
+        .collect();
+    let counted = (big.len() + small.len()) as u32;
+    assert!(reports.iter().any(|r| matches!(r,
+        rtp::Rtcp::SenderReport { ssrc: 100, info, .. } if info.packets == counted)));
+    assert!(!reports
+        .iter()
+        .any(|r| matches!(r, rtp::Rtcp::SenderReport { ssrc: 101, .. })));
+    let pli = rtp::feedback::Pli {
+        sender_ssrc: 200,
+        media_ssrc: 101,
+        extended: Some((1, 2)),
+    }
+    .to_bytes()
+    .unwrap();
+    assert!(a.on_rtcp(&pli, 0).contains(&VideoEvent::KeyFrameRequested));
+    // Back to one stream: the second one ends.
+    a.set_layout(layout()).unwrap();
+    assert_eq!(a.prids(), vec![0]);
+    assert!(a.on_layer_access_unit(1, &au(true, 100), 0).is_empty());
+    // A priority ID beyond our SSRC range, or a layout without PRID 0, is refused.
+    let far = uc::StreamLayout::full(vec![layout().layers[0], layer(63, 160, 120)]).unwrap();
+    let mut narrow = Video::new(
+        &plain_neg((200, 299)),
+        None,
+        (100, 110),
+        layout(),
+        [1; 10],
+        "n",
+    )
+    .unwrap();
+    assert!(narrow.set_layout(far).is_err());
+    let without_base = uc::StreamLayout::full(vec![layer(1, 320, 180)]).unwrap();
+    assert!(a.set_layout(without_base).is_err());
+    assert_eq!(a.prids(), vec![0]);
+}
+
+/// A second stream gets other sequence numbers than the first (its own start).
+#[test]
+fn simulcast_sequence_numbers_differ() {
+    let (mut a, _) = plain_pair();
+    let both = uc::StreamLayout::full(vec![layout().layers[0], layer(1, 320, 180)]).unwrap();
+    a.set_layout(both).unwrap();
+    let seq = |p: &Vec<u8>| rtp::parse(p).unwrap().header.sequence;
+    let s0 = seq(&a.on_layer_access_unit(0, &au(false, 100), 0)[0]);
+    let s1 = seq(&a.on_layer_access_unit(1, &au(false, 100), 0)[0]);
+    assert_ne!(s0, s1);
+    assert!(s1 < 0x8000, "MS-SRTP §5.1: a low start");
+}
+
+/// MS-RTP §3.1: within the peer's range the stream may move to another SSRC (an A/V MCU
+/// forwarding another simulcast stream). The new SSRC takes over after 200 ms
+/// of silence on the current one, its access units arrive, and a PLI about it goes out; a
+/// second SSRC while the current one still sends is dropped.
+#[test]
+fn stream_moves_to_another_ssrc() {
+    // A takes the peer's range 200–299.
+    let (mut b, _) = plain_pair();
+    let mut first = Video::new(
+        &plain_neg((100, 199)),
+        None,
+        (200, 299),
+        layout(),
+        [7; 10],
+        "f",
+    )
+    .unwrap();
+    let mut second = Video::new(
+        &plain_neg((100, 199)),
+        None,
+        (201, 299),
+        layout(),
+        [5; 10],
+        "s",
+    )
+    .unwrap();
+    let units = |v: &mut Video, b: &mut Video, now: u64| -> usize {
+        v.on_access_unit(&au(true, 500), (now * 90) as u32)
+            .iter()
+            .flat_map(|p| b.on_rtp(p, 0, now))
+            .filter(|e| matches!(e, VideoEvent::AccessUnit { .. }))
+            .count()
+    };
+    assert_eq!(units(&mut first, &mut b, 1000), 1);
+    assert_eq!(
+        units(&mut second, &mut b, 1100),
+        0,
+        "the current one still sends"
+    );
+    assert_eq!(units(&mut first, &mut b, 1150), 1);
+    assert_eq!(
+        units(&mut second, &mut b, 1400),
+        1,
+        "silent for 250 ms: followed"
+    );
+    assert_eq!(
+        units(&mut first, &mut b, 1450),
+        0,
+        "the old one is gone now"
+    );
+    let pli = b
+        .rtcp_due(1400, 0)
+        .iter()
+        .flat_map(|p| rtp::parse_rtcp(p).unwrap())
+        .any(|r| matches!(r, rtp::Rtcp::Feedback(rtp::feedback::Feedback::Pli(p)) if p.media_ssrc == 201));
+    assert!(pli, "a key frame from the new stream");
+    assert_eq!(b.received_units, 3);
+}
+
+/// MS-RTP §2.2.12.1: the PLI asks for a sync frame on the stream that arrives – priority ID 1
+/// when a mixer forwards our peer's second simulcast stream.
+#[test]
+fn pli_names_the_stream_that_arrives() {
+    let (mut b, _) = plain_pair();
+    let both = uc::StreamLayout::full(vec![layout().layers[0], layer(1, 320, 180)]).unwrap();
+    let mut peer = Video::new(
+        &plain_neg((100, 199)),
+        None,
+        (200, 299),
+        both.clone(),
+        [7; 10],
+        "p",
+    )
+    .unwrap();
+    peer.set_layout(both).unwrap();
+    let first = peer.on_layer_access_unit(1, &au(true, 3000), 0);
+    for p in &first {
+        b.on_rtp(p, 0, 0);
+    }
+    // Lose a middle packet of the next one.
+    let next = peer.on_layer_access_unit(1, &au(false, 3000), 3000);
+    for (i, p) in next.iter().enumerate() {
+        if i != 1 {
+            b.on_rtp(p, 0, 10);
+        }
+    }
+    assert_eq!(b.lost_units, 1);
+    let bits: Vec<Option<(u16, u64)>> = b
+        .rtcp_due(10, 0)
+        .iter()
+        .flat_map(|p| rtp::parse_rtcp(p).unwrap())
+        .filter_map(|r| match r {
+            rtp::Rtcp::Feedback(rtp::feedback::Feedback::Pli(p)) => Some(p.extended),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(bits.len(), 1);
+    assert_eq!(bits[0].map(|(_, b)| b), Some(0b10));
 }

@@ -97,3 +97,20 @@ The packetizer inserts the prefix NAL unit before the first slice of every acces
 `session::media_control` (PL-50, IE-07): `application/media_control+xml` bodies parsed with tight limits (4 KiB, depth 8, 64 nodes, no DTD), `picture_fast_update` and `picture_freeze` taken from `vc_primitive/to_encoder` (unknown commands skipped, `stream_id` not interpreted, at most 8 commands per body); every INFO in a call is answered with 200 OK, also with a broken body (XMLSMC §6, XMLMC §3.1.5.2) – we send no `general_error` (optional, it would reflect peer input); the commands become `Event::CallVideoControl`. `Command::RequestPictureUpdate` sends the fast update body (XMLSMC §7.1) in an INFO of the call's dialog. `media::video` reports `PictureUpdateNeeded` when a picture is lost and the peer did not negotiate PLI (at most once a second). CLI: a freeze pauses sending video in meetings only (XMLMC §1.6: from a central video processor), RTCP goes on (§3.1.5.1); a fast update sends an IDR and ends a freeze. Status: tested-offline.
 
 Implementation of PL-06 (2026-11-07, `h264uc::fec`, `sdp::video`, `media::Video`): XOR with one FEC packet per protection operation of up to 48 media packets; field layout checked against the example §4.4. FEC is applied to the plain RTP payload, each packet then protected with SRTP (**inference**: §2.2.8 does not mention SRTP). **Inference (design):** FEC costs at least one packet per access unit, so it goes out for IDR pictures and for 5 reports after the peer reported at least about 1 % loss, never for a single packet. Reed-Solomon (§3.1.5.2.2: not described) is neither sent nor used.
+
+Implementation of PL-05 (2026-11-08, `media::Video`, CLI):
+- **Documented:**
+  - Simulcast streams come from the same camera; every stream is its own RTP stream with its own PRID, and one full stream layout describes them all (§2.2.5, §3.1.5.3, p. 23).
+  - The timestamps of different simulcast streams need not be equal (§2.2.1, p. 9).
+  - An A/V MCU aggregates the requests of its receivers into one VSR with several entries (MS-RTP §2.2.12.2, p. 29).
+- **Inference:**
+  - Stream i has PRID i and SSRC `range start + i`. Neither specification says which SSRC a stream takes.
+  - The largest stream gets PRID 0.
+  - All streams of a picture carry the same timestamp.
+- **Design:**
+  - One stream per requested size, at most three.
+  - The smallest requests are served first from the path, and a further stream needs at least 64 kbit/s left.
+  - The first stream encodes on the GPU if allowed; the others encode on the CPU (one GPU encoder session per process).
+  - A further encoder that fails ends simulcast, not the video. `COMMSCRAFT_SIMULCAST=0` sends one stream.
+- **Receiving:** After a change of SSRC (16-rtp-rtcp), the depacketizer keeps the last full stream layout and learns the PRID again (`Depacketizer::restart`). The layout describes all streams of the sender, and a new full layout comes only with the next IDR (§2.2.5.1).
+- **Status:** `tested-offline`, `tested-in-lab`.
