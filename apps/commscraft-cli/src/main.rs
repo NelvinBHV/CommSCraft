@@ -75,7 +75,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           presenters: /admit [sip:URI]  /deny sip:URI  /promote sip:URI  /demote sip:URI  /lock  /unlock
           /remove sip:URI  /muteuser sip:URI  /unmuteuser sip:URI  /muteall  /unmuteall
           /options [open|closed|anonymous] [promote none|company|everyone] [phone bypass|lobby]
-          /search TEXT (address book)  /addressbook (load the offline address book)  /lookup TEXT (search it)  /expand LIST@DOMAIN (members of a distribution list)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
+          /search TEXT (address book)  /addressbook (load the offline address book)  /lookup TEXT (search it)  /expand LIST@DOMAIN (members of a distribution list)  /photo sip:USER (save a contact's photo)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
           --wait seconds (default 20), ends the conversation and signs out. Plain text only.
 
@@ -1331,7 +1331,6 @@ fn fetch_address_book(
     services: Option<&commscraft_provisioning::ServerConfiguration>,
     verbose: bool,
 ) -> Result<commscraft_abs::book::AddressBook, String> {
-    use commscraft_sipae::base64;
     let c = services.ok_or("no provisioning yet (address book service unknown)")?;
     let bases: Vec<&commscraft_provisioning::ServiceUrl> = [&c.abs_internal, &c.abs_external]
         .into_iter()
@@ -1366,36 +1365,7 @@ fn fetch_address_book(
             if verbose {
                 println!("  GET {}/{name}", base.url.trim_end_matches('/'));
             }
-            let negotiate = commscraft_ntlm::messages::negotiate_message(
-                commscraft_ntlm::messages::HTTP_NEGOTIATE,
-            );
-            let mut auth_err: Option<String> = None;
-            let result = commscraft_net::http::get_with_auth(
-                tls,
-                &url,
-                &[("Accept", "application/octet-stream")],
-                &user_agent(),
-                Duration::from_secs(60),
-                ADDRESS_BOOK_MAX,
-                &mut |challenge, cert| match challenge {
-                    None => Ok(format!("NTLM {}", base64::encode(&negotiate))),
-                    Some(ch) => {
-                        let token = ch
-                            .strip_prefix("NTLM ")
-                            .and_then(|b| base64::decode(b.trim()).ok());
-                        let answer = token
-                            .ok_or_else(|| "no NTLM challenge".to_string())
-                            .and_then(|t| engine.http_ntlm(&negotiate, &t, now(), cert));
-                        match answer {
-                            Ok(a) => Ok(format!("NTLM {}", base64::encode(&a))),
-                            Err(e) => {
-                                auth_err = Some(e);
-                                Err(commscraft_net::NetError::Io(std::io::Error::other("NTLM")))
-                            }
-                        }
-                    }
-                },
-            );
+            let result = ntlm_get(engine, tls, &url, Duration::from_secs(60), ADDRESS_BOOK_MAX);
             match result {
                 Ok(r) if r.status == 200 => {
                     let raw = commscraft_abs::book::decompress(&r.body)
@@ -1411,11 +1381,165 @@ fn fetch_address_book(
                     break;
                 }
                 Err(e) => {
-                    last = auth_err.take().unwrap_or_else(|| e.to_string());
+                    last = e;
                     break;
                 }
             }
         }
+    }
+    Err(last)
+}
+
+/// An HTTP GET with NTLM per MS-NTHT on one connection (as for the address book search).
+fn ntlm_get(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    url: &commscraft_url::HttpsUrl,
+    timeout: Duration,
+    limit: usize,
+) -> Result<commscraft_net::http::HttpResponse, String> {
+    use commscraft_sipae::base64;
+    let negotiate =
+        commscraft_ntlm::messages::negotiate_message(commscraft_ntlm::messages::HTTP_NEGOTIATE);
+    let mut auth_err: Option<String> = None;
+    commscraft_net::http::get_with_auth(
+        tls,
+        url,
+        &[("Accept", "application/octet-stream")],
+        &user_agent(),
+        timeout,
+        limit,
+        &mut |challenge, cert| match challenge {
+            None => Ok(format!("NTLM {}", base64::encode(&negotiate))),
+            Some(ch) => {
+                let token = ch
+                    .strip_prefix("NTLM ")
+                    .and_then(|b| base64::decode(b.trim()).ok());
+                let answer = token
+                    .ok_or_else(|| "no NTLM challenge".to_string())
+                    .and_then(|t| engine.http_ntlm(&negotiate, &t, now(), cert));
+                match answer {
+                    Ok(a) => Ok(format!("NTLM {}", base64::encode(&a))),
+                    Err(e) => {
+                        auth_err = Some(e);
+                        Err(commscraft_net::NetError::Io(std::io::Error::other("NTLM")))
+                    }
+                }
+            }
+        },
+    )
+    .map_err(|e| auth_err.take().unwrap_or_else(|| e.to_string()))
+}
+
+/// Largest photo downloaded when the server sets no limit (design).
+const PHOTO_MAX: usize = 1024 * 1024;
+
+/// The image type of a photo file by its first bytes; anything else is refused.
+fn photo_kind(b: &[u8]) -> Option<&'static str> {
+    if b.starts_with(&[0xff, 0xd8, 0xff]) {
+        Some("jpg")
+    } else if b.starts_with(b"\x89PNG\r\n\x1a\n") {
+        Some("png")
+    } else {
+        None
+    }
+}
+
+/// A contact's photo (function 15): the address book search names the file (DL-06:
+/// PhotoRelPath, PhotoHash, PhotoSize) relative to the address book folder ([MS-ABS] §1.3), so it
+/// is fetched from the provisioned address book base URL. The photo policy of endpointConfiguration
+/// decides whether photos are shown and how large they may be (RG-52). Photos are kept under
+/// `$XDG_CACHE_HOME/commscraft/photos` named by their hash, so a known state is not fetched again.
+fn fetch_photo(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    services: Option<&commscraft_provisioning::ServerConfiguration>,
+    uri: &str,
+    verbose: bool,
+) -> Result<PathBuf, String> {
+    use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
+    let c = services.ok_or("no provisioning yet (address book service unknown)")?;
+    if c.photo_usage == Some(commscraft_provisioning::PhotoUsage::NoPhoto) {
+        return Err("the server's policy shows no photos".into());
+    }
+    let uri = commscraft_presence::checked_sip_uri(uri).map_err(|_| "not a SIP URI")?;
+    let found = search(engine, tls, trust, services, &uri, verbose)?;
+    let entry = found
+        .into_iter()
+        .find(|e| {
+            e.sip_uri
+                .as_deref()
+                .is_some_and(|s| s.eq_ignore_ascii_case(&uri))
+        })
+        .ok_or("no such user in the address book")?;
+    let photo = entry.photo.ok_or("this user has no photo")?;
+    let limit = c.max_photo_kb.map_or(PHOTO_MAX, |kb| {
+        (kb as usize).saturating_mul(1024).min(PHOTO_MAX)
+    });
+    if photo.size.is_some_and(|n| n as usize > limit) {
+        return Err(format!(
+            "the photo is larger than the {limit} bytes allowed"
+        ));
+    }
+    let base = std::env::var_os("XDG_CACHE_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))
+        .ok_or("no HOME")?;
+    let dir = base.join("commscraft").join("photos");
+    let key = photo.hash.clone().unwrap_or_else(|| photo.rel_path.clone());
+    for ext in ["jpg", "png"] {
+        let cached = dir.join(format!("{key}.{ext}"));
+        if photo.hash.is_some() && cached.is_file() {
+            return Ok(cached);
+        }
+    }
+    let mut last = String::from("no usable service");
+    for b in [&c.abs_internal, &c.abs_external].into_iter().flatten() {
+        if !b.in_user_domain && !trust.trusts(&b.host) {
+            last = format!(
+                "{} is outside your SIP domain; add --trust-domain to use it",
+                b.host
+            );
+            continue;
+        }
+        let full = format!("{}/{}", b.url.trim_end_matches('/'), photo.rel_path);
+        let Some(url) = commscraft_url::parse_https(&full) else {
+            continue;
+        };
+        if verbose {
+            println!("  GET {full}");
+        }
+        let r = match ntlm_get(engine, tls, &url, Duration::from_secs(15), limit) {
+            Ok(r) => r,
+            Err(e) => {
+                last = e;
+                continue;
+            }
+        };
+        if r.status != 200 {
+            last = format!("HTTP {}", r.status);
+            continue;
+        }
+        if photo.size.is_some_and(|n| n as usize != r.body.len()) {
+            return Err("the photo does not have the announced size".into());
+        }
+        let ext = photo_kind(&r.body).ok_or("the photo is not a JPEG or PNG image")?;
+        std::fs::DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(&dir)
+            .map_err(|e| e.to_string())?;
+        let path = dir.join(format!("{key}.{ext}"));
+        let mut f = std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .mode(0o600)
+            .open(&path)
+            .map_err(|e| e.to_string())?;
+        f.write_all(&r.body).map_err(|e| e.to_string())?;
+        return Ok(path);
     }
     Err(last)
 }
@@ -3397,6 +3521,13 @@ fn interactive(
                     }
                     None
                 }
+                "/photo" => {
+                    match fetch_photo(&mut engine, tls, trust, services.as_deref(), &arg, verbose) {
+                        Ok(path) => println!("* photo of {arg}: {}", path.display()),
+                        Err(e) => println!("* no photo: {e}"),
+                    }
+                    None
+                }
                 "/lookup" => {
                     match &address_book {
                         None => println!("* no address book yet – load it with /addressbook"),
@@ -4115,6 +4246,15 @@ mod tests {
     /// E9-03: the subnet for the location request from `/proc/net/route` (values in native byte
     /// order, here as printed on a little-endian machine); the most specific route wins, the
     /// default route never matches.
+    /// Function 15: only JPEG and PNG photos are kept (security by design).
+    #[test]
+    fn photo_types() {
+        assert_eq!(photo_kind(&[0xff, 0xd8, 0xff, 0xe0]), Some("jpg"));
+        assert_eq!(photo_kind(b"\x89PNG\r\n\x1a\n...."), Some("png"));
+        assert_eq!(photo_kind(b"<svg onload=x>"), None);
+        assert_eq!(photo_kind(b""), None);
+    }
+
     #[test]
     #[cfg(target_endian = "little")]
     fn subnet_from_route_table() {

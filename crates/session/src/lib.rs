@@ -2222,6 +2222,9 @@ impl<R: Random> Engine<R> {
                         if let Some(u) = p.group("userSetting") {
                             c.apply_user_setting(u);
                         }
+                        if let Some(e) = p.group("endpointConfiguration") {
+                            c.apply_endpoint_configuration(e);
+                        }
                         self.location_profile = c.location_profile.clone();
                         self.focus_factory = c
                             .focus_factory_uri
