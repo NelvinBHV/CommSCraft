@@ -723,3 +723,17 @@ fn new_subscribers() {
     );
     assert!(set_subscriber_body("tel:+49").is_err());
 }
+
+/// [MS-PRES] §2.2.2.5.2: members by network type are added without a value, at the
+/// container's version; container 0 and other types are refused.
+#[test]
+fn network_members_body() {
+    let b = add_network_members_body(&[(200, 3, "sameEnterprise"), (100, 0, "federated")]).unwrap();
+    assert!(b.contains(r#"<container id="200" version="3"><member action="add" type="sameEnterprise"/></container>"#));
+    assert!(b.contains(
+        r#"<container id="100" version="0"><member action="add" type="federated"/></container>"#
+    ));
+    assert!(add_network_members_body(&[(0, 0, "federated")]).is_err());
+    assert!(add_network_members_body(&[(200, 0, "user")]).is_err());
+    assert!(add_network_members_body(&[(200, 0, "everyone\"/><x")]).is_err());
+}

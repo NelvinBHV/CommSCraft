@@ -145,7 +145,7 @@ fn hostile_values_are_dropped() {
             ("ucMaxAudioPort".into(), "5000".into()),
             ("dlxEnabled".into(), "yes".into()),
         ],
-        instances: vec![],
+        ..Group::default()
     };
     let c = ServerConfiguration::from_group(&g, "fabrikam.com");
     assert_eq!(
@@ -302,4 +302,126 @@ fn location_policy() {
     assert_eq!(old.emergency("999"), Some("911"));
     let off = LocationPolicy::from_group(&g(&[("EmergencyDialString", "911")]));
     assert_eq!(off.emergency("911"), None, "disabled: no emergency path");
+}
+
+/// A provisioning document with both publication grammars: the plain one requires
+/// `sameEnterprise` (default 200) and `federated` (default 100) once in a visible container,
+/// the privacy one only buddies by role (structure of [MS-SIPREGE] §2.2.2.5.4, pp. 33–48).
+fn grammar_doc(privacy_mode: &str) -> String {
+    let containers = r#"<containers>
+        <container id="0"><visible>false</visible></container>
+        <container id="100"><visible>true</visible></container>
+        <container id="200"><visible>true</visible></container>
+        <container id="300"><visible>true</visible></container>
+        <container id="32000"><visible>true</visible><blocked>true</blocked></container>
+      </containers>"#;
+    format!(
+        r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification">
+  <provisionGroup name="presencePolicyV2"><propertyEntryList>
+    <property name="EnablePrivacyMode">{privacy_mode}</property>
+  </propertyEntryList></provisionGroup>
+  <provisionGroup name="publicationGrammar">
+    <containerManifestList xmlns="http://schemas.microsoft.com/2008/09/sip/ContainerManifest">
+      <containerManifest>{containers}<members>
+        <member role="buddy"><allowedContainers type="visibleContainers"/><defaultContainer id="200"/><occurrenceConstraint type="one"/></member>
+        <member type="sameEnterprise"><allowedContainers type="visibleContainers"/><defaultContainer id="200"/><occurrenceConstraint type="one"/></member>
+        <member type="federated"><allowedContainers type="visibleContainers"/><defaultContainer id="100"/><occurrenceConstraint type="one"/></member>
+        <member type="publicCloud"><allowedContainers type="visibleContainers"/><occurrenceConstraint type="zeroOrOne"/></member>
+        <member type="user"><allowedContainers type="custom"><container id="32000"/></allowedContainers></member>
+      </members></containerManifest>
+    </containerManifestList>
+  </provisionGroup>
+  <provisionGroup name="privacyPublicationGrammar">
+    <containerManifestList xmlns="http://schemas.microsoft.com/2008/09/sip/ContainerManifest">
+      <containerManifest>{containers}<members>
+        <member role="buddy"><allowedContainers type="visibleContainers"/><defaultContainer id="200"/><occurrenceConstraint type="one"/></member>
+        <member type="sameEnterprise"><allowedContainers type="custom"><container id="32000"/></allowedContainers><occurrenceConstraint type="zeroOrOne"/></member>
+      </members></containerManifest>
+    </containerManifestList>
+  </provisionGroup>
+</provisionGroupList>"#
+    )
+}
+
+/// RG-45: the manifest of the grammar that applies; members by network type only (roles and
+/// users are not created); a member missing from all its allowed containers goes to its
+/// default container; one already somewhere allowed, or optional, needs nothing; in privacy
+/// mode nothing is required.
+#[test]
+fn container_manifest_requirements() {
+    let p = parse(&grammar_doc("false")).unwrap();
+    let m = p.container_manifest().unwrap();
+    assert_eq!(m.containers.len(), 5);
+    assert_eq!(
+        m.members
+            .iter()
+            .map(|r| r.kind.as_str())
+            .collect::<Vec<_>>(),
+        ["sameEnterprise", "federated", "publicCloud"]
+    );
+    assert_eq!(m.members[0].allowed, vec![100, 200, 300, 32000]);
+    let none = m.missing(|_, _| false);
+    assert_eq!(
+        none,
+        vec![
+            MissingMember {
+                kind: "sameEnterprise".into(),
+                container: 200
+            },
+            MissingMember {
+                kind: "federated".into(),
+                container: 100
+            }
+        ]
+    );
+    // sameEnterprise already in 300 (another visible container): only federated is missing.
+    let some = m.missing(|c, k| c == 300 && k == "sameEnterprise");
+    assert_eq!(some.len(), 1);
+    assert_eq!(some[0].kind, "federated");
+    assert!(m
+        .missing(|c, k| (c, k) == (200, "sameEnterprise") || (c, k) == (100, "federated"))
+        .is_empty());
+    // Privacy mode: the other grammar, which requires nothing.
+    let p = parse(&grammar_doc("true")).unwrap();
+    assert!(p
+        .container_manifest()
+        .unwrap()
+        .missing(|_, _| false)
+        .is_empty());
+}
+
+/// Security by design: a default container outside the allowed ones, container 0 or one the
+/// manifest does not list is never used; oversized manifests are cut to their bounds.
+#[test]
+fn container_manifest_bounds() {
+    let doc = |member: &str| {
+        format!(
+            r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="publicationGrammar"><containerManifestList xmlns="http://schemas.microsoft.com/2008/09/sip/ContainerManifest"><containerManifest><containers><container id="0"><visible>true</visible></container><container id="200"><visible>true</visible></container></containers><members>{member}</members></containerManifest></containerManifestList></provisionGroup></provisionGroupList>"#
+        )
+    };
+    for bad in [
+        r#"<member type="sameEnterprise"><allowedContainers type="custom"><container id="200"/></allowedContainers><defaultContainer id="300"/><occurrenceConstraint type="one"/></member>"#,
+        r#"<member type="sameEnterprise"><allowedContainers type="visibleContainers"/><defaultContainer id="0"/><occurrenceConstraint type="one"/></member>"#,
+        r#"<member type="sameEnterprise"><allowedContainers type="custom"><container id="100"/></allowedContainers><defaultContainer id="200"/><occurrenceConstraint type="one"/></member>"#,
+        r#"<member type="everyone"><allowedContainers type="visibleContainers"/><defaultContainer id="200"/><occurrenceConstraint type="one"/></member>"#,
+    ] {
+        let p = parse(&doc(bad)).unwrap();
+        assert!(
+            p.container_manifest()
+                .unwrap()
+                .missing(|_, _| false)
+                .is_empty(),
+            "{bad}"
+        );
+    }
+    let many: String = (0..200)
+        .map(|_| r#"<member type="federated"><allowedContainers type="visibleContainers"/><defaultContainer id="200"/><occurrenceConstraint type="one"/></member>"#)
+        .collect();
+    let p = parse(&doc(&many)).unwrap();
+    assert_eq!(
+        p.container_manifest().unwrap().members.len(),
+        manifest::MAX_MEMBERS
+    );
+    // No grammar group: no manifest.
+    assert!(parse(&corrected()).unwrap().container_manifest().is_none());
 }

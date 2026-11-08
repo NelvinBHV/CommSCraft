@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (video simulcast)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (presence visible to colleagues)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -34,7 +34,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 6 | Sign-in with TLS-DSK and client certificate | MS-SIPAE, MS-OCAUTHWS | B\* | – |
 | 7 | Registration, GRUU, endpoint ID | MS-SIPREGE, MS-SIPRE | B | **lab**, tested-offline (REGISTER with GRUU, refresh, signed 301 redirect to the home pool, deregistration NOTIFY, version block, keep-alive: `register`, `sip-identity`) |
 | 8 | In-band provisioning | MS-SIPREGE | B\* | **lab**, tested-offline (SUBSCRIBE with piggyback, provisionGroupList, validated ServerConfiguration; used for the address book, conference and media relay URIs: `provisioning`, `xml`, `session`) |
-| 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | **lab**, tested-offline (endpoint and own state publication, long-lived batch subscriptions with NOTIFY, refresh and pool resubscribe: `presence`, `session`) |
+| 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | **lab**, tested-offline (endpoint and own state publication, long-lived batch subscriptions with NOTIFY, refresh and pool resubscribe; the container members the publication grammar requires, so colleagues see the presence: `presence`, `provisioning`, `session`) |
 | 10 | Contact list (server) | MS-SIP, MS-PRES | B | **lab**, tested-offline (read the contact list with a live subscription and delta updates; add, change, move and remove contacts; add, rename and remove groups: `presence`, `session`, CLI `/contact`, `/contactgroup`) |
 | 11 | Contact list (Exchange unified contact store) | MS-PRES, MS-OXWSCOS, MS-OXWSPERS | B\* | – |
 | 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | **lab**, tested-offline (set the relationship per user, block at the server and in the client; the notice that someone added the user, with acknowledgement: `presence`, `session`, CLI `/privacy`, `/seen`) |

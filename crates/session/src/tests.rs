@@ -4356,3 +4356,161 @@ fn picture_control_through_info() {
     // No call, no request.
     assert!(sends(&e.command(Command::RequestPictureUpdate { call: 9 }, NOW)).is_empty());
 }
+
+/// RG-45 ([MS-SIPREGE] §2.2.2.5.4, p. 44): the members the server's container manifest
+/// requires are added once both the manifest and the containers are known – here
+/// `sameEnterprise` into 200 (at its version) and `federated` into 100, so others in the company
+/// see the presence; once they are there, nothing more is sent; a refusal reads the containers
+/// again and tries once more, never a third time.
+#[test]
+fn container_manifest_members_are_set_up() {
+    let (mut e, mut server, out) = signed_in();
+    let prov = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    let selfsub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-roaming-self"))
+        .unwrap();
+    let manifest = r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="publicationGrammar"><containerManifestList xmlns="http://schemas.microsoft.com/2008/09/sip/ContainerManifest"><containerManifest><containers><container id="100"><visible>true</visible></container><container id="200"><visible>true</visible></container></containers><members><member type="sameEnterprise"><allowedContainers type="visibleContainers"/><defaultContainer id="200"/><occurrenceConstraint type="one"/></member><member type="federated"><allowedContainers type="visibleContainers"/><defaultContainer id="100"/><occurrenceConstraint type="one"/></member></members></containerManifest></containerManifestList></provisionGroup></provisionGroupList>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &prov,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            manifest,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+    let members_sent = |out: &[Output]| -> Vec<String> {
+        sends(out)
+            .into_iter()
+            .filter(|m| {
+                m.single("Content-Type").unwrap()
+                    == Some("application/msrtc-setcontainermembers+xml")
+            })
+            .map(|m| String::from_utf8_lossy(&m.body).into_owned())
+            .collect()
+    };
+    assert!(members_sent(&out).is_empty(), "containers not known yet");
+    let doc = |containers: &str| {
+        format!(
+            r#"<roamingData xmlns="http://schemas.microsoft.com/2006/09/sip/roaming-self"><containers xmlns="http://schemas.microsoft.com/2006/09/sip/containers">{containers}</containers></roamingData>"#
+        )
+    };
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &selfsub,
+            200,
+            Some("application/vnd-microsoft-roaming-self+xml"),
+            &doc(r#"<container id="200" version="7"><member type="user" value="dave@contoso.com"/></container>"#),
+            &[("Expires", "600")],
+        ),
+        NOW,
+    );
+    let sent = members_sent(&out);
+    assert_eq!(sent.len(), 1, "{sent:?}");
+    assert!(sent[0].contains(r#"<container id="200" version="7"><member action="add" type="sameEnterprise"/></container>"#));
+    assert!(sent[0].contains(
+        r#"<container id="100" version="0"><member action="add" type="federated"/></container>"#
+    ));
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("everyone in your company"))));
+    // Refused: the containers are read again, then one more try.
+    let req = sends(&out)
+        .into_iter()
+        .find(|m| {
+            m.single("Content-Type").unwrap() == Some("application/msrtc-setcontainermembers+xml")
+        })
+        .unwrap();
+    let out = e.on_message(&answer(&mut server, &req, 409, None, "", &[]), NOW);
+    let again = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-roaming-self"))
+        .unwrap();
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &again,
+            200,
+            Some("application/vnd-microsoft-roaming-self+xml"),
+            &doc(r#"<container id="200" version="8"/>"#),
+            &[("Expires", "600")],
+        ),
+        NOW,
+    );
+    let sent = members_sent(&out);
+    assert_eq!(sent.len(), 1);
+    assert!(sent[0].contains(r#"<container id="200" version="8">"#));
+    let req = sends(&out)
+        .into_iter()
+        .find(|m| {
+            m.single("Content-Type").unwrap() == Some("application/msrtc-setcontainermembers+xml")
+        })
+        .unwrap();
+    let out = e.on_message(&answer(&mut server, &req, 409, None, "", &[]), NOW);
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n.contains("may not see your presence"))));
+    let again = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-roaming-self"))
+        .unwrap();
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &again,
+            200,
+            Some("application/vnd-microsoft-roaming-self+xml"),
+            &doc(r#"<container id="200" version="9"/>"#),
+            &[("Expires", "600")],
+        ),
+        NOW,
+    );
+    assert!(members_sent(&out).is_empty(), "no third try");
+}
+
+/// RG-45: when the containers already have the required members, nothing is sent.
+#[test]
+fn container_manifest_already_satisfied() {
+    let (mut e, mut server, out) = signed_in();
+    let selfsub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-roaming-self"))
+        .unwrap();
+    let prov = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    let out1 = e.on_message(
+        &answer(
+            &mut server,
+            &selfsub,
+            200,
+            Some("application/vnd-microsoft-roaming-self+xml"),
+            r#"<roamingData xmlns="http://schemas.microsoft.com/2006/09/sip/roaming-self"><containers xmlns="http://schemas.microsoft.com/2006/09/sip/containers"><container id="200" version="2"><member type="sameEnterprise"/></container></containers></roamingData>"#,
+            &[("Expires", "600")],
+        ),
+        NOW,
+    );
+    let out2 = e.on_message(
+        &answer(
+            &mut server,
+            &prov,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="publicationGrammar"><containerManifestList xmlns="http://schemas.microsoft.com/2008/09/sip/ContainerManifest"><containerManifest><containers><container id="200"><visible>true</visible></container></containers><members><member type="sameEnterprise"><allowedContainers type="visibleContainers"/><defaultContainer id="200"/><occurrenceConstraint type="one"/></member></members></containerManifest></containerManifestList></provisionGroup></provisionGroupList>"#,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+    for out in [&out1, &out2] {
+        assert!(!sends(out).iter().any(|m| m.single("Content-Type").unwrap()
+            == Some("application/msrtc-setcontainermembers+xml")));
+    }
+}

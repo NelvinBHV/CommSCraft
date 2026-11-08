@@ -51,6 +51,7 @@ Dependencies: RFC 3261 §10 (REGISTER), RFC 3265 (SUBSCRIBE/NOTIFY), draft-ietf-
 | RG-42 | Request body `<provisioningGroupList xmlns=".../2006/09/sip/provisioninggrouplist" subnet="…">` with groups: ServerConfiguration, meetingPolicy, ucPolicy, publicationGrammar, userSetting, endpointConfiguration, locationPolicy, mediaConfiguration, presencePolicyV2, privacyPublicationGrammar, publicProviders, persistentChatConfiguration | §2.2.2.4, pp. 20–22; §2.2.2.5.11, p. 71; example p. 98 |
 | RG-43 | Response `<provisionGroupList xmlns=".../2006/09/sip/provisiongrouplist-notification">` | §2.2.2.5, p. 22; example p. 98 |
 | RG-44 | Example request headers: `Supported: com.microsoft.autoextend`, `ms-benotify`, `Proxy-Require: ms-benotify`, `ms-piggyback-first-notify` | §4.2.1, pp. 97–98 |
+| RG-45 | Container manifest of the publication grammar: "The UAC SHOULD create containers and its members based on the constraints defined in the manifest"; member rules by type or role with allowed containers (custom or `visibleContainers`), `defaultContainer` ("MAY be added if the constraint is not satisfied"), `occurrenceConstraint` one/zeroOrOne; `presencePolicyV2/EnablePrivacyMode` tells whether the server is in privacy mode. The example's plain grammar requires `sameEnterprise` (default 200) and `federated` (default 100) once in a visible container | §2.2.2.5.4, pp. 33–48 (p. 44–46); §2.2.2.5.9, p. 59; example §4.2.2, pp. 102–104 |
 
 ### Provisioning values that matter for the client (selection, per group)
 
@@ -94,3 +95,13 @@ Dependencies: RFC 3261 §10 (REGISTER), RFC 3265 (SUBSCRIBE/NOTIFY), draft-ietf-
 ## Later finding (file 39)
 - OB-22: `EnableServerConversationHistory` (endpointConfiguration, p. 55; footnote <124>, p. 127: not supported before Lync 2013) lets the IM server record conversation history.
 - Found 2026-10-27 (implementation): the REGISTER example §4.1.1 (p. 94) carries a real NTLM AUTHENTICATE_MESSAGE in `gssapi-data`. Decoded it is **NTLMv1** (24-byte LM and NT responses) with flags 0x42908255 (DATAGRAM, IDENTIFY, KEY_EXCH, VERSION; **no** EXTENDED_SESSIONSECURITY, no 128-bit) from Windows 5.2.3790. CommSCraft refuses such an offer (OB-43); whether current servers offer ESS/128/KEY_EXCH is interop test IT-14. Test: `crates/register` `siprege_example_authenticate_is_ntlm_v1`.
+
+## Implementation (2026-11-08, container manifest)
+- **What the client does (`provisioning::manifest`, `session`):**
+  - The client reads the manifest of the grammar that applies: `privacyPublicationGrammar` when the server is in privacy mode, otherwise `publicationGrammar` (RG-45). The manifest is bounded to 64 containers and 64 member rules.
+  - Once both the manifest and the self document's containers are known, the client adds every member by network type (`sameEnterprise`, `federated`, `publicCloud`) whose constraint is "one" and that is in none of its allowed containers. It goes into the member's default container with one setContainerMembers request ([MS-PRES] §2.2.2.5.2, p. 47: such members carry no value). This happens at most twice a session, and the client never removes a member.
+- **Inference:**
+  - "One member" counts across the member's allowed containers. The prose speaks of "a given container".
+  - Members by role (buddy, delegate) are left to the contact list and delegates.
+- **Why it matters:** without `sameEnterprise` in a visible container, users in the same company get the blocked view ([MS-PRES] §1.3.1.3.4, p. 20) and see the user as offline.
+- **Status:** `tested-offline`, `tested-in-lab`.
