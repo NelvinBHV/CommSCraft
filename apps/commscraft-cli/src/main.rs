@@ -75,7 +75,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           presenters: /admit [sip:URI]  /deny sip:URI  /promote sip:URI  /demote sip:URI  /lock  /unlock
           /remove sip:URI  /muteuser sip:URI  /unmuteuser sip:URI  /muteall  /unmuteall
           /options [open|closed|anonymous] [promote none|company|everyone] [phone bypass|lobby]
-          /search TEXT (address book)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
+          /search TEXT (address book)  /addressbook (load the offline address book)  /lookup TEXT (search it)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
           --wait seconds (default 20), ends the conversation and signs out. Plain text only.
 
@@ -1270,6 +1270,112 @@ fn search(
     Err(last)
 }
 
+/// How many days back the newest full address book file is looked for (design: the server
+/// keeps the most recent N > 0 days, [MS-ABS] §1.3, p. 9; it writes the day's file at night).
+const ADDRESS_BOOK_DAYS: u16 = 7;
+/// Largest compressed address book file downloaded (design).
+const ADDRESS_BOOK_MAX: usize = 64 * 1024 * 1024;
+
+/// The offline address book (function 13; [MS-ABS] AB-01): the newest full file `F-XXXX.lsabs`
+/// under the base URL of in-band provisioning (internal first, then external), from today back
+/// [`ADDRESS_BOOK_DAYS`] days. Only hosts in the user's SIP domain or a trusted domain get
+/// credentials; NTLM over HTTP as for the search. The file is kept in memory only.
+fn fetch_address_book(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    services: Option<&commscraft_provisioning::ServerConfiguration>,
+    verbose: bool,
+) -> Result<commscraft_abs::book::AddressBook, String> {
+    use commscraft_sipae::base64;
+    let c = services.ok_or("no provisioning yet (address book service unknown)")?;
+    let bases: Vec<&commscraft_provisioning::ServiceUrl> = [&c.abs_internal, &c.abs_external]
+        .into_iter()
+        .flatten()
+        .collect();
+    if bases.is_empty() {
+        return Err("the server announced no address book service".into());
+    }
+    let today = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() / 86_400)
+        .unwrap_or(0);
+    // Days since 2001-01-01 (day 11 323 since 1970-01-01).
+    let today = u16::try_from(today.saturating_sub(11_323)).map_err(|_| "clock out of range")?;
+    let mut last = String::from("no usable service");
+    for base in bases {
+        if !base.in_user_domain && !trust.trusts(&base.host) {
+            last = format!(
+                "{} is outside your SIP domain; add --trust-domain to use it",
+                base.host
+            );
+            continue;
+        }
+        for back in 0..ADDRESS_BOOK_DAYS {
+            let day = today.saturating_sub(back);
+            let name = format!("F-{day:04X}.lsabs");
+            let Some(url) =
+                commscraft_url::parse_https(&format!("{}/{name}", base.url.trim_end_matches('/')))
+            else {
+                break;
+            };
+            if verbose {
+                println!("  GET {}/{name}", base.url.trim_end_matches('/'));
+            }
+            let negotiate = commscraft_ntlm::messages::negotiate_message(
+                commscraft_ntlm::messages::HTTP_NEGOTIATE,
+            );
+            let mut auth_err: Option<String> = None;
+            let result = commscraft_net::http::get_with_auth(
+                tls,
+                &url,
+                &[("Accept", "application/octet-stream")],
+                &user_agent(),
+                Duration::from_secs(60),
+                ADDRESS_BOOK_MAX,
+                &mut |challenge, cert| match challenge {
+                    None => Ok(format!("NTLM {}", base64::encode(&negotiate))),
+                    Some(ch) => {
+                        let token = ch
+                            .strip_prefix("NTLM ")
+                            .and_then(|b| base64::decode(b.trim()).ok());
+                        let answer = token
+                            .ok_or_else(|| "no NTLM challenge".to_string())
+                            .and_then(|t| engine.http_ntlm(&negotiate, &t, now(), cert));
+                        match answer {
+                            Ok(a) => Ok(format!("NTLM {}", base64::encode(&a))),
+                            Err(e) => {
+                                auth_err = Some(e);
+                                Err(commscraft_net::NetError::Io(std::io::Error::other("NTLM")))
+                            }
+                        }
+                    }
+                },
+            );
+            match result {
+                Ok(r) if r.status == 200 => {
+                    let raw = commscraft_abs::book::decompress(&r.body)
+                        .map_err(|e| format!("{name}: {e:?}"))?;
+                    return commscraft_abs::book::AddressBook::parse(&raw)
+                        .map_err(|e| format!("{name}: {e:?}"));
+                }
+                // Not (yet) written for this day: the day before.
+                Ok(r) if r.status == 404 => continue,
+                Ok(r) if r.status == 401 => return Err("not authorized (401)".into()),
+                Ok(r) => {
+                    last = format!("HTTP {}", r.status);
+                    break;
+                }
+                Err(e) => {
+                    last = auth_err.take().unwrap_or_else(|| e.to_string());
+                    break;
+                }
+            }
+        }
+    }
+    Err(last)
+}
+
 /// The local IPv4 subnet of `ip` from the kernel's routing table (`/proc/net/route`), for the
 /// location request (E9-03).
 fn subnet_of(ip: std::net::IpAddr) -> Option<std::net::IpAddr> {
@@ -1541,6 +1647,8 @@ fn interactive(
     let mut invitations: Vec<String> = Vec::new();
     let mut quitting = false;
     let mut services: Option<Box<commscraft_provisioning::ServerConfiguration>> = None;
+    // Function 13: the offline address book, once loaded with /addressbook.
+    let mut address_book: Option<commscraft_abs::book::AddressBook> = None;
     let mut outputs = engine.start(now());
     // Commands that events lead to (sent after the events are shown).
     let mut outputs_extra: Vec<C> = Vec::new();
@@ -1651,10 +1759,20 @@ fn interactive(
                             },
                             None => String::new(),
                         };
+                        // Function 13 (AB-02): the address book names a caller who comes with a
+                        // number only.
+                        let known = |n: &str| {
+                            address_book
+                                .as_ref()
+                                .and_then(|b| b.lookup_number(n))
+                                .and_then(|e| e.display_name)
+                                .map(|name| format!("{name}, "))
+                                .unwrap_or_default()
+                        };
                         let who = match engine.caller(call) {
                             Some(c) if c.anonymous => "an anonymous caller".to_string(),
                             Some(c) => match (c.number, c.gateway) {
-                                (Some(n), true) => format!("{n} (phone line)"),
+                                (Some(n), true) => format!("{}{n} (phone line)", known(&n)),
                                 (Some(n), false) => format!("{n} ({})", c.uri),
                                 (None, _) => c.uri,
                             },
@@ -3191,6 +3309,49 @@ fn interactive(
                     conversation,
                     mute: cmd == "/confmute",
                 }),
+                "/addressbook" => {
+                    match fetch_address_book(&mut engine, tls, trust, services.as_deref(), verbose)
+                    {
+                        Ok(b) => {
+                            let d = commscraft_abs::date_from_day_number(b.created);
+                            println!(
+                                "* address book of {:04}-{:02}-{:02}: {} entries (search with /lookup TEXT)",
+                                d.year,
+                                d.month,
+                                d.day,
+                                b.contacts.len()
+                            );
+                            address_book = Some(b);
+                        }
+                        Err(e) => println!("* address book not loaded: {e}"),
+                    }
+                    None
+                }
+                "/lookup" => {
+                    match &address_book {
+                        None => println!("* no address book yet – load it with /addressbook"),
+                        Some(b) => {
+                            let found = b.search(&arg, 25);
+                            if found.is_empty() {
+                                println!("* nothing found");
+                            }
+                            for f in found {
+                                println!(
+                                    "  {:<40} {}  {}",
+                                    f.sip.as_deref().unwrap_or("(no SIP address)"),
+                                    f.display_name.as_deref().unwrap_or(""),
+                                    [f.title, f.company, f.office, f.mail]
+                                        .into_iter()
+                                        .flatten()
+                                        .chain(f.phones)
+                                        .collect::<Vec<_>>()
+                                        .join(", ")
+                                );
+                            }
+                        }
+                    }
+                    None
+                }
                 "/search" => {
                     match search(&mut engine, tls, trust, services.as_deref(), &arg, verbose) {
                         Ok(found) if found.is_empty() => println!("* nothing found"),

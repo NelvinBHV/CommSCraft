@@ -38,7 +38,7 @@ Rules for working in the code are in
 | `commscraft-rtp` | L1 | RTP header, sender, reception statistics, RTCP SR/RR/SDES/BYE, telephone events | RT-01…RT-10, RT-20, RT-21, PL-30 |
 | `commscraft-turn-bwm` | L1 | MS-TURNBWM attribute types, XOR site addresses | BW-11, BW-12 |
 | `commscraft-sipcomp` | L2 | MPPC compressor/decompressor with 8 KiB history and packet flags (no header: O-CP-1) | CP-05…CP-08, K-CP-1, O-CP-3, OB-01 |
-| `commscraft-abs` | L3 | Address book block compression (LZ77 variant), CRC-32, file-name dates | AB-03, AB-04, K-AB-1, K-AB-4 |
+| `commscraft-abs` | L3 | Address book block compression (LZ77 variant), CRC-32, file-name dates; full address book files with search and reverse number lookup (`book`) | AB-03 … AB-09, K-AB-1, K-AB-2, K-AB-4 |
 | `commscraft-sip-msg` | L0 | SIP parsing, stream framing and serialization; bounded, fail-closed, injection-safe; UAC dialogs (RFC 3261 §12) | RFC 3261 §7, §18.3, §25; AE-29 |
 | `commscraft-sipae` | L1 | MS-SIPAE security associations, signature buffers, Authorization header, verification with replay window | AE-05, AE-10, AE-11, AE-29…AE-33, K-AE-4 |
 | `commscraft-register` | L2 | Sign-in state machine: REGISTER → NTLM handshake → signed 200 OK → GRUU/expiry → refresh → sign-out; client version block (RG-50); deregister/survivable mode NOTIFY; signed home pool redirect (O-RG-1); keep-alive negotiation (CON-30…CON-35) | AE-20…AE-33, RG-03…RG-32, RG-50, RE-03, RE-06, K-RG-4 |

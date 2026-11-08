@@ -280,7 +280,7 @@ fn request(
 /// Reads one complete response from a kept-alive connection: Content-Length or chunked framing;
 /// without either, until the server closes the connection. Octets beyond the response are an
 /// error (we never pipeline, so the server has no reason to send any).
-fn read_one(conn: &mut crate::SipConnection) -> Result<HttpResponse, NetError> {
+fn read_one(conn: &mut crate::SipConnection, limit: usize) -> Result<HttpResponse, NetError> {
     let mut data = Vec::new();
     let mut buf = [0u8; 16 * 1024];
     loop {
@@ -293,7 +293,7 @@ fn read_one(conn: &mut crate::SipConnection) -> Result<HttpResponse, NetError> {
             Ok(0) => return parse_response(&data),
             Ok(n) => {
                 data.extend_from_slice(buf.get(..n).unwrap_or_default());
-                if data.len() > MAX_RESPONSE {
+                if data.len() > limit {
                     return Err(bad("response too large"));
                 }
             }
@@ -320,7 +320,41 @@ pub fn post_with_auth(
     authorize: &mut Authorize<'_>,
 ) -> Result<HttpResponse, NetError> {
     let conn = tls.connect(&url.host, url.port, timeout)?;
-    post_with_auth_on(conn, url, extra_headers, body, user_agent, authorize)
+    with_auth_on(
+        conn,
+        "POST",
+        url,
+        extra_headers,
+        Some(body),
+        user_agent,
+        MAX_RESPONSE,
+        authorize,
+    )
+}
+
+/// GET with HTTP authentication on one kept-alive connection, like [`post_with_auth`], for a
+/// response of up to `limit` bytes (e.g. an address book file).
+#[allow(clippy::too_many_arguments)]
+pub fn get_with_auth(
+    tls: &TlsClient,
+    url: &HttpsUrl,
+    extra_headers: &[(&str, &str)],
+    user_agent: &str,
+    timeout: Duration,
+    limit: usize,
+    authorize: &mut Authorize<'_>,
+) -> Result<HttpResponse, NetError> {
+    let conn = tls.connect(&url.host, url.port, timeout)?;
+    with_auth_on(
+        conn,
+        "GET",
+        url,
+        extra_headers,
+        None,
+        user_agent,
+        limit,
+        authorize,
+    )
 }
 
 /// Like [`post_with_auth`], connecting to `addr` (the certificate is checked against `url.host`).
@@ -336,15 +370,27 @@ pub fn post_with_auth_at(
     authorize: &mut Authorize<'_>,
 ) -> Result<HttpResponse, NetError> {
     let conn = tls.connect_addr(addr, &url.host, timeout)?;
-    post_with_auth_on(conn, url, extra_headers, body, user_agent, authorize)
+    with_auth_on(
+        conn,
+        "POST",
+        url,
+        extra_headers,
+        Some(body),
+        user_agent,
+        MAX_RESPONSE,
+        authorize,
+    )
 }
 
-fn post_with_auth_on(
+#[allow(clippy::too_many_arguments)]
+fn with_auth_on(
     mut conn: crate::SipConnection,
+    method: &str,
     url: &HttpsUrl,
     extra_headers: &[(&str, &str)],
-    body: &[u8],
+    body: Option<&[u8]>,
     user_agent: &str,
+    limit: usize,
     authorize: &mut Authorize<'_>,
 ) -> Result<HttpResponse, NetError> {
     let host = if url.port == 443 {
@@ -366,15 +412,20 @@ fn post_with_auth_on(
         if !safe(&auth) {
             return Err(bad("unsafe authorization value"));
         }
-        let mut req = format!("POST {} HTTP/1.1\r\nHost: {host}\r\nUser-Agent: {user_agent}\r\nConnection: keep-alive\r\nAuthorization: {auth}\r\n", url.path);
+        let mut req = format!("{method} {} HTTP/1.1\r\nHost: {host}\r\nUser-Agent: {user_agent}\r\nConnection: keep-alive\r\nAuthorization: {auth}\r\n", url.path);
         for (k, v) in extra_headers {
             req.push_str(&format!("{k}: {v}\r\n"));
         }
-        req.push_str(&format!("Content-Length: {}\r\n\r\n", body.len()));
+        match body {
+            Some(b) => req.push_str(&format!("Content-Length: {}\r\n\r\n", b.len())),
+            None => req.push_str("\r\n"),
+        }
         conn.tls.write_all(req.as_bytes()).map_err(NetError::Io)?;
-        conn.tls.write_all(body).map_err(NetError::Io)?;
+        if let Some(b) = body {
+            conn.tls.write_all(b).map_err(NetError::Io)?;
+        }
         conn.tls.flush().map_err(NetError::Io)?;
-        let r = read_one(&mut conn)?;
+        let r = read_one(&mut conn, limit)?;
         if r.status != 401 {
             return Ok(r);
         }
