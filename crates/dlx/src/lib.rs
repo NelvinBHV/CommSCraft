@@ -1,5 +1,6 @@
 //! Address book search over the Group Expansion / Address Book Web Query service (MS-DLX
-//! `SearchAbEntry`, basic search).
+//! `SearchAbEntry`, basic search) and distribution list expansion (`ExpandDistributionList`,
+//! DL-04).
 //!
 //! Evidence: `docs/protocol/evidence/28-dlx-distribution-list-address-book-search.md` (DL-01 …
 //! DL-07, OB-44, K-DL-3). Sources: [MS-DLX] 20250520 §3.1.4.2 (pp. 22–31), schema §6 (pp. 58–65),
@@ -184,6 +185,131 @@ pub fn parse_response(xml: &str) -> Result<Vec<Entry>, Error> {
         }
     }
     Ok(out)
+}
+
+/// SOAPAction of ExpandDistributionList as the `AddressBookWinNegotiate` binding prints it (DL-03;
+/// K-DL-1 resolved by OB-44: without the space of p. 63).
+pub const EXPAND_SOAP_ACTION: &str = "\"DistributionListExpander/ExpandDistributionList\"";
+/// Longest distribution list address accepted (design).
+pub const MAX_GROUP_ADDRESS: usize = 256;
+/// Most members read from one answer (design; the server's default limit is 100, DL-04).
+pub const MAX_MEMBERS: usize = 1000;
+
+/// The request to expand the distribution list with the mail address `group` (DL-04;
+/// §3.1.4.1.3.1: exactly one `groupMailAddress`).
+pub fn expand_request(group: &str) -> Result<String, Error> {
+    let g = group.trim();
+    if g.is_empty() {
+        return Err(Error::EmptyQuery);
+    }
+    if g.chars().count() > MAX_GROUP_ADDRESS || g.chars().any(char::is_control) {
+        return Err(Error::QueryTooLong);
+    }
+    Ok(format!(
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?><soap:Envelope xmlns:soap=\"{NS_SOAP}\"><soap:Body>\
+<ExpandDistributionList xmlns=\"{NS_DLX}\"><groupMailAddress>{}</groupMailAddress></ExpandDistributionList>\
+</soap:Body></soap:Envelope>",
+        escape(g)
+    ))
+}
+
+/// ResponseState of an expansion (§3.1.4.1.4.1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExpandStatus {
+    Success,
+    /// The list has more members than the server returns (default above 100).
+    MemberCountLimitExceeded,
+    NotAuthorized,
+    NotFound,
+    SimultaneousRequestLimitExceeded,
+    /// `Invalid` or an unknown value.
+    Invalid,
+}
+
+/// A member of a distribution list (ActiveDirectoryObjectInfo, §3.1.4.1.3.5).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Member {
+    pub display_name: Option<String>,
+    pub mail: Option<String>,
+    pub mail_nickname: Option<String>,
+    /// Checked `sip:` URI.
+    pub sip_uri: Option<String>,
+}
+
+/// The answer to an expansion: status, users and nested lists (DlxGroup, §3.1.4.1.3.3).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Expansion {
+    pub status: ExpandStatus,
+    pub users: Vec<Member>,
+    pub nested_groups: Vec<Member>,
+}
+
+fn members(list: Option<&Element>) -> Vec<Member> {
+    let Some(list) = list else {
+        return Vec::new();
+    };
+    list.children_named("ActiveDirectoryObjectInfo")
+        .take(MAX_MEMBERS)
+        .map(|m| {
+            let text = |name: &str| {
+                m.child(name)
+                    .map(|v| printable(&v.text()))
+                    .filter(|v| !v.is_empty())
+            };
+            Member {
+                display_name: text("displayName"),
+                mail: text("mail"),
+                mail_nickname: text("mailNickname"),
+                sip_uri: m.child("sipUri").and_then(|v| sip_uri(&v.text())),
+            }
+        })
+        .collect()
+}
+
+/// Parses the SOAP answer of an expansion (§3.1.4.1.3.2 ff.).
+pub fn parse_expand_response(xml: &str) -> Result<Expansion, Error> {
+    let root = commscraft_xml::parse(
+        xml,
+        &Limits {
+            max_input: 1024 * 1024,
+            ..Limits::default()
+        },
+    )
+    .map_err(Error::Xml)?;
+    if root.name != "Envelope" || root.namespace.as_deref() != Some(NS_SOAP) {
+        return Err(Error::WrongDocument("soap:Envelope"));
+    }
+    let body = root
+        .child("Body")
+        .ok_or(Error::WrongDocument("soap:Body"))?;
+    if let Some(f) = body.child("Fault") {
+        let text = f.child("faultstring").map(|s| s.text()).unwrap_or_default();
+        return Err(Error::Fault(printable(&text)));
+    }
+    let result = body
+        .child("ExpandDistributionListResponse")
+        .and_then(|r| r.child("ExpandDistributionListResult"))
+        .ok_or(Error::WrongDocument("ExpandDistributionListResult"))?;
+    if result.namespace.as_deref() != Some(NS_DLX) {
+        return Err(Error::WrongDocument("namespace"));
+    }
+    let status = match result
+        .child("ResponseStatus")
+        .map(|s| s.text().trim().to_string())
+        .as_deref()
+    {
+        Some("Success") => ExpandStatus::Success,
+        Some("MemberCountLimitExceeded") => ExpandStatus::MemberCountLimitExceeded,
+        Some("NotAuthorized") => ExpandStatus::NotAuthorized,
+        Some("NotFound") => ExpandStatus::NotFound,
+        Some("SimultaneousRequestLimitExceeded") => ExpandStatus::SimultaneousRequestLimitExceeded,
+        _ => ExpandStatus::Invalid,
+    };
+    Ok(Expansion {
+        status,
+        users: members(result.child("Users")),
+        nested_groups: members(result.child("NestedGroups")),
+    })
 }
 
 #[cfg(test)]

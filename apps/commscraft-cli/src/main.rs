@@ -75,7 +75,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           presenters: /admit [sip:URI]  /deny sip:URI  /promote sip:URI  /demote sip:URI  /lock  /unlock
           /remove sip:URI  /muteuser sip:URI  /unmuteuser sip:URI  /muteall  /unmuteall
           /options [open|closed|anonymous] [promote none|company|everyone] [phone bypass|lobby]
-          /search TEXT (address book)  /addressbook (load the offline address book)  /lookup TEXT (search it)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
+          /search TEXT (address book)  /addressbook (load the offline address book)  /lookup TEXT (search it)  /expand LIST@DOMAIN (members of a distribution list)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
           --wait seconds (default 20), ends the conversation and signs out. Plain text only.
 
@@ -1173,23 +1173,23 @@ fn im_actions(
     Ok(())
 }
 
-/// Address book search (MS-DLX SearchAbEntry, OB-44): the endpoint comes from in-band
-/// provisioning; only hosts in the user's SIP domain or a trusted domain get credentials. NTLM
-/// over HTTP per MS-NTHT (NEGOTIATE in the first request, AUTHENTICATE after the 401 with the
-/// CHALLENGE, all on one connection). Blocks the loop for at most the HTTP timeout.
-fn search(
+/// A SOAP call to the MS-DLX service (OB-44): the endpoint comes from in-band provisioning; only
+/// hosts in the user's SIP domain or a trusted domain get credentials. NTLM over HTTP per MS-NTHT
+/// (NEGOTIATE in the first request, AUTHENTICATE after the 401 with the CHALLENGE, all on one
+/// connection). Blocks the loop for at most the HTTP timeout. Returns status and body text.
+fn dlx_call(
     engine: &mut commscraft_session::Engine<OsRandom>,
     tls: &TlsClient,
     trust: &Trust,
     services: Option<&commscraft_provisioning::ServerConfiguration>,
-    query: &str,
+    action: &str,
+    body: &str,
     verbose: bool,
-) -> Result<Vec<commscraft_dlx::Entry>, String> {
+) -> Result<(u16, String), String> {
     use commscraft_sipae::base64;
-    let body = commscraft_dlx::search_request(query).map_err(|e| format!("{e:?}"))?;
     let c = services.ok_or("no provisioning yet (address book service unknown)")?;
     if c.dlx_enabled == Some(false) {
-        return Err("the address book web search is disabled by the server".into());
+        return Err("the address book web service is disabled by the server".into());
     }
     let candidates: Vec<&commscraft_provisioning::ServiceUrl> = [
         &c.dlx_internal,
@@ -1216,7 +1216,7 @@ fn search(
             continue;
         };
         if verbose {
-            println!("  POST {} (SearchAbEntry)", s.url);
+            println!("  POST {} ({action})", s.url);
         }
         let negotiate =
             commscraft_ntlm::messages::negotiate_message(commscraft_ntlm::messages::HTTP_NEGOTIATE);
@@ -1226,7 +1226,7 @@ fn search(
             &url,
             &[
                 ("Content-Type", commscraft_dlx::CONTENT_TYPE),
-                ("SOAPAction", commscraft_dlx::SOAP_ACTION),
+                ("SOAPAction", action),
             ],
             body.as_bytes(),
             &user_agent(),
@@ -1251,23 +1251,67 @@ fn search(
             },
         );
         match result {
-            Ok(r) if r.status == 200 => {
-                let text = String::from_utf8(r.body).map_err(|_| "answer is not UTF-8")?;
-                return commscraft_dlx::parse_response(&text).map_err(|e| format!("{e:?}"));
-            }
             Ok(r) if r.status == 401 => return Err("not authorized (401)".into()),
-            Ok(r) => {
-                // A SOAP fault comes with 500.
-                let text = String::from_utf8_lossy(&r.body).to_string();
-                return match commscraft_dlx::parse_response(&text) {
-                    Err(commscraft_dlx::Error::Fault(f)) => Err(format!("server fault: {f}")),
-                    _ => Err(format!("HTTP {}", r.status)),
-                };
-            }
+            Ok(r) => return Ok((r.status, String::from_utf8_lossy(&r.body).to_string())),
             Err(e) => last = auth_err.take().unwrap_or_else(|| e.to_string()),
         }
     }
     Err(last)
+}
+
+/// Address book search (MS-DLX SearchAbEntry, OB-44).
+fn search(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    services: Option<&commscraft_provisioning::ServerConfiguration>,
+    query: &str,
+    verbose: bool,
+) -> Result<Vec<commscraft_dlx::Entry>, String> {
+    let body = commscraft_dlx::search_request(query).map_err(|e| format!("{e:?}"))?;
+    let (status, text) = dlx_call(
+        engine,
+        tls,
+        trust,
+        services,
+        commscraft_dlx::SOAP_ACTION,
+        &body,
+        verbose,
+    )?;
+    // A SOAP fault comes with 500.
+    match commscraft_dlx::parse_response(&text) {
+        Ok(found) if status == 200 => Ok(found),
+        Err(commscraft_dlx::Error::Fault(f)) => Err(format!("server fault: {f}")),
+        Err(e) if status == 200 => Err(format!("{e:?}")),
+        _ => Err(format!("HTTP {status}")),
+    }
+}
+
+/// Distribution list expansion (MS-DLX ExpandDistributionList, DL-04).
+fn expand(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    services: Option<&commscraft_provisioning::ServerConfiguration>,
+    group: &str,
+    verbose: bool,
+) -> Result<commscraft_dlx::Expansion, String> {
+    let body = commscraft_dlx::expand_request(group).map_err(|e| format!("{e:?}"))?;
+    let (status, text) = dlx_call(
+        engine,
+        tls,
+        trust,
+        services,
+        commscraft_dlx::EXPAND_SOAP_ACTION,
+        &body,
+        verbose,
+    )?;
+    match commscraft_dlx::parse_expand_response(&text) {
+        Ok(x) if status == 200 => Ok(x),
+        Err(commscraft_dlx::Error::Fault(f)) => Err(format!("server fault: {f}")),
+        Err(e) if status == 200 => Err(format!("{e:?}")),
+        _ => Err(format!("HTTP {status}")),
+    }
 }
 
 /// How many days back the newest full address book file is looked for (design: the server
@@ -3375,6 +3419,37 @@ fn interactive(
                                 );
                             }
                         }
+                    }
+                    None
+                }
+                "/expand" => {
+                    use commscraft_dlx::ExpandStatus as X;
+                    match expand(&mut engine, tls, trust, services.as_deref(), &arg, verbose) {
+                        Ok(x) => {
+                            match x.status {
+                                X::Success => {}
+                                X::MemberCountLimitExceeded => {
+                                    println!("* the list has more members than the server shows")
+                                }
+                                X::NotAuthorized => println!("* you may not expand this list"),
+                                X::NotFound => println!("* no such distribution list"),
+                                X::SimultaneousRequestLimitExceeded => {
+                                    println!("* the server is busy – try again later")
+                                }
+                                X::Invalid => println!("* the server could not expand the list"),
+                            }
+                            for (kind, list) in [("member", &x.users), ("list", &x.nested_groups)] {
+                                for m in list {
+                                    println!(
+                                        "  {kind:<6} {:<40} {}  {}",
+                                        m.sip_uri.as_deref().unwrap_or("(no SIP address)"),
+                                        m.display_name.as_deref().unwrap_or(""),
+                                        m.mail.as_deref().unwrap_or("")
+                                    );
+                                }
+                            }
+                        }
+                        Err(e) => println!("* expansion failed: {e}"),
                     }
                     None
                 }
