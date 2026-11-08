@@ -13,6 +13,8 @@ Source: [MS-ABS] "Address Book File Structure", edition 20250520, 79 pp. Product
 | AB-07 | ABF_CONTACT: objectGUID (16 bytes), NumberOfAttributes, attributes (ID 1 byte if MaximumAttributeId < 256, otherwise 2; binary attributes with a 2-byte length; strings NUL-terminated UTF-8) | §2.2.10–2.2.11, pp. 22–23 |
 | AB-08 | Normalisation rules: pairs "regex line CRLF replacement line CRLF", the first matching rule applies; special rule `E164` (≤15 digits, blanks/separators ignored ⇒ `tel:+<digits>`); regex syntax **.NET** (MC-RegEx; products from OCS 2007 R2: .NET 3.5) | §2.2.5, p. 20; <8> p. 75 |
 | AB-09 | Read the trailer at the end of the file: last 4 bytes = LengthOfTrailer | §2.2.14, p. 24 |
+| AB-10 | Delta files: ABF_DELTA_HEADER (FileType delta or compact delta, BaseCreationDate, CreationDate, NumberOfAttributes, MaximumAttributeId, UseNormalizationRules, SourceStream), then rules, attributes and the contacts; a contact with NumberOfAttributes 0 is deleted (NumberOfDeletedAttributes follows if Length > 0x14); ABF_DELTA_TRAILER Hash, BaseFileHash, NumberOfContacts, NumberOfDeletedContacts. Compact delta contacts carry only the changed attributes, a deleted attribute as an empty value | §1.3, p. 10; §2.2.4, p. 19; §2.2.9–2.2.10, p. 22; §2.2.13, p. 23; §2.2.15–2.2.16, pp. 24–25; example §3.1, pp. 26–59 |
+| AB-11 | The client normalizes numbers with the rules: in order, the first matching rule; E164 built in; without a match the number stays. Use: numbers outside the address book, and the address book numbers when UseNormalizationRules is 0 ("lets the client perform the normalization") | §1.3.1, pp. 10–11; §2.2.5, p. 20 |
 
 ### Checked
 - Date coding: 0x0A8C = 2008-05-24 (Saturday) ✓, 0x0A10 = 2008-01-21 (Monday) ✓, 0x0A11 = 2008-01-22 ✓ (pp. 10, 26).
@@ -39,7 +41,16 @@ Source: [MS-ABS] "Address Book File Structure", edition 20250520, 79 pp. Product
 - **Inferences:**
   - An ABF_CONTACT_ATTRIBUTE has its Id first and a Length only for a binary attribute. The Id decides whether the Length is present; the examples carry no binary contact attribute.
   - Empty lines between normalization rule pairs are skipped, because an empty line is no regular expression.
-- **Use:** search by every word of the query in display name, SIP and mail address, given name and surname. Reverse lookup of a caller's number compares the digits of stored and normalized numbers (`tel:+…`, example §3.1.4.4). The .NET regular expressions of the normalization rules are not evaluated yet.
-- **Not yet:** delta and compact delta files, a disk cache.
+- **Use:** search by every word of the query in display name, SIP and mail address, given name and surname. Reverse lookup of a caller's number compares the digits of stored and normalized numbers (`tel:+…`, example §3.1.4.4).
+- **Status:** `tested-offline`, `tested-in-lab`.
+
+## Implementation (2026-11-08, delta files, cache, normalization rules)
+- **Delta files (AB-10):** `book::Delta` reads delta and compact delta files. The header order is that of the field descriptions and the example §3.1.1 (bytes `10 0a 11 0a`: BaseCreationDate first). Deleted contacts stand in the same list as the changed ones, before the one sentinel (example §3.1.6.1: NumberOfAttributes 0, NumberOfDeletedAttributes 6). The trailer's NumberOfContacts does not count them (example §3.1.8: 2 and 1). In the example trailer the Hash comes before BaseFileHash (`db df d2 dd`). Recomputed: the published example parses to base 0x0A10, target 0x0A11, 20 attributes, a changed, a new and a deleted contact.
+- **Applying:** `AddressBook::apply` accepts a delta only for the file it was made from: same BaseCreationDate, and BaseFileHash equal to the full file's Hash (K-AB-3: compared, never recomputed). New and changed contacts replace the old ones; in a compact delta only their attributes, and an empty value removes one. Deleted contacts are removed, and the tables and the date are taken over. With real server files a cached F file plus the delta to the newest day gave the newest state (`tested-in-lab`).
+- **Server behaviour (`tested-in-lab`, no details):** the server keeps a delta from each kept full file to the newest one, so one delta brings a cached file of any kept day up to date.
+- **Cache (design):** opt-in with `--cache-address-book`. The newest full file is kept compressed, as sent, in the user's cache directory (directory 0700, file 0600, one per host). `/addressbook` then fetches the newest delta for it; without a delta it fetches a newer full file; if there is none, the cache is current. Without the option the book stays in memory only.
+- **Normalization rules (AB-11, AB-08):** compiled with the `regex` crate (linear time). A rule with a construct it lacks (look-around, back-references) is left out. .NET replacement syntax (`$n`, `${n}`, `${name}`, `$&`, `$$`) is translated.
+  - **Inference, recomputed against the example:** a rule must match the whole number, and a result without `tel:` gets it in front. With the example's 18 rules every one of its 6 stored phone values gives exactly the normalized value stored next to it; unanchored, rule 10 would already match a part of `555-533-4312`. A replacement `null` (second example rule) leaves the number unnormalized.
+  - **Use:** the reverse lookup also compares the caller's number in normalized form, and, when the server did not normalize (UseNormalizationRules 0), the address book's numbers normalized by the client.
 - **Status:** `tested-offline`, `tested-in-lab`.
 

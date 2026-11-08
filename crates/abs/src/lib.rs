@@ -353,6 +353,7 @@ fn civil_from_days(z: i64) -> Date {
 }
 
 pub mod book;
+pub mod normalize;
 
 #[cfg(test)]
 mod tests;

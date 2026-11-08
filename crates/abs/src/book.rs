@@ -11,7 +11,14 @@
 //! Security by design: every length is checked against the remaining bytes before use; at most
 //! [`MAX_ATTRIBUTES`] attributes, [`MAX_CONTACTS`] contacts and [`MAX_VALUES`] values per contact;
 //! strings are UTF-8 checked and stripped of control characters; a contact referring to an
-//! unknown attribute is kept without that value. Only full files are read here.
+//! unknown attribute is kept without that value.
+//!
+//! Delta files (D-XXXX-YYYY, §1.3 p. 10, §2.2.4, §2.2.9, §2.2.13; AB-10) carry the new and
+//! changed contacts in full and the deleted ones with NumberOfAttributes 0 in the same list
+//! before the sentinel (as the example §3.1.4–§3.1.7, pp. 46–58, shows); compact delta files
+//! (C-XXXX-YYYY, §2.2.15–§2.2.16) carry only the changed attributes, a deleted attribute as an
+//! empty value. A delta is applied only to the full file it was made from (BaseCreationDate, and
+//! BaseFileHash against the base file's Hash).
 
 use crate::Error as BlockError;
 
@@ -60,8 +67,12 @@ pub enum Error {
     Truncated,
     /// Not a full address book file (other FileType GUID).
     NotFullFile,
-    /// A delta or compact delta file (not read yet).
+    /// A delta or compact delta file where a full file is expected.
     DeltaFile,
+    /// Not a delta or compact delta file.
+    NotDeltaFile,
+    /// The delta was not made from this address book (other base date or base file hash).
+    WrongBase,
     /// A length, count or bound does not fit.
     Bad(&'static str),
 }
@@ -124,6 +135,28 @@ pub struct AddressBook {
     pub rules: Vec<Rule>,
     pub attributes: Vec<Attribute>,
     pub contacts: Vec<Contact>,
+    /// The Hash of the trailer, which a delta names as its BaseFileHash.
+    pub hash: Option<u16>,
+}
+
+/// A delta or compact delta file (§2.2.4, §2.2.13).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Delta {
+    /// The XXXX of D-XXXX-YYYY: the full file it was made from.
+    pub base: u16,
+    /// The YYYY: the full file it leads to.
+    pub created: u16,
+    /// A compact delta: contacts carry only their changed attributes.
+    pub compact: bool,
+    pub normalized: bool,
+    pub rules: Vec<Rule>,
+    pub attributes: Vec<Attribute>,
+    /// New and changed contacts.
+    pub changed: Vec<Contact>,
+    /// The objectGUIDs of deleted contacts.
+    pub deleted: Vec<[u8; 16]>,
+    pub hash: Option<u16>,
+    pub base_hash: Option<u16>,
 }
 
 /// One search result: the fields a client shows.
@@ -222,6 +255,91 @@ fn clean_lines(raw: &[u8]) -> String {
         .collect()
 }
 
+/// The rules and the attribute table after a header (§2.2.5–§2.2.7).
+fn read_tables(
+    r: &mut Reader<'_>,
+    count: usize,
+    max_id: u16,
+) -> Result<(Vec<Rule>, Vec<Attribute>), Error> {
+    if count > MAX_ATTRIBUTES {
+        return Err(Error::Bad("attribute count"));
+    }
+    let rules_len = usize::try_from(r.u32()?).map_err(|_| Error::Bad("rules length"))?;
+    let rules = parse_rules(r.take(rules_len)?);
+    let mut attributes = Vec::with_capacity(count);
+    for _ in 0..count {
+        let len = usize::from(r.u16()?);
+        let body = r.take(len)?;
+        let mut a = Reader { data: body, pos: 0 };
+        let id = a.u16()?;
+        let flags = a.u32()?;
+        let name = a.cstr()?;
+        if id > max_id {
+            return Err(Error::Bad("attribute id above MaximumAttributeId"));
+        }
+        attributes.push(Attribute { id, flags, name });
+    }
+    Ok((rules, attributes))
+}
+
+/// The contacts up to the sentinel (§2.2.8–§2.2.11). In a delta a contact without attributes
+/// is a deleted one (§2.2.9/§2.2.10); its NumberOfDeletedAttributes and the rest are skipped.
+fn read_contacts(
+    r: &mut Reader<'_>,
+    attributes: &[Attribute],
+    max_id: u16,
+    delta: bool,
+) -> Result<(Vec<Contact>, Vec<[u8; 16]>), Error> {
+    let wide_ids = max_id >= 256;
+    let mut contacts = Vec::new();
+    let mut deleted = Vec::new();
+    loop {
+        let len = usize::from(r.u16()?);
+        let body = r.take(len)?;
+        let mut c = Reader { data: body, pos: 0 };
+        let guid: [u8; 16] = c.take(16)?.try_into().map_err(|_| Error::Truncated)?;
+        let n = usize::from(c.u16()?);
+        if guid == [0u8; 16] {
+            // The sentinel: no attributes, Length 0x12 (§2.2.10).
+            if n != 0 {
+                return Err(Error::Bad("sentinel with attributes"));
+            }
+            break;
+        }
+        if n > MAX_VALUES {
+            return Err(Error::Bad("attribute values per contact"));
+        }
+        if contacts.len() + deleted.len() >= MAX_CONTACTS {
+            return Err(Error::Bad("contact count"));
+        }
+        if delta && n == 0 {
+            deleted.push(guid);
+            continue;
+        }
+        let mut values = Vec::with_capacity(n);
+        for _ in 0..n {
+            let id = if wide_ids {
+                c.u16()?
+            } else {
+                u16::from(c.u8()?)
+            };
+            let binary = attributes
+                .iter()
+                .find(|a| a.id == id)
+                .is_some_and(Attribute::is_binary);
+            let value = if binary {
+                let l = usize::from(c.u16()?);
+                Value::Binary(c.take(l)?.to_vec())
+            } else {
+                Value::Text(c.cstr()?)
+            };
+            values.push((id, value));
+        }
+        contacts.push(Contact { guid, values });
+    }
+    Ok((contacts, deleted))
+}
+
 impl AddressBook {
     /// Reads a decompressed full file.
     pub fn parse(data: &[u8]) -> Result<AddressBook, Error> {
@@ -240,68 +358,11 @@ impl AddressBook {
         let max_id = r.u16()?;
         let normalized = r.u16()? != 0;
         r.take(128)?;
-        if count > MAX_ATTRIBUTES {
-            return Err(Error::Bad("attribute count"));
-        }
-        let rules_len = usize::try_from(r.u32()?).map_err(|_| Error::Bad("rules length"))?;
-        let rules = parse_rules(r.take(rules_len)?);
-        let mut attributes = Vec::with_capacity(count);
-        for _ in 0..count {
-            let len = usize::from(r.u16()?);
-            let body = r.take(len)?;
-            let mut a = Reader { data: body, pos: 0 };
-            let id = a.u16()?;
-            let flags = a.u32()?;
-            let name = a.cstr()?;
-            if id > max_id {
-                return Err(Error::Bad("attribute id above MaximumAttributeId"));
-            }
-            attributes.push(Attribute { id, flags, name });
-        }
-        let wide_ids = max_id >= 256;
-        let mut contacts = Vec::new();
-        loop {
-            let len = usize::from(r.u16()?);
-            let body = r.take(len)?;
-            let mut c = Reader { data: body, pos: 0 };
-            let guid: [u8; 16] = c.take(16)?.try_into().map_err(|_| Error::Truncated)?;
-            let n = usize::from(c.u16()?);
-            if guid == [0u8; 16] {
-                // The sentinel: no attributes, Length 0x12 (§2.2.10).
-                if n != 0 {
-                    return Err(Error::Bad("sentinel with attributes"));
-                }
-                break;
-            }
-            if n > MAX_VALUES {
-                return Err(Error::Bad("attribute values per contact"));
-            }
-            if contacts.len() >= MAX_CONTACTS {
-                return Err(Error::Bad("contact count"));
-            }
-            let mut values = Vec::with_capacity(n);
-            for _ in 0..n {
-                let id = if wide_ids {
-                    c.u16()?
-                } else {
-                    u16::from(c.u8()?)
-                };
-                let binary = attributes
-                    .iter()
-                    .find(|a| a.id == id)
-                    .is_some_and(Attribute::is_binary);
-                let value = if binary {
-                    let l = usize::from(c.u16()?);
-                    Value::Binary(c.take(l)?.to_vec())
-                } else {
-                    Value::Text(c.cstr()?)
-                };
-                values.push((id, value));
-            }
-            contacts.push(Contact { guid, values });
-        }
-        // §2.2.12/§2.2.14: the trailer counts the contacts; it is checked when present.
-        if let Some(count) = trailer_contacts(data) {
+        let (rules, attributes) = read_tables(&mut r, count, max_id)?;
+        let (contacts, _) = read_contacts(&mut r, &attributes, max_id, false)?;
+        // §2.2.12/§2.2.14: Hash, then NumberOfContacts; checked when present.
+        let t = trailer(data);
+        if let Some(count) = t.and_then(|t| le32(t, 2)) {
             if count != contacts.len() {
                 return Err(Error::Bad("trailer contact count"));
             }
@@ -312,7 +373,45 @@ impl AddressBook {
             rules,
             attributes,
             contacts,
+            hash: t.and_then(|t| le16(t, 0)),
         })
+    }
+
+    /// Brings the address book to the state of the delta's target file (AB-10): only a delta made
+    /// from this file is accepted. The tables are replaced; new and changed contacts replace the
+    /// old ones (in a compact delta only their attributes, an empty value removes one); deleted
+    /// contacts are removed.
+    pub fn apply(&mut self, d: &Delta) -> Result<(), Error> {
+        let hash_differs = matches!((self.hash, d.base_hash), (Some(a), Some(b)) if a != b);
+        if d.base != self.created || hash_differs {
+            return Err(Error::WrongBase);
+        }
+        self.contacts.retain(|c| !d.deleted.contains(&c.guid));
+        for c in &d.changed {
+            let room = self.contacts.len() < MAX_CONTACTS;
+            match self.contacts.iter_mut().find(|o| o.guid == c.guid) {
+                Some(old) if d.compact => {
+                    old.values
+                        .retain(|(id, _)| !c.values.iter().any(|(n, _)| n == id));
+                    old.values.extend(
+                        c.values
+                            .iter()
+                            .filter(|(_, v)| !matches!(v, Value::Text(t) if t.is_empty()))
+                            .cloned(),
+                    );
+                    old.values.truncate(MAX_VALUES);
+                }
+                Some(old) => *old = c.clone(),
+                None if room => self.contacts.push(c.clone()),
+                None => return Err(Error::Bad("contact count")),
+            }
+        }
+        self.created = d.created;
+        self.normalized = d.normalized;
+        self.rules = d.rules.clone();
+        self.attributes = d.attributes.clone();
+        self.hash = d.hash;
+        Ok(())
     }
 
     fn field_of(&self, id: u16) -> Option<u8> {
@@ -396,7 +495,27 @@ impl AddressBook {
     /// Reverse lookup (§1.3, p. 10): the contact one of whose phone numbers is `number`,
     /// compared by digits (see [`digits`]).
     pub fn lookup_number(&self, number: &str) -> Option<Entry> {
-        let wanted = digits(number)?;
+        let normalizer = crate::normalize::Normalizer::new(&self.rules);
+        let mut wanted: Vec<String> = digits(number).into_iter().collect();
+        // AB-11: the caller's number in the form the rules give, too.
+        if let Some(d) = normalizer.normalize(number).as_deref().and_then(digits) {
+            if !wanted.contains(&d) {
+                wanted.push(d);
+            }
+        }
+        if wanted.is_empty() {
+            return None;
+        }
+        let matches = |t: &str| {
+            digits(t).is_some_and(|d| wanted.contains(&d))
+                // The server left the numbers as they are: the client normalizes them (§1.3.1).
+                || (!self.normalized
+                    && normalizer
+                        .normalize(t)
+                        .as_deref()
+                        .and_then(digits)
+                        .is_some_and(|d| wanted.contains(&d)))
+        };
         self.contacts
             .iter()
             .find(|c| {
@@ -411,7 +530,7 @@ impl AddressBook {
                                     | field::OTHER_TELEPHONE
                                     | field::IP_PHONE
                             )
-                        ) && digits(t).as_deref() == Some(wanted.as_str())
+                        ) && matches(t)
                     }
                     Value::Binary(_) => false,
                 })
@@ -438,14 +557,70 @@ pub fn digits(number: &str) -> Option<String> {
     (!out.is_empty() && out.len() <= 20).then_some(out)
 }
 
-/// The NumberOfContacts of a full trailer (§2.2.12, §2.2.14), if the trailer can be found.
-fn trailer_contacts(data: &[u8]) -> Option<usize> {
+impl Delta {
+    /// Reads a decompressed delta or compact delta file (§2.2.4: BaseCreationDate,
+    /// CreationDate, NumberOfAttributes, MaximumAttributeId, UseNormalizationRules – the order
+    /// of the field descriptions and the example §3.1.1, p. 32).
+    pub fn parse(data: &[u8]) -> Result<Delta, Error> {
+        let mut r = Reader { data, pos: 0 };
+        let file_type = r.take(16)?;
+        let compact = if file_type == DELTA_FILE {
+            false
+        } else if file_type == COMPACT_DELTA_FILE {
+            true
+        } else {
+            return Err(Error::NotDeltaFile);
+        };
+        let base = r.u16()?;
+        let created = r.u16()?;
+        let count = usize::from(r.u16()?);
+        let max_id = r.u16()?;
+        let normalized = r.u16()? != 0;
+        r.take(128)?;
+        if base >= created {
+            return Err(Error::Bad("delta dates"));
+        }
+        let (rules, attributes) = read_tables(&mut r, count, max_id)?;
+        let (changed, deleted) = read_contacts(&mut r, &attributes, max_id, true)?;
+        // §2.2.13: Hash, BaseFileHash, NumberOfContacts (without the deleted ones, example
+        // §3.1.8), NumberOfDeletedContacts; checked when present.
+        let t = trailer(data);
+        if let Some(t) = t {
+            if le32(t, 4).is_some_and(|n| n != changed.len())
+                || le32(t, 8).is_some_and(|n| n != deleted.len())
+            {
+                return Err(Error::Bad("trailer contact count"));
+            }
+        }
+        Ok(Delta {
+            base,
+            created,
+            compact,
+            normalized,
+            rules,
+            attributes,
+            changed,
+            deleted,
+            hash: t.and_then(|t| le16(t, 0)),
+            base_hash: t.and_then(|t| le16(t, 2)),
+        })
+    }
+}
+
+/// The trailer before ABF_TRAILER_LENGTH (§2.2.14), if it can be found.
+fn trailer(data: &[u8]) -> Option<&[u8]> {
     let len_at = data.len().checked_sub(4)?;
     let len = u32::from_le_bytes(data.get(len_at..)?.try_into().ok()?);
     let len = usize::try_from(len).ok()?;
     let start = len_at.checked_sub(len)?;
-    let t = data.get(start..len_at)?;
-    // Hash (2 bytes), then NumberOfContacts (4 bytes).
-    let count = u32::from_le_bytes(t.get(2..6)?.try_into().ok()?);
-    usize::try_from(count).ok()
+    data.get(start..len_at)
+}
+
+fn le16(t: &[u8], at: usize) -> Option<u16> {
+    Some(u16::from_le_bytes(t.get(at..at + 2)?.try_into().ok()?))
+}
+
+fn le32(t: &[u8], at: usize) -> Option<usize> {
+    let v = u32::from_le_bytes(t.get(at..at + 4)?.try_into().ok()?);
+    usize::try_from(v).ok()
 }

@@ -412,3 +412,241 @@ fn hostile_files_are_refused() {
         1 << 20
     );
 }
+
+// ----- book: delta files (AB-10) ------------------------------------------------------------
+
+/// AB-10, published example §3.1 (D-0A10-0A11.lsabs): base and target date, 20 attributes, a
+/// changed and a new contact, a deleted one (NumberOfAttributes 0 with
+/// NumberOfDeletedAttributes 6), and the trailer counts 2 and 1 with both hashes.
+#[test]
+fn example_delta_file() {
+    let d = book::Delta::parse(&hex(DECOMPRESSED)).unwrap();
+    assert_eq!(
+        (d.base, d.created, d.compact, d.normalized),
+        (0x0a10, 0x0a11, false, true)
+    );
+    assert_eq!(d.attributes.len(), 20);
+    assert_eq!((d.changed.len(), d.deleted.len()), (2, 1));
+    assert_eq!((d.hash, d.base_hash), (Some(0xdfdb), Some(0xddd2)));
+    let names: Vec<String> = d
+        .changed
+        .iter()
+        .filter_map(|c| {
+            c.values.iter().find_map(|(id, v)| match v {
+                book::Value::Text(t)
+                    if d.attributes
+                        .iter()
+                        .any(|a| a.id == *id && a.name == "displayName") =>
+                {
+                    Some(t.clone())
+                }
+                _ => None,
+            })
+        })
+        .collect();
+    assert_eq!(
+        names,
+        ["ABSUser1_displayname_changed", "ABSUser5_displayname"]
+    );
+    assert!(matches!(
+        book::AddressBook::parse(&hex(DECOMPRESSED)),
+        Err(book::Error::DeltaFile)
+    ));
+}
+
+fn display_name(b: &book::AddressBook, guid: [u8; 16]) -> Option<String> {
+    let c = b.contacts.iter().find(|c| c.guid == guid)?;
+    b.entry(c).display_name
+}
+
+/// AB-10: the example delta applied to its base: the changed contact replaced, the new one
+/// added, the deleted one removed, tables and date taken over; a delta of another base date or
+/// base file hash is refused and leaves the book unchanged.
+#[test]
+fn delta_applies_to_its_base_only() {
+    let d = book::Delta::parse(&hex(DECOMPRESSED)).unwrap();
+    let (user1, user5, user2) = (d.changed[0].guid, d.changed[1].guid, d.deleted[0]);
+    let name_id = d
+        .attributes
+        .iter()
+        .find(|a| a.name == "displayName")
+        .unwrap()
+        .id;
+    let contact = |guid, name: &str| book::Contact {
+        guid,
+        values: vec![(name_id, book::Value::Text(name.into()))],
+    };
+    let base = book::AddressBook {
+        created: 0x0a10,
+        normalized: false,
+        rules: Vec::new(),
+        attributes: d.attributes.clone(),
+        contacts: vec![contact(user1, "ABSUser1_old"), contact(user2, "ABSUser2")],
+        hash: Some(0xddd2),
+    };
+    let mut b = base.clone();
+    b.apply(&d).unwrap();
+    assert_eq!(
+        (b.created, b.hash, b.contacts.len()),
+        (0x0a11, Some(0xdfdb), 2)
+    );
+    assert_eq!(
+        display_name(&b, user1).as_deref(),
+        Some("ABSUser1_displayname_changed")
+    );
+    assert_eq!(
+        display_name(&b, user5).as_deref(),
+        Some("ABSUser5_displayname")
+    );
+    assert_eq!(display_name(&b, user2), None);
+    assert_eq!(b.rules, d.rules);
+    // Applied again (base date now 0x0a11), with another hash or another date: refused.
+    assert_eq!(b.clone().apply(&d), Err(book::Error::WrongBase));
+    let mut other = base.clone();
+    other.hash = Some(0x1234);
+    assert_eq!(other.apply(&d), Err(book::Error::WrongBase));
+    assert_eq!(other.contacts, base.contacts);
+}
+
+/// AB-10, compact delta (§2.2.16): only the named attributes change, an empty value removes
+/// one, the others stay.
+#[test]
+fn compact_delta_merges_attributes() {
+    let b0 = book::AddressBook::parse(&full_file(99, b"", ATTRS, &people())).unwrap();
+    let carol = b0.contacts[0].guid;
+    let d = book::Delta {
+        base: 0x24e2,
+        created: 0x24e3,
+        compact: true,
+        normalized: true,
+        rules: Vec::new(),
+        attributes: b0.attributes.clone(),
+        changed: vec![book::Contact {
+            guid: carol,
+            values: vec![
+                (3, book::Value::Text("Carol New".into())),
+                (9, book::Value::Text(String::new())),
+            ],
+        }],
+        deleted: Vec::new(),
+        hash: None,
+        base_hash: Some(0xbeef),
+    };
+    let mut b = b0.clone();
+    b.apply(&d).unwrap();
+    let e = b.entry(&b.contacts[0]);
+    assert_eq!(e.display_name.as_deref(), Some("Carol New"));
+    assert!(e.phones.is_empty(), "phone attribute removed");
+    assert_eq!(e.sip.as_deref(), Some("sip:carol@contoso.com"), "untouched");
+    assert_eq!(b.contacts.len(), 2);
+}
+
+/// Security by design: a full file is no delta, dates must rise, trailer counts must match.
+#[test]
+fn hostile_delta_files_are_refused() {
+    let full = full_file(99, b"", ATTRS, &people());
+    assert_eq!(book::Delta::parse(&full), Err(book::Error::NotDeltaFile));
+    let good = hex(DECOMPRESSED);
+    let mut dates = good.clone();
+    dates[16..20].copy_from_slice(&[0x11, 0x0a, 0x10, 0x0a]);
+    assert_eq!(
+        book::Delta::parse(&dates),
+        Err(book::Error::Bad("delta dates"))
+    );
+    let mut count = good.clone();
+    let at = count.len() - 8;
+    count[at..at + 4].copy_from_slice(&2u32.to_le_bytes());
+    assert_eq!(
+        book::Delta::parse(&count),
+        Err(book::Error::Bad("trailer contact count"))
+    );
+    for cut in [10, 200, good.len() - 40] {
+        assert!(book::Delta::parse(&good[..cut]).is_err(), "cut {cut}");
+    }
+}
+
+/// AB-11, recomputed against the example §3.1: with the file's own rules every stored phone
+/// value normalizes to the normalized value stored next to it; the other values do not
+/// normalize; a `null` rule and an over-long number give nothing; E164 strips separators.
+#[test]
+fn example_rules_normalize_like_the_server() {
+    let d = book::Delta::parse(&hex(DECOMPRESSED)).unwrap();
+    let n = normalize::Normalizer::new(&d.rules);
+    assert_eq!((n.skipped, d.rules.len()), (0, 18));
+    let mut pairs = 0;
+    for c in &d.changed {
+        let texts: Vec<&str> = c
+            .values
+            .iter()
+            .filter_map(|(_, v)| match v {
+                book::Value::Text(t) => Some(t.as_str()),
+                _ => None,
+            })
+            .collect();
+        for w in texts.windows(2) {
+            if w[1].starts_with("tel:") {
+                assert_eq!(n.normalize(w[0]).as_deref(), Some(w[1]), "{}", w[0]);
+                pairs += 1;
+            }
+        }
+    }
+    assert_eq!(pairs, 6);
+    assert_eq!(n.normalize("ABSUser1@urtest.com"), None);
+    assert_eq!(n.normalize("(882) 8080 1234"), None, "null rule");
+    assert_eq!(n.normalize("533-4312").as_deref(), Some("tel:+14255334312"));
+    assert_eq!(
+        n.normalize("x 12345").as_deref(),
+        Some("tel:12345;phone-context=proseware.com")
+    );
+    assert_eq!(n.normalize(&"1".repeat(65)), None);
+}
+
+/// AB-11: E164 alone, .NET replacement syntax, and rules the engine cannot take are left out.
+#[test]
+fn rule_syntax() {
+    let rule = |p: &str, r: &str| book::Rule {
+        pattern: p.into(),
+        replacement: r.into(),
+    };
+    let n = normalize::Normalizer::new(&[
+        rule("(?<=x)1", "a"),
+        rule(r"(\1)\1", "b"),
+        rule(r"0(\d)(\d+)", "+49$1${2}0$$$&"),
+        rule("E164", "ignored"),
+    ]);
+    assert_eq!(n.skipped, 2);
+    assert_eq!(n.normalize("04012").as_deref(), Some("tel:+4940120$04012"));
+    assert_eq!(
+        n.normalize("+49 (40) 123.45-6").as_deref(),
+        None,
+        "plus sign is not ignored"
+    );
+    assert_eq!(
+        n.normalize("49 (40) 123.45-6").as_deref(),
+        Some("tel:+4940123456")
+    );
+    assert_eq!(n.normalize("1234567890123456"), None, "more than 15 digits");
+}
+
+/// AB-11: when the server left the numbers as they are, the reverse lookup normalizes them
+/// with the file's rules.
+#[test]
+fn lookup_normalizes_unnormalized_books() {
+    let rules = b"0(\\d+)\r\n+4940$1\r\n\0";
+    let mut file = full_file(
+        99,
+        rules,
+        ATTRS,
+        &[vec![(3, b"Local".to_vec()), (9, b"0123".to_vec())]],
+    );
+    // UseNormalizationRules = 0.
+    file[22..24].copy_from_slice(&0u16.to_le_bytes());
+    let b = book::AddressBook::parse(&file).unwrap();
+    assert!(!b.normalized);
+    assert_eq!(
+        b.lookup_number("tel:+4940123")
+            .and_then(|e| e.display_name)
+            .as_deref(),
+        Some("Local")
+    );
+}

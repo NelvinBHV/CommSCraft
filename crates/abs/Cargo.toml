@@ -1,6 +1,6 @@
 [package]
 name = "commscraft-abs"
-description = "MS-ABS address book files: block compression (LZ77 variant), CRC-32, day-number dates, full files with search and reverse number lookup"
+description = "MS-ABS address book files: block compression (LZ77 variant), CRC-32, day-number dates, full and delta files with search and reverse number lookup, phone normalization rules"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,3 +9,7 @@ publish.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+# Phone normalization rules ([MC-RegEx] patterns, AB-11): linear-time matching, no backtracking.
+regex = { version = "1.13", default-features = false, features = ["std", "unicode-perl"] }
