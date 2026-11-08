@@ -574,6 +574,8 @@ enum Purpose {
     JoinFocus(ConversationId),
     Roster(ConversationId),
     DialOut(ConversationId),
+    /// CI-30: our invitation INVITE to an invitee.
+    ConfInvitation,
     MediaRelay(u32),
     CallInvite(CallId),
     CallReinvite(CallId),
@@ -2247,6 +2249,12 @@ impl<R: Random> Engine<R> {
                     self.on_c3p_answer(id, &resp.body, out);
                 }
             }
+            Purpose::ConfInvitation => {
+                if resp.status_code().is_some_and(|c| (200..300).contains(&c)) {
+                    let req = p.request.clone();
+                    self.on_invitation_accepted(&req, resp, now, out);
+                }
+            }
             Purpose::Ignore => {}
         }
     }
@@ -2355,6 +2363,9 @@ impl<R: Random> Engine<R> {
                 conversation: id,
                 status: code,
             })),
+            // The dial-out of the same invitee reports the outcome; a client that takes no
+            // invitation answers it with an error and is reached that way.
+            Purpose::ConfInvitation => {}
             Purpose::Ignore => {}
         }
     }

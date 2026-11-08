@@ -433,6 +433,50 @@ impl<R: Random> Engine<R> {
         self.send_request(m, Purpose::Invite(id), now, out);
     }
 
+    /// CI-30: the invitation to the conference sent to the invitee itself, as clients that take
+    /// conference invitations expect it (the MCU's dial-out is for those that cannot, archived
+    /// UCC API documentation "Invite Users to a Conference"): an INVITE with
+    /// `application/ms-conf-invite+xml` naming the focus. The invitee joins the focus on its own;
+    /// a 200 is acknowledged and the dialog ended at once, as nothing else follows on it.
+    /// `Supported: ms-sender` as in [SIPE] `sipe-conf.c` l. 808–811 (secondary evidence).
+    pub(crate) fn send_invitation(
+        &mut self,
+        focus: &str,
+        invitee: &str,
+        audio: bool,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let Ok(body) = conf::invitation_body(focus, None, audio) else {
+            return;
+        };
+        let mut m = self.request("INVITE", invitee, invitee);
+        m.push_header("Supported", "ms-sender");
+        m.push_header("Content-Type", conf::INVITATION_TYPE);
+        m.body = body.into_bytes();
+        self.send_request(m, Purpose::ConfInvitation, now, out);
+    }
+
+    /// The invitation was accepted: ACK, then BYE – the invitee joins the focus by itself.
+    pub(crate) fn on_invitation_accepted(
+        &mut self,
+        request: &Message,
+        resp: &Message,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let Ok(mut d) = Dialog::from_response(request, resp) else {
+            return;
+        };
+        let cseq = request.cseq().ok().flatten().map_or(1, |x| x.number);
+        let mut ack = im::ack_for_2xx(&d, cseq);
+        self.complete(&mut ack);
+        self.send_plain(ack, now, out);
+        let mut bye = d.request("BYE");
+        self.complete(&mut bye);
+        self.send_request(bye, Purpose::Ignore, now, out);
+    }
+
     /// The IM MCU session is up: invite the waiting participants.
     pub(crate) fn on_chat_joined(&mut self, id: ConversationId, now: u64, out: &mut Vec<Output>) {
         let invitees = match self.group_mut(id) {
@@ -490,6 +534,7 @@ impl<R: Random> Engine<R> {
             &invitee,
             &conf::guid(&random),
         );
+        let audio = !g.chat_only && g.roster.av_uri.is_some();
         let mut m = d.request("INFO");
         g.focus_dialog = Some(d);
         let Ok(body) = body else { return };
@@ -498,6 +543,7 @@ impl<R: Random> Engine<R> {
         m.push_header("Content-Type", conf::CONTENT_TYPE);
         m.body = body.into_bytes();
         self.send_request(m, Purpose::DialOut(id), now, out);
+        self.send_invitation(&focus, &invitee, audio, now, out);
     }
 
     /// The final C3P answer of a command, in a 200 OK or an INFO of the focus (CB-31).

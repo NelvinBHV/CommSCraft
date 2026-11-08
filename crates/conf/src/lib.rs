@@ -1084,10 +1084,12 @@ pub struct Invitation {
     pub im: bool,
 }
 
-/// Reads an invitation document. **Secondary evidence only** (K-CI-3): MS-SIPRE §3.9.5.1 (p. 58)
-/// names the content type and an `audio` element with `available="true"`; the element names
-/// `Conferencing`, `focus-uri`, `subject`, `im` come from [SIPE] `sipe-conf.c` l. 70–77. Only a
-/// checked focus URI is accepted; joining is always the user's decision.
+/// Reads an invitation document (CI-30, K-CI-3): the content type and the `audio` element with
+/// `available="true"` are in [MS-SIPRE] §3.9.5.1 (p. 58); the document `Conferencing`
+/// version 2.0 with `focus-uri`, `subject` and `im available` with `first-im` in the archived
+/// Microsoft documentation of the UCC API ("Invite Users to a Conference", "Accept a Conference
+/// Invitation", Office Communications Server 2007 SDK). Only a checked focus URI is accepted;
+/// joining is always the user's decision.
 pub fn parse_invitation(xml: &str) -> Result<Invitation, Error> {
     let root = commscraft_xml::parse(
         xml,
@@ -1118,6 +1120,22 @@ pub fn parse_invitation(xml: &str) -> Result<Invitation, Error> {
             .child("im")
             .is_some_and(|i| i.attr("available") == Some("true")),
     })
+}
+
+/// An invitation document for another client (CI-30; same sources as [`parse_invitation`]):
+/// the focus URI of the conference, its subject (empty if none), `audio available="true"` when
+/// the conference has audio ([MS-SIPRE] §3.9.5.1) and IM as available without a first message.
+pub fn invitation_body(focus: &str, subject: Option<&str>, audio: bool) -> Result<String, Error> {
+    if !is_focus_uri(focus) {
+        return Err(Error::UnsafeUri);
+    }
+    let subject = subject.map(printable).unwrap_or_default();
+    Ok(format!(
+        "<Conferencing version=\"2.0\"><focus-uri>{}</focus-uri><subject>{}</subject>{}<im available=\"true\"><first-im/></im></Conferencing>",
+        escape(focus),
+        escape(&subject),
+        if audio { "<audio available=\"true\"/>" } else { "" }
+    ))
 }
 
 pub mod schedule;
