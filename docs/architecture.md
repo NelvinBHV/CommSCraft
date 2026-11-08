@@ -1,6 +1,6 @@
 # CommSCraft architecture (planned)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (sandbox of the video window)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (title bar of the video window)
 
 Rules for working in the code are in
 [`AGENTS.md`](../AGENTS.md).
@@ -51,7 +51,7 @@ Rules for working in the code are in
 | `commscraft-conf` | L3 | Group IM and meetings: C3P addConference/addUser (join, dial-out), scheduling (`schedule`: add/get/list/modify/delete), roster (RFC 4575 merge, bounded), IMDN, Ms-Sender, invitations | CB-10…CB-37, PV-01…PV-14, CI-01…CI-14, K-CI-3, K-CA-3 |
 | `commscraft-park` | L3 | Call park: park request, park response, unpark notification (MS-SIPAPP) | CK-01…CK-07 |
 | `commscraft-video-ffmpeg` | L4 (adapter) | Video through the system's FFmpeg: camera capture over V4L2, H.264 encoding (VA-API on the GPU with the only unsafe module of the project, otherwise libx264; constrained baseline, IDR on request) and decoding, I420 pictures | PL-03 |
-| `commscraft-video-wayland` | L4 (adapter) | Video window on Wayland: GPU pictures go to the compositor as DMA-BUF without a copy. Rust implementation of the protocol, no C library, no `unsafe` |
+| `commscraft-video-wayland` | L4 (adapter) | Video window on Wayland: GPU pictures go to the compositor as DMA-BUF without a copy; a title bar from the compositor (`xdg-decoration`) or its own. Rust implementation of the protocol, no C library, no `unsafe` |
 
 The video window and its decoder run in a helper process of `commscraft-cli` (`video-window`, `apps/commscraft-cli/src/video_window.rs`): the client hands it access units over a pipe; it restricts itself with Landlock. Reasons: evidence file 23, `docs/security.md`.
 | `commscraft-h264uc` | L3 | H.264 UC RTP payload: packetization with PACSI and stream layout, bounded depacketization (MS-H264PF, RFC 6184/6190) | PL-01…PL-04, PL-08, PL-09 |
