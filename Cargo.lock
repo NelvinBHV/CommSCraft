@@ -125,6 +125,9 @@ dependencies = [
 [[package]]
 name = "commscraft-abs"
 version = "0.0.1"
+dependencies = [
+ "regex",
+]
 
 [[package]]
 name = "commscraft-audio-alsa"

@@ -87,6 +87,9 @@ im        signs in, opens a 1:1 conversation with --to, sends --text, shows answ
 --trust-domain   trust SIP servers in DOMAIN although it differs from your SIP domain (like
               TrustModelData of the Windows client); only for servers named by Autodiscover.
               A yes on the interactive question is remembered in ~/.config/commscraft/trusted-domains.
+--cache-address-book  keeps the newest full offline address book file in ~/.cache/commscraft/abs
+              (mode 0600), so /addressbook then fetches only the day's changes (delta file).
+              Without it the address book is held in memory only.
 --ntlm-legacy    diagnostic: NTLMv2 without the optional MIC/channel-binding additions, with LMv2.
 --verbose     also prints the non-secret NTLM facts (offered/chosen flags, domain names).
 The password is read from the terminal without echo, or as the first line of standard input.";
@@ -100,6 +103,7 @@ struct Args {
     epid: Option<String>,
     verbose: bool,
     authorized: bool,
+    cache_address_book: bool,
     discover_only: bool,
     trust_domains: Vec<String>,
     ntlm_legacy: bool,
@@ -146,6 +150,7 @@ fn parse_args() -> Result<Args, String> {
         text: None,
         wait: 20,
         authorized: false,
+        cache_address_book: false,
     };
     while let Some(flag) = it.next() {
         let mut value = || it.next().ok_or_else(|| format!("{flag} needs a value"));
@@ -186,6 +191,7 @@ fn parse_args() -> Result<Args, String> {
             }
             "--trust-domain" => a.trust_domains.push(value()?),
             "--authorized" => a.authorized = true,
+            "--cache-address-book" => a.cache_address_book = true,
             "-h" | "--help" => return Err(USAGE.into()),
             other => return Err(format!("unknown argument {other}\n\n{USAGE}")),
         }
@@ -989,6 +995,7 @@ fn run(a: Args) -> Result<(), String> {
             &tls,
             &trust,
             a.verbose,
+            a.cache_address_book,
         );
     }
     let mut reg = reg;
@@ -1320,17 +1327,84 @@ const ADDRESS_BOOK_DAYS: u16 = 7;
 /// Largest compressed address book file downloaded (design).
 const ADDRESS_BOOK_MAX: usize = 64 * 1024 * 1024;
 
-/// The offline address book (function 13; [MS-ABS] AB-01): the newest full file `F-XXXX.lsabs`
-/// under the base URL of in-band provisioning (internal first, then external), from today back
-/// [`ADDRESS_BOOK_DAYS`] days. Only hosts in the user's SIP domain or a trusted domain get
-/// credentials; NTLM over HTTP as for the search. The file is kept in memory only.
+/// One address book file under a base URL: `Ok(None)` when the server does not have it (404).
+fn abs_file(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    base: &commscraft_provisioning::ServiceUrl,
+    name: &str,
+    verbose: bool,
+) -> Result<Option<Vec<u8>>, String> {
+    let full = format!("{}/{name}", base.url.trim_end_matches('/'));
+    let url = commscraft_url::parse_https(&full).ok_or("unusable address book URL")?;
+    if verbose {
+        println!("  GET {full}");
+    }
+    let r = ntlm_get(engine, tls, &url, Duration::from_secs(60), ADDRESS_BOOK_MAX)?;
+    match r.status {
+        200 => Ok(Some(r.body)),
+        404 => Ok(None),
+        401 => Err("not authorized (401)".into()),
+        s => Err(format!("HTTP {s}")),
+    }
+}
+
+/// Where the newest full address book file of a server is kept: the user's cache directory,
+/// one file per host (`$XDG_CACHE_HOME/commscraft/abs/HOST.lsabs`, directory 0700).
+fn abs_cache_path(host: &str) -> Option<PathBuf> {
+    use std::os::unix::fs::DirBuilderExt;
+    if host.is_empty()
+        || !host
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || ".-".contains(c))
+    {
+        return None;
+    }
+    let base = std::env::var_os("XDG_CACHE_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))?;
+    let dir = base.join("commscraft").join("abs");
+    std::fs::DirBuilder::new()
+        .recursive(true)
+        .mode(0o700)
+        .create(&dir)
+        .ok()?;
+    Some(dir.join(format!("{host}.lsabs")))
+}
+
+/// Keeps a downloaded full file (compressed, as the server sent it; mode 0600).
+fn abs_cache_store(path: &std::path::Path, file: &[u8]) {
+    use std::os::unix::fs::OpenOptionsExt;
+    let written = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .mode(0o600)
+        .open(path)
+        .and_then(|mut f| f.write_all(file));
+    if let Err(e) = written {
+        eprintln!("* address book not cached: {e}");
+    }
+}
+
+/// The offline address book (function 13; [MS-ABS] AB-01, AB-10) from the provisioned address
+/// book service (internal first, then external); only hosts in the user's SIP domain or a
+/// trusted domain get credentials; NTLM over HTTP as for the search.
+///
+/// With `--cache-address-book` and a cached full file F-XXXX the newest delta D-XXXX-YYYY of the last
+/// [`ADDRESS_BOOK_DAYS`] days is fetched and applied (the server makes deltas from each full
+/// file it keeps to the newest one, §1.3, p. 10). Without a delta a newer full file is fetched;
+/// if there is none, the cache is current. Without a cache, or when it is unusable, the newest
+/// full file is fetched and cached. Returns the book and how it was obtained.
 fn fetch_address_book(
     engine: &mut commscraft_session::Engine<OsRandom>,
     tls: &TlsClient,
     trust: &Trust,
     services: Option<&commscraft_provisioning::ServerConfiguration>,
+    use_cache: bool,
     verbose: bool,
-) -> Result<commscraft_abs::book::AddressBook, String> {
+) -> Result<(commscraft_abs::book::AddressBook, String), String> {
+    use commscraft_abs::book::{decompress, AddressBook, Delta};
     let c = services.ok_or("no provisioning yet (address book service unknown)")?;
     let bases: Vec<&commscraft_provisioning::ServiceUrl> = [&c.abs_internal, &c.abs_external]
         .into_iter()
@@ -1346,7 +1420,7 @@ fn fetch_address_book(
     // Days since 2001-01-01 (day 11 323 since 1970-01-01).
     let today = u16::try_from(today.saturating_sub(11_323)).map_err(|_| "clock out of range")?;
     let mut last = String::from("no usable service");
-    for base in bases {
+    'bases: for base in bases {
         if !base.in_user_domain && !trust.trusts(&base.host) {
             last = format!(
                 "{} is outside your SIP domain; add --trust-domain to use it",
@@ -1354,32 +1428,77 @@ fn fetch_address_book(
             );
             continue;
         }
-        for back in 0..ADDRESS_BOOK_DAYS {
-            let day = today.saturating_sub(back);
-            let name = format!("F-{day:04X}.lsabs");
-            let Some(url) =
-                commscraft_url::parse_https(&format!("{}/{name}", base.url.trim_end_matches('/')))
-            else {
-                break;
-            };
-            if verbose {
-                println!("  GET {}/{name}", base.url.trim_end_matches('/'));
+        // The disk cache only when the user asked for it (`--cache-address-book`).
+        let cache = use_cache.then(|| abs_cache_path(&base.host)).flatten();
+        let cached = cache
+            .as_deref()
+            .and_then(|p| std::fs::read(p).ok())
+            .and_then(|f| decompress(&f).ok())
+            .and_then(|raw| AddressBook::parse(&raw).ok())
+            .filter(|b| b.created <= today);
+        let oldest = today.saturating_sub(ADDRESS_BOOK_DAYS - 1);
+        if let Some(mut book) = cached {
+            let from = book.created;
+            for day in (oldest.max(from + 1)..=today).rev() {
+                let name = format!("D-{from:04X}-{day:04X}.lsabs");
+                match abs_file(engine, tls, base, &name, verbose) {
+                    Ok(Some(file)) => {
+                        let applied = decompress(&file)
+                            .map_err(|e| format!("{e:?}"))
+                            .and_then(|raw| Delta::parse(&raw).map_err(|e| format!("{e:?}")))
+                            .and_then(|d| book.apply(&d).map_err(|e| format!("{e:?}")));
+                        match applied {
+                            Ok(()) => return Ok((book, format!("cache and {name}"))),
+                            Err(e) => {
+                                // A bad delta: fall back to the full file.
+                                eprintln!("* {name} not used: {e}");
+                                break;
+                            }
+                        }
+                    }
+                    Ok(None) => continue,
+                    Err(e) => {
+                        last = e;
+                        continue 'bases;
+                    }
+                }
             }
-            let result = ntlm_get(engine, tls, &url, Duration::from_secs(60), ADDRESS_BOOK_MAX);
-            match result {
-                Ok(r) if r.status == 200 => {
-                    let raw = commscraft_abs::book::decompress(&r.body)
-                        .map_err(|e| format!("{name}: {e:?}"))?;
-                    return commscraft_abs::book::AddressBook::parse(&raw)
-                        .map_err(|e| format!("{name}: {e:?}"));
+            // No usable delta: a newer full file, else the cache is current.
+            for day in (oldest.max(from + 1)..=today).rev() {
+                let name = format!("F-{day:04X}.lsabs");
+                match abs_file(engine, tls, base, &name, verbose) {
+                    Ok(Some(file)) => {
+                        let raw = decompress(&file).map_err(|e| format!("{name}: {e:?}"))?;
+                        let b = AddressBook::parse(&raw).map_err(|e| format!("{name}: {e:?}"))?;
+                        if let Some(p) = cache.as_deref() {
+                            abs_cache_store(p, &file);
+                        }
+                        return Ok((b, name));
+                    }
+                    Ok(None) => continue,
+                    Err(e) => {
+                        last = e;
+                        continue 'bases;
+                    }
+                }
+            }
+            if book.created == from && from >= oldest {
+                return Ok((book, "cache (current)".into()));
+            }
+        }
+        for day in (oldest..=today).rev() {
+            let name = format!("F-{day:04X}.lsabs");
+            match abs_file(engine, tls, base, &name, verbose) {
+                Ok(Some(file)) => {
+                    let raw = decompress(&file).map_err(|e| format!("{name}: {e:?}"))?;
+                    let b = AddressBook::parse(&raw).map_err(|e| format!("{name}: {e:?}"))?;
+                    if let Some(p) = cache.as_deref() {
+                        abs_cache_store(p, &file);
+                    }
+                    return Ok((b, name));
                 }
                 // Not (yet) written for this day: the day before.
-                Ok(r) if r.status == 404 => continue,
-                Ok(r) if r.status == 401 => return Err("not authorized (401)".into()),
-                Ok(r) => {
-                    last = format!("HTTP {}", r.status);
-                    break;
-                }
+                Ok(None) => continue,
                 Err(e) => {
                     last = e;
                     break;
@@ -1722,6 +1841,7 @@ fn interactive(
     tls: &TlsClient,
     trust: &Trust,
     verbose: bool,
+    cache_address_book: bool,
 ) -> Result<(), String> {
     use commscraft_session::{Command as C, Event as E, Output};
     use std::collections::BTreeMap;
@@ -3504,12 +3624,18 @@ fn interactive(
                     mute: cmd == "/confmute",
                 }),
                 "/addressbook" => {
-                    match fetch_address_book(&mut engine, tls, trust, services.as_deref(), verbose)
-                    {
-                        Ok(b) => {
+                    match fetch_address_book(
+                        &mut engine,
+                        tls,
+                        trust,
+                        services.as_deref(),
+                        cache_address_book,
+                        verbose,
+                    ) {
+                        Ok((b, source)) => {
                             let d = commscraft_abs::date_from_day_number(b.created);
                             println!(
-                                "* address book of {:04}-{:02}-{:02}: {} entries (search with /lookup TEXT)",
+                                "* address book of {:04}-{:02}-{:02}: {} entries from {source} (search with /lookup TEXT)",
                                 d.year,
                                 d.month,
                                 d.day,
