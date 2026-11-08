@@ -1,6 +1,6 @@
 [package]
 name = "commscraft-abs"
-description = "MS-ABS address book files: block compression (LZ77 variant), CRC-32 and day-number dates"
+description = "MS-ABS address book files: block compression (LZ77 variant), CRC-32, day-number dates, full files with search and reverse number lookup"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

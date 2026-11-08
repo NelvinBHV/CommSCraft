@@ -162,6 +162,7 @@ dependencies = [
 name = "commscraft-cli"
 version = "0.0.1"
 dependencies = [
+ "commscraft-abs",
  "commscraft-audio-alsa",
  "commscraft-avedgea",
  "commscraft-call-media",

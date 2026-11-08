@@ -1,4 +1,5 @@
-//! MS-ABS address book files: compressed blocks, CRC-32 and file-name dates.
+//! MS-ABS address book files: compressed blocks, CRC-32, file-name dates and (module [`book`])
+//! the decompressed file with search and reverse number lookup.
 //!
 //! Evidence: `docs/protocol/evidence/27-abs-address-book-files.md` (AB-03, AB-04, K-AB-1,
 //! K-AB-4). The bit order of the token-type word (bit 31 = first token, K-AB-1) is confirmed by
@@ -246,6 +247,12 @@ fn longest_match(data: &[u8], pos: usize) -> (usize, usize) {
 
 /// Decompresses a whole file (sequence of COMPRESSED_BLOCK, §5.5.1) and checks every CRC.
 pub fn decompress_file(file: &[u8]) -> Result<Vec<u8>, Error> {
+    decompress_file_bounded(file, usize::MAX)
+}
+
+/// Like [`decompress_file`], but refuses a file that grows beyond `max` bytes (a small file of
+/// highly compressed blocks can otherwise expand several thousand times).
+pub fn decompress_file_bounded(file: &[u8], max: usize) -> Result<Vec<u8>, Error> {
     let mut inp = Input { data: file, pos: 0 };
     let mut out = Vec::new();
     while inp.pos < file.len() {
@@ -267,6 +274,9 @@ pub fn decompress_file(file: &[u8]) -> Result<Vec<u8>, Error> {
         let computed = crc32(&block);
         if computed != stored {
             return Err(Error::CrcMismatch { stored, computed });
+        }
+        if out.len().saturating_add(block.len()) > max {
+            return Err(Error::OutputOverflow);
         }
         out.extend_from_slice(&block);
     }
@@ -341,6 +351,8 @@ fn civil_from_days(z: i64) -> Date {
     let year = (yoe + era * 400 + i64::from(month <= 2)) as i32;
     Date { year, month, day }
 }
+
+pub mod book;
 
 #[cfg(test)]
 mod tests;

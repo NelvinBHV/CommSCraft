@@ -2,7 +2,7 @@
 
 **Stage: M5 in progress** · M0 done · M1, M2, M3 built · M4 closed · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (conference invitations)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (offline address book)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,11 +16,11 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **15** tested-offline as a whole, **17** in parts, **18** not started, 2 not planned/needs captures; **28** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Implementation status of the 52 functions | **16** tested-offline as a whole, **18** in parts, **16** not started, 2 not planned/needs captures; **29** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **39 crates + 1 app** (`commscraft-cli`), **465 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **39 crates + 1 app** (`commscraft-cli`), **469 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -46,6 +46,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-08 | Offline address book: `/addressbook` loads the newest address book file of the server (MS-ABS, over HTTPS with NTLM), `/lookup` searches it by name and address, and a caller who comes with a phone number only is shown with the name from it. |
 | 2026-11-08 | Group conversations and meetings invite other people with a conference invitation of their own (as clients that take invitations expect), next to the conferencing server calling them; the invited client shows it and joins by itself. |
 | 2026-11-08 | Presence is visible to colleagues: the client sets up the container members the server's publication grammar requires (for example everyone in the company), so others no longer see a CommSCraft user as offline. |
 | 2026-11-08 | Video simulcast: when an A/V MCU asks for several sizes, up to three streams of the camera go out at once, each with its own priority ID and SSRC (the first on the GPU if allowed, the others on the CPU); `COMMSCRAFT_SIMULCAST=0` sends one. Received video follows the stream to another SSRC of the peer's range (a mixer forwarding another simulcast stream), and a picture loss indication asks for a sync frame on the stream that actually arrives. |

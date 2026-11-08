@@ -19,6 +19,7 @@ commscraft-im = { path = "../../crates/im" }
 commscraft-session = { path = "../../crates/session" }
 commscraft-tones = { path = "../../crates/tones" }
 commscraft-dlx = { path = "../../crates/dlx" }
+commscraft-abs = { path = "../../crates/abs" }
 commscraft-audio-alsa = { path = "../../crates/audio-alsa" }
 commscraft-g711 = { path = "../../crates/g711" }
 commscraft-g722 = { path = "../../crates/g722" }

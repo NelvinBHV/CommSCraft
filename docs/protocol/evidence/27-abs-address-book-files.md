@@ -29,3 +29,17 @@ Source: [MS-ABS] "Address Book File Structure", edition 20250520, 79 pp. Product
 ## Later findings (2026-10-27)
 - K-AB-1 **confirmed by the specification's own example**: the compressed block of §3.2 (CompressedSize 0x483, DecompressedSize 0xD72) decompresses with bit 31 as the first token and consumes exactly 0x483 bytes; with bit 0 first it runs past the end of the input. Recomputed in `crates/abs` (test `example_block_decompresses_msb_first`).
 - File-name dates recomputed in `crates/abs`: 0x0A8C = 2008-05-24 (Saturday, §1.3 p. 10), 0x0A10 = 2008-01-21 (Monday) and 0x0A11 = 2008-01-22 (Tuesday) (§3.1 p. 26).
+
+## Implementation (2026-11-08, full files, `book`; CLI `/addressbook`, `/lookup`)
+- **Fetching:** the newest full file `F-XXXX.lsabs` is fetched by HTTP GET from the provisioned base URL (AB-01), from today back seven days, with NTLM over HTTP as for the address book search. The download is bounded to 64 MiB and decompression to 256 MiB.
+- **Reading:** the file is read after AB-05 … AB-09:
+  - header fields in the order of the field descriptions: CreationDate, NumberOfAttributes, MaximumAttributeId, UseNormalizationRules;
+  - ABF_ATTRIBUTE and ABF_CONTACT with Length before Id (K-AB-2 also holds for ABF_CONTACT, as the example §3.1.4.1 shows: `66 01` = Length, then the GUID);
+  - the contact count checked against the full trailer.
+- **Inferences:**
+  - An ABF_CONTACT_ATTRIBUTE has its Id first and a Length only for a binary attribute. The Id decides whether the Length is present; the examples carry no binary contact attribute.
+  - Empty lines between normalization rule pairs are skipped, because an empty line is no regular expression.
+- **Use:** search by every word of the query in display name, SIP and mail address, given name and surname. Reverse lookup of a caller's number compares the digits of stored and normalized numbers (`tel:+…`, example §3.1.4.4). The .NET regular expressions of the normalization rules are not evaluated yet.
+- **Not yet:** delta and compact delta files, a disk cache.
+- **Status:** `tested-offline`, `tested-in-lab`.
+
