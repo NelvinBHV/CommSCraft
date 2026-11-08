@@ -4150,6 +4150,49 @@ fn outgoing_video_call() {
     );
 }
 
+/// A video line that only receives (no camera) stays so in the re-INVITE after ICE, while the audio
+/// line sends and receives: otherwise the MCU lists the participant as sending video.
+#[test]
+fn receive_only_video_stays_in_the_final_offer() {
+    let (mut e, mut server, _) = signed_in();
+    let mut receive_only = video_local(40002, 8);
+    receive_only.media.direction = commscraft_sdp::Direction::RecvOnly;
+    let out = e.command(
+        Command::VideoCall {
+            to: "sip:bob@contoso.com".into(),
+            local: Box::new(media_local(40000, 7)),
+            video: Box::new(receive_only.clone()),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    let answer_sdp = format!("{}{}", peer_sdp(9, "RTP/SAVP"), peer_video(10));
+    e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            &answer_sdp,
+            &[],
+        ),
+        NOW,
+    );
+    let out = e.command(
+        Command::UpdateCall {
+            call: 1,
+            local: Box::new(media_local(40000, 7)),
+        },
+        NOW,
+    );
+    let body = String::from_utf8(find(&out, "INVITE").body.clone()).unwrap();
+    let audio_part = &body[..body.find("m=video").unwrap()];
+    let video_part = &body[body.find("m=video").unwrap()..];
+    assert!(video_part.contains("a=recvonly"), "{video_part}");
+    assert!(!audio_part.contains("a=recvonly"));
+}
+
 /// Function 28: an answer without video (port 0) leaves an audio call and a notice.
 #[test]
 fn video_declined_by_peer() {

@@ -49,6 +49,8 @@ pub enum FromVideo {
     Selected(u32, Box<sdp::video::VideoLocal>),
     /// Something the user should know (no camera, no window); the call goes on.
     Notice(u32, String),
+    /// In a meeting: no picture from the watched source for a while (watch another one).
+    Stalled(u32),
     /// The peer takes no PLI: ask it for a full picture through SIP INFO (PL-50).
     PictureUpdate(u32),
     Failed(u32, String),
@@ -236,14 +238,31 @@ fn layout() -> Option<uc::StreamLayout> {
 }
 
 /// What we ask the peer for (VSR entry, RT-25): H.264 UC up to VGA at 15 or 30 fps.
+/// The largest picture we want to receive: VGA, or what `COMMSCRAFT_VIDEO_RECEIVE=WxH` names from
+/// the sizes we know (for a small window or a narrow line).
+fn receive_size() -> (u32, u32) {
+    std::env::var("COMMSCRAFT_VIDEO_RECEIVE")
+        .ok()
+        .and_then(|v| {
+            let (w, h) = v.trim().split_once('x')?;
+            let size = (w.parse().ok()?, h.parse().ok()?);
+            SIZES
+                .iter()
+                .any(|&(sw, sh, _)| (sw, sh) == size)
+                .then_some(size)
+        })
+        .unwrap_or((WIDTH, HEIGHT))
+}
+
 fn wanted() -> feedback::VsrEntry {
+    let (width, height) = receive_size();
     feedback::VsrEntry {
         payload_type: sdp::video::H264UC_PT,
         ucconfig_mode: 1,
         flags: feedback::FLAG_CONSTRAINED_BASELINE,
         aspect_ratios: feedback::ASPECT_4_3 | feedback::ASPECT_16_9,
-        max_width: WIDTH as u16,
-        max_height: HEIGHT as u16,
+        max_width: width as u16,
+        max_height: height as u16,
         min_bitrate: 100_000,
         bitrate_per_level: 100_000,
         // One receiver (us) wanting 500 … 600 kbit/s: element i = 5 (index 4) counts
@@ -251,7 +270,7 @@ fn wanted() -> feedback::VsrEntry {
         bitrate_histogram: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
         frame_rates: feedback::FPS_15 | feedback::FPS_30,
         must_instances: 1,
-        max_pixels: WIDTH * HEIGHT,
+        max_pixels: width * height,
         ..Default::default()
     }
 }
@@ -309,9 +328,23 @@ fn run(
         std::thread::sleep(Duration::from_millis(5));
     }
     let range = ssrc_range();
+    // Without a camera we only receive, and say so: in a meeting the others would otherwise pick
+    // our video to watch and wait for it in vain.
+    let camera_works = camera_available(&camera);
+    if !camera_works {
+        let _ = events.send(FromVideo::Notice(
+            id,
+            format!("no camera at {camera}: receiving video only"),
+        ));
+    }
     let local = |m: &CallMedia, d: sdp::Local| sdp::video::VideoLocal {
         media: sdp::Local {
             key: Some(m.key().clone()),
+            direction: if camera_works {
+                d.direction
+            } else {
+                sdp::Direction::RecvOnly
+            },
             ..d
         },
         ssrc_range: range,
@@ -353,19 +386,24 @@ fn run(
     let target = Arc::new(Mutex::new(START));
     let (au_tx, au_rx) = mpsc::sync_channel::<(Vec<u8>, u32)>(4);
     let (dec_tx, dec_rx) = mpsc::sync_channel::<Vec<u8>>(8);
-    spawn_camera(
-        camera,
-        au_tx,
-        stop.clone(),
-        idr.clone(),
-        target.clone(),
-        events.clone(),
-        id,
-    );
+    if camera_works {
+        spawn_camera(
+            camera,
+            au_tx,
+            stop.clone(),
+            idr.clone(),
+            target.clone(),
+            events.clone(),
+            id,
+        );
+    }
     crate::video_window::spawn(dec_rx, stop.clone(), events.clone(), id);
     let mut final_sent = false;
     let mut requested = false;
     let mut watched_by_peer: Option<bool> = None;
+    // A meeting's source that sends nothing (CA-13: the MCU picks no other one for us).
+    let mut last_picture = now_ms();
+    let mut stall_reported = false;
     // An MCU asked us to stop sending video (picture_freeze, PL-50): RTCP goes on.
     let mut frozen = false;
     // The peer's last request (none yet: our own limits) and what the path carries (RT-30).
@@ -405,6 +443,8 @@ fn run(
             Ok(ToVideo::Source(msi)) => {
                 if msi != source {
                     source = msi;
+                    last_picture = now;
+                    stall_reported = false;
                     if requested {
                         media.request_video(source, wanted(), now);
                     }
@@ -412,6 +452,13 @@ fn run(
             }
             // A re-INVITE answer with the same stream: nothing to rebuild here.
             Ok(ToVideo::Start { .. }) | Err(mpsc::TryRecvError::Empty) => {}
+        }
+        if source != feedback::SOURCE_ANY
+            && !stall_reported
+            && now.saturating_sub(last_picture) >= STALL_MS
+        {
+            stall_reported = true;
+            let _ = events.send(FromVideo::Stalled(id));
         }
         while let Ok((au, ts)) = au_rx.try_recv() {
             if !frozen {
@@ -435,6 +482,7 @@ fn run(
                     }
                 }
                 cm::Event::Video(VideoEvent::AccessUnit { data, .. }) => {
+                    last_picture = now;
                     // Bounded: a decoder that falls behind loses access units (the next
                     // key frame request repairs the picture).
                     if dec_tx.try_send(data).is_err() {
@@ -455,6 +503,25 @@ fn run(
                 cm::Event::Video(VideoEvent::SourceRequested { msi, entries }) => {
                     // RT-25: send what the request allows (size, frame rate, bit rate).
                     if msi != feedback::SOURCE_NONE && !entries.is_empty() {
+                        let sizes: Vec<String> = entries
+                            .iter()
+                            .filter(|e| e.payload_type == sdp::video::H264UC_PT)
+                            .map(|e| format!("{}x{}", e.max_width, e.max_height))
+                            .collect();
+                        let before = request
+                            .iter()
+                            .filter(|e| e.payload_type == sdp::video::H264UC_PT)
+                            .count();
+                        if sizes.len() > 1 && before != sizes.len() {
+                            let _ = events.send(FromVideo::Notice(
+                                id,
+                                format!(
+                                    "asked for {} video sizes ({}); sending the first",
+                                    sizes.len(),
+                                    sizes.join(", ")
+                                ),
+                            ));
+                        }
                         request = entries;
                         retarget(&mut media, &target, &idr, &events, id, &request, path_bps);
                     }
@@ -499,6 +566,13 @@ fn run(
 }
 
 /// Camera → encoder (GPU if available) → access units for the media thread.
+/// Whether the camera can be opened now (it is closed again at once).
+fn camera_available(device: &str) -> bool {
+    vf::init()
+        .and_then(|()| vf::Camera::open(device, WIDTH, HEIGHT, FPS))
+        .is_ok()
+}
+
 fn spawn_camera(
     device: String,
     out: SyncSender<(Vec<u8>, u32)>,
@@ -656,6 +730,9 @@ fn scaler_for(t: Target) -> Option<vf::Scaler> {
 fn hardware_allowed() -> bool {
     std::env::var("COMMSCRAFT_VIDEO_HW").map_or(true, |v| v.trim() != "0")
 }
+
+/// Time without a picture from a meeting's watched source before another one is watched (design).
+const STALL_MS: u64 = 15_000;
 
 /// Shortest time between two encoder rebuilds for a higher bit rate alone, and the changes that
 /// are worth one (design values: a rebuild costs an IDR picture).
