@@ -83,6 +83,7 @@ Dependencies: RFC 3261 §10 (REGISTER), RFC 3265 (SUBSCRIBE/NOTIFY), draft-ietf-
 |---|---|---|
 | RG-50 | 200 = allowed; 403 = blocked; `Warning` with agent `lcs.microsoft.com`: 310 (text, incompatible), 311 (403 + static URL), 312 (dynamic base URL with `folder`, the client adds `lang`, `arch`, `flavor`, `build`; OCS 2007 R2 only), 313 (200 + static URL), 314 ("Check Microsoft Update…") | §3.4.2.5.1–3.4.2.5.9, pp. 88–92; <168>, <174>, <175> p. 129 |
 | RG-51 | locationPolicy group (propertyEntryList): EnhancedEmergencyServicesEnabled, LocationPolicyTagID (into every emergency PIDF-LO), LocationRequired (yes/no/disclaimer), UseLocationForE911Only, EmergencyDialString + EmergencyDialMask (`;`-separated), EmergencyNumbers (`dial-mask,mask;dial…`, takes precedence), NotificationUri (comma-separated SIP URIs), ConferenceUri, ConferenceMode (oneway/twoway), EmergencyServiceDisclaimer, LocationRefreshInterval (hours). Implementation: `provisioning::LocationPolicy` – dial strings only digits/`*`/`#`/leading `+` (≤ 32), at most 16 numbers, URIs checked; disabled policy ⇒ no emergency path | §2.2.2.5.7, pp. 56–57 |
+| RG-52 | endpointConfiguration group: `PhotoUsage` (`NoPhoto`, `PhotosFromADOnly`, `AllPhotos`) decides whether the client shows photos of each type, `MaxPhotoSizeKB` is the largest photo a client MAY download. Implementation: an unknown PhotoUsage counts as `NoPhoto` (design, fail closed) | [MS-SIPREGE] 20250819 §2.2.2.5.6, pp. 37–38; example §4.2.2 |
 
 ## Gaps/conflicts
 

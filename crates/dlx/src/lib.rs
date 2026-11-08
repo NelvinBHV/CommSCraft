@@ -22,8 +22,10 @@ pub const MAX_QUERY: usize = 256;
 pub const MAX_RESULTS: u32 = 20;
 /// Attributes searched (AD names, MS-DLX §3.1.1 <1>; the same set as SIPE, secondary).
 const SEARCH_LIST: &str = "displayName,givenName,sn,mail,mailNickname,msRTCSIP-PrimaryUserAddress";
-const RETURN_LIST: &str =
-    "displayName,msRTCSIP-PrimaryUserAddress,mail,title,department,company,telephoneNumber,mobile";
+const RETURN_LIST: &str = "displayName,msRTCSIP-PrimaryUserAddress,mail,title,department,company,\
+telephoneNumber,mobile,PhotoRelPath,PhotoHash,PhotoSize";
+/// Longest photo path and hash accepted (design).
+const MAX_PHOTO_NAME: usize = 128;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
@@ -70,6 +72,38 @@ pub struct Entry {
     pub department: Option<String>,
     pub company: Option<String>,
     pub phone: Option<String>,
+    /// The entry's photo (DL-06): a checked file name relative to the address book folder.
+    pub photo: Option<Photo>,
+}
+
+/// Where an entry's photo lies and which state it has (DL-06: PhotoRelPath, PhotoHash,
+/// PhotoSize; the path is relative to the address book file folder, [MS-ABS] §1.3).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Photo {
+    /// Only letters, digits, `.`, `-`, `_`; no path separators, no leading dot.
+    pub rel_path: String,
+    /// Changes when the photo changes (letters, digits, `-` only); usable as a cache key.
+    pub hash: Option<String>,
+    pub size: Option<u32>,
+}
+
+/// A photo file name we fetch: one path segment, no traversal (security by design).
+fn photo_path(v: &str) -> Option<String> {
+    let v = v.trim();
+    let ok = !v.is_empty()
+        && v.len() <= MAX_PHOTO_NAME
+        && !v.starts_with('.')
+        && v.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "._-".contains(c));
+    ok.then(|| v.to_string())
+}
+
+fn photo_hash(v: &str) -> Option<String> {
+    let v = v.trim();
+    let ok = !v.is_empty()
+        && v.len() <= MAX_PHOTO_NAME
+        && v.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
+    ok.then(|| v.to_ascii_lowercase())
 }
 
 fn printable(s: &str) -> String {
@@ -100,6 +134,7 @@ fn entry(e: &Element) -> Entry {
     let Some(attrs) = e.child("Attributes") else {
         return out;
     };
+    let (mut path, mut hash, mut size) = (None, None, None);
     for a in attrs.children_named("Attribute") {
         let name = a
             .child("Name")
@@ -120,9 +155,17 @@ fn entry(e: &Element) -> Entry {
             "telephonenumber" | "mobile" if out.phone.is_none() => {
                 out.phone = Some(printable(&value))
             }
+            "photorelpath" => path = photo_path(&value),
+            "photohash" => hash = photo_hash(&value),
+            "photosize" => size = value.trim().parse::<u32>().ok(),
             _ => {}
         }
     }
+    out.photo = path.map(|rel_path| Photo {
+        rel_path,
+        hash,
+        size,
+    });
     out
 }
 

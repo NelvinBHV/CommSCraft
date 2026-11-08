@@ -311,6 +311,10 @@ pub struct ServerConfiguration {
     /// The location profile (dial plan) for phone numbers ([MS-SIPREGE] §2.2.2.5.1
     /// `ucLocationProfile`, overridden by userSetting `ucUserLocationProfile`, §2.2.2.5.5; RE-40).
     pub location_profile: Option<String>,
+    /// Which contact photos the client shows (endpointConfiguration `PhotoUsage`, RG-52).
+    pub photo_usage: Option<PhotoUsage>,
+    /// Largest photo the client may download, in KiB (endpointConfiguration `MaxPhotoSizeKB`).
+    pub max_photo_kb: Option<u32>,
     pub rejected: Vec<String>,
 }
 
@@ -325,7 +329,38 @@ pub fn profile_name(v: &str) -> Option<String> {
     .then(|| v.to_string())
 }
 
+/// `PhotoUsage` of endpointConfiguration ([MS-SIPREGE] 20250819 §2.2.2.5.6, p. 38).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PhotoUsage {
+    NoPhoto,
+    PhotosFromAdOnly,
+    AllPhotos,
+}
+
 impl ServerConfiguration {
+    /// Applies the endpointConfiguration group: the photo policy (RG-52). An unknown
+    /// `PhotoUsage` counts as no photos (fail closed).
+    pub fn apply_endpoint_configuration(&mut self, g: &Group) {
+        if let Some(v) = g.get("PhotoUsage") {
+            self.photo_usage = Some(match v.trim() {
+                x if x.eq_ignore_ascii_case("AllPhotos") => PhotoUsage::AllPhotos,
+                x if x.eq_ignore_ascii_case("PhotosFromADOnly") => PhotoUsage::PhotosFromAdOnly,
+                x => {
+                    if !x.eq_ignore_ascii_case("NoPhoto") {
+                        self.rejected.push("PhotoUsage".into());
+                    }
+                    PhotoUsage::NoPhoto
+                }
+            });
+        }
+        if let Some(v) = g.get("MaxPhotoSizeKB") {
+            match v.trim().parse::<u32>() {
+                Ok(kb) => self.max_photo_kb = Some(kb),
+                Err(_) => self.rejected.push("MaxPhotoSizeKB".into()),
+            }
+        }
+    }
+
     /// Applies the userSetting group: the user's own location profile wins (inference: the
     /// user-specific setting is the more specific one).
     pub fn apply_user_setting(&mut self, g: &Group) {

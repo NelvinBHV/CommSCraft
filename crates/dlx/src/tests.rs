@@ -178,3 +178,35 @@ fn expand_hostile_answers() {
     .unwrap();
     assert_eq!(x.users.len(), MAX_MEMBERS);
 }
+
+/// DL-06: PhotoRelPath, PhotoHash and PhotoSize of an entry (example §4.9, p. 47, whose path
+/// value starts with a space); a path with a separator or traversal is dropped.
+#[test]
+fn photo_attributes() {
+    let item = |path: &str| {
+        format!(
+            r#"<AbEntry><Attributes><Attribute><Name>msRTCSIP-PrimaryUserAddress</Name><Value>sip:a@contoso.com</Value></Attribute><Attribute><Name>PhotoRelPath</Name><Value>{path}</Value></Attribute><Attribute><Name>PhotoHash</Name><Value>86B20BBC-648a-44af-97ba-505e9cf7427d</Value></Attribute><Attribute><Name>PhotoSize</Name><Value>3691</Value></Attribute></Attributes></AbEntry>"#
+        )
+    };
+    let answer = |path: &str| {
+        envelope(&format!(
+            r#"<SearchAbEntryResponse xmlns="DistributionListExpander"><SearchAbEntryResult><Items>{}</Items></SearchAbEntryResult></SearchAbEntryResponse>"#,
+            item(path)
+        ))
+    };
+    let r = parse_response(&answer(" e92d7790-3668.86b20bbc-648a.photo")).unwrap();
+    let p = r[0].photo.clone().unwrap();
+    assert_eq!(p.rel_path, "e92d7790-3668.86b20bbc-648a.photo");
+    assert_eq!(
+        p.hash.as_deref(),
+        Some("86b20bbc-648a-44af-97ba-505e9cf7427d")
+    );
+    assert_eq!(p.size, Some(3691));
+    for bad in ["../secret.photo", "a/b.photo", ".hidden", "a%2fb", "x\\y"] {
+        assert_eq!(
+            parse_response(&answer(bad)).unwrap()[0].photo,
+            None,
+            "{bad}"
+        );
+    }
+}

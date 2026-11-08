@@ -425,3 +425,28 @@ fn container_manifest_bounds() {
     // No grammar group: no manifest.
     assert!(parse(&corrected()).unwrap().container_manifest().is_none());
 }
+
+/// RG-52: the photo policy of endpointConfiguration (§2.2.2.5.6, values of the example of
+/// §4.2.2); an unknown PhotoUsage counts as no photos, a malformed size is rejected.
+#[test]
+fn photo_policy() {
+    let group = |usage: &str, kb: &str| Group {
+        name: "endpointConfiguration".into(),
+        properties: vec![
+            ("PhotoUsage".into(), usage.into()),
+            ("MaxPhotoSizeKB".into(), kb.into()),
+        ],
+        instances: Vec::new(),
+        manifest: None,
+    };
+    let mut c = ServerConfiguration::default();
+    c.apply_endpoint_configuration(&group("AllPhotos", "10"));
+    assert_eq!(c.photo_usage, Some(PhotoUsage::AllPhotos));
+    assert_eq!(c.max_photo_kb, Some(10));
+    assert!(c.rejected.is_empty());
+    let mut c = ServerConfiguration::default();
+    c.apply_endpoint_configuration(&group("Everything", "ten"));
+    assert_eq!(c.photo_usage, Some(PhotoUsage::NoPhoto));
+    assert_eq!(c.max_photo_kb, None);
+    assert_eq!(c.rejected, ["PhotoUsage", "MaxPhotoSizeKB"]);
+}

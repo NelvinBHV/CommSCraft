@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (distribution list expansion)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (contact photos)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -40,10 +40,10 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | **lab**, tested-offline (set the relationship per user, block at the server and in the client; the notice that someone added the user, with acknowledgement: `presence`, `session`, CLI `/privacy`, `/seen`) |
 | 13 | Offline address book | MS-ABS | B\* | **lab**, parts tested-offline (newest full file from the provisioned address book service over HTTPS with NTLM, decompressed with a size bound, header, normalization rules, attributes and contacts read and checked against the trailer, search by name and address, reverse lookup of a caller's number: `abs`, `net::http`; CLI `/addressbook`, `/lookup`); delta files, a disk cache and the .NET regular expressions of the normalization rules – |
 | 14 | Address book and distribution list search | MS-DLX, MS-NTHT | B\* | **lab**, tested-offline (SearchAbEntry basic search with checked answer; ExpandDistributionList with status, members and nested lists: `dlx`; NTLM over HTTP on a kept-alive connection: `ntlm`, `net`; CLI `/search`, `/expand`) |
-| 15 | Contact photos | MS-OXWSPHOTO | B | – |
+| 15 | Contact photos | MS-OXWSPHOTO | B | **lab**, parts tested-offline (directory photos: the address book search names the photo file with its hash and size, fetched from the address book folder with NTLM, checked for size and image type, kept in a cache by hash; photo policy of in-band provisioning: `dlx`, `provisioning`; CLI `/photo`); photos from Exchange (MS-OXWSPHOTO) need an Exchange server – |
 | 16 | Calendar and out-of-office state | MS-PRES (format) | T | – |
 | 17 | Instant messaging 1:1 | MS-SIPRE, MS-OCSPROT | B | **lab**, tested-offline (incoming and outgoing sessions, queued text, delivery state: `im`, `session`) |
-| 18 | Typing indicator | MS-CONFIM | T | parts tested-offline (INFO KeyboardActivity, secondary format: `im`) |
+| 18 | Typing indicator | MS-CONFIM | T | **lab**, parts tested-offline (INFO KeyboardActivity, secondary format: `im`; shown in the CLI, which does not send it, since it reads whole lines) |
 | 19 | Group IM (IM conference) | MS-CONFPRO, MS-CONFBAS, MS-CONFIM | B\* | **lab**, tested-offline (create with IM and A/V MCU, join, roster, IM MCU, dial-out invitations and the invitee's focus join, IMDN, session timers, leave: `conf`, `session`; CLI `/group`, `/invite`, `/join`); conference invitations to the invitee (`application/ms-conf-invite+xml`, CI-30), so other clients show and join them; incoming ones are reported for `/join` (K-CI-3) |
 | 20 | Persistent chat | MS-XCCOSIP, MS-OCGCWEB | T | – |
 | 21 | Media relay access | MS-AVEDGEA, MS-TURN | B | parts tested-offline (MS-TURN client incl. SHA-256, TCP framing and pseudo-TLS: `turn`; STUN codec: `stun`; MS-AVEDGEA credentials fetched and refreshed by the engine: `avedgea`, `session`; UDP and TCP (443) relay candidates in calls: `call-media`); IPv6 relays, multiplexed TURN (not used by SfB) – |
@@ -79,4 +79,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **18** tested-offline as a whole, **17** in parts, **15** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **30** of them also `tested-in-lab`
+**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **18** tested-offline as a whole, **18** in parts, **14** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **32** of them also `tested-in-lab`
