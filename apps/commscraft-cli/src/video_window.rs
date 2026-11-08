@@ -7,8 +7,10 @@
 //!
 //! Security by design: received video is the most exposed input of the client. A decoder or driver
 //! failing on it now ends this process and not the call; the client starts it again on the CPU. It
-//! gets no credentials and only the environment a window needs. What it reports is treated as
-//! untrusted: bounded, printable, limited in number.
+//! gets no credentials and only the environment a window needs. Before it reads any video it puts
+//! itself into a Landlock sandbox ([`sandbox`]): it may read the system's files and use the GPU, but
+//! not read the user's files, write files, open TCP connections or gain privileges. What it reports
+//! is treated as untrusted: bounded, printable, limited in number.
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::fd::AsFd;
@@ -106,8 +108,64 @@ fn show_surface(window: &mut Window, surface: vf::DmaBuf) -> Result<(), WindowEr
     Ok(())
 }
 
+/// Read-only for the helper: programs, libraries, drivers, system configuration, and what the kernel
+/// tells about devices.
+const READ_ONLY: [&str; 6] = ["/usr", "/lib", "/lib64", "/etc", "/sys", "/proc"];
+/// The GPU's render devices: open, read, write and control.
+const DEVICES: [&str; 1] = ["/dev/dri"];
+/// Single device files libraries read.
+const DEVICE_FILES: [&str; 3] = ["/dev/null", "/dev/zero", "/dev/urandom"];
+
+/// How far the sandbox could be applied.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Sandbox {
+    Full,
+    /// The kernel knows only part of the rules.
+    Partial,
+    /// The kernel has no Landlock: the helper runs without it.
+    None,
+}
+
+/// Restricts this process for good (Landlock, no new privileges): reading only the system paths
+/// above and the window's runtime directory (Wayland socket, X authority file), the GPU devices in
+/// full, no other file access, no TCP. Unix sockets, which the window needs, are not restricted.
+/// A kernel without Landlock leaves the process as it is.
+pub fn sandbox() -> Result<Sandbox, landlock::RulesetError> {
+    use landlock::{
+        path_beneath_rules, Access, AccessFs, AccessNet, Ruleset, RulesetAttr, RulesetCreatedAttr,
+        RulesetStatus, ABI,
+    };
+    let abi = ABI::V5;
+    let read = AccessFs::from_read(abi);
+    let mut readable: Vec<String> = READ_ONLY.iter().map(|p| p.to_string()).collect();
+    if let Ok(runtime) = std::env::var("XDG_RUNTIME_DIR") {
+        readable.push(runtime);
+    }
+    let status = Ruleset::default()
+        .handle_access(AccessFs::from_all(abi))?
+        .handle_access(AccessNet::from_all(abi))?
+        .create()?
+        .add_rules(path_beneath_rules(&readable, read))?
+        .add_rules(path_beneath_rules(DEVICES, AccessFs::from_all(abi)))?
+        .add_rules(path_beneath_rules(DEVICE_FILES, read | AccessFs::WriteFile))?
+        .restrict_self()?;
+    Ok(match status.ruleset {
+        RulesetStatus::FullyEnforced => Sandbox::Full,
+        RulesetStatus::PartiallyEnforced => Sandbox::Partial,
+        RulesetStatus::NotEnforced => Sandbox::None,
+    })
+}
+
 /// The helper process. Messages for the user go to standard output, one per line.
 pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
+    // Before any received video is read. A sandbox that cannot be set up is reported; the helper
+    // still runs, as it did before the sandbox existed (design: the call matters more).
+    match sandbox() {
+        Ok(Sandbox::Full) => {}
+        Ok(Sandbox::Partial) => println!("video window: sandbox only partly available"),
+        Ok(Sandbox::None) => println!("video window: no sandbox (kernel without Landlock)"),
+        Err(e) => println!("video window: no sandbox ({e})"),
+    }
     let id = args.next().unwrap_or_default();
     let mut surfaces = args.next().as_deref() == Some("gpu") && Window::in_wayland_session();
     let title = format!("CommSCraft – call {}", clean_notice(&id));
@@ -363,6 +421,67 @@ mod tests {
         assert!(
             read_unit(&mut [0u8, 0, 0, 9, 1].as_slice()).is_err(),
             "cut off"
+        );
+    }
+
+    /// The sandbox (checked in a child process, since it cannot be undone): the user's files and TCP
+    /// are out of reach, the system's files are not.
+    #[test]
+    fn sandbox_keeps_the_users_files_out() {
+        const CHILD: &str = "COMMSCRAFT_SANDBOX_TEST_FILE";
+        if let Ok(path) = std::env::var(CHILD) {
+            let listener = std::env::var("COMMSCRAFT_SANDBOX_TEST_PORT").unwrap();
+            if sandbox().unwrap() == Sandbox::None {
+                println!("SANDBOX-UNAVAILABLE");
+                return;
+            }
+            assert!(
+                std::fs::read(&path).is_err(),
+                "a file outside the system paths"
+            );
+            assert!(std::fs::write("/usr/commscraft-sandbox-test", b"x").is_err());
+            assert!(
+                std::fs::read("/etc/hostname").is_ok() || std::fs::read("/etc/os-release").is_ok()
+            );
+            assert!(
+                std::net::TcpStream::connect(listener.as_str()).is_err(),
+                "TCP"
+            );
+            println!("SANDBOX-OK");
+            return;
+        }
+        let dir = std::env::temp_dir().join(format!("commscraft-sandbox-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let secret = dir.join("secret");
+        std::fs::write(&secret, b"password").unwrap();
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let out = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "video_window::tests::sandbox_keeps_the_users_files_out",
+                "--nocapture",
+            ])
+            .env(CHILD, &secret)
+            .env(
+                "COMMSCRAFT_SANDBOX_TEST_PORT",
+                listener.local_addr().unwrap().to_string(),
+            )
+            .output()
+            .unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert!(out.status.success(), "{text}");
+        assert!(
+            text.contains("SANDBOX-OK") || text.contains("SANDBOX-UNAVAILABLE"),
+            "{text}"
+        );
+        eprintln!(
+            "sandbox: {}",
+            if text.contains("SANDBOX-OK") {
+                "enforced"
+            } else {
+                "not available here"
+            }
         );
     }
 

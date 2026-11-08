@@ -31,6 +31,8 @@ commscraft-media = { path = "../../crates/media" }
 commscraft-h264uc = { path = "../../crates/h264uc" }
 commscraft-video-ffmpeg = { path = "../../crates/video-ffmpeg" }
 commscraft-video-wayland = { path = "../../crates/video-wayland" }
+# The kernel's sandbox (Landlock) for the video window process.
+landlock = "=0.4.7"
 commscraft-turn-bwm = { path = "../../crates/turn-bwm" }
 commscraft-sdp = { path = "../../crates/sdp" }
 commscraft-rtp = { path = "../../crates/rtp" }
