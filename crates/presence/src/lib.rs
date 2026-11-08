@@ -1266,6 +1266,28 @@ pub fn set_container_members_body(changes: &[MemberChange]) -> Result<String, Er
     Ok(b)
 }
 
+/// setContainerMembers SERVICE body adding members by network type (`sameEnterprise`,
+/// `federated`, `publicCloud`; [MS-PRES] §2.2.2.5.2, pp. 46–47: a member of such a type has no
+/// value), each to a container at its current version – the members a container manifest
+/// requires ([MS-SIPREGE] §2.2.2.5.4, p. 44). Container 0 cannot be changed.
+pub fn add_network_members_body(changes: &[(u32, u32, &str)]) -> Result<String, Error> {
+    let mut b = format!("<setContainerMembers xmlns=\"{NS_CONTAINER_MANAGEMENT}\">");
+    for (container, version, kind) in changes {
+        if *container == 0 {
+            return Err(Error::OutOfRange);
+        }
+        let kind = ["sameEnterprise", "federated", "publicCloud"]
+            .into_iter()
+            .find(|k| k.eq_ignore_ascii_case(kind))
+            .ok_or(Error::OutOfRange)?;
+        b.push_str(&format!(
+            "<container id=\"{container}\" version=\"{version}\"><member action=\"add\" type=\"{kind}\"/></container>"
+        ));
+    }
+    b.push_str("</setContainerMembers>");
+    Ok(b)
+}
+
 /// SERVICE body publishing the blocking routing instance into the Blocked Contacts container
 /// (Lync SDK "Blocked Contacts container"; [MS-SIPRE] §3.9.5.1 example, pp. 84–85): calls of its
 /// members fail at the server.

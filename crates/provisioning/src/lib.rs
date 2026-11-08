@@ -16,7 +16,10 @@
 //!   [`from_message`].
 
 use commscraft_sip_msg::Message;
+
+pub mod manifest;
 use commscraft_xml::{Element, Limits};
+pub use manifest::{ContainerManifest, MissingMember};
 
 pub const EVENT: &str = "vnd-microsoft-provisioning-v2";
 pub const CONTENT_TYPE: &str = "application/vnd-microsoft-roaming-provisioning-v2+xml";
@@ -114,6 +117,8 @@ pub struct Group {
     pub name: String,
     pub properties: Vec<(String, String)>,
     pub instances: Vec<Vec<(String, String)>>,
+    /// The container manifest of a publication grammar group (RG-45).
+    pub manifest: Option<ContainerManifest>,
 }
 
 impl Group {
@@ -137,6 +142,22 @@ impl Provisioning {
         self.groups
             .iter()
             .find(|g| g.name.eq_ignore_ascii_case(name))
+    }
+
+    /// The container manifest that applies (RG-45): that of `privacyPublicationGrammar` when
+    /// presencePolicyV2 says the server is in privacy mode ([MS-SIPREGE] §2.2.2.5.9, p. 59:
+    /// EnablePrivacyMode), otherwise that of `publicationGrammar`.
+    pub fn container_manifest(&self) -> Option<&ContainerManifest> {
+        let privacy = self
+            .group("presencePolicyV2")
+            .and_then(|g| g.get("EnablePrivacyMode"))
+            .is_some_and(|v| v.eq_ignore_ascii_case("true"));
+        let name = if privacy {
+            "privacyPublicationGrammar"
+        } else {
+            "publicationGrammar"
+        };
+        self.group(name).and_then(|g| g.manifest.as_ref())
     }
 }
 
@@ -173,6 +194,7 @@ pub fn parse(body: &str) -> Result<Provisioning, Error> {
             match child.name.as_str() {
                 "propertyEntryList" => group.properties.extend(props_of(child)?),
                 "instance" => group.instances.push(props_of(child)?),
+                "containerManifestList" => group.manifest = ContainerManifest::parse(child),
                 _ => {
                     let value = child.text();
                     if value.len() > MAX_VALUE_LEN {

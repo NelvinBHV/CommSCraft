@@ -14,6 +14,8 @@ use super::*;
 
 /// How long a change waits for the changed containers before they are fetched anyway (seconds).
 const EDIT_WAIT: u64 = 10;
+/// How often a session tries to set up the members the container manifest requires.
+const MANIFEST_TRIES: u8 = 2;
 /// New subscribers reported per session: anyone can subscribe, so they cannot flood the user.
 const MAX_TOLD: usize = 256;
 
@@ -121,6 +123,75 @@ impl<R: Random> Engine<R> {
             known.insert(c.id, c);
         }
         self.privacy_edit_until = None;
+    }
+
+    /// RG-45: the network members the server's container manifest requires but the user's
+    /// containers lack (for example `sameEnterprise` in container 200 – without it nobody in the
+    /// company sees the user's presence), added once both are known; at most twice a session.
+    pub(crate) fn apply_manifest(&mut self, now: u64, out: &mut Vec<Output>) {
+        if self.manifest_tries >= MANIFEST_TRIES || self.privacy_edit_until.is_some() {
+            return;
+        }
+        let (Some(manifest), Some(containers)) = (&self.container_manifest, &self.containers)
+        else {
+            return;
+        };
+        let missing = manifest.missing(|id, kind| {
+            containers
+                .get(&id)
+                .is_some_and(|c| c.members.iter().any(|m| m.kind.eq_ignore_ascii_case(kind)))
+        });
+        if missing.is_empty() {
+            self.manifest_tries = MANIFEST_TRIES;
+            return;
+        }
+        let changes: Vec<(u32, u32, &str)> = missing
+            .iter()
+            .map(|m| {
+                let version = containers.get(&m.container).map_or(0, |c| c.version);
+                (m.container, version, m.kind.as_str())
+            })
+            .collect();
+        let Ok(body) = pres::add_network_members_body(&changes) else {
+            self.manifest_tries = MANIFEST_TRIES;
+            return;
+        };
+        let who: Vec<&str> = missing
+            .iter()
+            .map(|m| match m.kind.as_str() {
+                "sameEnterprise" => "everyone in your company",
+                "federated" => "federated users",
+                _ => "public IM users",
+            })
+            .collect();
+        self.manifest_tries += 1;
+        out.push(Output::Event(Event::Notice(format!(
+            "your presence becomes visible as the server's rules ask: {}",
+            who.join(", ")
+        ))));
+        let aor = self.cfg.aor.clone();
+        let mut m = self.request("SERVICE", &aor, &aor);
+        m.push_header("Content-Type", pres::SET_CONTAINER_MEMBERS_TYPE);
+        m.body = body.into_bytes();
+        self.privacy_edit_until = Some(now.saturating_add(EDIT_WAIT));
+        self.send_request(m, Purpose::ManifestMembers, now, out);
+    }
+
+    /// Refused (for example a version conflict): the containers are read again and the
+    /// manifest is applied once more to what they say.
+    pub(crate) fn on_manifest_members_failed(
+        &mut self,
+        code: u16,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        self.privacy_edit_until = None;
+        if self.manifest_tries >= MANIFEST_TRIES {
+            out.push(Output::Event(Event::Notice(format!(
+                "others may not see your presence: the server refused the visibility rules ({code})"
+            ))));
+        }
+        self.fetch_self_document(now, out);
     }
 
     /// Whether an INVITE comes from a member of the Blocked Contacts container, by user or domain.

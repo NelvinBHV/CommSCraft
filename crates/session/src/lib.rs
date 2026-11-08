@@ -558,9 +558,14 @@ enum Purpose {
     Provisioning,
     PublishStatus(pres::UserStatus),
     PublishRouting(Box<pres::Forwarding>),
-    SetDelegate { uri: String, add: bool },
+    SetDelegate {
+        uri: String,
+        add: bool,
+    },
     ContactEdit,
     SetMembers,
+    /// The network members the container manifest requires (RG-45).
+    ManifestMembers,
     PublishBlock,
     AcknowledgeSubscriber,
     Invite(ConversationId),
@@ -654,6 +659,9 @@ pub struct Engine<R: Random> {
     told_subscribers: HashSet<String>,
     /// A membership change is under way until the changed containers arrive, at most until then.
     privacy_edit_until: Option<u64>,
+    /// RG-45: the server's container manifest, and how often its members were tried to set up.
+    container_manifest: Option<prov::ContainerManifest>,
+    manifest_tries: u8,
     /// Version of the blocking routing instance, once published.
     block_version: Option<u32>,
     /// A contact list change is under way until the changed list arrives, at most until then.
@@ -726,6 +734,8 @@ impl<R: Random> Engine<R> {
             left_transfers: HashMap::new(),
             contact_list: None,
             containers: None,
+            container_manifest: None,
+            manifest_tries: 0,
             told_subscribers: HashSet::new(),
             privacy_edit_until: None,
             block_version: None,
@@ -1230,7 +1240,11 @@ impl<R: Random> Engine<R> {
                 }
                 if let Ok(Some(c)) = pres::parse_containers(body) {
                     self.on_containers(c);
+                } else if self.containers.is_none() {
+                    // The first self document without containers: the user has none yet.
+                    self.containers = Some(BTreeMap::new());
                 }
+                self.apply_manifest(now, out);
                 if let Ok(Some(l)) = pres::parse_subscribers(body) {
                     self.on_subscribers(l, now, out);
                 }
@@ -2080,6 +2094,8 @@ impl<R: Random> Engine<R> {
             }
             Purpose::Provisioning => match prov::from_message(resp) {
                 Ok(Some(p)) => {
+                    self.container_manifest = p.container_manifest().cloned();
+                    self.apply_manifest(now, out);
                     // RG-51: the location policy decides about emergency numbers.
                     if let Some(g) = p.group("locationPolicy") {
                         let policy = prov::LocationPolicy::from_group(g);
@@ -2127,7 +2143,7 @@ impl<R: Random> Engine<R> {
                 out.push(Output::Event(Event::OwnStatus(s)));
             }
             Purpose::ContactEdit => self.on_contact_edit_answered(resp, now, out),
-            Purpose::SetMembers | Purpose::AcknowledgeSubscriber => {}
+            Purpose::SetMembers | Purpose::ManifestMembers | Purpose::AcknowledgeSubscriber => {}
             Purpose::PublishBlock => self.block_version = Some(self.block_version.unwrap_or(0) + 1),
             Purpose::SetDelegate { .. } => {
                 // §2.2.2.10.3: the 200 carries the complete delegate list.
@@ -2251,6 +2267,7 @@ impl<R: Random> Engine<R> {
             )))),
             Purpose::ContactEdit => self.on_contact_edit_failed(code, now, out),
             Purpose::SetMembers => self.on_set_members_failed(code, now, out),
+            Purpose::ManifestMembers => self.on_manifest_members_failed(code, now, out),
             Purpose::AcknowledgeSubscriber => out.push(Output::Event(Event::Notice(format!(
                 "subscriber not acknowledged ({code})"
             )))),
