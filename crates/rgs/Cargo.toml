@@ -1,0 +1,14 @@
+[package]
+name = "commscraft-rgs"
+description = "Response group agent (MS-RGSWS): agent groups, sign-in and sign-out, active response groups"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-xml = { path = "../xml" }
+
+[lints]
+workspace = true

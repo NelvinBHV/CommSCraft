@@ -64,7 +64,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
-          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /meeting ID  /cancelmeeting ID [static]
@@ -3740,6 +3740,35 @@ fn interactive(
                     }
                 },
                 "/chat" => Some(C::StartConversation { to: arg }),
+                "/rgs" => {
+                    // Function 47: response group agent (MS-RGSWS).
+                    let mut w = arg.split_whitespace();
+                    let op = match (w.next(), w.next()) {
+                        (None, _) => None,
+                        (Some("in"), Some(g)) => Some(commscraft_rgs::Op::SignIn(g.to_string())),
+                        (Some("out"), Some(g)) => Some(commscraft_rgs::Op::SignOut(g.to_string())),
+                        _ => {
+                            println!("* /rgs (groups)  /rgs in GROUP-ID  /rgs out GROUP-ID");
+                            continue;
+                        }
+                    };
+                    match rgs_agent(
+                        &mut engine,
+                        tls,
+                        trust,
+                        services.as_deref(),
+                        op.as_ref(),
+                        verbose,
+                    ) {
+                        Ok(lines) => {
+                            for l in lines {
+                                println!("{l}");
+                            }
+                        }
+                        Err(e) => println!("* response groups: {e}"),
+                    }
+                    None
+                }
                 "/voicemail" if arg == "call" => {
                     // UM-01: the own voicemail, without PIN prompt.
                     let relay = engine.media_relay().and_then(calls::relay_from);
@@ -5218,6 +5247,254 @@ fn transcript_participant(
             .to_string(),
         address: address.to_string(),
     });
+}
+
+/// Function 47: the Response Group Service as the client reaches it – the web-ticket endpoint
+/// from the service's metadata and a ticket from its issuer ([MS-OCAUTHWS] AW-01 … AW-05).
+struct RgsConnection {
+    endpoint: String,
+    ticket: commscraft_ocauthws::webticket::WebTicket,
+}
+
+/// A fresh UUID (version 4) for WS-Trust contexts and WS-Addressing message IDs.
+fn new_uuid() -> String {
+    let mut b = [0u8; 16];
+    commscraft_register::Random::fill(&mut OsRandom, &mut b);
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    format!(
+        "{}-{}-{}-{}-{}",
+        hex_of(&b[..4]),
+        hex_of(&b[4..6]),
+        hex_of(&b[6..8]),
+        hex_of(&b[8..10]),
+        hex_of(&b[10..])
+    )
+}
+
+/// Function 47: connects to the provisioned Response Group Service (internal URL first): its
+/// metadata with NTLM, then a ticket from the named issuer with NTLM. Only hosts in the user's
+/// SIP domain or a trusted domain get credentials.
+fn rgs_connect(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    services: Option<&commscraft_provisioning::ServerConfiguration>,
+    verbose: bool,
+) -> Result<RgsConnection, String> {
+    use commscraft_ocauthws::webticket;
+    let c = services.ok_or("no provisioning yet")?;
+    let candidates: Vec<&commscraft_provisioning::ServiceUrl> = [&c.rgs_internal, &c.rgs_external]
+        .into_iter()
+        .flatten()
+        .collect();
+    if candidates.is_empty() {
+        return Err("the server announced no Response Group Service".into());
+    }
+    let own = engine
+        .aor()
+        .rsplit('@')
+        .next()
+        .unwrap_or_default()
+        .to_string();
+    let allowed = |host: &str| commscraft_url::in_domain(host, &own) || trust.trusts(host);
+    let mut last = String::from("no usable service");
+    for s in candidates {
+        if !s.in_user_domain && !trust.trusts(&s.host) {
+            last = format!(
+                "{} is outside your SIP domain; add --trust-domain to use it",
+                s.host
+            );
+            continue;
+        }
+        let mex = format!("{}/mex?singleWsdl", s.url.trim_end_matches('/'));
+        let Some(url) = commscraft_url::parse_https(&mex) else {
+            continue;
+        };
+        if verbose {
+            println!("  GET {mex}");
+        }
+        let r = match ntlm_get_with(
+            engine,
+            tls,
+            &url,
+            &[("Accept", "text/xml")],
+            Duration::from_secs(15),
+            1024 * 1024,
+        ) {
+            Ok(r) if r.status == 200 => r,
+            Ok(r) => {
+                last = format!("metadata: HTTP {}", r.status);
+                continue;
+            }
+            Err(e) => {
+                last = e;
+                continue;
+            }
+        };
+        let endpoints = webticket::parse_metadata(&String::from_utf8_lossy(&r.body))
+            .map_err(|e| format!("metadata: {e:?}"))?;
+        let Some((endpoint, issuer)) = endpoints.into_iter().find_map(|e| {
+            let i = e.issuer?;
+            Some((e.address, i))
+        }) else {
+            last = "the metadata name no web-ticket endpoint".into();
+            continue;
+        };
+        for u in [&endpoint, &issuer] {
+            let host = commscraft_url::parse_https(u)
+                .map(|x| x.host)
+                .unwrap_or_default();
+            if !allowed(&host) {
+                return Err(format!(
+                    "{host} is outside your SIP domain; add --trust-domain to use it"
+                ));
+            }
+        }
+        let issuer_url = commscraft_url::parse_https(&issuer).ok_or("unusable issuer URL")?;
+        let mut entropy = zeroize::Zeroizing::new([0u8; 32]);
+        commscraft_register::Random::fill(&mut OsRandom, &mut entropy[..]);
+        let body = webticket::issue_token_request(&endpoint, &new_uuid(), &entropy[..])
+            .map_err(|e| format!("{e:?}"))?;
+        if verbose {
+            println!("  POST {issuer} (IssueToken)");
+        }
+        let r = ntlm_post(
+            engine,
+            tls,
+            &issuer_url,
+            &[
+                ("Content-Type", commscraft_ocauthws::CONTENT_TYPE),
+                ("SOAPAction", webticket::ISSUE_ACTION),
+            ],
+            &body,
+        )?;
+        let ticket = webticket::parse_issue_token_answer(&String::from_utf8_lossy(&r.body))
+            .map_err(|e| format!("web ticket: {e:?} (HTTP {})", r.status))?;
+        return Ok(RgsConnection { endpoint, ticket });
+    }
+    Err(last)
+}
+
+/// Function 47: one operation with the web ticket; returns the SOAP answer.
+fn rgs_call(
+    tls: &TlsClient,
+    conn: &RgsConnection,
+    op: &commscraft_rgs::Op,
+    verbose: bool,
+) -> Result<String, String> {
+    let body = commscraft_rgs::body(op).map_err(|e| format!("{e:?}"))?;
+    let action = op.soap_action();
+    let envelope = commscraft_ocauthws::webticket::secured_envelope(
+        &action,
+        &conn.endpoint,
+        &new_uuid(),
+        &conn.ticket,
+        &body,
+    )
+    .map_err(|e| format!("{e:?}"))?;
+    let url = commscraft_url::parse_https(&conn.endpoint).ok_or("unusable endpoint")?;
+    if verbose {
+        println!("  POST {} ({})", conn.endpoint, op.name());
+    }
+    let r = commscraft_net::http::post(
+        tls,
+        &url,
+        &[
+            ("Content-Type", commscraft_rgs::CONTENT_TYPE),
+            ("SOAPAction", &action),
+        ],
+        envelope.as_bytes(),
+        &user_agent(),
+        Duration::from_secs(15),
+    )
+    .map_err(|e| e.to_string())?;
+    match r.status {
+        200 | 500 => Ok(String::from_utf8_lossy(&r.body).to_string()),
+        s => {
+            let diag = r
+                .headers
+                .iter()
+                .find(|(n, _)| n.eq_ignore_ascii_case("x-ms-diagnostics"))
+                .map(|(_, v)| format!(" ({})", term::clean(v)))
+                .unwrap_or_default();
+            Err(format!("HTTP {s}{diag}"))
+        }
+    }
+}
+
+/// Function 47: the agent's groups (with sign-in state and waiting calls) and the response
+/// groups served, or a sign-in/sign-out of one group followed by the groups.
+fn rgs_agent(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    services: Option<&commscraft_provisioning::ServerConfiguration>,
+    op: Option<&commscraft_rgs::Op>,
+    verbose: bool,
+) -> Result<Vec<String>, String> {
+    use commscraft_rgs::{self as rgs, Op, SignInState};
+    let conn = rgs_connect(engine, tls, trust, services, verbose)?;
+    let mut out = Vec::new();
+    if let Some(op) = op {
+        let answer = rgs_call(tls, &conn, op, verbose)?;
+        let done = rgs::parse_bool(&answer, op).map_err(|e| format!("{e:?}"))?;
+        out.push(format!(
+            "* {} {}",
+            if matches!(op, Op::SignIn(_)) {
+                "sign-in"
+            } else {
+                "sign-out"
+            },
+            if done {
+                "done"
+            } else {
+                "refused by the server"
+            }
+        ));
+    }
+    let answer = rgs_call(tls, &conn, &Op::IsAgent, verbose)?;
+    if !rgs::parse_bool(&answer, &Op::IsAgent).map_err(|e| format!("{e:?}"))? {
+        out.push("* you are not an agent of a response group".into());
+        return Ok(out);
+    }
+    let answer = rgs_call(tls, &conn, &Op::GetGroups, verbose)?;
+    let groups = rgs::parse_groups(&answer).map_err(|e| format!("{e:?}"))?;
+    out.push(format!("* agent groups: {}", groups.len()));
+    for g in groups {
+        let state = match (g.can_sign_in, g.state) {
+            (false, _) => "always signed in (informal group)",
+            (true, SignInState::SignedIn) => "signed in",
+            (true, SignInState::SignedOut) => "signed out",
+            (true, SignInState::Unknown) => "state unknown",
+        };
+        out.push(format!(
+            "  {} {} – {state}, {} agents, {} calls waiting{}",
+            g.id,
+            g.name,
+            g.agents,
+            g.calls_waiting,
+            if g.calls_waiting > 0 {
+                format!(" (longest {} s)", g.longest_wait)
+            } else {
+                String::new()
+            }
+        ));
+    }
+    let answer = rgs_call(tls, &conn, &Op::GetActiveResponseGroups, verbose)?;
+    for r in rgs::parse_response_groups(&answer).map_err(|e| format!("{e:?}"))? {
+        out.push(format!(
+            "  serves {} {}{}",
+            r.uri,
+            r.display_name.unwrap_or_default(),
+            if r.outbound_allowed {
+                " (may call on its behalf)"
+            } else {
+                ""
+            }
+        ));
+    }
+    Ok(out)
 }
 
 /// Function 38: the voice messages in the user's Inbox (FindItem on the voicemail classes).

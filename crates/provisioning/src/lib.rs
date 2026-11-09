@@ -295,6 +295,10 @@ pub struct ServerConfiguration {
     pub dlx_enabled: Option<bool>,
     pub abwq_internal: Option<ServiceUrl>,
     pub abwq_external: Option<ServiceUrl>,
+    /// The Response Group Service web service ([MS-SIPREGE] §2.2.2.5.1
+    /// `responseGroupServiceInternalURL`/`…ExternalURL`, [MS-RGSWS]; function 47).
+    pub rgs_internal: Option<ServiceUrl>,
+    pub rgs_external: Option<ServiceUrl>,
     pub lis_internal: Option<ServiceUrl>,
     pub mras_uri: Option<String>,
     pub qos_uri: Option<String>,
@@ -504,6 +508,8 @@ impl ServerConfiguration {
         c.abwq_internal = url("abwqInternalUrl", &mut rejected);
         c.abwq_external = url("abwqExternalUrl", &mut rejected);
         c.lis_internal = url("lisInternalUrl", &mut rejected);
+        c.rgs_internal = url("responseGroupServiceInternalURL", &mut rejected);
+        c.rgs_external = url("responseGroupServiceExternalURL", &mut rejected);
         let mut sip = |name: &str| {
             let v = g.get(name)?;
             let u = sip_uri(v);

@@ -10,3 +10,12 @@ Sources (edition 20250520): [MS-RGSWS] "Response Group Service Web Service Proto
 ## Classification
 - According to the overview the UCWA services are meant for **web and mobile applications** ("A typical scenario … web or mobile application", OCSMP §1.3, p. 10). The Windows desktop client uses SIP for the same functions (meeting scheduling via MS-CONFPRO, file 19). For CommSCraft they are **optional**; they can, however, offer a simpler alternative for meeting scheduling/dial-in data.
 - Not SfB-related (contained in the Office package, not evaluated further): Groove protocols (MS-GRV*), PowerPoint/OneNote web services (MS-PW*, MS-OMPWHP, MS-OMWWH), Office Broadcast (MS-OBPAS/MS-OBPRS), MS-IMESYN, MS-INFODCF, MS-MERX, MS-STWEB, MS-UDCX, MS-OCPROTO (Office client overview, without SfB protocols).
+
+## Implementation (2026-11-09, response group agent, function 47)
+- **WS-01:** `rgs` builds the operations IsAgent, GetAgent, GetGroups, SignIn, SignOut and GetActiveResponseGroups (examples §4.1–4.3, pp. 34–35) and reads the answers: groups with ID, name, number of agents, whether they support sign-in (CanSignIn), the user's state, calls waiting and the longest wait; response groups with SIP URI, name, anonymity and outbound permission. The service URL comes from provisioning (`responseGroupServiceInternalURL`/`…ExternalURL`, MS-SIPREGE §2.2.2.5.1).
+- **Authentication:** per §1.5 (p. 11) with a web ticket (file 09: AW-01 … AW-05, `ocauthws::webticket`):
+  - the service's metadata (`mex?singleWsdl`) name only a web-ticket endpoint (`…/webticket_bearer`) and its issuer (`tested-in-lab`);
+  - the client asks the issuer's Windows-authentication binding with NTLM for a ticket for that endpoint;
+  - it sends the SAML assertion in the WS-Security header together with WS-Addressing Action, MessageID and To.
+- **CLI:** `/rgs` lists groups and response groups; `/rgs in|out GROUP-ID` signs in or out, then lists again.
+- **Status:** `tested-offline`, `tested-in-lab` (agent groups listed, sign-in and sign-out of a formal group, the served response group).

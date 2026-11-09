@@ -482,6 +482,43 @@ pub fn post_with_auth(
     )
 }
 
+/// POST without HTTP authentication (the request authenticates itself, e.g. with a web ticket in
+/// its SOAP header, [MS-OCAUTHWS] §3.2); a 401 is returned like any answer.
+pub fn post(
+    tls: &TlsClient,
+    url: &HttpsUrl,
+    extra_headers: &[(&str, &str)],
+    body: &[u8],
+    user_agent: &str,
+    timeout: Duration,
+) -> Result<HttpResponse, NetError> {
+    let mut conn = tls.connect(&url.host, url.port, timeout)?;
+    let host = if url.port == 443 {
+        url.host.clone()
+    } else {
+        format!("{}:{}", url.host, url.port)
+    };
+    let safe = |s: &str| !s.chars().any(|c| c.is_control());
+    if !safe(&url.path)
+        || !safe(user_agent)
+        || extra_headers.iter().any(|(k, v)| !safe(k) || !safe(v))
+    {
+        return Err(bad("unsafe request value"));
+    }
+    let mut req = format!(
+        "POST {} HTTP/1.1\r\nHost: {host}\r\nUser-Agent: {user_agent}\r\nConnection: close\r\n",
+        url.path
+    );
+    for (k, v) in extra_headers {
+        req.push_str(&format!("{k}: {v}\r\n"));
+    }
+    req.push_str(&format!("Content-Length: {}\r\n\r\n", body.len()));
+    conn.tls.write_all(req.as_bytes()).map_err(NetError::Io)?;
+    conn.tls.write_all(body).map_err(NetError::Io)?;
+    conn.tls.flush().map_err(NetError::Io)?;
+    read_one(&mut conn, MAX_RESPONSE)
+}
+
 /// GET with HTTP authentication on one kept-alive connection, like [`post_with_auth`], for a
 /// response of up to `limit` bytes (e.g. an address book file).
 #[allow(clippy::too_many_arguments)]

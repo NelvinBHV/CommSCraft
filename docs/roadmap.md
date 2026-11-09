@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (voicemail)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (response group agent, web tickets)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -22,7 +22,7 @@ details are not published.
 | M4 | done (tested-offline, tested-in-lab) | meetings: scheduling (create, list, change, cancel; options, presenters, static meeting), join (focus URI, meeting link), lobby, roster, conference audio via the A/V MCU (SRTP sent, SRTP/SSRTP received), muting ourselves, presenter commands, announcements, dialling out to phones, PSTN calling, call transfer, forwarding, call park, quality reports, emergency calls with location, team and delegate ringing, delegates and calls on behalf of the boss, meeting options in the running meeting | E911 rest (WLAN/LLDP identifiers), PSTN dial-in details |
 | M5 | done (tested-offline, tested-in-lab) | H.264 UC RTP payload (`h264uc`), camera capture, H.264 encoding on the GPU or CPU and decoding (`video-ffmpeg`), video SDP (`sdp::video`), PLI/VSR (`rtp::feedback`), video core (`media::video`) and transport (`call-media`), 1:1 video calls (session and CLI), video in meetings, bandwidth estimation and rate adaptation (`media::rate`), picture control (function 31), the video window process with Landlock and a system call filter, bandwidth management of the video stream | owner verification; by decision not done: temporal enhancement layers, more than three simulcast sizes, Reed-Solomon FEC, GPU decoding without Wayland |
 | M6 | not started | building blocks only: MPPC test vectors | everything else |
-| M7 | in progress | calendar and out-of-office state from Exchange (function 16), conversation history in Exchange (function 49), voicemail list and listening (function 38); building blocks: PSOM test vectors | persistent chat, PSOM content, response group agent, UCWA, SILK |
+| M7 | in progress | calendar and out-of-office state from Exchange (function 16), conversation history in Exchange (function 49), voicemail list and listening (function 38), response group agent with web tickets (function 47); building blocks: PSOM test vectors | persistent chat, PSOM content, UCWA, SILK |
 
 Next steps in order: M7 (calendar state and out-of-office note, conversation history in Exchange, voicemail), then M6 (viewing shared screens); the M3 remainders above are optional or need captures.
 

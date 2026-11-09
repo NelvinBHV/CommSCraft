@@ -274,6 +274,7 @@ dependencies = [
  "commscraft-provisioning",
  "commscraft-qoe",
  "commscraft-register",
+ "commscraft-rgs",
  "commscraft-rtp",
  "commscraft-sdp",
  "commscraft-session",
@@ -470,6 +471,13 @@ dependencies = [
  "commscraft-sipae",
  "commscraft-url",
  "zeroize",
+]
+
+[[package]]
+name = "commscraft-rgs"
+version = "0.0.1"
+dependencies = [
+ "commscraft-xml",
 ]
 
 [[package]]

@@ -56,3 +56,10 @@ Dependencies: SOAP 1.1/1.2, WS-Trust 1.3, WS-Security, WS-MetadataExchange, SAML
   - Without a header (the SOAPAction HTTP header names the operation) it issues the certificate (`tested-in-lab`).
   - The client therefore sends no SOAP header.
 - **Status:** `tested-offline`, `tested-in-lab`.
+
+## Implementation (2026-11-09, web tickets)
+- **AW-01:** `ocauthws::webticket::parse_metadata` reads a service's WSDL: per port the HTTPS address and the issuer address of the binding's policy (`sp:IssuedToken/sp:Issuer/wsa:Address`).
+- **AW-03/AW-04:** `issue_token_request` builds IssueToken as in the example §4.2.1 (p. 62): AppliesTo = the service endpoint, 256 bits of client entropy, KeyType SymmetricKey. It is sent with NTLM to the issuer's Windows-authentication binding (WinNegotiate at the issuer address, `tested-in-lab`). `parse_issue_token_answer` takes the assertion byte for byte, after it parsed on its own as a SAML 1.1 assertion, and `Lifetime/Expires`.
+- **AW-05:** `secured_envelope` sends the assertion in the WS-Security header of a SOAP 1.1 request, together with WS-Addressing Action, MessageID and To (the service policies require addressing).
+- **K-AW-4 (found 2026-11-09):** a service's policy names KeyType Bearer in its RequestSecurityTokenTemplate, but the issuer refuses a bearer request ("Unsupported key type in web ticket request"). With KeyType SymmetricKey and client entropy, as in §4.2.1, it issues the ticket, and the service accepts it in the WS-Security header (`tested-in-lab`).
+- **Status:** `tested-offline`, `tested-in-lab`.

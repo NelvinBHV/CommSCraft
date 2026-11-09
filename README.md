@@ -10,8 +10,8 @@ application, a ranked work list, and nothing copied from Microsoft products.
 
 > **Stage: M1 (sign-in), M4 and M5 (video) closed, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search, audio and video calls, meetings and telephony (transfer, forwarding, park, delegates,
-> emergency calls) exist as building blocks that pass offline tests and whose main flows also ran in the owner's private lab (44 crates,
-> 547 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
+> emergency calls) exist as building blocks that pass offline tests and whose main flows also ran in the owner's private lab (45 crates,
+> 554 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
 > for the owner's runs on authorized servers; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
@@ -39,7 +39,7 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 ## What works today
 
 Status from [`docs/target-app-parity.md`](docs/target-app-parity.md) (2026-11-09): of 52 client
-functions, 26 are implemented and tested offline as a whole, 15 in parts, 8 not started.
+functions, 26 are implemented and tested offline as a whole, 15 in parts, 7 not started.
 
 | Area | In the code (tested offline) | Not yet |
 |---|---|---|
@@ -48,7 +48,7 @@ functions, 26 are implemented and tested offline as a whole, 15 in parts, 8 not 
 | Instant messaging | 1:1 with typing indicator, group conversations (ad-hoc conference, invitations, delivery reports) | rich text, file transfer |
 | Audio calls | G.722 and G.711, SRTP, ICE, MS-TURN relay over UDP and over TCP 443 (pseudo-TLS), DTMF, mute, hold/resume, early media, call admission control, ALSA/PipeWire devices; ringing, notification sound and music on hold (the approved CommSCraft sound pack, or a WAV file of the user's; `off` and a volume per sound) | – |
 | Meetings | schedule, join by address or meeting link, lobby, roster, audio and video in the A/V MCU (SRTP/SSRTP), mute yourself; as presenter: admit, roles, lock, remove, mute others or the audience | sharing, whiteboard, PowerPoint |
-| Telephony | phone numbers with the dial plan (phone-context), calls from gateways with caller number, call back, anonymous callers, early media, call transfer (blind and with consultation), call forwarding and simultaneous ring, team and delegate calls, call park, emergency calls with location | voicemail |
+| Telephony | phone numbers with the dial plan (phone-context), calls from gateways with caller number, call back, anonymous callers, early media, call transfer (blind and with consultation), call forwarding and simultaneous ring, team and delegate calls, call park, emergency calls with location, voicemail (list, listening), response group agent | – |
 | Video, screen sharing | video calls and meeting video (H.264) | screen sharing |
 | Exchange | contact photos, contact list (unified contact store), calendar state and out-of-office note (own and contacts'), conversation history, voicemail list and listening | – |
 
