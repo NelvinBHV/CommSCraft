@@ -75,7 +75,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           presenters: /admit [sip:URI]  /deny sip:URI  /promote sip:URI  /demote sip:URI  /lock  /unlock
           /remove sip:URI  /muteuser sip:URI  /unmuteuser sip:URI  /muteall  /unmuteall
           /options [open|closed|anonymous] [promote none|company|everyone] [phone bypass|lobby]
-          /search TEXT (address book)  /addressbook (load the offline address book)  /lookup TEXT (search it)  /expand LIST@DOMAIN (members of a distribution list)  /photo sip:USER (save a contact's photo)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
+          /search TEXT (address book)  /addressbook (update the offline address book now)  /lookup TEXT (search it)  /expand LIST@DOMAIN (members of a distribution list)  /photo sip:USER (save a contact's photo)  /to N (switch conversation)  /end [N]  /quit  – any other line is sent as text.
 im        signs in, opens a 1:1 conversation with --to, sends --text, shows answers and typing for
           --wait seconds (default 20), ends the conversation and signs out. Plain text only.
 
@@ -87,9 +87,12 @@ im        signs in, opens a 1:1 conversation with --to, sends --text, shows answ
 --trust-domain   trust SIP servers in DOMAIN although it differs from your SIP domain (like
               TrustModelData of the Windows client); only for servers named by Autodiscover.
               A yes on the interactive question is remembered in ~/.config/commscraft/trusted-domains.
---cache-address-book  keeps the newest full offline address book file in ~/.cache/commscraft/abs
-              (mode 0600), so /addressbook then fetches only the day's changes (delta file).
-              Without it the address book is held in memory only.
+--address-book-delay MINUTES  interactive: the offline address book is fetched after sign-in at a
+              random time within MINUTES (default 60, 0 = at once; like GalDownloadInitialDelay of
+              the Windows client), then once a day, unless the server's policy allows the web
+              search only. It is kept in ~/.cache/commscraft/abs (mode 0600) and used at once on
+              the next sign-in; later fetches load only the day's changes (delta file).
+--no-address-book-cache  hold the offline address book in memory only.
 --ntlm-legacy    diagnostic: NTLMv2 without the optional MIC/channel-binding additions, with LMv2.
 --verbose     also prints the non-secret NTLM facts (offered/chosen flags, domain names).
 The password is read from the terminal without echo, or as the first line of standard input.";
@@ -103,7 +106,7 @@ struct Args {
     epid: Option<String>,
     verbose: bool,
     authorized: bool,
-    cache_address_book: bool,
+    address_book: AddressBookOptions,
     discover_only: bool,
     trust_domains: Vec<String>,
     ntlm_legacy: bool,
@@ -113,6 +116,25 @@ struct Args {
     to: Option<String>,
     text: Option<String>,
     wait: u64,
+}
+
+/// How the offline address book is kept up to date (function 13), as the Windows client does:
+/// kept on disk, fetched after sign-in at a random time within the initial delay
+/// (`GalDownloadInitialDelay`, default 60 minutes, Microsoft Learn "Configure client
+/// bootstrapping policies") and then daily ([MS-ABS] 20250520 §1.3, p. 10).
+#[derive(Debug, Clone, Copy)]
+struct AddressBookOptions {
+    cache: bool,
+    delay_minutes: u64,
+}
+
+impl Default for AddressBookOptions {
+    fn default() -> Self {
+        AddressBookOptions {
+            cache: true,
+            delay_minutes: 60,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -150,7 +172,7 @@ fn parse_args() -> Result<Args, String> {
         text: None,
         wait: 20,
         authorized: false,
-        cache_address_book: false,
+        address_book: AddressBookOptions::default(),
     };
     while let Some(flag) = it.next() {
         let mut value = || it.next().ok_or_else(|| format!("{flag} needs a value"));
@@ -191,7 +213,14 @@ fn parse_args() -> Result<Args, String> {
             }
             "--trust-domain" => a.trust_domains.push(value()?),
             "--authorized" => a.authorized = true,
-            "--cache-address-book" => a.cache_address_book = true,
+            "--no-address-book-cache" => a.address_book.cache = false,
+            "--address-book-delay" => {
+                a.address_book.delay_minutes = value()?
+                    .parse()
+                    .ok()
+                    .filter(|m| *m <= 24 * 60)
+                    .ok_or("--address-book-delay needs minutes (0 to 1440)")?
+            }
             "-h" | "--help" => return Err(USAGE.into()),
             other => return Err(format!("unknown argument {other}\n\n{USAGE}")),
         }
@@ -377,7 +406,10 @@ fn hex(rng: &mut OsRandom, n: usize) -> String {
 fn print_provisioning(p: &prov::Provisioning, user_domain: &str) {
     println!("provisioning: {} groups", p.groups.len());
     if let Some(g) = p.group("ServerConfiguration") {
-        let c = prov::ServerConfiguration::from_group(g, user_domain);
+        let mut c = prov::ServerConfiguration::from_group(g, user_domain);
+        if let Some(e) = p.group("endpointConfiguration") {
+            c.apply_endpoint_configuration(e);
+        }
         let url = |name: &str, u: &Option<prov::ServiceUrl>| {
             if let Some(u) = u {
                 let note = if u.in_user_domain {
@@ -405,6 +437,12 @@ fn print_provisioning(p: &prov::Provisioning, user_domain: &str) {
         }
         if let Some(e) = c.av_encryption {
             println!("  A/V encryption: {e:?}");
+        }
+        if let Some(u) = c.abs_usage {
+            println!("  address book policy: {u:?}");
+        }
+        if let Some(u) = c.photo_usage {
+            println!("  photo policy: {u:?}");
         }
         if !c.rejected.is_empty() {
             println!("  rejected (invalid) values: {}", c.rejected.join(", "));
@@ -995,7 +1033,7 @@ fn run(a: Args) -> Result<(), String> {
             &tls,
             &trust,
             a.verbose,
-            a.cache_address_book,
+            a.address_book,
         );
     }
     let mut reg = reg;
@@ -1391,8 +1429,8 @@ fn abs_cache_store(path: &std::path::Path, file: &[u8]) {
 /// book service (internal first, then external); only hosts in the user's SIP domain or a
 /// trusted domain get credentials; NTLM over HTTP as for the search.
 ///
-/// With `--cache-address-book` and a cached full file F-XXXX the newest delta D-XXXX-YYYY of the last
-/// [`ADDRESS_BOOK_DAYS`] days is fetched and applied (the server makes deltas from each full
+/// With the disk cache (default; `--no-address-book-cache` turns it off) and a cached full file
+/// F-XXXX the newest delta D-XXXX-YYYY of the last [`ADDRESS_BOOK_DAYS`] days is fetched and applied (the server makes deltas from each full
 /// file it keeps to the newest one, §1.3, p. 10). Without a delta a newer full file is fetched;
 /// if there is none, the cache is current. Without a cache, or when it is unusable, the newest
 /// full file is fetched and cached. Returns the book and how it was obtained.
@@ -1406,19 +1444,14 @@ fn fetch_address_book(
 ) -> Result<(commscraft_abs::book::AddressBook, String), String> {
     use commscraft_abs::book::{decompress, AddressBook, Delta};
     let c = services.ok_or("no provisioning yet (address book service unknown)")?;
-    let bases: Vec<&commscraft_provisioning::ServiceUrl> = [&c.abs_internal, &c.abs_external]
-        .into_iter()
-        .flatten()
-        .collect();
+    if !address_book_file_allowed(c) {
+        return Err("the server's policy allows the web search only (AbsUsage)".into());
+    }
+    let bases = address_book_bases(c);
     if bases.is_empty() {
         return Err("the server announced no address book service".into());
     }
-    let today = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs() / 86_400)
-        .unwrap_or(0);
-    // Days since 2001-01-01 (day 11 323 since 1970-01-01).
-    let today = u16::try_from(today.saturating_sub(11_323)).map_err(|_| "clock out of range")?;
+    let today = abs_today().ok_or("clock out of range")?;
     let mut last = String::from("no usable service");
     'bases: for base in bases {
         if !base.in_user_domain && !trust.trusts(&base.host) {
@@ -1428,7 +1461,7 @@ fn fetch_address_book(
             );
             continue;
         }
-        // The disk cache only when the user asked for it (`--cache-address-book`).
+        // The disk cache unless the user turned it off (`--no-address-book-cache`).
         let cache = use_cache.then(|| abs_cache_path(&base.host)).flatten();
         let cached = cache
             .as_deref()
@@ -1507,6 +1540,83 @@ fn fetch_address_book(
         }
     }
     Err(last)
+}
+
+/// Today as an address book day number: days since 2001-01-01 (day 11 323 since 1970-01-01).
+fn abs_today() -> Option<u16> {
+    u16::try_from((now() / 86_400).checked_sub(11_323)?).ok()
+}
+
+/// The provisioned address book services, internal first.
+fn address_book_bases(
+    c: &commscraft_provisioning::ServerConfiguration,
+) -> Vec<&commscraft_provisioning::ServiceUrl> {
+    [&c.abs_internal, &c.abs_external]
+        .into_iter()
+        .flatten()
+        .collect()
+}
+
+/// RG-53: the address book file may be used unless the policy allows the web search only (no
+/// `AbsUsage` counts as the server example's `WebSearchAndFileDownload`).
+fn address_book_file_allowed(c: &commscraft_provisioning::ServerConfiguration) -> bool {
+    c.abs_usage.is_none_or(|u| u.file_allowed())
+}
+
+/// The address book kept from an earlier session, without network access (the Windows client
+/// uses its local copy at once, too): the cached full file of the first usable service. Its
+/// changes since then come with the next fetch.
+fn cached_address_book(
+    trust: &Trust,
+    c: &commscraft_provisioning::ServerConfiguration,
+) -> Option<commscraft_abs::book::AddressBook> {
+    use commscraft_abs::book::{decompress, AddressBook};
+    if !address_book_file_allowed(c) {
+        return None;
+    }
+    let today = abs_today()?;
+    address_book_bases(c)
+        .into_iter()
+        .filter(|b| b.in_user_domain || trust.trusts(&b.host))
+        .find_map(|b| {
+            let file = std::fs::read(abs_cache_path(&b.host)?).ok()?;
+            let raw = decompress(&file).ok()?;
+            AddressBook::parse(&raw).ok().filter(|b| b.created <= today)
+        })
+}
+
+/// When the address book is fetched next after sign-in: a random time within the initial delay
+/// (spreads the load of all clients signing in at the same time).
+fn first_address_book_fetch(at: u64, delay_minutes: u64) -> u64 {
+    use commscraft_register::Random;
+    let span = delay_minutes * 60;
+    if span == 0 {
+        return at;
+    }
+    let mut b = [0u8; 8];
+    OsRandom.fill(&mut b);
+    at + u64::from_le_bytes(b) % (span + 1)
+}
+
+/// Prints the entries of the offline address book that match.
+fn print_address_book_matches(b: &commscraft_abs::book::AddressBook, text: &str) {
+    let found = b.search(text, 25);
+    if found.is_empty() {
+        println!("* nothing found");
+    }
+    for f in found {
+        println!(
+            "  {:<40} {}  {}",
+            f.sip.as_deref().unwrap_or("(no SIP address)"),
+            f.display_name.as_deref().unwrap_or(""),
+            [f.title, f.company, f.office, f.mail]
+                .into_iter()
+                .flatten()
+                .chain(f.phones)
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
 }
 
 /// An HTTP GET with NTLM per MS-NTHT on one connection (as for the address book search).
@@ -1841,7 +1951,7 @@ fn interactive(
     tls: &TlsClient,
     trust: &Trust,
     verbose: bool,
-    cache_address_book: bool,
+    book_options: AddressBookOptions,
 ) -> Result<(), String> {
     use commscraft_session::{Command as C, Event as E, Output};
     use std::collections::BTreeMap;
@@ -1935,8 +2045,10 @@ fn interactive(
     let mut invitations: Vec<String> = Vec::new();
     let mut quitting = false;
     let mut services: Option<Box<commscraft_provisioning::ServerConfiguration>> = None;
-    // Function 13: the offline address book, once loaded with /addressbook.
+    // Function 13: the offline address book (from the cache at sign-in, then fetched) and the
+    // time of the next fetch.
     let mut address_book: Option<commscraft_abs::book::AddressBook> = None;
+    let mut book_next: Option<u64> = None;
     let mut outputs = engine.start(now());
     // Commands that events lead to (sent after the events are shown).
     let mut outputs_extra: Vec<C> = Vec::new();
@@ -1960,6 +2072,26 @@ fn interactive(
                     }
                     E::RegistrationEnded(why) => return Err(format!("registration ended: {why}")),
                     E::Provisioned(c) => {
+                        if !address_book_file_allowed(&c) {
+                            address_book = None;
+                            book_next = None;
+                        } else if book_next.is_none() {
+                            if book_options.cache && address_book.is_none() {
+                                address_book = cached_address_book(trust, &c);
+                                if let Some(b) = &address_book {
+                                    let d = commscraft_abs::date_from_day_number(b.created);
+                                    println!(
+                                        "* address book of {:04}-{:02}-{:02} from the cache: {} entries",
+                                        d.year,
+                                        d.month,
+                                        d.day,
+                                        b.contacts.len()
+                                    );
+                                }
+                            }
+                            book_next =
+                                Some(first_address_book_fetch(now(), book_options.delay_minutes));
+                        }
                         services = Some(c);
                         if lis_wanted {
                             let r = lis_lookup(
@@ -2577,6 +2709,33 @@ fn interactive(
                 verbose,
             ) {
                 outputs.extend(engine.command(C::SetLocation(Box::new(loc)), t));
+            }
+        }
+        // Function 13: the scheduled address book fetch, then daily; after a failure again in an
+        // hour (design).
+        if book_next.is_some_and(|n| t >= n) {
+            match fetch_address_book(
+                &mut engine,
+                tls,
+                trust,
+                services.as_deref(),
+                book_options.cache,
+                verbose,
+            ) {
+                Ok((b, source)) => {
+                    if verbose {
+                        println!(
+                            "* address book updated from {source}: {} entries",
+                            b.contacts.len()
+                        );
+                    }
+                    address_book = Some(b);
+                    book_next = Some(t + 86_400);
+                }
+                Err(e) => {
+                    println!("* address book not updated: {e}");
+                    book_next = Some(t + 3_600);
+                }
             }
         }
         // Video streams: ready, selected, notices (function 28).
@@ -3629,10 +3788,11 @@ fn interactive(
                         tls,
                         trust,
                         services.as_deref(),
-                        cache_address_book,
+                        book_options.cache,
                         verbose,
                     ) {
                         Ok((b, source)) => {
+                            book_next = Some(now() + 86_400);
                             let d = commscraft_abs::date_from_day_number(b.created);
                             println!(
                                 "* address book of {:04}-{:02}-{:02}: {} entries from {source} (search with /lookup TEXT)",
@@ -3657,25 +3817,7 @@ fn interactive(
                 "/lookup" => {
                     match &address_book {
                         None => println!("* no address book yet – load it with /addressbook"),
-                        Some(b) => {
-                            let found = b.search(&arg, 25);
-                            if found.is_empty() {
-                                println!("* nothing found");
-                            }
-                            for f in found {
-                                println!(
-                                    "  {:<40} {}  {}",
-                                    f.sip.as_deref().unwrap_or("(no SIP address)"),
-                                    f.display_name.as_deref().unwrap_or(""),
-                                    [f.title, f.company, f.office, f.mail]
-                                        .into_iter()
-                                        .flatten()
-                                        .chain(f.phones)
-                                        .collect::<Vec<_>>()
-                                        .join(", ")
-                                );
-                            }
-                        }
+                        Some(b) => print_address_book_matches(b, &arg),
                     }
                     None
                 }
@@ -3710,6 +3852,22 @@ fn interactive(
                     }
                     None
                 }
+                // RG-53: with FileDownloadOnly the offline address book answers; when the web
+                // search fails, too (as long as one is loaded).
+                "/search"
+                    if services
+                        .as_deref()
+                        .and_then(|c| c.abs_usage)
+                        .is_some_and(|u| !u.web_search_allowed()) =>
+                {
+                    match &address_book {
+                        Some(b) => print_address_book_matches(b, &arg),
+                        None => println!(
+                            "* the server's policy allows the address book file only – load it with /addressbook"
+                        ),
+                    }
+                    None
+                }
                 "/search" => {
                     match search(&mut engine, tls, trust, services.as_deref(), &arg, verbose) {
                         Ok(found) if found.is_empty() => println!("* nothing found"),
@@ -3728,7 +3886,13 @@ fn interactive(
                                 );
                             }
                         }
-                        Err(e) => println!("* search failed: {e}"),
+                        Err(e) => match &address_book {
+                            Some(b) => {
+                                println!("* search failed ({e}) – from the offline address book:");
+                                print_address_book_matches(b, &arg);
+                            }
+                            None => println!("* search failed: {e}"),
+                        },
                     }
                     None
                 }
@@ -4369,9 +4533,6 @@ fn promote_name(v: u32) -> &'static str {
 mod tests {
     use super::*;
 
-    /// E9-03: the subnet for the location request from `/proc/net/route` (values in native byte
-    /// order, here as printed on a little-endian machine); the most specific route wins, the
-    /// default route never matches.
     /// Function 15: only JPEG and PNG photos are kept (security by design).
     #[test]
     fn photo_types() {
@@ -4381,6 +4542,32 @@ mod tests {
         assert_eq!(photo_kind(b""), None);
     }
 
+    /// Function 13: the first fetch after sign-in lies within the initial delay (0 = at once);
+    /// RG-53: only WebSearchOnly forbids the file, no policy allows it.
+    #[test]
+    fn address_book_schedule_and_policy() {
+        use commscraft_provisioning::{AbsUsage, ServerConfiguration};
+        assert_eq!(first_address_book_fetch(1_000, 0), 1_000);
+        for _ in 0..200 {
+            let t = first_address_book_fetch(1_000, 60);
+            assert!((1_000..=1_000 + 3_600).contains(&t));
+        }
+        let mut c = ServerConfiguration::default();
+        assert!(address_book_file_allowed(&c));
+        for (u, allowed) in [
+            (AbsUsage::WebSearchAndFileDownload, true),
+            (AbsUsage::FileDownloadOnly, true),
+            (AbsUsage::WebSearchOnly, false),
+        ] {
+            c.abs_usage = Some(u);
+            assert_eq!(address_book_file_allowed(&c), allowed);
+        }
+        assert!(abs_today().is_some_and(|d| d > 0x24E0));
+    }
+
+    /// E9-03: the subnet for the location request from `/proc/net/route` (values in native byte
+    /// order, here as printed on a little-endian machine); the most specific route wins, the
+    /// default route never matches.
     #[test]
     #[cfg(target_endian = "little")]
     fn subnet_from_route_table() {

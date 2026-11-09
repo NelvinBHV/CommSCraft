@@ -450,3 +450,43 @@ fn photo_policy() {
     assert_eq!(c.max_photo_kb, None);
     assert_eq!(c.rejected, ["PhotoUsage", "MaxPhotoSizeKB"]);
 }
+
+/// RG-53: the address book policy of endpointConfiguration (§2.2.2.5.6, p. 51); an unknown
+/// value is rejected and leaves the policy unset.
+#[test]
+fn address_book_policy() {
+    let group = |usage: &str| Group {
+        name: "endpointConfiguration".into(),
+        properties: vec![("AbsUsage".into(), usage.into())],
+        instances: Vec::new(),
+        manifest: None,
+    };
+    for (v, want, file, web) in [
+        (
+            "WebSearchAndFileDownload",
+            AbsUsage::WebSearchAndFileDownload,
+            true,
+            true,
+        ),
+        ("websearchonly", AbsUsage::WebSearchOnly, false, true),
+        (
+            " FileDownloadOnly ",
+            AbsUsage::FileDownloadOnly,
+            true,
+            false,
+        ),
+    ] {
+        let mut c = ServerConfiguration::default();
+        c.apply_endpoint_configuration(&group(v));
+        assert_eq!(c.abs_usage, Some(want));
+        assert_eq!(
+            (want.file_allowed(), want.web_search_allowed()),
+            (file, web)
+        );
+        assert!(c.rejected.is_empty());
+    }
+    let mut c = ServerConfiguration::default();
+    c.apply_endpoint_configuration(&group("Everything"));
+    assert_eq!(c.abs_usage, None);
+    assert_eq!(c.rejected, ["AbsUsage"]);
+}
