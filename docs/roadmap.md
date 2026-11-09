@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (contact list in Exchange)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (system call filter of the video window)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -23,7 +23,7 @@ details are not published.
 | M5 | in progress | H.264 UC RTP payload (`h264uc`), camera capture, H.264 encoding on the GPU or CPU and decoding (`video-ffmpeg`), video SDP (`sdp::video`), PLI/VSR (`rtp::feedback`), video core (`media::video`) and transport (`call-media`), 1:1 video calls (session and CLI), video in meetings, bandwidth estimation and rate adaptation (`media::rate`), picture control (function 31) | hardware decoding, 1:1 and conference video |
 | M6 – M7 | not started | building blocks only: PSOM/ABS/MPPC test vectors | everything else |
 
-Next steps in order: a system call filter for the video window process; the M3 remainders above are optional or need captures.
+Next steps in order: bandwidth management for video streams; the M3 remainders above are optional or need captures.
 
 ## Milestones
 

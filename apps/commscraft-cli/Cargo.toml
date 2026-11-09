@@ -35,6 +35,9 @@ commscraft-video-ffmpeg = { path = "../../crates/video-ffmpeg" }
 commscraft-video-wayland = { path = "../../crates/video-wayland" }
 # The kernel's sandbox (Landlock) for the video window process.
 landlock = "=0.4.7"
+# Its system call filter (seccomp-BPF, pure Rust, no libseccomp) and the system call numbers.
+seccompiler = "=0.5.0"
+libc = "0.2"
 commscraft-turn-bwm = { path = "../../crates/turn-bwm" }
 commscraft-sdp = { path = "../../crates/sdp" }
 commscraft-rtp = { path = "../../crates/rtp" }
