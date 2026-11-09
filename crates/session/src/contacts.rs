@@ -14,6 +14,54 @@ use super::*;
 const EDIT_WAIT: u64 = 10;
 
 impl<R: Random> Engine<R> {
+    /// PR-51: the client can reach Exchange. The contact list subscription then carries
+    /// `ms-ucs` and `ms-ucs-ready` (§3.10.4, p. 134: "SIP enabled endpoints that can connect to
+    /// the email server SHOULD add the ms-ucs supported header"; example §4.14.1, p. 197) and
+    /// is sent again at once.
+    pub fn enable_exchange_contacts(&mut self, now: u64) -> Vec<Output> {
+        let mut out = Vec::new();
+        if self.ucs {
+            return out;
+        }
+        self.ucs = true;
+        if let Some(i) = self.contacts_index().filter(|_| self.registered) {
+            self.resubscribe_now(i, now, &mut out);
+        }
+        out
+    }
+
+    /// Whether the contact list is kept in Exchange (read and changed there by the client).
+    pub fn contacts_in_exchange(&self) -> bool {
+        self.contacts_in_exchange
+    }
+
+    /// The server moved the list: no more contact list subscription (§3.10.4: endpoints that
+    /// connect to the email server keep `ms-ucs` and get 488).
+    pub(crate) fn on_contacts_moved(&mut self, index: usize, out: &mut Vec<Output>) {
+        if let Some(s) = self.subs.get_mut(index) {
+            s.dialog = None;
+            s.refresh_at = None;
+            s.retry_at = None;
+        }
+        self.contact_edit_until = None;
+        if !self.contacts_in_exchange {
+            self.contacts_in_exchange = true;
+            out.push(Output::Event(Event::ContactsInExchange));
+        }
+    }
+
+    /// The contact list as read from Exchange (EX-04 GetImItemList): kept like a list from the
+    /// server, and the presence of its contacts is subscribed.
+    pub fn set_exchange_contacts(&mut self, mut list: pres::ContactList, now: u64) -> Vec<Output> {
+        let mut out = Vec::new();
+        list.ucs_mode = Some("migrated".into());
+        let uris: Vec<String> = list.contacts.iter().map(|c| c.uri.clone()).collect();
+        self.contact_list = Some(list.clone());
+        out.push(Output::Event(Event::ContactList(list)));
+        self.replace_presence_subscriptions(uris, now, &mut out);
+        out
+    }
+
     /// The contact list as last received.
     pub fn contact_list(&self) -> Option<&pres::ContactList> {
         self.contact_list.as_ref()
@@ -29,8 +77,8 @@ impl<R: Random> Engine<R> {
         let refusal = match (&self.contact_list, &edit) {
             (None, _) => Some("the contact list is not loaded yet"),
             (Some(l), _) if l.ucs_mode.as_deref() == Some("migrated") => {
-                // PR-51: the list lives in Exchange (M7).
-                Some("the contact list is kept in Exchange and cannot be changed here")
+                // PR-51: the list lives in Exchange; the client changes it there (EX-04).
+                Some("the contact list is kept in Exchange and is changed there")
             }
             (Some(l), _) if l.delta_num.is_none() => Some("the contact list has no version"),
             (Some(l), pres::ContactEdit::Set { uri, .. })

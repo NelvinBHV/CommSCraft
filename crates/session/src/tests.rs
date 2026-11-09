@@ -4631,3 +4631,117 @@ fn diagnostics_and_error_reports() {
         .iter()
         .any(|ev| matches!(ev, Event::Diagnostic { .. })));
 }
+
+/// PR-51: with Exchange reachable the contact list subscription carries ms-ucs and ms-ucs-ready
+/// (§4.14.1); 488 with 2165 (§4.14.3.1) means the list is in Exchange – no more subscription;
+/// the list read from Exchange is kept and its contacts' presence subscribed.
+#[test]
+fn contact_list_moves_to_exchange() {
+    const EVENT: &str = "vnd-microsoft-roaming-contacts";
+    let (mut e, mut server, out) = signed_in();
+    let first = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some(EVENT))
+        .unwrap();
+    assert!(!first.header_values("Supported").any(|v| v == "ms-ucs"));
+    let out = e.enable_exchange_contacts(NOW);
+    let sub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some(EVENT))
+        .expect("subscribed again");
+    let supported: Vec<&str> = sub.header_values("Supported").collect();
+    assert!(supported.contains(&"ms-ucs") && supported.contains(&"ms-ucs-ready"));
+    assert!(e.enable_exchange_contacts(NOW).is_empty(), "once");
+
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &sub,
+            488,
+            None,
+            "",
+            &[("ms-diagnostics", "2165;reason=\"Contact subscription is not allowed as the user's contact list has migrated to Exchange.\";source=\"fe.contoso.com\"")],
+        ),
+        NOW,
+    );
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::ContactsInExchange)));
+    assert!(e.contacts_in_exchange());
+    // No retry of the contact list subscription.
+    let later = e.on_tick(NOW + 3_600);
+    assert!(!sends(&later)
+        .iter()
+        .any(|m| m.single("Event").unwrap() == Some(EVENT)));
+
+    let list = pres::ContactList {
+        groups: vec![pres::Group {
+            id: 1,
+            name: "Team".into(),
+        }],
+        contacts: vec![pres::Contact {
+            uri: "sip:bob@contoso.com".into(),
+            name: "Bob".into(),
+            groups: vec![1],
+            subscribed: true,
+            extension: false,
+        }],
+        ..Default::default()
+    };
+    let out = e.set_exchange_contacts(list, NOW);
+    assert!(events(&out).iter().any(
+        |ev| matches!(ev, Event::ContactList(l) if l.ucs_mode.as_deref() == Some("migrated"))
+    ));
+    assert!(sends(&out)
+        .iter()
+        .any(|m| m.single("Event").unwrap() == Some("presence")
+            && String::from_utf8_lossy(&m.body).contains("sip:bob@contoso.com")));
+    // Changes go to Exchange, not to the server.
+    let out = e.command(
+        Command::EditContacts(pres::ContactEdit::AddGroup { name: "X".into() }),
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+}
+
+/// PR-51 (§4.14.2): the subscription ends with 2186 while signed in – the list moved.
+#[test]
+fn contact_list_moved_while_signed_in() {
+    const EVENT: &str = "vnd-microsoft-roaming-contacts";
+    let (mut e, mut server, _) = signed_in();
+    let out = e.enable_exchange_contacts(NOW);
+    let sub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some(EVENT))
+        .unwrap();
+    e.on_message(
+        &answer(
+            &mut server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-contacts+xml"),
+            r#"<contactList deltaNum="16" ucsMode="allowed"><group id="1" name="~"/></contactList>"#,
+            &[("Expires", "600")],
+        ),
+        NOW,
+    );
+    assert!(!e.contacts_in_exchange());
+    let notify = peer_request(
+        &mut server,
+        &sub,
+        "BENOTIFY",
+        3,
+        Some("application/vnd-microsoft-roaming-contacts+xml"),
+        r#"<contactList deltaNum="16" ucsMode="migrated"><group id="1" name="~"/></contactList>"#,
+        &[
+            ("Event", EVENT),
+            ("subscription-state", "terminated;expires=0"),
+            ("ms-diagnostics-public", "2186;reason=\"Contact subscription has been terminated as the user migrated to ucs mode.\""),
+        ],
+    );
+    let out = e.on_message(&notify, NOW);
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::ContactsInExchange)));
+    assert!(e.contacts_in_exchange());
+}

@@ -11,7 +11,7 @@ application, a ranked work list, and nothing copied from Microsoft products.
 > **Stage: M4 closed, M5 (video) in progress, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search, audio and video calls, meetings and telephony (transfer, forwarding, park, delegates,
 > emergency calls) exist as building blocks that pass offline tests and whose main flows also ran in the owner's private lab (41 crates,
-> 498 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
+> 504 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
 > for the owner's runs on authorized servers; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
@@ -38,18 +38,19 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 
 ## What works today
 
-Status from [`docs/target-app-parity.md`](docs/target-app-parity.md) (2026-11-08): of 52 client
-functions, 20 are implemented and tested offline as a whole, 16 in parts, 14 not started.
+Status from [`docs/target-app-parity.md`](docs/target-app-parity.md) (2026-11-09): of 52 client
+functions, 21 are implemented and tested offline as a whole, 16 in parts, 13 not started.
 
 | Area | In the code (tested offline) | Not yet |
 |---|---|---|
 | Sign-in | Autodiscover (HTTPS only), DNS SRV, TLS 1.2/1.3, NTLM with MS-SIPAE signing, registration with GRUU, home-pool redirect, keep-alive, in-band provisioning, sign-out | Kerberos, TLS-DSK |
-| Presence and contacts | own state, contacts' presence (live), contact list (read), address book search | editing the contact list, privacy/blocking, offline address book, photos |
+| Presence and contacts | own state, contacts' presence (live), contact list (read and edit, on the server or in Exchange), privacy relationships and blocking, address book search, distribution lists, offline address book, contact photos (directory and Exchange) | calendar and out-of-office state |
 | Instant messaging | 1:1 with typing indicator, group conversations (ad-hoc conference, invitations, delivery reports) | rich text, file transfer |
 | Audio calls | G.722 and G.711, SRTP, ICE, MS-TURN relay over UDP and over TCP 443 (pseudo-TLS), DTMF, mute, hold/resume, early media, call admission control, ALSA/PipeWire devices; ringing, notification sound and music on hold (the approved CommSCraft sound pack, or a WAV file of the user's; `off` and a volume per sound) | – |
-| Meetings | join by address or meeting link, lobby, roster, audio in the A/V MCU (SRTP/SSRTP), mute yourself; as presenter: admit, roles, lock, remove, mute others or the audience | scheduling, video |
-| Telephony | phone numbers with the dial plan (phone-context), calls from gateways with caller number, call back, anonymous callers, early media, call transfer (blind and with consultation), call forwarding and simultaneous ring | team/delegate calls, park, E911, voicemail |
-| Video, screen sharing, Exchange | – | everything (M5–M7) |
+| Meetings | schedule, join by address or meeting link, lobby, roster, audio and video in the A/V MCU (SRTP/SSRTP), mute yourself; as presenter: admit, roles, lock, remove, mute others or the audience | sharing, whiteboard, PowerPoint |
+| Telephony | phone numbers with the dial plan (phone-context), calls from gateways with caller number, call back, anonymous callers, early media, call transfer (blind and with consultation), call forwarding and simultaneous ring, team and delegate calls, call park, emergency calls with location | voicemail |
+| Video, screen sharing | video calls and meeting video (H.264) | screen sharing |
+| Exchange | contact photos, contact list (unified contact store) | calendar state, out-of-office note, conversation history, voicemail |
 
 ## Building and running
 
