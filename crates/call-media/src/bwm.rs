@@ -10,10 +10,12 @@
 //! (check, then commit and updates); the caller only towards a peer without ICE (commit and
 //! updates, §3.1.4.4.2). The ICE caller towards an ICE peer sends nothing.
 //!
-//! Inference (documented in file 23): the reserved amount is the audio stream's bandwidth on the
-//! wire – 20 ms G.722 or G.711 frames (160 octets) plus RTP (12), SRTP tag and MKI (11), UDP (8)
-//! and IPv4 (20) headers, 50 packets/s = 84.4 kbit/s, rounded up to 85 – for minimum and
-//! maximum, send and receive. Without an answer to the check within 3 s the call goes on without
+//! Inference (documented in file 23): the reserved amount of an audio stream is its bandwidth on
+//! the wire – 20 ms G.722 or G.711 frames (160 octets) plus RTP (12), SRTP tag and MKI (11), UDP
+//! (8) and IPv4 (20) headers, 50 packets/s = 84.4 kbit/s, rounded up to 85 – for minimum and
+//! maximum, send and receive. A video stream (each media stream is managed on its own, BW-01)
+//! reserves the payload bit rates of the resolution table (BW-17) for the sizes the client sends
+//! and receives: the minimum of the smallest, the maximum of the largest ([`video_amount`]). Without an answer to the check within 3 s the call goes on without
 //! policy. Commits are repeated at most 120 times (one minute), then given up. At the end of the
 //! call an update with the amount 0 cancels the reservation (§2.2.3).
 //!
@@ -28,6 +30,10 @@ use commscraft_turn_bwm as bwm;
 
 /// The audio stream's bandwidth in kbit/s (see the module documentation).
 pub const AUDIO_KBPS: u32 = 85;
+/// A video stream's bandwidth in kbit/s: the minimum payload bit rate of 320x180 and the maximum
+/// of 640x480 (BW-17), the smallest and the largest size the client sends and receives.
+pub const VIDEO_MIN_KBPS: u32 = 15;
+pub const VIDEO_MAX_KBPS: u32 = 800;
 /// [MS-ICE2BWM] §3.1.2.
 pub const COMMIT_MS: u64 = 500;
 pub const UPDATE_MS: u64 = 19_000;
@@ -35,12 +41,23 @@ pub const UPDATE_MS: u64 = 19_000;
 pub const CHECK_WAIT_MS: u64 = 3_000;
 pub const MAX_COMMITS: u32 = 120;
 
-pub fn amount() -> bwm::Amount {
+/// The reservation of an audio stream.
+pub fn audio_amount() -> bwm::Amount {
     bwm::Amount {
         min_send: AUDIO_KBPS,
         max_send: AUDIO_KBPS,
         min_receive: AUDIO_KBPS,
         max_receive: AUDIO_KBPS,
+    }
+}
+
+/// The reservation of a video stream.
+pub fn video_amount() -> bwm::Amount {
+    bwm::Amount {
+        min_send: VIDEO_MIN_KBPS,
+        max_send: VIDEO_MAX_KBPS,
+        min_receive: VIDEO_MIN_KBPS,
+        max_receive: VIDEO_MAX_KBPS,
     }
 }
 
@@ -50,8 +67,11 @@ pub struct BwmConfig {
     /// SIP Call-ID of the call (for the check, §2.2.13); may be empty.
     pub call_id: String,
     pub profile: bwm::LocationProfile,
-    /// The caller's ICE candidates from the offer: set for the callee, which then checks.
+    /// The caller's ICE candidates from the offer (of this stream's media line): set for the
+    /// callee, which then checks.
     pub peer: Option<sdp::Ice>,
+    /// What this stream reserves ([`audio_amount`], [`video_amount`]).
+    pub amount: bwm::Amount,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

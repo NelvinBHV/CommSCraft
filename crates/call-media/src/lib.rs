@@ -30,7 +30,7 @@ use commscraft_turn as turn;
 use commscraft_turn_bwm as turn_bwm;
 
 mod bwm;
-pub use bwm::BwmConfig;
+pub use bwm::{audio_amount, video_amount, BwmConfig};
 
 const MAX_DATAGRAM: usize = 1500;
 const MAX_WRITE_BUFFER: usize = 64 * 1024;
@@ -210,6 +210,8 @@ pub struct CallMedia {
     remote_direction: sdp::Direction,
     /// Bandwidth management (call admission control), when the server enables it.
     bwm: Option<bwm::Bwm>,
+    /// Video: the send bit rate the policy server reserved, as last passed to the encoder.
+    video_cap: Option<u32>,
     /// Answers to bandwidth requests from the TURN clients: (socket, event).
     bac_events: Vec<(usize, turn::Event)>,
     local_ip: IpAddr,
@@ -356,6 +358,7 @@ impl CallMedia {
             hold_music: false,
             remote_direction: sdp::Direction::SendRecv,
             bwm: None,
+            video_cap: None,
             bac_events: Vec::new(),
             local_ip,
             started: now,
@@ -756,7 +759,8 @@ impl CallMedia {
         let Some(b) = self.bwm.as_ref() else {
             return;
         };
-        let (profile, call_id, phase) = (b.cfg.profile, b.cfg.call_id.clone(), b.phase);
+        let (profile, call_id, phase, amount) =
+            (b.cfg.profile, b.cfg.call_id.clone(), b.phase, b.cfg.amount);
         match phase {
             bwm::Phase::Idle | bwm::Phase::Checking => {
                 let Some(peer) = b.cfg.peer.clone() else {
@@ -815,7 +819,7 @@ impl CallMedia {
                     };
                     let tid = self.bac_on(
                         sock,
-                        |t| turn_bwm::check_attributes(&sites, bwm::amount(), &call_id, profile, t),
+                        |t| turn_bwm::check_attributes(&sites, amount, &call_id, profile, t),
                         now,
                     );
                     if let (Some(tid), Some(b)) = (tid, self.bwm.as_mut()) {
@@ -834,7 +838,7 @@ impl CallMedia {
                 };
                 let tid = self.bac_on(
                     sock,
-                    |t| turn_bwm::commit_attributes(&sites, bwm::amount(), "", profile, t),
+                    |t| turn_bwm::commit_attributes(&sites, amount, "", profile, t),
                     now,
                 );
                 if let Some(b) = self.bwm.as_mut() {
@@ -854,7 +858,7 @@ impl CallMedia {
                 };
                 self.bac_on(
                     sock,
-                    |_| turn_bwm::update_attributes(&id, Some(bwm::amount()), ""),
+                    |_| turn_bwm::update_attributes(&id, Some(amount), ""),
                     now,
                 );
                 if let Some(b) = self.bwm.as_mut() {
@@ -1387,8 +1391,33 @@ impl CallMedia {
                 self.send_from(l, r, &p);
             }
         }
+        self.cap_video_rate(&mut events, now);
         self.flush_tcp();
         events
+    }
+
+    /// Video: the send bit rate the policy server reserved for this stream (commit answer, BW-05)
+    /// is the upper bound of what the encoder is asked for; a new reservation retargets it at
+    /// once (inference: the reserved maximum send bandwidth bounds the stream like a path
+    /// estimate, RT-30).
+    fn cap_video_rate(&mut self, events: &mut Vec<Event>, now: u64) {
+        let (Some(kbps), Some(v)) = (
+            self.bwm.as_ref().and_then(|b| b.reserved_send),
+            self.video.as_ref(),
+        ) else {
+            return;
+        };
+        let cap = kbps.saturating_mul(1000);
+        for e in events.iter_mut() {
+            if let Event::Video(media::VideoEvent::SendRate(bps)) = e {
+                *bps = (*bps).min(cap);
+            }
+        }
+        if self.video_cap != Some(cap) {
+            self.video_cap = Some(cap);
+            let target = v.send_target(now).unwrap_or(cap).min(cap);
+            events.push(Event::Video(media::VideoEvent::SendRate(target)));
+        }
     }
 
     /// One MS-TURN TCP frame: control (0x02) goes to the TURN client, data (0x03) is the stream

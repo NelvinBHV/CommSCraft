@@ -486,6 +486,22 @@ pub fn bandwidth_config(
             federation,
         },
         peer: offer.and_then(|(_, o)| sdp::offer_ice(o)),
+        amount: cm::audio_amount(),
+    })
+}
+
+/// The bandwidth management settings of a call's video stream: those of its audio stream with the
+/// video reservation and, for the callee, the candidates of the offer's video line (each media
+/// stream is managed on its own, [MS-ICE2BWM] §1.3).
+pub fn video_bandwidth_config(
+    audio: Option<&cm::BwmConfig>,
+    offer: Option<&[u8]>,
+) -> Option<cm::BwmConfig> {
+    audio.map(|a| cm::BwmConfig {
+        call_id: a.call_id.clone(),
+        profile: a.profile,
+        peer: offer.and_then(sdp::video::offer_video_ice),
+        amount: cm::video_amount(),
     })
 }
 

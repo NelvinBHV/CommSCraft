@@ -612,3 +612,24 @@ fn direction_intersection() {
     assert_eq!(SendRecv.intersect(Inactive), Inactive);
     assert_eq!(SendOnly.intersect(RecvOnly), Inactive);
 }
+
+/// Function 32: the callee's bandwidth check of the video stream uses the candidates of the
+/// offer's video line, not those of the audio line.
+#[test]
+fn video_line_candidates_of_an_offer() {
+    let mut v = video_local();
+    if let Some(ice) = v.media.ice.as_mut() {
+        for c in &mut ice.candidates {
+            c.port = 40002;
+        }
+    }
+    let offer = video::offer_with_video(&local(), &v, Encryption::Required).unwrap();
+    let audio = offer_ice(offer.as_bytes()).unwrap();
+    let video = video::offer_video_ice(offer.as_bytes()).unwrap();
+    assert_eq!(audio.candidates[0].port, 40000);
+    assert_eq!(video.candidates[0].port, 40002);
+    assert!(
+        video::offer_video_ice(SPEC_OFFER.as_bytes()).is_none(),
+        "no video line"
+    );
+}
