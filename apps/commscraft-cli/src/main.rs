@@ -1405,10 +1405,51 @@ fn abs_file(
     }
 }
 
-/// Where the newest full address book file of a server is kept: the user's cache directory,
-/// one file per host (`$XDG_CACHE_HOME/commscraft/abs/HOST.lsabs`, directory 0700).
-fn abs_cache_path(host: &str) -> Option<PathBuf> {
+/// A cache file name part: letters, digits and `.-_@` only (everything else becomes `_`),
+/// lower case, bounded.
+fn cache_name(v: &str) -> String {
+    v.to_ascii_lowercase()
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || ".-_@".contains(c) {
+                c
+            } else {
+                '_'
+            }
+        })
+        .take(120)
+        .collect()
+}
+
+/// Where the newest full address book file of a service is kept: the user's cache directory,
+/// one directory per signed-in account and one file per service URL
+/// (`$XDG_CACHE_HOME/commscraft/abs/ACCOUNT/HOST_PATH.lsabs`, directories 0700). Issue #124: two
+/// accounts of the same Unix user never share a cached directory. A file of the earlier layout
+/// (one per host, for every account) is removed.
+fn abs_cache_path(account: &str, base: &commscraft_provisioning::ServiceUrl) -> Option<PathBuf> {
     use std::os::unix::fs::DirBuilderExt;
+    let (dir, file) = abs_cache_names(account, base)?;
+    let root = std::env::var_os("XDG_CACHE_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))?
+        .join("commscraft")
+        .join("abs");
+    let _ = std::fs::remove_file(root.join(format!("{}.lsabs", base.host)));
+    let dir = root.join(dir);
+    std::fs::DirBuilder::new()
+        .recursive(true)
+        .mode(0o700)
+        .create(&dir)
+        .ok()?;
+    Some(dir.join(file))
+}
+
+/// The account directory and the file name of [`abs_cache_path`].
+fn abs_cache_names(
+    account: &str,
+    base: &commscraft_provisioning::ServiceUrl,
+) -> Option<(String, String)> {
+    let host = &base.host;
     if host.is_empty()
         || !host
             .chars()
@@ -1416,16 +1457,17 @@ fn abs_cache_path(host: &str) -> Option<PathBuf> {
     {
         return None;
     }
-    let base = std::env::var_os("XDG_CACHE_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))?;
-    let dir = base.join("commscraft").join("abs");
-    std::fs::DirBuilder::new()
-        .recursive(true)
-        .mode(0o700)
-        .create(&dir)
-        .ok()?;
-    Some(dir.join(format!("{host}.lsabs")))
+    let account = cache_name(account.trim_start_matches("sip:"));
+    if !account.contains('@') || account.starts_with('.') {
+        return None;
+    }
+    let path = commscraft_url::parse_https(&base.url)
+        .map(|u| u.path)
+        .unwrap_or_default();
+    Some((
+        account,
+        format!("{}.lsabs", cache_name(&format!("{host}{path}"))),
+    ))
 }
 
 /// Keeps a downloaded full file (compressed, as the server sent it; mode 0600).
@@ -1480,7 +1522,9 @@ fn fetch_address_book(
             continue;
         }
         // The disk cache unless the user turned it off (`--no-address-book-cache`).
-        let cache = use_cache.then(|| abs_cache_path(&base.host)).flatten();
+        let cache = use_cache
+            .then(|| abs_cache_path(engine.aor(), base))
+            .flatten();
         let cached = cache
             .as_deref()
             .and_then(|p| std::fs::read(p).ok())
@@ -1490,6 +1534,9 @@ fn fetch_address_book(
         let oldest = today.saturating_sub(ADDRESS_BOOK_DAYS - 1);
         if let Some(mut book) = cached {
             let from = book.created;
+            // Issue #126: a refused delta leaves the book as it was (`AddressBook::apply`), but
+            // the book is then not reported as current.
+            let mut unusable: Option<String> = None;
             for day in (oldest.max(from + 1)..=today).rev() {
                 let name = format!("D-{from:04X}-{day:04X}.lsabs");
                 match abs_file(engine, tls, base, &name, verbose) {
@@ -1503,6 +1550,7 @@ fn fetch_address_book(
                             Err(e) => {
                                 // A bad delta: fall back to the full file.
                                 eprintln!("* {name} not used: {e}");
+                                unusable = Some(name);
                                 break;
                             }
                         }
@@ -1534,7 +1582,11 @@ fn fetch_address_book(
                 }
             }
             if book.created == from && from >= oldest {
-                return Ok((book, "cache (current)".into()));
+                let source = match unusable {
+                    Some(name) => format!("cache (not updated: {name} not usable)"),
+                    None => "cache (current)".into(),
+                };
+                return Ok((book, source));
             }
         }
         for day in (oldest..=today).rev() {
@@ -1585,6 +1637,7 @@ fn address_book_file_allowed(c: &commscraft_provisioning::ServerConfiguration) -
 /// uses its local copy at once, too): the cached full file of the first usable service. Its
 /// changes since then come with the next fetch.
 fn cached_address_book(
+    account: &str,
     trust: &Trust,
     c: &commscraft_provisioning::ServerConfiguration,
 ) -> Option<commscraft_abs::book::AddressBook> {
@@ -1597,7 +1650,7 @@ fn cached_address_book(
         .into_iter()
         .filter(|b| b.in_user_domain || trust.trusts(&b.host))
         .find_map(|b| {
-            let file = std::fs::read(abs_cache_path(&b.host)?).ok()?;
+            let file = std::fs::read(abs_cache_path(account, b)?).ok()?;
             let raw = decompress(&file).ok()?;
             AddressBook::parse(&raw).ok().filter(|b| b.created <= today)
         })
@@ -2365,7 +2418,7 @@ fn interactive(
                             book_next = None;
                         } else if book_next.is_none() {
                             if book_options.cache && address_book.is_none() {
-                                address_book = cached_address_book(trust, &c);
+                                address_book = cached_address_book(engine.aor(), trust, &c);
                                 if let Some(b) = &address_book {
                                     let d = commscraft_abs::date_from_day_number(b.created);
                                     println!(
@@ -5064,6 +5117,34 @@ mod tests {
             assert_eq!(address_book_file_allowed(&c), allowed);
         }
         assert!(abs_today().is_some_and(|d| d > 0x24E0));
+    }
+
+    /// Issue #124: the address book cache is kept per account and per service URL; names hold
+    /// only safe characters.
+    #[test]
+    fn address_book_cache_names() {
+        let base = |url: &str| commscraft_provisioning::ServiceUrl {
+            url: url.into(),
+            host: "fe.contoso.com".into(),
+            in_user_domain: true,
+        };
+        let abs = base("https://fe.contoso.com:443/abs/handler");
+        let a = abs_cache_names("sip:alice@contoso.com", &abs).unwrap();
+        let b = abs_cache_names("sip:Bob@contoso.com", &abs).unwrap();
+        assert_eq!(a.0, "alice@contoso.com");
+        assert_eq!(b.0, "bob@contoso.com");
+        assert_eq!(a.1, "fe.contoso.com_abs_handler.lsabs");
+        assert_ne!(
+            abs_cache_names(
+                "sip:alice@contoso.com",
+                &base("https://fe.contoso.com/other")
+            ),
+            Some(a.clone())
+        );
+        let odd = abs_cache_names("sip:a/../b@contoso.com", &abs).unwrap();
+        assert_eq!(odd.0, "a_.._b@contoso.com");
+        assert!(abs_cache_names("sip:../x@contoso.com", &abs).is_none());
+        assert!(abs_cache_names("sip:..", &abs).is_none());
     }
 
     /// Function 11: the changes of the list as Exchange operations, with the identifiers behind

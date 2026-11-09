@@ -61,3 +61,10 @@ Source: [MS-ABS] "Address Book File Structure", edition 20250520, 79 pp. Product
 - **Schedule (AB-12, AB-13):** in `interactive` the cached copy is used right after provisioning, without network access. The first fetch follows at a random time within `--address-book-delay` minutes (default 60, 0 = at once, like `GalDownloadInitialDelay`), then every 24 hours; after a failed fetch again in an hour (design). `/addressbook` fetches at once.
 - **Disk cache:** on by default, as the Windows client keeps its copy. Directory 0700, file 0600, one compressed full file per host.
 - **Status:** `tested-offline`, `tested-in-lab` (all three policy values, the schedule and the cache); the answer from the offline book after a failed web search is `source-only`.
+
+## Fixes (2026-11-09, issues #124 – #126)
+- **Cache per account (#124):** `$XDG_CACHE_HOME/commscraft/abs/ACCOUNT/HOST_PATH.lsabs` – one directory per signed-in account, one file per service URL; a file of the earlier layout (one per host) is removed.
+- **Linear delta application (#125):** deleted and known contacts are looked up in hash tables, the changed attributes of a compact delta likewise.
+- **Atomic delta application (#126):** the contact limit is checked before anything changes; a refused delta leaves the book as it was, and the cached book is then reported as "not updated", not as current.
+- **Status:** `tested-offline` (regression tests: a delta at the contact limit, 100 000 deletions and changes), `tested-in-lab` (cache per account).
+
