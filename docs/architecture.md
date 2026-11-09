@@ -1,6 +1,6 @@
 # CommSCraft architecture (planned)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-08 · **Change:** minor (title bar of the video window)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (Exchange web services crate)
 
 Rules for working in the code are in
 [`AGENTS.md`](../AGENTS.md).
@@ -49,6 +49,7 @@ Rules for working in the code are in
 | `commscraft-presence` | L3 | Enhanced presence: publish own userState, batch presence queries (multipart/RLMI/categories), roaming contact list | PR-05, PR-10…PR-17, PR-30…PR-36, SIP-01/02/04/07, K-PR-1 |
 | `commscraft-ocer` | L3 | Client error reporting: `ms-diagnostics` headers, explanations of handled error identifiers, `reportError` document | ER-01 … ER-07 |
 | `commscraft-dlx` | L3 | Address book search (MS-DLX SearchAbEntry): SOAP request, bounded answer parser with SIP URI check | DL-01…DL-10, K-DL-3, OB-44 |
+| `commscraft-ews` | L3 | Exchange web services of the client: Autodiscover GetUserSettings (MS-OXWSADISC) request and bounded answer with redirects, GetUserPhoto URL and answer (MS-OXWSPHOTO) | EX-06, EX-08, K-EX-1 |
 | `commscraft-conf` | L3 | Group IM and meetings: C3P addConference/addUser (join, dial-out), scheduling (`schedule`: add/get/list/modify/delete), roster (RFC 4575 merge, bounded), IMDN, Ms-Sender, invitations | CB-10…CB-37, PV-01…PV-14, CI-01…CI-14, K-CI-3, K-CA-3 |
 | `commscraft-park` | L3 | Call park: park request, park response, unpark notification (MS-SIPAPP) | CK-01…CK-07 |
 | `commscraft-video-ffmpeg` | L4 (adapter) | Video through the system's FFmpeg: camera capture over V4L2, H.264 encoding (VA-API on the GPU with the only unsafe module of the project, otherwise libx264; constrained baseline, IDR on request) and decoding, I420 pictures | PL-03 |

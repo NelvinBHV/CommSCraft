@@ -1231,7 +1231,6 @@ fn dlx_call(
     body: &str,
     verbose: bool,
 ) -> Result<(u16, String), String> {
-    use commscraft_sipae::base64;
     let c = services.ok_or("no provisioning yet (address book service unknown)")?;
     if c.dlx_enabled == Some(false) {
         return Err("the address book web service is disabled by the server".into());
@@ -1263,45 +1262,64 @@ fn dlx_call(
         if verbose {
             println!("  POST {} ({action})", s.url);
         }
-        let negotiate =
-            commscraft_ntlm::messages::negotiate_message(commscraft_ntlm::messages::HTTP_NEGOTIATE);
-        let mut auth_err: Option<String> = None;
-        let result = commscraft_net::http::post_with_auth(
+        match ntlm_post(
+            engine,
             tls,
             &url,
             &[
                 ("Content-Type", commscraft_dlx::CONTENT_TYPE),
                 ("SOAPAction", action),
             ],
-            body.as_bytes(),
-            &user_agent(),
-            Duration::from_secs(15),
-            &mut |challenge, cert| match challenge {
-                None => Ok(format!("NTLM {}", base64::encode(&negotiate))),
-                Some(ch) => {
-                    let token = ch
-                        .strip_prefix("NTLM ")
-                        .and_then(|b| base64::decode(b.trim()).ok());
-                    let answer = token
-                        .ok_or_else(|| "no NTLM challenge".to_string())
-                        .and_then(|t| engine.http_ntlm(&negotiate, &t, now(), cert));
-                    match answer {
-                        Ok(a) => Ok(format!("NTLM {}", base64::encode(&a))),
-                        Err(e) => {
-                            auth_err = Some(e);
-                            Err(commscraft_net::NetError::Io(std::io::Error::other("NTLM")))
-                        }
-                    }
-                }
-            },
-        );
-        match result {
+            body,
+        ) {
             Ok(r) if r.status == 401 => return Err("not authorized (401)".into()),
             Ok(r) => return Ok((r.status, String::from_utf8_lossy(&r.body).to_string())),
-            Err(e) => last = auth_err.take().unwrap_or_else(|| e.to_string()),
+            Err(e) => last = e,
         }
     }
     Err(last)
+}
+
+/// A POST with NTLM per MS-NTHT on one connection: NEGOTIATE in the first request,
+/// AUTHENTICATE after the 401 with the CHALLENGE (as for the address book search).
+fn ntlm_post(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    url: &commscraft_url::HttpsUrl,
+    headers: &[(&str, &str)],
+    body: &str,
+) -> Result<commscraft_net::http::HttpResponse, String> {
+    use commscraft_sipae::base64;
+    let negotiate =
+        commscraft_ntlm::messages::negotiate_message(commscraft_ntlm::messages::HTTP_NEGOTIATE);
+    let mut auth_err: Option<String> = None;
+    commscraft_net::http::post_with_auth(
+        tls,
+        url,
+        headers,
+        body.as_bytes(),
+        &user_agent(),
+        Duration::from_secs(15),
+        &mut |challenge, cert| match challenge {
+            None => Ok(format!("NTLM {}", base64::encode(&negotiate))),
+            Some(ch) => {
+                let token = ch
+                    .strip_prefix("NTLM ")
+                    .and_then(|b| base64::decode(b.trim()).ok());
+                let answer = token
+                    .ok_or_else(|| "no NTLM challenge".to_string())
+                    .and_then(|t| engine.http_ntlm(&negotiate, &t, now(), cert));
+                match answer {
+                    Ok(a) => Ok(format!("NTLM {}", base64::encode(&a))),
+                    Err(e) => {
+                        auth_err = Some(e);
+                        Err(commscraft_net::NetError::Io(std::io::Error::other("NTLM")))
+                    }
+                }
+            }
+        },
+    )
+    .map_err(|e| auth_err.take().unwrap_or_else(|| e.to_string()))
 }
 
 /// Address book search (MS-DLX SearchAbEntry, OB-44).
@@ -1627,6 +1645,25 @@ fn ntlm_get(
     timeout: Duration,
     limit: usize,
 ) -> Result<commscraft_net::http::HttpResponse, String> {
+    ntlm_get_with(
+        engine,
+        tls,
+        url,
+        &[("Accept", "application/octet-stream")],
+        timeout,
+        limit,
+    )
+}
+
+/// [`ntlm_get`] with the request headers given.
+fn ntlm_get_with(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    url: &commscraft_url::HttpsUrl,
+    headers: &[(&str, &str)],
+    timeout: Duration,
+    limit: usize,
+) -> Result<commscraft_net::http::HttpResponse, String> {
     use commscraft_sipae::base64;
     let negotiate =
         commscraft_ntlm::messages::negotiate_message(commscraft_ntlm::messages::HTTP_NEGOTIATE);
@@ -1634,7 +1671,7 @@ fn ntlm_get(
     commscraft_net::http::get_with_auth(
         tls,
         url,
-        &[("Accept", "application/octet-stream")],
+        headers,
         &user_agent(),
         timeout,
         limit,
@@ -1674,6 +1711,212 @@ fn photo_kind(b: &[u8]) -> Option<&'static str> {
     }
 }
 
+/// Most Autodiscover redirects followed (design).
+const EWS_MAX_REDIRECTS: usize = 3;
+
+/// The user's Exchange web services (EX-08): Autodiscover GetUserSettings at the endpoints of
+/// the user's own mail domain ([MS-OXWSADISC] §1.5, pp. 11–12), with NTLM like the other web
+/// services (inference, O-EX-5/OB-48: Autodiscover names the auth package; the server offers
+/// Negotiate and NTLM). Only hosts in the user's SIP domain or a trusted domain get
+/// credentials; redirects only to HTTPS and at most [`EWS_MAX_REDIRECTS`] times. Returns the
+/// settings of the user.
+fn ews_settings(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    verbose: bool,
+) -> Result<commscraft_ews::UserSettings, String> {
+    use commscraft_ews::{UserSettings as U, GET_USER_SETTINGS_ACTION, SETTINGS};
+    let mut mailbox = engine.aor().trim_start_matches("sip:").to_ascii_lowercase();
+    let user_domain = mailbox
+        .split_once('@')
+        .map(|(_, d)| d.to_string())
+        .ok_or("no mail domain")?;
+    let mut urls: Vec<String> = commscraft_ews::autodiscover_urls(&user_domain)
+        .ok_or("unusable mail domain")?
+        .into();
+    let mut last = String::from("no Exchange Autodiscover endpoint answered");
+    let mut redirects = 0;
+    while let Some(u) = (!urls.is_empty()).then(|| urls.remove(0)) {
+        let Some(url) = commscraft_url::parse_https(&u) else {
+            continue;
+        };
+        if !commscraft_url::in_domain(&url.host, &user_domain) && !trust.trusts(&url.host) {
+            last = format!(
+                "{} is outside your SIP domain; add --trust-domain to use it",
+                url.host
+            );
+            continue;
+        }
+        let body = commscraft_ews::user_settings_request(&mailbox, &SETTINGS, &u)
+            .map_err(|e| format!("{e:?}"))?;
+        if verbose {
+            println!("  POST {u} (GetUserSettings)");
+        }
+        let r = match ntlm_post(
+            engine,
+            tls,
+            &url,
+            &[
+                ("Content-Type", commscraft_ews::CONTENT_TYPE),
+                ("SOAPAction", GET_USER_SETTINGS_ACTION),
+            ],
+            &body,
+        ) {
+            Ok(r) => r,
+            Err(e) => {
+                last = e;
+                continue;
+            }
+        };
+        if r.status == 401 {
+            return Err("not authorized at Exchange (401)".into());
+        }
+        let text = String::from_utf8_lossy(&r.body);
+        match commscraft_ews::parse_user_settings(&text) {
+            Ok(s @ U::Settings(_)) => return Ok(s),
+            Ok(U::RedirectAddress(a)) if redirects < EWS_MAX_REDIRECTS => {
+                redirects += 1;
+                mailbox = a;
+                urls.insert(0, u);
+            }
+            Ok(U::RedirectUrl(next)) if redirects < EWS_MAX_REDIRECTS => {
+                redirects += 1;
+                urls.insert(0, next);
+            }
+            Ok(_) => return Err("too many Autodiscover redirects".into()),
+            Err(e) if r.status == 200 => last = format!("{e:?}"),
+            Err(_) => last = format!("HTTP {}", r.status),
+        }
+    }
+    Err(last)
+}
+
+/// A contact's photo from Exchange (EX-06, [MS-OXWSPHOTO] §3.1.5.1.1, p. 9): GetUserPhoto at
+/// the photos URL, else the EWS URL of the user's settings, with NTLM. The photo is kept under
+/// `$XDG_CACHE_HOME/commscraft/photos/exchange-<address>.<ext>` with its ETag next to it; the
+/// ETag goes back in If-None-Match, and a 304 keeps the cached photo (§3.1.5, pp. 8–9).
+fn exchange_photo(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    settings: &commscraft_ews::UserSettings,
+    email: &str,
+    limit: usize,
+    verbose: bool,
+) -> Result<Option<PathBuf>, String> {
+    use commscraft_ews::PhotoAnswer as A;
+    use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
+    let base = settings
+        .https_url(&[
+            "InternalPhotosUrl",
+            "ExternalPhotosUrl",
+            "InternalEwsUrl",
+            "ExternalEwsUrl",
+        ])
+        .ok_or("Exchange named no web services URL")?;
+    let full = commscraft_ews::photo_url(base, email, commscraft_ews::PhotoSize::Hr240)
+        .map_err(|e| format!("{e:?}"))?;
+    let url = commscraft_url::parse_https(&full).ok_or("unusable photo URL")?;
+    let own = engine
+        .aor()
+        .rsplit('@')
+        .next()
+        .unwrap_or_default()
+        .to_string();
+    if !commscraft_url::in_domain(&url.host, &own) && !trust.trusts(&url.host) {
+        return Err(format!(
+            "{} is outside your SIP domain; add --trust-domain to use it",
+            url.host
+        ));
+    }
+    let dir = std::env::var_os("XDG_CACHE_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))
+        .ok_or("no HOME")?
+        .join("commscraft")
+        .join("photos");
+    // The checked address as file name: letters, digits and `.-_@` only.
+    let key: String = email
+        .to_ascii_lowercase()
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || ".-_@".contains(c) {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let etag_file = dir.join(format!("exchange-{key}.etag"));
+    let cached = ["jpg", "png"]
+        .iter()
+        .map(|ext| dir.join(format!("exchange-{key}.{ext}")))
+        .find(|p| p.is_file());
+    let etag = cached
+        .as_ref()
+        .and_then(|_| std::fs::read_to_string(&etag_file).ok());
+    let mut headers = vec![("Accept", "image/*")];
+    if let Some(t) = etag.as_deref() {
+        headers.push(("If-None-Match", t.trim()));
+    }
+    if verbose {
+        println!(
+            "  GET {full}{}",
+            if etag.is_some() {
+                " (If-None-Match)"
+            } else {
+                ""
+            }
+        );
+    }
+    let r = ntlm_get_with(engine, tls, &url, &headers, Duration::from_secs(15), limit)?;
+    let header = |n: &str| r.header(n).ok().flatten();
+    if verbose {
+        println!(
+            "  HTTP {} ({} bytes, ETag {})",
+            r.status,
+            r.body.len(),
+            header("ETag").map_or("none".to_string(), term::clean)
+        );
+    }
+    match commscraft_ews::photo_answer(r.status, header("Content-Type"), header("ETag")) {
+        A::Image { etag, .. } => {
+            let ext = photo_kind(&r.body).ok_or("the photo is not a JPEG or PNG image")?;
+            std::fs::DirBuilder::new()
+                .recursive(true)
+                .mode(0o700)
+                .create(&dir)
+                .map_err(|e| e.to_string())?;
+            let write = |path: &std::path::Path, data: &[u8]| {
+                std::fs::OpenOptions::new()
+                    .write(true)
+                    .create(true)
+                    .truncate(true)
+                    .mode(0o600)
+                    .open(path)
+                    .and_then(|mut f| f.write_all(data))
+                    .map_err(|e| e.to_string())
+            };
+            let path = dir.join(format!("exchange-{key}.{ext}"));
+            write(&path, &r.body)?;
+            match etag {
+                Some(t) => write(&etag_file, t.as_bytes())?,
+                None => {
+                    let _ = std::fs::remove_file(&etag_file);
+                }
+            }
+            Ok(Some(path))
+        }
+        A::Unchanged => cached
+            .map(Some)
+            .ok_or_else(|| "304 without a cached photo".to_string()),
+        A::NoPhoto => Ok(None),
+        A::Unauthorized => Err("not authorized at Exchange (401)".into()),
+        A::Failed(s) => Err(format!("HTTP {s}")),
+    }
+}
+
 /// A contact's photo (function 15): the address book search names the file (DL-06:
 /// PhotoRelPath, PhotoHash, PhotoSize) relative to the address book folder ([MS-ABS] §1.3), so it
 /// is fetched from the provisioned address book base URL. The photo policy of endpointConfiguration
@@ -1702,10 +1945,29 @@ fn fetch_photo(
                 .is_some_and(|s| s.eq_ignore_ascii_case(&uri))
         })
         .ok_or("no such user in the address book")?;
-    let photo = entry.photo.ok_or("this user has no photo")?;
     let limit = c.max_photo_kb.map_or(PHOTO_MAX, |kb| {
         (kb as usize).saturating_mul(1024).min(PHOTO_MAX)
     });
+    // RG-52: AllPhotos allows photos beyond the directory – first the Exchange photo
+    // (EX-06), then the directory photo.
+    if c.photo_usage == Some(commscraft_provisioning::PhotoUsage::AllPhotos) {
+        let email = entry
+            .mail
+            .clone()
+            .unwrap_or_else(|| uri.trim_start_matches("sip:").to_string());
+        let from_exchange = ews_settings(engine, tls, trust, verbose)
+            .and_then(|s| exchange_photo(engine, tls, trust, &s, &email, limit, verbose));
+        match from_exchange {
+            Ok(Some(path)) => return Ok(path),
+            Ok(None) => {
+                if verbose {
+                    println!("  Exchange has no photo of {email}");
+                }
+            }
+            Err(e) => println!("* no photo from Exchange ({e}) – trying the directory"),
+        }
+    }
+    let photo = entry.photo.ok_or("this user has no photo")?;
     if photo.size.is_some_and(|n| n as usize > limit) {
         return Err(format!(
             "the photo is larger than the {limit} bytes allowed"

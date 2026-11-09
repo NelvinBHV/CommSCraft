@@ -713,6 +713,11 @@ fn expires_of(m: &Message) -> Option<u64> {
 }
 
 impl<R: Random> Engine<R> {
+    /// The user's own address (AOR, `sip:user@domain`).
+    pub fn aor(&self) -> &str {
+        &self.cfg.aor
+    }
+
     pub fn new(cfg: Config, reg: Registrar<R>) -> Self {
         let gruu = cfg.aor.clone();
         Self {
