@@ -679,11 +679,15 @@ impl Depacketizer {
             .as_ref()
             .is_some_and(|c| c.timestamp != p.timestamp)
         {
-            // A new access unit before the marker: the previous one is incomplete.
+            // A new access unit before the marker. [RFC6184] §5.1: the marker bit is only an
+            // early indication – a decoder "MUST NOT rely on this property" – so an access unit
+            // without gaps, without an open fragment and with a slice ends here as well (K-PL-1:
+            // the Windows sharer of a screen sends its key frames without the marker,
+            // `tested-in-lab`). The sequence number of the next packet says nothing: FEC packets
+            // of the same stream (PL-06) lie in between.
             if let Some(c) = self.cur.take() {
-                out.push(Output::Lost {
-                    timestamp: c.timestamp,
-                });
+                let has_slice = c.nals.iter().any(|n| nal_type(n).is_some_and(is_vcl));
+                out.push(Self::finish(c, has_slice));
             }
         }
         let fresh = self.cur.is_none();
@@ -717,27 +721,32 @@ impl Depacketizer {
         }
         if p.marker {
             if let Some(c) = self.cur.take() {
-                let complete = c.ok && c.fu.is_none() && !c.nals.is_empty();
-                if complete {
-                    let mut data = Vec::with_capacity(c.size + 4 * c.nals.len());
-                    // Prefix NAL units are for the MCU; an AVC decoder discards them anyway.
-                    for n in c.nals.iter().filter(|n| nal_type(n) != Some(NAL_PREFIX)) {
-                        data.extend_from_slice(&[0, 0, 0, 1]);
-                        data.extend_from_slice(n);
-                    }
-                    out.push(Output::AccessUnit {
-                        timestamp: c.timestamp,
-                        data,
-                        idr: c.idr,
-                    });
-                } else {
-                    out.push(Output::Lost {
-                        timestamp: c.timestamp,
-                    });
-                }
+                out.push(Self::finish(c, true));
             }
         }
         out
+    }
+
+    /// The access unit of `c`, or its loss: complete means no packet missing, no fragment open,
+    /// at least one NAL unit, and `usable` (the caller's further condition).
+    fn finish(c: Pending, usable: bool) -> Output {
+        let complete = usable && c.ok && c.fu.is_none() && !c.nals.is_empty();
+        if !complete {
+            return Output::Lost {
+                timestamp: c.timestamp,
+            };
+        }
+        let mut data = Vec::with_capacity(c.size + 4 * c.nals.len());
+        // Prefix NAL units are for the MCU; an AVC decoder discards them anyway.
+        for n in c.nals.iter().filter(|n| nal_type(n) != Some(NAL_PREFIX)) {
+            data.extend_from_slice(&[0, 0, 0, 1]);
+            data.extend_from_slice(n);
+        }
+        Output::AccessUnit {
+            timestamp: c.timestamp,
+            data,
+            idr: c.idr,
+        }
     }
 
     fn take_payload(&mut self, payload: &[u8]) -> Result<(), ()> {

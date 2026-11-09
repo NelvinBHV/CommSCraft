@@ -2,7 +2,7 @@
 
 **Stage: M1 and M5 done** · M0 done · M2, M3 built · M1, M4 and M5 closed · next M7, then M6 · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (response group agent, web tickets)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (viewing a screen shared 1:1)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,11 +16,11 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **26** tested-offline as a whole, **15** in parts, **5** not started, 6 not planned/needs captures; **38** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Implementation status of the 52 functions | **26** tested-offline as a whole, **16** in parts, **4** not started, 6 not planned/needs captures; **39** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **45 crates + 1 app** (`commscraft-cli`), **554 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **45 crates + 1 app** (`commscraft-cli`), **557 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-09 | M6 started: viewing a screen shared 1:1 (`/view N`) – video-based screen sharing with H.264 UC; key frames without the RTP marker bit are taken. |
 | 2026-11-09 | Response group agent (`/rgs`): agent groups, signing in and out, the response groups served – the first web service used with a web ticket (MS-OCAUTHWS). |
 | 2026-11-09 | Voicemail: `/voicemail` lists the voice messages in Exchange, `/voicemail call` calls the own voicemail without PIN prompt; Exchange UM's play-on-phone call is recognised. |
 | 2026-11-09 | Conversation history in Exchange: finished IM conversations are saved in the Conversation History folder (`--no-history` to switch off; the server's archiving policy wins). |

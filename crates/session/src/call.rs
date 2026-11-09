@@ -157,6 +157,22 @@ pub(crate) fn audio_sdp(m: &Message) -> Option<Vec<u8>> {
 
 /// Like [`audio_sdp`], with the part's Content-ID (PS-09) if it is a safe header value.
 pub(crate) fn audio_sdp_part(m: &Message) -> Option<(Vec<u8>, Option<String>)> {
+    let has_audio = |b: &[u8]| {
+        sdp::parse(b)
+            .ok()
+            .is_some_and(|s| s.media.iter().any(|x| x.kind == "audio"))
+    };
+    sdp_part(m, &has_audio)
+}
+
+/// The SDP of an INVITE that offers video-based screen sharing (function 43, CS-03).
+pub(crate) fn screen_sdp_part(m: &Message) -> Option<(Vec<u8>, Option<String>)> {
+    sdp_part(m, &sdp::screen::offered)
+}
+
+/// The (last, i.e. preferred) SDP part of an INVITE body that `wanted` accepts, with its
+/// Content-ID.
+fn sdp_part(m: &Message, wanted: &dyn Fn(&[u8]) -> bool) -> Option<(Vec<u8>, Option<String>)> {
     // The header value is the Content-ID in angle brackets (MS-OCPSTN §2.2.7 example; RFC 2045
     // §7); the ID itself must be printable without brackets or white space.
     let safe = |id: &Option<String>| {
@@ -177,11 +193,7 @@ pub(crate) fn audio_sdp_part(m: &Message) -> Option<(Vec<u8>, Option<String>)> {
     };
     let ct = m.single("Content-Type").ok().flatten()?.to_string();
     let lower = ct.to_ascii_lowercase();
-    let has_audio = |b: &[u8]| {
-        sdp::parse(b)
-            .ok()
-            .is_some_and(|s| s.media.iter().any(|x| x.kind == "audio"))
-    };
+    let has_audio = wanted;
     if lower.starts_with("application/sdp") {
         return has_audio(&m.body).then(|| (m.body.clone(), None));
     }
@@ -945,11 +957,13 @@ impl<R: Random> Engine<R> {
         self.send_plain(r, now, out);
     }
 
-    /// An incoming INVITE with an audio offer: 180 Ringing, report it, wait for the user.
+    /// An incoming INVITE with an audio offer – or, with `screen`, a screen to view (function
+    /// 43) –: 180 Ringing, report it, wait for the user.
     pub(crate) fn on_incoming_call(
         &mut self,
         req: &Message,
         offer: Vec<u8>,
+        screen: bool,
         now: u64,
         out: &mut Vec<Output>,
     ) {
@@ -969,7 +983,12 @@ impl<R: Random> Engine<R> {
             self.send_plain(r, now, out);
             return;
         }
-        let content_id = audio_sdp_part(req).and_then(|(_, id)| id);
+        let content_id = if screen {
+            screen_sdp_part(req)
+        } else {
+            audio_sdp_part(req)
+        }
+        .and_then(|(_, id)| id);
         // RFC 3891 §3: Replaces must name one of our established calls, else 481.
         let Ok(replaces) = self.replaced_call(req) else {
             let r = response_to(req, 481, "Call/Transaction Does Not Exist");
@@ -1021,7 +1040,126 @@ impl<R: Random> Engine<R> {
                 video: None,
             },
         );
-        Self::call_event(out, Event::IncomingCall { call: id, from });
+        if screen {
+            self.screen_calls.insert(id);
+            Self::call_event(out, Event::IncomingScreenShare { call: id, from });
+        } else {
+            Self::call_event(out, Event::IncomingCall { call: id, from });
+        }
+    }
+
+    /// `AcceptScreenShare` (function 43): answer the sharer's offer as viewer – the screen video
+    /// stream receive-only, the rest rejected (`sdp::screen`).
+    pub(crate) fn accept_screen(
+        &mut self,
+        id: CallId,
+        video: sdp::video::VideoLocal,
+        policy: sdp::Encryption,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let Some(c) = self.calls.get(&id) else { return };
+        if !matches!(c.state, CallState::Ringing { .. }) || !self.screen_calls.contains(&id) {
+            return;
+        }
+        let invite = c.invite.clone();
+        let content_id = c.content_id.clone();
+        let fresh = video
+            .media
+            .key
+            .clone()
+            .unwrap_or_else(|| sdp::Key::new(0, [0; 30]));
+        let answered = if policy != sdp::Encryption::Off && video.media.key.is_none() {
+            Err(sdp::Error::Crypto("no media key"))
+        } else {
+            sdp::screen::answer(&c.offer, &video, fresh, policy)
+        };
+        match answered {
+            Ok((body, nv)) => {
+                let mut ok = response_to(&invite, 200, "OK");
+                for rr in invite.header_values("Record-Route") {
+                    ok.push_header("Record-Route", rr);
+                }
+                ok.push_header("Contact", &format!("<{}>", self.gruu));
+                if let Some(cid) = content_id {
+                    ok.push_header("ms-accepted-content-id", &cid);
+                }
+                ok.push_header("Content-Type", "application/sdp");
+                ok.body = body.into_bytes();
+                self.send_plain(ok, now, out);
+                let mut kept = video;
+                kept.media.direction = sdp::Direction::RecvOnly;
+                if let (Some(k), Some(tag)) = (
+                    kept.media.key.as_mut(),
+                    nv.remote_key.as_ref().map(|r| r.tag),
+                ) {
+                    k.tag = tag;
+                }
+                if let Some(c) = self.calls.get_mut(&id) {
+                    c.state = CallState::Active;
+                    c.policy = policy;
+                    c.video = Some(kept);
+                }
+                Self::call_event(
+                    out,
+                    Event::CallVideo {
+                        call: id,
+                        video: Box::new(nv),
+                    },
+                );
+            }
+            Err(e) => {
+                self.calls.remove(&id);
+                self.screen_calls.remove(&id);
+                self.answer_call_request(&invite, 488, "Not Acceptable Here", now, out);
+                out.push(Output::Event(Event::Notice(format!(
+                    "call {id}: shared screen not viewable ({e:?})"
+                ))));
+                Self::call_event(
+                    out,
+                    Event::CallEnded {
+                        call: id,
+                        status: 488,
+                    },
+                );
+            }
+        }
+    }
+
+    /// A re-INVITE of the sharer (final offer after ICE, MS-ICE2 §3.1.4.8.1): the same answer
+    /// with our video stream.
+    fn on_screen_reinvite(&mut self, id: CallId, req: &Message, now: u64, out: &mut Vec<Output>) {
+        let Some(c) = self.calls.get(&id) else { return };
+        let (Some(video), Some((offer, _))) = (c.video.clone(), screen_sdp_part(req)) else {
+            let r = response_to(req, 488, "Not Acceptable Here");
+            self.send_plain(r, now, out);
+            return;
+        };
+        let key = video
+            .media
+            .key
+            .clone()
+            .unwrap_or_else(|| sdp::Key::new(0, [0; 30]));
+        match sdp::screen::answer(&offer, &video, key, c.policy) {
+            Ok((body, nv)) if c.policy == sdp::Encryption::Off || nv.remote_key.is_some() => {
+                let mut ok = response_to(req, 200, "OK");
+                ok.push_header("Contact", &format!("<{}>", self.gruu));
+                ok.push_header("Content-Type", "application/sdp");
+                ok.body = body.into_bytes();
+                self.send_plain(ok, now, out);
+                Self::call_event(
+                    out,
+                    Event::CallVideo {
+                        call: id,
+                        video: Box::new(nv),
+                    },
+                );
+            }
+            _ => {
+                let r = response_to(req, 488, "Not Acceptable Here");
+                self.send_plain(r, now, out);
+            }
+        }
     }
 
     /// `AcceptCall`: answer the offer with our parameters (200 OK with SDP).
@@ -1181,6 +1319,9 @@ impl<R: Random> Engine<R> {
                         status: 0,
                     },
                 );
+            }
+            "INVITE" if self.screen_calls.contains(&id) => {
+                self.on_screen_reinvite(id, req, now, out)
             }
             "INVITE" => {
                 let Some(c) = self.calls.get(&id) else { return };

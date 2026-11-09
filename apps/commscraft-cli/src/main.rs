@@ -64,7 +64,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
-          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /view [N] (view a shared screen)  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /meeting ID  /cancelmeeting ID [static]
@@ -2510,6 +2510,8 @@ fn interactive(
     let mut video_of_call: BTreeMap<u32, u32> = BTreeMap::new();
     let mut ready_audio: BTreeMap<u32, Box<commscraft_sdp::Local>> = BTreeMap::new();
     let mut ready_video: BTreeMap<u32, Box<commscraft_sdp::video::VideoLocal>> = BTreeMap::new();
+    // Function 43: video streams prepared for viewing a shared screen, by call.
+    let mut pending_screen: BTreeMap<u32, u32> = BTreeMap::new();
     let camera = std::env::var("COMMSCRAFT_CAMERA").unwrap_or_else(|_| "/dev/video0".into());
     // Ringing, notification sound and music on hold (issues #82–#84).
     let mut meeting_calls: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
@@ -2754,6 +2756,13 @@ fn interactive(
                                 controlling: outgoing.contains(&call),
                             });
                         }
+                    }
+                    E::IncomingScreenShare { call, from } => {
+                        cues.start_ring(call);
+                        println!(
+                            "* call {call}: {from} shares their screen – /view {call} or /hangup {call}"
+                        );
+                        current_call = Some(call);
                     }
                     E::IncomingCall { call, from } => {
                         cues.start_ring(call);
@@ -3421,9 +3430,23 @@ fn interactive(
         // Video streams: ready, selected, notices (function 28).
         while let Ok(v) = video_rx.try_recv() {
             match v {
-                video_call::FromVideo::Ready(vid, local) => {
-                    ready_video.insert(vid, local);
-                }
+                video_call::FromVideo::Ready(vid, local) => match pending_screen.remove(&vid) {
+                    Some(call) => {
+                        let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
+                        video_of_call.insert(call, vid);
+                        outputs.extend(engine.command(
+                            C::AcceptScreenShare {
+                                call,
+                                video: local,
+                                policy,
+                            },
+                            now(),
+                        ));
+                    }
+                    None => {
+                        ready_video.insert(vid, local);
+                    }
+                },
                 video_call::FromVideo::Selected(vid, local) => {
                     if let Some((&call, _)) = video_of_call.iter().find(|(_, &v)| v == vid) {
                         outputs
@@ -3907,6 +3930,33 @@ fn interactive(
                     println!("* preparing the call (gathering media addresses) …");
                     None
                 }
+                "/view" => match arg.parse::<u32>().ok().or(current_call) {
+                    // Function 43: view a shared screen (receive-only video stream, no camera).
+                    Some(call) => {
+                        cues.stop_ring(call);
+                        let relay = engine.media_relay().and_then(calls::relay_from);
+                        let vid = next_media;
+                        next_media = next_media.wrapping_add(1).max(1);
+                        video_handles.insert(
+                            vid,
+                            video_call::spawn(
+                                vid,
+                                local_ip,
+                                relay,
+                                None,
+                                String::new(),
+                                video_tx.clone(),
+                            ),
+                        );
+                        pending_screen.insert(vid, call);
+                        println!("* preparing to view the shared screen …");
+                        None
+                    }
+                    None => {
+                        println!("* /view N – no shared screen offered");
+                        None
+                    }
+                },
                 "/answer" | "/answervideo" => match arg.parse::<u32>().ok().or(current_call) {
                     Some(call) => {
                         cues.stop_ring(call);

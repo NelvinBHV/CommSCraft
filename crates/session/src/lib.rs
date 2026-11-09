@@ -293,6 +293,12 @@ pub enum Command {
         local: Box<sdp::Local>,
         policy: sdp::Encryption,
     },
+    /// Function 43: view a shared screen (video-based screen sharing, receive only).
+    AcceptScreenShare {
+        call: CallId,
+        video: Box<sdp::video::VideoLocal>,
+        policy: sdp::Encryption,
+    },
     /// Final offer with the selected candidates, or hold/resume (re-INVITE).
     UpdateCall {
         call: CallId,
@@ -470,6 +476,12 @@ pub enum Event {
         call: CallId,
     },
     IncomingCall {
+        call: CallId,
+        from: String,
+    },
+    /// Someone shares their screen with us (function 43): view it with
+    /// [`Command::AcceptScreenShare`] or decline with `Hangup`.
+    IncomingScreenShare {
         call: CallId,
         from: String,
     },
@@ -661,6 +673,8 @@ pub struct Engine<R: Random> {
     /// Function 16: what the server has of the calendar publications, and their versions.
     calendar: pres::calendar::Calendar,
     calendar_versions: [u32; pres::calendar::SLOTS],
+    /// Function 43: calls that bring a shared screen to view.
+    screen_calls: std::collections::BTreeSet<CallId>,
     /// The routing rules the user published last (restored after an emergency call).
     routing_rules: pres::Forwarding,
     /// The rules above were published by this session (only then they are restored).
@@ -771,6 +785,7 @@ impl<R: Random> Engine<R> {
             conflict_retries: [0; 6],
             calendar: pres::calendar::Calendar::default(),
             calendar_versions: [0; pres::calendar::SLOTS],
+            screen_calls: std::collections::BTreeSet::new(),
             routing_rules: pres::Forwarding::default(),
             routing_known: false,
             location_policy: None,
@@ -1643,8 +1658,12 @@ impl<R: Random> Engine<R> {
             self.on_invitation(req, now, out);
             return;
         }
+        if let Some((offer, _)) = call::screen_sdp_part(req) {
+            self.on_incoming_call(req, offer, true, now, out);
+            return;
+        }
         if let Some(offer) = call::audio_sdp(req) {
-            self.on_incoming_call(req, offer, now, out);
+            self.on_incoming_call(req, offer, false, now, out);
             return;
         }
         let is_sdp = header_token(req, "Content-Type").as_deref() == Some("application/sdp");
@@ -1913,6 +1932,11 @@ impl<R: Random> Engine<R> {
             Command::ConferenceMute { conversation, mute } => {
                 self.conference_mute(conversation, mute, now, &mut out)
             }
+            Command::AcceptScreenShare {
+                call,
+                video,
+                policy,
+            } => self.accept_screen(call, *video, policy, now, &mut out),
             Command::Call { to, local, policy } => {
                 self.start_call(&to, *local, policy, now, &mut out)
             }

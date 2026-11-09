@@ -148,6 +148,21 @@ pub fn video_section(
     pt: u8,
     fec: Option<u8>,
 ) -> Result<String, Error> {
+    labelled_video_section(v, proto, pt, fec, MAIN_VIDEO_LABEL)
+}
+
+/// The label of the main video stream (SD-62).
+pub const MAIN_VIDEO_LABEL: &str = "main-video";
+
+/// [`video_section`] with another `a=label` (video-based screen sharing:
+/// `applicationsharing-video`, [MS-CONFAS] §3.2.5.1.2).
+pub(crate) fn labelled_video_section(
+    v: &VideoLocal,
+    proto: &str,
+    pt: u8,
+    fec: Option<u8>,
+    label: &str,
+) -> Result<String, Error> {
     if !valid_range(v.ssrc_range) {
         return Err(Error::Syntax("SSRC range"));
     }
@@ -163,7 +178,7 @@ pub fn video_section(
     ));
     // SD-63 / §3.1.5.30.3: feedback needs the reduced-size attribute too.
     s.push_str("a=rtcp-fb:* x-message app send:src,x-pli recv:src,x-pli\r\na=rtcp-rsize\r\n");
-    s.push_str("a=label:main-video\r\n");
+    s.push_str(&format!("a=label:{label}\r\n"));
     transport_attributes(l, &mut s);
     if let Some(k) = &l.key {
         s.push_str(&format!("a=crypto:{}\r\n", k.attribute()));
@@ -336,6 +351,18 @@ fn answer_video_line(
     fresh: Key,
     policy: Encryption,
 ) -> Option<(String, NegotiatedVideo)> {
+    answer_labelled_video_line(s, m, ours, fresh, policy, MAIN_VIDEO_LABEL)
+}
+
+/// [`answer_video_line`] with the label of the answered stream.
+pub(crate) fn answer_labelled_video_line(
+    s: &Session,
+    m: &Media,
+    ours: &VideoLocal,
+    fresh: Key,
+    policy: Encryption,
+    label: &str,
+) -> Option<(String, NegotiatedVideo)> {
     let pt = h264uc_pt(m)?;
     let range = ssrc_range_of(m)?;
     let required = m.proto.eq_ignore_ascii_case("RTP/SAVP");
@@ -379,7 +406,7 @@ fn answer_video_line(
         Direction::SendRecv => ours.media.direction,
     };
     let fec = ulpfec_pt(m);
-    let section = video_section(&v, proto, pt, fec).ok()?;
+    let section = labelled_video_section(&v, proto, pt, fec, label).ok()?;
     Some((
         section,
         NegotiatedVideo {

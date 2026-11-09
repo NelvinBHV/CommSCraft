@@ -4846,3 +4846,97 @@ fn voicemail_playback_call() {
     e.on_message(&server.sign(invite("um2", "sip:bob@contoso.com")), NOW);
     assert!(!e.caller(2).unwrap().voicemail_playback);
 }
+
+/// Function 43: the sharer's INVITE in the shape of the Windows client (multipart/alternative,
+/// RDP line and screen video line) rings as a shared screen; viewing answers the video line
+/// receive-only and rejects the RDP line; the final re-INVITE gets the same answer; hanging up
+/// while it rings declines it.
+#[test]
+fn shared_screen_viewing() {
+    let sdp = |version: u32| {
+        format!(
+            "v=0\r\no=- 0 {version} IN IP4 192.0.2.20\r\ns=session\r\nc=IN IP4 192.0.2.20\r\nt=0 0\r\n\
+m=applicationsharing 14720 TCP/RTP/AVP 127\r\na=ice-ufrag:aaaa\r\na=ice-pwd:bbbbbbbbbbbbbbbbbbbbbbbb\r\n\
+a=candidate:1 1 TCP-PASS 2120613887 192.0.2.20 2447 typ host\r\na=rtpmap:127 x-data/90000\r\n\
+a=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\n\
+m=video 6612 RTP/AVP 122 123\r\na=x-ssrc-range:2980344164-2980344263\r\na=rtcp-fb:* x-message app send:src,x-pli recv:src,x-pli\r\na=rtcp-rsize\r\n\
+a=label:applicationsharing-video\r\na=ice-ufrag:cccc\r\na=ice-pwd:dddddddddddddddddddddddd\r\n\
+a=candidate:1 1 UDP 2130706431 192.0.2.20 6612 typ host\r\na=candidate:1 2 UDP 2130705918 192.0.2.20 6613 typ host\r\n\
+a=crypto:2 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
+a=rtcp:6613\r\na=sendonly\r\na=rtpmap:122 X-H264UC/90000\r\na=fmtp:122 packetization-mode=1;mst-mode=NI-TC\r\na=rtpmap:123 x-ulpfecuc/90000\r\n"
+        )
+    };
+    let invite = |server: &mut Server, call_id: &str, cseq: u32, tag: Option<&str>| {
+        let mut m = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+        m.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKshare");
+        m.push_header("From", "<sip:bob@contoso.com>;tag=bobshare");
+        m.push_header(
+            "To",
+            &match tag {
+                Some(t) => format!("<sip:alice@contoso.com>;tag={t}"),
+                None => "<sip:alice@contoso.com>".into(),
+            },
+        );
+        m.push_header("Call-ID", call_id);
+        m.push_header("CSeq", &format!("{cseq} INVITE"));
+        m.push_header("Contact", "<sip:bob@contoso.com;opaque=user:epid:y;gruu>");
+        m.push_header("Content-Type", "multipart/alternative;boundary=\"b\"");
+        m.body = format!(
+            "--b\r\nContent-Type: application/sdp\r\nContent-Disposition: session; handling=optional; ms-proxy-2007fallback\r\n\r\n{}\r\n--b\r\nContent-Type: application/sdp\r\nContent-ID: <x1@contoso.com>\r\nContent-Disposition: session; handling=optional\r\n\r\n{}\r\n--b--\r\n",
+            sdp(0).replace("m=video 6612 RTP/AVP 122 123", "m=video 0 RTP/AVP 122"),
+            sdp(cseq)
+        )
+        .into_bytes();
+        server.sign(m)
+    };
+    let (mut e, mut server, _) = signed_in();
+    let out = e.on_message(&invite(&mut server, "share1", 1, None), NOW);
+    assert_eq!(sends(&out).pop().unwrap().status_code(), Some(180));
+    assert!(events(&out).contains(&Event::IncomingScreenShare {
+        call: 1,
+        from: "sip:bob@contoso.com".into()
+    }));
+    let out = e.command(
+        Command::AcceptScreenShare {
+            call: 1,
+            video: Box::new(video_local(42002, 4)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let ok = sends(&out).pop().unwrap();
+    assert_eq!(ok.status_code(), Some(200));
+    assert_eq!(
+        ok.single("ms-accepted-content-id").unwrap(),
+        Some("<x1@contoso.com>")
+    );
+    let body = String::from_utf8(ok.body.clone()).unwrap();
+    assert!(
+        body.contains("m=applicationsharing 0 TCP/RTP/AVP 127\r\n"),
+        "{body}"
+    );
+    assert!(body.contains("m=video 42002 RTP/SAVP 122"));
+    assert!(body.contains("a=label:applicationsharing-video\r\n"));
+    assert!(body.contains("a=recvonly\r\n"));
+    assert!(events(&out)
+        .iter()
+        .any(|e| matches!(e, Event::CallVideo { call: 1, .. })));
+    // The final offer after ICE.
+    let tag = ok
+        .single("To")
+        .unwrap()
+        .and_then(|t| t.split("tag=").nth(1))
+        .unwrap()
+        .to_string();
+    let out = e.on_message(&invite(&mut server, "share1", 2, Some(&tag)), NOW);
+    let again = sends(&out).pop().unwrap();
+    assert_eq!(again.status_code(), Some(200));
+    assert!(String::from_utf8_lossy(&again.body).contains("a=recvonly\r\n"));
+    // A second shared screen, declined while it rings.
+    let out = e.on_message(&invite(&mut server, "share2", 1, None), NOW);
+    assert!(events(&out)
+        .iter()
+        .any(|e| matches!(e, Event::IncomingScreenShare { call: 2, .. })));
+    let out = e.command(Command::Hangup { call: 2 }, NOW);
+    assert_eq!(sends(&out).pop().unwrap().status_code(), Some(603));
+}
