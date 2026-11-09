@@ -44,6 +44,7 @@ STATUS = {
     "O-TU-1": "closed (OB-41, normative: ignore unknown optional attributes)",
     "L-19": "closed (ITU-T G.711 and G.722 incl. digital test sequences obtained 2026-10-28, evidence 17)",
     "O-IC-2": "interop test IT-22 (default: RFC 5389 length rule, inference)",
+    "O-CS-1": "open: capture of the Windows client's own conference invitation (sharing offered there)",
 }
 
 ID_RE = re.compile(r"^- (?:\*\*)?([KLO])-([A-Z0-9]+(?:-[0-9]+)?)")
