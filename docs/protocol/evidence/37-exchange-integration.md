@@ -65,3 +65,13 @@ These points are dispensable for a first Linux client or need an interop test.
   - `CalendarStatePublicationInterval` replaces the 15-minute interval.
 - **Contacts:** the aggregateState's meetingSubject and meetingLocation (§3.8.5.1.2.5, p. 122) and an OOF note are shown.
 - **Status:** `tested-offline`, `tested-in-lab` (publication accepted; a watcher sees busy, in a meeting and the out-of-office note).
+
+## Implementation (2026-11-09, conversation history, function 49)
+- **Storage (EX-09, OB-22, OB-49):** `ews::history` saves a finished IM conversation, 1:1 or group, with CreateItem ([MS-OXWSCORE] §3.1.4.2, pp. 57–61; `MessageDisposition="SaveOnly"`) into the distinguished folder `conversationhistory` ([MS-OXWSCDATA] §2.2.5.10; not in Exchange 2007/2010, <96>) with RequestServerVersion Exchange2013.
+- **Entry:** a message as the Lync 2010 SDK describes the entries (official, secondary):
+  - the other participants as To recipients (`DisplayTo`); a conference focus or other address with parameters is left out;
+  - the first message as `Subject` (the topic – inference);
+  - the whole conversation as plain-text `Body`, one line per message with UTC time and sender (own layout, OB-49).
+- **Not a draft:** PidTagMessageFlags = mfRead without mfUnsent ([MS-OXCMSG] §2.2.1.6, p. 19), set at creation, when the flags are still writable.
+- **When:** at the end of the conversation (`/end`, the other side leaving, sign-out). The server's `EnableIMAutoArchiving` (MS-SIPREGE §2.2.2.5.6, p. 52) decides – always or never; when not set, the user decides (default on, `--no-history`).
+- **Status:** `tested-offline`, `tested-in-lab` (both participants' entries saved; the entry is read, not a draft, with the other participant as recipient and the whole text).

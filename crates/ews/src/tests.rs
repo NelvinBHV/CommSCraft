@@ -554,3 +554,87 @@ mod calendar_tests {
         assert_eq!(plain_text("<b"), "");
     }
 }
+
+mod history_tests {
+    use crate::history::*;
+    use commscraft_xml::{parse_xs_datetime, Limits};
+
+    fn conv() -> Conversation {
+        let t = parse_xs_datetime("2026-11-09T08:05:00Z").unwrap();
+        Conversation {
+            participants: vec![Participant {
+                name: "Bob <Test>".into(),
+                address: "bob@contoso.com".into(),
+            }],
+            lines: vec![
+                Line {
+                    time: t,
+                    sender: "Alice".into(),
+                    text: "Hi Bob\u{1b}[31m, lunch?".into(),
+                },
+                Line {
+                    time: t + 75,
+                    sender: "Bob <Test>".into(),
+                    text: "Sure & at 12".into(),
+                },
+            ],
+        }
+    }
+
+    #[test]
+    fn save_request_layout() {
+        let c = conv();
+        assert_eq!(c.subject(), "Hi Bob [31m, lunch?");
+        assert_eq!(
+            c.body(),
+            "[2026-11-09 08:05 UTC] Alice: Hi Bob [31m, lunch?\n[2026-11-09 08:06 UTC] Bob <Test>: Sure & at 12\n"
+        );
+        let r = save_request(&c).unwrap();
+        let e = commscraft_xml::parse(&r, &Limits::default()).unwrap();
+        let create = e.child("Body").unwrap().child("CreateItem").unwrap();
+        assert_eq!(create.attr("MessageDisposition"), Some("SaveOnly"));
+        assert_eq!(
+            create
+                .child("SavedItemFolderId")
+                .unwrap()
+                .child("DistinguishedFolderId")
+                .unwrap()
+                .attr("Id"),
+            Some("conversationhistory")
+        );
+        let m = create.child("Items").unwrap().child("Message").unwrap();
+        assert_eq!(m.child("Body").unwrap().text(), c.body());
+        let to = m.child("ToRecipients").unwrap().child("Mailbox").unwrap();
+        assert_eq!(to.child("Name").unwrap().text(), "Bob <Test>");
+        assert_eq!(to.child("EmailAddress").unwrap().text(), "bob@contoso.com");
+        // PidTagMessageFlags = mfRead (not a draft).
+        let p = m.child("ExtendedProperty").unwrap();
+        assert_eq!(
+            p.child("ExtendedFieldURI").unwrap().attr("PropertyTag"),
+            Some("0x0E07")
+        );
+        assert_eq!(p.child("Value").unwrap().text(), "1");
+    }
+
+    #[test]
+    fn save_request_refuses() {
+        assert!(save_request(&Conversation::default()).is_err());
+        let mut c = conv();
+        c.participants[0].address = "bob\"@x.com".into();
+        assert!(!save_request(&c).unwrap().contains("ToRecipients"));
+    }
+
+    #[test]
+    fn save_answer() {
+        let ok = r#"<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><m:CreateItemResponse xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages"><m:ResponseMessages><m:CreateItemResponseMessage ResponseClass="Success"><m:ResponseCode>NoError</m:ResponseCode><m:Items/></m:CreateItemResponseMessage></m:ResponseMessages></m:CreateItemResponse></s:Body></s:Envelope>"#;
+        assert_eq!(parse_save_answer(ok), Ok(()));
+        let bad = ok
+            .replace("Success", "Error")
+            .replace("NoError", "ErrorFolderNotFound");
+        assert_eq!(
+            parse_save_answer(&bad),
+            Err(crate::Error::Server("ErrorFolderNotFound".into()))
+        );
+        assert!(parse_save_answer("<x/>").is_err());
+    }
+}

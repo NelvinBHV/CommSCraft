@@ -12,6 +12,7 @@
 use commscraft_xml::{escape, Element, Limits};
 
 pub mod calendar;
+pub mod history;
 pub mod ucs;
 
 pub const CONTENT_TYPE: &str = "text/xml; charset=utf-8";
