@@ -43,3 +43,25 @@ These points are dispensable for a first Linux client or need an interop test.
 - **CLI:** when the list moved (file 07, PR-51), `/contacts` shows the list from Exchange with numbered groups; `/contact add|remove|move` and `/contactgroup add|rename|remove` become the operations above, then the list is read again. Authentication: NTLM, as for Autodiscover.
 - **K-EX-2 (found 2026-11-09):** a group's MemberCorrelationKey (§2.2.4.2) names the contact items behind the personas – `Attributions/Attribution/SourceId` of [MS-OXWSPERS] – not the PersonaId; these items are also the ContactId the operations take (`tested-in-lab`). An IM address may come without `sip:` (a list moved from the server); the client adds it and checks the address.
 - **Status:** `tested-offline`, `tested-in-lab` (move of the list, read, add/rename/remove group, add/move/remove contact).
+
+## Implementation (2026-11-09, calendar and out-of-office state, function 16)
+- **Reading (O-EX-1/O-EX-2, OB-13/OB-14/OB-48):** `ews::calendar` asks GetUserAvailability ([MS-OXWAVLS] example §4.1, pp. 46–47) for the user's own mailbox with RequestedView DetailedMerged and 15-minute blocks over 384 blocks from the start of the UTC day (MS-PRES §2.2.2.7.8, p. 70: "SHOULD contain 384 entries"), and GetUserOofSettings ([MS-OXWOOF] example §4.1, p. 28).
+- **Merged string:** the digits 0–4 (§3.1.4.1.4.1, pp. 42–43) become the 2-bit codes of MS-PRES; "no data" counts as free.
+- **Ongoing meeting:** a Busy event at the current time. Tentative and out-of-facility events are left out (inference). Subject and location are taken only from events that are not private.
+- **Automatic replies:** on while Enabled, or Scheduled with the current time in the duration. The internal reply is reduced to plain text (Exchange keeps it as HTML).
+- **K-AW-3 (found 2026-11-09):** the request's time zone is UTC: bias 0 and both transitions without offset. With two equal transition dates the server refuses the zone as invalid. With the transition dates of the example §4.1 it answers (`tested-in-lab`).
+- **Publishing (PR-30, PR-37, PR-39):** `presence::calendar` follows the Lync 2013 SDK page "Publication behaviors of category instances" (official, secondary) for instances and containers:
+  - calendarData instance 0 (static): working hours into containers 1, 200, 300 and 400, empty into 100 and 32000; the same as the example MS-PRES §4.3.3 (pp. 154–156).
+  - calendarData instance from a hash of the mailbox: the free/busy value into 200, 300 and 400, empty into 1, 100 and 32000.
+  - calendarState `0x4…` (6500, `in-a-meeting`, subject and location) and the `out-of-office` activity `0x6…` (without availability, so it does not change the aggregated availability, §3.8.5.1.2.2) into containers 2 and 3.
+  - The note (type `OOF`) into 200, 300 and 400, empty into 100 and 32000.
+  - Endpoint-bound publications, unlike the SDK's time-bounded and static ones, so nothing stale remains after sign-out (design; §4.3.3 does the same for free/busy).
+  - Only changed groups are published (§3.8.5.3, p. 129); an ended meeting or reply is deleted with `expires="0"`; 409 conflicts are retried with the versions they name (PR-05).
+- **Server settings ([MS-SIPREGE] §2.2.2.5.6, pp. 50–52):** what the endpointConfiguration settings disable is neither read nor published:
+  - `DisableCalendarPresence`: free/busy, meeting and working hours.
+  - `DisableFreeBusyInfo`: the free/busy value.
+  - `DisableMeetingSubjectAndLocation`: subject and location.
+  - `DisablePresenceNote`: the automatic replies.
+  - `CalendarStatePublicationInterval` replaces the 15-minute interval.
+- **Contacts:** the aggregateState's meetingSubject and meetingLocation (§3.8.5.1.2.5, p. 122) and an OOF note are shown.
+- **Status:** `tested-offline`, `tested-in-lab` (publication accepted; a watcher sees busy, in a meeting and the out-of-office note).

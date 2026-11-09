@@ -490,3 +490,56 @@ fn address_book_policy() {
     assert_eq!(c.abs_usage, None);
     assert_eq!(c.rejected, ["AbsUsage"]);
 }
+
+/// Functions 16 and 49: the calendar and conversation history settings of endpointConfiguration
+/// (§2.2.2.5.6, pp. 50–55); a malformed value is rejected and changes nothing.
+#[test]
+fn calendar_and_history_policy() {
+    let group = |props: &[(&str, &str)]| Group {
+        name: "endpointConfiguration".into(),
+        properties: props
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect(),
+        instances: Vec::new(),
+        manifest: None,
+    };
+    let mut c = ServerConfiguration::default();
+    c.apply_endpoint_configuration(&group(&[
+        ("DisableCalendarPresence", "false"),
+        ("DisableFreeBusyInfo", "True"),
+        ("DisablePresenceNote", "true"),
+        ("DisableMeetingSubjectAndLocation", "false"),
+        ("CalendarStatePublicationInterval", "300"),
+        ("EnableServerConversationHistory", "true"),
+        ("EnableIMAutoArchiving", "false"),
+        ("DisableSavingIM", "false"),
+    ]));
+    assert_eq!(
+        c.calendar,
+        CalendarPolicy {
+            disable_calendar: false,
+            disable_free_busy: true,
+            disable_oof_note: true,
+            disable_meeting_details: false,
+            interval: Some(300),
+        }
+    );
+    assert_eq!(c.server_conversation_history, Some(true));
+    assert_eq!(c.im_auto_archiving, Some(false));
+    assert_eq!(c.disable_saving_im, Some(false));
+    assert!(c.rejected.is_empty());
+    let mut c = ServerConfiguration::default();
+    c.apply_endpoint_configuration(&group(&[
+        ("DisableCalendarPresence", "yes"),
+        ("CalendarStatePublicationInterval", "0"),
+    ]));
+    assert_eq!(c.calendar, CalendarPolicy::default());
+    assert_eq!(
+        c.rejected,
+        [
+            "DisableCalendarPresence",
+            "CalendarStatePublicationInterval"
+        ]
+    );
+}

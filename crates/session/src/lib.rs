@@ -87,6 +87,7 @@ fn conflict_slot(p: &Purpose) -> Option<usize> {
         Purpose::PublishRouting(_) => Some(2),
         Purpose::SetDelegate { .. } => Some(3),
         Purpose::PublishBlock => Some(4),
+        Purpose::PublishCalendar(_) => Some(5),
         _ => None,
     }
 }
@@ -134,6 +135,9 @@ pub enum ConferenceAction {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
     SetStatus(pres::UserStatus),
+    /// Function 16: publish the calendar and out-of-office state read from Exchange; only what
+    /// changed since the last publication is sent (MS-PRES §3.8.5.3).
+    PublishCalendar(Box<pres::calendar::Calendar>),
     /// Call forwarding and simultaneous ring: publishes the routing preamble (RE-50).
     SetForwarding(pres::Forwarding),
     StartConversation {
@@ -574,6 +578,7 @@ enum Purpose {
     PublishEndpoint,
     Provisioning,
     PublishStatus(pres::UserStatus),
+    PublishCalendar(Box<pres::calendar::Calendar>),
     PublishRouting(Box<pres::Forwarding>),
     SetDelegate {
         uri: String,
@@ -644,7 +649,10 @@ pub struct Engine<R: Random> {
     delegates: Option<pres::Delegates>,
     /// 409 retries per kind of operation since its last success (issues #67, #70: bounded and
     /// kept apart – endpoint, status, routing, delegates).
-    conflict_retries: [u8; 5],
+    conflict_retries: [u8; 6],
+    /// Function 16: what the server has of the calendar publications, and their versions.
+    calendar: pres::calendar::Calendar,
+    calendar_versions: [u32; pres::calendar::SLOTS],
     /// The routing rules the user published last (restored after an emergency call).
     routing_rules: pres::Forwarding,
     /// The rules above were published by this session (only then they are restored).
@@ -752,7 +760,9 @@ impl<R: Random> Engine<R> {
             status_versions: [0, 0],
             routing_versions: [0; 5],
             delegates: None,
-            conflict_retries: [0; 5],
+            conflict_retries: [0; 6],
+            calendar: pres::calendar::Calendar::default(),
+            calendar_versions: [0; pres::calendar::SLOTS],
             routing_rules: pres::Forwarding::default(),
             routing_known: false,
             location_policy: None,
@@ -949,6 +959,20 @@ impl<R: Random> Engine<R> {
     /// OCS-UC03: after the first registration publish the endpoint and subscribe to the contact
     /// list (the presence subscriptions follow when the list is known).
     fn bootstrap(&mut self, now: u64, out: &mut Vec<Output>) {
+        // Endpoint-bound calendar publications ended with the last registration; the static
+        // working hours stay (PR-02).
+        let keep = self.calendar.working_hours.take();
+        let mailbox = std::mem::take(&mut self.calendar.mailbox);
+        self.calendar = pres::calendar::Calendar {
+            mailbox,
+            working_hours: keep,
+            ..Default::default()
+        };
+        for (slot, v) in self.calendar_versions.iter_mut().enumerate() {
+            if !pres::calendar::slot_present(&self.calendar, slot) {
+                *v = 0;
+            }
+        }
         self.fetch_provisioning(now, out);
         self.publish_endpoint(now, out);
         self.subs.push(Subscription {
@@ -1134,6 +1158,36 @@ impl<R: Random> Engine<R> {
         m.push_header("Content-Type", "application/msrtc-category-publish+xml");
         m.body = body.into_bytes();
         self.send_request(m, Purpose::PublishRouting(Box::new(rules)), now, out);
+    }
+
+    /// Function 16: the changed calendar publications (`presence::calendar`).
+    fn publish_calendar(&mut self, cal: pres::calendar::Calendar, now: u64, out: &mut Vec<Output>) {
+        let slots = pres::calendar::slots(&cal, &self.calendar);
+        if slots.is_empty() {
+            return;
+        }
+        let endpoint = self.reg.instance().to_string();
+        let body = match pres::calendar::publish_body(
+            &self.cfg.aor,
+            &endpoint,
+            &cal,
+            &self.calendar,
+            &slots,
+            &self.calendar_versions,
+        ) {
+            Ok(b) => b,
+            Err(e) => {
+                out.push(Output::Event(Event::Notice(format!(
+                    "calendar state not published ({e:?})"
+                ))));
+                return;
+            }
+        };
+        let aor = self.cfg.aor.clone();
+        let mut m = self.request("SERVICE", &aor, &aor);
+        m.push_header("Content-Type", "application/msrtc-category-publish+xml");
+        m.body = body.into_bytes();
+        self.send_request(m, Purpose::PublishCalendar(Box::new(cal)), now, out);
     }
 
     fn publish_status(&mut self, status: pres::UserStatus, now: u64, out: &mut Vec<Output>) {
@@ -1740,6 +1794,7 @@ impl<R: Random> Engine<R> {
         }
         match cmd {
             Command::SetStatus(s) => self.publish_status(s, now, &mut out),
+            Command::PublishCalendar(c) => self.publish_calendar(*c, now, &mut out),
             Command::SetForwarding(f) => self.publish_routing(f, now, &mut out),
             Command::StartConversation { to } => self.start_conversation(&to, now, &mut out),
             Command::SendText { conversation, text } => {
@@ -2111,6 +2166,7 @@ impl<R: Random> Engine<R> {
                     match retry {
                         Purpose::PublishEndpoint => self.publish_endpoint(now, out),
                         Purpose::PublishStatus(s) => self.publish_status(s, now, out),
+                        Purpose::PublishCalendar(c) => self.publish_calendar(*c, now, out),
                         Purpose::PublishRouting(f) => self.publish_routing(*f, now, out),
                         Purpose::SetDelegate { uri, add } => self.set_delegate(&uri, add, now, out),
                         Purpose::PublishBlock => self.publish_block(now, out),
@@ -2233,6 +2289,21 @@ impl<R: Random> Engine<R> {
             Purpose::PublishEndpoint => &mut self.endpoint_versions,
             Purpose::PublishStatus(_) => &mut self.status_versions[..],
             Purpose::PublishRouting(_) => &mut self.routing_versions[..],
+            Purpose::PublishCalendar(ref c) => {
+                // The fault's index counts the publications of this request (slots in order).
+                let slots = pres::calendar::slots(c, &self.calendar);
+                let mut changed = false;
+                for f in conflicts {
+                    let slot = slots.get((f.index as usize).saturating_sub(1));
+                    if let Some(v) = slot.and_then(|s| self.calendar_versions.get_mut(*s)) {
+                        if *v != f.cur_version {
+                            *v = f.cur_version;
+                            changed = true;
+                        }
+                    }
+                }
+                return changed.then(|| p.purpose.clone());
+            }
             Purpose::PublishBlock => {
                 let cur = conflicts.first()?.cur_version;
                 if self.block_version == Some(cur) {
@@ -2326,6 +2397,19 @@ impl<R: Random> Engine<R> {
                     "unusable provisioning ({e:?})"
                 )))),
             },
+            Purpose::PublishCalendar(c) => {
+                // A published instance has the next version; a deleted one starts again at 0.
+                for slot in pres::calendar::slots(&c, &self.calendar) {
+                    if let Some(v) = self.calendar_versions.get_mut(slot) {
+                        *v = if pres::calendar::slot_present(&c, slot) {
+                            *v + 1
+                        } else {
+                            0
+                        };
+                    }
+                }
+                self.calendar = *c;
+            }
             Purpose::PublishStatus(s) => {
                 self.status_versions = self.status_versions.map(|v| v + 1);
                 out.push(Output::Event(Event::OwnStatus(s)));
@@ -2459,6 +2543,9 @@ impl<R: Random> Engine<R> {
                 }
             }
             Purpose::PublishStatus(_) => out.push(Output::Event(Event::OwnStatusFailed(code))),
+            Purpose::PublishCalendar(_) => out.push(Output::Event(Event::Notice(format!(
+                "calendar state not published ({code})"
+            )))),
             Purpose::PublishRouting(_) => out.push(Output::Event(Event::Notice(format!(
                 "forwarding not set ({code})"
             )))),

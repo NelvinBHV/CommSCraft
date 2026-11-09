@@ -1,7 +1,8 @@
 //! Exchange web services the client uses (evidence file 37): Autodiscover `GetUserSettings`
 //! ([MS-OXWSADISC] 20250520, EX-08) for the user's EWS endpoint, and user photos
 //! `GetUserPhoto` ([MS-OXWSPHOTO] 20250520, EX-06), and the contact list in Exchange
-//! ([MS-OXWSCOS] 20250520, EX-01 … EX-05, module [`ucs`]).
+//! ([MS-OXWSCOS] 20250520, EX-01 … EX-05, module [`ucs`]), and calendar and out-of-office
+//! state ([MS-OXWAVLS], [MS-OXWOOF], module [`calendar`]).
 //!
 //! Security by design: the mailbox and setting names are checked and XML-escaped; the response
 //! is parsed with the bounded XML reader (no DTD); only HTTPS endpoint URLs are taken over,
@@ -10,6 +11,7 @@
 
 use commscraft_xml::{escape, Element, Limits};
 
+pub mod calendar;
 pub mod ucs;
 
 pub const CONTENT_TYPE: &str = "text/xml; charset=utf-8";

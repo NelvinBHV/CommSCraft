@@ -4745,3 +4745,58 @@ fn contact_list_moved_while_signed_in() {
         .any(|ev| matches!(ev, Event::ContactsInExchange)));
     assert!(e.contacts_in_exchange());
 }
+
+/// Function 16: calendar publications – only changes, versions per instance, a 409 retried
+/// with the versions of the publications it names, a meeting that ended deleted.
+#[test]
+fn calendar_state_publication() {
+    use pres::calendar::{Calendar, Meeting};
+    let (mut e, mut server, _) = signed_in();
+    let cal = Calendar {
+        mailbox: "alice@contoso.com".into(),
+        working_hours: None,
+        free_busy: Some((NOW - NOW % 86_400, "AAqq".into())),
+        meeting: Some(Meeting {
+            start: NOW - 600,
+            subject: Some("Review".into()),
+            location: None,
+        }),
+        out_of_office: None,
+    };
+    let out = e.command(Command::PublishCalendar(Box::new(cal.clone())), NOW);
+    let first = sends(&out).pop().unwrap();
+    let body = String::from_utf8_lossy(&first.body).to_string();
+    // Six free/busy publications and the calendarState in containers 2 and 3.
+    assert_eq!(body.matches("<publication ").count(), 8, "{body}");
+    assert!(body.contains("<meetingSubject>Review</meetingSubject>"));
+    // The server already has the third publication (free/busy, container 400) at version 2.
+    let fault = r#"<Fault><Faultcode>Client.BadCall.WrongDelta</Faultcode><details><operation index="3" version="0" curVersion="2"/></details></Fault>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &first,
+            409,
+            Some("application/msrtc-fault+xml"),
+            fault,
+            &[],
+        ),
+        NOW,
+    );
+    let retry = sends(&out).pop().unwrap();
+    let body = String::from_utf8_lossy(&retry.body).to_string();
+    assert!(body.contains("container=\"400\" version=\"2\""), "{body}");
+    assert_eq!(body.matches("version=\"0\"").count(), 7);
+    e.on_message(&answer(&mut server, &retry, 200, None, "", &[]), NOW);
+    // The same state again: nothing is sent.
+    let out = e.command(Command::PublishCalendar(Box::new(cal.clone())), NOW);
+    assert!(sends(&out).is_empty());
+    // The meeting ended: its two instances are deleted at version 1.
+    let mut ended = cal;
+    ended.meeting = None;
+    let out = e.command(Command::PublishCalendar(Box::new(ended)), NOW);
+    let del = sends(&out).pop().unwrap();
+    let body = String::from_utf8_lossy(&del.body).to_string();
+    assert_eq!(body.matches("<publication ").count(), 2, "{body}");
+    assert_eq!(body.matches("version=\"1\"").count(), 2);
+    assert_eq!(body.matches("expires=\"0\"").count(), 2);
+}

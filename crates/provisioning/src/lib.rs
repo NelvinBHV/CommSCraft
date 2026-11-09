@@ -317,7 +317,32 @@ pub struct ServerConfiguration {
     pub max_photo_kb: Option<u32>,
     /// How the address book may be used (endpointConfiguration `AbsUsage`, RG-53).
     pub abs_usage: Option<AbsUsage>,
+    /// Calendar and out-of-office publication (function 16; endpointConfiguration, §2.2.2.5.6,
+    /// pp. 50–52).
+    pub calendar: CalendarPolicy,
+    /// Conversation history (function 49): the server records it (`EnableServerConversationHistory`,
+    /// p. 55), the client archives IM conversations (`EnableIMAutoArchiving`: `Some(true)` always,
+    /// `Some(false)` never, `None` the user decides, p. 52), saving IMs is not allowed
+    /// (`DisableSavingIM`, p. 51).
+    pub server_conversation_history: Option<bool>,
+    pub im_auto_archiving: Option<bool>,
+    pub disable_saving_im: Option<bool>,
     pub rejected: Vec<String>,
+}
+
+/// The calendar settings of endpointConfiguration ([MS-SIPREGE] §2.2.2.5.6, pp. 50–52).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct CalendarPolicy {
+    /// `DisableCalendarPresence`: no free/busy data is loaded or published.
+    pub disable_calendar: bool,
+    /// `DisableFreeBusyInfo`: no free/busy information is published.
+    pub disable_free_busy: bool,
+    /// `DisablePresenceNote`: the out-of-office message is neither loaded nor published.
+    pub disable_oof_note: bool,
+    /// `DisableMeetingSubjectAndLocation`: meeting subject and location are not published.
+    pub disable_meeting_details: bool,
+    /// `CalendarStatePublicationInterval`: how often calendar data is published, in seconds.
+    pub interval: Option<u32>,
 }
 
 /// A location profile name as it goes into `phone-context` (inference: dial plan names are
@@ -382,6 +407,46 @@ impl ServerConfiguration {
             match v.trim().parse::<u32>() {
                 Ok(kb) => self.max_photo_kb = Some(kb),
                 Err(_) => self.rejected.push("MaxPhotoSizeKB".into()),
+            }
+        }
+        let mut flag = |name: &str, slot: &mut Option<bool>| {
+            if let Some(v) = g.get(name) {
+                match boolean(v.trim()) {
+                    Some(b) => *slot = Some(b),
+                    None => self.rejected.push(name.into()),
+                }
+            }
+        };
+        let mut f = [None; 7];
+        for (name, slot) in [
+            "DisableCalendarPresence",
+            "DisableFreeBusyInfo",
+            "DisablePresenceNote",
+            "DisableMeetingSubjectAndLocation",
+            "EnableServerConversationHistory",
+            "EnableIMAutoArchiving",
+            "DisableSavingIM",
+        ]
+        .iter()
+        .zip(f.iter_mut())
+        {
+            flag(name, slot);
+        }
+        let [cal, fb, note, details, server_history, archiving, saving] = f;
+        self.calendar.disable_calendar = cal.unwrap_or(self.calendar.disable_calendar);
+        self.calendar.disable_free_busy = fb.unwrap_or(self.calendar.disable_free_busy);
+        self.calendar.disable_oof_note = note.unwrap_or(self.calendar.disable_oof_note);
+        self.calendar.disable_meeting_details =
+            details.unwrap_or(self.calendar.disable_meeting_details);
+        self.server_conversation_history = server_history.or(self.server_conversation_history);
+        self.im_auto_archiving = archiving.or(self.im_auto_archiving);
+        self.disable_saving_im = saving.or(self.disable_saving_im);
+        if let Some(v) = g.get("CalendarStatePublicationInterval") {
+            match v.trim().parse::<u32>() {
+                Ok(n) if n > 0 => self.calendar.interval = Some(n),
+                _ => self
+                    .rejected
+                    .push("CalendarStatePublicationInterval".into()),
             }
         }
         if let Some(v) = g.get("AbsUsage") {
