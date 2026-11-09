@@ -315,6 +315,8 @@ pub struct ServerConfiguration {
     pub photo_usage: Option<PhotoUsage>,
     /// Largest photo the client may download, in KiB (endpointConfiguration `MaxPhotoSizeKB`).
     pub max_photo_kb: Option<u32>,
+    /// How the address book may be used (endpointConfiguration `AbsUsage`, RG-53).
+    pub abs_usage: Option<AbsUsage>,
     pub rejected: Vec<String>,
 }
 
@@ -337,9 +339,32 @@ pub enum PhotoUsage {
     AllPhotos,
 }
 
+/// `AbsUsage` of endpointConfiguration ([MS-SIPREGE] 20250819 §2.2.2.5.6, p. 51): whether the
+/// user may use the address book web query ([MS-DLX]), the address book file ([MS-ABS]) or both.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AbsUsage {
+    WebSearchAndFileDownload,
+    WebSearchOnly,
+    FileDownloadOnly,
+}
+
+impl AbsUsage {
+    /// Whether the address book file may be downloaded and kept.
+    pub fn file_allowed(self) -> bool {
+        self != AbsUsage::WebSearchOnly
+    }
+
+    /// Whether the web query may be used.
+    pub fn web_search_allowed(self) -> bool {
+        self != AbsUsage::FileDownloadOnly
+    }
+}
+
 impl ServerConfiguration {
-    /// Applies the endpointConfiguration group: the photo policy (RG-52). An unknown
-    /// `PhotoUsage` counts as no photos (fail closed).
+    /// Applies the endpointConfiguration group: the photo policy (RG-52) and the address book
+    /// policy (RG-53). An unknown `PhotoUsage` counts as no photos (fail closed); an unknown
+    /// `AbsUsage` is rejected and counts as not sent (design: the server's example sends
+    /// `WebSearchAndFileDownload`, §4.2.2).
     pub fn apply_endpoint_configuration(&mut self, g: &Group) {
         if let Some(v) = g.get("PhotoUsage") {
             self.photo_usage = Some(match v.trim() {
@@ -357,6 +382,20 @@ impl ServerConfiguration {
             match v.trim().parse::<u32>() {
                 Ok(kb) => self.max_photo_kb = Some(kb),
                 Err(_) => self.rejected.push("MaxPhotoSizeKB".into()),
+            }
+        }
+        if let Some(v) = g.get("AbsUsage") {
+            match v.trim() {
+                x if x.eq_ignore_ascii_case("WebSearchAndFileDownload") => {
+                    self.abs_usage = Some(AbsUsage::WebSearchAndFileDownload)
+                }
+                x if x.eq_ignore_ascii_case("WebSearchOnly") => {
+                    self.abs_usage = Some(AbsUsage::WebSearchOnly)
+                }
+                x if x.eq_ignore_ascii_case("FileDownloadOnly") => {
+                    self.abs_usage = Some(AbsUsage::FileDownloadOnly)
+                }
+                _ => self.rejected.push("AbsUsage".into()),
             }
         }
     }
