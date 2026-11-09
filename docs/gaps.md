@@ -1,6 +1,6 @@
 # Where CommSCraft falls short of the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (calendar and out-of-office state)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (conversation history in Exchange)
 
 The work list, ranked by how much each item blocks the alpha gate in
 [`roadmap.md`](roadmap.md#alpha-gate-core-workflows) (**A** = blocks alpha). Each entry says what is
@@ -23,7 +23,7 @@ what is still missing per milestone, followed by the open points found in the an
 | 5 | Conferences and telephony: recording, PSTN dial-in details of meetings, PSTN media bypass, the rest of E911 (WLAN/LLDP identifiers); scheduling meetings (create, list, change, cancel; presenters, invitees and options; the static meeting), joining meetings (address or link), lobby, conference audio (SRTP sent, SRTP/SSRTP received), muting, announcements and their language, dialling phone numbers into meetings, the presenter commands with meeting options in the running meeting, PSTN calling, call transfer, forwarding, call park, quality reports, emergency calls with location and team/delegate ringing, delegates and calls on behalf of the boss exist | functions 33–34, 36–37, 39–42, 45 | M4 |
 | 6 | Video H.264 UC: nothing open apart from the owner's verification (row 1). Not done by decision: temporal enhancement layers (optional – a simulcast stream has "one base layer and 0 or more enhancement layers", [MS-H264PF] §3.1.5.3, p. 23), more than three simulcast sizes (a source request decides what is sent), Reed-Solomon FEC (not specified, PL-06), GPU decoding without a Wayland compositor (measured, file 23: copying the picture back costs more than decoding on the CPU). the RTP payload of one layer (`h264uc`), camera capture, H.264 encoding on the GPU (VA-API) or with libx264, and decoding (`video-ffmpeg`), the video media description (`sdp::video`), PLI and VSR (`rtp::feedback`), the video stream core (`media::video`) and its transport in `call-media`, video calls in the session, bandwidth estimation and rate adaptation (`media::rate`), picture control through SIP INFO (`session::media_control`), simulcast in up to three sizes (`media::video`, CLI) exist, the video window in its own process with Landlock and a system call filter, bandwidth management of the video stream exist | functions 28, 31 | M5 |
 | 7 | Viewing shared screens (RDP over RTP) | function 43 | M6 |
-| 8 | Exchange and extras: conversation history in Exchange, voicemail, persistent chat, whiteboard/PowerPoint/polls, response group agent, UCWA, SILK; the calendar and out-of-office state exist (tested-offline) | functions 49, 38, 20, 44, 47, 48, 51 | M7 |
+| 8 | Exchange and extras: voicemail, persistent chat, whiteboard/PowerPoint/polls, response group agent, UCWA, SILK; the calendar and out-of-office state and the conversation history in Exchange exist (tested-offline) | functions 38, 20, 44, 47, 48, 51 | M7 |
 | 9 | Graphical user interface (egui); today only the command-line tool exists | – | not yet in a milestone |
 
 ## Open points from the analysis – closed (2026-10-31)

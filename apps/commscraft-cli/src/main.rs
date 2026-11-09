@@ -96,6 +96,8 @@ im        signs in, opens a 1:1 conversation with --to, sends --text, shows answ
 --no-calendar  interactive: do not show your calendar state. Otherwise free/busy times, the
               meeting you are in and your automatic replies are read from Exchange every
               15 minutes and published (like the Windows client's calendar presence).
+--no-history  interactive: do not save IM conversations in the Conversation History folder in
+              Exchange (saved when a conversation ends, unless the server's policy decides).
 --kerberos    sign in with Kerberos when the server offers it: the ticket of USER@REALM from the
               ticket cache (kinit), else the password; the realm is the SIP domain in capitals, the
               KDC comes from the system's Kerberos configuration (KRB5_CONFIG). Falls back to NTLM.
@@ -126,6 +128,9 @@ struct Args {
     tls_dsk: bool,
     /// Function 16: publish calendar and out-of-office state from Exchange (interactive).
     calendar: bool,
+    /// Function 49: save IM conversations in Exchange (interactive; the user's choice unless the
+    /// server's EnableIMAutoArchiving decides).
+    history: bool,
     command: Command,
     set_status: Option<commscraft_presence::UserStatus>,
     max_contacts: usize,
@@ -184,6 +189,7 @@ fn parse_args() -> Result<Args, String> {
         kerberos: false,
         tls_dsk: false,
         calendar: true,
+        history: true,
         command,
         set_status: None,
         max_contacts: 50,
@@ -236,6 +242,7 @@ fn parse_args() -> Result<Args, String> {
             "--authorized" => a.authorized = true,
             "--no-address-book-cache" => a.address_book.cache = false,
             "--no-calendar" => a.calendar = false,
+            "--no-history" => a.history = false,
             "--address-book-delay" => {
                 a.address_book.delay_minutes = value()?
                     .parse()
@@ -1096,7 +1103,7 @@ fn run(a: Args) -> Result<(), String> {
             &trust,
             a.verbose,
             a.address_book,
-            a.calendar,
+            (a.calendar, a.history),
         );
     }
     let mut reg = reg;
@@ -2485,7 +2492,7 @@ fn interactive(
     trust: &Trust,
     verbose: bool,
     book_options: AddressBookOptions,
-    calendar: bool,
+    (calendar, history): (bool, bool),
 ) -> Result<(), String> {
     use commscraft_session::{Command as C, Event as E, Output};
     use std::collections::BTreeMap;
@@ -2589,6 +2596,8 @@ fn interactive(
     let mut ews_looked_up = false;
     // Function 16: the next time the calendar is read from Exchange.
     let mut calendar_next: Option<u64> = None;
+    // Function 49: the IM conversations so far, saved in Exchange when they end.
+    let mut transcripts: BTreeMap<u32, commscraft_ews::history::Conversation> = BTreeMap::new();
     let mut ucs_ids = UcsIds::default();
     // Engine outputs that come from events (sent after the events are shown).
     let mut deferred: Vec<Output> = Vec::new();
@@ -3056,6 +3065,11 @@ fn interactive(
                                 "connected with"
                             }
                         );
+                        transcript_participant(
+                            transcripts.entry(conversation).or_default(),
+                            &peer,
+                            presence.get(&peer).map(|(n, _)| n.as_str()),
+                        );
                         peers.insert(conversation, peer);
                         current = Some(conversation);
                     }
@@ -3083,6 +3097,13 @@ fn interactive(
                             .or_else(|| peers.get(&conversation).cloned())
                             .unwrap_or_default();
                         println!("[{conversation}] {who}: {text}");
+                        transcripts.entry(conversation).or_default().lines.push(
+                            commscraft_ews::history::Line {
+                                time: now(),
+                                sender: who,
+                                text,
+                            },
+                        );
                     }
                     E::MeetingSettings {
                         conversation,
@@ -3130,6 +3151,16 @@ fn interactive(
                         conversation,
                         participants,
                     } => {
+                        // Function 49: the group's members are the history entry's recipients.
+                        if let Some(t) = transcripts.get_mut(&conversation) {
+                            let me = engine.own_aor().to_ascii_lowercase();
+                            for p in participants
+                                .iter()
+                                .filter(|p| p.in_chat() && p.uri.to_ascii_lowercase() != me)
+                            {
+                                transcript_participant(t, &p.uri, p.name.as_deref());
+                            }
+                        }
                         // CA-13: the client names the video to watch – the others that send
                         // video are the candidates; the one watched stays while it sends.
                         if let Some((vid, current)) = conf_video.get_mut(&conversation) {
@@ -3268,6 +3299,20 @@ fn interactive(
                     } => println!("* [{conversation}] message not delivered ({status})"),
                     E::ConversationEnded { conversation } => {
                         println!("* [{conversation}] ended");
+                        if let Some(t) = transcripts.remove(&conversation) {
+                            let wanted = services
+                                .as_deref()
+                                .and_then(|c| c.im_auto_archiving)
+                                .unwrap_or(history);
+                            if let (true, Some(s)) = (wanted && !t.lines.is_empty(), &ews) {
+                                match save_conversation(&mut engine, tls, trust, s, &t, verbose) {
+                                    Ok(()) => println!(
+                                        "* [{conversation}] saved in your Conversation History folder"
+                                    ),
+                                    Err(e) => println!("* [{conversation}] not saved: {e}"),
+                                }
+                            }
+                        }
                         peers.remove(&conversation);
                         if current == Some(conversation) {
                             current = peers.keys().next().copied();
@@ -4575,10 +4620,19 @@ fn interactive(
                     None
                 }
                 _ => match current {
-                    Some(c) => Some(C::SendText {
-                        conversation: c,
-                        text: line.clone(),
-                    }),
+                    Some(c) => {
+                        transcripts.entry(c).or_default().lines.push(
+                            commscraft_ews::history::Line {
+                                time: now(),
+                                sender: engine.aor().trim_start_matches("sip:").to_string(),
+                                text: line.clone(),
+                            },
+                        );
+                        Some(C::SendText {
+                            conversation: c,
+                            text: line.clone(),
+                        })
+                    }
                     None => {
                         println!("* no conversation – start one with /chat sip:user@domain");
                         None
@@ -5077,6 +5131,55 @@ fn exchange_calendar(
         Some(Err(e)) => println!("* automatic replies not read from Exchange: {e}"),
     }
     Ok(c)
+}
+
+/// Function 49: a participant of a conversation for its history entry – a SIP address without
+/// parameters (not a conference focus) becomes a recipient once.
+fn transcript_participant(
+    t: &mut commscraft_ews::history::Conversation,
+    uri: &str,
+    name: Option<&str>,
+) {
+    let Some(address) = uri.strip_prefix("sip:").filter(|a| !a.contains(';')) else {
+        return;
+    };
+    if t.participants
+        .iter()
+        .any(|p| p.address.eq_ignore_ascii_case(address))
+    {
+        return;
+    }
+    t.participants.push(commscraft_ews::history::Participant {
+        name: name
+            .filter(|n| !n.is_empty())
+            .unwrap_or(address)
+            .to_string(),
+        address: address.to_string(),
+    });
+}
+
+/// Function 49: saves a finished conversation in the Conversation History folder (CreateItem,
+/// EX-09, OB-22).
+fn save_conversation(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    settings: &commscraft_ews::UserSettings,
+    t: &commscraft_ews::history::Conversation,
+    verbose: bool,
+) -> Result<(), String> {
+    use commscraft_ews::history;
+    let body = history::save_request(t).map_err(|e| format!("{e:?}"))?;
+    let answer = ews_call(
+        engine,
+        tls,
+        trust,
+        settings,
+        ("CreateItem", history::CREATE_ITEM_ACTION),
+        &body,
+        verbose,
+    )?;
+    history::parse_save_answer(&answer).map_err(|e| format!("{e:?}"))
 }
 
 /// One EWS operation `(name, soapAction)` at the user's EWS URL, with NTLM; the answer's text
