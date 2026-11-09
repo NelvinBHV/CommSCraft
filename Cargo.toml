@@ -12,6 +12,7 @@ members = [
     "crates/sip-msg",
     "crates/sipae",
     "crates/register",
+    "crates/gssapi",
     "crates/xml",
     "crates/provisioning",
     "crates/presence",

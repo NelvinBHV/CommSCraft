@@ -25,6 +25,8 @@ jobs:
         run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends libasound2-dev
       - name: FFmpeg libraries and headers for the video adapter
         run: sudo apt-get install -y -q --no-install-recommends pkg-config clang libclang-dev libavcodec-dev libavformat-dev libavdevice-dev libavutil-dev libswscale-dev
+      - name: Kerberos (GSSAPI) headers for the Kerberos adapter
+        run: sudo apt-get install -y -q --no-install-recommends libkrb5-dev
       - name: Format
         run: cargo fmt --all -- --check
       - name: Clippy

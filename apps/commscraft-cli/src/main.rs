@@ -46,7 +46,7 @@ use commscraft_sipae::Policy;
 
 const USAGE: &str =
     "usage: commscraft-cli sign-in|presence|im|interactive --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
-[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--ntlm-legacy] \
+[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--kerberos] [--ntlm-legacy] \
 [--set-status online|busy|dnd|away] [--max-contacts N] [--to sip:URI --text TEXT [--wait S]] --authorized
        commscraft-cli audio-check [--device ALSA_DEVICE] [--codec g722|pcma]   (local, no network)
 
@@ -93,6 +93,9 @@ im        signs in, opens a 1:1 conversation with --to, sends --text, shows answ
               search only. It is kept in ~/.cache/commscraft/abs (mode 0600) and used at once on
               the next sign-in; later fetches load only the day's changes (delta file).
 --no-address-book-cache  hold the offline address book in memory only.
+--kerberos    sign in with Kerberos when the server offers it: the ticket of USER@REALM from the
+              ticket cache (kinit), else the password; the realm is the SIP domain in capitals, the
+              KDC comes from the system's Kerberos configuration (KRB5_CONFIG). Falls back to NTLM.
 --ntlm-legacy    diagnostic: NTLMv2 without the optional MIC/channel-binding additions, with LMv2.
 --verbose     also prints the non-secret NTLM facts (offered/chosen flags, domain names).
 The password is read from the terminal without echo, or as the first line of standard input.";
@@ -110,6 +113,8 @@ struct Args {
     discover_only: bool,
     trust_domains: Vec<String>,
     ntlm_legacy: bool,
+    /// Function 5: sign in with Kerberos when the server offers it (else NTLM).
+    kerberos: bool,
     command: Command,
     set_status: Option<commscraft_presence::UserStatus>,
     max_contacts: usize,
@@ -165,6 +170,7 @@ fn parse_args() -> Result<Args, String> {
         discover_only: false,
         trust_domains: Vec::new(),
         ntlm_legacy: false,
+        kerberos: false,
         command,
         set_status: None,
         max_contacts: 50,
@@ -196,6 +202,7 @@ fn parse_args() -> Result<Args, String> {
             "--verbose" => a.verbose = true,
             "--discover-only" => a.discover_only = true,
             "--ntlm-legacy" => a.ntlm_legacy = true,
+            "--kerberos" => a.kerberos = true,
             "--set-status" => {
                 let v = value()?;
                 a.set_status = Some(
@@ -817,6 +824,14 @@ impl Session {
                     result = Pumped::Done;
                 }
                 Event::SurvivableMode => println!("server reports survivable mode"),
+                Event::Authentication { scheme, fallback } => match fallback {
+                    Some(why) => println!(
+                        "authentication: Kerberos not used ({}) – {}",
+                        term::clean(&why),
+                        scheme.name()
+                    ),
+                    None => println!("authentication: {}", scheme.name()),
+                },
                 Event::Failed(f) => return Err(format!("sign-in failed: {f:?}")),
             }
         }
@@ -1017,7 +1032,23 @@ fn run(a: Args) -> Result<(), String> {
         policy: Policy::default(),
         ntlm_legacy: a.ntlm_legacy,
     };
-    let reg = Registrar::new(cfg, password, rng).map_err(|e| format!("configuration: {e:?}"))?;
+    // Function 5: the Kerberos principal is the account in the realm of the SIP domain (the
+    // usual Active Directory layout: realm = DNS domain in capitals; inference); the ticket cache
+    // is used when it holds a ticket for it, else the password.
+    let kerberos = a.kerberos.then(|| {
+        let realm = user_domain.to_ascii_uppercase();
+        Box::new(commscraft_gssapi::Kerberos::new(
+            commscraft_gssapi::Credentials::Password {
+                principal: format!("{}@{realm}", a.user),
+                password: zeroize::Zeroizing::new(password.reveal().to_string()),
+            },
+        ))
+    });
+    let mut reg =
+        Registrar::new(cfg, password, rng).map_err(|e| format!("configuration: {e:?}"))?;
+    if let Some(k) = kerberos {
+        reg = reg.with_kerberos(k);
+    }
     if a.command == Command::Interactive {
         let ecfg = commscraft_session::Config {
             aor: a.aor.clone(),

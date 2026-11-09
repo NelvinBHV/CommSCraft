@@ -1,0 +1,18 @@
+[package]
+name = "commscraft-gssapi"
+description = "Adapter to the system's Kerberos (GSSAPI, MIT krb5 or Heimdal) for the MS-SIPAE Kerberos sign-in"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-register = { path = "../register" }
+commscraft-sipae = { path = "../sipae" }
+# Safe Rust binding to libgssapi_krb5 (MIT licence); the unsafe code stays in that crate.
+libgssapi = { version = "=0.11.0", default-features = false }
+zeroize.workspace = true
+
+[lints]
+workspace = true
