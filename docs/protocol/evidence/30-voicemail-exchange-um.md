@@ -21,3 +21,9 @@ Sources: [MS-OCEXUM] "Call Control for Exchange Unified Messaging Protocol Exten
 ## Later finding (file 39)
 - L-15 **narrowed** (OB-23): voicemail message classes `IPM.Note.Microsoft.Voicemail.UM(.CA)` (MS-OXOUM §2.2.2.1, p. 10); MS-OXWUMS only covers playing on the phone.
 - L-15 **closed** (OB-48): the voicemail list is an EWS FindItem on the documented message class (MS-OXOUM, OB-23) at the Autodiscover `EwsUrl`.
+
+## Implementation (2026-11-09, function 38)
+- **UM-01:** `Command::CallVoicemail` calls the voicemail GRUU `<aor>;opaque=app:voicemail` (RE-10) with `Ms-Exchange-Command: skip-pin` (§2.2.1, p. 8; example §4.1, p. 13); an ordinary audio call otherwise (UM-03: audio only). CLI `/voicemail call`.
+- **UM-02:** an incoming call with `Ms-Sensitivity: private-no-diversion`, From = To = the user's own URI is reported as Exchange playing a voice message (`Caller::voicemail_playback`); it is offered like any call – the client has no rule of its own that would hide it (Appear Offline and forwarding act on the server).
+- **List (L-15, OB-23, OB-48):** `ews::voicemail` asks FindItem in the Inbox for items whose class starts with `IPM.Note.Microsoft.Voicemail` ([MS-OXOUM] §2.2.2.1, p. 10), newest first, at most 50. Each entry shows caller (PidTagVoiceMessageSenderName), number (PidTagSenderTelephoneNumber) and length (PidTagVoiceMessageDuration) ([MS-OXOUM] §2.2.5.1–2.2.5.5, pp. 24–25), and whether it is new. Items of other classes are not taken even if the server returns them. CLI `/voicemail`.
+- **Status:** `tested-offline`, `tested-in-lab` for the list (a test item with the voicemail class), and for the call up to the server's answer (no voicemail service was available).

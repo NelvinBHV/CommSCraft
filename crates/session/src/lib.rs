@@ -233,6 +233,14 @@ pub enum Command {
         local: Box<sdp::Local>,
         policy: sdp::Encryption,
     },
+    /// Function 38: listen to voicemail – a call to the user's voicemail GRUU
+    /// (`<aor>;opaque=app:voicemail`, RE-10) with `Ms-Exchange-Command: skip-pin` (UM-01,
+    /// [MS-OCEXUM] §2.2.1, p. 8; §3.1, p. 10; example §4.1, p. 13: the trusted, authenticated
+    /// connection replaces the PIN).
+    CallVoicemail {
+        local: Box<sdp::Local>,
+        policy: sdp::Encryption,
+    },
     /// A call with audio and video (function 28).
     VideoCall {
         to: String,
@@ -1907,6 +1915,21 @@ impl<R: Random> Engine<R> {
             }
             Command::Call { to, local, policy } => {
                 self.start_call(&to, *local, policy, now, &mut out)
+            }
+            Command::CallVoicemail { local, policy } => {
+                let to = format!("{};opaque=app:voicemail", self.cfg.aor);
+                let headers = [("Ms-Exchange-Command".to_string(), "skip-pin".to_string())];
+                self.start_call_with(
+                    &to,
+                    *local,
+                    policy,
+                    call::Extras {
+                        headers: &headers,
+                        ..Default::default()
+                    },
+                    now,
+                    &mut out,
+                );
             }
             Command::CallOnBehalf {
                 to,

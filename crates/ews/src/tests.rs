@@ -638,3 +638,53 @@ mod history_tests {
         assert!(parse_save_answer("<x/>").is_err());
     }
 }
+
+mod voicemail_tests {
+    use crate::voicemail::*;
+    use commscraft_xml::Limits;
+
+    #[test]
+    fn list_request_shape() {
+        let r = list_request();
+        let e = commscraft_xml::parse(&r, &Limits::default()).unwrap();
+        let f = e.child("Body").unwrap().child("FindItem").unwrap();
+        let c = f.child("Restriction").unwrap().child("Contains").unwrap();
+        assert_eq!(c.attr("ContainmentMode"), Some("Prefixed"));
+        assert_eq!(
+            c.child("Constant").unwrap().attr("Value"),
+            Some("IPM.Note.Microsoft.Voicemail")
+        );
+        assert!(r.contains("PropertyTag=\"0x6801\" PropertyType=\"Integer\""));
+        assert!(r.contains("<t:DistinguishedFolderId Id=\"inbox\"/>"));
+    }
+
+    #[test]
+    fn list_answer() {
+        let xml = r#"<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>
+<m:FindItemResponse xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages" xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types">
+<m:ResponseMessages><m:FindItemResponseMessage ResponseClass="Success"><m:ResponseCode>NoError</m:ResponseCode>
+<m:RootFolder TotalItemsInView="3" IncludesLastItemInRange="true"><t:Items>
+<t:Message><t:ItemId Id="AA=="/><t:Subject>Voice Mail from Bob (22 seconds)</t:Subject><t:DateTimeReceived>2026-11-09T07:30:00Z</t:DateTimeReceived><t:ItemClass>IPM.Note.Microsoft.Voicemail.UM.CA</t:ItemClass><t:IsRead>false</t:IsRead>
+<t:From><t:Mailbox><t:Name>Bob Test</t:Name></t:Mailbox></t:From>
+<t:ExtendedProperty><t:ExtendedFieldURI PropertyTag="0x6801" PropertyType="Integer"/><t:Value>22</t:Value></t:ExtendedProperty>
+<t:ExtendedProperty><t:ExtendedFieldURI PropertyTag="0x6802" PropertyType="String"/><t:Value>+4940123</t:Value></t:ExtendedProperty>
+<t:ExtendedProperty><t:ExtendedFieldURI PropertyTag="0x6803" PropertyType="String"/><t:Value>Bob Caller	</t:Value></t:ExtendedProperty></t:Message>
+<t:Message><t:ItemId Id="AB=="/><t:Subject>Lunch</t:Subject><t:ItemClass>IPM.Note</t:ItemClass></t:Message>
+<t:Message><t:ItemId Id="AC=="/><t:Subject>Voice Mail</t:Subject><t:ItemClass>ipm.note.microsoft.voicemail.um</t:ItemClass><t:IsRead>true</t:IsRead>
+<t:From><t:Mailbox><t:Name>Carol</t:Name></t:Mailbox></t:From></t:Message>
+</t:Items></m:RootFolder></m:FindItemResponseMessage></m:ResponseMessages></m:FindItemResponse></s:Body></s:Envelope>"#;
+        let l = parse_list(xml).unwrap();
+        // The plain mail is not taken even if the server sends it.
+        assert_eq!(l.len(), 2);
+        assert_eq!(l[0].caller, "Bob Caller");
+        assert_eq!(l[0].phone.as_deref(), Some("+4940123"));
+        assert_eq!(l[0].duration, Some(22));
+        assert!(!l[0].read);
+        assert!(l[0].received.is_some());
+        assert_eq!(l[1].caller, "Carol");
+        assert!(l[1].read);
+        assert_eq!(l[1].duration, None);
+        let err = xml.replace(r#"ResponseClass="Success""#, r#"ResponseClass="Error""#);
+        assert!(parse_list(&err).is_err());
+    }
+}
