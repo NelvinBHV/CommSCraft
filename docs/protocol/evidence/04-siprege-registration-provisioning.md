@@ -95,6 +95,7 @@ Dependencies: RFC 3261 §10 (REGISTER), RFC 3265 (SUBSCRIBE/NOTIFY), draft-ietf-
 - K-RG-3: The text extraction of the XSD fragments (e.g. pp. 24–25, 50, 60–67) is only partly readable; the element names are documented by the tree view and description, the exact XSD types must be checked against the original PDF during implementation.
 
 ## Later finding (file 39)
+- Implementation (2026-11-09, `provisioning::CalendarPolicy`): DisableCalendarPresence, DisableFreeBusyInfo, DisablePresenceNote, DisableMeetingSubjectAndLocation and CalendarStatePublicationInterval are read (function 16), as are EnableServerConversationHistory, EnableIMAutoArchiving and DisableSavingIM (function 49). A value that is not `true`/`false` or not a positive number is rejected and changes nothing. Status: tested-offline.
 - OB-22: `EnableServerConversationHistory` (endpointConfiguration, p. 55; footnote <124>, p. 127: not supported before Lync 2013) lets the IM server record conversation history.
 - Found 2026-10-27 (implementation): the REGISTER example §4.1.1 (p. 94) carries a real NTLM AUTHENTICATE_MESSAGE in `gssapi-data`. Decoded it is **NTLMv1** (24-byte LM and NT responses) with flags 0x42908255 (DATAGRAM, IDENTIFY, KEY_EXCH, VERSION; **no** EXTENDED_SESSIONSECURITY, no 128-bit) from Windows 5.2.3790. CommSCraft refuses such an offer (OB-43); whether current servers offer ESS/128/KEY_EXCH is interop test IT-14. Test: `crates/register` `siprege_example_authenticate_is_ntlm_v1`.
 

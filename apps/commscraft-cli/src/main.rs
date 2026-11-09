@@ -3325,9 +3325,15 @@ fn interactive(
         // Function 16: the calendar from Exchange every 15 minutes (design; the blocks are
         // 15 minutes long); the session publishes only what changed.
         if calendar_next.is_some_and(|n| t >= n) {
-            calendar_next = Some(t + 15 * 60);
+            // CalendarStatePublicationInterval and the other calendar settings of
+            // endpointConfiguration ([MS-SIPREGE] §2.2.2.5.6) decide what is read and published.
+            let policy = services
+                .as_deref()
+                .map(|c| c.calendar.clone())
+                .unwrap_or_default();
+            calendar_next = Some(t + policy.interval.map_or(15 * 60, u64::from));
             if let Some(settings) = &ews {
-                match exchange_calendar(&mut engine, tls, trust, settings, verbose) {
+                match exchange_calendar(&mut engine, tls, trust, settings, &policy, verbose) {
                     Ok(c) => outputs.extend(engine.command(C::PublishCalendar(Box::new(c)), t)),
                     Err(e) => println!("* calendar state not read from Exchange: {e}"),
                 }
@@ -4975,12 +4981,15 @@ fn ucs_call(
 
 /// Function 16: the calendar state to publish – free/busy blocks, the ongoing meeting and the
 /// working hours from GetUserAvailability, the automatic replies from GetUserOofSettings
-/// (O-EX-1/O-EX-2, OB-13/OB-14). One of the two may fail; then its part stays empty.
+/// (O-EX-1/O-EX-2, OB-13/OB-14). One of the two may fail; then its part stays empty. What the
+/// server's calendar settings disable is neither read nor published (an empty calendar removes
+/// earlier publications).
 fn exchange_calendar(
     engine: &mut commscraft_session::Engine<OsRandom>,
     tls: &TlsClient,
     trust: &Trust,
     settings: &commscraft_ews::UserSettings,
+    policy: &commscraft_provisioning::CalendarPolicy,
     verbose: bool,
 ) -> Result<commscraft_presence::calendar::Calendar, String> {
     use commscraft_ews::calendar as cal;
@@ -4988,48 +4997,63 @@ fn exchange_calendar(
     let mailbox = engine.aor().trim_start_matches("sip:").to_ascii_lowercase();
     let t = now();
     let (start, end) = cal::window(t);
-    let request = cal::availability_request(&mailbox, start, end).map_err(|e| format!("{e:?}"))?;
-    let availability = ews_call(
-        engine,
-        tls,
-        trust,
-        settings,
-        ("GetUserAvailability", cal::GET_USER_AVAILABILITY_ACTION),
-        &request,
-        verbose,
-    )
-    .and_then(|x| cal::parse_availability(&x, start).map_err(|e| format!("{e:?}")));
-    let request = cal::oof_request(&mailbox).map_err(|e| format!("{e:?}"))?;
-    let oof = ews_call(
-        engine,
-        tls,
-        trust,
-        settings,
-        ("GetUserOofSettings", cal::GET_USER_OOF_SETTINGS_ACTION),
-        &request,
-        verbose,
-    )
-    .and_then(|x| cal::parse_oof(&x).map_err(|e| format!("{e:?}")));
-    if let (Err(a), Err(o)) = (&availability, &oof) {
-        return Err(format!("{a}; {o}"));
-    }
     let mut c = Calendar {
-        mailbox,
+        mailbox: mailbox.clone(),
         ..Calendar::default()
     };
+    let availability = if policy.disable_calendar {
+        None
+    } else {
+        let request =
+            cal::availability_request(&mailbox, start, end).map_err(|e| format!("{e:?}"))?;
+        Some(
+            ews_call(
+                engine,
+                tls,
+                trust,
+                settings,
+                ("GetUserAvailability", cal::GET_USER_AVAILABILITY_ACTION),
+                &request,
+                verbose,
+            )
+            .and_then(|x| cal::parse_availability(&x, start).map_err(|e| format!("{e:?}"))),
+        )
+    };
+    let oof = if policy.disable_oof_note {
+        None
+    } else {
+        let request = cal::oof_request(&mailbox).map_err(|e| format!("{e:?}"))?;
+        Some(
+            ews_call(
+                engine,
+                tls,
+                trust,
+                settings,
+                ("GetUserOofSettings", cal::GET_USER_OOF_SETTINGS_ACTION),
+                &request,
+                verbose,
+            )
+            .and_then(|x| cal::parse_oof(&x).map_err(|e| format!("{e:?}"))),
+        )
+    };
+    if let (Some(Err(a)), Some(Err(o))) = (&availability, &oof) {
+        return Err(format!("{a}; {o}"));
+    }
     match availability {
-        Ok(a) => {
-            if !a.slots.is_empty() {
+        None => {}
+        Some(Ok(a)) => {
+            if !a.slots.is_empty() && !policy.disable_free_busy {
                 let codes: Vec<u8> = a.slots.iter().map(|s| s.code()).collect();
                 c.free_busy = Some((
                     a.start,
                     commscraft_sipae::base64::encode(&free_busy_value(&codes)),
                 ));
             }
+            let details = !policy.disable_meeting_details;
             c.meeting = a.current_meeting(t).map(|m| Meeting {
                 start: m.start,
-                subject: m.subject.clone(),
-                location: m.location.clone(),
+                subject: m.subject.clone().filter(|_| details),
+                location: m.location.clone().filter(|_| details),
             });
             c.working_hours = a.working_hours.as_ref().map(|w| w.to_xml());
             if verbose {
@@ -5045,11 +5069,12 @@ fn exchange_calendar(
                 );
             }
         }
-        Err(e) => println!("* free/busy not read from Exchange: {e}"),
+        Some(Err(e)) => println!("* free/busy not read from Exchange: {e}"),
     }
     match oof {
-        Ok(o) => c.out_of_office = o.active(t).then_some(o.message),
-        Err(e) => println!("* automatic replies not read from Exchange: {e}"),
+        None => {}
+        Some(Ok(o)) => c.out_of_office = o.active(t).then_some(o.message),
+        Some(Err(e)) => println!("* automatic replies not read from Exchange: {e}"),
     }
     Ok(c)
 }

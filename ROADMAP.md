@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **44 crates + 1 app** (`commscraft-cli`), **539 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **44 crates + 1 app** (`commscraft-cli`), **540 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an

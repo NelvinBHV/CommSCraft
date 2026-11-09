@@ -57,5 +57,11 @@ These points are dispensable for a first Linux client or need an interop test.
   - The note (type `OOF`) into 200, 300 and 400, empty into 100 and 32000.
   - Endpoint-bound publications, unlike the SDK's time-bounded and static ones, so nothing stale remains after sign-out (design; §4.3.3 does the same for free/busy).
   - Only changed groups are published (§3.8.5.3, p. 129); an ended meeting or reply is deleted with `expires="0"`; 409 conflicts are retried with the versions they name (PR-05).
+- **Server settings ([MS-SIPREGE] §2.2.2.5.6, pp. 50–52):** what the endpointConfiguration settings disable is neither read nor published:
+  - `DisableCalendarPresence`: free/busy, meeting and working hours.
+  - `DisableFreeBusyInfo`: the free/busy value.
+  - `DisableMeetingSubjectAndLocation`: subject and location.
+  - `DisablePresenceNote`: the automatic replies.
+  - `CalendarStatePublicationInterval` replaces the 15-minute interval.
 - **Contacts:** the aggregateState's meetingSubject and meetingLocation (§3.8.5.1.2.5, p. 122) and an OOF note are shown.
 - **Status:** `tested-offline`, `tested-in-lab` (publication accepted; a watcher sees busy, in a meeting and the out-of-office note).
