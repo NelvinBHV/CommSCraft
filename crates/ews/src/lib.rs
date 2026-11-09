@@ -14,6 +14,7 @@ use commscraft_xml::{escape, Element, Limits};
 pub mod calendar;
 pub mod history;
 pub mod ucs;
+pub mod voicemail;
 
 pub const CONTENT_TYPE: &str = "text/xml; charset=utf-8";
 /// `soapAction` of GetUserSettings ([MS-OXWSADISC] §3.1.4.4, p. 49).

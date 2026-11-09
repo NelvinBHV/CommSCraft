@@ -13,6 +13,7 @@ commscraft-register = { path = "../../crates/register" }
 commscraft-gssapi = { path = "../../crates/gssapi" }
 commscraft-tlsdsk = { path = "../../crates/tlsdsk" }
 commscraft-ocauthws = { path = "../../crates/ocauthws" }
+commscraft-xml = { path = "../../crates/xml" }
 commscraft-sip-identity = { path = "../../crates/sip-identity" }
 commscraft-provisioning = { path = "../../crates/provisioning" }
 commscraft-discovery = { path = "../../crates/discovery" }

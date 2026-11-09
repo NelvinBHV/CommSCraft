@@ -4800,3 +4800,49 @@ fn calendar_state_publication() {
     assert_eq!(body.matches("version=\"1\"").count(), 2);
     assert_eq!(body.matches("expires=\"0\"").count(), 2);
 }
+
+/// Function 38 (UM-01): listening to voicemail calls the own voicemail GRUU with skip-pin.
+#[test]
+fn voicemail_call() {
+    let (mut e, _server, _) = signed_in();
+    let out = e.command(
+        Command::CallVoicemail {
+            local: Box::new(media_local(40000, 7)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    assert!(matches!(
+        &invite.start,
+        commscraft_sip_msg::StartLine::Request { uri, .. } if uri == "sip:alice@contoso.com;opaque=app:voicemail"
+    ));
+    assert_eq!(
+        invite.single("Ms-Exchange-Command").unwrap(),
+        Some("skip-pin")
+    );
+}
+
+/// Function 38 (UM-02): Exchange UM calling to play a message – From = To = us with
+/// private-no-diversion; the same header from someone else is no playback call.
+#[test]
+fn voicemail_playback_call() {
+    let (mut e, mut server, _) = signed_in();
+    let invite = |call_id: &str, from: &str| {
+        let mut m = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+        m.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKum");
+        m.push_header("From", &format!("<{from}>;tag=um1"));
+        m.push_header("To", "<sip:alice@contoso.com>");
+        m.push_header("Call-ID", call_id);
+        m.push_header("CSeq", "1 INVITE");
+        m.push_header("Contact", "<sip:um.contoso.com;transport=tls>");
+        m.push_header("Ms-Sensitivity", "private-no-diversion");
+        m.push_header("Content-Type", "application/sdp");
+        m.body = peer_sdp(9, "RTP/AVP").into_bytes();
+        m
+    };
+    e.on_message(&server.sign(invite("um1", "sip:alice@contoso.com")), NOW);
+    assert!(e.caller(1).unwrap().voicemail_playback);
+    e.on_message(&server.sign(invite("um2", "sip:bob@contoso.com")), NOW);
+    assert!(!e.caller(2).unwrap().voicemail_playback);
+}

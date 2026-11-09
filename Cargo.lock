@@ -286,6 +286,7 @@ dependencies = [
  "commscraft-url",
  "commscraft-video-ffmpeg",
  "commscraft-video-wayland",
+ "commscraft-xml",
  "landlock",
  "libc",
  "seccompiler",

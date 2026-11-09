@@ -122,6 +122,9 @@ pub struct Caller {
     /// The caller is a delegate calling for this person (`p-session-on-behalf-of`, AE-38,
     /// [MS-SIPAE] §3.2.5.4), checked.
     pub acting_for: Option<String>,
+    /// Exchange UM calls to play voice messages (UM-02, [MS-OCEXUM] §2.2.2, pp. 8–9; §3.2,
+    /// p. 11): `Ms-Sensitivity: private-no-diversion` and From = To = the user's own URI.
+    pub voicemail_playback: bool,
 }
 
 /// Most early dialogs (forks) tracked per call.
@@ -463,11 +466,20 @@ impl<R: Random> Engine<R> {
             .flatten()
             .and_then(|v| commscraft_sip_msg::parse_name_addr(v).ok())
             .and_then(|n| pres::checked_sip_uri(&n.uri).ok());
+        let voicemail_playback = c
+            .invite
+            .header_values("Ms-Sensitivity")
+            .any(|v| v.trim().eq_ignore_ascii_case("private-no-diversion"))
+            && c.peer.eq_ignore_ascii_case(&self.cfg.aor)
+            && addressed_to
+                .as_deref()
+                .is_some_and(|t| t.eq_ignore_ascii_case(&self.cfg.aor));
         Some(Caller {
             uri: sip.unwrap_or_else(|| c.peer.clone()),
             number,
             anonymous,
             gateway,
+            voicemail_playback,
             on_behalf_of,
             acting_for,
         })

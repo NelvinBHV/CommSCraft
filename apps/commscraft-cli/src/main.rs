@@ -64,7 +64,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
-          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /meeting ID  /cancelmeeting ID [static]
@@ -2527,6 +2527,8 @@ fn interactive(
     let mut pending_behalf: BTreeMap<u32, String> = BTreeMap::new();
     // Media ids of calls being prepared that are emergency calls (function 39).
     let mut pending_emergency: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
+    // Function 38: media prepared for a call to the own voicemail.
+    let mut pending_voicemail: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
     // The location policy enables emergency services: ask the location service (E9-03).
     let mut lis_wanted = false;
     // RG-51: the location policy and the next periodic location lookup (LocationRefreshInterval).
@@ -2785,7 +2787,12 @@ fn interactive(
                             },
                             None => from,
                         } + &for_whom;
-                        if let Some(old) = engine.replaces(call) {
+                        if engine.caller(call).is_some_and(|c| c.voicemail_playback) {
+                            // UM-02: Exchange plays a voice message on this phone.
+                            println!(
+                                "* incoming call {call}: Exchange plays your voicemail – /answer {call} or /hangup {call}"
+                            );
+                        } else if let Some(old) = engine.replaces(call) {
                             // RFC 3891: an attended transfer replaces call `old` – answer it.
                             println!("* call {old} is being replaced by call {call} from {who}");
                             let _ = self_tx.send(format!("/answer {call}"));
@@ -3529,7 +3536,9 @@ fn interactive(
                         let call = engine.next_call_id();
                         media_of_call.insert(call, id);
                         outgoing.insert(call);
-                        let command = if pending_emergency.remove(&id) {
+                        let command = if pending_voicemail.remove(&id) {
+                            C::CallVoicemail { local, policy }
+                        } else if pending_emergency.remove(&id) {
                             C::EmergencyCall {
                                 dialled: to,
                                 local,
@@ -3731,6 +3740,59 @@ fn interactive(
                     }
                 },
                 "/chat" => Some(C::StartConversation { to: arg }),
+                "/voicemail" if arg == "call" => {
+                    // UM-01: the own voicemail, without PIN prompt.
+                    let relay = engine.media_relay().and_then(calls::relay_from);
+                    let bwm = calls::bandwidth_config(
+                        services.as_ref().and_then(|s| s.enable_bw_policy_check) == Some(true),
+                        engine.own_aor(),
+                        None,
+                        None,
+                    );
+                    let id = next_media;
+                    next_media = next_media.wrapping_add(1).max(1);
+                    let h = calls::spawn(
+                        id,
+                        local_ip,
+                        relay,
+                        bwm,
+                        commscraft_audio_alsa::Config::default(),
+                        media_tx.clone(),
+                    );
+                    handles.insert(id, h);
+                    pending_out.insert(id, format!("{};opaque=app:voicemail", engine.own_aor()));
+                    pending_voicemail.insert(id);
+                    println!("* calling your voicemail (gathering media addresses) …");
+                    None
+                }
+                "/voicemail" => {
+                    // Function 38: the voice messages in Exchange (MS-OXOUM message classes).
+                    match &ews {
+                        Some(s) => match voicemail_list(&mut engine, tls, trust, s, verbose) {
+                            Ok(list) if list.is_empty() => println!("* no voice messages"),
+                            Ok(list) => {
+                                println!("* {} voice messages (newest first):", list.len());
+                                for v in list {
+                                    let when = v
+                                        .received
+                                        .and_then(commscraft_xml::xs_datetime)
+                                        .unwrap_or_default();
+                                    println!(
+                                        "  {} {when}  {}{}{}",
+                                        if v.read { " " } else { "*" },
+                                        v.caller,
+                                        v.phone.map(|p| format!(" ({p})")).unwrap_or_default(),
+                                        v.duration.map(|d| format!(", {d} s")).unwrap_or_default()
+                                    );
+                                }
+                                println!("  (* = new; /voicemail call to listen)");
+                            }
+                            Err(e) => println!("* voicemail list not read: {e}"),
+                        },
+                        None => println!("* no Exchange web services known"),
+                    }
+                    None
+                }
                 "/call" | "/callback" | "/callfor" | "/videocall" => {
                     // AE-38: /callfor sip:BOSS TARGET calls as the boss's delegate.
                     let (boss, arg) = if cmd == "/callfor" {
@@ -5156,6 +5218,27 @@ fn transcript_participant(
             .to_string(),
         address: address.to_string(),
     });
+}
+
+/// Function 38: the voice messages in the user's Inbox (FindItem on the voicemail classes).
+fn voicemail_list(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    settings: &commscraft_ews::UserSettings,
+    verbose: bool,
+) -> Result<Vec<commscraft_ews::voicemail::Voicemail>, String> {
+    use commscraft_ews::voicemail;
+    let answer = ews_call(
+        engine,
+        tls,
+        trust,
+        settings,
+        ("FindItem", voicemail::FIND_ITEM_ACTION),
+        &voicemail::list_request(),
+        verbose,
+    )?;
+    voicemail::parse_list(&answer).map_err(|e| format!("{e:?}"))
 }
 
 /// Function 49: saves a finished conversation in the Conversation History folder (CreateItem,
