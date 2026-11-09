@@ -381,18 +381,50 @@ impl AddressBook {
     /// from this file is accepted. The tables are replaced; new and changed contacts replace the
     /// old ones (in a compact delta only their attributes, an empty value removes one); deleted
     /// contacts are removed.
+    ///
+    /// Security by design (issues #125, #126): every check runs before anything changes, so a
+    /// refused delta leaves the book as it was; contacts are found through hash tables, so the
+    /// work grows linearly with the book and the delta.
     pub fn apply(&mut self, d: &Delta) -> Result<(), Error> {
+        use std::collections::{HashMap, HashSet};
         let hash_differs = matches!((self.hash, d.base_hash), (Some(a), Some(b)) if a != b);
         if d.base != self.created || hash_differs {
             return Err(Error::WrongBase);
         }
-        self.contacts.retain(|c| !d.deleted.contains(&c.guid));
+        let deleted: HashSet<&[u8; 16]> = d.deleted.iter().collect();
+        let kept = self
+            .contacts
+            .iter()
+            .filter(|c| !deleted.contains(&c.guid))
+            .count();
+        let known: HashSet<&[u8; 16]> = self
+            .contacts
+            .iter()
+            .filter(|c| !deleted.contains(&c.guid))
+            .map(|c| &c.guid)
+            .collect();
+        let new: HashSet<&[u8; 16]> = d
+            .changed
+            .iter()
+            .map(|c| &c.guid)
+            .filter(|g| !known.contains(g))
+            .collect();
+        if kept.saturating_add(new.len()) > MAX_CONTACTS {
+            return Err(Error::Bad("contact count"));
+        }
+        // From here on nothing can fail.
+        self.contacts.retain(|c| !deleted.contains(&c.guid));
+        let mut index: HashMap<[u8; 16], usize> = self
+            .contacts
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (c.guid, i))
+            .collect();
         for c in &d.changed {
-            let room = self.contacts.len() < MAX_CONTACTS;
-            match self.contacts.iter_mut().find(|o| o.guid == c.guid) {
+            match index.get(&c.guid).and_then(|&i| self.contacts.get_mut(i)) {
                 Some(old) if d.compact => {
-                    old.values
-                        .retain(|(id, _)| !c.values.iter().any(|(n, _)| n == id));
+                    let changed: HashSet<u16> = c.values.iter().map(|(n, _)| *n).collect();
+                    old.values.retain(|(id, _)| !changed.contains(id));
                     old.values.extend(
                         c.values
                             .iter()
@@ -402,8 +434,10 @@ impl AddressBook {
                     old.values.truncate(MAX_VALUES);
                 }
                 Some(old) => *old = c.clone(),
-                None if room => self.contacts.push(c.clone()),
-                None => return Err(Error::Bad("contact count")),
+                None => {
+                    index.insert(c.guid, self.contacts.len());
+                    self.contacts.push(c.clone());
+                }
             }
         }
         self.created = d.created;

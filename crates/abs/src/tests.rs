@@ -650,3 +650,78 @@ fn lookup_normalizes_unnormalized_books() {
         Some("Local")
     );
 }
+
+fn guid(n: u32) -> [u8; 16] {
+    let mut g = [0u8; 16];
+    g[..4].copy_from_slice(&n.to_le_bytes());
+    g[15] = 1;
+    g
+}
+
+fn plain_book(n: u32) -> book::AddressBook {
+    book::AddressBook {
+        created: 0x0a10,
+        normalized: false,
+        rules: Vec::new(),
+        attributes: Vec::new(),
+        contacts: (0..n)
+            .map(|i| book::Contact {
+                guid: guid(i),
+                values: Vec::new(),
+            })
+            .collect(),
+        hash: None,
+    }
+}
+
+fn plain_delta(
+    changed: impl Iterator<Item = u32>,
+    deleted: impl Iterator<Item = u32>,
+) -> book::Delta {
+    book::Delta {
+        base: 0x0a10,
+        created: 0x0a11,
+        compact: false,
+        normalized: false,
+        rules: Vec::new(),
+        attributes: Vec::new(),
+        changed: changed
+            .map(|i| book::Contact {
+                guid: guid(i),
+                values: Vec::new(),
+            })
+            .collect(),
+        deleted: deleted.map(guid).collect(),
+        hash: None,
+        base_hash: None,
+    }
+}
+
+/// Issue #126: a delta that would exceed the contact limit is refused before anything changes –
+/// the book keeps its contacts, date and tables; deletions in the same delta make room.
+#[test]
+fn refused_delta_leaves_the_book_unchanged() {
+    let max = book::MAX_CONTACTS as u32;
+    let base = plain_book(max - 1);
+    let mut b = base.clone();
+    let d = plain_delta([max, max + 1].into_iter(), [0].into_iter().take(0));
+    assert_eq!(b.apply(&d), Err(book::Error::Bad("contact count")));
+    assert_eq!(b, base);
+    // Two new, one deleted: fits exactly.
+    let d = plain_delta([max, max + 1].into_iter(), [0].into_iter());
+    b.apply(&d).unwrap();
+    assert_eq!(b.contacts.len(), book::MAX_CONTACTS);
+    assert_eq!(b.created, 0x0a11);
+}
+
+/// Issue #125: many deletions and changes are applied in linear time (with list searches this
+/// would take on the order of 10^10 comparisons).
+#[test]
+fn large_delta_applies_in_linear_time() {
+    let mut b = plain_book(200_000);
+    let d = plain_delta(100_000..200_000, 0..100_000);
+    let start = std::time::Instant::now();
+    b.apply(&d).unwrap();
+    assert_eq!(b.contacts.len(), 100_000);
+    assert!(start.elapsed() < std::time::Duration::from_secs(20));
+}
