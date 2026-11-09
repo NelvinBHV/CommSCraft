@@ -39,7 +39,7 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 ## What works today
 
 Status from [`docs/target-app-parity.md`](docs/target-app-parity.md) (2026-11-09): of 52 client
-functions, 26 are implemented and tested offline as a whole, 15 in parts, 7 not started.
+functions, 26 are implemented and tested offline as a whole, 15 in parts, 5 not started.
 
 | Area | In the code (tested offline) | Not yet |
 |---|---|---|
