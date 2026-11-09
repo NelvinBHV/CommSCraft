@@ -9,8 +9,10 @@
 //! failing on it now ends this process and not the call; the client starts it again on the CPU. It
 //! gets no credentials and only the environment a window needs. Before it reads any video it puts
 //! itself into a Landlock sandbox ([`sandbox`]): it may read the system's files and use the GPU, but
-//! not read the user's files, write files, open TCP connections or gain privileges. What it reports
-//! is treated as untrusted: bounded, printable, limited in number.
+//! not read the user's files, write files, open TCP connections or gain privileges. A system call
+//! filter ([`syscall_filter`]) then takes away what a taken-over decoder could still use: starting
+//! programs, network sockets, debugging other processes, kernel interfaces. What it reports is
+//! treated as untrusted: bounded, printable, limited in number.
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::fd::AsFd;
@@ -156,6 +158,103 @@ pub fn sandbox() -> Result<Sandbox, landlock::RulesetError> {
     })
 }
 
+/// System calls the video window never needs and a taken-over decoder could misuse: starting
+/// programs, reading or changing other processes, kernel modules, namespaces and mounts, BPF and
+/// performance counters, kernel key rings, io_uring (its operations are not seen by seccomp),
+/// file handles that bypass path checks, the clock, swap, reboot.
+const DENIED_SYSCALLS: &[libc::c_long] = &[
+    libc::SYS_execve,
+    libc::SYS_execveat,
+    libc::SYS_ptrace,
+    libc::SYS_process_vm_readv,
+    libc::SYS_process_vm_writev,
+    libc::SYS_process_madvise,
+    libc::SYS_pidfd_getfd,
+    libc::SYS_kcmp,
+    libc::SYS_init_module,
+    libc::SYS_finit_module,
+    libc::SYS_delete_module,
+    libc::SYS_kexec_load,
+    libc::SYS_kexec_file_load,
+    libc::SYS_mount,
+    libc::SYS_umount2,
+    libc::SYS_pivot_root,
+    libc::SYS_chroot,
+    libc::SYS_unshare,
+    libc::SYS_setns,
+    libc::SYS_fsopen,
+    libc::SYS_fsmount,
+    libc::SYS_move_mount,
+    libc::SYS_open_tree,
+    libc::SYS_bpf,
+    libc::SYS_perf_event_open,
+    libc::SYS_userfaultfd,
+    libc::SYS_keyctl,
+    libc::SYS_add_key,
+    libc::SYS_request_key,
+    libc::SYS_io_uring_setup,
+    libc::SYS_io_uring_enter,
+    libc::SYS_io_uring_register,
+    libc::SYS_open_by_handle_at,
+    libc::SYS_name_to_handle_at,
+    libc::SYS_fanotify_init,
+    libc::SYS_personality,
+    libc::SYS_swapon,
+    libc::SYS_swapoff,
+    libc::SYS_reboot,
+    libc::SYS_settimeofday,
+    libc::SYS_clock_settime,
+    libc::SYS_acct,
+    libc::SYS_quotactl,
+];
+/// Socket families the window may open: only local (Unix) sockets for the Wayland or X server.
+/// Every other family (IP, raw packets, netlink, …) is refused.
+const ALLOWED_SOCKET_FAMILY: libc::c_long = libc::AF_UNIX as libc::c_long;
+
+/// The system call filter of the helper (seccomp-BPF): the calls of [`DENIED_SYSCALLS`] and sockets
+/// other than Unix sockets fail with EPERM, everything else is allowed. A deny list on top of
+/// Landlock (design: the GPU drivers' system calls differ by driver and version, an allow list
+/// would break video on some systems).
+// `c_long` is `i64` on the 64-bit targets seccompiler knows; the conversion keeps other widths
+// compiling.
+#[allow(clippy::useless_conversion)]
+fn syscall_program() -> Result<seccompiler::BpfProgram, String> {
+    use seccompiler::{
+        SeccompAction, SeccompCmpArgLen, SeccompCmpOp, SeccompCondition, SeccompFilter,
+        SeccompRule, TargetArch,
+    };
+    let arch = TargetArch::try_from(std::env::consts::ARCH).map_err(|e| e.to_string())?;
+    let mut rules: std::collections::BTreeMap<i64, Vec<SeccompRule>> = DENIED_SYSCALLS
+        .iter()
+        .map(|&n| (i64::from(n), Vec::new()))
+        .collect();
+    let other_family = SeccompCondition::new(
+        0,
+        SeccompCmpArgLen::Dword,
+        SeccompCmpOp::Ne,
+        ALLOWED_SOCKET_FAMILY as u64,
+    )
+    .and_then(|c| SeccompRule::new(vec![c]))
+    .map_err(|e| e.to_string())?;
+    rules.insert(i64::from(libc::SYS_socket), vec![other_family]);
+    let filter = SeccompFilter::new(
+        rules,
+        SeccompAction::Allow,
+        SeccompAction::Errno(libc::EPERM as u32),
+        arch,
+    )
+    .map_err(|e| e.to_string())?;
+    filter
+        .try_into()
+        .map_err(|e: seccompiler::BackendError| e.to_string())
+}
+
+/// Applies [`syscall_program`] to every thread of this process, for good.
+pub fn syscall_filter() -> Result<(), String> {
+    let program = syscall_program()?;
+    seccompiler::apply_filter_all_threads(&program).map_err(|e| e.to_string())
+}
+
 /// The helper process. Messages for the user go to standard output, one per line.
 pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
     // Before any received video is read. A sandbox that cannot be set up is reported; the helper
@@ -165,6 +264,9 @@ pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
         Ok(Sandbox::Partial) => println!("video window: sandbox only partly available"),
         Ok(Sandbox::None) => println!("video window: no sandbox (kernel without Landlock)"),
         Err(e) => println!("video window: no sandbox ({e})"),
+    }
+    if let Err(e) = syscall_filter() {
+        println!("video window: no system call filter ({})", clean_notice(&e));
     }
     let id = args.next().unwrap_or_default();
     let mut surfaces = args.next().as_deref() == Some("gpu") && Window::in_wayland_session();
@@ -413,6 +515,27 @@ pub fn spawn(input: Receiver<Vec<u8>>, stop: Arc<AtomicBool>, events: Sender<Fro
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The system call filter, applied to one thread only: starting a program and IP sockets are
+    /// refused, Unix sockets still work; other threads are not affected.
+    #[test]
+    fn syscall_filter_refuses_what_the_window_never_needs() {
+        let program = syscall_program().unwrap();
+        assert!(!program.is_empty());
+        let filtered = std::thread::spawn(move || {
+            seccompiler::apply_filter(&program).unwrap();
+            let exec = std::process::Command::new("/bin/true").status();
+            let udp = std::net::UdpSocket::bind("127.0.0.1:0");
+            let tcp = std::net::TcpListener::bind("127.0.0.1:0");
+            let unix = std::os::unix::net::UnixDatagram::unbound();
+            (exec.is_err(), udp.is_err(), tcp.is_err(), unix.is_ok())
+        })
+        .join()
+        .unwrap();
+        assert_eq!(filtered, (true, true, true, true));
+        // This thread has no filter.
+        assert!(std::net::UdpSocket::bind("127.0.0.1:0").is_ok());
+    }
 
     /// What goes over the pipe; hostile lengths are refused before allocating.
     #[test]
