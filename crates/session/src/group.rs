@@ -68,8 +68,12 @@ pub(crate) struct Group {
     pub lobby_since: Option<u64>,
     /// The call to the A/V MCU (conference audio).
     pub av_call: Option<CallId>,
+    /// The viewing call to the application sharing MCU (function 43).
+    pub screen_call: Option<CallId>,
     /// The focus factory refused the A/V MCU (`mcuTypeNotAvailable`): created with chat only.
     pub chat_only: bool,
+    /// The focus factory refused the MCUs with application sharing: created without it.
+    pub without_sharing: bool,
 }
 
 /// How long we wait in the lobby before leaving (CB-23 recommends an own timeout; design).
@@ -148,8 +152,9 @@ impl<R: Random> Engine<R> {
         self.send_add_conference(id, &factory, now, out);
     }
 
-    /// addConference with the IM MCU and the A/V MCU, so that the conversation can add audio
-    /// later (PV-12); after a `mcuTypeNotAvailable` refusal with the IM MCU only.
+    /// addConference with the IM MCU, the A/V MCU and the application sharing MCU, so that the
+    /// conversation can add audio and carry a shared screen later (PV-12); after a
+    /// `mcuTypeNotAvailable` refusal without application sharing, then with the IM MCU only.
     fn send_add_conference(
         &mut self,
         id: ConversationId,
@@ -157,11 +162,19 @@ impl<R: Random> Engine<R> {
         now: u64,
         out: &mut Vec<Output>,
     ) {
-        let chat_only = self.group_mut(id).is_some_and(|g| g.chat_only);
+        let (chat_only, without_sharing) = self
+            .group_mut(id)
+            .map_or((false, false), |g| (g.chat_only, g.without_sharing));
         let mcus: &[conf::McuType] = if chat_only {
             &[conf::McuType::Chat]
-        } else {
+        } else if without_sharing {
             &[conf::McuType::Chat, conf::McuType::AudioVideo]
+        } else {
+            &[
+                conf::McuType::Chat,
+                conf::McuType::AudioVideo,
+                conf::McuType::ApplicationSharing,
+            ]
         };
         let mut random = [0u8; 16];
         self.reg.fill_random(&mut random);
@@ -274,16 +287,25 @@ impl<R: Random> Engine<R> {
                 }
             }
             Some(r) => {
-                // PV-12: the focus factory has no A/V MCU – once more with the IM MCU only.
-                let retry = r.reason.as_deref() == Some("mcuTypeNotAvailable")
-                    && self.group_mut(id).is_some_and(|g| !g.chat_only);
-                if let (true, Some(factory)) = (retry, self.focus_factory.clone()) {
+                // PV-12: an MCU type is not there – once more without application sharing,
+                // then with the IM MCU only.
+                let refused = r.reason.as_deref() == Some("mcuTypeNotAvailable");
+                let step = self.group_mut(id).map(|g| (g.without_sharing, g.chat_only));
+                if let (true, Some((without_sharing, false)), Some(factory)) =
+                    (refused, step, self.focus_factory.clone())
+                {
                     if let Some(g) = self.group_mut(id) {
-                        g.chat_only = true;
+                        if without_sharing {
+                            g.chat_only = true;
+                        } else {
+                            g.without_sharing = true;
+                        }
                     }
-                    out.push(Output::Event(Event::Notice(
-                        "the server offers no conference audio; chat only".into(),
-                    )));
+                    if without_sharing {
+                        out.push(Output::Event(Event::Notice(
+                            "the server offers no conference audio; chat only".into(),
+                        )));
+                    }
                     self.send_add_conference(id, &factory, now, out);
                     return;
                 }
@@ -662,6 +684,9 @@ impl<R: Random> Engine<R> {
             if let Some(call) = g.av_call {
                 self.hangup(call, now, out);
             }
+            if let Some(call) = g.screen_call {
+                self.hangup(call, now, out);
+            }
             if let Some(mut d) = g.roster_dialog {
                 let mut m = d.request("SUBSCRIBE");
                 self.complete(&mut m);
@@ -793,6 +818,7 @@ impl<R: Random> Engine<R> {
                 part: None,
                 video,
                 emergency: false,
+                screen: false,
             },
             now,
             out,
@@ -802,6 +828,60 @@ impl<R: Random> Engine<R> {
                 g.av_call = Some(call);
             }
             out.push(Output::Event(Event::ConferenceAudio {
+                conversation: id,
+                call,
+            }));
+        }
+    }
+
+    /// `ViewConferenceScreen` (function 43): view what is shared in the conference – a call to
+    /// its application sharing MCU (CS-01: dial-in by INVITE) with our viewer offer
+    /// (`sdp::screen::viewer_offer`); the call belongs to the conversation and ends with it.
+    pub(crate) fn view_conference_screen(
+        &mut self,
+        id: ConversationId,
+        video: sdp::video::VideoLocal,
+        policy: sdp::Encryption,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let uri = match self.group_mut(id) {
+            Some(g) if g.lobby_since.is_some() => {
+                out.push(Output::Event(Event::Notice("still in the lobby".into())));
+                return;
+            }
+            Some(g) if g.screen_call.is_some() => {
+                out.push(Output::Event(Event::Notice("already viewing".into())));
+                return;
+            }
+            Some(g) => g.roster.as_uri.clone(),
+            None => None,
+        };
+        let Some(uri) = uri else {
+            out.push(Output::Event(Event::Notice(
+                "nothing is shared in this conference".into(),
+            )));
+            return;
+        };
+        let local = video.media.clone();
+        let started = self.start_call_with(
+            &uri,
+            local,
+            policy,
+            crate::call::Extras {
+                video: Some(&video),
+                screen: true,
+                ..Default::default()
+            },
+            now,
+            out,
+        );
+        if let Some(call) = started {
+            self.screen_calls.insert(call);
+            if let Some(g) = self.group_mut(id) {
+                g.screen_call = Some(call);
+            }
+            out.push(Output::Event(Event::ConferenceScreen {
                 conversation: id,
                 call,
             }));

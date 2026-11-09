@@ -792,10 +792,14 @@ impl Depacketizer {
                     full.present = l.present;
                 }
             }
-            // §3.2.5.1: a full layout must be known, and this layer must be in it.
-            let known = self.layout.as_ref().is_some_and(|l| {
-                l.present & (1u64 << pacsi.prid) != 0 && l.layer(pacsi.prid).is_some()
-            });
+            // §3.2.5.1: a full layout must be known, and this layer must be described in it.
+            // K-PL-2: §3.2.5.1 also asks for the layer's presence bit, but the application
+            // sharing MCU describes layers 0 and 2, sets only bit 0 and then sends layer 2
+            // (`tested-in-lab`); a described layer is therefore taken without its bit.
+            let known = self
+                .layout
+                .as_ref()
+                .is_some_and(|l| l.layer(pacsi.prid).is_some());
             if !known {
                 return Err(());
             }

@@ -589,8 +589,27 @@ fn group_without_av_mcu_falls_back_to_chat_once() {
         NOW,
     );
     let first = find(&out, "SERVICE");
-    assert!(String::from_utf8_lossy(&first.body).contains("entity=\"audio-video\""));
-    let refused = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" C3PVersion="1" requestId="1" code="failure"><addConference reason="mcuTypeNotAvailable"/></response>"#;
+    let body = String::from_utf8_lossy(&first.body).to_string();
+    assert!(
+        body.contains("entity=\"audio-video\"") && body.contains("entity=\"applicationsharing\"")
+    );
+    // First refusal: once more without application sharing.
+    let refused0 = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" C3PVersion="1" requestId="1" code="failure"><addConference reason="mcuTypeNotAvailable"/></response>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &first,
+            200,
+            Some("application/cccp+xml"),
+            refused0,
+            &[],
+        ),
+        NOW,
+    );
+    let first = find(&out, "SERVICE");
+    let body = String::from_utf8_lossy(&first.body).to_string();
+    assert!(body.contains("entity=\"audio-video\"") && !body.contains("applicationsharing"));
+    let refused = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" C3PVersion="1" requestId="2" code="failure"><addConference reason="mcuTypeNotAvailable"/></response>"#;
     let out = e.on_message(
         &answer(
             &mut server,
@@ -608,7 +627,7 @@ fn group_without_av_mcu_falls_back_to_chat_once() {
     let second = find(&out, "SERVICE");
     let body = String::from_utf8_lossy(&second.body).to_string();
     assert!(body.contains("entity=\"chat\"") && !body.contains("audio-video"));
-    let refused2 = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" C3PVersion="1" requestId="2" code="failure"><addConference reason="mcuTypeNotAvailable"/></response>"#;
+    let refused2 = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" C3PVersion="1" requestId="3" code="failure"><addConference reason="mcuTypeNotAvailable"/></response>"#;
     let out = e.on_message(
         &answer(
             &mut server,
@@ -4939,4 +4958,131 @@ a=rtcp:6613\r\na=sendonly\r\na=rtpmap:122 X-H264UC/90000\r\na=fmtp:122 packetiza
         .any(|e| matches!(e, Event::IncomingScreenShare { call: 2, .. })));
     let out = e.command(Command::Hangup { call: 2 }, NOW);
     assert_eq!(sends(&out).pop().unwrap().status_code(), Some(603));
+}
+
+/// Function 43 in meetings: join, the roster names the application sharing MCU, the viewer offer
+/// goes to it (RDP line disabled, screen video receive-only), its answer gives the screen
+/// stream, the final offer after ICE goes out as re-INVITE, and leaving ends the viewing call.
+#[test]
+fn meeting_screen_viewing() {
+    const ASMCU: &str = "sip:alice@contoso.com;gruu;opaque=app:conf:applicationsharing:id:FC275ECD12493E4E9C27C894FE91E104";
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::JoinConference {
+            focus: FOCUS.into(),
+        },
+        NOW,
+    );
+    let focus_invite = find(&out, "INVITE");
+    let granted = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" requestId="1" C3PVersion="1" code="success"><addUser><conferenceKeys confEntity="{FOCUS}"/></addUser></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &focus_invite,
+            200,
+            Some("application/cccp+xml"),
+            &granted,
+            &[],
+        ),
+        NOW,
+    );
+    let roster_sub = find(&out, "SUBSCRIBE");
+    let doc = format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="full" version="1"><conference-description><conf-uris><entry><uri>{ASMCU}</uri><purpose>applicationsharing</purpose></entry></conf-uris></conference-description><users><user entity="sip:alice@contoso.com" state="full"><endpoint entity="{{F}}" msci:session-type="focus"><status>connected</status></endpoint></user></users></conference-info>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &roster_sub,
+            200,
+            Some("application/conference-info+xml"),
+            &doc,
+            &[("Expires", "3600")],
+        ),
+        NOW,
+    );
+    let conversation = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::Participants { conversation, .. } => Some(*conversation),
+            _ => None,
+        })
+        .or_else(|| {
+            events(&out).iter().find_map(|ev| match ev {
+                Event::ConversationStarted { conversation, .. } => Some(*conversation),
+                _ => None,
+            })
+        })
+        .unwrap_or(1);
+    let out = e.command(
+        Command::ViewConferenceScreen {
+            conversation,
+            video: Box::new(video_local(42002, 4)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let call = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::ConferenceScreen { call, .. } => Some(*call),
+            _ => None,
+        })
+        .expect("viewing call");
+    let invite = find(&out, "INVITE");
+    assert!(invite
+        .single("To")
+        .unwrap()
+        .unwrap()
+        .contains("app:conf:applicationsharing"));
+    let body = String::from_utf8_lossy(&invite.body).to_string();
+    assert!(body
+        .contains("m=applicationsharing 0 TCP/RTP/AVP 127\r\na=x-applicationsharing-role:viewer"));
+    assert!(body.contains("m=video 42002 RTP/SAVP 122 123"));
+    assert!(
+        body.contains("a=label:applicationsharing-video\r\n") && body.contains("a=recvonly\r\n")
+    );
+    assert!(!body.contains("m=audio"));
+    // The MCU's answer: the screen stream sendonly.
+    let answer_sdp = "v=0\r\no=- 2 0 IN IP4 192.0.2.20\r\ns=session\r\nc=IN IP4 192.0.2.20\r\nt=0 0\r\n\
+m=applicationsharing 0 TCP/RTP/AVP 127\r\n\
+m=video 51632 RTP/SAVP 122 123\r\na=x-ssrc-range:5000-5099\r\na=rtcp-fb:* x-message app send:src,x-pli recv:src,x-pli\r\na=rtcp-rsize\r\na=label:applicationsharing-video\r\n\
+a=ice-ufrag:cccc\r\na=ice-pwd:dddddddddddddddddddddddd\r\na=candidate:1 1 UDP 2130706431 192.0.2.20 51632 typ host\r\n\
+a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
+a=rtcp:51633\r\na=sendonly\r\na=rtpmap:122 X-H264UC/90000\r\na=fmtp:122 packetization-mode=1;mst-mode=NI-TC\r\na=rtpmap:123 x-ulpfecuc/90000\r\n";
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            answer_sdp,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(sends(&out).iter().any(|m| m.method() == Some("ACK")));
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::CallVideo { call: c, .. } if *c == call)));
+    // The final offer after ICE.
+    let out = e.command(
+        Command::SetCallVideo {
+            call,
+            video: Box::new(video_local(42002, 9)),
+        },
+        NOW,
+    );
+    let reinvite = find(&out, "INVITE");
+    let body = String::from_utf8_lossy(&reinvite.body).to_string();
+    assert!(body.contains("a=label:applicationsharing-video") && !body.contains("m=audio"));
+    // Leaving the conversation ends the viewing call.
+    let out = e.command(Command::EndConversation { conversation }, NOW);
+    assert!(sends(&out).iter().any(|m| m.method() == Some("BYE")
+        && m.single("To")
+            .ok()
+            .flatten()
+            .is_some_and(|t| t.contains("applicationsharing"))));
 }

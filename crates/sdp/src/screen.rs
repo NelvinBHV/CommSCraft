@@ -85,3 +85,33 @@ pub fn answer(
     }
     Ok((out, negotiated))
 }
+
+/// Our offer as viewer to the application sharing MCU of a meeting (CS-02, CS-03; [MS-CONFAS]
+/// §3.2.5.1.2, pp. 15–16): the screen video line receive-only with the screen label and, as
+/// the MCU expects an application sharing line, `m=applicationsharing` in the viewer role,
+/// disabled with port 0 (no RDP viewer yet; inference – whether the MCU takes it is shown by
+/// `tested-in-lab`).
+pub fn viewer_offer(video: &VideoLocal, policy: Encryption) -> Result<String, Error> {
+    let proto = match policy {
+        Encryption::Required => "RTP/SAVP",
+        _ => "RTP/AVP",
+    };
+    let mut v = video.clone();
+    v.media.direction = Direction::RecvOnly;
+    if policy == Encryption::Off {
+        v.media.key = None;
+    }
+    let mut out = header(&v.media);
+    out.push_str(&format!(
+        "a=x-mediabw:{SCREEN_VIDEO_LABEL} send={SCREEN_MEDIABW_KBPS};recv={SCREEN_MEDIABW_KBPS}\r\n"
+    ));
+    out.push_str("m=applicationsharing 0 TCP/RTP/AVP 127\r\na=x-applicationsharing-role:viewer\r\na=x-applicationsharing-media-type:rdp\r\na=x-applicationsharing-contentflow:inactive\r\na=rtpmap:127 x-data/90000\r\n");
+    out.push_str(&super::video::labelled_video_section(
+        &v,
+        proto,
+        super::video::H264UC_PT,
+        Some(super::video::ULPFEC_PT),
+        SCREEN_VIDEO_LABEL,
+    )?);
+    Ok(out)
+}

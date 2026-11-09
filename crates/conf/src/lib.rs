@@ -121,6 +121,8 @@ pub enum McuType {
     Chat,
     /// The A/V MCU (conference audio).
     AudioVideo,
+    /// The application sharing MCU (screen sharing, CB-01; [MS-CONFAS] §1.3, p. 8).
+    ApplicationSharing,
 }
 
 impl McuType {
@@ -128,6 +130,7 @@ impl McuType {
         match self {
             McuType::Chat => "chat",
             McuType::AudioVideo => "audio-video",
+            McuType::ApplicationSharing => "applicationsharing",
         }
     }
 }
@@ -702,6 +705,13 @@ pub struct Endpoint {
     /// A/V endpoint: the main video's media source ID (MSI) and whether the participant sends
     /// it (status sendrecv or sendonly) (CA-12; [MS-CONFAV] §2.2.2.1.2.3, example §4.1).
     pub video: Option<(u32, bool)>,
+    /// Application sharing endpoint (function 43, CS-10): whether it shares (media type
+    /// `applicationsharing` with status `sendonly`, the sharer) or views.
+    pub sharing: Option<bool>,
+    /// The media source ID of the shared screen's video (media `video` labelled
+    /// `applicationsharing-video` with status `sendonly`; `tested-in-lab`): the source a
+    /// viewer asks the MCU for (CA-13).
+    pub screen_source: Option<u32>,
 }
 
 /// One participant of the conference roster.
@@ -750,6 +760,8 @@ pub struct Roster {
     pub chat_uri: Option<String>,
     /// MCU conference URI with purpose `audio-video` (CA-01).
     pub av_uri: Option<String>,
+    /// MCU conference URI with purpose `applicationsharing` (CS-01).
+    pub as_uri: Option<String>,
     pub participants: Vec<Participant>,
     /// Lock state and meeting options (CB-43).
     pub settings: Settings,
@@ -795,6 +807,7 @@ impl Roster {
                 match purpose.trim() {
                     "chat" => self.chat_uri = u,
                     "audio-video" => self.av_uri = u,
+                    "applicationsharing" => self.as_uri = u,
                     _ => {}
                 }
             }
@@ -911,6 +924,8 @@ impl Roster {
                 uri: None,
                 audio: None,
                 video: None,
+                sharing: None,
+                screen_source: None,
             });
             if let Some(k) = attr_local(ep, "session-type") {
                 e.kind = printable(k);
@@ -941,6 +956,27 @@ impl Roster {
                         e.video = Some((msi, sends));
                     }
                 }
+                let is_screen_video = m.child("type").is_some_and(|t| t.text().trim() == "video")
+                    && m.child("label")
+                        .is_some_and(|l| l.text().trim() == "applicationsharing-video");
+                if is_screen_video
+                    && m.child("status")
+                        .is_some_and(|s| s.text().trim() == "sendonly")
+                {
+                    e.screen_source = m
+                        .child("media-source-id")
+                        .and_then(|v| v.text().trim().parse::<u32>().ok())
+                        .filter(|m| *m != 0 && *m < 0xffff_fffe);
+                }
+                // CS-10 ([MS-CONFAS] §3.3.5.4, pp. 20–21): sendonly = sharer, recvonly = viewer.
+                if m.child("type")
+                    .is_some_and(|t| t.text().trim() == "applicationsharing")
+                {
+                    e.sharing = m
+                        .child("status")
+                        .map(|s| s.text().trim() == "sendonly")
+                        .or(e.sharing);
+                }
                 if is_audio {
                     let blocked = m
                         .child("media-ingress-filter")
@@ -957,6 +993,14 @@ impl Roster {
 }
 
 impl Roster {
+    /// Who shares a screen in the conference (CS-10): the participant with an application
+    /// sharing endpoint in the sharer role.
+    pub fn screen_sharer(&self) -> Option<&Participant> {
+        self.participants
+            .iter()
+            .find(|p| p.endpoints.iter().any(|e| e.sharing == Some(true)))
+    }
+
     /// Our own focus endpoint is in the lobby (`on-hold`, CB-23).
     pub fn in_lobby(&self, own: &str) -> bool {
         self.own(own).is_some_and(|p| {

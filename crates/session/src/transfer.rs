@@ -459,6 +459,7 @@ impl<R: Random> Engine<R> {
                 part: None,
                 video: None,
                 emergency: false,
+                screen: false,
             },
             now,
             out,

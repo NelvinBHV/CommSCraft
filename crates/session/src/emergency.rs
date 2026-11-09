@@ -107,6 +107,7 @@ impl<R: Random> Engine<R> {
                 part: part.as_ref(),
                 video: None,
                 emergency: true,
+                screen: false,
             },
             now,
             &mut call_out,

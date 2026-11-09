@@ -691,3 +691,17 @@ fn screen_sharing_viewer_answer() {
     )
     .is_err());
 }
+
+/// Function 43 in meetings: the viewer's offer to the application sharing MCU (CS-02, CS-03).
+#[test]
+fn screen_viewer_offer() {
+    let o = screen::viewer_offer(&video_local(), Encryption::Required).unwrap();
+    let s = parse(o.as_bytes()).unwrap();
+    assert_eq!(s.media.len(), 2);
+    assert_eq!(s.media[0].kind, "applicationsharing");
+    assert_eq!(s.media[0].attr("x-applicationsharing-role"), Some("viewer"));
+    assert_eq!(s.media[1].kind, "video");
+    assert_eq!(s.media[1].attr("label"), Some("applicationsharing-video"));
+    assert!(o.contains("m=video 40002 RTP/SAVP 122 123\r\n"));
+    assert!(o.contains("a=recvonly\r\n"));
+}
