@@ -19,6 +19,7 @@ Source: [MS-CONFAS] "Centralized Conference Control Protocol: Application Sharin
 ## Conflicts / gaps
 - K-CS-1: §3.2.5.1.2 (pp. 15–16) uses both "sharer/viewer" and "sharing/viewing" for x-applicationsharing-role. The MS-SDPEXT ABNF (§3.1.5.18.2) allows only `sharer` | `viewer` ⇒ authoritative.
 - K-CS-2: §3.3.5.7.2 (p. 26) ties "AttendeesCanShare" to server-mode = 13, MS-CONFPRO §2.2.1.2 declares server-mode obsolete (behaviour always like 14). For SfB, AttendeesCanShare = false is to be expected, if the server reports it at all – interop test.
+- O-CS-1 (2026-11-09): in a conference created by CommSCraft (chat, audio-video, applicationsharing MCUs), the invited Windows client offers no desktop sharing ("Manage Content" only); in a conference it created itself it does. Whether the invitation (`application/ms-conf-invite+xml`, CI-30) or the conference lacks something needs a capture of the Windows client's own invitation.
 - K-CS-3: The example on p. 22 uses the namespace `urn:params:xml:ns:conference-info-separator` (missing "ietf") and typographic quotes – example error.
 - L-12: The actual screen/application transfer needs a complete **RDP implementation** (MS-RDPBCGR, MS-RDPEMC, possibly MS-RDPEGFX/RDPRFX); these Windows specifications are available and documented separately (file 36).
 
@@ -35,3 +36,16 @@ Source: [MS-CONFAS] "Centralized Conference Control Protocol: Application Sharin
 - **K-PL-1 (found 2026-11-09):** see file 17; key frames come without the marker bit.
 - **Not yet:** viewing in meetings (the application sharing MCU, CS-01 … CS-11) and RDP-based sharing (L-12).
 - **Status:** `tested-offline`, `tested-in-lab` (the Windows client's desktop seen in CommSCraft's video window: about 300 pictures in 35 s, none lost).
+
+## Implementation (2026-11-09, viewing in meetings, function 43)
+- **MCU (CS-01):** the roster's `conf-uris` entry with purpose `applicationsharing` (`conf::Roster::as_uri`).
+- **Sharer (CS-10):** the endpoint whose `applicationsharing` media has status `sendonly`. Its screen video – media `video` labelled `applicationsharing-video`, `sendonly` – carries a media source ID (`tested-in-lab`); the CLI announces the sharer once and `/viewconf N` views.
+- **Viewer offer (CS-02, CS-03; `sdp::screen::viewer_offer`):**
+  - `m=applicationsharing` in the viewer role with content flow `inactive`, disabled with port 0 (no RDP viewer yet);
+  - `m=video` receive-only, labelled `applicationsharing-video`, H.264 UC with ULPFEC;
+  - session-level `a=x-mediabw:applicationsharing-video`.
+- **MCU's answer (`tested-in-lab`):** it keeps the RDP line at port 0 and answers the video line `sendonly`. The final offer after ICE goes out as re-INVITE with the same shape and is answered in the same way.
+- **Source:** the video request (VSR, CA-13) names the sharer's media source ID; without it nothing arrives (`tested-in-lab`).
+- **K-PL-2:** see file 17.
+- **Ad-hoc conferences:** they now include the application sharing MCU (file 19, PV-12), so that the conference can carry a shared screen. Open: O-CS-1 (in a conference created by CommSCraft the invited Windows client offers no desktop sharing).
+- **Status:** `tested-offline`, `tested-in-lab` (a desktop shared in a meeting by the Windows client seen in CommSCraft: 577 pictures, 2 lost).

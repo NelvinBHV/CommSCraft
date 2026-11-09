@@ -64,7 +64,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
-          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /view [N] (view a shared screen)  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /view [N] (view a shared screen)  /viewconf [N] (view the screen shared in a meeting)  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /meeting ID  /cancelmeeting ID [static]
@@ -2510,8 +2510,16 @@ fn interactive(
     let mut video_of_call: BTreeMap<u32, u32> = BTreeMap::new();
     let mut ready_audio: BTreeMap<u32, Box<commscraft_sdp::Local>> = BTreeMap::new();
     let mut ready_video: BTreeMap<u32, Box<commscraft_sdp::video::VideoLocal>> = BTreeMap::new();
-    // Function 43: video streams prepared for viewing a shared screen, by call.
+    // Function 43: video streams prepared for viewing a shared screen, by call; for viewing in
+    // a meeting by conversation, and the video stream of each such conversation; conversations
+    // whose sharing was announced.
     let mut pending_screen: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut pending_conf_screen: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut conf_screen_video: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut sharing_announced: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
+    // The screen video stream of each conversation being viewed, and the sharer's source.
+    let mut viewing_screen: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut screen_source: BTreeMap<u32, u32> = BTreeMap::new();
     let camera = std::env::var("COMMSCRAFT_CAMERA").unwrap_or_else(|_| "/dev/video0".into());
     // Ringing, notification sound and music on hold (issues #82–#84).
     let mut meeting_calls: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
@@ -3167,6 +3175,32 @@ fn interactive(
                         conversation,
                         participants,
                     } => {
+                        // Function 43: tell once who shares a screen in the meeting.
+                        let sharer = participants
+                            .iter()
+                            .find(|p| p.endpoints.iter().any(|e| e.sharing == Some(true)));
+                        let source =
+                            sharer.and_then(|p| p.endpoints.iter().find_map(|e| e.screen_source));
+                        if let Some(msi) = source {
+                            if screen_source.insert(conversation, msi) != Some(msi) {
+                                if let Some(h) = viewing_screen
+                                    .get(&conversation)
+                                    .and_then(|v| video_handles.get(v))
+                                {
+                                    let _ = h.tx.send(video_call::ToVideo::Source(msi));
+                                }
+                            }
+                        }
+                        match sharer {
+                            Some(p) if sharing_announced.insert(conversation) => println!(
+                                "* [{conversation}] {} shares a screen – /viewconf {conversation}",
+                                p.name.as_deref().unwrap_or(&p.uri)
+                            ),
+                            None if sharing_announced.remove(&conversation) => {
+                                println!("* [{conversation}] screen sharing ended")
+                            }
+                            _ => {}
+                        }
                         // Function 49: the group's members are the history entry's recipients.
                         if let Some(t) = transcripts.get_mut(&conversation) {
                             let me = engine.own_aor().to_ascii_lowercase();
@@ -3229,6 +3263,22 @@ fn interactive(
                         } else {
                             println!("* [{conversation}] admitted to the meeting");
                         }
+                    }
+                    E::ConferenceScreen { conversation, call } => {
+                        // The viewing call offers (controlling ICE agent) and sends the final
+                        // offer once ICE has chosen.
+                        if let Some(vid) = conf_screen_video.remove(&conversation) {
+                            video_of_call.insert(call, vid);
+                            outgoing.insert(call);
+                            viewing_screen.insert(conversation, vid);
+                            // CA-13: ask the MCU for the sharer's stream.
+                            if let (Some(msi), Some(h)) =
+                                (screen_source.get(&conversation), video_handles.get(&vid))
+                            {
+                                let _ = h.tx.send(video_call::ToVideo::Source(*msi));
+                            }
+                        }
+                        println!("* [{conversation}] viewing the shared screen (call {call})");
                     }
                     E::ConferenceAudio { conversation, call } => {
                         meeting_calls.insert(call);
@@ -3430,6 +3480,22 @@ fn interactive(
         // Video streams: ready, selected, notices (function 28).
         while let Ok(v) = video_rx.try_recv() {
             match v {
+                video_call::FromVideo::Ready(vid, local)
+                    if pending_conf_screen.contains_key(&vid) =>
+                {
+                    if let Some(conversation) = pending_conf_screen.remove(&vid) {
+                        let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
+                        conf_screen_video.insert(conversation, vid);
+                        outputs.extend(engine.command(
+                            C::ViewConferenceScreen {
+                                conversation,
+                                video: local,
+                                policy,
+                            },
+                            now(),
+                        ));
+                    }
+                }
                 video_call::FromVideo::Ready(vid, local) => match pending_screen.remove(&vid) {
                     Some(call) => {
                         let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
@@ -3930,6 +3996,32 @@ fn interactive(
                     println!("* preparing the call (gathering media addresses) …");
                     None
                 }
+                "/viewconf" => match arg.parse::<u32>().ok().or(current) {
+                    // Function 43: view what is shared in a meeting (receive-only video).
+                    Some(conversation) => {
+                        let relay = engine.media_relay().and_then(calls::relay_from);
+                        let vid = next_media;
+                        next_media = next_media.wrapping_add(1).max(1);
+                        video_handles.insert(
+                            vid,
+                            video_call::spawn(
+                                vid,
+                                local_ip,
+                                relay,
+                                None,
+                                String::new(),
+                                video_tx.clone(),
+                            ),
+                        );
+                        pending_conf_screen.insert(vid, conversation);
+                        println!("* [{conversation}] preparing to view the shared screen …");
+                        None
+                    }
+                    None => {
+                        println!("* /viewconf N – no meeting conversation");
+                        None
+                    }
+                },
                 "/view" => match arg.parse::<u32>().ok().or(current_call) {
                     // Function 43: view a shared screen (receive-only video stream, no camera).
                     Some(call) => {

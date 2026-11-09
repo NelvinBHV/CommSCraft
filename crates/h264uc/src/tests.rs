@@ -454,3 +454,47 @@ fn access_unit_without_marker() {
         })
     ));
 }
+
+/// K-PL-2: a full layout that describes layers 0 and 2 but sets only the presence bit of layer 0
+/// – as the application sharing MCU sends it – still lets access units of layer 2 through; a
+/// layer without description is still dropped.
+#[test]
+fn described_layer_without_presence_bit() {
+    let base = vga_layout().layers[0];
+    let mut layout = StreamLayout::full(vec![base, LayerDescription { prid: 2, ..base }]).unwrap();
+    layout.present = 1;
+    let mut p0 = Packetizer::new(1200, 0, layout.clone()).unwrap();
+    let key = p0.packetize(&annex_b(&[&[0x65, 1, 2, 3]])).unwrap();
+    let mut p2 = Packetizer::new(1200, 2, layout).unwrap();
+    let _ = p2.packetize(&annex_b(&[&[0x65, 1, 2, 3]])).unwrap();
+    let delta = p2.packetize(&annex_b(&[&[0x41, 4, 5]])).unwrap();
+    let mut d = Depacketizer::new();
+    assert!(matches!(
+        feed(&mut d, &key, 1, 3000).first(),
+        Some(Output::AccessUnit { .. })
+    ));
+    let n = key.len() as u16;
+    assert!(matches!(
+        feed(&mut d, &delta, 1 + n, 6000).first(),
+        Some(Output::AccessUnit {
+            timestamp: 6000,
+            ..
+        })
+    ));
+    // Layer 5 is not described at all.
+    let mut p5 = Packetizer::new(1200, 5, vga_layout_with_prid(5)).unwrap();
+    let _ = p5.packetize(&annex_b(&[&[0x65, 1]])).unwrap();
+    let other = p5.packetize(&annex_b(&[&[0x41, 4, 5]])).unwrap();
+    let m = delta.len() as u16;
+    assert_eq!(
+        feed(&mut d, &other, 1 + n + m, 9000),
+        vec![Output::Lost { timestamp: 9000 }]
+    );
+}
+
+fn vga_layout_with_prid(prid: u8) -> StreamLayout {
+    let mut l = vga_layout();
+    l.layers[0].prid = prid;
+    l.present = 1 << prid;
+    l
+}

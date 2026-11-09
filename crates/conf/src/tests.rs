@@ -959,3 +959,48 @@ fn video_sources_from_roster() {
         "SOURCE_NONE is no source"
     );
 }
+
+/// Function 43: the application sharing MCU from `conf-uris` (CS-01), the sharer and its screen
+/// video source from the roster (CS-10; the shape the server sends, `tested-in-lab`).
+#[test]
+fn roster_screen_sharing() {
+    let xml = format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="full" version="1">
+<conference-description><conf-uris>
+<entry><uri>sip:alice@contoso.com;gruu;opaque=app:conf:applicationsharing:id:AB12</uri><purpose>applicationsharing</purpose></entry>
+<entry><uri>sip:alice@contoso.com;gruu;opaque=app:conf:audio-video:id:AB12</uri><purpose>audio-video</purpose></entry>
+</conf-uris></conference-description>
+<users>
+<user entity="sip:bob@contoso.com" state="full"><display-text>Bob</display-text>
+<endpoint entity="{{40622D80}}" msci:session-type="applicationsharing" msci:endpoint-uri="sip:bob@contoso.com;opaque=user:epid:x;gruu">
+<status>connected</status>
+<media id="1"><type>video</type><label>applicationsharing-video</label><status>sendonly</status><msci:media-source-id>2</msci:media-source-id></media>
+<media id="3"><type>applicationsharing</type><status>sendonly</status></media>
+</endpoint></user>
+<user entity="sip:carol@contoso.com" state="full">
+<endpoint entity="{{00857543}}" msci:session-type="applicationsharing">
+<status>connected</status>
+<media id="4"><type>video</type><label>applicationsharing-video</label><status>recvonly</status><msci:media-source-id>3</msci:media-source-id></media>
+</endpoint></user>
+</users></conference-info>"#
+    );
+    let mut r = Roster::default();
+    assert!(r.apply(&xml, FOCUS).unwrap());
+    assert_eq!(
+        r.as_uri.as_deref(),
+        Some("sip:alice@contoso.com;gruu;opaque=app:conf:applicationsharing:id:AB12")
+    );
+    let sharer = r.screen_sharer().unwrap();
+    assert_eq!(sharer.uri, "sip:bob@contoso.com");
+    let e = &sharer.endpoints[0];
+    assert_eq!(e.sharing, Some(true));
+    assert_eq!(e.screen_source, Some(2));
+    // The viewer is neither sharer nor source.
+    let carol = r
+        .participants
+        .iter()
+        .find(|p| p.uri == "sip:carol@contoso.com")
+        .unwrap();
+    assert_eq!(carol.endpoints[0].screen_source, None);
+    assert_ne!(carol.endpoints[0].sharing, Some(true));
+}

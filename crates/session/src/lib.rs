@@ -293,6 +293,12 @@ pub enum Command {
         local: Box<sdp::Local>,
         policy: sdp::Encryption,
     },
+    /// Function 43: view what is shared in a conference (its application sharing MCU).
+    ViewConferenceScreen {
+        conversation: ConversationId,
+        video: Box<sdp::video::VideoLocal>,
+        policy: sdp::Encryption,
+    },
     /// Function 43: view a shared screen (video-based screen sharing, receive only).
     AcceptScreenShare {
         call: CallId,
@@ -478,6 +484,11 @@ pub enum Event {
     IncomingCall {
         call: CallId,
         from: String,
+    },
+    /// The viewing call of a conference's shared screen got this call ID (function 43).
+    ConferenceScreen {
+        conversation: ConversationId,
+        call: CallId,
     },
     /// Someone shares their screen with us (function 43): view it with
     /// [`Command::AcceptScreenShare`] or decline with `Hangup`.
@@ -1932,6 +1943,11 @@ impl<R: Random> Engine<R> {
             Command::ConferenceMute { conversation, mute } => {
                 self.conference_mute(conversation, mute, now, &mut out)
             }
+            Command::ViewConferenceScreen {
+                conversation,
+                video,
+                policy,
+            } => self.view_conference_screen(conversation, *video, policy, now, &mut out),
             Command::AcceptScreenShare {
                 call,
                 video,
@@ -1972,6 +1988,7 @@ impl<R: Random> Engine<R> {
                             part: None,
                             video: None,
                             emergency: false,
+                            screen: false,
                         },
                         now,
                         &mut out,
@@ -2013,7 +2030,9 @@ impl<R: Random> Engine<R> {
                 video,
                 policy,
             } => self.accept_call_with_video(call, *local, Some(*video), policy, now, &mut out),
-            Command::SetCallVideo { call, video } => self.set_call_video(call, *video),
+            Command::SetCallVideo { call, video } => {
+                self.set_call_video(call, *video, now, &mut out)
+            }
             Command::RequestPictureUpdate { call } => {
                 self.request_picture_update(call, now, &mut out)
             }

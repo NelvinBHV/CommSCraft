@@ -49,6 +49,9 @@ pub(crate) struct Extras<'a> {
     /// An emergency call: it may exceed [`MAX_CALLS`] by one (issue #67 – an emergency call is
     /// never refused for the number of calls in progress).
     pub emergency: bool,
+    /// Viewing a shared screen (function 43): the offer is `sdp::screen::viewer_offer` of
+    /// `video`, without audio.
+    pub screen: bool,
 }
 
 /// One more MIME part of an outgoing INVITE (the PIDF-LO of an emergency call). The fields come
@@ -278,6 +281,13 @@ impl<R: Random> Engine<R> {
             return None;
         }
         let offer = match extras.video {
+            Some(v) if extras.screen => match sdp::screen::viewer_offer(v, policy) {
+                Ok(o) => o,
+                Err(_) => {
+                    out.push(Output::Event(Event::Notice("unusable video stream".into())));
+                    return None;
+                }
+            },
             Some(v) => match sdp::video::offer_with_video(&local, v, policy) {
                 Ok(o) => o,
                 Err(_) => {
@@ -665,6 +675,13 @@ impl<R: Random> Engine<R> {
             );
             return;
         }
+        if self.screen_calls.contains(&id) {
+            self.on_screen_answer(id, d, resp, now, out);
+            return;
+        }
+        let Some(c) = self.calls.get_mut(&id) else {
+            return;
+        };
         let key = c.local.as_ref().and_then(|l| l.key.clone());
         let answer = audio_sdp(resp);
         let negotiated = answer
@@ -722,6 +739,64 @@ impl<R: Random> Engine<R> {
         }
     }
 
+    /// The answer of the application sharing MCU to our viewer offer (function 43): the screen
+    /// video stream, or BYE when it is unusable.
+    fn on_screen_answer(
+        &mut self,
+        id: CallId,
+        d: Dialog,
+        resp: &Message,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let Some(c) = self.calls.get_mut(&id) else {
+            return;
+        };
+        let key = c.video.as_ref().and_then(|v| v.media.key.clone());
+        let body = sdp_part(resp, &|b| {
+            sdp::parse(b)
+                .ok()
+                .is_some_and(|s| s.media.iter().any(|m| m.kind == "video"))
+        })
+        .map(|(b, _)| b);
+        let video = body
+            .as_deref()
+            .ok_or(sdp::Error::Syntax("no video in the answer"))
+            .and_then(|b| sdp::video::video_answer_to_offer(b, key.as_ref(), c.policy));
+        match video {
+            Ok(Some(v)) => {
+                c.dialog = Some(d);
+                c.state = CallState::Active;
+                c.early.clear();
+                Self::call_event(
+                    out,
+                    Event::CallVideo {
+                        call: id,
+                        video: Box::new(v),
+                    },
+                );
+            }
+            other => {
+                let mut d2 = d;
+                let mut bye = d2.request("BYE");
+                self.complete(&mut bye);
+                self.send_request(bye, Purpose::Ignore, now, out);
+                self.calls.remove(&id);
+                self.screen_calls.remove(&id);
+                out.push(Output::Event(Event::Notice(format!(
+                    "call {id}: the shared screen cannot be viewed ({other:?})"
+                ))));
+                Self::call_event(
+                    out,
+                    Event::CallEnded {
+                        call: id,
+                        status: 488,
+                    },
+                );
+            }
+        }
+    }
+
     /// The video outcome of an answer: `CallVideo`, or a notice when the peer took no video
     /// (the call goes on with audio).
     fn report_video(
@@ -759,15 +834,36 @@ impl<R: Random> Engine<R> {
     }
 
     /// `SetCallVideo`: a newer description of our video stream (the final offer after ICE);
-    /// the key stays (SD-13).
-    pub(crate) fn set_call_video(&mut self, id: CallId, mut video: sdp::video::VideoLocal) {
-        if let Some(c) = self.calls.get_mut(&id) {
-            if let Some(old) = &c.video {
-                video.media.key = old.media.key.clone();
-                video.ssrc_range = old.ssrc_range;
-                c.video = Some(video);
-            }
+    /// the key stays (SD-13). A viewing call has no audio stream whose update would carry it:
+    /// the re-INVITE with the viewer offer goes out here.
+    pub(crate) fn set_call_video(
+        &mut self,
+        id: CallId,
+        mut video: sdp::video::VideoLocal,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let screen = self.screen_calls.contains(&id);
+        let Some(c) = self.calls.get_mut(&id) else {
+            return;
+        };
+        let Some(old) = &c.video else { return };
+        video.media.key = old.media.key.clone();
+        video.ssrc_range = old.ssrc_range;
+        c.video = Some(video.clone());
+        if !screen || c.state != CallState::Active {
+            return;
         }
+        let Ok(offer) = sdp::screen::viewer_offer(&video, c.policy) else {
+            return;
+        };
+        let Some(d) = c.dialog.as_mut() else { return };
+        let mut m = d.request("INVITE");
+        self.complete(&mut m);
+        m.push_header("Contact", &format!("<{}>", self.gruu));
+        m.push_header("Content-Type", "application/sdp");
+        m.body = offer.into_bytes();
+        self.send_request(m, Purpose::CallReinvite(id), now, out);
     }
 
     /// `RequestPictureUpdate`: an INFO with `picture_fast_update` in the call's dialog (PL-50).
@@ -884,6 +980,10 @@ impl<R: Random> Engine<R> {
         let mut ack = im::ack_for_2xx(&d, cseq);
         self.complete(&mut ack);
         self.send_plain(ack, now, out);
+        // A viewing call (function 43) has no audio: its answer keeps the screen stream.
+        if self.screen_calls.contains(&id) {
+            return;
+        }
         match audio_sdp(resp)
             .ok_or(sdp::Error::NoAudio)
             .and_then(|s| sdp::answer_to_offer(&s, key.as_ref(), policy))

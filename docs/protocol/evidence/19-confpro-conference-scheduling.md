@@ -32,3 +32,6 @@ Source: [MS-CONFPRO] "Centralized Conference Control Protocol: Provisioning", ed
 
 ## Implementation (2026-11-01, meeting options and static meeting)
 `conf::schedule::Extras` (PV-15): automatic promotion, lobby bypass for phone callers, locked and invitees with role go into addConference and modifyConference; checked SIP URIs, at most 100 invitees, duplicates refused, the organizer left out; without options the document is unchanged. `schedule_static`, `get_conferences(…, static)`, `delete_conference(…, static)` and `Meeting::static_meeting` (PV-16). CLI options before the subject of `/schedule` and `/changemeeting`, `/schedule static`, `/meetings static`, `/cancelmeeting ID static`. Not implemented: PSTN dial-in details (pstn-access), getConferencingCapabilities. Status: tested-offline.
+
+## Implementation (2026-11-09, application sharing MCU in ad-hoc conferences)
+- **PV-12:** ad-hoc conferences ask for `chat`, `audio-video` and `applicationsharing`. After `mcuTypeNotAvailable` the request is repeated without application sharing, then with chat only, then it ends. Status: tested-offline, `tested-in-lab` (the MCU is allocated; its URI appears in `conf-uris`).
