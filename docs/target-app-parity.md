@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (address book kept and updated like the Windows client)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (contact photos from Exchange)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -40,7 +40,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | **lab**, tested-offline (set the relationship per user, block at the server and in the client; the notice that someone added the user, with acknowledgement: `presence`, `session`, CLI `/privacy`, `/seen`) |
 | 13 | Offline address book | MS-ABS | B\* | **lab**, tested-offline (newest full file from the provisioned address book service over HTTPS with NTLM, decompressed with a size bound, header, normalization rules, attributes and contacts read and checked against the trailer; delta and compact delta files applied only to their base file; disk cache brought up to date with the newest delta; like the Windows client fetched after sign-in at a random time within an initial delay and then daily, and the server's address book policy obeyed (web search only, file only, both; the offline book answers when the web search fails); the phone normalization rules evaluated (recomputed against the specification's example); search by name and address, reverse lookup of a caller's number: `abs`, `net::http`; CLI `/addressbook`, `/lookup`, `--address-book-delay`, `--no-address-book-cache`) |
 | 14 | Address book and distribution list search | MS-DLX, MS-NTHT | B\* | **lab**, tested-offline (SearchAbEntry basic search with checked answer; ExpandDistributionList with status, members and nested lists: `dlx`; NTLM over HTTP on a kept-alive connection: `ntlm`, `net`; CLI `/search`, `/expand`) |
-| 15 | Contact photos | MS-OXWSPHOTO | B | **lab**, parts tested-offline (directory photos: the address book search names the photo file with its hash and size, fetched from the address book folder with NTLM, checked for size and image type, kept in a cache by hash; photo policy of in-band provisioning: `dlx`, `provisioning`; CLI `/photo`); photos from Exchange (MS-OXWSPHOTO) need an Exchange server – |
+| 15 | Contact photos | MS-OXWSPHOTO | B | **lab**, tested-offline (directory photos: the address book search names the photo file with its hash and size, fetched from the address book folder with NTLM, checked for size and image type, kept in a cache by hash; photo policy of in-band provisioning; photos from Exchange: Autodiscover GetUserSettings for the web services URL, GetUserPhoto with NTLM and ETag, then the directory photo: `dlx`, `ews`, `provisioning`; CLI `/photo`) |
 | 16 | Calendar and out-of-office state | MS-PRES (format) | T | – |
 | 17 | Instant messaging 1:1 | MS-SIPRE, MS-OCSPROT | B | **lab**, tested-offline (incoming and outgoing sessions, queued text, delivery state: `im`, `session`) |
 | 18 | Typing indicator | MS-CONFIM | T | **lab**, parts tested-offline (INFO KeyboardActivity, secondary format: `im`; shown in the CLI, which does not send it, since it reads whole lines) |
@@ -79,4 +79,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **19** tested-offline as a whole, **17** in parts, **14** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **32** of them also `tested-in-lab`
+**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **20** tested-offline as a whole, **16** in parts, **14** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **32** of them also `tested-in-lab`

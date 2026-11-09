@@ -35,5 +35,5 @@ Source: [MS-DLX] "Distribution List Expansion Protocol", edition 20250520, 70 pp
 - **Photo attributes (DL-06):** the search asks for `PhotoRelPath`, `PhotoHash` and `PhotoSize`. The path is accepted only as one file name of letters, digits, `.`, `-` and `_` without a leading dot; the hash only with letters, digits and `-`. The example of §4.9 (p. 47) prints the path with a leading space, which is trimmed.
 - **Fetching (inference from DL-06 and [MS-ABS] §1.3):** "relative to the file system folder" of the address book files, so the photo is fetched as the provisioned address book base URL plus the path, with NTLM as for the address book files (also `tested-in-lab`).
 - **Checks (design):** the size must match PhotoSize and stay within `MaxPhotoSizeKB` (RG-52, at most 1 MiB); only JPEG and PNG are kept. The file goes to the user's cache directory, named by the photo hash, so an unchanged photo is not fetched again.
-- **Status:** `tested-offline`, `tested-in-lab`. Photos from Exchange (MS-OXWSPHOTO) are open, as they need an Exchange server.
+- **Status:** `tested-offline`, `tested-in-lab`. Photos from Exchange (MS-OXWSPHOTO): file 37.
 
