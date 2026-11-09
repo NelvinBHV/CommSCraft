@@ -3484,6 +3484,7 @@ fn interactive(
                         Some(arg.as_str()),
                         None,
                     );
+                    let video_bwm = calls::video_bandwidth_config(bwm.as_ref(), None);
                     let id = next_media;
                     next_media = next_media.wrapping_add(1).max(1);
                     let h = calls::spawn(
@@ -3506,6 +3507,7 @@ fn interactive(
                                 vid,
                                 local_ip,
                                 relay,
+                                video_bwm,
                                 camera.clone(),
                                 video_tx.clone(),
                             ),
@@ -3533,6 +3535,10 @@ fn interactive(
                             engine.call_peer(call),
                             engine.incoming_offer(call),
                         );
+                        let video_bwm = calls::video_bandwidth_config(
+                            bwm.as_ref(),
+                            engine.incoming_offer(call).map(|(_, o)| o),
+                        );
                         let id = next_media;
                         next_media = next_media.wrapping_add(1).max(1);
                         let h = calls::spawn(
@@ -3556,6 +3562,7 @@ fn interactive(
                                         vid,
                                         local_ip,
                                         relay,
+                                        video_bwm,
                                         camera.clone(),
                                         video_tx.clone(),
                                     ),
@@ -3993,6 +4000,7 @@ fn interactive(
                                     vid,
                                     local_ip,
                                     relay,
+                                    None,
                                     camera.clone(),
                                     video_tx.clone(),
                                 ),

@@ -8,10 +8,10 @@ Recommendations. It follows the conventions of the [storytold Crafting Apps](htt
 (WordCraft, GridCraft, DeckCraft, …): pure Rust where possible, measured parity with the target
 application, a ranked work list, and nothing copied from Microsoft products.
 
-> **Stage: M4 closed, M5 (video) in progress, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
+> **Stage: M4 and M5 (video) closed, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search, audio and video calls, meetings and telephony (transfer, forwarding, park, delegates,
 > emergency calls) exist as building blocks that pass offline tests and whose main flows also ran in the owner's private lab (41 crates,
-> 510 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
+> 512 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
 > for the owner's runs on authorized servers; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
@@ -39,7 +39,7 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 ## What works today
 
 Status from [`docs/target-app-parity.md`](docs/target-app-parity.md) (2026-11-09): of 52 client
-functions, 21 are implemented and tested offline as a whole, 16 in parts, 13 not started.
+functions, 22 are implemented and tested offline as a whole, 15 in parts, 13 not started.
 
 | Area | In the code (tested offline) | Not yet |
 |---|---|---|

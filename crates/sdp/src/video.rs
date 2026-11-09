@@ -206,6 +206,13 @@ pub fn offered_video(offer: &[u8]) -> bool {
         .is_some_and(|s| video_line(&s).is_some_and(|m| h264uc_pt(m).is_some()))
 }
 
+/// The ICE candidates of an offer's video line (for the callee's bandwidth check of the video
+/// stream, [MS-ICE2BWM] §3.1.4.8.1.1 – every media stream is managed on its own).
+pub fn offer_video_ice(offer: &[u8]) -> Option<crate::Ice> {
+    let s = parse(offer).ok()?;
+    ice_of(video_line(&s)?)
+}
+
 fn video_line(s: &Session) -> Option<&Media> {
     s.media.iter().find(|m| m.kind == "video" && m.port != 0)
 }

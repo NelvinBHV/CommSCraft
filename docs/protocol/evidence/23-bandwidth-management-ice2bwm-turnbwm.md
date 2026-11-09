@@ -52,6 +52,13 @@ The XOR examples of §2.2.4 (pp. 15–16) are correct: 0x1122⊕0x4455 = 0x5577;
 ## Implementation (2026-11-01, frame rate by size)
 BW-18: the CLI sends at most 15 fps below 640x360 (the highest of the request's lower rates: 15 or 7.5). Status: tested-offline.
 
+## Implementation (2026-11-09, video streams)
+- Every media stream is managed on its own (BW-01): the video stream of a 1:1 call gets its own check (the callee, with the candidates of the offer's video line), commit, updates and cancel on its own relay allocation, with MS-Service-Quality video (`call-media` with `BwmConfig::amount`, `sdp::video::offer_video_ice`, CLI `video_call`).
+- **Inference:** the video reservation is the payload rates of BW-17 for the sizes the client sends and receives – minimum 15 kbit/s (320x180), maximum 800 kbit/s (640x480).
+- Every path refused (BW-03): no video, the call goes on with audio. The send bandwidth the server reserves bounds the encoder's target like a path estimate (inference, RT-30).
+- Meetings are not managed by the client, for audio and video alike (the A/V MCU's streams).
+- **Status:** `tested-offline` (a policy server answering the video commit with 300 kbit/s; the encoder's targets stay below it). A test needs a TURN server as policy server, i.e. an Edge server.
+
 Hardware decoding (2026-11-07, `video-ffmpeg`, `video-wayland`, measured, not a protocol rule; integrated AMD 780M and Intel i5-10310U GPUs).
 - Where the time goes (`decode_phases`, 360 pictures 720p, CPU ticks at 100/s): AMD decoding on the GPU alone 3, with download 24; Intel 5 and 46. On the CPU (`decode_load`): AMD 19, Intel 36–37. So copying back is the cost, not decoding.
 - A player with the same mechanism, 8 s of 720p, CPU seconds of the player: CPU decoding with XVideo AMD 0.69, Intel 2.24; GPU with copy 1.19 and 3.63; GPU directly to the compositor 0.40 and 0.68; GPU through OpenGL 0.70 and 1.58.

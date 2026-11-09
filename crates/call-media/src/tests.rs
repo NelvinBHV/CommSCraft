@@ -412,6 +412,9 @@ type CheckAnswer = (bool, bool, bool);
 /// A UDP TURN server for the bandwidth tests: challenge, SHA-256 allocation (relayed address
 /// `relayed`), and the bandwidth requests of MS-TURNBWM. Returns the BAC message types it saw,
 /// with the amount's maximum send value when one was present.
+/// The send bandwidth the mock policy server reserves (kbit/s).
+const RESERVED_SEND_KBPS: u32 = 300;
+
 fn mock_udp_turn_bwm(
     socket: UdpSocket,
     relayed: SocketAddr,
@@ -495,7 +498,13 @@ fn mock_udp_turn_bwm(
                     }
                     _ => vec![
                         (turn_bwm::attr::RESERVATION_ID, vec![0x42; 16]),
-                        (turn_bwm::attr::RESERVATION_AMOUNT, vec![0; 16]),
+                        (
+                            turn_bwm::attr::RESERVATION_AMOUNT,
+                            [15u32, RESERVED_SEND_KBPS, 15, RESERVED_SEND_KBPS]
+                                .iter()
+                                .flat_map(|v| v.to_be_bytes())
+                                .collect(),
+                        ),
                     ],
                 };
                 reply(turn::ALLOCATE_RESPONSE, attrs, true)
@@ -523,6 +532,10 @@ type BwmSetup = (
 );
 
 fn bwm_media(answer: CheckAnswer, peer: Option<sdp::Ice>) -> BwmSetup {
+    bwm_stream(answer, peer, false)
+}
+
+fn bwm_stream(answer: CheckAnswer, peer: Option<sdp::Ice>, video: bool) -> BwmSetup {
     let server = UdpSocket::bind("127.0.0.1:0").unwrap();
     let relay = Relay {
         server: server.local_addr().unwrap(),
@@ -538,7 +551,11 @@ fn bwm_media(answer: CheckAnswer, peer: Option<sdp::Ice>) -> BwmSetup {
         stop.clone(),
     );
     let ip: IpAddr = "127.0.0.1".parse().unwrap();
-    let (mut m, first) = CallMedia::prepare(ip, Some(&relay), now_ms()).unwrap();
+    let (mut m, first) = if video {
+        CallMedia::prepare_video(ip, Some(&relay), now_ms()).unwrap()
+    } else {
+        CallMedia::prepare(ip, Some(&relay), now_ms()).unwrap()
+    };
     m.enable_bandwidth_management(BwmConfig {
         call_id: "call-1".into(),
         profile: turn_bwm::LocationProfile {
@@ -547,6 +564,11 @@ fn bwm_media(answer: CheckAnswer, peer: Option<sdp::Ice>) -> BwmSetup {
             federation: turn_bwm::Federation::None,
         },
         peer,
+        amount: if video {
+            crate::bwm::video_amount()
+        } else {
+            crate::bwm::audio_amount()
+        },
     });
     m.send_initial(first);
     (m, stop, handle)
@@ -773,4 +795,60 @@ fn loopback_video_stream() {
         std::thread::sleep(std::time::Duration::from_millis(2));
     }
     assert!(bye, "RTCP BYE of the video stream");
+}
+
+/// Function 32 for video: the video stream is managed on its own – its commit reserves the video
+/// amount (BW-17 sizes), and the send bit rate the server reserves bounds the encoder's target.
+#[test]
+fn video_stream_bandwidth_reservation() {
+    let (mut m, stop, handle) = bwm_stream((true, true, true), None, true);
+    let t0 = now_ms();
+    while !m.gathered(now_ms()) && now_ms() < t0 + 5000 {
+        m.poll(now_ms());
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    let d = m.local_description();
+    let n = sdp::video::NegotiatedVideo {
+        payload_type: 122,
+        remote_rtp: ("198.51.100.7".parse().unwrap(), 7000),
+        remote_rtcp: ("198.51.100.7".parse().unwrap(), 7001),
+        remote_key: Some(m.key().clone()),
+        remote_ice: None,
+        direction: sdp::Direction::SendRecv,
+        fec_payload_type: None,
+        ssrc_range: (2000, 2099),
+        feedback: sdp::video::Feedback {
+            send_src: true,
+            recv_src: true,
+            send_pli: true,
+            recv_pli: true,
+        },
+    };
+    assert!(d.ice.is_some());
+    m.start_video(&n, (1000, 1099), video_layout(), true, "a@test", now_ms())
+        .unwrap();
+    let mut rates = Vec::new();
+    let t = now_ms();
+    for k in 0..60u64 {
+        for e in m.poll(t + k * 10) {
+            if let Event::Video(media::VideoEvent::SendRate(bps)) = e {
+                rates.push(bps);
+            }
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    m.stop(now_ms());
+    std::thread::sleep(std::time::Duration::from_millis(100));
+    stop.store(true, std::sync::atomic::Ordering::Relaxed);
+    let seen = handle.join().unwrap();
+    assert_eq!(
+        seen.first(),
+        Some(&(1, Some(bwm::VIDEO_MAX_KBPS))),
+        "commit"
+    );
+    assert!(!rates.is_empty(), "the reservation retargets the encoder");
+    assert!(
+        rates.iter().all(|r| *r <= RESERVED_SEND_KBPS * 1000),
+        "{rates:?}"
+    );
 }

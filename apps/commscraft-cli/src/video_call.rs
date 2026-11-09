@@ -374,11 +374,12 @@ pub fn spawn(
     id: u32,
     local_ip: IpAddr,
     relay: Option<cm::Relay>,
+    bwm: Option<cm::BwmConfig>,
     camera: String,
     events: Sender<FromVideo>,
 ) -> VideoHandle {
     let (tx, rx) = mpsc::channel::<ToVideo>();
-    std::thread::spawn(move || run(id, local_ip, relay, camera, rx, events));
+    std::thread::spawn(move || run(id, local_ip, relay, bwm, camera, rx, events));
     VideoHandle { tx }
 }
 
@@ -404,6 +405,7 @@ fn run(
     id: u32,
     local_ip: IpAddr,
     relay: Option<cm::Relay>,
+    bwm: Option<cm::BwmConfig>,
     camera: String,
     rx: Receiver<ToVideo>,
     events: Sender<FromVideo>,
@@ -417,10 +419,22 @@ fn run(
         }
     };
     drop(relay);
+    // Function 32: the video stream's own bandwidth management (call admission control).
+    if let Some(cfg) = bwm {
+        media.enable_bandwidth_management(cfg);
+    }
     media.send_initial(first);
     while !media.gathered(now_ms()) {
         media.poll(now_ms());
         std::thread::sleep(Duration::from_millis(5));
+    }
+    // [MS-ICE2BWM] §3.1.4.2: every path refused – no video (the call goes on with audio).
+    if media.bandwidth_blocked() {
+        let _ = events.send(FromVideo::Failed(
+            id,
+            "the bandwidth policy refuses video on every path".into(),
+        ));
+        return;
     }
     let range = ssrc_range();
     // Without a camera we only receive, and say so: in a meeting the others would otherwise pick

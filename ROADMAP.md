@@ -1,8 +1,8 @@
 # CommSCraft roadmap
 
-**Stage: M5 in progress** · M0 done · M1, M2, M3 built · M4 closed · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
+**Stage: M5 done** · M0 done · M1, M2, M3 built · M4 and M5 closed · next M7, then M6 · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (system call filter of the video window)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (M5 complete: video bandwidth management)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,11 +16,11 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **21** tested-offline as a whole, **16** in parts, **13** not started, 2 not planned/needs captures; **33** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Implementation status of the 52 functions | **22** tested-offline as a whole, **15** in parts, **13** not started, 2 not planned/needs captures; **33** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **41 crates + 1 app** (`commscraft-cli`), **510 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **41 crates + 1 app** (`commscraft-cli`), **512 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -36,8 +36,9 @@ transfer can come later from interop captures.
 1. **M3 – audio 1:1** (built): the owner's first calls (IT-23 … IT-29); remaining optional
    parts in [`docs/gaps.md`](docs/gaps.md).
 2. **M4 – conferences and telephony** (closed 2026-11-01): meetings (scheduling, options, lobby, audio, presenter commands, announcements, dial-out), PSTN calling, transfer, forwarding, team/delegate ringing, delegates, call park, E911, QoE; optional remainders in [`docs/gaps.md`](docs/gaps.md).
-3. **M5 – video** (next), **M6 – viewing shared screens**,
-   **M7 – Exchange integration**; the graphical interface (egui) is not yet in a milestone.
+3. **M5 – video** (closed 2026-11-09): 1:1 and meeting video with H.264 UC, simulcast, FEC, rate adaptation, picture control, bandwidth management, GPU encoding and decoding, the received video in a sandboxed process; optional remainders in [`docs/gaps.md`](docs/gaps.md).
+4. **M7 – Exchange integration** (next) and **M6 – viewing shared screens**; the graphical
+   interface (egui) comes after the milestones.
    Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
 
 Hours are not estimated.
@@ -46,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-09 | M5 (video) complete: the video stream of a call has its own bandwidth management (call admission control), and the reserved bandwidth bounds the encoder. What stays undone is optional or not specified (temporal enhancement layers, more simulcast sizes, Reed-Solomon FEC) or not worthwhile by measurement (GPU decoding without Wayland). |
 | 2026-11-09 | The video window process also filters its system calls (seccomp): no starting programs, no network sockets, no access to other processes or kernel interfaces. |
 | 2026-11-09 | Issues #129, #130: one-to-one cache names per account; the HTTP reader takes the caller's size bound on every layer (large address book files) and parses a response once it is complete. |
 | 2026-11-09 | Offline address book hardened (issues #124–#126): the cache is kept per account, a delta is applied in linear time and only as a whole. |
