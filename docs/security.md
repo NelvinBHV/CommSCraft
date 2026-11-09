@@ -1,6 +1,6 @@
 # Security by design
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (TLS-DSK sign-in; M1 complete)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (response group agent, web tickets)
 
 CommSCraft handles passwords, Kerberos tickets, NTLM session keys and SRTP keys. It talks to
 servers and peers it cannot trust. Security is part of every design decision, not a later review.
@@ -92,6 +92,7 @@ This page lists the rules every crate follows and how each is enforced. The gene
   - **Certificate checks:** an issued certificate must carry the requested key; a stored one is used only while valid and only with its key.
   - **Credentials:** the certificate request goes with the NTLM HTTP authentication only to a provisioning service in the user's SIP domain or a trusted domain.
   - **Signing keys:** from the TLS exporter, wiped on drop.
+- **Web tickets (MS-OCAUTHWS):** a ticket is asked for only at the issuer the service's metadata name, and only when service and issuer are in the user's SIP domain or a trusted domain. The SAML assertion is copied byte for byte (never rebuilt) and only after it parsed on its own as a SAML assertion; it lives in memory for one use of the service and is never stored or logged. The client entropy comes from the OS random source and is wiped after use.
 - **Media:** SRTP only (`AES_CM_128_HMAC_SHA1_80`, K-SR-1); no unencrypted RTP fallback.
 - **Logging:** headers that carry secrets (`Authorization`, `Proxy-Authorization`, `gssapi-data`,
   web tickets, SDP `a=crypto`) are redacted before anything is logged.

@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (voicemail)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (response group agent, web tickets)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -72,11 +72,11 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 44 | Whiteboard, PowerPoint, polls | MS-PSOM | T | – |
 | 45 | Quality reports and call rating | MS-QoE | B\* | **lab**, tested-offline (VQReportEvent after every call with the measured network figures – jitter, loss, round trip, packets – of both directions, LocalPAI, selected media path; call rating 1–5 with text: `qoe`, `media`, `call-media`, `session`, CLI automatic report and `/rate`); MOS estimates are optional and not computed (OB-47) |
 | 46 | Error diagnostics and display | MS-OCER | B | **lab**, tested-offline (`ms-diagnostics` and `ms-diagnostics-public` of failed requests and of the server's BYE/CANCEL read with bounds and shown with our explanation of the handled error identifiers, unknown ones by number; failed INVITEs that the server explains reported with `reportError` including progress reports, stopped as the server's answers ask: `ocer`, `session`, CLI) |
-| 47 | Response group agent | MS-RGSWS | B | – |
+| 47 | Response group agent | MS-RGSWS | B | **lab**, tested-offline (agent groups with sign-in state and waiting calls, signing in and out of formal groups, the response groups served; over a web ticket from the server's ticket service – metadata, IssueToken with NTLM, SAML assertion in the WS-Security header: `rgs`, `ocauthws::webticket`, `provisioning`; CLI `/rgs [in|out GROUP-ID]`) |
 | 48 | UCWA web services | MS-CVWREST, MS-ECREST, MS-OCSMP | B | – |
 | 49 | Conversation history in Exchange | MS-OXWSCDATA, MS-OXWSSRCH | T | **lab**, tested-offline (a finished IM conversation, 1:1 or group, is saved as a read message in the Conversation History folder – CreateItem into `conversationhistory`, participants as recipients, the first message as subject, the whole text as body; the server's EnableIMAutoArchiving decides, otherwise the user: `ews::history`; CLI `interactive`, `--no-history`) |
 | 50 | Sign-out | MS-SIPREGE, MS-CONFBAS | B | **lab**, tested-offline (REGISTER with Expires 0, unsubscribe, ending conversations, group conversations and calls: `register`, `session`) |
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **26** tested-offline as a whole, **15** in parts, **8** not started, 3 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **38** of them also `tested-in-lab`
+**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **26** tested-offline as a whole, **15** in parts, **7** not started, 4 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **38** of them also `tested-in-lab`

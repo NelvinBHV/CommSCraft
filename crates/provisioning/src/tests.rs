@@ -543,3 +543,31 @@ fn calendar_and_history_policy() {
         ]
     );
 }
+
+/// Function 47: the Response Group Service URLs (§2.2.2.5.1); only HTTPS is taken.
+#[test]
+fn response_group_service_urls() {
+    let g = Group {
+        name: "ServerConfiguration".into(),
+        properties: vec![
+            (
+                "responseGroupServiceInternalURL".into(),
+                "https://pool.fabrikam.com/RgsClients/AgentService.svc".into(),
+            ),
+            (
+                "responseGroupServiceExternalURL".into(),
+                "http://ext.fabrikam.com/RgsClients/AgentService.svc".into(),
+            ),
+        ],
+        ..Group::default()
+    };
+    let c = ServerConfiguration::from_group(&g, "fabrikam.com");
+    let i = c.rgs_internal.unwrap();
+    assert_eq!(
+        i.url,
+        "https://pool.fabrikam.com/RgsClients/AgentService.svc"
+    );
+    assert!(i.in_user_domain);
+    assert_eq!(c.rgs_external, None);
+    assert_eq!(c.rejected, ["responseGroupServiceExternalURL"]);
+}

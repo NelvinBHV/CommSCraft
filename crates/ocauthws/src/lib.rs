@@ -12,6 +12,8 @@
 //! the disposition "Issued", the entity the one asked for and the certificate well-formed DER;
 //! the caller still checks that the certificate carries the requested public key.
 
+pub mod webticket;
+
 use commscraft_sipae::base64;
 use commscraft_xml::{escape, Element, Limits};
 
