@@ -19,8 +19,10 @@ use crate::{NetError, TlsClient};
 /// next `Authorization` header value.
 pub type Authorize<'a> = dyn FnMut(Option<&str>, Option<&[u8]>) -> Result<String, NetError> + 'a;
 
-/// Upper bound of a whole response (head and body).
+/// Upper bound of a whole response (head and body) unless the caller names another one.
 pub const MAX_RESPONSE: usize = 256 * 1024;
+/// Upper bound of the head of a response (status line and header fields).
+const MAX_HEAD: usize = 256 * 1024;
 const MAX_HEADERS: usize = 100;
 const MAX_LINE: usize = 8 * 1024;
 
@@ -53,14 +55,20 @@ fn bad(what: &str) -> NetError {
 
 /// Parses a complete response as read until the server closed the connection.
 pub fn parse_response(data: &[u8]) -> Result<HttpResponse, NetError> {
-    frame(data, true)?.ok_or_else(|| bad("incomplete response"))
+    parse_response_within(data, MAX_RESPONSE)
+}
+
+/// [`parse_response`] for a response of up to `limit` octets.
+fn parse_response_within(data: &[u8], limit: usize) -> Result<HttpResponse, NetError> {
+    frame(data, true, limit)?.ok_or_else(|| bad("incomplete response"))
 }
 
 /// One response from `data`: `Ok(None)` while more octets are needed, an error for anything
 /// malformed or for octets after the end of the response. `closed`: the server closed the
-/// connection, so nothing more will come (a body without framing ends here).
-fn frame(data: &[u8], closed: bool) -> Result<Option<HttpResponse>, NetError> {
-    if data.len() > MAX_RESPONSE {
+/// connection, so nothing more will come (a body without framing ends here). `limit`: the
+/// largest whole response the caller accepts (issue #130: the same bound on every layer).
+fn frame(data: &[u8], closed: bool, limit: usize) -> Result<Option<HttpResponse>, NetError> {
+    if data.len() > limit {
         return Err(bad("response too large"));
     }
     let Some(head_end) = data.windows(4).position(|w| w == b"\r\n\r\n") else {
@@ -118,17 +126,14 @@ fn frame(data: &[u8], closed: bool) -> Result<Option<HttpResponse>, NetError> {
     let incomplete = |what| if closed { Err(bad(what)) } else { Ok(None) };
     let body = match (te, cl) {
         (Some(_), Some(_)) => return Err(bad("both Transfer-Encoding and Content-Length")),
-        (Some(t), None) if t.eq_ignore_ascii_case("chunked") => match dechunk(raw_body)? {
+        (Some(t), None) if t.eq_ignore_ascii_case("chunked") => match dechunk(raw_body, limit)? {
             Some((body, used)) if used == raw_body.len() => body,
             Some(_) => return Err(bad("data after the last chunk")),
             None => return incomplete("chunked body incomplete"),
         },
         (Some(_), None) => return Err(bad("unsupported transfer coding")),
         (None, Some(l)) => {
-            if l.is_empty() || l.len() > 7 || !l.bytes().all(|b| b.is_ascii_digit()) {
-                return Err(bad("Content-Length"));
-            }
-            let n: usize = l.parse().map_err(|_| bad("Content-Length"))?;
+            let n = content_length(l, limit)?;
             match raw_body.len().cmp(&n) {
                 std::cmp::Ordering::Less => return incomplete("body shorter than Content-Length"),
                 std::cmp::Ordering::Greater => return Err(bad("data after Content-Length")),
@@ -149,9 +154,22 @@ fn frame(data: &[u8], closed: bool) -> Result<Option<HttpResponse>, NetError> {
     Ok(Some(HttpResponse { body, ..resp }))
 }
 
+/// A Content-Length value: decimal digits only, at most `limit` (the whole response cannot be
+/// shorter than its body).
+fn content_length(l: &str, limit: usize) -> Result<usize, NetError> {
+    if l.is_empty() || l.len() > 19 || !l.bytes().all(|b| b.is_ascii_digit()) {
+        return Err(bad("Content-Length"));
+    }
+    let n: u64 = l.parse().map_err(|_| bad("Content-Length"))?;
+    usize::try_from(n)
+        .ok()
+        .filter(|n| *n <= limit)
+        .ok_or_else(|| bad("response too large"))
+}
+
 /// Chunked body (RFC 9112 §7.1): `Ok(None)` while incomplete, else the body and the octets used
 /// up to and including the CRLF after the trailer section (trailer fields are read and dropped).
-fn dechunk(all: &[u8]) -> Result<Option<(Vec<u8>, usize)>, NetError> {
+fn dechunk(all: &[u8], limit: usize) -> Result<Option<(Vec<u8>, usize)>, NetError> {
     let mut data = all;
     let mut out = Vec::new();
     let next_line = |d: &[u8]| -> Result<Option<usize>, NetError> {
@@ -169,7 +187,7 @@ fn dechunk(all: &[u8]) -> Result<Option<(Vec<u8>, usize)>, NetError> {
         let line = std::str::from_utf8(data.get(..line_end).unwrap_or_default())
             .map_err(|_| bad("chunk size"))?;
         let size_text = line.split(';').next().unwrap_or("").trim();
-        if size_text.is_empty() || size_text.len() > 6 {
+        if size_text.is_empty() || size_text.len() > 8 {
             return Err(bad("chunk size"));
         }
         if !size_text.bytes().all(|b| b.is_ascii_hexdigit()) {
@@ -194,7 +212,7 @@ fn dechunk(all: &[u8]) -> Result<Option<(Vec<u8>, usize)>, NetError> {
             }
             return Err(bad("too many trailer fields"));
         }
-        if out.len() + size > MAX_RESPONSE {
+        if out.len().saturating_add(size) > limit {
             return Err(bad("body too large"));
         }
         let Some(chunk) = data.get(..size) else {
@@ -279,18 +297,21 @@ fn request(
 
 /// Reads one complete response from a kept-alive connection: Content-Length or chunked framing;
 /// without either, until the server closes the connection. Octets beyond the response are an
-/// error (we never pipeline, so the server has no reason to send any).
+/// error (we never pipeline, so the server has no reason to send any). Issue #130: the caller's
+/// `limit` holds on every layer, and the response is parsed only once its framing says it is
+/// complete ([`Progress`]), so the work grows linearly with its size.
 fn read_one(conn: &mut crate::SipConnection, limit: usize) -> Result<HttpResponse, NetError> {
     let mut data = Vec::new();
     let mut buf = [0u8; 16 * 1024];
+    let mut progress = Progress::default();
     loop {
-        if !data.is_empty() {
-            if let Some(r) = frame(&data, false)? {
+        if progress.ready(&data, limit)? {
+            if let Some(r) = frame(&data, false, limit)? {
                 return Ok(r);
             }
         }
         match conn.tls.read(&mut buf) {
-            Ok(0) => return parse_response(&data),
+            Ok(0) => return parse_response_within(&data, limit),
             Ok(n) => {
                 data.extend_from_slice(buf.get(..n).unwrap_or_default());
                 if data.len() > limit {
@@ -298,10 +319,139 @@ fn read_one(conn: &mut crate::SipConnection, limit: usize) -> Result<HttpRespons
                 }
             }
             Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof && !data.is_empty() => {
-                return parse_response(&data)
+                return parse_response_within(&data, limit)
             }
             Err(e) => return Err(NetError::Io(e)),
         }
+    }
+}
+
+/// How far a response being read is known to be: where its head ends and how its body is
+/// framed. Each octet is looked at a bounded number of times.
+#[derive(Debug, Default)]
+struct Progress {
+    /// Octets already searched for the end of the head.
+    searched: usize,
+    head_end: Option<usize>,
+    framing: Framing,
+    /// Chunked: the body offset of the first chunk not yet complete.
+    chunk_pos: usize,
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+enum Framing {
+    #[default]
+    Unknown,
+    /// The whole response has this many octets.
+    Length(usize),
+    Chunked,
+    /// No framing: the body ends when the server closes the connection.
+    UntilClose,
+    /// Let [`frame`] decide (it has the complete view, including errors).
+    Check,
+}
+
+impl Progress {
+    /// Whether [`frame`] should look at `data` now: the response is complete by its framing, or
+    /// [`frame`] has to report an error.
+    fn ready(&mut self, data: &[u8], limit: usize) -> Result<bool, NetError> {
+        if data.is_empty() {
+            return Ok(false);
+        }
+        let head_end = match self.head_end {
+            Some(h) => h,
+            None => {
+                let from = self.searched.saturating_sub(3);
+                let found = data
+                    .get(from..)
+                    .and_then(|d| d.windows(4).position(|w| w == b"\r\n\r\n"))
+                    .map(|p| from + p);
+                self.searched = data.len();
+                let Some(h) = found else {
+                    if data.len() > MAX_HEAD {
+                        return Err(bad("head too large"));
+                    }
+                    return Ok(false);
+                };
+                self.head_end = Some(h);
+                self.framing = framing_of(data.get(..h).unwrap_or_default(), h, limit);
+                h
+            }
+        };
+        let body = data.get(head_end + 4..).unwrap_or_default();
+        Ok(match self.framing {
+            Framing::Length(total) => data.len() >= total,
+            Framing::Chunked => chunks_complete(body, &mut self.chunk_pos),
+            Framing::UntilClose => false,
+            Framing::Unknown | Framing::Check => true,
+        })
+    }
+}
+
+/// The framing a head announces; anything unusual is left to [`frame`].
+fn framing_of(head: &[u8], head_end: usize, limit: usize) -> Framing {
+    let Ok(head) = std::str::from_utf8(head) else {
+        return Framing::Check;
+    };
+    let mut lines = head.split("\r\n");
+    let status = lines
+        .next()
+        .and_then(|l| l.split(' ').nth(1))
+        .and_then(|c| c.parse::<u16>().ok());
+    let mut te = Vec::new();
+    let mut cl = Vec::new();
+    for line in lines {
+        let Some((n, v)) = line.split_once(':') else {
+            return Framing::Check;
+        };
+        if n.eq_ignore_ascii_case("transfer-encoding") {
+            te.push(v.trim());
+        } else if n.eq_ignore_ascii_case("content-length") {
+            cl.push(v.trim());
+        }
+    }
+    match (te.as_slice(), cl.as_slice()) {
+        ([t], []) if t.eq_ignore_ascii_case("chunked") => Framing::Chunked,
+        ([], [l]) => match content_length(l, limit) {
+            Ok(n) => Framing::Length(head_end + 4 + n),
+            Err(_) => Framing::Check,
+        },
+        ([], []) if matches!(status, Some(100..=199 | 204 | 304)) => Framing::Check,
+        ([], []) => Framing::UntilClose,
+        _ => Framing::Check,
+    }
+}
+
+/// Walks the chunk size lines of a chunked body from `*pos` without copying: whether the last
+/// chunk and the trailer section are complete. `*pos` moves past every complete chunk, so each
+/// octet is walked once; a malformed size line returns `true` so [`frame`] reports it.
+fn chunks_complete(body: &[u8], pos: &mut usize) -> bool {
+    loop {
+        let rest = body.get(*pos..).unwrap_or_default();
+        let Some(line_end) = rest.windows(2).position(|w| w == b"\r\n") else {
+            return rest.len() > MAX_LINE;
+        };
+        let size = std::str::from_utf8(rest.get(..line_end).unwrap_or_default())
+            .ok()
+            .map(|l| l.split(';').next().unwrap_or("").trim())
+            .filter(|t| !t.is_empty() && t.len() <= 8)
+            .and_then(|t| usize::from_str_radix(t, 16).ok());
+        let Some(size) = size else {
+            return true;
+        };
+        let after_line = line_end + 2;
+        if size == 0 {
+            // The trailer section ends with an empty line.
+            let trailer = rest.get(after_line..).unwrap_or_default();
+            return trailer.starts_with(b"\r\n")
+                || trailer.windows(4).any(|w| w == b"\r\n\r\n")
+                || trailer.len() > MAX_HEAD;
+        }
+        let next = after_line.saturating_add(size).saturating_add(2);
+        if rest.len() < next {
+            return false;
+        }
+        *pos += next;
     }
 }
 
@@ -511,17 +661,107 @@ mod tests {
             b"HTTP/1.1 401 Unauthorized\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n0\r\n\r\n";
         for cut in 0..full.len() {
             assert!(
-                frame(&full[..cut], false).unwrap().is_none(),
+                frame(&full[..cut], false, MAX_RESPONSE).unwrap().is_none(),
                 "complete too early at {cut}"
             );
         }
-        assert_eq!(frame(full, false).unwrap().unwrap().body, b"abc");
+        assert_eq!(
+            frame(full, false, MAX_RESPONSE).unwrap().unwrap().body,
+            b"abc"
+        );
         let cl: &[u8] = b"HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nabc";
-        assert!(frame(&cl[..cl.len() - 1], false).unwrap().is_none());
-        assert!(frame(cl, false).unwrap().is_some());
-        // Without framing on a kept-alive connection: wait for the close.
-        assert!(frame(b"HTTP/1.1 200 OK\r\n\r\nabc", false)
+        assert!(frame(&cl[..cl.len() - 1], false, MAX_RESPONSE)
             .unwrap()
             .is_none());
+        assert!(frame(cl, false, MAX_RESPONSE).unwrap().is_some());
+        // Without framing on a kept-alive connection: wait for the close.
+        assert!(frame(b"HTTP/1.1 200 OK\r\n\r\nabc", false, MAX_RESPONSE)
+            .unwrap()
+            .is_none());
+    }
+
+    /// Issue #130: the caller's limit holds on every layer – a larger limit admits a response
+    /// over 256 KiB (Content-Length of more than seven digits, chunks), a body over the limit
+    /// is refused.
+    #[test]
+    fn caller_limit_on_every_layer() {
+        let body = vec![b'x'; 10 * 1024 * 1024 + 1];
+        let mut cl =
+            format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n", body.len()).into_bytes();
+        cl.extend_from_slice(&body);
+        let big = 64 * 1024 * 1024;
+        assert_eq!(
+            frame(&cl, false, big).unwrap().unwrap().body.len(),
+            body.len()
+        );
+        assert!(frame(&cl, false, MAX_RESPONSE).is_err());
+        assert!(frame(
+            b"HTTP/1.1 200 OK\r\nContent-Length: 99999999999\r\n\r\n",
+            false,
+            big
+        )
+        .is_err());
+        assert!(frame(
+            b"HTTP/1.1 200 OK\r\nContent-Length: 99999999999999999999\r\n\r\n",
+            false,
+            big
+        )
+        .is_err());
+        let mut chunked = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n".to_vec();
+        for _ in 0..80 {
+            chunked.extend_from_slice(b"1000\r\n");
+            chunked.extend_from_slice(&[b'y'; 4096]);
+            chunked.extend_from_slice(b"\r\n");
+        }
+        chunked.extend_from_slice(b"0\r\n\r\n");
+        assert_eq!(
+            frame(&chunked, false, big).unwrap().unwrap().body.len(),
+            80 * 4096
+        );
+        assert!(frame(&chunked, false, MAX_RESPONSE).is_err());
+    }
+
+    /// Issue #130: the response is parsed only when its framing says it is complete, so reading
+    /// a large response in 16 KiB pieces does linear work.
+    #[test]
+    fn progress_waits_for_the_framing() {
+        let big = 64 * 1024 * 1024;
+        let mut chunked = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n".to_vec();
+        for _ in 0..2048 {
+            chunked.extend_from_slice(b"1000\r\n");
+            chunked.extend_from_slice(&[b'z'; 4096]);
+            chunked.extend_from_slice(b"\r\n");
+        }
+        chunked.extend_from_slice(b"0\r\nX-T: 1\r\n\r\n");
+        let body = vec![b'w'; 8 * 1024 * 1024];
+        let mut cl =
+            format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n", body.len()).into_bytes();
+        cl.extend_from_slice(&body);
+        let start = std::time::Instant::now();
+        for full in [&chunked, &cl] {
+            let mut p = Progress::default();
+            let mut ready_at = None;
+            for end in (16 * 1024..full.len() + 16 * 1024).step_by(16 * 1024) {
+                let end = end.min(full.len());
+                if p.ready(&full[..end], big).unwrap() {
+                    ready_at = Some(end);
+                    break;
+                }
+            }
+            assert_eq!(ready_at, Some(full.len()));
+            assert!(frame(full, false, big).unwrap().is_some());
+        }
+        assert!(start.elapsed() < std::time::Duration::from_secs(20));
+        // Without framing: only the end of the connection completes the body.
+        let mut p = Progress::default();
+        assert!(!p.ready(b"HTTP/1.1 200 OK\r\n\r\nabc", big).unwrap());
+        // A malformed chunk size is handed to frame, which refuses it.
+        let mut p = Progress::default();
+        let bad_chunk = b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n";
+        assert!(p.ready(bad_chunk, big).unwrap());
+        assert!(frame(bad_chunk, false, big).is_err());
+        // A head that never ends is refused.
+        let mut p = Progress::default();
+        assert!(p.ready(&vec![b'a'; MAX_HEAD + 1], big).is_err());
     }
 }

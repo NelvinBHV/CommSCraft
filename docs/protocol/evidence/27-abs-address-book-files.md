@@ -66,5 +66,7 @@ Source: [MS-ABS] "Address Book File Structure", edition 20250520, 79 pp. Product
 - **Cache per account (#124):** `$XDG_CACHE_HOME/commscraft/abs/ACCOUNT/HOST_PATH.lsabs` – one directory per signed-in account, one file per service URL; a file of the earlier layout (one per host) is removed.
 - **Linear delta application (#125):** deleted and known contacts are looked up in hash tables, the changed attributes of a compact delta likewise.
 - **Atomic delta application (#126):** the contact limit is checked before anything changes; a refused delta leaves the book as it was, and the cached book is then reported as "not updated", not as current.
-- **Status:** `tested-offline` (regression tests: a delta at the contact limit, 100 000 deletions and changes), `tested-in-lab` (cache per account).
+- **One-to-one cache names (#129):** account and service URL are encoded one-to-one (letters, digits, `@` and `-` stay, every other octet becomes `%XX`); a name over 200 octets means no cache instead of a shortened name. Directories of the earlier lossy names are removed.
+- **Download size (#130):** the 64 MiB bound of an address book file now holds in the HTTP reader as well (it refused responses over 256 KiB before).
+- **Status:** `tested-offline` (regression tests: a delta at the contact limit, 100 000 deletions and changes, colliding names), `tested-in-lab` (cache per account).
 

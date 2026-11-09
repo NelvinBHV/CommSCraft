@@ -1405,9 +1405,24 @@ fn abs_file(
     }
 }
 
-/// A cache file name part: letters, digits and `.-_@` only (everything else becomes `_`),
-/// lower case, bounded.
-fn cache_name(v: &str) -> String {
+/// A cache file name part, one-to-one (issue #129): ASCII letters, digits, `@` and `-` stay,
+/// every other octet becomes `%XX` – `.`, `_` and `%` too, so two different inputs never give
+/// the same name and no name is `.` or `..`. `None` when the name would exceed 200 octets (no
+/// cache then, rather than a shortened, ambiguous name).
+fn cache_name(v: &str) -> Option<String> {
+    let mut out = String::new();
+    for b in v.bytes() {
+        if b.is_ascii_alphanumeric() || b == b'@' || b == b'-' {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("%{b:02X}"));
+        }
+    }
+    (!out.is_empty() && out.len() <= 200).then_some(out)
+}
+
+/// The account directory name of the earlier layout (lossy; only to remove it).
+fn legacy_cache_name(v: &str) -> String {
     v.to_ascii_lowercase()
         .chars()
         .map(|c| {
@@ -1423,9 +1438,10 @@ fn cache_name(v: &str) -> String {
 
 /// Where the newest full address book file of a service is kept: the user's cache directory,
 /// one directory per signed-in account and one file per service URL
-/// (`$XDG_CACHE_HOME/commscraft/abs/ACCOUNT/HOST_PATH.lsabs`, directories 0700). Issue #124: two
-/// accounts of the same Unix user never share a cached directory. A file of the earlier layout
-/// (one per host, for every account) is removed.
+/// (`$XDG_CACHE_HOME/commscraft/abs/ACCOUNT/HOST_PATH.lsabs`, directories 0700, names encoded
+/// one-to-one by [`cache_name`]). Issues #124, #129: two accounts of the same Unix user never
+/// share a cached directory. Files of the earlier layouts (one per host for every account; a
+/// lossy account name) are removed.
 fn abs_cache_path(account: &str, base: &commscraft_provisioning::ServiceUrl) -> Option<PathBuf> {
     use std::os::unix::fs::DirBuilderExt;
     let (dir, file) = abs_cache_names(account, base)?;
@@ -1435,6 +1451,10 @@ fn abs_cache_path(account: &str, base: &commscraft_provisioning::ServiceUrl) -> 
         .join("commscraft")
         .join("abs");
     let _ = std::fs::remove_file(root.join(format!("{}.lsabs", base.host)));
+    let legacy = legacy_cache_name(account.trim_start_matches("sip:"));
+    if legacy != dir && legacy.contains('@') && !legacy.starts_with('.') {
+        let _ = std::fs::remove_dir_all(root.join(legacy));
+    }
     let dir = root.join(dir);
     std::fs::DirBuilder::new()
         .recursive(true)
@@ -1457,16 +1477,16 @@ fn abs_cache_names(
     {
         return None;
     }
-    let account = cache_name(account.trim_start_matches("sip:"));
-    if !account.contains('@') || account.starts_with('.') {
+    let account = account.trim_start_matches("sip:");
+    if !account.contains('@') {
         return None;
     }
     let path = commscraft_url::parse_https(&base.url)
         .map(|u| u.path)
         .unwrap_or_default();
     Some((
-        account,
-        format!("{}.lsabs", cache_name(&format!("{host}{path}"))),
+        cache_name(account)?,
+        format!("{}.lsabs", cache_name(&format!("{host}{path}"))?),
     ))
 }
 
@@ -5119,8 +5139,8 @@ mod tests {
         assert!(abs_today().is_some_and(|d| d > 0x24E0));
     }
 
-    /// Issue #124: the address book cache is kept per account and per service URL; names hold
-    /// only safe characters.
+    /// Issues #124, #129: the address book cache is kept per account and per service URL; the
+    /// names are one-to-one, so different accounts or URLs never share a file.
     #[test]
     fn address_book_cache_names() {
         let base = |url: &str| commscraft_provisioning::ServiceUrl {
@@ -5130,21 +5150,34 @@ mod tests {
         };
         let abs = base("https://fe.contoso.com:443/abs/handler");
         let a = abs_cache_names("sip:alice@contoso.com", &abs).unwrap();
-        let b = abs_cache_names("sip:Bob@contoso.com", &abs).unwrap();
-        assert_eq!(a.0, "alice@contoso.com");
-        assert_eq!(b.0, "bob@contoso.com");
-        assert_eq!(a.1, "fe.contoso.com_abs_handler.lsabs");
+        assert_eq!(a.0, "alice@contoso%2Ecom");
+        assert_eq!(a.1, "fe%2Econtoso%2Ecom%2Fabs%2Fhandler.lsabs");
+        // #129: these two collided before.
+        let plus = abs_cache_names("sip:alice+team@contoso.com", &abs).unwrap();
+        let under = abs_cache_names("sip:alice_team@contoso.com", &abs).unwrap();
+        assert_ne!(plus.0, under.0);
         assert_ne!(
-            abs_cache_names(
-                "sip:alice@contoso.com",
-                &base("https://fe.contoso.com/other")
-            ),
-            Some(a.clone())
+            abs_cache_names("sip:Alice@contoso.com", &abs).unwrap().0,
+            a.0
         );
-        let odd = abs_cache_names("sip:a/../b@contoso.com", &abs).unwrap();
-        assert_eq!(odd.0, "a_.._b@contoso.com");
-        assert!(abs_cache_names("sip:../x@contoso.com", &abs).is_none());
+        let other = abs_cache_names(
+            "sip:alice@contoso.com",
+            &base("https://fe.contoso.com/abs_handler"),
+        );
+        assert_ne!(other.unwrap().1, a.1);
+        // No path separators, no dot names, no shortened names.
+        let odd = abs_cache_names("sip:../x@contoso.com", &abs).unwrap();
+        assert!(!odd.0.contains('/') && !odd.0.starts_with('.'));
+        let long = format!("sip:{}@contoso.com", "a".repeat(250));
+        assert!(abs_cache_names(&long, &abs).is_none());
         assert!(abs_cache_names("sip:..", &abs).is_none());
+        // One-to-one over many similar inputs.
+        let names: std::collections::HashSet<String> =
+            ["a.b", "a_b", "a%2Eb", "a%b", "a b", "a+b", "a/b", "a-b"]
+                .iter()
+                .map(|n| cache_name(n).unwrap())
+                .collect();
+        assert_eq!(names.len(), 8);
     }
 
     /// Function 11: the changes of the list as Exchange operations, with the identifiers behind
