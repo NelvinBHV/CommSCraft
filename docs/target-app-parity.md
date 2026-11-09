@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (contact photos from Exchange)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (contact list in Exchange)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -36,7 +36,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 8 | In-band provisioning | MS-SIPREGE | B\* | **lab**, tested-offline (SUBSCRIBE with piggyback, provisionGroupList, validated ServerConfiguration; used for the address book, conference and media relay URIs: `provisioning`, `xml`, `session`) |
 | 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | **lab**, tested-offline (endpoint and own state publication, long-lived batch subscriptions with NOTIFY, refresh and pool resubscribe; the container members the publication grammar requires, so colleagues see the presence: `presence`, `provisioning`, `session`) |
 | 10 | Contact list (server) | MS-SIP, MS-PRES | B | **lab**, tested-offline (read the contact list with a live subscription and delta updates; add, change, move and remove contacts; add, rename and remove groups: `presence`, `session`, CLI `/contact`, `/contactgroup`) |
-| 11 | Contact list (Exchange unified contact store) | MS-PRES, MS-OXWSCOS, MS-OXWSPERS | B\* | – |
+| 11 | Contact list (Exchange unified contact store) | MS-PRES, MS-OXWSCOS, MS-OXWSPERS | B\* | **lab**, tested-offline (with Exchange reachable the contact list subscription offers `ms-ucs`/`ms-ucs-ready`, so the server moves the list to Exchange; 488/2165 and the end with 2186 recognized; the list read from Exchange with its groups, the contacts' presence subscribed; contacts and groups added, moved, renamed and removed in Exchange: `presence`, `session`, `ews`; CLI `/contacts`, `/contact`, `/contactgroup`) |
 | 12 | Privacy relationships and blocking | MS-PRES, MS-SIPREGE | B | **lab**, tested-offline (set the relationship per user, block at the server and in the client; the notice that someone added the user, with acknowledgement: `presence`, `session`, CLI `/privacy`, `/seen`) |
 | 13 | Offline address book | MS-ABS | B\* | **lab**, tested-offline (newest full file from the provisioned address book service over HTTPS with NTLM, decompressed with a size bound, header, normalization rules, attributes and contacts read and checked against the trailer; delta and compact delta files applied only to their base file; disk cache brought up to date with the newest delta; like the Windows client fetched after sign-in at a random time within an initial delay and then daily, and the server's address book policy obeyed (web search only, file only, both; the offline book answers when the web search fails); the phone normalization rules evaluated (recomputed against the specification's example); search by name and address, reverse lookup of a caller's number: `abs`, `net::http`; CLI `/addressbook`, `/lookup`, `--address-book-delay`, `--no-address-book-cache`) |
 | 14 | Address book and distribution list search | MS-DLX, MS-NTHT | B\* | **lab**, tested-offline (SearchAbEntry basic search with checked answer; ExpandDistributionList with status, members and nested lists: `dlx`; NTLM over HTTP on a kept-alive connection: `ntlm`, `net`; CLI `/search`, `/expand`) |
@@ -79,4 +79,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **20** tested-offline as a whole, **16** in parts, **14** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **32** of them also `tested-in-lab`
+**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **21** tested-offline as a whole, **16** in parts, **13** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **33** of them also `tested-in-lab`

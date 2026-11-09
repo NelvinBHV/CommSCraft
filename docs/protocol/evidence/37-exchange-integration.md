@@ -38,3 +38,8 @@ These points are dispensable for a first Linux client or need an interop test.
 - **Server behaviour (`tested-in-lab`, no details):** without a photo stored in the mailbox, GetUserPhoto returns the directory thumbnail; with one, the stored photo. No ETag was sent, so the 304 path is `tested-offline` only.
 - **Status:** `tested-offline`, `tested-in-lab`.
 
+## Implementation (2026-11-09, contact list in Exchange)
+- **Operations (EX-04):** `ews::ucs` builds GetImItemList (§3.1.4.6, pp. 40–44), AddImGroup (§3.1.4.3, p. 27), SetImGroup (§3.1.4.12, p. 65), RemoveImGroup (§3.1.4.11, p. 61), AddNewImContactToGroup (§3.1.4.4, p. 31), AddImContactToGroup (§3.1.4.2), RemoveImContactFromGroup (§3.1.4.10, p. 57) and RemoveContactFromImList (§3.1.4.8, p. 48) as SOAP 1.1 with RequestServerVersion (examples §4, pp. 73–75), and checks ResponseClass and ResponseCode of every answer. Groups (ImGroupType, §2.2.4.2) and contacts (personas, EX-05) are read bounded.
+- **CLI:** when the list moved (file 07, PR-51), `/contacts` shows the list from Exchange with numbered groups; `/contact add|remove|move` and `/contactgroup add|rename|remove` become the operations above, then the list is read again. Authentication: NTLM, as for Autodiscover.
+- **K-EX-2 (found 2026-11-09):** a group's MemberCorrelationKey (§2.2.4.2) names the contact items behind the personas – `Attributions/Attribution/SourceId` of [MS-OXWSPERS] – not the PersonaId; these items are also the ContactId the operations take (`tested-in-lab`). An IM address may come without `sip:` (a list moved from the server); the client adds it and checks the address.
+- **Status:** `tested-offline`, `tested-in-lab` (move of the list, read, add/rename/remove group, add/move/remove contact).

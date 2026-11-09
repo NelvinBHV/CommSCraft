@@ -223,3 +223,140 @@ fn photo_answers() {
     assert_eq!(photo_answer(401, None, None), PhotoAnswer::Unauthorized);
     assert_eq!(photo_answer(400, None, None), PhotoAnswer::Failed(400));
 }
+
+mod ucs_tests {
+    use crate::ucs::*;
+    use crate::Error;
+
+    fn id(s: &str) -> ItemId {
+        ItemId {
+            id: s.into(),
+            change_key: Some("EgAAAA==".into()),
+        }
+    }
+
+    /// The AddImGroup request of [MS-OXWSCOS] §4 (p. 74) and the other operations.
+    #[test]
+    fn requests() {
+        let r = ucs_request(&UcsOp::AddGroup {
+            name: "MyCustomGroup".into(),
+        })
+        .unwrap();
+        assert!(r.contains("<t:RequestServerVersion Version=\"Exchange2013\"/>"));
+        assert!(
+            r.contains("<m:AddImGroup><m:DisplayName>MyCustomGroup</m:DisplayName></m:AddImGroup>")
+        );
+        let r = ucs_request(&UcsOp::AddContactToGroup {
+            contact: id("AAMkAGQ1MjJjMTBkLTc4Y2AA="),
+            group: id("AAMkAGQ1MjJjMTBkzzAAAQKAAA="),
+        })
+        .unwrap();
+        assert!(r.contains(
+            "<m:ContactId Id=\"AAMkAGQ1MjJjMTBkLTc4Y2AA=\" ChangeKey=\"EgAAAA==\"/><m:GroupId Id=\"AAMkAGQ1MjJjMTBkzzAAAQKAAA=\""
+        ));
+        let r = ucs_request(&UcsOp::AddNewContact {
+            im_address: "sip:bob@contoso.com".into(),
+            name: Some("Bob <B>".into()),
+            group: None,
+        })
+        .unwrap();
+        assert!(r.contains("<m:ImAddress>sip:bob@contoso.com</m:ImAddress><m:DisplayName>Bob &lt;B&gt;</m:DisplayName></m:AddNewImContactToGroup>"));
+        assert!(ucs_request(&UcsOp::GetList)
+            .unwrap()
+            .contains("<m:GetImItemList></m:GetImItemList>"));
+        for op in [
+            UcsOp::AddGroup { name: "".into() },
+            UcsOp::AddGroup {
+                name: "a\u{1}b".into(),
+            },
+            UcsOp::AddNewContact {
+                im_address: "bob@contoso.com".into(),
+                name: None,
+                group: None,
+            },
+            UcsOp::AddNewContact {
+                im_address: "sip:bob\"@contoso.com".into(),
+                name: None,
+                group: None,
+            },
+        ] {
+            assert!(ucs_request(&op).is_err(), "{op:?}");
+        }
+        assert_eq!(
+            UcsOp::RemoveContact { contact: id("A") }.soap_action(),
+            "\"http://schemas.microsoft.com/exchange/services/2006/messages/RemoveContactFromImList\""
+        );
+    }
+
+    const LIST: &str = r#"<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>
+<GetImItemListResponse ResponseClass="Success" xmlns="http://schemas.microsoft.com/exchange/services/2006/messages">
+<ResponseCode>NoError</ResponseCode>
+<ImItemList>
+ <Groups xmlns="http://schemas.microsoft.com/exchange/services/2006/types">
+  <ImGroup><DisplayName>Other Contacts</DisplayName><GroupType>IPM.DistList.MOC.OtherContacts</GroupType>
+   <ExchangeStoreId Id="AAMkG1=" ChangeKey="EgAAAA=="/>
+   <MemberCorrelationKey><ItemId Id="AAMkP1=" ChangeKey="x"/></MemberCorrelationKey></ImGroup>
+  <ImGroup><DisplayName>Team</DisplayName><GroupType>IPM.DistList.MOC.UserGroup</GroupType>
+   <ExchangeStoreId Id="AAMkG2="/>
+   <MemberCorrelationKey><ItemId Id="AAMkP1="/><ItemId Id="AAMkP2="/></MemberCorrelationKey></ImGroup>
+  <ImGroup><GroupType>IPM.DistList.MOC.UserGroup</GroupType></ImGroup>
+ </Groups>
+ <Personas xmlns="http://schemas.microsoft.com/exchange/services/2006/types">
+  <Persona><PersonaId Id="AAMkX1="/><DisplayName>Bob</DisplayName><ImAddress>sip:bob@contoso.com</ImAddress>
+   <Attributions><Attribution><Id>0</Id><SourceId Id="AAMkP1=" ChangeKey="EQAAAA=="/><DisplayName>Favorites</DisplayName></Attribution></Attributions>
+   <EmailAddress><Name>Bob</Name><EmailAddress>bob@contoso.com</EmailAddress></EmailAddress></Persona>
+  <Persona><PersonaId Id="AAMkP2="/><DisplayName>Carol</DisplayName></Persona>
+  <Persona><DisplayName>No id</DisplayName></Persona>
+  <Persona><PersonaId Id="bad id&lt;"/></Persona>
+ </Personas>
+</ImItemList></GetImItemListResponse></s:Body></s:Envelope>"#;
+
+    /// GetImItemList (§2.2.4.1–2.2.4.3; personas per [MS-OXWSPERS] §2.2.4.19): groups with their
+    /// members, contacts with IM and mail address; entries without a usable identifier dropped.
+    #[test]
+    fn item_list() {
+        let l = parse_im_item_list(LIST).unwrap();
+        assert_eq!(l.groups.len(), 2);
+        assert_eq!(l.groups[0].kind, GroupKind::OtherContacts);
+        assert_eq!(l.groups[1].name, "Team");
+        assert_eq!(l.groups[1].members, ["AAMkP1=", "AAMkP2="]);
+        assert_eq!(l.groups[1].id.as_ref().unwrap().change_key, None);
+        assert_eq!(l.personas.len(), 2);
+        assert_eq!(
+            l.personas[0].im_address.as_deref(),
+            Some("sip:bob@contoso.com")
+        );
+        assert_eq!(l.personas[0].email.as_deref(), Some("bob@contoso.com"));
+        assert_eq!(l.personas[1].im_address, None);
+        // K-EX-2: membership through the contact item behind the persona.
+        assert_eq!(l.personas[0].contact_id().id, "AAMkP1=");
+        assert!(l.personas[0].in_group(&l.groups[0]) && l.personas[0].in_group(&l.groups[1]));
+        assert_eq!(l.personas[1].contact_id().id, "AAMkP2=");
+        assert!(!l.personas[1].in_group(&l.groups[0]) && l.personas[1].in_group(&l.groups[1]));
+    }
+
+    /// Answers of changes: the new group's and contact's identifiers; errors and faults.
+    #[test]
+    fn answers() {
+        let add = UcsOp::AddGroup { name: "G".into() };
+        let ok = r#"<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>
+<AddImGroupResponse ResponseClass="Success" xmlns="http://schemas.microsoft.com/exchange/services/2006/messages">
+<ResponseCode>NoError</ResponseCode><ImGroup><DisplayName xmlns="http://schemas.microsoft.com/exchange/services/2006/types">MyCustomGroup</DisplayName>
+<ExchangeStoreId Id="AAMkAGQ1MjJjMTBkLTc4Y2UtNDA5Ny04ZjU5LWI3MAAA=" ChangeKey="EgAAAA==" xmlns="http://schemas.microsoft.com/exchange/services/2006/types"/>
+</ImGroup></AddImGroupResponse></s:Body></s:Envelope>"#;
+        assert_eq!(
+            parse_ucs_answer(&add, ok).unwrap().unwrap().id,
+            "AAMkAGQ1MjJjMTBkLTc4Y2UtNDA5Ny04ZjU5LWI3MAAA="
+        );
+        let err = ok
+            .replace("ResponseClass=\"Success\"", "ResponseClass=\"Error\"")
+            .replace("<ResponseCode>NoError", "<ResponseCode>ErrorItemNotFound");
+        assert_eq!(
+            parse_ucs_answer(&add, &err),
+            Err(Error::Server("ErrorItemNotFound".into()))
+        );
+        // The answer of another operation is not taken.
+        assert!(parse_ucs_answer(&UcsOp::RemoveGroup { group: id("A") }, ok).is_err());
+        assert!(parse_im_item_list("<x/>").is_err());
+    }
+}

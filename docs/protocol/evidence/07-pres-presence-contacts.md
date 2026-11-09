@@ -84,3 +84,8 @@ Source: [MS-PRES] "Presence Protocol", edition 20250520, rev. 13.0, 257 pp. Appl
 
 ## Implementation (2026-11-01, delegates)
 `presence::set_delegate_body` (PR-21: add with publish and redelegate denied – least privilege, design – or remove, at the list version) and `parse_delegates` (roaming-self or bare delegates document, K-PR-3, at most 32). The self subscription asks for `roamingEx type="delegates"` too; the session keeps the list and its version, retries a 409 once with `curVersion` (§2.2.2.10.4) and reports the list from the 200 (§2.2.2.10.3). CLI `/delegate add|remove`. Status: tested-offline.
+
+## Implementation (2026-11-09, contact list in Exchange)
+- **PR-51:** once the client found its Exchange web services (file 37, EX-08), the contact list subscription carries `Supported: ms-ucs` and `ms-ucs-ready` and is sent again (`pres::ucs_headers`, `Engine::enable_exchange_contacts`). 488 with `ms-diagnostics` 2165, or a (BE)NOTIFY that ends the subscription with 2186, means the list is in Exchange: the subscription is not repeated (`Event::ContactsInExchange`), the client reads the list from Exchange and hands it to the session (`Engine::set_exchange_contacts`), which subscribes the contacts' presence. Changes then go to Exchange (file 37), not to the server.
+- **Server behaviour (`tested-in-lab`, no details):** with `ms-ucs-ready` the server answered `ucsMode="allowed"` and moved the list in the background; afterwards the subscription with `ms-ucs` got 488/2165, the one without `ms-ucs` a proxied list with `ucsMode="migrated"`.
+- **Status:** `tested-offline`, `tested-in-lab`.

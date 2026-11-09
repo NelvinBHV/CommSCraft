@@ -361,6 +361,9 @@ pub enum Event {
         minutes: u32,
     },
     ContactList(pres::ContactList),
+    /// PR-51: the server moved the contact list to Exchange (488 with ms-diagnostics 2165, or
+    /// the subscription ended with 2186); the client reads it from Exchange from now on.
+    ContactsInExchange,
     Presence(pres::ContactPresence),
     PresenceUnavailable {
         uri: String,
@@ -667,6 +670,10 @@ pub struct Engine<R: Random> {
     /// Accepted transfers whose call the transferor already ended.
     left_transfers: HashMap<CallId, (transfer::Incoming, u64)>,
     contact_list: Option<pres::ContactList>,
+    /// PR-51: the client can reach Exchange (`ms-ucs`), and the server moved the contact list
+    /// there.
+    ucs: bool,
+    contacts_in_exchange: bool,
     containers: Option<BTreeMap<u32, pres::Container>>,
     /// Subscribers the user was already told about in this session.
     told_subscribers: HashSet<String>,
@@ -755,6 +762,8 @@ impl<R: Random> Engine<R> {
             calls: HashMap::new(),
             left_transfers: HashMap::new(),
             contact_list: None,
+            ucs: false,
+            contacts_in_exchange: false,
             containers: None,
             container_manifest: None,
             manifest_tries: 0,
@@ -1132,6 +1141,9 @@ impl<R: Random> Engine<R> {
             SubKind::ContactList => {
                 let mut m = self.request("SUBSCRIBE", &aor, &aor);
                 pres::contacts_headers(&mut m, false);
+                if self.ucs {
+                    pres::ucs_headers(&mut m);
+                }
                 m
             }
             SubKind::SelfRoaming => {
@@ -1182,6 +1194,9 @@ impl<R: Random> Engine<R> {
             SubKind::ContactList => {
                 m.push_header("Event", "vnd-microsoft-roaming-contacts");
                 m.push_header("Accept", "application/vnd-microsoft-roaming-contacts+xml");
+                if self.ucs {
+                    pres::ucs_headers(&mut m);
+                }
             }
             SubKind::SelfRoaming => pres::self_subscribe(&mut m),
             SubKind::Presence { uris, single, .. } => {
@@ -1433,9 +1448,27 @@ impl<R: Random> Engine<R> {
             self.on_document(index, req, now, out);
         }
         let state = header_token(req, "subscription-state").unwrap_or_default();
-        if state == "terminated" {
+        if state == "terminated" && !self.contacts_moved_by(index, req, out) {
             self.schedule_retry(index, now);
         }
+    }
+
+    /// PR-51 (§4.14.2, p. 198): a contact list (BE)NOTIFY that ends the subscription with 2186 –
+    /// the list moved to Exchange. Returns whether it did.
+    fn contacts_moved_by(&mut self, index: usize, req: &Message, out: &mut Vec<Output>) -> bool {
+        let contacts = matches!(
+            self.subs.get(index).map(|s| &s.kind),
+            Some(SubKind::ContactList)
+        );
+        let terminated = header_token(req, "subscription-state").as_deref() == Some("terminated");
+        let moved = contacts
+            && terminated
+            && self.ucs
+            && commscraft_ocer::Diagnostic::from_message(req).is_some_and(|d| d.id == 2186);
+        if moved {
+            self.on_contacts_moved(index, out);
+        }
+        moved
     }
 
     // ----- conversations -------------------------------------------------------------------
@@ -2074,6 +2107,20 @@ impl<R: Random> Engine<R> {
                     return;
                 }
             }
+            // PR-51 (§4.14.3.1, pp. 199–200): 488 with 2165 – the list is in Exchange.
+            if let Purpose::Subscribe(i) | Purpose::Refresh(i) = p.purpose {
+                let contacts = matches!(
+                    self.subs.get(i).map(|s| &s.kind),
+                    Some(SubKind::ContactList)
+                );
+                let in_exchange = code == 488
+                    && commscraft_ocer::Diagnostic::from_message(resp)
+                        .is_some_and(|d| d.id == 2165);
+                if contacts && in_exchange && self.ucs {
+                    self.on_contacts_moved(i, out);
+                    return;
+                }
+            }
             self.on_failure(p, code, now, out);
         }
     }
@@ -2516,6 +2563,7 @@ impl<R: Random> Engine<R> {
                 if !req.body.is_empty() {
                     self.on_document(i, req, now, out);
                 }
+                self.contacts_moved_by(i, req, out);
             } else if let Some(id) = self.roster_of(req) {
                 self.on_roster_document(id, req, now, out);
             } else if let Some(id) = self.chat_of(req) {

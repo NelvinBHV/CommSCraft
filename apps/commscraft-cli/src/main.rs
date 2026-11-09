@@ -2311,6 +2311,13 @@ fn interactive(
     // time of the next fetch.
     let mut address_book: Option<commscraft_abs::book::AddressBook> = None;
     let mut book_next: Option<u64> = None;
+    // Function 11: the user's Exchange web services (looked up once after provisioning) and the
+    // Exchange identifiers of the contact list once it is kept there.
+    let mut ews: Option<commscraft_ews::UserSettings> = None;
+    let mut ews_looked_up = false;
+    let mut ucs_ids = UcsIds::default();
+    // Engine outputs that come from events (sent after the events are shown).
+    let mut deferred: Vec<Output> = Vec::new();
     let mut outputs = engine.start(now());
     // Commands that events lead to (sent after the events are shown).
     let mut outputs_extra: Vec<C> = Vec::new();
@@ -2334,6 +2341,25 @@ fn interactive(
                     }
                     E::RegistrationEnded(why) => return Err(format!("registration ended: {why}")),
                     E::Provisioned(c) => {
+                        // PR-51: with Exchange reachable the contact list may move there.
+                        if !ews_looked_up {
+                            ews_looked_up = true;
+                            match ews_settings(&mut engine, tls, trust, verbose) {
+                                Ok(s)
+                                    if s.https_url(&["InternalEwsUrl", "ExternalEwsUrl"])
+                                        .is_some() =>
+                                {
+                                    ews = Some(s);
+                                    deferred.extend(engine.enable_exchange_contacts(now()));
+                                }
+                                Ok(_) => {}
+                                Err(e) => {
+                                    if verbose {
+                                        println!("  no Exchange web services: {e}");
+                                    }
+                                }
+                            }
+                        }
                         if !address_book_file_allowed(&c) {
                             address_book = None;
                             book_next = None;
@@ -2642,6 +2668,11 @@ fn interactive(
                         }
                         presence.retain(|uri, _| l.contacts.iter().any(|c| c.uri == *uri));
                         println!("* {} contacts", l.contacts.len());
+                        if verbose {
+                            if let Some(m) = &l.ucs_mode {
+                                println!("  contact list mode (ucsMode): {}", term::clean(m));
+                            }
+                        }
                     }
                     E::Presence(p) => {
                         let state = format!("{:?}", p.class());
@@ -2939,10 +2970,25 @@ fn interactive(
                             current = peers.keys().next().copied();
                         }
                     }
+                    E::ContactsInExchange => match ews.as_ref() {
+                        Some(s) => match exchange_contact_list(&mut engine, tls, trust, s, verbose)
+                        {
+                            Ok((list, ids)) => {
+                                println!("* the contact list is kept in Exchange");
+                                ucs_ids = ids;
+                                deferred.extend(engine.set_exchange_contacts(list, now()));
+                            }
+                            Err(e) => println!("* contact list from Exchange not loaded: {e}"),
+                        },
+                        None => println!(
+                            "* the contact list is kept in Exchange, which is not reachable"
+                        ),
+                    },
                     E::Notice(n) => println!("* {n}"),
                 },
             }
         }
+        outputs.append(&mut deferred);
         for c in std::mem::take(&mut outputs_extra) {
             outputs.extend(engine.command(c, now()));
         }
@@ -3242,14 +3288,47 @@ fn interactive(
                     }
                     None
                 }
-                "/contact" => {
-                    let edit = contact_command(&arg, engine.contact_list());
-                    if edit.is_none() {
-                        println!(
-                            "* /contact add sip:URI [NAME] | remove sip:URI | move sip:URI GROUP …"
-                        );
+                "/contact" | "/contactgroup" => {
+                    let edit = if cmd == "/contact" {
+                        contact_command(&arg, engine.contact_list())
+                    } else {
+                        contact_group_command(&arg)
+                    };
+                    match (edit, ews.clone()) {
+                        (None, _) if cmd == "/contact" => {
+                            println!(
+                                "* /contact add sip:URI [NAME] | remove sip:URI | move sip:URI GROUP …"
+                            );
+                            None
+                        }
+                        (None, _) => {
+                            println!("* /contactgroup add NAME | rename ID NAME | remove ID");
+                            None
+                        }
+                        // Function 11: the list is in Exchange – change it there, then read it.
+                        (Some(edit), Some(s)) if engine.contacts_in_exchange() => {
+                            let list = engine.contact_list().cloned().unwrap_or_default();
+                            let done = ucs_ops(&edit, &list, &ucs_ids).and_then(|ops| {
+                                for op in &ops {
+                                    let text = ucs_call(&mut engine, tls, trust, &s, op, verbose)?;
+                                    commscraft_ews::ucs::parse_ucs_answer(op, &text)
+                                        .map_err(|e| format!("{e:?}"))?;
+                                }
+                                exchange_contact_list(&mut engine, tls, trust, &s, verbose)
+                            });
+                            match done {
+                                Ok((list, ids)) => {
+                                    ucs_ids = ids;
+                                    outputs.extend(engine.set_exchange_contacts(list, now()));
+                                }
+                                Err(e) => {
+                                    println!("* the contact list in Exchange was not changed: {e}")
+                                }
+                            }
+                            None
+                        }
+                        (Some(edit), _) => Some(C::EditContacts(edit)),
                     }
-                    edit.map(C::EditContacts)
                 }
                 "/privacy" => {
                     let mut w = arg.split_whitespace();
@@ -3279,13 +3358,6 @@ fn interactive(
                     }
                 }
                 "/seen" if arg.starts_with("sip:") => Some(C::AcknowledgeSubscriber { uri: arg }),
-                "/contactgroup" => {
-                    let edit = contact_group_command(&arg);
-                    if edit.is_none() {
-                        println!("* /contactgroup add NAME | rename ID NAME | remove ID");
-                    }
-                    edit.map(C::EditContacts)
-                }
                 "/status" => match commscraft_presence::UserStatus::parse(&arg) {
                     Some(s) => Some(C::SetStatus(s)),
                     None => {
@@ -4549,6 +4621,173 @@ use commscraft_presence::{ContactEdit, ContactList};
 const MAX_VIDEO_CANDIDATES: usize = 64;
 
 /// `/contact add|remove|move …`: a change of the list; an entry's other values stay as they are.
+/// The Exchange identifiers behind the numbers the contact list from Exchange shows
+/// (function 11): group number → group, contact address → contact.
+#[derive(Debug, Default)]
+struct UcsIds {
+    groups: Vec<(u32, commscraft_ews::ucs::ItemId)>,
+    contacts: Vec<(String, commscraft_ews::ucs::ItemId)>,
+}
+
+/// An operation on the contact list in Exchange (EX-04) at the user's EWS URL, with NTLM.
+fn ucs_call(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    settings: &commscraft_ews::UserSettings,
+    op: &commscraft_ews::ucs::UcsOp,
+    verbose: bool,
+) -> Result<String, String> {
+    let base = settings
+        .https_url(&["InternalEwsUrl", "ExternalEwsUrl"])
+        .ok_or("Exchange named no web services URL")?;
+    let url = commscraft_url::parse_https(base).ok_or("unusable EWS URL")?;
+    let own = engine
+        .aor()
+        .rsplit('@')
+        .next()
+        .unwrap_or_default()
+        .to_string();
+    if !commscraft_url::in_domain(&url.host, &own) && !trust.trusts(&url.host) {
+        return Err(format!(
+            "{} is outside your SIP domain; add --trust-domain to use it",
+            url.host
+        ));
+    }
+    let body = commscraft_ews::ucs::ucs_request(op).map_err(|e| format!("{e:?}"))?;
+    if verbose {
+        println!("  POST {base} ({})", op.name());
+    }
+    let action = op.soap_action();
+    let r = ntlm_post(
+        engine,
+        tls,
+        &url,
+        &[
+            ("Content-Type", commscraft_ews::CONTENT_TYPE),
+            ("SOAPAction", &action),
+        ],
+        &body,
+    )?;
+    match r.status {
+        401 => Err("not authorized at Exchange (401)".into()),
+        // A SOAP fault comes with 500.
+        200 | 500 => Ok(String::from_utf8_lossy(&r.body).to_string()),
+        s => Err(format!("HTTP {s}")),
+    }
+}
+
+/// The contact list from Exchange (GetImItemList, EX-04/EX-05) in the form the session keeps:
+/// groups numbered in order, contacts with a SIP address as IM address in the groups whose
+/// members they are (MemberCorrelationKey, [MS-OXWSCOS] §2.2.4.2, through the contact items
+/// behind the persona – K-EX-2).
+fn exchange_contact_list(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    settings: &commscraft_ews::UserSettings,
+    verbose: bool,
+) -> Result<(ContactList, UcsIds), String> {
+    use commscraft_ews::ucs::{parse_im_item_list, UcsOp};
+    let text = ucs_call(engine, tls, trust, settings, &UcsOp::GetList, verbose)?;
+    let l = parse_im_item_list(&text).map_err(|e| format!("{e:?}"))?;
+    let mut list = ContactList::default();
+    let mut ids = UcsIds::default();
+    for (n, g) in (1u32..).zip(&l.groups) {
+        list.groups.push(commscraft_presence::Group {
+            id: n,
+            name: g.name.clone(),
+        });
+        if let Some(id) = &g.id {
+            ids.groups.push((n, id.clone()));
+        }
+    }
+    for p in &l.personas {
+        let uri = p
+            .im_address
+            .as_deref()
+            .and_then(|a| commscraft_presence::checked_sip_uri(a).ok());
+        let Some(uri) = uri else {
+            list.skipped.push(p.name.clone());
+            continue;
+        };
+        let groups = (1u32..)
+            .zip(&l.groups)
+            .filter(|(_, g)| p.in_group(g))
+            .map(|(n, _)| n)
+            .collect();
+        list.contacts.push(commscraft_presence::Contact {
+            uri: uri.clone(),
+            name: p.name.clone(),
+            groups,
+            subscribed: true,
+            extension: false,
+        });
+        ids.contacts.push((uri, p.contact_id().clone()));
+    }
+    Ok((list, ids))
+}
+
+/// The Exchange operations for a change of the list (EX-04): add a contact (into its first
+/// group), move it (into the new groups, out of the old ones), remove it; add, rename and
+/// remove a group.
+fn ucs_ops(
+    edit: &ContactEdit,
+    list: &ContactList,
+    ids: &UcsIds,
+) -> Result<Vec<commscraft_ews::ucs::UcsOp>, String> {
+    use commscraft_ews::ucs::UcsOp;
+    let group = |n: u32| {
+        ids.groups
+            .iter()
+            .find(|(g, _)| *g == n)
+            .map(|(_, id)| id.clone())
+            .ok_or_else(|| format!("no group {n}"))
+    };
+    let contact = |uri: &str| {
+        ids.contacts
+            .iter()
+            .find(|(u, _)| u == uri)
+            .map(|(_, id)| id.clone())
+    };
+    Ok(match edit {
+        ContactEdit::Set {
+            uri, name, groups, ..
+        } => match (contact(uri), list.contacts.iter().find(|c| c.uri == *uri)) {
+            (Some(id), Some(old)) => {
+                let mut ops = Vec::new();
+                for g in groups.iter().filter(|g| !old.groups.contains(g)) {
+                    ops.push(UcsOp::AddContactToGroup {
+                        contact: id.clone(),
+                        group: group(*g)?,
+                    });
+                }
+                for g in old.groups.iter().filter(|g| !groups.contains(g)) {
+                    ops.push(UcsOp::RemoveContactFromGroup {
+                        contact: id.clone(),
+                        group: group(*g)?,
+                    });
+                }
+                ops
+            }
+            _ => vec![UcsOp::AddNewContact {
+                im_address: uri.clone(),
+                name: (!name.is_empty()).then(|| name.clone()),
+                group: groups.first().map(|g| group(*g)).transpose()?,
+            }],
+        },
+        ContactEdit::Delete { uri } => vec![UcsOp::RemoveContact {
+            contact: contact(uri).ok_or("not in the contact list")?,
+        }],
+        ContactEdit::AddGroup { name } => vec![UcsOp::AddGroup { name: name.clone() }],
+        ContactEdit::RenameGroup { id, name } => vec![UcsOp::RenameGroup {
+            group: group(*id)?,
+            name: name.clone(),
+        }],
+        ContactEdit::DeleteGroup { id } => vec![UcsOp::RemoveGroup { group: group(*id)? }],
+    })
+}
+
 fn contact_command(arg: &str, list: Option<&ContactList>) -> Option<ContactEdit> {
     let (action, rest) = arg.trim().split_once(' ')?;
     let (uri, rest) = match rest.trim().split_once(' ') {
@@ -4825,6 +5064,81 @@ mod tests {
             assert_eq!(address_book_file_allowed(&c), allowed);
         }
         assert!(abs_today().is_some_and(|d| d > 0x24E0));
+    }
+
+    /// Function 11: the changes of the list as Exchange operations, with the identifiers behind
+    /// the group numbers and addresses.
+    #[test]
+    fn ucs_operations() {
+        use commscraft_ews::ucs::{ItemId, UcsOp};
+        let id = |s: &str| ItemId {
+            id: s.into(),
+            change_key: None,
+        };
+        let list = ContactList {
+            groups: vec![
+                commscraft_presence::Group {
+                    id: 1,
+                    name: "Other Contacts".into(),
+                },
+                commscraft_presence::Group {
+                    id: 2,
+                    name: "Team".into(),
+                },
+            ],
+            contacts: vec![commscraft_presence::Contact {
+                uri: "sip:bob@contoso.com".into(),
+                name: "Bob".into(),
+                groups: vec![1],
+                subscribed: true,
+                extension: false,
+            }],
+            ..Default::default()
+        };
+        let ids = UcsIds {
+            groups: vec![(1, id("G1")), (2, id("G2"))],
+            contacts: vec![("sip:bob@contoso.com".into(), id("P1"))],
+        };
+        let ops = |arg: &str| ucs_ops(&contact_command(arg, Some(&list)).unwrap(), &list, &ids);
+        assert_eq!(
+            ops("move sip:bob@contoso.com 2").unwrap(),
+            [
+                UcsOp::AddContactToGroup {
+                    contact: id("P1"),
+                    group: id("G2")
+                },
+                UcsOp::RemoveContactFromGroup {
+                    contact: id("P1"),
+                    group: id("G1")
+                }
+            ]
+        );
+        assert_eq!(
+            ops("add sip:carol@contoso.com Carol").unwrap(),
+            [UcsOp::AddNewContact {
+                im_address: "sip:carol@contoso.com".into(),
+                name: Some("Carol".into()),
+                group: None
+            }]
+        );
+        assert_eq!(
+            ops("remove sip:bob@contoso.com").unwrap(),
+            [UcsOp::RemoveContact { contact: id("P1") }]
+        );
+        assert!(ops("remove sip:carol@contoso.com").is_err());
+        assert!(ops("move sip:bob@contoso.com 9").is_err());
+        let group = |arg: &str| ucs_ops(&contact_group_command(arg).unwrap(), &list, &ids);
+        assert_eq!(
+            group("rename 2 Core").unwrap(),
+            [UcsOp::RenameGroup {
+                group: id("G2"),
+                name: "Core".into()
+            }]
+        );
+        assert_eq!(
+            group("remove 1").unwrap(),
+            [UcsOp::RemoveGroup { group: id("G1") }]
+        );
     }
 
     /// E9-03: the subnet for the location request from `/proc/net/route` (values in native byte

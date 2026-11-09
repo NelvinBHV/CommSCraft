@@ -767,8 +767,8 @@ pub fn single_headers(m: &mut Message, polling: bool) {
     m.push_header("Content-Type", "application/msrtc-adrl-categorylist+xml");
 }
 
-/// Adds the headers of the contact list SUBSCRIBE (SIP-07; §4.14.3.2, p. 200). No `ms-ucs`: the
-/// server then proxies a contact list kept in Exchange (PR-51).
+/// Adds the headers of the contact list SUBSCRIBE (SIP-07; §4.14.3.2, p. 200). Without
+/// [`ucs_headers`] the server proxies a contact list kept in Exchange (PR-51).
 pub fn contacts_headers(m: &mut Message, polling: bool) {
     m.push_header("Event", "vnd-microsoft-roaming-contacts");
     m.push_header("Accept", "application/vnd-microsoft-roaming-contacts+xml");
@@ -776,6 +776,13 @@ pub fn contacts_headers(m: &mut Message, polling: bool) {
     if polling {
         m.push_header("Expires", "0");
     }
+}
+
+/// PR-51: the client can connect to Exchange – `ms-ucs`, and `ms-ucs-ready`, which asks the
+/// server to move the list there ([MS-PRES] §3.10.4, p. 134; example §4.14.1, p. 197).
+pub fn ucs_headers(m: &mut Message) {
+    m.push_header("Supported", "ms-ucs");
+    m.push_header("Supported", "ms-ucs-ready");
 }
 
 /// One body part of a `multipart/related` document.

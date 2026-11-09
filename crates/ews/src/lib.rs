@@ -1,6 +1,7 @@
 //! Exchange web services the client uses (evidence file 37): Autodiscover `GetUserSettings`
 //! ([MS-OXWSADISC] 20250520, EX-08) for the user's EWS endpoint, and user photos
-//! `GetUserPhoto` ([MS-OXWSPHOTO] 20250520, EX-06).
+//! `GetUserPhoto` ([MS-OXWSPHOTO] 20250520, EX-06), and the contact list in Exchange
+//! ([MS-OXWSCOS] 20250520, EX-01 … EX-05, module [`ucs`]).
 //!
 //! Security by design: the mailbox and setting names are checked and XML-escaped; the response
 //! is parsed with the bounded XML reader (no DTD); only HTTPS endpoint URLs are taken over,
@@ -8,6 +9,8 @@
 //! only reported – the caller decides whether to follow it (only to HTTPS, at most a few times).
 
 use commscraft_xml::{escape, Element, Limits};
+
+pub mod ucs;
 
 pub const CONTENT_TYPE: &str = "text/xml; charset=utf-8";
 /// `soapAction` of GetUserSettings ([MS-OXWSADISC] §3.1.4.4, p. 49).
