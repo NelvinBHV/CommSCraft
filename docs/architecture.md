@@ -1,6 +1,6 @@
 # CommSCraft architecture (planned)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (Kerberos sign-in)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (TLS-DSK sign-in; M1 complete)
 
 Rules for working in the code are in
 [`AGENTS.md`](../AGENTS.md).
@@ -41,8 +41,10 @@ Rules for working in the code are in
 | `commscraft-abs` | L3 | Address book block compression (LZ77 variant), CRC-32, file-name dates; full and delta address book files with search and reverse number lookup (`book`); phone normalization rules (`normalize`) | AB-03 … AB-11, K-AB-1 … K-AB-4 |
 | `commscraft-sip-msg` | L0 | SIP parsing, stream framing and serialization; bounded, fail-closed, injection-safe; UAC dialogs (RFC 3261 §12) | RFC 3261 §7, §18.3, §25; AE-29 |
 | `commscraft-sipae` | L1 | MS-SIPAE security associations, signature buffers, Authorization header, verification with replay window | AE-05, AE-10, AE-11, AE-29…AE-33, K-AE-4 |
+| `commscraft-ocauthws` | L1 | Certificate provisioning for TLS-DSK (MS-OCAUTHWS GetAndPublishCert): request without SOAP header (K-AW-2), checked answer | AW-10…AW-15 |
+| `commscraft-tlsdsk` | adapter | TLS-DSK: RSA key and PKCS#10 request, the TLS handshake tunnelled in MS-SIPAE (rustls, TLS 1.2, SHA-256 suites), signing keys from the exporter "client EAP encryption", HMAC-SHA256 | AE-26, AE-27, AE-30 |
 | `commscraft-gssapi` | adapter | The system's Kerberos (GSSAPI through `libgssapi`): the registrar's Kerberos provider and GSS_GetMIC/VerifyMIC | AE-25, AE-30, AE-35 |
-| `commscraft-register` | L2 | Sign-in state machine: REGISTER → NTLM or Kerberos handshake → signed 200 OK → GRUU/expiry → refresh → sign-out; client version block (RG-50); deregister/survivable mode NOTIFY; signed home pool redirect (O-RG-1); keep-alive negotiation (CON-30…CON-35) | AE-20…AE-33, RG-03…RG-32, RG-50, RE-03, RE-06, K-RG-4 |
+| `commscraft-register` | L2 | Sign-in state machine: REGISTER → TLS-DSK, Kerberos or NTLM handshake → signed 200 OK → GRUU/expiry → refresh → sign-out; client version block (RG-50); deregister/survivable mode NOTIFY; signed home pool redirect (O-RG-1); keep-alive negotiation (CON-30…CON-35) | AE-20…AE-33, RG-03…RG-32, RG-50, RE-03, RE-06, K-RG-4 |
 | `commscraft-url` | L0 | Checked DNS host names and HTTPS URLs, user-domain test | docs/security.md |
 | `commscraft-discovery` | L2 | Autodiscover (HTTPS only, Domain resource, redirect limits) and DNS SRV/fallback ordering (TLS only, domain filter) | AD-02…AD-13, CON-10…CON-18, OB-06, K-AD-1 |
 | `commscraft-net` | adapter | TLS client (rustls + ring, system trust store, optional enterprise CA), blocking SIP connection over the bounded decoder, OS random source, HTTPS GET for Autodiscover, DNS SRV client | CON-01…CON-04, CON-11, AD-02…AD-04, [SFB-TLS] |

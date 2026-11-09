@@ -1,6 +1,6 @@
 # Security by design
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (Kerberos sign-in)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (TLS-DSK sign-in; M1 complete)
 
 CommSCraft handles passwords, Kerberos tickets, NTLM session keys and SRTP keys. It talks to
 servers and peers it cannot trust. Security is part of every design decision, not a later review.
@@ -85,7 +85,13 @@ This page lists the rules every crate follows and how each is enforced. The gene
 ## Rules for the next building blocks
 
 - **Kerberos:** the adapter crate `commscraft-gssapi` uses the system's GSSAPI library (crate `libgssapi`); tickets and keys stay in it, the protocol crates see only tokens and MICs. The service principal must be `sip/` plus a DNS host name; the context asks for integrity only (no delegation); the password copy is wiped once credentials exist; when Kerberos fails the client falls back to NTLM and says why. A security association is renewed before the ticket (or 8 hours) ends.
-- **TLS-DSK:** behind an adapter crate; private keys never leave it.
+- **TLS-DSK:**
+  - **Adapter:** `commscraft-tlsdsk`, a rustls client over buffers. TLS 1.2 with SHA-256 suites only; the server certificate is checked like the SIP connection's.
+  - **User key:** RSA 2048. The `rsa` crate only generates it; signing (certificate request, certificate_verify) runs in `ring`, so the timing weakness of `rsa`'s private key operations (RUSTSEC-2023-0071) does not apply.
+  - **Storage:** the key is kept wiped in memory and stored only as `key.pk8` (0600, directory 0700) next to the certificate.
+  - **Certificate checks:** an issued certificate must carry the requested key; a stored one is used only while valid and only with its key.
+  - **Credentials:** the certificate request goes with the NTLM HTTP authentication only to a provisioning service in the user's SIP domain or a trusted domain.
+  - **Signing keys:** from the TLS exporter, wiped on drop.
 - **Media:** SRTP only (`AES_CM_128_HMAC_SHA1_80`, K-SR-1); no unencrypted RTP fallback.
 - **Logging:** headers that carry secrets (`Authorization`, `Proxy-Authorization`, `gssapi-data`,
   web tickets, SDP `a=crypto`) are redacted before anything is logged.

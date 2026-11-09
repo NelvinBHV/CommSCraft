@@ -66,6 +66,7 @@ impl std::error::Error for NetError {}
 #[derive(Clone)]
 pub struct TlsClient {
     config: Arc<ClientConfig>,
+    roots: Arc<RootCertStore>,
 }
 
 impl std::fmt::Debug for TlsClient {
@@ -106,14 +107,21 @@ impl TlsClient {
             return Err(NetError::NoTrustAnchors);
         }
         let provider = Arc::new(rustls::crypto::ring::default_provider());
+        let roots = Arc::new(roots);
         let config = ClientConfig::builder_with_provider(provider)
             .with_protocol_versions(&[&rustls::version::TLS13, &rustls::version::TLS12])
             .map_err(|e| NetError::Tls(std::io::Error::other(e)))?
-            .with_root_certificates(roots)
+            .with_root_certificates(roots.clone())
             .with_no_client_auth();
         Ok(Self {
             config: Arc::new(config),
+            roots,
         })
+    }
+
+    /// The trust anchors, for TLS run elsewhere with the same trust (the TLS-DSK handshake).
+    pub fn roots(&self) -> Arc<RootCertStore> {
+        self.roots.clone()
     }
 
     /// Resolves `host` and connects to the first address that accepts the connection.

@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (Kerberos sign-in)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (TLS-DSK sign-in; M1 complete)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -31,7 +31,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 3 | SIP compression (optional) | MS-SIPCOMP | B\* | – |
 | 4 | Sign-in with NTLM | MS-SIPAE, MS-NLMP | B\* | **lab**, tested-offline (NTLMv2 incl. MIC, MS-SIPAE signing and verification up to version 4, offline sign-in against a test registrar: `ntlm`, `sipae`, `register`) |
 | 5 | Sign-in with Kerberos | MS-SIPAE, MS-KILE | B | **lab**, tested-offline (AP-REQ for `sip/<FE>` from the ticket cache or the password, signed REGISTER from version 4, GSS_GetMIC/VerifyMIC for every signed message, opaque from the first signed answer, renewal before the ticket ends, fallback to NTLM: `register`, `sipae`, adapter `gssapi`; CLI `--kerberos`) |
-| 6 | Sign-in with TLS-DSK and client certificate | MS-SIPAE, MS-OCAUTHWS | B\* | – |
+| 6 | Sign-in with TLS-DSK and client certificate | MS-SIPAE, MS-OCAUTHWS | B\* | **lab**, tested-offline (user certificate from the certificate provisioning service – RSA key, PKCS#10 request, GetAndPublishCert with NTLM, stored 0600 –; the TLS handshake tunnelled in the sign-in, TLS 1.2 with SHA-256 suites, signing keys from the exporter, HMAC-SHA256 for every signed message; fallback to Kerberos or NTLM: `register`, `sipae`, `ocauthws`, adapter `tlsdsk`; CLI `--tls-dsk`) |
 | 7 | Registration, GRUU, endpoint ID | MS-SIPREGE, MS-SIPRE | B | **lab**, tested-offline (REGISTER with GRUU, refresh, signed 301 redirect to the home pool, deregistration NOTIFY, version block, keep-alive: `register`, `sip-identity`) |
 | 8 | In-band provisioning | MS-SIPREGE | B\* | **lab**, tested-offline (SUBSCRIBE with piggyback, provisionGroupList, validated ServerConfiguration; used for the address book, conference and media relay URIs: `provisioning`, `xml`, `session`) |
 | 9 | Publish and subscribe presence | MS-PRES, MS-SIP | B | **lab**, tested-offline (endpoint and own state publication, long-lived batch subscriptions with NOTIFY, refresh and pool resubscribe; the container members the publication grammar requires, so colleagues see the presence: `presence`, `provisioning`, `session`) |
@@ -79,4 +79,4 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | – |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **23** tested-offline as a whole, **15** in parts, **12** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **34** of them also `tested-in-lab`
+**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **24** tested-offline as a whole, **15** in parts, **11** not started, 2 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **35** of them also `tested-in-lab`

@@ -46,7 +46,7 @@ use commscraft_sipae::Policy;
 
 const USAGE: &str =
     "usage: commscraft-cli sign-in|presence|im|interactive --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
-[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--kerberos] [--ntlm-legacy] \
+[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--kerberos] [--tls-dsk] [--ntlm-legacy] \
 [--set-status online|busy|dnd|away] [--max-contacts N] [--to sip:URI --text TEXT [--wait S]] --authorized
        commscraft-cli audio-check [--device ALSA_DEVICE] [--codec g722|pcma]   (local, no network)
 
@@ -96,6 +96,10 @@ im        signs in, opens a 1:1 conversation with --to, sends --text, shows answ
 --kerberos    sign in with Kerberos when the server offers it: the ticket of USER@REALM from the
               ticket cache (kinit), else the password; the realm is the SIP domain in capitals, the
               KDC comes from the system's Kerberos configuration (KRB5_CONFIG). Falls back to NTLM.
+--tls-dsk     sign in with TLS-DSK when the server offers it: a user certificate from the server's
+              certificate provisioning service (asked for once with NTLM, kept in
+              ~/.local/share/commscraft/tlsdsk/ACCOUNT, key 0600), then a TLS handshake inside the
+              SIP sign-in. Falls back to Kerberos (with --kerberos) or NTLM.
 --ntlm-legacy    diagnostic: NTLMv2 without the optional MIC/channel-binding additions, with LMv2.
 --verbose     also prints the non-secret NTLM facts (offered/chosen flags, domain names).
 The password is read from the terminal without echo, or as the first line of standard input.";
@@ -115,6 +119,8 @@ struct Args {
     ntlm_legacy: bool,
     /// Function 5: sign in with Kerberos when the server offers it (else NTLM).
     kerberos: bool,
+    /// Function 6: sign in with TLS-DSK and a user certificate when the server offers it.
+    tls_dsk: bool,
     command: Command,
     set_status: Option<commscraft_presence::UserStatus>,
     max_contacts: usize,
@@ -171,6 +177,7 @@ fn parse_args() -> Result<Args, String> {
         trust_domains: Vec::new(),
         ntlm_legacy: false,
         kerberos: false,
+        tls_dsk: false,
         command,
         set_status: None,
         max_contacts: 50,
@@ -203,6 +210,7 @@ fn parse_args() -> Result<Args, String> {
             "--discover-only" => a.discover_only = true,
             "--ntlm-legacy" => a.ntlm_legacy = true,
             "--kerberos" => a.kerberos = true,
+            "--tls-dsk" => a.tls_dsk = true,
             "--set-status" => {
                 let v = value()?;
                 a.set_status = Some(
@@ -711,6 +719,8 @@ enum Pumped {
     Nothing,
     Registered,
     Done,
+    /// TLS-DSK needs a user certificate from this provisioning service.
+    CertificateNeeded(String),
     /// A message that is not for the registrar (a response to one of our own requests).
     Message(Message),
 }
@@ -824,12 +834,13 @@ impl Session {
                     result = Pumped::Done;
                 }
                 Event::SurvivableMode => println!("server reports survivable mode"),
+                Event::CertificateNeeded { sts_uri } => {
+                    result = Pumped::CertificateNeeded(sts_uri);
+                }
                 Event::Authentication { scheme, fallback } => match fallback {
-                    Some(why) => println!(
-                        "authentication: Kerberos not used ({}) – {}",
-                        term::clean(&why),
-                        scheme.name()
-                    ),
+                    Some(why) => {
+                        println!("authentication: {} – {}", term::clean(&why), scheme.name())
+                    }
                     None => println!("authentication: {}", scheme.name()),
                 },
                 Event::Failed(f) => return Err(format!("sign-in failed: {f:?}")),
@@ -961,7 +972,7 @@ impl Session {
                     return Ok(m);
                 }
                 Pumped::Done => return Err("the registration ended".into()),
-                Pumped::Nothing | Pumped::Registered => {}
+                Pumped::Nothing | Pumped::Registered | Pumped::CertificateNeeded(_) => {}
             }
         }
     }
@@ -1049,6 +1060,19 @@ fn run(a: Args) -> Result<(), String> {
     if let Some(k) = kerberos {
         reg = reg.with_kerberos(k);
     }
+    // Function 6: the user certificate of this account and the trust anchors of the connection.
+    let tls_dsk_dir = tls_dsk_dir(&a.aor);
+    if a.tls_dsk {
+        match &tls_dsk_dir {
+            Some(dir) => {
+                reg = reg.with_tls_dsk(Box::new(commscraft_tlsdsk::TlsDsk::new(
+                    dir.clone(),
+                    tls.roots(),
+                )))
+            }
+            None => eprintln!("no place for the TLS-DSK certificate – signing in without it"),
+        }
+    }
     if a.command == Command::Interactive {
         let ecfg = commscraft_session::Config {
             aor: a.aor.clone(),
@@ -1092,6 +1116,20 @@ fn run(a: Args) -> Result<(), String> {
         match s.pump(&mut reg, a.verbose)? {
             Pumped::Registered => break,
             Pumped::Done => return Ok(()),
+            Pumped::CertificateNeeded(sts_uri) => {
+                let dir = tls_dsk_dir
+                    .as_deref()
+                    .ok_or("no place for the certificate")?;
+                let mut ntlm = |negotiate: &[u8], challenge: &[u8], cert: Option<&[u8]>| {
+                    reg.http_ntlm(negotiate, challenge, now(), cert)
+                        .map_err(|e| format!("{e:?}"))
+                };
+                provision_certificate(
+                    &tls, &trust, &sts_uri, &a.aor, &epid, dir, &mut ntlm, a.verbose,
+                )?;
+                let m = reg.start(now());
+                s.send(&m)?;
+            }
             Pumped::Nothing | Pumped::Message(_) => {}
         }
     }
@@ -2311,6 +2349,127 @@ fn lis_city(
 /// The interactive mode on top of the session engine. Lines from the terminal arrive through a
 /// thread and a channel; network input and the clock are handled in this loop. Everything shown
 /// comes from the engine's checked events (control characters already removed).
+/// Where the TLS-DSK identity of an account is kept: `$XDG_DATA_HOME/commscraft/tlsdsk/ACCOUNT`
+/// (directory 0700, files 0600; the account name encoded one-to-one).
+fn tls_dsk_dir(aor: &str) -> Option<PathBuf> {
+    let base = std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))?;
+    Some(
+        base.join("commscraft")
+            .join("tlsdsk")
+            .join(cache_name(aor.trim_start_matches("sip:"))?),
+    )
+}
+
+/// The NTLM AUTHENTICATE for an HTTP challenge: (NEGOTIATE, CHALLENGE, server certificate).
+type NtlmAnswer<'a> = dyn FnMut(&[u8], &[u8], Option<&[u8]>) -> Result<Vec<u8>, String> + 'a;
+
+/// Function 6: the user certificate from the certificate provisioning service ([MS-OCAUTHWS]
+/// GetAndPublishCert, AW-10 … AW-15) – a new RSA key and PKCS#10 request, sent with NTLM to the
+/// service's Windows-authentication binding at `sts_uri` (only a host in the user's SIP domain
+/// or a trusted domain gets credentials); the issued certificate must carry the new key and is
+/// stored with it in `dir`. The device ID is the endpoint's `+sip.instance` (AW-14).
+#[allow(clippy::too_many_arguments)]
+fn provision_certificate(
+    tls: &TlsClient,
+    trust: &Trust,
+    sts_uri: &str,
+    aor: &str,
+    epid: &str,
+    dir: &std::path::Path,
+    ntlm: &mut NtlmAnswer<'_>,
+    verbose: bool,
+) -> Result<(), String> {
+    use commscraft_sipae::base64;
+    let url = commscraft_url::parse_https(sts_uri).ok_or("unusable certificate service URL")?;
+    let domain = aor.rsplit('@').next().unwrap_or_default();
+    if !commscraft_url::in_domain(&url.host, domain) && !trust.trusts(&url.host) {
+        return Err(format!(
+            "{} is outside your SIP domain; add --trust-domain to use it",
+            url.host
+        ));
+    }
+    let device = commscraft_sip_identity::instance_uuid_from_epid(epid)
+        .map_err(|_| "no device ID".to_string())?;
+    let mut id = [0u8; 16];
+    commscraft_register::Random::fill(&mut OsRandom, &mut id);
+    let request_id = format!(
+        "{}-{}-{}-{}-{}",
+        hex_of(&id[..4]),
+        hex_of(&id[4..6]),
+        hex_of(&id[6..8]),
+        hex_of(&id[8..10]),
+        hex_of(&id[10..])
+    );
+    let entity = aor.trim_start_matches("sip:");
+    println!(
+        "* getting a user certificate for TLS-DSK (RSA {} bits) …",
+        commscraft_tlsdsk::KEY_BITS
+    );
+    let request = commscraft_tlsdsk::Request::generate(entity).map_err(|e| format!("{e:?}"))?;
+    let body = commscraft_ocauthws::certificate_request(aor, &device, &request.csr, &request_id)
+        .map_err(|e| format!("{e:?}"))?;
+    if verbose {
+        println!("  POST {sts_uri} (GetAndPublishCert)");
+    }
+    let negotiate =
+        commscraft_ntlm::messages::negotiate_message(commscraft_ntlm::messages::HTTP_NEGOTIATE);
+    let mut auth_err: Option<String> = None;
+    let r = commscraft_net::http::post_with_auth(
+        tls,
+        &url,
+        &[
+            ("Content-Type", commscraft_ocauthws::CONTENT_TYPE),
+            ("SOAPAction", commscraft_ocauthws::SOAP_ACTION),
+        ],
+        body.as_bytes(),
+        &user_agent(),
+        Duration::from_secs(30),
+        &mut |challenge, cert| match challenge {
+            None => Ok(format!("NTLM {}", base64::encode(&negotiate))),
+            Some(ch) => {
+                let token = ch
+                    .strip_prefix("NTLM ")
+                    .and_then(|b| base64::decode(b.trim()).ok());
+                match token
+                    .ok_or_else(|| "no NTLM challenge".to_string())
+                    .and_then(|t| ntlm(&negotiate, &t, cert))
+                {
+                    Ok(a) => Ok(format!("NTLM {}", base64::encode(&a))),
+                    Err(e) => {
+                        auth_err = Some(e);
+                        Err(commscraft_net::NetError::Io(std::io::Error::other("NTLM")))
+                    }
+                }
+            }
+        },
+    )
+    .map_err(|e| auth_err.take().unwrap_or_else(|| e.to_string()))?;
+    if verbose {
+        println!("  HTTP {} ({} bytes)", r.status, r.body.len());
+        for (name, value) in r.headers.iter().filter(|(n, _)| n.starts_with("x-ms")) {
+            println!("    {name}: {}", term::clean(value));
+        }
+    }
+    if r.status == 401 {
+        return Err("the certificate service refused the credentials (401)".into());
+    }
+    let text = String::from_utf8_lossy(&r.body);
+    let certificate = commscraft_ocauthws::parse_certificate_answer(&text, aor)
+        .map_err(|e| format!("certificate service: {e:?} (HTTP {})", r.status))?;
+    let identity =
+        commscraft_tlsdsk::Identity::new(request, certificate).map_err(|e| format!("{e:?}"))?;
+    identity.store(dir).map_err(|e| format!("{e:?}"))?;
+    let days = identity.remaining().unwrap_or(0) / 86_400;
+    println!("* user certificate received (valid for {days} more days)");
+    Ok(())
+}
+
+fn hex_of(b: &[u8]) -> String {
+    b.iter().map(|x| format!("{x:02x}")).collect()
+}
+
 fn interactive(
     conn: SipConnection,
     mut engine: commscraft_session::Engine<OsRandom>,
@@ -2444,6 +2603,19 @@ fn interactive(
                         return Ok(());
                     }
                     E::RegistrationEnded(why) => return Err(format!("registration ended: {why}")),
+                    E::CertificateNeeded { sts_uri } => {
+                        let dir =
+                            tls_dsk_dir(engine.aor()).ok_or("no place for the certificate")?;
+                        let aor = engine.aor().to_string();
+                        let epid = engine.epid().to_string();
+                        let mut ntlm = |negotiate: &[u8], challenge: &[u8], cert: Option<&[u8]>| {
+                            engine.http_ntlm(negotiate, challenge, now(), cert)
+                        };
+                        provision_certificate(
+                            tls, trust, &sts_uri, &aor, &epid, &dir, &mut ntlm, verbose,
+                        )?;
+                        deferred.extend(engine.start(now()));
+                    }
                     E::Provisioned(c) => {
                         // PR-51: with Exchange reachable the contact list may move there.
                         if !ews_looked_up {

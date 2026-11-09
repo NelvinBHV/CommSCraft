@@ -774,7 +774,7 @@ fn kerberos_failure_falls_back_to_ntlm() {
     let events = reg.on_message(&server.handle(&r1), NOW);
     assert!(matches!(
         events.first(),
-        Some(Event::Authentication { scheme: Scheme::Ntlm, fallback: Some(why) }) if why == "no credentials cache"
+        Some(Event::Authentication { scheme: Scheme::Ntlm, fallback: Some(why) }) if why == "Kerberos not used (no credentials cache)"
     ));
     let Some(Event::Send(r2)) = events.last() else {
         panic!("{events:?}")
@@ -820,5 +820,215 @@ fn kerberos_context_is_renewed_before_the_ticket_ends() {
         m.header_values("Authorization").count(),
         0,
         "a new unauthenticated REGISTER (AE-20)"
+    );
+}
+
+/// A TLS-DSK handshake of the test: fixed tokens, two server flights, then NTLM signing with a
+/// fixed key as the MIC (any shared-key MIC serves to test the registrar).
+struct FakeTls {
+    steps: u8,
+    fail_at: Option<u8>,
+}
+
+const TLS_KEY: [u8; 16] = [9; 16];
+
+impl TlsDskHandshake for FakeTls {
+    fn hello(&mut self) -> Result<Vec<u8>, String> {
+        Ok(b"client_hello".to_vec())
+    }
+
+    fn step(&mut self, token: &[u8]) -> Result<TlsDskStep, String> {
+        self.steps += 1;
+        if self.fail_at == Some(self.steps) {
+            return Err("bad server certificate".into());
+        }
+        match self.steps {
+            1 => {
+                assert_eq!(token, b"server_hello..done");
+                Ok(TlsDskStep::Send(b"certificate..finished".to_vec()))
+            }
+            _ => {
+                assert_eq!(token, b"ccs+finished");
+                Ok(TlsDskStep::Done {
+                    mic: Box::new(NtlmMic::client(&TLS_KEY)),
+                    lifetime: Some(180 * 86_400),
+                })
+            }
+        }
+    }
+}
+
+struct FakeTlsProvider {
+    certificate: bool,
+    fail_at: Option<u8>,
+}
+
+impl TlsDskProvider for FakeTlsProvider {
+    fn start(&mut self, target: &str) -> Result<TlsDskStart, String> {
+        assert_eq!(target, TARGET);
+        Ok(if self.certificate {
+            TlsDskStart::Handshake(Box::new(FakeTls {
+                steps: 0,
+                fail_at: self.fail_at,
+            }))
+        } else {
+            TlsDskStart::NeedCertificate
+        })
+    }
+}
+
+fn tls_challenge(req: &Message, gssapi: Option<&[u8]>) -> Message {
+    let mut r = Server::reply(req, 401, "Unauthorized");
+    let mut v = format!("TLS-DSK realm=\"{REALM}\", targetname=\"{TARGET}\", version=4, sts-uri=\"https://{TARGET}/CertProv/CertProvisioningService.svc\"");
+    if let Some(g) = gssapi {
+        v = format!("TLS-DSK opaque=\"72118CF0\", gssapi-data=\"{}\", targetname=\"{TARGET}\", realm=\"{REALM}\", version=4", base64::encode(g));
+    }
+    r.push_header("WWW-Authenticate", &v);
+    if gssapi.is_none() {
+        r.push_header(
+            "WWW-Authenticate",
+            &format!("NTLM realm=\"{REALM}\", targetname=\"{TARGET}\", version=4"),
+        );
+    }
+    r
+}
+
+fn send_of(events: &[Event]) -> Message {
+    match events.last() {
+        Some(Event::Send(m)) => m.clone(),
+        other => panic!("expected a Send, got {other:?}"),
+    }
+}
+
+fn param(m: &Message, name: &str) -> Option<String> {
+    let auth = m.header_values("Authorization").next()?;
+    let (_, params) = parse_auth_params(auth).ok()?;
+    params.into_iter().find(|(k, _)| k == name).map(|(_, v)| v)
+}
+
+/// AE-26/AE-27 (§4.4): client_hello, the client's flight after the server's, then – after the
+/// server's finished – a signed REGISTER without a token; the signed 200 OK registers.
+#[test]
+fn tls_dsk_sign_in() {
+    use commscraft_sipae::{signature_buffer, BufferParams, Direction};
+    let mut server = Server::new();
+    server.version = 4;
+    let mut reg = registrar().with_tls_dsk(Box::new(FakeTlsProvider {
+        certificate: true,
+        fail_at: None,
+    }));
+    let r1 = reg.start(NOW);
+    let e = reg.on_message(&tls_challenge(&r1, None), NOW);
+    assert!(matches!(
+        e.first(),
+        Some(Event::Authentication {
+            scheme: Scheme::TlsDsk,
+            fallback: None
+        })
+    ));
+    let r2 = send_of(&e);
+    assert_eq!(
+        base64::decode(&param(&r2, "gssapi-data").unwrap()).unwrap(),
+        b"client_hello"
+    );
+    let r3 = send_of(&reg.on_message(&tls_challenge(&r2, Some(b"server_hello..done")), NOW));
+    assert_eq!(param(&r3, "opaque").as_deref(), Some("72118CF0"));
+    assert_eq!(
+        base64::decode(&param(&r3, "gssapi-data").unwrap()).unwrap(),
+        b"certificate..finished"
+    );
+    let r4 = send_of(&reg.on_message(&tls_challenge(&r3, Some(b"ccs+finished")), NOW));
+    // Step 8: no token, but crand/cnum/response with the client key.
+    assert_eq!(param(&r4, "gssapi-data"), None);
+    let mut unsigned = r4.clone();
+    unsigned.headers.retain(|h| h.name != "Authorization");
+    let buf = signature_buffer(
+        &BufferParams {
+            scheme: Scheme::TlsDsk,
+            rand: &param(&r4, "crand").unwrap(),
+            num: &param(&r4, "cnum").unwrap(),
+            realm: REALM,
+            targetname: TARGET,
+            version: Some(4),
+        },
+        &unsigned,
+        Direction::Outgoing,
+    )
+    .unwrap();
+    let response = param(&r4, "response").unwrap();
+    let token: Vec<u8> = (0..response.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&response[i..i + 2], 16).unwrap())
+        .collect();
+    assert!(NtlmMic::server(&TLS_KEY).verify_mic(buf.as_bytes(), &token));
+    // The signed 200 OK.
+    server.key = Some([0; 16]);
+    let mut ok = server.ok(&r4);
+    ok.headers.retain(|h| h.name != "Authentication-Info");
+    let buf = signature_buffer(
+        &BufferParams {
+            scheme: Scheme::TlsDsk,
+            rand: "211639C4",
+            num: "1",
+            realm: REALM,
+            targetname: TARGET,
+            version: Some(4),
+        },
+        &ok,
+        Direction::Incoming,
+    )
+    .unwrap();
+    let mic = NtlmMic::server(&TLS_KEY).get_mic(buf.as_bytes()).unwrap();
+    let hex: String = mic.iter().map(|b| format!("{b:02x}")).collect();
+    ok.push_header(
+        "Authentication-Info",
+        &format!("TLS-DSK rspauth=\"{hex}\", srand=\"211639C4\", snum=\"1\", opaque=\"72118CF0\", qop=\"auth\", targetname=\"{TARGET}\", realm=\"{REALM}\", version=4"),
+    );
+    let done = reg.on_message(&ok, NOW);
+    assert!(
+        matches!(done.as_slice(), [Event::Registered(_)]),
+        "{done:?}"
+    );
+}
+
+/// Without a certificate the registrar asks for one at the challenge's sts-uri and stops.
+#[test]
+fn tls_dsk_needs_a_certificate() {
+    let mut reg = registrar().with_tls_dsk(Box::new(FakeTlsProvider {
+        certificate: false,
+        fail_at: None,
+    }));
+    let r1 = reg.start(NOW);
+    let e = reg.on_message(&tls_challenge(&r1, None), NOW);
+    assert!(
+        matches!(e.as_slice(), [Event::CertificateNeeded { sts_uri }] if sts_uri == &format!("https://{TARGET}/CertProv/CertProvisioningService.svc")),
+        "{e:?}"
+    );
+}
+
+/// A TLS failure (e.g. the server certificate) starts the sign-in again with NTLM.
+#[test]
+fn tls_dsk_failure_falls_back() {
+    let mut server = Server::new();
+    server.version = 4;
+    let mut reg = registrar().with_tls_dsk(Box::new(FakeTlsProvider {
+        certificate: true,
+        fail_at: Some(1),
+    }));
+    let r1 = reg.start(NOW);
+    let r2 = send_of(&reg.on_message(&tls_challenge(&r1, None), NOW));
+    let restart = send_of(&reg.on_message(&tls_challenge(&r2, Some(b"server_hello..done")), NOW));
+    assert_eq!(
+        restart.header_values("Authorization").count(),
+        0,
+        "AE-20 again"
+    );
+    let e = reg.on_message(&server.challenge_401(&restart), NOW);
+    assert!(
+        matches!(
+            e.first(),
+            Some(Event::Authentication { scheme: Scheme::Ntlm, fallback: Some(why) }) if why.contains("bad server certificate")
+        ),
+        "{e:?}"
     );
 }
