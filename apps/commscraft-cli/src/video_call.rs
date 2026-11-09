@@ -268,7 +268,12 @@ fn retarget(
     request: &[feedback::VsrEntry],
     path_bps: Option<u32>,
     layers: usize,
+    sending: bool,
 ) {
+    // Without a camera nothing is sent: no plan, no notice.
+    if !sending {
+        return;
+    }
     let t = plan(request, path_bps, layers);
     if t.is_empty() || targets.lock().map_or(true, |cur| *cur == t) {
         return;
@@ -370,6 +375,26 @@ fn wanted() -> feedback::VsrEntry {
     }
 }
 
+/// What we ask a screen sharer for (function 43): up to 1920×1200 (a desktop, not a camera
+/// picture), about 1.5 Mbit/s, 15 or 7.5 frames per second (design; the sharer adapts its
+/// picture to the request, `tested-in-lab`).
+fn wanted_screen() -> feedback::VsrEntry {
+    let (width, height) = (1920u32, 1200u32);
+    feedback::VsrEntry {
+        max_width: width as u16,
+        max_height: height as u16,
+        min_bitrate: 100_000,
+        bitrate_per_level: 300_000,
+        // One receiver wanting 1.3 … 1.6 Mbit/s (element i = 5, [MS-RTP] §2.2.12.2, p. 32).
+        bitrate_histogram: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+        frame_rates: feedback::FPS_7_5 | feedback::FPS_15,
+        max_pixels: width * height,
+        ..wanted()
+    }
+}
+
+/// Spawns the video stream of a call. An empty `camera` means viewing a shared screen: receive
+/// only, with the request of [`wanted_screen`].
 pub fn spawn(
     id: u32,
     local_ip: IpAddr,
@@ -439,8 +464,11 @@ fn run(
     let range = ssrc_range();
     // Without a camera we only receive, and say so: in a meeting the others would otherwise pick
     // our video to watch and wait for it in vain.
-    let camera_works = camera_available(&camera);
-    if !camera_works {
+    // An empty camera name: receive only by intent (a shared screen, function 43).
+    let screen = camera.is_empty();
+    let want = if screen { wanted_screen() } else { wanted() };
+    let camera_works = !screen && camera_available(&camera);
+    if !camera_works && !camera.is_empty() {
         let _ = events.send(FromVideo::Notice(
             id,
             format!("no camera at {camera}: receiving video only"),
@@ -521,6 +549,10 @@ fn run(
     // The peer's last request (none yet: our own limits) and what the path carries (RT-30).
     let mut request: Vec<feedback::VsrEntry> = vec![wanted()];
     let mut path_bps: Option<u32> = None;
+    // Until the first sequence parameter set arrives the decoder cannot start (a stream joined
+    // after its key frame, e.g. a shared screen): ask for a key frame now and then.
+    let mut parameter_sets_seen = false;
+    let mut last_key_request = 0u64;
     let mut layers = max_layers(&simulcast_ok);
     loop {
         let now = now_ms();
@@ -559,7 +591,7 @@ fn run(
                     last_picture = now;
                     stall_reported = false;
                     if requested {
-                        media.request_video(source, wanted(), now);
+                        media.request_video(source, want, now);
                     }
                 }
             }
@@ -577,7 +609,15 @@ fn run(
         if max_layers(&simulcast_ok) != layers {
             layers = max_layers(&simulcast_ok);
             retarget(
-                &mut media, &targets, &idr, &events, id, &request, path_bps, layers,
+                &mut media,
+                &targets,
+                &idr,
+                &events,
+                id,
+                &request,
+                path_bps,
+                layers,
+                camera_works,
             );
         }
         while let Ok((prid, au, ts)) = au_rx.try_recv() {
@@ -591,7 +631,7 @@ fn run(
                     if !requested {
                         // RT-25: ask the peer for its video (a 1:1 call: any source).
                         requested = true;
-                        media.request_video(source, wanted(), now);
+                        media.request_video(source, want, now);
                     }
                     if controlling && !final_sent {
                         final_sent = true;
@@ -603,6 +643,18 @@ fn run(
                 }
                 cm::Event::Video(VideoEvent::AccessUnit { data, .. }) => {
                     last_picture = now;
+                    if !parameter_sets_seen {
+                        parameter_sets_seen = has_parameter_sets(&data);
+                        if !parameter_sets_seen
+                            && now.saturating_sub(last_key_request) >= KEY_REQUEST_MS
+                        {
+                            last_key_request = now;
+                            // RTCP PLI and the SIP INFO picture_fast_update (PL-50): a
+                            // sender may take either (design).
+                            media.request_key_frame(now);
+                            let _ = events.send(FromVideo::PictureUpdate(id));
+                        }
+                    }
                     // Bounded: a decoder that falls behind loses access units (the next
                     // key frame request repairs the picture).
                     if dec_tx.try_send(data).is_err() {
@@ -619,7 +671,15 @@ fn run(
                     // RT-30: the path changed – the same request at another bit rate.
                     path_bps = Some(bps);
                     retarget(
-                        &mut media, &targets, &idr, &events, id, &request, path_bps, layers,
+                        &mut media,
+                        &targets,
+                        &idr,
+                        &events,
+                        id,
+                        &request,
+                        path_bps,
+                        layers,
+                        camera_works,
                     );
                 }
                 cm::Event::Video(VideoEvent::SourceRequested { msi, entries }) => {
@@ -646,7 +706,15 @@ fn run(
                         }
                         request = entries;
                         retarget(
-                            &mut media, &targets, &idr, &events, id, &request, path_bps, layers,
+                            &mut media,
+                            &targets,
+                            &idr,
+                            &events,
+                            id,
+                            &request,
+                            path_bps,
+                            layers,
+                            camera_works,
                         );
                     }
                     // A VSR is repeated (RT-26): tell the user only when it changes.
@@ -690,6 +758,20 @@ fn run(
 }
 
 /// Camera → encoder (GPU if available) → access units for the media thread.
+/// How often a key frame is asked for while no parameter sets arrived (design).
+const KEY_REQUEST_MS: u64 = 1000;
+
+/// Whether an access unit carries a sequence parameter set (NAL type 7, ITU-T H.264 Table 7-1),
+/// which a decoder needs to start.
+fn has_parameter_sets(au: &[u8]) -> bool {
+    commscraft_h264uc::split_annex_b(au)
+        .map(|nals| {
+            nals.iter()
+                .any(|n| n.first().is_some_and(|b| b & 0x1f == 7))
+        })
+        .unwrap_or(false)
+}
+
 /// Whether the camera can be opened now (it is closed again at once).
 fn camera_available(device: &str) -> bool {
     vf::init()

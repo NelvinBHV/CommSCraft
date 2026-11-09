@@ -849,6 +849,7 @@ fn answer_audio(
     ))
 }
 
+pub mod screen;
 pub mod video;
 
 #[cfg(test)]

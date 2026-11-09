@@ -114,3 +114,6 @@ Implementation of PL-05 (2026-11-08, `media::Video`, CLI):
   - A further encoder that fails ends simulcast, not the video. `COMMSCRAFT_SIMULCAST=0` sends one stream.
 - **Receiving:** After a change of SSRC (16-rtp-rtcp), the depacketizer keeps the last full stream layout and learns the PRID again (`Depacketizer::restart`). The layout describes all streams of the sender, and a new full layout comes only with the next IDR (§2.2.5.1).
 - **Status:** `tested-offline`, `tested-in-lab`.
+
+## Later finding (2026-11-09)
+- **K-PL-1:** the Windows client's screen video (video-based screen sharing, function 43) sends its key-frame access units – PACSI, SPS, PPS, IDR slices – without the RTP marker bit on the last packet (`tested-in-lab`). [RFC6184] §5.1 allows receivers to rely on the marker only as an early indication ("MUST NOT rely on this property"). The depacketizer (`h264uc`) therefore also ends an access unit at the next timestamp, if the unit is gap-free, has no open fragment and contains a slice. The next packet's sequence number is not checked: FEC packets of the same stream (PL-06) lie in between.

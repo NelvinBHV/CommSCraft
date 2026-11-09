@@ -633,3 +633,61 @@ fn video_line_candidates_of_an_offer() {
         "no video line"
     );
 }
+
+/// Function 43: a sharer's offer in the shape the Windows client sends for desktop sharing
+/// (`tested-in-lab`, addresses and keys replaced): an RDP line (SD-80/81) and the screen video
+/// line (CS-03). The viewer takes the video line receive-only with the screen label and rejects
+/// the RDP line with port 0, in the offer's order.
+const SHARER_OFFER: &str = "v=0\r\no=- 0 1 IN IP4 192.0.2.20\r\ns=session\r\nc=IN IP4 192.0.2.20\r\nb=CT:99980\r\nt=0 0\r\n\
+a=x-mediabw:applicationsharing-video send=12000;recv=12000\r\n\
+m=applicationsharing 14720 TCP/RTP/AVP 127\r\na=ice-ufrag:aaaa\r\na=ice-pwd:bbbbbbbbbbbbbbbbbbbbbbbb\r\n\
+a=candidate:1 1 TCP-PASS 2120613887 192.0.2.20 2447 typ host\r\n\
+a=crypto:2 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
+a=setup:active\r\na=connection:new\r\na=rtcp:14720\r\na=mid:1\r\na=rtpmap:127 x-data/90000\r\n\
+a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\na=x-applicationsharing-contentflow:sendonly\r\n\
+m=video 6612 RTP/AVP 122 123\r\na=x-ssrc-range:2980344164-2980344263\r\na=rtcp-fb:* x-message app send:src,x-pli recv:src,x-pli\r\na=rtcp-rsize\r\n\
+a=label:applicationsharing-video\r\na=ice-ufrag:cccc\r\na=ice-pwd:dddddddddddddddddddddddd\r\na=x-mediasettings:applicationsharing-video=required\r\n\
+a=candidate:1 1 UDP 2130706431 192.0.2.20 6612 typ host\r\na=candidate:1 2 UDP 2130705918 192.0.2.20 6613 typ host\r\n\
+a=crypto:2 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
+a=rtcp:6613\r\na=sendonly\r\na=rtpmap:122 X-H264UC/90000\r\na=fmtp:122 packetization-mode=1;mst-mode=NI-TC\r\na=rtpmap:123 x-ulpfecuc/90000\r\n";
+
+#[test]
+fn screen_sharing_viewer_answer() {
+    let offer = SHARER_OFFER.as_bytes();
+    assert!(screen::offered(offer));
+    assert!(screen::offered_rdp(offer));
+    assert!(screen::offer_ice(offer).is_some());
+    let (answer, n) = screen::answer(
+        offer,
+        &video_local(),
+        Key::new(1, [5; 30]),
+        Encryption::Required,
+    )
+    .unwrap();
+    let s = parse(answer.as_bytes()).unwrap();
+    assert_eq!(s.media.len(), 2);
+    assert_eq!(s.media[0].kind, "applicationsharing");
+    assert_eq!(s.media[0].port, 0);
+    let v = &s.media[1];
+    assert_eq!(v.kind, "video");
+    assert_eq!(v.port, 40002);
+    assert_eq!(v.attr("label"), Some("applicationsharing-video"));
+    assert!(answer.contains("a=recvonly\r\n"));
+    assert!(answer.contains("a=x-mediabw:applicationsharing-video send=12000;recv=12000\r\n"));
+    assert!(answer.find("a=x-mediabw").unwrap() < answer.find("m=").unwrap());
+    // The key under the offered tag, and the sharer's stream.
+    assert!(answer.contains("a=crypto:2 "));
+    assert_eq!(n.payload_type, 122);
+    assert_eq!(n.ssrc_range, (2980344164, 2980344263));
+    assert_eq!(n.direction, Direction::SendOnly);
+    // A main video line is no screen.
+    let main = SHARER_OFFER.replace("label:applicationsharing-video", "label:main-video");
+    assert!(!screen::offered(main.as_bytes()));
+    assert!(screen::answer(
+        main.as_bytes(),
+        &video_local(),
+        Key::new(1, [5; 30]),
+        Encryption::Required
+    )
+    .is_err());
+}

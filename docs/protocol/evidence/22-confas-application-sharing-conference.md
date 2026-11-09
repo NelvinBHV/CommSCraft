@@ -21,3 +21,17 @@ Source: [MS-CONFAS] "Centralized Conference Control Protocol: Application Sharin
 - K-CS-2: §3.3.5.7.2 (p. 26) ties "AttendeesCanShare" to server-mode = 13, MS-CONFPRO §2.2.1.2 declares server-mode obsolete (behaviour always like 14). For SfB, AttendeesCanShare = false is to be expected, if the server reports it at all – interop test.
 - K-CS-3: The example on p. 22 uses the namespace `urn:params:xml:ns:conference-info-separator` (missing "ietf") and typographic quotes – example error.
 - L-12: The actual screen/application transfer needs a complete **RDP implementation** (MS-RDPBCGR, MS-RDPEMC, possibly MS-RDPEGFX/RDPRFX); these Windows specifications are available and documented separately (file 36).
+
+## Implementation (2026-11-09, viewing a screen shared 1:1, function 43)
+- **Offer (`tested-in-lab`, details private):** for desktop sharing in a 1:1 conversation the Windows client sends an INVITE with `multipart/alternative`. Both parts carry an `m=applicationsharing` line (RDP, `a=x-applicationsharing-role:sharer`, SD-80/81); the preferred part also carries the screen video line of CS-03:
+  - `m=video … RTP/AVP 122 123`, H.264 UC with ULPFEC, `a=label:applicationsharing-video`, `a=sendonly`;
+  - `a=x-mediasettings:applicationsharing-video=required`;
+  - session-level `a=x-mediabw:applicationsharing-video`.
+- **Viewer (`sdp::screen`, `session`):** an INVITE whose SDP offers the screen video line rings as `IncomingScreenShare`; `/view N` answers as viewer:
+  - the video line receive-only with the same label, the RDP line declined with port 0 (RFC 3264 §6);
+  - the final re-INVITE after ICE gets the same answer;
+  - `/hangup N` while it rings declines with 603.
+- **Video:** the stream is a video call's receive path (ICE, SRTP, H.264 UC, decoder, window) without a camera. The request (VSR, RT-25) asks for up to 1920×1200 at 7.5 or 15 frames per second; the sharer adapts its picture to it (`tested-in-lab`). Until the first sequence parameter set arrives, the viewer asks for a key frame once a second (RTCP PLI and SIP INFO picture_fast_update).
+- **K-PL-1 (found 2026-11-09):** see file 17; key frames come without the marker bit.
+- **Not yet:** viewing in meetings (the application sharing MCU, CS-01 … CS-11) and RDP-based sharing (L-12).
+- **Status:** `tested-offline`, `tested-in-lab` (the Windows client's desktop seen in CommSCraft's video window: about 300 pictures in 35 s, none lost).

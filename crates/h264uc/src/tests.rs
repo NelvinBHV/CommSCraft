@@ -401,3 +401,56 @@ fn restart_keeps_the_layout() {
         [Output::Lost { .. }]
     ));
 }
+
+/// [RFC6184] §5.1 (K-PL-1): a complete access unit whose last packet lacks the marker bit ends
+/// with the next timestamp – as the Windows screen sharer sends its key frames (SPS, PPS, IDR
+/// slices) –, also when an FEC packet's sequence number lies in between.
+#[test]
+fn access_unit_without_marker() {
+    let sps = [0x67, 0x42, 0x00, 0x1f];
+    let pps = [0x68, 0xce, 0x3c, 0x80];
+    let idr = [0x65, 0x88, 0x84, 0x00];
+    let mut p = Packetizer::new(1200, 0, vga_layout()).unwrap();
+    let mut key = p.packetize(&annex_b(&[&sps, &pps, &idr])).unwrap();
+    let next = p.packetize(&annex_b(&[&[0x41, 1, 2]])).unwrap();
+    for k in &mut key {
+        k.marker = false;
+    }
+    let n = key.len() as u16;
+    let mut d = Depacketizer::new();
+    assert!(feed(&mut d, &key, 1, 3000).is_empty());
+    let got = feed(&mut d, &next, 1 + n, 6000);
+    match got.first() {
+        Some(Output::AccessUnit {
+            timestamp: 3000,
+            data,
+            idr: true,
+        }) => {
+            let types: Vec<u8> = split_annex_b(data)
+                .unwrap()
+                .iter()
+                .map(|x| x[0] & 0x1f)
+                .collect();
+            assert_eq!(types, vec![7, 8, 5]);
+        }
+        other => panic!("{other:?}"),
+    }
+    assert!(matches!(
+        got.get(1),
+        Some(Output::AccessUnit {
+            timestamp: 6000,
+            ..
+        })
+    ));
+    // An FEC packet's sequence number between the two.
+    let mut d = Depacketizer::new();
+    assert!(feed(&mut d, &key, 1, 3000).is_empty());
+    let got = feed(&mut d, &next, 2 + n, 6000);
+    assert!(matches!(
+        got.first(),
+        Some(Output::AccessUnit {
+            timestamp: 3000,
+            ..
+        })
+    ));
+}
