@@ -910,6 +910,16 @@ impl<R: Random> Engine<R> {
                 RegEvent::SurvivableMode => out.push(Output::Event(Event::Notice(
                     "the server works in survivable mode".into(),
                 ))),
+                RegEvent::Authentication { scheme, fallback } => {
+                    let text = match fallback {
+                        Some(why) => format!(
+                            "Kerberos not used ({why}) – signing in with {}",
+                            scheme.name()
+                        ),
+                        None => format!("signing in with {}", scheme.name()),
+                    };
+                    out.push(Output::Event(Event::Notice(text)));
+                }
                 RegEvent::Failed(f) => self.ended(&format!("{f:?}"), out, false),
             }
         }

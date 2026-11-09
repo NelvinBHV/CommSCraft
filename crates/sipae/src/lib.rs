@@ -431,6 +431,17 @@ pub trait Mic {
     fn verify_mic(&mut self, buffer: &[u8], token: &[u8]) -> bool;
 }
 
+/// A boxed MIC provider (the registrar holds NTLM or Kerberos behind one type).
+impl<M: Mic + ?Sized> Mic for Box<M> {
+    fn get_mic(&mut self, buffer: &[u8]) -> Result<Vec<u8>, Error> {
+        (**self).get_mic(buffer)
+    }
+
+    fn verify_mic(&mut self, buffer: &[u8], token: &[u8]) -> bool {
+        (**self).verify_mic(buffer, token)
+    }
+}
+
 /// NTLM signing for SIP: connectionless NTLM with the fixed sequence number 100 (AE-30, NL-05).
 /// Holds the four keys derived from the exported session key; they are wiped on drop.
 pub struct NtlmMic {
@@ -701,6 +712,11 @@ impl<M: Mic> SecurityAssociation<M> {
         if self.state == SaState::Establishing {
             if msg.status_code() == Some(403) {
                 return Err(Error::CredentialsRejected);
+            }
+            // Kerberos has no second challenge: the server's opaque value arrives with the first
+            // signed answer (§4.2 step 6, p. 44) and goes into every later Authorization header.
+            if self.challenge.opaque.is_none() {
+                self.challenge.opaque = info.opaque.clone();
             }
             self.state = SaState::Established;
             newly_established = true;

@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (M5 complete: video bandwidth management)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (Kerberos sign-in)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -16,7 +16,7 @@ details are not published.
 | Milestone | State (2026-11-09) | What exists | Missing before the gate |
 |---|---|---|---|
 | M0 | done | analysis in [`protocol/`](protocol/), workspace, CI, specification test vectors | – |
-| M1 | built, tested-offline, tested-in-lab | discovery (Autodiscover HTTPS-only, DNS SRV, trust model), TLS adapter, NTLM + MS-SIPAE, REGISTER (GRUU, refresh, redirect, deregister), keep-alive, provisioning, sign-out, `commscraft-cli` | Kerberos, TLS-DSK; owner verification |
+| M1 | built, tested-offline, tested-in-lab | discovery (Autodiscover HTTPS-only, DNS SRV, trust model), TLS adapter, NTLM and Kerberos (system GSSAPI) + MS-SIPAE, REGISTER (GRUU, refresh, redirect, deregister), keep-alive, provisioning, sign-out, `commscraft-cli` | TLS-DSK; owner verification |
 | M2 | built, tested-offline, tested-in-lab | presence (publish, batch subscriptions, pool resubscribe, container manifest), contact list (read, live, editing), privacy relationships and blocking, 1:1 IM with typing, group IM (ad-hoc conference, invitations, IMDN), offline address book (full and delta files, disk cache, daily update like the Windows client, address book policy, normalization rules), address book search and distribution list expansion (MS-DLX over NTLM/HTTP), contact photos (directory and Exchange), contact list in Exchange (unified contact store), error diagnostics (MS-OCER), session engine, CLI `interactive` | owner verification |
 | M3 | in progress | G.711, G.722, ALSA/PipeWire adapter, RTP/RTCP, DTMF, SRTP, SDP, STUN, MS-TURN, MS-AVEDGEA, ICE agent (UDP and TCP relay on 443 with pseudo-TLS), call signalling incl. hold/resume and early media, media core with the MS-RTP RTCP profile, bandwidth management (call admission control) and runtime, CLI `/call` `/answer` `/hangup` `/dtmf` `/mute` `/hold` `/resume` | redundancy, early answer as the callee, TCP-only mode, own music on hold, bandwidth management for video; owner verification (IT-23 … IT-29) |
 | M4 | done (tested-offline, tested-in-lab) | meetings: scheduling (create, list, change, cancel; options, presenters, static meeting), join (focus URI, meeting link), lobby, roster, conference audio via the A/V MCU (SRTP sent, SRTP/SSRTP received), muting ourselves, presenter commands, announcements, dialling out to phones, PSTN calling, call transfer, forwarding, call park, quality reports, emergency calls with location, team and delegate ringing, delegates and calls on behalf of the boss, meeting options in the running meeting | E911 rest (WLAN/LLDP identifiers), PSTN dial-in details |

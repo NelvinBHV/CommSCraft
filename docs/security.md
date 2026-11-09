@@ -1,6 +1,6 @@
 # Security by design
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (system call filter of the video window)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (Kerberos sign-in)
 
 CommSCraft handles passwords, Kerberos tickets, NTLM session keys and SRTP keys. It talks to
 servers and peers it cannot trust. Security is part of every design decision, not a later review.
@@ -84,7 +84,8 @@ This page lists the rules every crate follows and how each is enforced. The gene
 
 ## Rules for the next building blocks
 
-- **Kerberos/TLS-DSK:** behind adapter crates; tickets and private keys never leave them.
+- **Kerberos:** the adapter crate `commscraft-gssapi` uses the system's GSSAPI library (crate `libgssapi`); tickets and keys stay in it, the protocol crates see only tokens and MICs. The service principal must be `sip/` plus a DNS host name; the context asks for integrity only (no delegation); the password copy is wiped once credentials exist; when Kerberos fails the client falls back to NTLM and says why. A security association is renewed before the ticket (or 8 hours) ends.
+- **TLS-DSK:** behind an adapter crate; private keys never leave it.
 - **Media:** SRTP only (`AES_CM_128_HMAC_SHA1_80`, K-SR-1); no unencrypted RTP fallback.
 - **Logging:** headers that carry secrets (`Authorization`, `Proxy-Authorization`, `gssapi-data`,
   web tickets, SDP `a=crypto`) are redacted before anything is logged.

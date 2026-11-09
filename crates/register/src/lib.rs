@@ -1,4 +1,4 @@
-//! Sign-in and registration as a sans-I/O state machine: REGISTER with MS-SIPAE NTLM
+//! Sign-in and registration as a sans-I/O state machine: REGISTER with MS-SIPAE NTLM or Kerberos
 //! authentication, verification of the signed 200 OK, GRUU and expiry, refresh and sign-out.
 //!
 //! Evidence: `docs/protocol/evidence/04-siprege-registration-provisioning.md` (RG-03, RG-05,
@@ -13,7 +13,11 @@
 //! - responses that do not belong to the current transaction (Call-ID, CSeq, From tag, Via branch)
 //!   are dropped; every waiting state has a timeout (32 s, RFC 3261 timer F);
 //! - the password lives in a wiped, unprintable container and is only used to answer the NTLM
-//!   challenge; Kerberos and TLS-DSK challenges are ignored until their adapters exist;
+//!   challenge; Kerberos runs in an adapter the caller supplies ([`KerberosProvider`]), so this
+//!   crate links no system library; when Kerberos is offered but fails (no ticket, no KDC), the
+//!   sign-in falls back to NTLM and says so; TLS-DSK challenges are ignored;
+//! - a security association is renewed before it expires: Kerberos at the ticket's end, NTLM
+//!   after 8 hours, each minus 5 minutes (AE-35);
 //! - all random values come from the caller's CSPRNG ([`Random`]).
 //!
 //! Server-initiated deregistration and survivable mode NOTIFYs (RG-30 … RG-32) are accepted only
@@ -26,7 +30,7 @@ pub mod keepalive;
 
 use commscraft_ntlm::messages as ntlm;
 use commscraft_sip_msg::{parse_name_addr, read_quoted, Message};
-use commscraft_sipae::{base64, Challenge, NtlmMic, Policy, Scheme, SecurityAssociation};
+use commscraft_sipae::{base64, Challenge, Mic, NtlmMic, Policy, Scheme, SecurityAssociation};
 use zeroize::Zeroize;
 
 /// Transaction timeout: 64 × T1 = 32 s (RFC 3261 §17.1.2.2, timer F; MS-SIPAE AE-35 keeps the old
@@ -36,6 +40,28 @@ pub const TRANSACTION_TIMEOUT: u64 = 32;
 pub const MIN_EXPIRES: u64 = 30;
 /// Seconds between 1601-01-01 and 1970-01-01 (FILETIME epoch).
 const FILETIME_UNIX_OFFSET: u64 = 11_644_473_600;
+
+/// Longest life of a security association, and the margin before its end (AE-35: NTLM 8 h,
+/// Kerberos min(ticket, 8 h), minus a buffer of at least 5 minutes).
+pub const SA_MAX_LIFETIME: u64 = 8 * 3600;
+pub const SA_RENEW_MARGIN: u64 = 300;
+
+/// A Kerberos security context for the SIP server, as an adapter crate creates it ([MS-SIPAE]
+/// §3.2.5.1 step 5, AE-25): the KRB_AP_REQ token for `gssapi-data`, the context's GSS_GetMIC /
+/// GSS_VerifyMIC, and how long its ticket lasts.
+pub struct KerberosContext {
+    pub token: Vec<u8>,
+    pub mic: Box<dyn Mic + Send>,
+    /// Seconds the ticket stays valid, if known.
+    pub lifetime: Option<u64>,
+}
+
+/// Creates Kerberos contexts (implemented by an adapter over the system's GSSAPI library).
+pub trait KerberosProvider: Send {
+    /// A context for the service principal `target` (the challenge's `targetname`, e.g.
+    /// `sip/pool.contoso.com`), with the Integrity flag. An error is a reason to use NTLM.
+    fn context(&mut self, target: &str) -> Result<KerberosContext, String>;
+}
 
 /// Source of cryptographically secure random bytes (the OS CSPRNG in the adapter layer).
 pub trait Random {
@@ -48,6 +74,12 @@ pub struct Password(String);
 impl Password {
     pub fn new(p: String) -> Self {
         Self(p)
+    }
+
+    /// The password for a second authentication adapter of the same sign-in (Kerberos with a
+    /// password when no ticket is cached). The caller keeps the copy in a wiped container.
+    pub fn reveal(&self) -> &str {
+        &self.0
     }
 }
 
@@ -148,6 +180,11 @@ pub enum Event {
     /// The registrar sent a signed 301/302 to the user's home pool (O-RG-1): close the connection
     /// and register there. The caller asks the user first if `in_user_domain` is false.
     Redirected(RedirectTarget),
+    /// Which authentication protocol the sign-in uses, and why NTLM if Kerberos was wanted.
+    Authentication {
+        scheme: Scheme,
+        fallback: Option<String>,
+    },
 }
 
 /// Target of a registrar redirect (validated, TLS only).
@@ -279,8 +316,11 @@ pub struct Registrar<R: Random> {
     branch: String,
     deadline: Option<u64>,
     phase: Phase,
-    sa: Option<SecurityAssociation<NtlmMic>>,
+    sa: Option<SecurityAssociation<Box<dyn Mic + Send>>>,
+    /// When the security association must be renewed (AE-35).
+    sa_renew_at: Option<u64>,
     ntlm_info: Option<NtlmInfo>,
+    kerberos: Option<Box<dyn KerberosProvider>>,
 }
 
 impl<R: Random> std::fmt::Debug for Registrar<R> {
@@ -353,8 +393,16 @@ impl<R: Random> Registrar<R> {
             deadline: None,
             phase: Phase::Idle,
             sa: None,
+            sa_renew_at: None,
             ntlm_info: None,
+            kerberos: None,
         })
+    }
+
+    /// Signs in with Kerberos when the server offers it ([MS-SIPAE] §3.2.5.1, AE-25), else NTLM.
+    pub fn with_kerberos(mut self, provider: Box<dyn KerberosProvider>) -> Self {
+        self.kerberos = Some(provider);
+        self
     }
 
     /// The `+sip.instance` value derived from the EPID (RE-07).
@@ -512,6 +560,13 @@ impl<R: Random> Registrar<R> {
     /// Timers: refresh before expiry (RG-21) and transaction timeouts.
     pub fn on_tick(&mut self, now: u64) -> Vec<Event> {
         match self.phase {
+            // AE-35: the security association ends before the next refresh would be due –
+            // authenticate anew instead of refreshing.
+            Phase::Registered { refresh_at }
+                if now >= refresh_at && self.sa_renew_at.is_some_and(|r| now >= r) =>
+            {
+                vec![Event::Send(self.start(now))]
+            }
             Phase::Registered { refresh_at } if now >= refresh_at => {
                 let mut m = self.register_request(now, false);
                 match self.sign(&mut m) {
@@ -686,7 +741,7 @@ impl<R: Random> Registrar<R> {
         };
         msg.header_values(header)
             .filter_map(|v| Challenge::parse(v, proxy).ok().flatten())
-            .filter(|c| c.scheme == Scheme::Ntlm)
+            .filter(|c| c.scheme == Scheme::Ntlm || c.scheme == Scheme::Kerberos)
             .collect()
     }
 
@@ -712,13 +767,66 @@ impl<R: Random> Registrar<R> {
         } else {
             "Authorization"
         };
-        (name, format!("NTLM {}", params.join(", ")))
+        (name, format!("{} {}", c.scheme.name(), params.join(", ")))
+    }
+
+    /// The Kerberos sign-in: one REGISTER with the KRB_AP_REQ (§4.2 step 3, p. 44), signed from
+    /// version 4 on (§4.3 steps 3–4, pp. 45–46). `Err` with the reason: use NTLM.
+    fn kerberos_register(&mut self, c: &Challenge, now: u64) -> Result<Vec<Event>, String> {
+        let provider = self.kerberos.as_mut().ok_or("no Kerberos")?;
+        let ctx = provider.context(&c.targetname)?;
+        if ctx.token.is_empty() {
+            return Err("no Kerberos token".into());
+        }
+        let sa = SecurityAssociation::new(c.clone(), ctx.mic, &self.cfg.policy)
+            .map_err(|e| format!("{e:?}"))?;
+        self.sa = Some(sa);
+        let lifetime = ctx.lifetime.unwrap_or(SA_MAX_LIFETIME).min(SA_MAX_LIFETIME);
+        self.sa_renew_at = Some(now + lifetime.saturating_sub(SA_RENEW_MARGIN));
+        let mut m = self.register_request(now, false);
+        let (name, mut value) = Self::auth_header(c, &base64::encode(&ctx.token));
+        if c.version.is_some_and(|v| v >= 4) {
+            let mut r = [0u8; 4];
+            self.rng.fill(&mut r);
+            let (crand, cnum, response) = self
+                .sa
+                .as_mut()
+                .ok_or("no security association")?
+                .handshake_signature(&m, u32::from_be_bytes(r))
+                .map_err(|e| format!("{e:?}"))?;
+            value.push_str(&format!(
+                ", crand=\"{crand}\", cnum=\"{cnum}\", response=\"{response}\""
+            ));
+        }
+        m.push_header(name, &value);
+        self.phase = Phase::AwaitFinal;
+        Ok(vec![
+            Event::Authentication {
+                scheme: Scheme::Kerberos,
+                fallback: None,
+            },
+            Event::Send(m),
+        ])
     }
 
     fn on_first_response(&mut self, msg: &Message, code: u16, now: u64) -> Vec<Event> {
         match code {
             401 | 407 => {
-                let Some(c) = self.challenges(msg, code).into_iter().next() else {
+                let challenges = self.challenges(msg, code);
+                let kerberos = challenges.iter().find(|c| {
+                    c.scheme == Scheme::Kerberos
+                        && c.version.is_some_and(|v| v >= self.cfg.policy.min_version)
+                });
+                let mut fallback = None;
+                if let (Some(k), true) = (kerberos.cloned(), self.kerberos.is_some()) {
+                    match self.kerberos_register(&k, now) {
+                        Ok(events) => return events,
+                        Err(e) => fallback = Some(e),
+                    }
+                } else if self.kerberos.is_some() {
+                    fallback = Some("the server offers no Kerberos".into());
+                }
+                let Some(c) = challenges.into_iter().find(|c| c.scheme == Scheme::Ntlm) else {
                     return self.fail(Failure::NoSupportedChallenge);
                 };
                 if c.version.is_none_or(|v| v < self.cfg.policy.min_version) {
@@ -731,7 +839,16 @@ impl<R: Random> Registrar<R> {
                 let (name, value) = Self::auth_header(&c, "");
                 m.push_header(name, &value);
                 self.phase = Phase::AwaitNtlmChallenge { first: c };
-                vec![Event::Send(m)]
+                // The protocol is worth reporting only when Kerberos was wanted.
+                let mut events = Vec::new();
+                if self.kerberos.is_some() {
+                    events.push(Event::Authentication {
+                        scheme: Scheme::Ntlm,
+                        fallback,
+                    });
+                }
+                events.push(Event::Send(m));
+                events
             }
             200..=299 => self.fail(Failure::BadResponse("registration without authentication")),
             _ => self.fail(Failure::Status(code)),
@@ -753,7 +870,8 @@ impl<R: Random> Registrar<R> {
             };
         }
         let Some(c) = self.challenges(msg, code).into_iter().find(|c| {
-            c.realm == first.realm
+            c.scheme == Scheme::Ntlm
+                && c.realm == first.realm
                 && c.targetname == first.targetname
                 && c.gssapi_data.as_deref().is_some_and(|g| !g.is_empty())
         }) else {
@@ -803,16 +921,14 @@ impl<R: Random> Registrar<R> {
             Ok(v) => v,
             Err(e) => return self.fail(Failure::Ntlm(e)),
         };
-        let sa = match SecurityAssociation::new(
-            c.clone(),
-            NtlmMic::client(key.as_bytes()),
-            &self.cfg.policy,
-        ) {
+        let mic: Box<dyn Mic + Send> = Box::new(NtlmMic::client(key.as_bytes()));
+        let sa = match SecurityAssociation::new(c.clone(), mic, &self.cfg.policy) {
             Ok(sa) => sa,
             Err(e) => return self.fail(Failure::Auth(e)),
         };
         drop(key);
         self.sa = Some(sa);
+        self.sa_renew_at = Some(now + SA_MAX_LIFETIME - SA_RENEW_MARGIN);
         let mut m = self.register_request(now, false);
         let (name, mut value) = Self::auth_header(&c, &base64::encode(&token));
         // Version 4: this request is already signed (MS-SIPAE §3.2.5.1 step 6.8, p. 26; AE-06).

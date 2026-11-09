@@ -79,3 +79,14 @@ States: **establishing → established → expired**. Data per SA: (realm, targe
 
 ## Implementation (2026-11-01, delegation headers)
 AE-38: `Command::CallOnBehalf` sends `P-Session-On-Behalf-Of: <boss>` (checked); answering a call that reached us for someone else (Referred-By equal to the INVITE's `To` and not our AOR – a transferred call carries the transferor in Referred-By but is addressed to us; issue #67) puts that address into the 200's `P-Session-On-Behalf-Of` (inference: team calls are treated like delegate calls); an incoming `p-session-on-behalf-of` is shown as "on behalf of" (§3.2.5.4). AE-37: a REFER in a call whose own dialog URI is not our address of record carries `ms-referee-uri="<our AOR>"` in Referred-By; the referrer URI stays our AOR (inference). CLI `/callfor`. Status: tested-offline.
+
+## Implementation (2026-11-09, Kerberos sign-in)
+- **AE-25:** with `--kerberos` the registrar answers a Kerberos challenge with one REGISTER that carries the KRB_AP_REQ for the challenge's `targetname` (`sip/<FE>`) as `gssapi-data`; from version 4 on it is signed with the context's GSS_GetMIC (§4.3 steps 3–4, pp. 45–46). The signed 200 OK is checked with GSS_VerifyMIC (AE-32), and every later request is signed with the same context (AE-29/AE-30).
+- **Adapter:** the context comes from the system's GSSAPI library through the adapter crate `commscraft-gssapi` (crate `libgssapi`), which implements the registrar's `KerberosProvider` and `sipae::Mic`. The protocol crates link no system library.
+  - Credentials: the ticket cache if it holds a usable ticket of `USER@REALM` (realm = the SIP domain in capitals, inference), else the password typed for the sign-in.
+  - Flags: Integrity only (Identify is a Windows SSPI flag without a GSSAPI counterpart; no mutual authentication token is part of the handshake, §4.2).
+- **Opaque (found 2026-11-09):** Kerberos has no second challenge; the server's `opaque` first appears in the `Authentication-Info` of the signed 200 OK (example §4.2 step 6, p. 44). The SA takes it over from there, and every later Authorization header carries it – without it the server answers 401 with ms-diagnostics 1000 "Final handshake failed" (`tested-in-lab`).
+- **Fallback:** Kerberos not possible (no ticket and the password refused, no KDC, the server offers no Kerberos) – NTLM, and the client says why.
+- **SA expiry (AE-35):** Kerberos at the ticket's end, NTLM after 8 hours, each minus 5 minutes – then a new unauthenticated REGISTER instead of a refresh.
+- **Status:** `tested-offline` (version 3 and 4, fallback, renewal), `tested-in-lab` (password and ticket cache, signed SUBSCRIBE/SERVICE in a session, fallback without KDC).
+

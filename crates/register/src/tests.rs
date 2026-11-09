@@ -629,3 +629,196 @@ fn higher_server_versions_are_answered_with_4() {
         .unwrap()
         .ends_with("version=4"));
 }
+
+/// A Kerberos context of the test: a fixed AP-REQ and, as its GSS_GetMIC, NTLM signing with a
+/// fixed key (any shared-key MIC serves to test the registrar's use of it).
+struct FakeKerberos {
+    fail: Option<&'static str>,
+    lifetime: Option<u64>,
+}
+
+const KRB_KEY: [u8; 16] = [7; 16];
+const AP_REQ: &[u8] = b"KRB_AP_REQ of the test";
+
+impl KerberosProvider for FakeKerberos {
+    fn context(&mut self, target: &str) -> Result<KerberosContext, String> {
+        assert_eq!(
+            target,
+            format!("sip/{TARGET}"),
+            "the challenge's targetname"
+        );
+        if let Some(why) = self.fail {
+            return Err(why.into());
+        }
+        Ok(KerberosContext {
+            token: AP_REQ.to_vec(),
+            mic: Box::new(NtlmMic::client(&KRB_KEY)),
+            lifetime: self.lifetime,
+        })
+    }
+}
+
+/// The server side of the Kerberos sign-in (MS-SIPAE §4.2/§4.3): checks the AP-REQ and, with
+/// version 4, the client's signature; answers with a signed 200 OK.
+fn kerberos_server(req: &Message, version: u32, server: &mut Server) -> Message {
+    use commscraft_sipae::{signature_buffer, BufferParams, Direction};
+    let auth = req.header_values("Authorization").next().unwrap();
+    assert!(auth.starts_with("Kerberos "), "{auth}");
+    let (_, params) = parse_auth_params(auth).unwrap();
+    let get = |n: &str| params.iter().find(|(k, _)| k == n).map(|(_, v)| v.clone());
+    let target = format!("sip/{TARGET}");
+    assert_eq!(get("targetname").as_deref(), Some(target.as_str()));
+    assert_eq!(
+        base64::decode(&get("gssapi-data").unwrap()).unwrap(),
+        AP_REQ
+    );
+    if version >= 4 {
+        let mut unsigned = req.clone();
+        unsigned.headers.retain(|h| h.name != "Authorization");
+        let buf = signature_buffer(
+            &BufferParams {
+                scheme: Scheme::Kerberos,
+                rand: &get("crand").unwrap(),
+                num: &get("cnum").unwrap(),
+                realm: REALM,
+                targetname: &target,
+                version: Some(version),
+            },
+            &unsigned,
+            Direction::Outgoing,
+        )
+        .unwrap();
+        let response = get("response").unwrap();
+        let token: Vec<u8> = (0..response.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&response[i..i + 2], 16).unwrap())
+            .collect();
+        assert!(
+            NtlmMic::server(&KRB_KEY).verify_mic(buf.as_bytes(), &token),
+            "the AP-REQ request is signed (§4.3 step 4)"
+        );
+    }
+    // A 200 OK signed with the Kerberos context.
+    let mut r = server.ok(req);
+    r.headers.retain(|h| h.name != "Authentication-Info");
+    let buf = signature_buffer(
+        &BufferParams {
+            scheme: Scheme::Kerberos,
+            rand: "211639C4",
+            num: "1",
+            realm: REALM,
+            targetname: &target,
+            version: Some(version),
+        },
+        &r,
+        Direction::Incoming,
+    )
+    .unwrap();
+    let mic = NtlmMic::server(&KRB_KEY).get_mic(buf.as_bytes()).unwrap();
+    let hex: String = mic.iter().map(|b| format!("{b:02x}")).collect();
+    r.push_header(
+        "Authentication-Info",
+        &format!("Kerberos rspauth=\"{hex}\", srand=\"211639C4\", snum=\"1\", opaque=\"A9A0BB9C\", qop=\"auth\", targetname=\"{target}\", realm=\"{REALM}\""),
+    );
+    r
+}
+
+/// AE-25 (§4.2, §4.3): with a Kerberos provider the client answers the Kerberos challenge with one
+/// REGISTER carrying the AP-REQ – signed from version 4 on – and the signed 200 OK registers.
+#[test]
+fn kerberos_sign_in() {
+    for version in [3, 4] {
+        let mut server = Server::new();
+        server.version = version;
+        server.key = Some([0; 16]);
+        let mut reg = registrar().with_kerberos(Box::new(FakeKerberos {
+            fail: None,
+            lifetime: Some(36_000),
+        }));
+        let r1 = reg.start(NOW);
+        let events = reg.on_message(&server.challenge_401(&r1), NOW);
+        assert!(matches!(
+            events.first(),
+            Some(Event::Authentication {
+                scheme: Scheme::Kerberos,
+                fallback: None
+            })
+        ));
+        let Some(Event::Send(r2)) = events.last() else {
+            panic!("{events:?}")
+        };
+        let done = reg.on_message(&kerberos_server(r2, version, &mut server), NOW);
+        assert!(
+            matches!(done.as_slice(), [Event::Registered(_)]),
+            "version {version}: {done:?}"
+        );
+        // Later requests are signed with the Kerberos context and carry the opaque value of the
+        // first signed answer (Kerberos has no second challenge, §4.2 step 6).
+        let mut m = Message::request("SUBSCRIBE", "sip:alice@contoso.com");
+        reg.sign_request(&mut m).unwrap();
+        let auth = m.header_values("Authorization").next().unwrap();
+        assert!(auth.starts_with("Kerberos qop=\"auth\""), "{auth}");
+        assert!(auth.contains("opaque=\"A9A0BB9C\""), "{auth}");
+    }
+}
+
+/// Kerberos wanted but not possible (no ticket, no KDC): NTLM, and the reason is reported.
+#[test]
+fn kerberos_failure_falls_back_to_ntlm() {
+    let mut server = Server::new();
+    let mut reg = registrar().with_kerberos(Box::new(FakeKerberos {
+        fail: Some("no credentials cache"),
+        lifetime: None,
+    }));
+    let r1 = reg.start(NOW);
+    let events = reg.on_message(&server.handle(&r1), NOW);
+    assert!(matches!(
+        events.first(),
+        Some(Event::Authentication { scheme: Scheme::Ntlm, fallback: Some(why) }) if why == "no credentials cache"
+    ));
+    let Some(Event::Send(r2)) = events.last() else {
+        panic!("{events:?}")
+    };
+    assert!(r2
+        .header_values("Authorization")
+        .next()
+        .unwrap()
+        .starts_with("NTLM "));
+    let r3 = only_send(reg.on_message(&server.handle(r2), NOW));
+    let done = reg.on_message(&server.handle(&r3), NOW);
+    assert!(
+        matches!(done.as_slice(), [Event::Registered(_)]),
+        "{done:?}"
+    );
+}
+
+/// AE-35: before the ticket ends the client authenticates anew instead of refreshing.
+#[test]
+fn kerberos_context_is_renewed_before_the_ticket_ends() {
+    let mut server = Server::new();
+    server.key = Some([0; 16]);
+    let mut reg = registrar().with_kerberos(Box::new(FakeKerberos {
+        fail: None,
+        lifetime: Some(3_000),
+    }));
+    let r1 = reg.start(NOW);
+    let events = reg.on_message(&server.challenge_401(&r1), NOW);
+    let Some(Event::Send(r2)) = events.last() else {
+        panic!("{events:?}")
+    };
+    let done = reg.on_message(&kerberos_server(r2, 3, &mut server), NOW);
+    let [Event::Registered(r)] = done.as_slice() else {
+        panic!("{done:?}")
+    };
+    // The refresh (4/5 of 7200 s) comes after the ticket's end minus 5 minutes (2700 s).
+    assert!(r.refresh_at > NOW + 2_700);
+    let renew = reg.on_tick(r.refresh_at);
+    let [Event::Send(m)] = renew.as_slice() else {
+        panic!("{renew:?}")
+    };
+    assert_eq!(
+        m.header_values("Authorization").count(),
+        0,
+        "a new unauthenticated REGISTER (AE-20)"
+    );
+}
