@@ -44,3 +44,15 @@ Dependencies: SOAP 1.1/1.2, WS-Trust 1.3, WS-Security, WS-MetadataExchange, SAML
 ## Later finding (file 39)
 - O-AW-1 **secondary evidence** (OB-08): bearer variant (Timestamp + Assertion/EncryptedData) or proof of possession (P_SHA1 key, HMAC-SHA1 XML signature over `#timestamp`). The WSDL policy in §6 remains authoritative.
 - O-AW-1 **closed** (OB-39, normative): the web-ticket policy §6.3 (p. 81) requires a bearer SAML 1.1 token as a signed supporting token over HTTPS, with WS-Addressing and no timestamp requirement; MS-DLX names its binding `AddressBookWebTicketBearer`.
+
+## Implementation (2026-11-09, certificate provisioning)
+- **AW-10 … AW-15:** `ocauthws::certificate_request` builds GetAndPublishCert (DeviceId = the endpoint's `+sip.instance` GUID, AW-14; Entity = the SIP URI without `sip:`); `parse_certificate_answer` takes the certificate only with ResponseClass Success, DispositionMessage "Issued", the asked entity and well-formed DER.
+- **Request:** the adapter `tlsdsk` makes an RSA 2048 key pair and a PKCS#10 request with CN = entity, key usage digital signature and key encipherment, and extended key usage client authentication, signed with SHA-256 by `ring`.
+- **Check:** the issued certificate must carry the requested public key and be valid now.
+- **Storage:** the CLI keeps certificate and key in `$XDG_DATA_HOME/commscraft/tlsdsk/<account>` (directory 0700, files 0600) and asks again a day before the certificate ends.
+- **No web ticket (inference from the service metadata, `tested-in-lab`):** the service at the challenge's `sts-uri` has a Windows-authentication binding (`CertProvisioningServiceWin`: HTTP Negotiate/NTLM over HTTPS) next to the web-ticket bindings, so the client sends the request with its NTLM HTTP authentication.
+- **K-AW-2 (found 2026-11-09):** the example request §4.1.1 (p. 60) carries a SOAP header with `To` and `Action` in the namespace `…/addressing/none` (`mustUnderstand="1"`).
+  - With it the service answers 400 without a body; with WS-Addressing 1.0 headers it answers 500.
+  - Without a header (the SOAPAction HTTP header names the operation) it issues the certificate (`tested-in-lab`).
+  - The client therefore sends no SOAP header.
+- **Status:** `tested-offline`, `tested-in-lab`.

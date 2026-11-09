@@ -640,6 +640,20 @@ impl<M: Mic> SecurityAssociation<M> {
         self.signature(msg, crand)
     }
 
+    /// TLS-DSK: after the TLS handshake the keys are known before the server confirms anything,
+    /// and the next REGISTER is signed (§4.4 steps 7–8, pp. 49–50), whatever the version. Returns
+    /// `crand`, `cnum` and `response` like [`Self::handshake_signature`].
+    pub fn tls_dsk_signature(
+        &mut self,
+        msg: &Message,
+        crand: u32,
+    ) -> Result<(String, String, String), Error> {
+        if self.state != SaState::Establishing || self.challenge.scheme != Scheme::TlsDsk {
+            return Err(Error::WrongState);
+        }
+        self.signature(msg, crand)
+    }
+
     /// §3.2.4.1 steps 1–4: next cnum, crand as 8 hex digits, MIC over the buffer, lower-case hex.
     fn signature(&mut self, msg: &Message, crand: u32) -> Result<(String, String, String), Error> {
         let cnum = self

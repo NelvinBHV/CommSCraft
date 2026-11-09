@@ -1,0 +1,29 @@
+[package]
+name = "commscraft-tlsdsk"
+description = "TLS-DSK sign-in adapter: the user's key and certificate request, and the TLS handshake tunnelled in MS-SIPAE (rustls)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-register = { path = "../register" }
+commscraft-sipae = { path = "../sipae" }
+rustls.workspace = true
+# Signing the certificate request with the user's RSA key (constant time).
+ring = "=0.17.14"
+# Only to generate the RSA key pair (ring cannot); no private key operation runs in it.
+rsa = { version = "=0.9.10", default-features = false, features = ["std", "u64_digit"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+hmac.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+zeroize.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+# Tests only: a CA, the server certificate and the user certificate from our request.
+rcgen = { version = "=0.14.10", default-features = false, features = ["crypto", "ring", "x509-parser"] }

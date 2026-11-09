@@ -13,6 +13,8 @@ members = [
     "crates/sipae",
     "crates/register",
     "crates/gssapi",
+    "crates/ocauthws",
+    "crates/tlsdsk",
     "crates/xml",
     "crates/provisioning",
     "crates/presence",
@@ -77,3 +79,9 @@ rustls = { version = "0.23.46", default-features = false, features = ["ring", "s
 rustls-native-certs = "0.8.4"
 getrandom = "0.3.4"
 sha2 = "0.10.9"
+
+# RSA key generation for TLS-DSK (tests and debug builds) would take minutes unoptimized.
+[profile.dev.package.num-bigint-dig]
+opt-level = 3
+[profile.dev.package.rsa]
+opt-level = 3

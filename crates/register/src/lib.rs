@@ -63,6 +63,39 @@ pub trait KerberosProvider: Send {
     fn context(&mut self, target: &str) -> Result<KerberosContext, String>;
 }
 
+/// How a TLS-DSK sign-in starts ([MS-SIPAE] §3.2.5.1 step 5, AE-26).
+pub enum TlsDskStart {
+    /// A TLS handshake with the user certificate is ready.
+    Handshake(Box<dyn TlsDskHandshake>),
+    /// There is no usable user certificate yet: get one from the certificate provisioning
+    /// service ([MS-OCAUTHWS], `sts-uri` of the challenge) and sign in again.
+    NeedCertificate,
+}
+
+/// One step of the TLS handshake tunnelled in `gssapi-data`.
+pub enum TlsDskStep {
+    /// Send this token (TLS records) in the next REGISTER.
+    Send(Vec<u8>),
+    /// The handshake is complete: the signing keys and how long the certificate stays valid.
+    Done {
+        mic: Box<dyn Mic + Send>,
+        lifetime: Option<u64>,
+    },
+}
+
+/// The client side of the TLS-DSK handshake (implemented by an adapter over a TLS library).
+pub trait TlsDskHandshake: Send {
+    /// The first token: the client_hello.
+    fn hello(&mut self) -> Result<Vec<u8>, String>;
+    /// The server's token (server_hello … server_hello_done, or change_cipher_spec and finished).
+    fn step(&mut self, token: &[u8]) -> Result<TlsDskStep, String>;
+}
+
+/// Creates TLS-DSK handshakes for the server `target` (the challenge's `targetname`).
+pub trait TlsDskProvider: Send {
+    fn start(&mut self, target: &str) -> Result<TlsDskStart, String>;
+}
+
 /// Source of cryptographically secure random bytes (the OS CSPRNG in the adapter layer).
 pub trait Random {
     fn fill(&mut self, buf: &mut [u8]);
@@ -180,10 +213,17 @@ pub enum Event {
     /// The registrar sent a signed 301/302 to the user's home pool (O-RG-1): close the connection
     /// and register there. The caller asks the user first if `in_user_domain` is false.
     Redirected(RedirectTarget),
-    /// Which authentication protocol the sign-in uses, and why NTLM if Kerberos was wanted.
+    /// Which authentication protocol the sign-in uses, and why another one if a stronger one
+    /// was wanted.
     Authentication {
         scheme: Scheme,
         fallback: Option<String>,
+    },
+    /// TLS-DSK is offered but there is no user certificate: get one from `sts_uri` (an HTTPS URL
+    /// of the server, checked by the caller like any web service) and call [`Registrar::start`]
+    /// again.
+    CertificateNeeded {
+        sts_uri: String,
     },
 }
 
@@ -217,6 +257,10 @@ enum Phase {
     AwaitChallenge,
     /// REGISTER with empty gssapi-data sent; waiting for the NTLM CHALLENGE.
     AwaitNtlmChallenge {
+        first: Challenge,
+    },
+    /// A TLS-DSK token sent; waiting for the server's next TLS records.
+    AwaitTlsDsk {
         first: Challenge,
     },
     /// AUTHENTICATE sent; waiting for the signed 200 OK.
@@ -321,6 +365,11 @@ pub struct Registrar<R: Random> {
     sa_renew_at: Option<u64>,
     ntlm_info: Option<NtlmInfo>,
     kerberos: Option<Box<dyn KerberosProvider>>,
+    tls_dsk: Option<Box<dyn TlsDskProvider>>,
+    /// The TLS-DSK handshake in progress.
+    tls_handshake: Option<Box<dyn TlsDskHandshake>>,
+    /// TLS-DSK failed in this sign-in: the next challenge is answered with Kerberos or NTLM.
+    tls_dsk_failed: Option<String>,
 }
 
 impl<R: Random> std::fmt::Debug for Registrar<R> {
@@ -396,7 +445,17 @@ impl<R: Random> Registrar<R> {
             sa_renew_at: None,
             ntlm_info: None,
             kerberos: None,
+            tls_dsk: None,
+            tls_handshake: None,
+            tls_dsk_failed: None,
         })
+    }
+
+    /// Signs in with TLS-DSK and the user certificate when the server offers it ([MS-SIPAE]
+    /// §3.2.5.1, AE-26/AE-27), before Kerberos and NTLM.
+    pub fn with_tls_dsk(mut self, provider: Box<dyn TlsDskProvider>) -> Self {
+        self.tls_dsk = Some(provider);
+        self
     }
 
     /// Signs in with Kerberos when the server offers it ([MS-SIPAE] §3.2.5.1, AE-25), else NTLM.
@@ -651,6 +710,7 @@ impl<R: Random> Registrar<R> {
         match self.phase.clone() {
             Phase::AwaitChallenge => self.on_first_response(msg, code, now),
             Phase::AwaitNtlmChallenge { first } => self.on_ntlm_challenge(msg, code, &first, now),
+            Phase::AwaitTlsDsk { first } => self.on_tls_dsk_challenge(msg, code, &first, now),
             Phase::AwaitFinal => self.on_final(msg, code, now),
             Phase::Refreshing => self.on_refresh(msg, code, now),
             Phase::Unregistering => self.on_unregister(msg, code),
@@ -741,7 +801,7 @@ impl<R: Random> Registrar<R> {
         };
         msg.header_values(header)
             .filter_map(|v| Challenge::parse(v, proxy).ok().flatten())
-            .filter(|c| c.scheme == Scheme::Ntlm || c.scheme == Scheme::Kerberos)
+            .filter(|c| matches!(c.scheme, Scheme::Ntlm | Scheme::Kerberos | Scheme::TlsDsk))
             .collect()
     }
 
@@ -768,6 +828,139 @@ impl<R: Random> Registrar<R> {
             "Authorization"
         };
         (name, format!("{} {}", c.scheme.name(), params.join(", ")))
+    }
+
+    /// The TLS-DSK sign-in, first step: the client_hello in `gssapi-data` (§4.4 step 3, p. 47).
+    /// `Err` with the reason: use Kerberos or NTLM.
+    fn tls_dsk_hello(&mut self, c: &Challenge, now: u64) -> Result<Vec<Event>, String> {
+        let provider = self.tls_dsk.as_mut().ok_or("no TLS-DSK")?;
+        let mut handshake = match provider.start(&c.targetname)? {
+            TlsDskStart::Handshake(h) => h,
+            TlsDskStart::NeedCertificate => {
+                let sts_uri = c
+                    .sts_uri
+                    .clone()
+                    .filter(|u| {
+                        u.get(..8)
+                            .is_some_and(|p| p.eq_ignore_ascii_case("https://"))
+                    })
+                    .ok_or("no certificate and no certificate provisioning service")?;
+                self.phase = Phase::Idle;
+                self.deadline = None;
+                return Ok(vec![Event::CertificateNeeded { sts_uri }]);
+            }
+        };
+        let hello = handshake.hello()?;
+        self.tls_handshake = Some(handshake);
+        let mut m = self.register_request(now, false);
+        let (name, value) = Self::auth_header(c, &base64::encode(&hello));
+        m.push_header(name, &value);
+        self.phase = Phase::AwaitTlsDsk { first: c.clone() };
+        Ok(vec![
+            Event::Authentication {
+                scheme: Scheme::TlsDsk,
+                fallback: None,
+            },
+            Event::Send(m),
+        ])
+    }
+
+    /// The server's TLS records (§4.4 steps 4–7, pp. 48–49): the next token, or – after the
+    /// server's finished – the keys and a signed REGISTER without a token (step 8). A TLS failure
+    /// starts the sign-in again with Kerberos or NTLM.
+    fn on_tls_dsk_challenge(
+        &mut self,
+        msg: &Message,
+        code: u16,
+        first: &Challenge,
+        now: u64,
+    ) -> Vec<Event> {
+        if !matches!(code, 401 | 407) {
+            self.tls_handshake = None;
+            return if (200..300).contains(&code) {
+                self.fail(Failure::BadResponse("registration without authentication"))
+            } else {
+                self.fail(Failure::Status(code))
+            };
+        }
+        let step = self
+            .challenges(msg, code)
+            .into_iter()
+            .find(|c| {
+                c.scheme == Scheme::TlsDsk
+                    && c.realm == first.realm
+                    && c.targetname == first.targetname
+                    && c.gssapi_data.as_deref().is_some_and(|g| !g.is_empty())
+            })
+            .ok_or_else(|| "the server ended the TLS handshake".to_string())
+            .and_then(|c| {
+                let token = base64::decode(c.gssapi_data.as_deref().unwrap_or(""))
+                    .map_err(|_| "gssapi-data is not base64".to_string())?;
+                let h = self
+                    .tls_handshake
+                    .as_mut()
+                    .ok_or_else(|| "no TLS handshake".to_string())?;
+                Ok((c, h.step(&token)?))
+            });
+        match step {
+            Ok((c, TlsDskStep::Send(token))) => {
+                let mut m = self.register_request(now, false);
+                let (name, value) = Self::auth_header(&c, &base64::encode(&token));
+                m.push_header(name, &value);
+                vec![Event::Send(m)]
+            }
+            Ok((c, TlsDskStep::Done { mic, lifetime })) => {
+                self.tls_handshake = None;
+                let sa = match SecurityAssociation::new(c.clone(), mic, &self.cfg.policy) {
+                    Ok(sa) => sa,
+                    Err(e) => return self.fail(Failure::Auth(e)),
+                };
+                self.sa = Some(sa);
+                let lifetime = lifetime.unwrap_or(SA_MAX_LIFETIME).min(SA_MAX_LIFETIME);
+                self.sa_renew_at = Some(now + lifetime.saturating_sub(SA_RENEW_MARGIN));
+                let mut m = self.register_request(now, false);
+                let mut r = [0u8; 4];
+                self.rng.fill(&mut r);
+                let signed = match self.sa.as_mut() {
+                    Some(sa) => sa.tls_dsk_signature(&m, u32::from_be_bytes(r)),
+                    None => Err(commscraft_sipae::Error::WrongState),
+                };
+                let (crand, cnum, response) = match signed {
+                    Ok(v) => v,
+                    Err(e) => return self.fail(Failure::Auth(e)),
+                };
+                let mut params = Vec::new();
+                if let Some(o) = &c.opaque {
+                    params.push(format!("opaque=\"{o}\""));
+                }
+                params.push("qop=\"auth\"".to_string());
+                params.push(format!("realm=\"{}\"", c.realm));
+                params.push(format!("targetname=\"{}\"", c.targetname));
+                if let Some(v) = c.version {
+                    params.push(format!(
+                        "version={}",
+                        v.min(commscraft_sipae::IMPLEMENTED_VERSION)
+                    ));
+                }
+                params.push(format!(
+                    "crand=\"{crand}\", cnum=\"{cnum}\", response=\"{response}\""
+                ));
+                let header = if c.proxy {
+                    "Proxy-Authorization"
+                } else {
+                    "Authorization"
+                };
+                m.push_header(header, &format!("TLS-DSK {}", params.join(", ")));
+                self.phase = Phase::AwaitFinal;
+                vec![Event::Send(m)]
+            }
+            Err(e) => {
+                // AE-26: a failed handshake – start again without TLS-DSK.
+                self.tls_handshake = None;
+                self.tls_dsk_failed = Some(e);
+                vec![Event::Send(self.start(now))]
+            }
+        }
     }
 
     /// The Kerberos sign-in: one REGISTER with the KRB_AP_REQ (§4.2 step 3, p. 44), signed from
@@ -813,19 +1006,56 @@ impl<R: Random> Registrar<R> {
         match code {
             401 | 407 => {
                 let challenges = self.challenges(msg, code);
+                let tls_dsk = challenges.iter().find(|c| {
+                    c.scheme == Scheme::TlsDsk
+                        && c.version.is_some_and(|v| v >= self.cfg.policy.min_version)
+                });
+                let mut tls_fallback = self.tls_dsk_failed.take();
+                if self.tls_dsk.is_some() && tls_fallback.is_none() {
+                    match tls_dsk.cloned() {
+                        Some(t) => match self.tls_dsk_hello(&t, now) {
+                            Ok(events) => return events,
+                            Err(e) => tls_fallback = Some(e),
+                        },
+                        None => tls_fallback = Some("the server offers no TLS-DSK".into()),
+                    }
+                }
                 let kerberos = challenges.iter().find(|c| {
                     c.scheme == Scheme::Kerberos
                         && c.version.is_some_and(|v| v >= self.cfg.policy.min_version)
                 });
-                let mut fallback = None;
+                let mut fallback = tls_fallback.map(|e| format!("TLS-DSK: {e}"));
                 if let (Some(k), true) = (kerberos.cloned(), self.kerberos.is_some()) {
                     match self.kerberos_register(&k, now) {
-                        Ok(events) => return events,
-                        Err(e) => fallback = Some(e),
+                        Ok(mut events) => {
+                            if let (Some(f), Some(Event::Authentication { fallback, .. })) =
+                                (fallback, events.first_mut())
+                            {
+                                *fallback = Some(f);
+                            }
+                            return events;
+                        }
+                        Err(e) => {
+                            fallback = Some(match fallback {
+                                Some(f) => format!("{f}; Kerberos: {e}"),
+                                None => e,
+                            })
+                        }
                     }
                 } else if self.kerberos.is_some() {
-                    fallback = Some("the server offers no Kerberos".into());
+                    fallback = Some(match fallback {
+                        Some(f) => format!("{f}; the server offers no Kerberos"),
+                        None => "the server offers no Kerberos".into(),
+                    });
                 }
+                // Reported as "<why> – <protocol used>": name what was not used.
+                let fallback = fallback.map(|f| {
+                    if f.starts_with("TLS-DSK") {
+                        f
+                    } else {
+                        format!("Kerberos not used ({f})")
+                    }
+                });
                 let Some(c) = challenges.into_iter().find(|c| c.scheme == Scheme::Ntlm) else {
                     return self.fail(Failure::NoSupportedChallenge);
                 };
@@ -839,9 +1069,9 @@ impl<R: Random> Registrar<R> {
                 let (name, value) = Self::auth_header(&c, "");
                 m.push_header(name, &value);
                 self.phase = Phase::AwaitNtlmChallenge { first: c };
-                // The protocol is worth reporting only when Kerberos was wanted.
+                // The protocol is worth reporting only when a stronger one was wanted.
                 let mut events = Vec::new();
-                if self.kerberos.is_some() {
+                if self.kerberos.is_some() || self.tls_dsk.is_some() {
                     events.push(Event::Authentication {
                         scheme: Scheme::Ntlm,
                         fallback,

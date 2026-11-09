@@ -1,0 +1,15 @@
+[package]
+name = "commscraft-ocauthws"
+description = "Certificate provisioning for TLS-DSK (MS-OCAUTHWS GetAndPublishCert): SOAP request and checked answer"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-xml = { path = "../xml" }
+commscraft-sipae = { path = "../sipae" }
+
+[lints]
+workspace = true

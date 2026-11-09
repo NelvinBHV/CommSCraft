@@ -348,6 +348,11 @@ pub enum Event {
     SignedOut,
     /// The registration ended without the user asking (deregistered by the server, lost, failed).
     RegistrationEnded(String),
+    /// TLS-DSK needs a user certificate from the certificate provisioning service at `sts_uri`;
+    /// get it and call [`Engine::start`] again.
+    CertificateNeeded {
+        sts_uri: String,
+    },
     /// In-band provisioning arrived (RG-41): checked ServerConfiguration (web service URLs …).
     Provisioned(Box<prov::ServerConfiguration>),
     /// The location policy of provisioning (emergency numbers, RG-51).
@@ -725,6 +730,11 @@ impl<R: Random> Engine<R> {
         &self.cfg.aor
     }
 
+    /// The endpoint ID (EPID).
+    pub fn epid(&self) -> &str {
+        &self.cfg.epid
+    }
+
     pub fn new(cfg: Config, reg: Registrar<R>) -> Self {
         let gruu = cfg.aor.clone();
         Self {
@@ -910,12 +920,12 @@ impl<R: Random> Engine<R> {
                 RegEvent::SurvivableMode => out.push(Output::Event(Event::Notice(
                     "the server works in survivable mode".into(),
                 ))),
+                RegEvent::CertificateNeeded { sts_uri } => {
+                    out.push(Output::Event(Event::CertificateNeeded { sts_uri }))
+                }
                 RegEvent::Authentication { scheme, fallback } => {
                     let text = match fallback {
-                        Some(why) => format!(
-                            "Kerberos not used ({why}) – signing in with {}",
-                            scheme.name()
-                        ),
+                        Some(why) => format!("{why} – signing in with {}", scheme.name()),
                         None => format!("signing in with {}", scheme.name()),
                     };
                     out.push(Output::Event(Event::Notice(text)));
