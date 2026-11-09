@@ -93,6 +93,9 @@ im        signs in, opens a 1:1 conversation with --to, sends --text, shows answ
               search only. It is kept in ~/.cache/commscraft/abs (mode 0600) and used at once on
               the next sign-in; later fetches load only the day's changes (delta file).
 --no-address-book-cache  hold the offline address book in memory only.
+--no-calendar  interactive: do not show your calendar state. Otherwise free/busy times, the
+              meeting you are in and your automatic replies are read from Exchange every
+              15 minutes and published (like the Windows client's calendar presence).
 --kerberos    sign in with Kerberos when the server offers it: the ticket of USER@REALM from the
               ticket cache (kinit), else the password; the realm is the SIP domain in capitals, the
               KDC comes from the system's Kerberos configuration (KRB5_CONFIG). Falls back to NTLM.
@@ -121,6 +124,8 @@ struct Args {
     kerberos: bool,
     /// Function 6: sign in with TLS-DSK and a user certificate when the server offers it.
     tls_dsk: bool,
+    /// Function 16: publish calendar and out-of-office state from Exchange (interactive).
+    calendar: bool,
     command: Command,
     set_status: Option<commscraft_presence::UserStatus>,
     max_contacts: usize,
@@ -178,6 +183,7 @@ fn parse_args() -> Result<Args, String> {
         ntlm_legacy: false,
         kerberos: false,
         tls_dsk: false,
+        calendar: true,
         command,
         set_status: None,
         max_contacts: 50,
@@ -229,6 +235,7 @@ fn parse_args() -> Result<Args, String> {
             "--trust-domain" => a.trust_domains.push(value()?),
             "--authorized" => a.authorized = true,
             "--no-address-book-cache" => a.address_book.cache = false,
+            "--no-calendar" => a.calendar = false,
             "--address-book-delay" => {
                 a.address_book.delay_minutes = value()?
                     .parse()
@@ -1089,6 +1096,7 @@ fn run(a: Args) -> Result<(), String> {
             &trust,
             a.verbose,
             a.address_book,
+            a.calendar,
         );
     }
     let mut reg = reg;
@@ -2477,6 +2485,7 @@ fn interactive(
     trust: &Trust,
     verbose: bool,
     book_options: AddressBookOptions,
+    calendar: bool,
 ) -> Result<(), String> {
     use commscraft_session::{Command as C, Event as E, Output};
     use std::collections::BTreeMap;
@@ -2578,6 +2587,8 @@ fn interactive(
     // Exchange identifiers of the contact list once it is kept there.
     let mut ews: Option<commscraft_ews::UserSettings> = None;
     let mut ews_looked_up = false;
+    // Function 16: the next time the calendar is read from Exchange.
+    let mut calendar_next: Option<u64> = None;
     let mut ucs_ids = UcsIds::default();
     // Engine outputs that come from events (sent after the events are shown).
     let mut deferred: Vec<Output> = Vec::new();
@@ -2627,6 +2638,9 @@ fn interactive(
                                 {
                                     ews = Some(s);
                                     deferred.extend(engine.enable_exchange_contacts(now()));
+                                    if calendar {
+                                        calendar_next = Some(now());
+                                    }
                                 }
                                 Ok(_) => {}
                                 Err(e) => {
@@ -2951,7 +2965,20 @@ fn interactive(
                         }
                     }
                     E::Presence(p) => {
-                        let state = format!("{:?}", p.class());
+                        let mut state = format!("{:?}", p.class());
+                        // Function 16: activity, meeting and out-of-office note of the contact.
+                        if let Some(a) = &p.activity {
+                            state.push_str(&format!(" – {a}"));
+                        }
+                        if let Some(m) = &p.meeting {
+                            state.push_str(&format!(" – {m}"));
+                        }
+                        if p.note_is_oof {
+                            state.push_str(&format!(
+                                " – out of office: {}",
+                                p.note.as_deref().unwrap_or_default()
+                            ));
+                        }
                         let entry = presence
                             .entry(p.uri.clone())
                             .or_insert_with(|| (String::new(), String::new()));
@@ -3293,6 +3320,17 @@ fn interactive(
                 verbose,
             ) {
                 outputs.extend(engine.command(C::SetLocation(Box::new(loc)), t));
+            }
+        }
+        // Function 16: the calendar from Exchange every 15 minutes (design; the blocks are
+        // 15 minutes long); the session publishes only what changed.
+        if calendar_next.is_some_and(|n| t >= n) {
+            calendar_next = Some(t + 15 * 60);
+            if let Some(settings) = &ews {
+                match exchange_calendar(&mut engine, tls, trust, settings, verbose) {
+                    Ok(c) => outputs.extend(engine.command(C::PublishCalendar(Box::new(c)), t)),
+                    Err(e) => println!("* calendar state not read from Exchange: {e}"),
+                }
             }
         }
         // Function 13: the scheduled address book fetch, then daily; after a failure again in an
@@ -4922,6 +4960,111 @@ fn ucs_call(
     op: &commscraft_ews::ucs::UcsOp,
     verbose: bool,
 ) -> Result<String, String> {
+    let body = commscraft_ews::ucs::ucs_request(op).map_err(|e| format!("{e:?}"))?;
+    let action = op.soap_action();
+    ews_call(
+        engine,
+        tls,
+        trust,
+        settings,
+        (op.name(), &action),
+        &body,
+        verbose,
+    )
+}
+
+/// Function 16: the calendar state to publish – free/busy blocks, the ongoing meeting and the
+/// working hours from GetUserAvailability, the automatic replies from GetUserOofSettings
+/// (O-EX-1/O-EX-2, OB-13/OB-14). One of the two may fail; then its part stays empty.
+fn exchange_calendar(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    settings: &commscraft_ews::UserSettings,
+    verbose: bool,
+) -> Result<commscraft_presence::calendar::Calendar, String> {
+    use commscraft_ews::calendar as cal;
+    use commscraft_presence::calendar::{free_busy_value, Calendar, Meeting};
+    let mailbox = engine.aor().trim_start_matches("sip:").to_ascii_lowercase();
+    let t = now();
+    let (start, end) = cal::window(t);
+    let request = cal::availability_request(&mailbox, start, end).map_err(|e| format!("{e:?}"))?;
+    let availability = ews_call(
+        engine,
+        tls,
+        trust,
+        settings,
+        ("GetUserAvailability", cal::GET_USER_AVAILABILITY_ACTION),
+        &request,
+        verbose,
+    )
+    .and_then(|x| cal::parse_availability(&x, start).map_err(|e| format!("{e:?}")));
+    let request = cal::oof_request(&mailbox).map_err(|e| format!("{e:?}"))?;
+    let oof = ews_call(
+        engine,
+        tls,
+        trust,
+        settings,
+        ("GetUserOofSettings", cal::GET_USER_OOF_SETTINGS_ACTION),
+        &request,
+        verbose,
+    )
+    .and_then(|x| cal::parse_oof(&x).map_err(|e| format!("{e:?}")));
+    if let (Err(a), Err(o)) = (&availability, &oof) {
+        return Err(format!("{a}; {o}"));
+    }
+    let mut c = Calendar {
+        mailbox,
+        ..Calendar::default()
+    };
+    match availability {
+        Ok(a) => {
+            if !a.slots.is_empty() {
+                let codes: Vec<u8> = a.slots.iter().map(|s| s.code()).collect();
+                c.free_busy = Some((
+                    a.start,
+                    commscraft_sipae::base64::encode(&free_busy_value(&codes)),
+                ));
+            }
+            c.meeting = a.current_meeting(t).map(|m| Meeting {
+                start: m.start,
+                subject: m.subject.clone(),
+                location: m.location.clone(),
+            });
+            c.working_hours = a.working_hours.as_ref().map(|w| w.to_xml());
+            if verbose {
+                println!(
+                    "  calendar: {} blocks, {} events{}",
+                    a.slots.len(),
+                    a.events.len(),
+                    if c.meeting.is_some() {
+                        ", in a meeting now"
+                    } else {
+                        ""
+                    }
+                );
+            }
+        }
+        Err(e) => println!("* free/busy not read from Exchange: {e}"),
+    }
+    match oof {
+        Ok(o) => c.out_of_office = o.active(t).then_some(o.message),
+        Err(e) => println!("* automatic replies not read from Exchange: {e}"),
+    }
+    Ok(c)
+}
+
+/// One EWS operation `(name, soapAction)` at the user's EWS URL, with NTLM; the answer's text
+/// (a SOAP fault comes with 500).
+fn ews_call(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    settings: &commscraft_ews::UserSettings,
+    (name, action): (&str, &str),
+    body: &str,
+    verbose: bool,
+) -> Result<String, String> {
     let base = settings
         .https_url(&["InternalEwsUrl", "ExternalEwsUrl"])
         .ok_or("Exchange named no web services URL")?;
@@ -4938,20 +5081,18 @@ fn ucs_call(
             url.host
         ));
     }
-    let body = commscraft_ews::ucs::ucs_request(op).map_err(|e| format!("{e:?}"))?;
     if verbose {
-        println!("  POST {base} ({})", op.name());
+        println!("  POST {base} ({name})");
     }
-    let action = op.soap_action();
     let r = ntlm_post(
         engine,
         tls,
         &url,
         &[
             ("Content-Type", commscraft_ews::CONTENT_TYPE),
-            ("SOAPAction", &action),
+            ("SOAPAction", action),
         ],
-        &body,
+        body,
     )?;
     match r.status {
         401 => Err("not authorized at Exchange (401)".into()),

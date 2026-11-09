@@ -2,7 +2,7 @@
 
 **Stage: M1 and M5 done** · M0 done · M2, M3 built · M1, M4 and M5 closed · next M7, then M6 · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (TLS-DSK sign-in; M1 complete)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (calendar and out-of-office state)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,11 +16,11 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **24** tested-offline as a whole, **15** in parts, **11** not started, 2 not planned/needs captures; **35** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Implementation status of the 52 functions | **25** tested-offline as a whole, **15** in parts, **10** not started, 2 not planned/needs captures; **36** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **44 crates + 1 app** (`commscraft-cli`), **526 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **44 crates + 1 app** (`commscraft-cli`), **539 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-09 | M7 started: calendar and out-of-office state – free/busy, the ongoing meeting and the automatic replies are read from Exchange every 15 minutes and published as presence; contacts' meetings and out-of-office notes are shown. |
 | 2026-11-09 | M1 complete: TLS-DSK sign-in (`--tls-dsk`) – a user certificate from the server's certificate provisioning service, then a TLS handshake inside the SIP sign-in; every SIP message signed with keys from it. |
 | 2026-11-09 | Kerberos sign-in (`--kerberos`): the ticket from the cache or the password, through the system's GSSAPI library; every SIP message signed with the Kerberos context; NTLM when Kerberos is not possible. |
 | 2026-11-09 | M5 (video) complete: the video stream of a call has its own bandwidth management (call admission control), and the reserved bandwidth bounds the encoder. What stays undone is optional or not specified (temporal enhancement layers, more simulcast sizes, Reed-Solomon FEC) or not worthwhile by measurement (GPU decoding without Wayland). |

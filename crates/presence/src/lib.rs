@@ -879,6 +879,11 @@ pub struct ContactPresence {
     pub activity: Option<String>,
     pub display_name: Option<String>,
     pub note: Option<String>,
+    /// The note is the out-of-office message (note type `OOF`, PR-37; function 16).
+    pub note_is_oof: bool,
+    /// Subject and location of the meeting the contact is in (aggregateState `meetingSubject`
+    /// and `meetingLocation`, §3.8.5.1.2.5, p. 122).
+    pub meeting: Option<String>,
 }
 
 impl ContactPresence {
@@ -926,6 +931,15 @@ pub fn parse_categories(xml: &str) -> Result<ContactPresence, Error> {
                                     .or_else(|| a.child("custom").map(|c| c.text()))
                             })
                             .map(|s| printable(&s));
+                        let part = |n: &str| {
+                            st.child(n)
+                                .map(|e| printable(e.text().trim()))
+                                .filter(|t| !t.is_empty())
+                        };
+                        p.meeting = match (part("meetingSubject"), part("meetingLocation")) {
+                            (Some(s), Some(l)) => Some(format!("{s} ({l})")),
+                            (s, l) => s.or(l),
+                        };
                     }
                 }
             }
@@ -943,6 +957,7 @@ pub fn parse_categories(xml: &str) -> Result<ContactPresence, Error> {
                 if let Some(body) = cat.child("note").and_then(|n| n.child("body")) {
                     let t = printable(body.text().trim());
                     if !t.is_empty() {
+                        p.note_is_oof = body.attr("type") == Some("OOF");
                         p.note = Some(t);
                     }
                 }
@@ -1425,6 +1440,8 @@ pub fn contact_edit_body(edit: &ContactEdit, delta: u64) -> Result<String, Error
          <m:deltaNum>{delta}</m:deltaNum></m:{name}></SOAP-ENV:Body></SOAP-ENV:Envelope>"
     ))
 }
+
+pub mod calendar;
 
 #[cfg(test)]
 mod tests;

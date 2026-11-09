@@ -737,3 +737,196 @@ fn network_members_body() {
     assert!(add_network_members_body(&[(200, 0, "user")]).is_err());
     assert!(add_network_members_body(&[(200, 0, "everyone\"/><x")]).is_err());
 }
+
+mod calendar_tests {
+    use crate::calendar::*;
+    use commscraft_xml::Limits;
+
+    const EP: &str = "221ef77e-3a68-5570-86ed-6ea5bd4b7ff8";
+    const WH: &str = "<WorkingHours xmlns=\"http://schemas.microsoft.com/exchange/services/2006/types\"><TimeZone><Bias>480</Bias></TimeZone><WorkingPeriodArray><WorkingPeriod><DayOfWeek>Monday</DayOfWeek><StartTimeInMinutes>480</StartTimeInMinutes><EndTimeInMinutes>1020</EndTimeInMinutes></WorkingPeriod></WorkingPeriodArray></WorkingHours>";
+
+    fn full() -> Calendar {
+        Calendar {
+            mailbox: "bob@contoso.com".into(),
+            working_hours: Some(WH.into()),
+            free_busy: Some((1_266_134_400, "AKpV/w==".into())),
+            meeting: Some(Meeting {
+                start: 1_200_078_000,
+                subject: Some("Customer <Meeting>".into()),
+                location: Some("Conf Room 100".into()),
+            }),
+            out_of_office: Some("Out until Monday".into()),
+        }
+    }
+
+    /// MS-PRES §2.2.2.7.8 (p. 69): FrFrFrFrFrBuBuBuBuTeTeTeTeOoOoOoOoFrFr.
+    #[test]
+    fn free_busy_bits() {
+        let codes = [0, 0, 0, 0, 0, 2, 2, 2, 2, 1, 1, 1, 1, 3, 3, 3, 3, 0, 0];
+        assert_eq!(
+            free_busy_value(&codes),
+            [
+                0b0000_0000,
+                0b0010_1010,
+                0b1001_0101,
+                0b0111_1111,
+                0b1100_0000
+            ]
+        );
+    }
+
+    #[test]
+    fn instance_ids() {
+        let [fb, note, meeting, oof] = instances("Bob@Contoso.com");
+        assert_eq!(instances("bob@contoso.com"), [fb, note, meeting, oof]);
+        // 2-bit free/busy encoding: top bits 00; calendarState 0x4…, out of office 0x6….
+        assert_eq!(fb >> 30, 0);
+        assert_ne!(fb, 0);
+        assert_ne!(note, 0);
+        assert_eq!(meeting >> 28, 4);
+        assert_eq!(oof >> 28, 6);
+    }
+
+    #[test]
+    fn first_publication() {
+        let new = full();
+        let old = Calendar::default();
+        let s = slots(&new, &old);
+        assert_eq!(s.len(), SLOTS);
+        let b = publish_body("sip:bob@contoso.com", EP, &new, &old, &s, &[0; SLOTS]).unwrap();
+        let e = commscraft_xml::parse(&b, &Limits::default()).unwrap();
+        let pubs: Vec<_> = e
+            .child("publications")
+            .unwrap()
+            .children_named("publication")
+            .collect();
+        assert_eq!(pubs.len(), SLOTS);
+        let [fb, note, meeting, oof] = instances("bob@contoso.com");
+        let find = |cat: &str, inst: u32, cont: u32| {
+            pubs.iter()
+                .find(|p| {
+                    p.attr("categoryName") == Some(cat)
+                        && p.attr("instance") == Some(&inst.to_string())
+                        && p.attr("container") == Some(&cont.to_string())
+                })
+                .copied()
+                .unwrap_or_else(|| panic!("{cat} {inst} {cont}"))
+        };
+        // Working hours: static, with content in 1/200/300/400, empty in 100/32000.
+        let wh = find("calendarData", 0, 1);
+        assert_eq!(wh.attr("expireType"), Some("static"));
+        let cd = wh.child("calendarData").unwrap();
+        assert_eq!(cd.attr("mailboxID"), Some("bob@contoso.com"));
+        assert!(cd.child("WorkingHours").is_some());
+        assert!(find("calendarData", 0, 32000)
+            .child("calendarData")
+            .unwrap()
+            .child("WorkingHours")
+            .is_none());
+        // Free/busy with the endpoint, in 200/300/400; empty in 1.
+        let f = find("calendarData", fb, 300);
+        assert_eq!(f.attr("expireType"), Some("endpoint"));
+        assert_eq!(f.attr("endpointId"), Some(EP));
+        let v = f.child("calendarData").unwrap().child("freeBusy").unwrap();
+        assert_eq!(v.attr("startTime"), Some("2010-02-14T08:00:00Z"));
+        assert_eq!(v.attr("granularity"), Some("PT15M"));
+        assert_eq!(v.text(), "AKpV/w==");
+        assert!(find("calendarData", fb, 1)
+            .child("calendarData")
+            .unwrap()
+            .child("freeBusy")
+            .is_none());
+        // calendarState as in §4.3.1.1, the subject escaped.
+        let st = find("state", meeting, 2).child("state").unwrap();
+        assert_eq!(st.child("availability").unwrap().text(), "6500");
+        assert_eq!(
+            st.child("activity").unwrap().attr("token"),
+            Some("in-a-meeting")
+        );
+        assert_eq!(
+            st.child("meetingSubject").unwrap().text(),
+            "Customer <Meeting>"
+        );
+        assert!(b.contains("Customer &lt;Meeting&gt;"));
+        // Out of office: the activity without availability, and the OOF note.
+        let o = find("state", oof, 3).child("state").unwrap();
+        assert!(o.child("availability").is_none());
+        assert_eq!(
+            o.child("activity").unwrap().attr("token"),
+            Some("out-of-office")
+        );
+        let n = find("note", note, 200).child("note").unwrap();
+        let body = n.child("body").unwrap();
+        assert_eq!(body.attr("type"), Some("OOF"));
+        assert_eq!(body.text(), "Out until Monday");
+        assert!(find("note", note, 100)
+            .child("note")
+            .unwrap()
+            .child("body")
+            .is_none());
+    }
+
+    /// Only changed groups are published; a group that went away is deleted.
+    #[test]
+    fn changes_and_deletions() {
+        let old = full();
+        assert!(slots(&old, &old).is_empty());
+        let mut new = old.clone();
+        new.meeting = None;
+        new.out_of_office = Some("Back on Tuesday".into());
+        let s = slots(&new, &old);
+        // Meeting (2 deleted) and the note (5); the out-of-office state stays.
+        assert_eq!(s, vec![12, 13, 16, 17, 18, 19, 20]);
+        let mut versions = [0; SLOTS];
+        versions[12] = 4;
+        let b = publish_body("sip:bob@contoso.com", EP, &new, &old, &s, &versions).unwrap();
+        let meeting = instances("bob@contoso.com")[2];
+        assert!(b.contains(&format!("<publication categoryName=\"state\" instance=\"{meeting}\" container=\"2\" version=\"4\" expireType=\"endpoint\" endpointId=\"{EP}\" expires=\"0\"/>")));
+        assert!(b.contains("Back on Tuesday"));
+        // Nothing published before and nothing now: nothing to do.
+        assert!(slots(&Calendar::default(), &Calendar::default()).is_empty());
+    }
+
+    #[test]
+    fn hostile_input() {
+        let old = Calendar::default();
+        let mut c = full();
+        c.working_hours = Some("<WorkingHours xmlns=\"x\"/>".into());
+        assert!(publish_body("sip:bob@contoso.com", EP, &c, &old, &[0], &[0; SLOTS]).is_err());
+        let mut c = full();
+        c.free_busy = Some((0, "AA\"/><x".into()));
+        assert!(publish_body("sip:bob@contoso.com", EP, &c, &old, &[6], &[0; SLOTS]).is_err());
+        let mut c = full();
+        c.mailbox = "bob\"@contoso.com".into();
+        assert!(publish_body("sip:bob@contoso.com", EP, &c, &old, &[12], &[0; SLOTS]).is_err());
+        assert!(publish_body(
+            "sip:bob@contoso.com",
+            "x\"",
+            &full(),
+            &old,
+            &[12],
+            &[0; SLOTS]
+        )
+        .is_err());
+        let mut c = full();
+        c.out_of_office = Some(format!("a\u{7}b{}", "x".repeat(5000)));
+        let b = publish_body("sip:bob@contoso.com", EP, &c, &old, &[16], &[0; SLOTS]).unwrap();
+        assert!(b.contains(&format!(
+            "<body type=\"OOF\" uri=\"\">ab{}</body>",
+            "x".repeat(MAX_NOTE - 2)
+        )));
+    }
+}
+
+/// Function 16: the OOF note and the meeting of a contact.
+#[test]
+fn contact_out_of_office_and_meeting() {
+    let xml = r#"<categories xmlns="http://schemas.microsoft.com/2006/09/sip/categories" uri="sip:bob@contoso.com">
+<category name="state" instance="1"><state xmlns="http://schemas.microsoft.com/2006/09/sip/state" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="aggregateState"><availability>6500</availability><activity token="in-a-meeting"/><meetingSubject>Review</meetingSubject><meetingLocation>Room 1</meetingLocation></state></category>
+<category name="note" instance="7"><note xmlns="http://schemas.microsoft.com/2006/09/sip/note"><body type="OOF" uri="">Away until Monday</body></note></category>
+</categories>"#;
+    let p = parse_categories(xml).unwrap();
+    assert_eq!(p.meeting.as_deref(), Some("Review (Room 1)"));
+    assert!(p.note_is_oof);
+    assert_eq!(p.note.as_deref(), Some("Away until Monday"));
+}

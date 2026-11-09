@@ -360,3 +360,197 @@ mod ucs_tests {
         assert!(parse_im_item_list("<x/>").is_err());
     }
 }
+
+mod calendar_tests {
+    use crate::calendar::*;
+    use commscraft_xml::{parse_xs_datetime, Limits};
+
+    /// [MS-OXWAVLS] §4.2 (pp. 47–50), the second FreeBusyResponse (Detailed) first and with a
+    /// merged string as DetailedMerged adds it (§4.3: one digit per block), shortened.
+    const AVAILABILITY: &str = r#"<?xml version="1.0" encoding="utf-8" ?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <GetUserAvailabilityResponse xmlns="http://schemas.microsoft.com/exchange/services/2006/messages">
+      <FreeBusyResponseArray>
+        <FreeBusyResponse>
+          <ResponseMessage ResponseClass="Success"><ResponseCode>NoError</ResponseCode></ResponseMessage>
+          <FreeBusyView>
+            <FreeBusyViewType xmlns="http://schemas.microsoft.com/exchange/services/2006/types">DetailedMerged</FreeBusyViewType>
+            <MergedFreeBusy xmlns="http://schemas.microsoft.com/exchange/services/2006/types">000000000000332000000000</MergedFreeBusy>
+            <CalendarEventArray xmlns="http://schemas.microsoft.com/exchange/services/2006/types">
+              <CalendarEvent>
+                <StartTime>2008-01-21T08:00:00</StartTime>
+                <EndTime>2008-01-21T09:00:00</EndTime>
+                <BusyType>Tentative</BusyType>
+                <CalendarEventDetails>
+                  <ID>00000000CEB2AC9C</ID>
+                  <Subject>Meeting1</Subject>
+                  <Location>Location1</Location>
+                  <IsMeeting>true</IsMeeting>
+                  <IsPrivate>false</IsPrivate>
+                </CalendarEventDetails>
+              </CalendarEvent>
+              <CalendarEvent>
+                <StartTime>2008-01-21T13:00:00</StartTime>
+                <EndTime>2008-01-21T14:00:00</EndTime>
+                <BusyType>Busy</BusyType>
+                <CalendarEventDetails>
+                  <Subject>Meeting2</Subject>
+                  <Location>Location2</Location>
+                  <IsMeeting>true</IsMeeting>
+                  <IsPrivate>false</IsPrivate>
+                </CalendarEventDetails>
+              </CalendarEvent>
+              <CalendarEvent>
+                <StartTime>2008-01-21T13:30:00</StartTime>
+                <EndTime>2008-01-21T15:00:00</EndTime>
+                <BusyType>Busy</BusyType>
+                <CalendarEventDetails>
+                  <Subject>Secret</Subject>
+                  <Location>Somewhere</Location>
+                  <IsPrivate>true</IsPrivate>
+                </CalendarEventDetails>
+              </CalendarEvent>
+            </CalendarEventArray>
+            <WorkingHours xmlns="http://schemas.microsoft.com/exchange/services/2006/types">
+              <TimeZone>
+                <Bias>480</Bias>
+                <StandardTime><Bias>0</Bias><Time>02:00:00</Time><DayOrder>1</DayOrder><Month>11</Month><DayOfWeek>Sunday</DayOfWeek></StandardTime>
+                <DaylightTime><Bias>-60</Bias><Time>02:00:00</Time><DayOrder>2</DayOrder><Month>3</Month><DayOfWeek>Sunday</DayOfWeek></DaylightTime>
+              </TimeZone>
+              <WorkingPeriodArray>
+                <WorkingPeriod>
+                  <DayOfWeek>Monday Tuesday Wednesday Thursday Friday</DayOfWeek>
+                  <StartTimeInMinutes>480</StartTimeInMinutes>
+                  <EndTimeInMinutes>1020</EndTimeInMinutes>
+                </WorkingPeriod>
+              </WorkingPeriodArray>
+            </WorkingHours>
+          </FreeBusyView>
+        </FreeBusyResponse>
+      </FreeBusyResponseArray>
+    </GetUserAvailabilityResponse>
+  </soap:Body>
+</soap:Envelope>"#;
+
+    #[test]
+    fn availability_answer() {
+        let t = |s: &str| parse_xs_datetime(s).unwrap();
+        let a = parse_availability(AVAILABILITY, t("2008-01-21T00:00:00Z")).unwrap();
+        assert_eq!(a.slots.len(), 24);
+        assert_eq!(a.slots[12], FreeBusy::Oof);
+        assert_eq!(a.slots[14], FreeBusy::Busy);
+        assert_eq!(a.events.len(), 3);
+        assert_eq!(a.events[0].busy, FreeBusy::Tentative);
+        // A private event keeps its time but not its subject and location.
+        assert_eq!(a.events[2].subject, None);
+        assert_eq!(a.events[2].location, None);
+        // Tentative is no meeting; of two busy ones the later start wins.
+        assert_eq!(a.current_meeting(t("2008-01-21T08:30:00Z")), None);
+        let m = a.current_meeting(t("2008-01-21T13:10:00Z")).unwrap();
+        assert_eq!(m.subject.as_deref(), Some("Meeting2"));
+        assert_eq!(m.location.as_deref(), Some("Location2"));
+        assert_eq!(
+            a.current_meeting(t("2008-01-21T13:45:00Z"))
+                .unwrap()
+                .subject,
+            None
+        );
+        assert_eq!(a.current_meeting(t("2008-01-21T15:00:00Z")), None);
+        // The working hours are written back as MS-PRES §2.2.2.7.8 carries them.
+        let wh = a.working_hours.unwrap().to_xml();
+        assert!(wh.starts_with("<WorkingHours xmlns=\"http://schemas.microsoft.com/exchange/services/2006/types\"><TimeZone><Bias>480</Bias><StandardTime><Bias>0</Bias><Time>02:00:00</Time><DayOrder>1</DayOrder><Month>11</Month>"));
+        assert!(wh.contains("<WorkingPeriod><DayOfWeek>Monday Tuesday Wednesday Thursday Friday</DayOfWeek><StartTimeInMinutes>480</StartTimeInMinutes><EndTimeInMinutes>1020</EndTimeInMinutes></WorkingPeriod>"));
+        commscraft_xml::parse(&wh, &Limits::default()).unwrap();
+    }
+
+    #[test]
+    fn availability_errors() {
+        let bad_digit = AVAILABILITY.replace("000000000000332000000000", "00x");
+        assert!(parse_availability(&bad_digit, 0).is_err());
+        let error = AVAILABILITY.replace(
+            r#"ResponseClass="Success"><ResponseCode>NoError"#,
+            r#"ResponseClass="Error"><ResponseCode>ErrorMailRecipientNotFound"#,
+        );
+        assert!(matches!(
+            parse_availability(&error, 0),
+            Err(crate::Error::Server(c)) if c == "ErrorMailRecipientNotFound"
+        ));
+        // Injected markup in a day name does not reach the presence document.
+        let evil = AVAILABILITY.replace(
+            "Monday Tuesday Wednesday Thursday Friday",
+            "Monday&lt;x/&gt;",
+        );
+        let a = parse_availability(&evil, 0).unwrap();
+        assert!(a.working_hours.unwrap().periods.is_empty());
+    }
+
+    #[test]
+    fn availability_request_window() {
+        let now = parse_xs_datetime("2026-11-09T10:17:00Z").unwrap();
+        let (start, end) = window(now);
+        assert_eq!(start, parse_xs_datetime("2026-11-09T00:00:00Z").unwrap());
+        assert_eq!(end - start, 4 * 86_400);
+        let r = availability_request("alice@contoso.com", start, end).unwrap();
+        assert!(r.contains(
+            "<StartTime>2026-11-09T00:00:00</StartTime><EndTime>2026-11-13T00:00:00</EndTime>"
+        ));
+        assert!(r.contains("<MergedFreeBusyIntervalInMinutes>15</MergedFreeBusyIntervalInMinutes><RequestedView>DetailedMerged</RequestedView>"));
+        assert!(r.contains("<Address>alice@contoso.com</Address>"));
+        commscraft_xml::parse(&r, &Limits::default()).unwrap();
+        assert!(availability_request("a<b@c.com", start, end).is_err());
+    }
+
+    /// [MS-OXWOOF] §4.2 (pp. 28–29).
+    const OOF: &str = r#"<?xml version="1.0" encoding="utf-8" ?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <GetUserOofSettingsResponse xmlns="http://schemas.microsoft.com/exchange/services/2006/messages">
+      <ResponseMessage ResponseClass="Success"><ResponseCode>NoError</ResponseCode></ResponseMessage>
+      <OofSettings xmlns="http://schemas.microsoft.com/exchange/services/2006/types">
+        <OofState>Enabled</OofState>
+        <ExternalAudience>All</ExternalAudience>
+        <Duration>
+          <StartTime>2008-02-01T00:00:00</StartTime>
+          <EndTime>2008-02-02T00:00:00</EndTime>
+        </Duration>
+        <InternalReply>
+          <Message>I am out of office. This is my internal reply.</Message>
+        </InternalReply>
+        <ExternalReply>
+          <Message>I am out of office. This is my external reply.</Message>
+        </ExternalReply>
+      </OofSettings>
+      <AllowExternalOof>All</AllowExternalOof>
+    </GetUserOofSettingsResponse>
+  </soap:Body>
+</soap:Envelope>"#;
+
+    #[test]
+    fn oof_answer() {
+        let t = |s: &str| parse_xs_datetime(s).unwrap();
+        let o = parse_oof(OOF).unwrap();
+        assert_eq!(o.state, OofState::Enabled);
+        assert_eq!(o.message, "I am out of office. This is my internal reply.");
+        assert!(o.active(0));
+        let s = parse_oof(&OOF.replace(">Enabled<", ">Scheduled<")).unwrap();
+        assert!(!s.active(t("2008-01-31T23:59:59Z")));
+        assert!(s.active(t("2008-02-01T12:00:00Z")));
+        assert!(!s.active(t("2008-02-02T00:00:00Z")));
+        let d = parse_oof(&OOF.replace(">Enabled<", ">Disabled<")).unwrap();
+        assert!(!d.active(t("2008-02-01T12:00:00Z")));
+        assert!(parse_oof(&OOF.replace(">Enabled<", ">On<")).is_err());
+        let r = oof_request("user@example.com").unwrap();
+        assert!(r.contains("<GetUserOofSettingsRequest xmlns=\"http://schemas.microsoft.com/exchange/services/2006/messages\"><Mailbox xmlns=\"http://schemas.microsoft.com/exchange/services/2006/types\"><Address>user@example.com</Address></Mailbox>"));
+    }
+
+    /// Exchange keeps replies as HTML; the note gets plain text.
+    #[test]
+    fn oof_message_as_plain_text() {
+        let html = "<html><head><style>p{color:red}</style><title>x</title></head><body><div>Out until&nbsp;Monday &amp; back<br>on Tuesday</div><!-- <b>hidden</b> --><script>alert(1)</script>&#x263A;&#9;\u{7}</body></html>";
+        assert_eq!(plain_text(html), "Out until Monday & back on Tuesday ☺");
+        assert_eq!(plain_text("a &unknown; b &lt;"), "a &unknown; b <");
+        assert_eq!(plain_text(&"x".repeat(5000)).len(), MAX_MESSAGE);
+        assert_eq!(plain_text("<b"), "");
+    }
+}

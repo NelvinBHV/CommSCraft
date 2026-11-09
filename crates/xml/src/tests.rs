@@ -137,3 +137,30 @@ fn mutated_documents_never_panic() {
         let _ = p(&d);
     }
 }
+
+#[test]
+fn xs_datetime_round_trip() {
+    for u in [0u64, 951_782_400, 1_762_646_400, 4_102_444_799] {
+        let s = xs_datetime(u).unwrap();
+        assert_eq!(parse_xs_datetime(&s), Some(u), "{s}");
+    }
+    assert_eq!(
+        parse_xs_datetime("2008-01-21T11:30:00"),
+        parse_xs_datetime("2008-01-21T11:30:00Z")
+    );
+    assert_eq!(
+        parse_xs_datetime("2008-01-21T12:30:00.123+01:00"),
+        parse_xs_datetime("2008-01-21T11:30:00Z")
+    );
+    for bad in [
+        "",
+        "2008-01-21",
+        "2008-13-01T00:00:00Z",
+        "2008-01-21T24:00:00Z",
+        "1969-12-31T23:59:59Z",
+        "2008-1-21T00:00:00Z",
+        "2008-01-21T00:00:00+1:00",
+    ] {
+        assert_eq!(parse_xs_datetime(bad), None, "{bad}");
+    }
+}

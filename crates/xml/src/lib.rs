@@ -424,7 +424,6 @@ pub fn parse(input: &str, limits: &Limits) -> Result<Element, Error> {
     root.ok_or(Error::NoRoot)
 }
 
-/// Escapes text for element content or attribute values when writing XML.
 /// XML Schema dateTime in UTC (`YYYY-MM-DDTHH:MM:SSZ`) of a Unix time; days to civil date after
 /// H. Hinnant's algorithm (proleptic Gregorian calendar). Years after 9999 are refused.
 pub fn xs_datetime(unix: u64) -> Option<String> {
@@ -450,6 +449,68 @@ pub fn xs_datetime(unix: u64) -> Option<String> {
     ))
 }
 
+/// Unix time of an XML Schema dateTime (`YYYY-MM-DDTHH:MM:SS`, optional fraction, `Z` or
+/// `±HH:MM`; without a zone the time is taken as UTC). Years 1970 to 9999 only.
+pub fn parse_xs_datetime(v: &str) -> Option<u64> {
+    let v = v.trim();
+    let (date, rest) = v.split_once('T')?;
+    let mut d = date.split('-');
+    let (year, month, day): (i64, i64, i64) = (
+        d.next()?.parse().ok()?,
+        d.next()?.parse().ok()?,
+        d.next()?.parse().ok()?,
+    );
+    if d.next().is_some() || date.len() != 10 {
+        return None;
+    }
+    let (time, offset) = if let Some(t) = rest.strip_suffix('Z') {
+        (t, 0i64)
+    } else if let Some(i) = rest.rfind(['+', '-']).filter(|i| *i >= 8) {
+        let (t, z) = rest.split_at(i);
+        let sign = if z.starts_with('-') { -1 } else { 1 };
+        let (h, m) = z.get(1..)?.split_once(':')?;
+        let (h, m): (i64, i64) = (h.parse().ok()?, m.parse().ok()?);
+        if h > 14 || m > 59 || z.len() != 6 {
+            return None;
+        }
+        (t, sign * (h * 3600 + m * 60))
+    } else {
+        (rest, 0)
+    };
+    let time = time.split('.').next()?;
+    let mut t = time.split(':');
+    let (h, m, sec): (i64, i64, i64) = (
+        t.next()?.parse().ok()?,
+        t.next()?.parse().ok()?,
+        t.next()?.parse().ok()?,
+    );
+    if t.next().is_some() || time.len() != 8 {
+        return None;
+    }
+    if !(1970..=9999).contains(&year)
+        || !(1..=12).contains(&month)
+        || !(1..=31).contains(&day)
+        || h > 23
+        || m > 59
+        || sec > 60
+    {
+        return None;
+    }
+    // Days from civil (H. Hinnant), 1970-01-01 = 0.
+    let (y, mo) = if month <= 2 {
+        (year - 1, month + 9)
+    } else {
+        (year, month - 3)
+    };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let doy = (153 * mo + 2) / 5 + day - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    u64::try_from(days * 86_400 + h * 3600 + m * 60 + sec - offset).ok()
+}
+
+/// Escapes text for element content or attribute values when writing XML.
 pub fn escape(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for c in s.chars() {
