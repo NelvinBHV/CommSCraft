@@ -2765,7 +2765,7 @@ fn interactive(
                             });
                         }
                     }
-                    E::IncomingScreenShare { call, from } => {
+                    E::IncomingScreenShare { call, from, .. } => {
                         cues.start_ring(call);
                         println!(
                             "* call {call}: {from} shares their screen – /view {call} or /hangup {call}"
