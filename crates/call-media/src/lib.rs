@@ -20,7 +20,7 @@
 
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::net::{IpAddr, SocketAddr, TcpStream, UdpSocket};
+use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream, UdpSocket};
 use std::time::Duration;
 
 use commscraft_ice_agent::{self as ice, Agent};
@@ -164,6 +164,8 @@ struct TcpConn {
     frames: Deframer4571,
     out: Vec<u8>,
     failed: bool,
+    /// The peer connected to our passive candidate.
+    accepted: bool,
 }
 
 impl TcpConn {
@@ -174,10 +176,13 @@ impl TcpConn {
     }
 }
 
-/// The active TCP host candidate of an application sharing stream (function 43: RDP runs over
-/// TCP only, [MS-RTASPF] §1.7): it connects to the peer's passive candidates on demand.
+/// The TCP host candidates of an application sharing stream (function 43: RDP runs over TCP
+/// only, [MS-RTASPF] §1.7): the active one connects to the peer's passive candidates on demand,
+/// the passive one takes the peer's connections. The Windows sharer gives up at once when it
+/// finds no candidate to connect to (`tested-in-lab`), so both are offered, as it does itself.
 struct TcpHost {
     conns: Vec<TcpConn>,
+    listener: Option<TcpListener>,
 }
 
 /// Most TCP connections one active candidate opens (design: one per passive peer candidate).
@@ -324,7 +329,12 @@ impl CallMedia {
     /// runs over TCP only, [MS-RTASPF] §1.7; ice-tcp-07: active candidates carry port 9).
     pub fn prepare_data(local_ip: IpAddr, now: u64) -> std::io::Result<Self> {
         let (mut me, _) = Self::prepare_stream(local_ip, None, turn::Stream::Video, now)?;
-        me.sockets = vec![Socket::TcpHost(Box::new(TcpHost { conns: Vec::new() }))];
+        let listener = TcpListener::bind(SocketAddr::new(local_ip, 0))?;
+        listener.set_nonblocking(true)?;
+        me.sockets = vec![Socket::TcpHost(Box::new(TcpHost {
+            conns: Vec::new(),
+            listener: Some(listener),
+        }))];
         Ok(me)
     }
 
@@ -519,16 +529,25 @@ impl CallMedia {
                         }
                     }
                 }
-                Socket::TcpHost(_) => {
-                    // IE-04: TCP (6), active (5); host type; RTP and RTCP on one address.
-                    let a = SocketAddr::new(self.local_ip, 9);
-                    for c in [1u8, 2] {
-                        let lp = commscraft_ice::tcp_local_preference(6, 5, 0);
-                        let p = commscraft_ice::candidate_priority(126, lp, c);
-                        out.push((
-                            i,
-                            local("6", c, ice::Transport::TcpActive, ice::Kind::Host, a, p),
-                        ));
+                Socket::TcpHost(h) => {
+                    // IE-04: TCP (6), active (5) and passive (2); host type; RTP and RTCP on one
+                    // address. The active candidate names port 9 (ice-tcp-07 §4.1).
+                    let passive = h.listener.as_ref().and_then(|l| l.local_addr().ok());
+                    let mut kinds = vec![(
+                        "6",
+                        ice::Transport::TcpActive,
+                        5,
+                        SocketAddr::new(self.local_ip, 9),
+                    )];
+                    if let Some(a) = passive {
+                        kinds.push(("7", ice::Transport::TcpPassive, 2, a));
+                    }
+                    for (f, tr, dir, a) in kinds {
+                        for c in [1u8, 2] {
+                            let lp = commscraft_ice::tcp_local_preference(6, dir, 0);
+                            let p = commscraft_ice::candidate_priority(126, lp, c);
+                            out.push((i, local(f, c, tr, ice::Kind::Host, a, p)));
+                        }
                     }
                 }
                 Socket::Relay { .. } | Socket::Tcp(_) => {}
@@ -563,11 +582,16 @@ impl CallMedia {
         };
         let udp =
             |c: &ice::Local, comp: u8| c.transport == ice::Transport::Udp && c.component == comp;
+        // Without UDP (application sharing) the passive TCP candidate, which can be reached.
+        let passive = |c: &ice::Local, comp: u8| {
+            c.transport == ice::Transport::TcpPassive && c.component == comp
+        };
         let default = |comp: u8| {
             cands
                 .iter()
                 .find(|(_, c)| c.kind == ice::Kind::Relayed && udp(c, comp))
                 .or_else(|| cands.iter().find(|(_, c)| udp(c, comp)))
+                .or_else(|| cands.iter().find(|(_, c)| passive(c, comp)))
                 .map(|(_, c)| c.address)
         };
         let rtp = default(1).unwrap_or_else(|| SocketAddr::new(self.local_ip, 9));
@@ -679,12 +703,28 @@ impl CallMedia {
         self.data =
             Some(media::data::Data::new(key, remote_key, random).map_err(|e| format!("{e:?}"))?);
         self.remote_key = remote_key.cloned();
-        self.start_transport(remote_ice, remote_rtp, remote_rtp, controlling, now)
+        // RTCP runs on the RTP connection (`a=rtcp-mux`, always offered for RDP): the sharer
+        // nominates only component 1 (`tested-in-lab`), so its component 2 candidates are left
+        // out and no RTCP pair is waited for.
+        let remote_ice = remote_ice.clone().map(|mut ice| {
+            ice.candidates.retain(|c| c.component == 1);
+            ice
+        });
+        self.start_transport(&remote_ice, remote_rtp, remote_rtp, controlling, now)
     }
 
-    /// Application sharing: RDP bytes to the peer (function 43).
+    /// Application sharing: RDP bytes to the peer (function 43). The first bytes are preceded
+    /// by empty packets that get our source past the receiver's probation (`Data::probation`).
     pub fn send_data(&mut self, bytes: &[u8], now: u64) {
-        let Some(packets) = self.data.as_mut().map(|d| d.send(bytes, now)) else {
+        let Some(packets) = self.data.as_mut().map(|d| {
+            let mut p = if d.sent == 0 {
+                d.probation(2, now)
+            } else {
+                Vec::new()
+            };
+            p.extend(d.send(bytes, now));
+            p
+        }) else {
             return;
         };
         if let Some((l, r)) = self.rtp_path() {
@@ -1153,6 +1193,7 @@ impl CallMedia {
                         frames: Deframer4571::default(),
                         out: Vec::new(),
                         failed,
+                        accepted: false,
                     });
                 }
                 if let Some(c) = h.conns.iter_mut().find(|c| c.peer == to) {
@@ -1409,6 +1450,23 @@ impl CallMedia {
                     }
                 }
                 Socket::TcpHost(h) => {
+                    // The peer's connections to our passive candidate.
+                    while let Some(Ok((stream, peer))) = h.listener.as_ref().map(|l| l.accept()) {
+                        let usable = h.conns.len() < MAX_TCP_CONNS
+                            && stream.set_nonblocking(true).is_ok()
+                            && stream.set_nodelay(true).is_ok();
+                        if usable {
+                            h.conns.retain(|c| c.peer != peer);
+                            h.conns.push(TcpConn {
+                                peer,
+                                stream: Some(stream),
+                                frames: Deframer4571::default(),
+                                out: Vec::new(),
+                                failed: false,
+                                accepted: true,
+                            });
+                        }
+                    }
                     let mut chunk = [0u8; 4096];
                     for c in h.conns.iter_mut().filter(|c| !c.failed) {
                         let Some(stream) = c.stream.as_mut() else {
@@ -1546,6 +1604,12 @@ impl CallMedia {
             .unwrap_or_default();
         if let Some(v) = self.video.as_mut() {
             due.extend(v.rtcp_due(now, ntp));
+        }
+        // Application sharing: once ICE chose the path (RTCP runs on the RTP connection).
+        if self.selected.is_some() {
+            if let Some(d) = self.data.as_mut() {
+                due.extend(d.rtcp_due(now, ntp));
+            }
         }
         for p in due {
             if let Some((_, rtcp)) = self.direct {
@@ -1744,6 +1808,9 @@ impl CallMedia {
     /// our role follows the peer's: towards a passive peer candidate we are active.
     fn local_for(&self, sock: usize, peer: SocketAddr, component: u8) -> Option<usize> {
         let want = match self.sockets.get(sock)? {
+            Socket::TcpHost(h) if h.conns.iter().any(|c| c.peer == peer && c.accepted) => {
+                ice::Transport::TcpPassive
+            }
             Socket::TcpHost(_) => ice::Transport::TcpActive,
             Socket::Tcp(_) if self.remote_passive.contains(&peer) => ice::Transport::TcpActive,
             Socket::Tcp(_) => ice::Transport::TcpPassive,

@@ -136,8 +136,9 @@ fn rdp_line(s: &Session) -> Option<&Media> {
 /// Our answer as RDP viewer to a sharer's offer without screen video (window sharing sends only
 /// RDP, `tested-in-lab`): `m=applicationsharing` over TCP with our ICE candidates (an active TCP
 /// host candidate) and key, role viewer and content flow recvonly (SD-81, CS-02), RTCP on the
-/// same port (`a=rtcp-mux`, as offered); `a=setup:passive` against the offer's `active`
-/// ([RFC4145] §4). Every other line is rejected with port 0.
+/// same port (`a=rtcp-mux`, as offered). No `a=setup`: with the offer's fingerprint it would
+/// choose DTLS-SRTP ([RFC5763] §5), we take the SDES key; the TCP connection comes from ICE.
+/// Every other line is rejected with port 0.
 pub fn answer_rdp(
     offer: &[u8],
     local: &Local,
@@ -188,12 +189,15 @@ pub fn answer_rdp(
         .attr("mid")
         .map(str::trim)
         .filter(|v| !v.is_empty() && v.len() <= 16 && v.chars().all(|c| c.is_ascii_alphanumeric()));
-    let mut section = format!("m=applicationsharing 9 {} 127\r\n", m.proto);
+    let mut section = format!(
+        "m=applicationsharing {} {} 127\r\n",
+        local.rtp_port, m.proto
+    );
     transport_attributes(local, &mut section);
     if let Some(k) = &my_key {
         section.push_str(&format!("a=crypto:{}\r\n", k.attribute()));
     }
-    section.push_str("a=setup:passive\r\na=connection:new\r\na=rtcp:9\r\n");
+    section.push_str(&format!("a=rtcp:{}\r\n", local.rtp_port));
     if let Some(mid) = mid {
         section.push_str(&format!("a=mid:{mid}\r\n"));
     }

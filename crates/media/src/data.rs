@@ -26,6 +26,8 @@ pub const DATA_MTU: usize = 1400;
 /// Out-of-order packets kept while a hole is open (design: over TCP nothing should be out of
 /// order at all; a relay may still reorder a little).
 pub const MAX_PENDING: usize = 256;
+/// Interval of our RTCP reports (RFC 3550 §6.2: 5 s minimum).
+pub const RTCP_INTERVAL_MS: u64 = 5_000;
 
 /// The data stream of one application sharing session.
 pub struct Data {
@@ -36,6 +38,9 @@ pub struct Data {
     next_seq: Option<u16>,
     pending: BTreeMap<u16, Vec<u8>>,
     broken: bool,
+    /// When the next RTCP report is due (ms) and the CNAME it carries.
+    next_rtcp: u64,
+    cname: String,
     /// Received and sent payload octets.
     pub received: u64,
     pub sent: u64,
@@ -71,14 +76,64 @@ impl Data {
             next_seq: None,
             pending: BTreeMap::new(),
             broken: false,
+            next_rtcp: 0,
+            cname: "commscraft@linux".into(),
             received: 0,
             sent: 0,
         })
     }
 
+    /// The CNAME of our reports (RFC 3550 §6.5.1).
+    pub fn set_cname(&mut self, cname: &str) {
+        self.cname = cname
+            .chars()
+            .filter(|c| !c.is_control())
+            .take(255)
+            .collect();
+    }
+
+    /// Our RTCP sender report with SDES CNAME when one is due (every [`RTCP_INTERVAL_MS`], the
+    /// first at once; RFC 3550 §6.4.1). The peer's own reports to us carry a CNAME too.
+    pub fn rtcp_due(&mut self, now_ms: u64, ntp: u64) -> Option<Vec<u8>> {
+        if now_ms < self.next_rtcp {
+            return None;
+        }
+        self.next_rtcp = now_ms + RTCP_INTERVAL_MS;
+        let info = rtp::SenderInfo {
+            ntp,
+            rtp_timestamp: ticks(now_ms),
+            packets: self.sender.packets,
+            octets: self.sender.octets,
+        };
+        let plain = rtp::compound(self.sender.ssrc, Some(info), &[], &self.cname);
+        match self.tx_srtp.as_mut() {
+            Some(c) => c.protect_rtcp(&plain).ok(),
+            None => Some(plain),
+        }
+    }
+
     /// Whether a hole in the received stream ended it.
     pub fn broken(&self) -> bool {
         self.broken
+    }
+
+    /// `count` RTP/SRTP packets without payload: a receiver may take a new source only after
+    /// [RFC3550] §A.1's `MIN_SEQUENTIAL` packets in a row and drop those before (probation);
+    /// the RDP stream starts with a single packet (inference, design). Empty payloads add
+    /// nothing to the byte stream.
+    pub fn probation(&mut self, count: usize, now_ms: u64) -> Vec<Vec<u8>> {
+        let ts = ticks(now_ms);
+        let mut out = Vec::new();
+        for _ in 0..count {
+            let Ok(p) = self.sender.packet_at(RDP_PT, false, &[], ts) else {
+                continue;
+            };
+            match self.tx_srtp.as_mut() {
+                Some(c) => out.extend(c.protect_rtp(&p).ok()),
+                None => out.push(p),
+            }
+        }
+        out
     }
 
     /// RTP/SRTP packets carrying `bytes` (split at [`DATA_MTU`]).
@@ -186,6 +241,22 @@ mod tests {
         }
         assert_eq!(got, msg);
         assert_eq!((tx.sent, rx.received), (5000, 5000));
+    }
+
+    /// Empty packets for the probation carry nothing into the byte stream and keep the
+    /// sequence numbers running; the report is SRTCP-protected and due every 5 s.
+    #[test]
+    fn probation_and_report() {
+        let (mut tx, mut rx) = pair();
+        let mut packets = tx.probation(2, 0);
+        assert_eq!(packets.len(), 2);
+        packets.extend(tx.send(b"rdp", 0));
+        let got: Vec<u8> = packets.iter().flat_map(|p| rx.on_rtp(p)).collect();
+        assert_eq!(got, b"rdp");
+        let first = tx.rtcp_due(10_000, 1).unwrap();
+        assert_eq!(first.get(1), Some(&200), "a sender report");
+        assert!(tx.rtcp_due(14_999, 1).is_none());
+        assert!(tx.rtcp_due(15_000, 1).is_some());
     }
 
     /// Reordered packets wait for the hole; a duplicate is dropped; a forged packet is not taken.

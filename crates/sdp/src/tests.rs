@@ -741,7 +741,7 @@ a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x
     assert!(a.contains("a=x-applicationsharing-role:viewer\r\n"));
     assert!(a.contains("a=x-applicationsharing-contentflow:recvonly\r\n"));
     assert!(a.contains("a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role"));
-    assert!(a.contains("a=setup:passive\r\n") && a.contains("a=rtcp-mux\r\n"));
+    assert!(!a.contains("a=setup") && a.contains("a=rtcp-mux\r\n"));
     parse(a.as_bytes()).unwrap();
     assert_eq!(n.remote_rtp.1, 13635);
     assert_eq!(n.remote_key.unwrap().tag, 2);

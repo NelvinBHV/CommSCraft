@@ -119,6 +119,7 @@ fn run(
     let mut window = Some((window_rx, window_events));
     let mut dirty = false;
     let mut last_picture = 0u64;
+    let mut selected = false;
     let why = 'session: loop {
         match rx.try_recv() {
             Ok(ToRdp::Stop) | Err(mpsc::TryRecvError::Disconnected) => break "stopped".into(),
@@ -150,13 +151,16 @@ fn run(
                 },
                 cm::Event::Failed(why) => break 'session format!("data path: {why}"),
                 cm::Event::PeerBye => break 'session "the sharer stopped".into(),
-                cm::Event::Selected | cm::Event::Dtmf(_) | cm::Event::Video(_) => {}
+                cm::Event::Selected => selected = true,
+                cm::Event::Dtmf(_) | cm::Event::Video(_) => {}
             }
         }
         if media.data_broken() {
             break "data lost (MS-RTASPF: the stream ends at a loss)".into();
         }
-        if first.is_some() && media.data_path_ready() {
+        // The first RDP bytes once ICE selected the path (design: not on a pair still being
+        // checked).
+        if first.is_some() && selected {
             if let Some(b) = first.take() {
                 media.send_data(&b, now);
             }
