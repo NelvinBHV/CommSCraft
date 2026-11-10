@@ -705,3 +705,59 @@ fn screen_viewer_offer() {
     assert!(o.contains("m=video 40002 RTP/SAVP 122 123\r\n"));
     assert!(o.contains("a=recvonly\r\n"));
 }
+
+/// Function 43 over RDP: a sharer's window-sharing offer (RDP only, `tested-in-lab` shape,
+/// addresses and keys replaced) answered as viewer.
+#[test]
+fn rdp_viewer_answer() {
+    let offer = "v=0\r\no=- 0 0 IN IP4 192.0.2.20\r\ns=session\r\nc=IN IP4 192.0.2.20\r\nb=CT:99980\r\nt=0 0\r\n\
+m=applicationsharing 13635 TCP/RTP/AVP 127\r\na=ice-ufrag:aaaa\r\na=ice-pwd:bbbbbbbbbbbbbbbbbbbbbbbb\r\n\
+a=candidate:1 1 TCP-PASS 2120613887 192.0.2.20 28160 typ host\r\na=candidate:1 2 TCP-PASS 2120613374 192.0.2.20 28160 typ host\r\n\
+a=candidate:2 1 TCP-ACT 2121006591 192.0.2.20 13635 typ host\r\n\
+a=crypto:2 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
+a=setup:active\r\na=connection:new\r\na=rtcp:13635\r\na=mid:1\r\na=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\n\
+a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\na=x-applicationsharing-contentflow:sendonly\r\n";
+    assert!(screen::offered_rdp_sharer(offer.as_bytes()));
+    assert!(!screen::offered(offer.as_bytes()));
+    let mut local = local();
+    local.rtp_port = 9;
+    if let Some(ice) = local.ice.as_mut() {
+        ice.candidates[0].transport = Transport::TcpActive;
+        ice.candidates[0].port = 9;
+    }
+    let (a, n) = screen::answer_rdp(
+        offer.as_bytes(),
+        &local,
+        Key::new(1, [5; 30]),
+        Encryption::Required,
+    )
+    .unwrap();
+    assert!(
+        a.contains("m=applicationsharing 9 TCP/RTP/AVP 127\r\n"),
+        "{a}"
+    );
+    assert!(a.contains("TCP-ACT"));
+    assert!(a.contains("a=crypto:2 "));
+    assert!(a.contains("a=x-applicationsharing-role:viewer\r\n"));
+    assert!(a.contains("a=x-applicationsharing-contentflow:recvonly\r\n"));
+    assert!(a.contains("a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role"));
+    assert!(a.contains("a=setup:passive\r\n") && a.contains("a=rtcp-mux\r\n"));
+    parse(a.as_bytes()).unwrap();
+    assert_eq!(n.remote_rtp.1, 13635);
+    assert_eq!(n.remote_key.unwrap().tag, 2);
+    assert!(n
+        .remote_ice
+        .unwrap()
+        .candidates
+        .iter()
+        .any(|c| c.transport == Transport::TcpPassive && c.port == 28160));
+    // Without a key under the policy "required": refused.
+    let plain = offer.replace("a=crypto:2 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n", "");
+    assert!(screen::answer_rdp(
+        plain.as_bytes(),
+        &local,
+        Key::new(1, [5; 30]),
+        Encryption::Required
+    )
+    .is_err());
+}

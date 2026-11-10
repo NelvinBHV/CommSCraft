@@ -115,3 +115,119 @@ pub fn viewer_offer(video: &VideoLocal, policy: Encryption) -> Result<String, Er
     )?);
     Ok(out)
 }
+
+/// What the viewer needs of a sharer's RDP line (SD-80, SD-81).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NegotiatedRdp {
+    pub remote_key: Option<Key>,
+    pub remote_ice: Option<Ice>,
+    pub remote_rtp: Endpoint,
+    pub session_id: Option<String>,
+}
+
+fn rdp_line(s: &Session) -> Option<&Media> {
+    s.media.iter().find(|m| {
+        m.kind == "applicationsharing"
+            && m.port != 0
+            && m.attr("x-applicationsharing-role") == Some("sharer")
+    })
+}
+
+/// Our answer as RDP viewer to a sharer's offer without screen video (window sharing sends only
+/// RDP, `tested-in-lab`): `m=applicationsharing` over TCP with our ICE candidates (an active TCP
+/// host candidate) and key, role viewer and content flow recvonly (SD-81, CS-02), RTCP on the
+/// same port (`a=rtcp-mux`, as offered); `a=setup:passive` against the offer's `active`
+/// ([RFC4145] §4). Every other line is rejected with port 0.
+pub fn answer_rdp(
+    offer: &[u8],
+    local: &Local,
+    fresh_key: Key,
+    policy: Encryption,
+) -> Result<(String, NegotiatedRdp), Error> {
+    let s = parse(offer)?;
+    let index = s
+        .media
+        .iter()
+        .position(|m| {
+            m.kind == "applicationsharing"
+                && m.port != 0
+                && m.attr("x-applicationsharing-role") == Some("sharer")
+        })
+        .ok_or(Error::Syntax("no RDP line"))?;
+    let m = rdp_line(&s).ok_or(Error::Syntax("no RDP line"))?;
+    if !m.formats.contains(&127) {
+        return Err(Error::Syntax("no x-data payload type"));
+    }
+    let offered = keys_of(m).into_iter().next();
+    let (my_key, remote_key) = match (offered, policy) {
+        (Some(k), Encryption::Required | Encryption::Optional { .. }) => {
+            let mut mine = fresh_key;
+            mine.tag = k.tag;
+            if mine.key == k.key {
+                return Err(Error::Crypto("peer reused our key"));
+            }
+            (Some(mine), Some(k))
+        }
+        (
+            None,
+            Encryption::Off
+            | Encryption::Optional {
+                allow_plaintext: true,
+            },
+        ) => (None, None),
+        (Some(_), Encryption::Off) => (None, None),
+        _ => return Err(Error::Unencrypted),
+    };
+    let (rtp, _) = endpoints(&s, m)?;
+    let session_id = m
+        .attr("x-applicationsharing-session-id")
+        .map(str::trim)
+        .filter(|v| !v.is_empty() && v.len() <= 32 && v.chars().all(|c| c.is_ascii_alphanumeric()))
+        .map(str::to_string);
+    let mid = m
+        .attr("mid")
+        .map(str::trim)
+        .filter(|v| !v.is_empty() && v.len() <= 16 && v.chars().all(|c| c.is_ascii_alphanumeric()));
+    let mut section = format!("m=applicationsharing 9 {} 127\r\n", m.proto);
+    transport_attributes(local, &mut section);
+    if let Some(k) = &my_key {
+        section.push_str(&format!("a=crypto:{}\r\n", k.attribute()));
+    }
+    section.push_str("a=setup:passive\r\na=connection:new\r\na=rtcp:9\r\n");
+    if let Some(mid) = mid {
+        section.push_str(&format!("a=mid:{mid}\r\n"));
+    }
+    section.push_str("a=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\n");
+    if let Some(id) = &session_id {
+        section.push_str(&format!("a=x-applicationsharing-session-id:{id}\r\n"));
+    }
+    section.push_str("a=x-applicationsharing-role:viewer\r\na=x-applicationsharing-media-type:rdp\r\na=x-applicationsharing-contentflow:recvonly\r\n");
+    let mut out = header(local);
+    for (i, line) in s.media.iter().enumerate() {
+        if i == index {
+            out.push_str(&section);
+        } else {
+            let fmts: Vec<String> = line.formats.iter().map(u8::to_string).collect();
+            let fmts = if fmts.is_empty() {
+                "0".to_string()
+            } else {
+                fmts.join(" ")
+            };
+            out.push_str(&format!("m={} 0 {} {fmts}\r\n", line.kind, line.proto));
+        }
+    }
+    Ok((
+        out,
+        NegotiatedRdp {
+            remote_key,
+            remote_ice: ice_of(m),
+            remote_rtp: rtp,
+            session_id,
+        },
+    ))
+}
+
+/// Whether an SDP offers RDP-based sharing from a sharer.
+pub fn offered_rdp_sharer(offer: &[u8]) -> bool {
+    parse(offer).ok().is_some_and(|s| rdp_line(&s).is_some())
+}
