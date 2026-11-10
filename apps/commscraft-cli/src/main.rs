@@ -2765,6 +2765,10 @@ fn interactive(
                             });
                         }
                     }
+                    E::ScreenRdp { call, .. } => {
+                        // Function 43: the RDP viewer is not wired yet on this branch.
+                        println!("* call {call}: window sharing over RDP answered");
+                    }
                     E::IncomingScreenShare { call, from, .. } => {
                         cues.start_ring(call);
                         println!(
