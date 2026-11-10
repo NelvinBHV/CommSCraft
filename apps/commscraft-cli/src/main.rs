@@ -28,6 +28,7 @@ macro_rules! eprint {
 
 mod calls;
 mod cues;
+mod rdp_call;
 mod term;
 mod video_call;
 mod video_window;
@@ -2514,6 +2515,12 @@ fn interactive(
     // a meeting by conversation, and the video stream of each such conversation; conversations
     // whose sharing was announced.
     let mut pending_screen: BTreeMap<u32, u32> = BTreeMap::new();
+    // Function 43 over RDP: calls offering only RDP (a shared window), the viewer of each call
+    // being viewed, and the viewers waiting for their data stream (id → call).
+    let (rdp_tx, rdp_rx) = mpsc::channel::<rdp_call::FromRdp>();
+    let mut rdp_offers: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
+    let mut rdp_handles: BTreeMap<u32, rdp_call::RdpHandle> = BTreeMap::new();
+    let mut pending_rdp: BTreeMap<u32, u32> = BTreeMap::new();
     let mut pending_conf_screen: BTreeMap<u32, u32> = BTreeMap::new();
     let mut conf_screen_video: BTreeMap<u32, u32> = BTreeMap::new();
     let mut sharing_announced: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
@@ -2765,12 +2772,21 @@ fn interactive(
                             });
                         }
                     }
-                    E::ScreenRdp { call, .. } => {
-                        // Function 43: the RDP viewer is not wired yet on this branch.
-                        println!("* call {call}: window sharing over RDP answered");
+                    E::ScreenRdp { call, rdp } => {
+                        // Function 43: the answered RDP stream starts the viewer (we answered:
+                        // ICE controlled).
+                        if let Some(h) = rdp_handles.get(&call) {
+                            let _ = h.tx.send(rdp_call::ToRdp::Start {
+                                rdp,
+                                controlling: false,
+                            });
+                        }
                     }
-                    E::IncomingScreenShare { call, from, .. } => {
+                    E::IncomingScreenShare { call, from, rdp } => {
                         cues.start_ring(call);
+                        if rdp {
+                            rdp_offers.insert(call);
+                        }
                         println!(
                             "* call {call}: {from} shares their screen – /view {call} or /hangup {call}"
                         );
@@ -2965,6 +2981,10 @@ fn interactive(
                         cues.stop_ring(call);
                         meeting_calls.remove(&call);
                         println!("* call {call} ended ({status})");
+                        rdp_offers.remove(&call);
+                        if let Some(h) = rdp_handles.remove(&call) {
+                            let _ = h.tx.send(rdp_call::ToRdp::Stop);
+                        }
                         if let Some(v) = video_of_call.remove(&call) {
                             if let Some(h) = video_handles.remove(&v) {
                                 let _ = h.tx.send(video_call::ToVideo::Stop);
@@ -3478,6 +3498,29 @@ fn interactive(
                 Err(e) => {
                     println!("* address book not updated: {e}");
                     book_next = Some(t + 3_600);
+                }
+            }
+        }
+        // Function 43: viewers of windows shared over RDP.
+        while let Ok(r) = rdp_rx.try_recv() {
+            match r {
+                rdp_call::FromRdp::Ready(id, local) => {
+                    if let Some(call) = pending_rdp.remove(&id) {
+                        let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
+                        outputs.extend(engine.command(
+                            C::AcceptRdpShare {
+                                call,
+                                local,
+                                policy,
+                            },
+                            now(),
+                        ));
+                    }
+                }
+                rdp_call::FromRdp::Notice(id, n) => println!("* [window {id}] {n}"),
+                rdp_call::FromRdp::Ended(id, why) => {
+                    pending_rdp.remove(&id);
+                    println!("* [window {id}] {why}");
                 }
             }
         }
@@ -4027,6 +4070,25 @@ fn interactive(
                     }
                 },
                 "/view" => match arg.parse::<u32>().ok().or(current_call) {
+                    // Function 43 over RDP: a shared window (only RDP offered).
+                    Some(call) if rdp_offers.remove(&call) => {
+                        cues.stop_ring(call);
+                        let id = next_media;
+                        next_media = next_media.wrapping_add(1).max(1);
+                        rdp_handles.insert(
+                            call,
+                            rdp_call::spawn(
+                                id,
+                                local_ip,
+                                engine.own_aor().to_string(),
+                                rdp_tx.clone(),
+                                video_tx.clone(),
+                            ),
+                        );
+                        pending_rdp.insert(id, call);
+                        println!("* preparing to view the shared window …");
+                        None
+                    }
                     // Function 43: view a shared screen (receive-only video stream, no camera).
                     Some(call) => {
                         cues.stop_ring(call);

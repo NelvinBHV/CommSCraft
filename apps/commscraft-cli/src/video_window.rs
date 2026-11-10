@@ -55,6 +55,69 @@ fn write_unit(out: &mut impl Write, unit: &[u8]) -> std::io::Result<()> {
 /// The next access unit; `None` at the end of the pipe. A length above the decoder's limit ends the
 /// stream rather than allocating it.
 fn read_unit(input: &mut impl Read) -> std::io::Result<Option<Vec<u8>>> {
+    read_bounded(input, vf::MAX_ACCESS_UNIT)
+}
+
+/// The largest raw picture on the pipe: its size header and an I420 picture of the display's
+/// largest size.
+const MAX_RAW_UNIT: usize = 8 + (vf::MAX_WIDTH as usize * vf::MAX_HEIGHT as usize) * 3 / 2;
+
+/// A raw picture on the pipe (shared windows over RDP, function 43): width and height (big
+/// endian), then the I420 picture.
+pub fn raw_unit(p: &vf::Picture) -> Vec<u8> {
+    let mut unit = Vec::with_capacity(8 + p.data.len());
+    unit.extend_from_slice(&p.width.to_be_bytes());
+    unit.extend_from_slice(&p.height.to_be_bytes());
+    unit.extend_from_slice(&p.data);
+    unit
+}
+
+/// The picture of a raw unit, if its size and length agree.
+fn picture_of(unit: Vec<u8>) -> Option<vf::Picture> {
+    let width = u32::from_be_bytes(unit.get(..4)?.try_into().ok()?);
+    let height = u32::from_be_bytes(unit.get(4..8)?.try_into().ok()?);
+    if width > vf::MAX_WIDTH || height > vf::MAX_HEIGHT {
+        return None;
+    }
+    let data = unit.get(8..)?.to_vec();
+    (data.len() == vf::Picture::i420_len(width, height)).then_some(vf::Picture {
+        width,
+        height,
+        data,
+    })
+}
+
+/// The raw mode of the helper: pictures as they come, shown in a window.
+fn raw_main(title: &str) -> i32 {
+    let mut input = std::io::stdin().lock();
+    let mut window: Option<vf::Display> = None;
+    let mut size = (0, 0);
+    while let Ok(Some(unit)) = read_bounded(&mut input, MAX_RAW_UNIT) {
+        let Some(p) = picture_of(unit) else { continue };
+        if size != (p.width, p.height) {
+            println!("the shared window is {}x{}", p.width, p.height);
+            size = (p.width, p.height);
+            window = None;
+        }
+        if window.is_none() {
+            match vf::Display::open(title, p.width, p.height) {
+                Ok(w) => window = Some(w),
+                Err(e) => {
+                    println!("no window: {e:?}");
+                    return 2;
+                }
+            }
+        }
+        if let Some(w) = window.as_mut() {
+            if w.show(&p).is_err() {
+                window = None;
+            }
+        }
+    }
+    0
+}
+
+fn read_bounded(input: &mut impl Read, max: usize) -> std::io::Result<Option<Vec<u8>>> {
     let mut length = [0u8; 4];
     match input.read_exact(&mut length) {
         Ok(()) => {}
@@ -62,7 +125,7 @@ fn read_unit(input: &mut impl Read) -> std::io::Result<Option<Vec<u8>>> {
         Err(e) => return Err(e),
     }
     let length = u32::from_be_bytes(length) as usize;
-    if length > vf::MAX_ACCESS_UNIT {
+    if length > max {
         return Err(std::io::ErrorKind::InvalidData.into());
     }
     let mut unit = vec![0; length];
@@ -269,8 +332,12 @@ pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
         println!("video window: no system call filter ({})", clean_notice(&e));
     }
     let id = args.next().unwrap_or_default();
-    let mut surfaces = args.next().as_deref() == Some("gpu") && Window::in_wayland_session();
+    let mode = args.next();
     let title = format!("CommSCraft – call {}", clean_notice(&id));
+    if mode.as_deref() == Some("raw") {
+        return raw_main(&title);
+    }
+    let mut surfaces = mode.as_deref() == Some("gpu") && Window::in_wayland_session();
     let mut decoder = match vf::init().and_then(|()| vf::Decoder::with_hardware(surfaces)) {
         Ok(d) => d,
         Err(e) => {
@@ -381,12 +448,12 @@ fn gpu_wanted() -> bool {
         && std::env::var("COMMSCRAFT_VIDEO_DECODE").map_or(true, |v| v.trim() != "cpu")
 }
 
-fn start(id: u32, gpu: bool) -> std::io::Result<Child> {
+fn start(id: u32, mode: &str) -> std::io::Result<Child> {
     let mut command = Command::new(std::env::current_exe()?);
     command
         .arg(COMMAND)
         .arg(id.to_string())
-        .arg(if gpu { "gpu" } else { "cpu" })
+        .arg(mode)
         .env_clear()
         .current_dir("/")
         .stdin(Stdio::piped())
@@ -454,6 +521,26 @@ fn feed(
 /// CPU, and the peer is asked for a new picture; a helper still failing then ends the received video
 /// and nothing else.
 pub fn spawn(input: Receiver<Vec<u8>>, stop: Arc<AtomicBool>, events: Sender<FromVideo>, id: u32) {
+    spawn_mode(input, stop, events, id, false);
+}
+
+/// The same for raw pictures ([`raw_unit`]): a shared window over RDP (function 43).
+pub fn spawn_raw(
+    input: Receiver<Vec<u8>>,
+    stop: Arc<AtomicBool>,
+    events: Sender<FromVideo>,
+    id: u32,
+) {
+    spawn_mode(input, stop, events, id, true);
+}
+
+fn spawn_mode(
+    input: Receiver<Vec<u8>>,
+    stop: Arc<AtomicBool>,
+    events: Sender<FromVideo>,
+    id: u32,
+    raw: bool,
+) {
     std::thread::spawn(move || {
         let notice = |text: String| {
             let _ = events.send(FromVideo::Notice(id, text));
@@ -462,7 +549,12 @@ pub fn spawn(input: Receiver<Vec<u8>>, stop: Arc<AtomicBool>, events: Sender<Fro
         let mut input = Some(input);
         let mut restarts = 0;
         loop {
-            let mut child = match start(id, gpu) {
+            let mode = match (raw, gpu) {
+                (true, _) => "raw",
+                (false, true) => "gpu",
+                (false, false) => "cpu",
+            };
+            let mut child = match start(id, mode) {
                 Ok(c) => c,
                 Err(e) => {
                     notice(format!("no video window process: {e}"));
@@ -553,6 +645,15 @@ mod tests {
             read_unit(&mut [0u8, 0, 0, 9, 1].as_slice()).is_err(),
             "cut off"
         );
+        // Raw pictures: size and length must agree.
+        let p = vf::Picture::filled(16, 16, 1, 2, 3);
+        assert_eq!(picture_of(raw_unit(&p)), Some(p.clone()));
+        let mut short = raw_unit(&p);
+        short.pop();
+        assert_eq!(picture_of(short), None);
+        let mut huge = raw_unit(&p);
+        huge.splice(..4, 4000u32.to_be_bytes());
+        assert_eq!(picture_of(huge), None);
     }
 
     /// The sandbox (checked in a child process, since it cannot be undone): the user's files and TCP

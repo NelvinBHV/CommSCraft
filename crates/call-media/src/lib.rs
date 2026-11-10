@@ -694,6 +694,12 @@ impl CallMedia {
         }
     }
 
+    /// Application sharing: whether a path to the peer is there (ICE found one), so the first
+    /// RDP bytes can go out.
+    pub fn data_path_ready(&self) -> bool {
+        self.rtp_path().is_some()
+    }
+
     /// Application sharing: whether a lasting hole ended the received stream.
     pub fn data_broken(&self) -> bool {
         self.data.as_ref().is_some_and(media::data::Data::broken)
