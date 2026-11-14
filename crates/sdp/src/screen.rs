@@ -156,8 +156,8 @@ fn rdp_line(s: &Session) -> Option<&Media> {
 /// Our answer as RDP viewer to a sharer's offer without screen video (window sharing sends only
 /// RDP, `tested-in-lab`): `m=applicationsharing` over TCP with our ICE candidates (an active TCP
 /// host candidate) and key, role viewer and content flow recvonly (SD-81, CS-02), RTCP on the
-/// same port (`a=rtcp-mux`, as offered). No `a=setup`: with the offer's fingerprint it would
-/// choose DTLS-SRTP ([RFC5763] §5), we take the SDES key; the TCP connection comes from ICE.
+/// same port (`a=rtcp-mux`, as offered); the SDES key, no fingerprint (so no DTLS-SRTP even
+/// with `a=setup`, [RFC5763] §5); the TCP connection comes from ICE.
 /// As the Windows viewer answers (`tested-in-lab`): `TCP/RTP/SAVP` when encrypted, the offered
 /// `a=extmap` lines and `a=x-bwealgorithm:packetpair` taken over. Every other line is rejected
 /// with port 0.
@@ -217,11 +217,18 @@ pub fn answer_rdp(
         m.proto.as_str()
     };
     let mut section = format!("m=applicationsharing {} {proto} 127\r\n", local.rtp_port);
-    transport_attributes(local, &mut section);
+    // RTCP shares the connection (`a=rtcp-mux`): candidates of component 1 only, no `a=rtcp`,
+    // as the Windows viewer answers (`tested-in-lab`).
+    let mut one = local.clone();
+    if let Some(ice) = one.ice.as_mut() {
+        ice.candidates.retain(|c| c.component == 1);
+    }
+    transport_attributes(&one, &mut section);
     if let Some(k) = &my_key {
         section.push_str(&format!("a=crypto:{}\r\n", k.attribute()));
     }
-    section.push_str(&format!("a=rtcp:{}\r\n", local.rtp_port));
+    // The Windows viewer's setup and connection attributes (without a fingerprint: no DTLS).
+    section.push_str("a=setup:active\r\na=connection:existing\r\n");
     if let Some(mid) = mid {
         section.push_str(&format!("a=mid:{mid}\r\n"));
     }

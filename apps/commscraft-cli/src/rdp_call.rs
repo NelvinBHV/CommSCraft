@@ -123,10 +123,13 @@ fn run(
     let mut dirty = false;
     let mut last_picture = 0u64;
     let mut selected = false;
+    let mut final_answer = false;
     let why = 'session: loop {
         match rx.try_recv() {
             Ok(ToRdp::Stop) | Err(mpsc::TryRecvError::Disconnected) => break "stopped".into(),
-            Ok(ToRdp::Start { .. }) | Err(mpsc::TryRecvError::Empty) => {}
+            // The sharer's final offer (re-INVITE after ICE) was answered.
+            Ok(ToRdp::Start { .. }) => final_answer = true,
+            Err(mpsc::TryRecvError::Empty) => {}
         }
         let now = now_ms();
         for e in media.poll(now) {
@@ -161,9 +164,9 @@ fn run(
         if media.data_broken() {
             break "data lost (MS-RTASPF: the stream ends at a loss)".into();
         }
-        // The first RDP bytes once ICE selected the path and the peer's first RTCP came in,
-        // as the Windows viewer does it (`tested-in-lab`).
-        if first.is_some() && selected && media.data_peer_heard() {
+        // The first RDP bytes once ICE selected the path, the peer's first RTCP came in (as the
+        // Windows viewer does it, `tested-in-lab`) and the final offer was answered (design).
+        if first.is_some() && selected && media.data_peer_heard() && final_answer {
             if let Some(b) = first.take() {
                 media.send_data(&b, now);
             }

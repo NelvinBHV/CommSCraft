@@ -727,6 +727,9 @@ a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x
     if let Some(ice) = local.ice.as_mut() {
         ice.candidates[0].transport = Transport::TcpActive;
         ice.candidates[0].port = 9;
+        let mut rtcp = ice.candidates[0].clone();
+        rtcp.component = 2;
+        ice.candidates.push(rtcp);
     }
     let (a, n) = screen::answer_rdp(
         offer.as_bytes(),
@@ -744,7 +747,15 @@ a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x
     assert!(a.contains("a=x-applicationsharing-role:viewer\r\n"));
     assert!(a.contains("a=x-applicationsharing-contentflow:recvonly\r\n"));
     assert!(a.contains("a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role"));
-    assert!(!a.contains("a=setup") && a.contains("a=rtcp-mux\r\n"));
+    assert!(
+        a.contains("a=setup:active\r\na=connection:existing\r\n") && a.contains("a=rtcp-mux\r\n")
+    );
+    // RTCP on the same connection: no `a=rtcp`, candidates of component 1 only.
+    assert!(!a.contains("a=rtcp:"));
+    assert!(a
+        .lines()
+        .filter(|l| l.starts_with("a=candidate:"))
+        .all(|l| l.split(' ').nth(1) == Some("1")));
     parse(a.as_bytes()).unwrap();
     assert_eq!(n.remote_rtp.1, 13635);
     // The send time extension is taken over with its ID, the other one is not.
