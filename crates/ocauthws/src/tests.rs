@@ -87,6 +87,18 @@ mod webticket_tests {
     use crate::webticket::*;
     use commscraft_xml::Limits;
 
+    /// Security: `Debug` of a ticket never shows the assertion, only its length.
+    #[test]
+    fn debug_hides_the_assertion() {
+        let t = WebTicket {
+            assertion: "<saml:Assertion>SECRET</saml:Assertion>".into(),
+            expires: Some(7),
+        };
+        let shown = format!("{t:?} {t:#?}");
+        assert!(!shown.contains("SECRET") && !shown.contains("saml"));
+        assert!(shown.contains("39 bytes redacted") && shown.contains("Some(7)"));
+    }
+
     /// [MS-OCAUTHWS] §4.2.2 (pp. 62–64), shortened (signature and key info cut).
     const ANSWER: &str = r#"<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
   <s:Body>

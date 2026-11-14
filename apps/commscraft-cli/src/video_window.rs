@@ -13,6 +13,11 @@
 //! filter ([`syscall_filter`]) then takes away what a taken-over decoder could still use: starting
 //! programs, network sockets, debugging other processes, kernel interfaces. What it reports is
 //! treated as untrusted: bounded, printable, limited in number.
+//!
+//! Fail closed (issue #144): without the system call filter or without Landlock the helper
+//! decodes nothing ([`confinement`]); a Landlock the kernel knows only in part is reported and
+//! taken. `COMMSCRAFT_VIDEO_UNCONFINED=1` in the client's environment allows decoding without
+//! them anyway, by the user's explicit choice.
 
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::fd::AsFd;
@@ -43,6 +48,10 @@ const MAX_NOTICE: usize = 200;
 const MAX_NOTICES: usize = 16;
 /// Starts of the helper after it failed: the first again on the CPU.
 const MAX_RESTARTS: u32 = 2;
+/// The helper's exit code when it refuses to decode without its confinement (not restarted).
+const EXIT_UNCONFINED: i32 = 3;
+/// The variable by which the user allows decoding without confinement.
+const UNCONFINED: &str = "COMMSCRAFT_VIDEO_UNCONFINED";
 
 /// One access unit on the pipe: its length, then its bytes.
 fn write_unit(out: &mut impl Write, unit: &[u8]) -> std::io::Result<()> {
@@ -437,18 +446,56 @@ pub fn syscall_filter() -> Result<(), String> {
     seccompiler::apply_filter_all_threads(&program).map_err(|e| e.to_string())
 }
 
+/// Whether the helper may decode with the confinement it got (issue #144): the messages to
+/// report, or why it refuses. The system call filter and Landlock are both required; a partial
+/// Landlock is taken; `allow_unconfined` (the user's explicit choice) takes anything.
+fn confinement(
+    landlock: Result<Sandbox, String>,
+    filter: Result<(), String>,
+    allow_unconfined: bool,
+) -> Result<Vec<String>, String> {
+    let mut notes = Vec::new();
+    let mut missing = Vec::new();
+    match landlock {
+        Ok(Sandbox::Full) => {}
+        Ok(Sandbox::Partial) => notes.push("video window: sandbox only partly available".into()),
+        Ok(Sandbox::None) => missing.push("no sandbox (kernel without Landlock)".to_string()),
+        Err(e) => missing.push(format!("no sandbox ({})", clean_notice(&e))),
+    }
+    if let Err(e) = filter {
+        missing.push(format!("no system call filter ({})", clean_notice(&e)));
+    }
+    if missing.is_empty() {
+        return Ok(notes);
+    }
+    if allow_unconfined {
+        notes.extend(
+            missing
+                .into_iter()
+                .map(|m| format!("video window: {m}, decoding anyway ({UNCONFINED})")),
+        );
+        return Ok(notes);
+    }
+    Err(format!(
+        "video window: {}; received video is not decoded unconfined (set {UNCONFINED}=1 to allow it)",
+        missing.join(", ")
+    ))
+}
+
 /// The helper process. Messages for the user go to standard output, one per line.
 pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
-    // Before any received video is read. A sandbox that cannot be set up is reported; the helper
-    // still runs, as it did before the sandbox existed (design: the call matters more).
-    match sandbox() {
-        Ok(Sandbox::Full) => {}
-        Ok(Sandbox::Partial) => println!("video window: sandbox only partly available"),
-        Ok(Sandbox::None) => println!("video window: no sandbox (kernel without Landlock)"),
-        Err(e) => println!("video window: no sandbox ({e})"),
-    }
-    if let Err(e) = syscall_filter() {
-        println!("video window: no system call filter ({})", clean_notice(&e));
+    // Before any received video is read (issue #144: fail closed).
+    let allow = std::env::var(UNCONFINED).is_ok_and(|v| v.trim() == "1");
+    match confinement(
+        sandbox().map_err(|e| e.to_string()),
+        syscall_filter(),
+        allow,
+    ) {
+        Ok(notes) => notes.iter().for_each(|n| println!("{n}")),
+        Err(refusal) => {
+            println!("{refusal}");
+            return EXIT_UNCONFINED;
+        }
     }
     let id = args.next().unwrap_or_default();
     let mode = args.next();
@@ -577,7 +624,7 @@ fn start(id: u32, mode: &str) -> std::io::Result<Child> {
         .current_dir("/")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped());
-    for name in ENVIRONMENT {
+    for name in ENVIRONMENT.iter().chain(std::iter::once(&UNCONFINED)) {
         if let Some(value) = std::env::var_os(name) {
             command.env(name, value);
         }
@@ -706,6 +753,11 @@ fn spawn_mode(
             if ended || stop.load(Ordering::Relaxed) || status.is_some_and(|s| s.success()) {
                 return;
             }
+            // It refused to decode without its confinement: starting it again would not help.
+            if status.and_then(|s| s.code()) == Some(EXIT_UNCONFINED) {
+                notice("no received video: the video window cannot be confined".into());
+                return;
+            }
             restarts += 1;
             if restarts > MAX_RESTARTS {
                 notice("the video window keeps failing: no more received video".into());
@@ -786,6 +838,30 @@ mod tests {
         let p = i420_of_bgrx(801, 601, &px, 1920, 1088).unwrap();
         assert_eq!((p.width, p.height), (800, 600));
         assert!(i420_of_bgrx(8, 8, &[0; 256], 1920, 1088).is_none());
+    }
+
+    /// Issue #144: without the system call filter or Landlock nothing is decoded unless the user
+    /// allows it; a partial Landlock is taken with a note.
+    #[test]
+    fn confinement_fails_closed() {
+        let ok = || Ok(());
+        let no_filter = || Err("EINVAL".to_string());
+        assert_eq!(confinement(Ok(Sandbox::Full), ok(), false), Ok(vec![]));
+        assert_eq!(
+            confinement(Ok(Sandbox::Partial), ok(), false).map(|n| n.len()),
+            Ok(1)
+        );
+        assert!(confinement(Ok(Sandbox::Full), no_filter(), false).is_err());
+        assert!(confinement(Ok(Sandbox::None), ok(), false).is_err());
+        assert!(confinement(Err("ENOSYS".into()), ok(), false).is_err());
+        let refusal = confinement(Ok(Sandbox::None), no_filter(), false).unwrap_err();
+        assert!(refusal.contains("Landlock") && refusal.contains("system call filter"));
+        assert!(refusal.contains(UNCONFINED));
+        // Allowed by the user: decoded, with both gaps reported.
+        assert_eq!(
+            confinement(Ok(Sandbox::None), no_filter(), true).map(|n| n.len()),
+            Ok(2)
+        );
     }
 
     /// What goes over the pipe; hostile lengths are refused before allocating.

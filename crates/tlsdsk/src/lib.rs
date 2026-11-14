@@ -85,8 +85,8 @@ impl Request {
     /// Generates the key pair and the PKCS#10 request.
     pub fn generate(entity: &str) -> Result<Request, Error> {
         use rsa::pkcs8::{EncodePrivateKey, EncodePublicKey};
-        let mut rng = rand_core::OsRng;
-        let key = rsa::RsaPrivateKey::new(&mut rng, KEY_BITS).map_err(|_| Error::KeyGeneration)?;
+        let mut rng = getrandom::SysRng;
+        let key = rsa::PrivateKey::new(&mut rng, KEY_BITS).map_err(|_| Error::KeyGeneration)?;
         let key_pkcs8 = Zeroizing::new(
             key.to_pkcs8_der()
                 .map_err(|_| Error::Encoding)?

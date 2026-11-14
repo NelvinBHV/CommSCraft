@@ -6,7 +6,11 @@
 //! IronRDP's PDU types: X.224 Connection Request with standard RDP security, MCS Connect
 //! Initial, Erect Domain, Attach User, Channel Join, Client Info, licensing (expected to end at
 //! once), Demand/Confirm Active and the finalization. After that IronRDP's active stage decodes
-//! the screen updates into an RGBA image.
+//! the screen updates into an RGBA image. The Windows sharer draws through the graphics
+//! pipeline ([MS-RDPEGFX]) on the dynamic channels (`drdynvc`), not with bitmap updates
+//! (`tested-in-lab`): we ask for `drdynvc` as the Windows viewer does and offer the pipeline's
+//! capability sets without AVC (H.264), so RemoteFX, planar and ClearCodec are decoded in
+//! IronRDP's Rust code.
 //!
 //! What MS-RTASPF 20250520 requires: encryption level "None" (§1.5, p. 7), no bulk compression
 //! between viewer and the sharer's side (§1.5), and no Security Exchange PDU (§3.1.5, p. 9) – so
@@ -708,7 +712,7 @@ impl Viewer {
 }
 
 /// The Confirm Active PDU's capability sets ([MS-RDPBCGR] §2.2.1.13.2): no orders, no caches,
-/// no bulk compression – bitmap updates only, which IronRDP decodes.
+/// no bulk compression; the screen comes through the graphics pipeline (or bitmap updates).
 fn confirm_active(width: u16, height: u16) -> ClientConfirmActive {
     ClientConfirmActive {
         originator_id: SERVER_CHANNEL_ID,

@@ -60,6 +60,38 @@ fn clean(s: &str, max: usize) -> String {
 }
 
 impl Conversation {
+    /// Adds a line while the conversation is open, with the limits of the saved entry applied
+    /// in memory too: the text and sender are cut to their bounds and only the newest
+    /// [`MAX_LINES`] lines are kept, so a peer sending without end cannot make the transcript
+    /// grow without end (security by design).
+    pub fn add_line(&mut self, line: Line) {
+        if self.lines.len() >= MAX_LINES {
+            let excess = self.lines.len() + 1 - MAX_LINES;
+            self.lines.drain(..excess);
+        }
+        self.lines.push(Line {
+            time: line.time,
+            sender: line.sender.chars().take(256).collect(),
+            text: line.text.chars().take(MAX_LINE).collect(),
+        });
+    }
+
+    /// Adds a participant once (by address, case-insensitive), at most [`MAX_PARTICIPANTS`].
+    pub fn add_participant(&mut self, p: Participant) {
+        if self.participants.len() >= MAX_PARTICIPANTS
+            || self
+                .participants
+                .iter()
+                .any(|q| q.address.eq_ignore_ascii_case(&p.address))
+        {
+            return;
+        }
+        self.participants.push(Participant {
+            name: p.name.chars().take(256).collect(),
+            address: p.address.chars().take(256).collect(),
+        });
+    }
+
     /// The subject: the topic, which the Windows client takes from the first message (OB-22:
     /// `Subject` = topic; the first message – inference).
     pub fn subject(&self) -> String {
