@@ -190,12 +190,14 @@ impl Data {
     }
 
     /// A received RTCP/SRTCP packet: only noted when it is authentic (its content is not used).
-    pub fn on_rtcp(&mut self, packet: &[u8]) {
+    /// Returns whether it was.
+    pub fn on_rtcp(&mut self, packet: &[u8]) -> bool {
         let ok = match self.rx_srtp.as_mut() {
             Some(c) => c.unprotect_rtcp(packet).is_ok(),
             None => rtp::parse_rtcp(packet).is_ok(),
         };
         self.peer_heard |= ok;
+        ok
     }
 
     /// Whether the peer's RTCP came in: the Windows viewer starts RDP only after the first

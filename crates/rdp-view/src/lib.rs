@@ -20,6 +20,12 @@
 //! screen size is bounded ([`MAX_SIDE`]).
 
 use ironrdp_core::{decode, encode_vec, impl_as_any};
+use ironrdp_dvc::DrdynvcClient;
+use ironrdp_egfx::client::{GraphicsPipelineClient, GraphicsPipelineHandler};
+use ironrdp_egfx::pdu::{
+    CapabilitiesV103Flags, CapabilitiesV104Flags, CapabilitiesV107Flags, CapabilitiesV10Flags,
+    CapabilitiesV8Flags, CapabilitySet as EgfxCapabilitySet,
+};
 use ironrdp_graphics::image_processing::PixelFormat;
 use ironrdp_pdu::gcc::{
     ChannelDef, ChannelName, ChannelOptions, ClientCoreData, ClientCoreOptionalData,
@@ -122,6 +128,45 @@ impl SvcProcessor for Encomsp {
 
 impl SvcClientProcessor for Encomsp {}
 
+/// The static channels we ask for: `drdynvc` and `encomsp`.
+const STATIC_CHANNELS: usize = 2;
+
+/// The graphics pipeline's handler: the capability sets without H.264 (AVC), whose decoder
+/// runs only in the sandboxed window process; RemoteFX, planar and ClearCodec are decoded in
+/// IronRDP's Rust code. Version 10.1 is left out (it has no flag to switch AVC off), 8.1 too.
+struct Gfx;
+
+impl GraphicsPipelineHandler for Gfx {
+    fn capabilities(&self) -> Vec<EgfxCapabilitySet> {
+        vec![
+            EgfxCapabilitySet::V10_7 {
+                flags: CapabilitiesV107Flags::SMALL_CACHE | CapabilitiesV107Flags::AVC_DISABLED,
+            },
+            EgfxCapabilitySet::V10_6 {
+                flags: CapabilitiesV104Flags::SMALL_CACHE | CapabilitiesV104Flags::AVC_DISABLED,
+            },
+            EgfxCapabilitySet::V10_5 {
+                flags: CapabilitiesV104Flags::SMALL_CACHE | CapabilitiesV104Flags::AVC_DISABLED,
+            },
+            EgfxCapabilitySet::V10_4 {
+                flags: CapabilitiesV104Flags::SMALL_CACHE | CapabilitiesV104Flags::AVC_DISABLED,
+            },
+            EgfxCapabilitySet::V10_3 {
+                flags: CapabilitiesV103Flags::AVC_DISABLED,
+            },
+            EgfxCapabilitySet::V10_2 {
+                flags: CapabilitiesV10Flags::SMALL_CACHE | CapabilitiesV10Flags::AVC_DISABLED,
+            },
+            EgfxCapabilitySet::V10 {
+                flags: CapabilitiesV10Flags::SMALL_CACHE | CapabilitiesV10Flags::AVC_DISABLED,
+            },
+            EgfxCapabilitySet::V8 {
+                flags: CapabilitiesV8Flags::SMALL_CACHE,
+            },
+        ]
+    }
+}
+
 enum State {
     WaitConfirm,
     WaitConnectResponse,
@@ -140,7 +185,9 @@ pub struct Viewer {
     buffer: Vec<u8>,
     io_channel: u16,
     user_channel: u16,
-    encomsp_channel: Option<u16>,
+    /// The static channels' IDs from the server, in the order we asked for them
+    /// ([`STATIC_CHANNELS`]).
+    static_channels: Vec<u16>,
     image: Option<DecodedImage>,
 }
 
@@ -190,7 +237,7 @@ impl Viewer {
                 buffer: Vec::new(),
                 io_channel: 0,
                 user_channel: 0,
-                encomsp_channel: None,
+                static_channels: Vec::new(),
                 image: None,
             },
             bytes,
@@ -296,7 +343,13 @@ impl Viewer {
                     return Err(Error::Refused("RDP encryption required".into()));
                 }
                 self.io_channel = blocks.network.io_channel;
-                self.encomsp_channel = blocks.network.channel_ids.first().copied();
+                self.static_channels = blocks
+                    .network
+                    .channel_ids
+                    .iter()
+                    .copied()
+                    .take(STATIC_CHANNELS)
+                    .collect();
                 out.push(Event::Send(x224(mcs::ErectDomainPdu {
                     sub_height: 0,
                     sub_interval: 0,
@@ -310,7 +363,7 @@ impl Viewer {
                     .0;
                 self.user_channel = confirm.initiator_id;
                 let mut remaining = vec![self.user_channel, self.io_channel];
-                remaining.extend(self.encomsp_channel);
+                remaining.extend(self.static_channels.iter().copied());
                 for &channel_id in &remaining {
                     out.push(Event::Send(x224(mcs::ChannelJoinRequest {
                         initiator_id: self.user_channel,
@@ -394,7 +447,8 @@ impl Viewer {
                     ),
                     early_capability_flags: Some(
                         ClientEarlyCapabilityFlags::SUPPORT_ERR_INFO_PDU
-                            | ClientEarlyCapabilityFlags::WANT_32_BPP_SESSION,
+                            | ClientEarlyCapabilityFlags::WANT_32_BPP_SESSION
+                            | ClientEarlyCapabilityFlags::SUPPORT_DYN_VC_GFX_PROTOCOL,
                     ),
                     dig_product_id: Some(String::new()),
                     connection_type: Some(ConnectionType::NotUsed),
@@ -410,11 +464,21 @@ impl Viewer {
                 encryption_methods: EncryptionMethod::empty(),
                 ext_encryption_methods: 0,
             },
+            // As the Windows viewer asks for them (`tested-in-lab`): the dynamic channels, which
+            // carry the graphics pipeline the sharer draws with, then the multiparty channel.
             network: Some(ClientNetworkData {
-                channels: vec![ChannelDef {
-                    name: ChannelName::from_static(b"encomsp\0"),
-                    options: ChannelOptions::INITIALIZED,
-                }],
+                channels: vec![
+                    ChannelDef {
+                        name: ChannelName::from_static(b"drdynvc\0"),
+                        options: ChannelOptions::INITIALIZED
+                            | ChannelOptions::ENCRYPT_RDP
+                            | ChannelOptions::COMPRESS_RDP,
+                    },
+                    ChannelDef {
+                        name: ChannelName::from_static(b"encomsp\0"),
+                        options: ChannelOptions::INITIALIZED,
+                    },
+                ],
             }),
             cluster: None,
             monitor: None,
@@ -575,8 +639,13 @@ impl Viewer {
             return Ok(State::WaitFinalization { share_id, font_map });
         }
         let mut channels = StaticChannelSet::new();
+        let gfx = GraphicsPipelineClient::new(Box::new(Gfx), None);
+        channels.insert(DrdynvcClient::new().with_dynamic_channel(gfx));
         channels.insert(Encomsp::default());
-        if let Some(id) = self.encomsp_channel {
+        if let Some(&id) = self.static_channels.first() {
+            channels.attach_channel_id(std::any::TypeId::of::<DrdynvcClient>(), id);
+        }
+        if let Some(&id) = self.static_channels.get(1) {
             channels.attach_channel_id(std::any::TypeId::of::<Encomsp>(), id);
         }
         let stage = ActiveStageBuilder {

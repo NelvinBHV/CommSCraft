@@ -218,17 +218,46 @@ pub fn answer_rdp(
     };
     let mut section = format!("m=applicationsharing {} {proto} 127\r\n", local.rtp_port);
     // RTCP shares the connection (`a=rtcp-mux`): candidates of component 1 only, no `a=rtcp`,
-    // as the Windows viewer answers (`tested-in-lab`).
+    // as the Windows viewer answers (`tested-in-lab`). Only the passive TCP candidate when
+    // there is one: the Windows sharer connects to it, and it takes the first remote candidate
+    // it can use as the only source of the RTP it accepts – with our active candidate (port 9)
+    // listed, it bound its receiver to that port and dropped all our RTP (`tested-in-lab`).
     let mut one = local.clone();
+    // The sharer's final offer after ICE names our candidate in `a=remote-candidates`; the
+    // Windows viewer then answers with the sharer's candidate as its remote candidate for both
+    // components and `a=setup:passive`, and only with that answer the sharer's transport
+    // becomes connected and its receiver takes RTP (`tested-in-lab`).
+    let final_offer = m.attr("remote-candidates").is_some();
+    if final_offer {
+        let theirs = ice_of(m).and_then(|i| {
+            i.candidates
+                .into_iter()
+                .find(|c| c.component == 1)
+                .map(|c| std::net::SocketAddr::new(c.address, c.port))
+        });
+        one.remote_candidates = theirs.map(|a| vec![(1, a), (2, a)]).unwrap_or_default();
+    }
     if let Some(ice) = one.ice.as_mut() {
         ice.candidates.retain(|c| c.component == 1);
+        if ice
+            .candidates
+            .iter()
+            .any(|c| c.transport == crate::Transport::TcpPassive)
+        {
+            ice.candidates
+                .retain(|c| c.transport == crate::Transport::TcpPassive);
+        }
     }
     transport_attributes(&one, &mut section);
     if let Some(k) = &my_key {
         section.push_str(&format!("a=crypto:{}\r\n", k.attribute()));
     }
     // The Windows viewer's setup and connection attributes (without a fingerprint: no DTLS).
-    section.push_str("a=setup:active\r\na=connection:existing\r\n");
+    section.push_str(if final_offer {
+        "a=setup:passive\r\na=connection:existing\r\n"
+    } else {
+        "a=setup:active\r\na=connection:existing\r\n"
+    });
     if let Some(mid) = mid {
         section.push_str(&format!("a=mid:{mid}\r\n"));
     }

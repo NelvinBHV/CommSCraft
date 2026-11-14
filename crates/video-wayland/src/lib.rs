@@ -146,7 +146,30 @@ pub struct Window {
     /// Buffers by key, for the size they were made for.
     buffers: HashMap<u64, wl_buffer::WlBuffer>,
     size: (u32, u32),
+    /// Shared memory for pictures from memory ([`Window::show_pixels`]) and their next key.
+    shm: Option<wl_shm::WlShm>,
+    next_pixels_key: u64,
 }
+
+/// A picture from memory while the compositor reads it: buffer, pool and memfd go together and
+/// are destroyed when the compositor releases the buffer.
+struct PixelsBuffer {
+    buffer: wl_buffer::WlBuffer,
+    pool: wl_shm_pool::WlShmPool,
+    _file: std::fs::File,
+}
+
+impl Drop for PixelsBuffer {
+    fn drop(&mut self) {
+        self.buffer.destroy();
+        self.pool.destroy();
+    }
+}
+
+/// Keys of pictures from memory: apart from the inodes that key GPU buffers.
+const PIXELS_KEY_BASE: u64 = 1 << 62;
+/// Largest side of a picture from memory (design: the shared screens of window sharing).
+pub const MAX_PIXELS_SIDE: u32 = 8192;
 
 fn connection_error(e: impl std::fmt::Display) -> Error {
     Error::Connection(e.to_string())
@@ -187,6 +210,7 @@ impl Window {
                 d
             });
         let seat: Option<wl_seat::WlSeat> = globals.bind(&qh, 1..=5, ()).ok();
+        let shm: Option<wl_shm::WlShm> = globals.bind(&qh, 1..=1, ()).ok();
         let bar = Bar::new(&globals, &compositor, &surface, &qh);
         surface.commit();
         let mut state = State {
@@ -227,7 +251,68 @@ impl Window {
             _decoration: decoration,
             buffers: HashMap::new(),
             size: (0, 0),
+            shm,
+            next_pixels_key: PIXELS_KEY_BASE,
         })
+    }
+
+    /// Shows a picture from memory: `xrgb` holds `height` rows of `width` pixels in XRGB8888
+    /// (little-endian: blue, green, red, unused), written into a memfd with ordinary writes and
+    /// handed to the compositor through `wl_shm` (shared screens over RDP, function 43).
+    /// `Ok(false)`: the compositor is behind, the picture was skipped.
+    pub fn show_pixels(&mut self, width: u32, height: u32, xrgb: &[u8]) -> Result<bool, Error> {
+        self.pump()?;
+        let stride = width.checked_mul(4).ok_or(Error::Unsupported)?;
+        let len = (stride as usize)
+            .checked_mul(height as usize)
+            .ok_or(Error::Unsupported)?;
+        if width == 0
+            || height == 0
+            || width > MAX_PIXELS_SIDE
+            || height > MAX_PIXELS_SIDE
+            || xrgb.len() != len
+        {
+            return Err(Error::Unsupported);
+        }
+        if self.state.in_flight.len() >= MAX_IN_FLIGHT {
+            return Ok(false);
+        }
+        let shm = self.shm.as_ref().ok_or(Error::Unsupported)?;
+        let size = i32::try_from(len).map_err(|_| Error::Unsupported)?;
+        let (w, h, s) = (
+            i32::try_from(width).map_err(|_| Error::Unsupported)?,
+            i32::try_from(height).map_err(|_| Error::Unsupported)?,
+            i32::try_from(stride).map_err(|_| Error::Unsupported)?,
+        );
+        let fd = rustix::fs::memfd_create("commscraft-picture", rustix::fs::MemfdFlags::CLOEXEC)
+            .map_err(connection_error)?;
+        let mut file = std::fs::File::from(fd);
+        file.write_all(xrgb).map_err(connection_error)?;
+        let qh = self.queue.handle();
+        let key = self.next_pixels_key;
+        self.next_pixels_key = self.next_pixels_key.wrapping_add(1).max(PIXELS_KEY_BASE);
+        let pool = shm.create_pool(file.as_fd(), size, &qh, ());
+        let buffer = pool.create_buffer(0, w, h, s, wl_shm::Format::Xrgb8888, &qh, key);
+        if let Some(bar) = self.bar.as_mut().filter(|_| !self.state.server_side) {
+            if bar.width != width && bar.draw(width, &qh).is_ok() {
+                self.state.bar_width = width;
+                self.xdg_surface
+                    .set_window_geometry(0, -(BAR as i32), w, h + BAR as i32);
+            }
+        }
+        self.surface.attach(Some(&buffer), 0, 0);
+        self.surface.damage_buffer(0, 0, w, h);
+        self.surface.commit();
+        self.state.in_flight.insert(
+            key,
+            Box::new(PixelsBuffer {
+                buffer,
+                pool,
+                _file: file,
+            }),
+        );
+        self.pump()?;
+        Ok(true)
     }
 
     /// Handles what the compositor sent, without waiting.

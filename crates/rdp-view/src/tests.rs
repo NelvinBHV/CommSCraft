@@ -8,7 +8,8 @@ use ironrdp_pdu::rdp::capability_sets::ServerDemandActive;
 use ironrdp_pdu::rdp::headers::{ShareControlHeader, ShareDataHeader, StreamPriority};
 
 const IO: u16 = 1003;
-const ENC: u16 = 1004;
+const DVC: u16 = 1004;
+const ENC: u16 = 1005;
 const USER: u16 = 1007;
 const SHARE: u32 = 0x0001_03ea;
 
@@ -58,7 +59,7 @@ fn connect_response(encryption: EncryptionMethod) -> Vec<u8> {
             optional_data: ServerCoreOptionalData::default(),
         },
         network: ServerNetworkData {
-            channel_ids: vec![ENC],
+            channel_ids: vec![DVC, ENC],
             io_channel: IO,
         },
         security: if encryption.is_empty() {
@@ -111,7 +112,10 @@ fn until_demand_active() -> Viewer {
     let blocks = initial.conference_create_request.gcc_blocks();
     assert!(blocks.security.encryption_methods.is_empty());
     let channels = &blocks.network.as_ref().unwrap().channels;
-    assert_eq!(channels[0].name.as_str(), Some("encomsp"));
+    assert_eq!(channels[0].name.as_str(), Some("drdynvc"));
+    assert_eq!(channels[1].name.as_str(), Some("encomsp"));
+    let early = blocks.core.optional_data.early_capability_flags.unwrap();
+    assert!(early.contains(ClientEarlyCapabilityFlags::SUPPORT_DYN_VC_GFX_PROTOCOL));
     let out = v
         .on_bytes(&connect_response(EncryptionMethod::empty()))
         .unwrap();
@@ -122,10 +126,14 @@ fn until_demand_active() -> Viewer {
     })
     .unwrap();
     let out = v.on_bytes(&attach).unwrap();
-    assert_eq!(sends(&out).len(), 3, "user, I/O and encomsp channel");
+    assert_eq!(
+        sends(&out).len(),
+        4,
+        "user, I/O, drdynvc and encomsp channel"
+    );
     // The three confirms in one go, split across calls in the middle of a PDU.
     let mut joins = Vec::new();
-    for c in [USER, IO, ENC] {
+    for c in [USER, IO, DVC, ENC] {
         joins.extend(
             x224(mcs::ChannelJoinConfirm {
                 result: 0,

@@ -14,7 +14,6 @@ use std::time::Duration;
 use commscraft_call_media::{self as cm, CallMedia};
 use commscraft_rdp_view as rv;
 use commscraft_sdp as sdp;
-use commscraft_video_ffmpeg as vf;
 
 use crate::video_call::FromVideo;
 
@@ -175,12 +174,12 @@ fn run(
             break "the shared window did not start".into();
         }
         if dirty && now.saturating_sub(last_picture) >= 1000 / MAX_FPS {
-            if let Some(p) = viewer
+            if let Some((w, h, px)) = viewer
                 .image()
-                .and_then(|(w, h, rgba)| to_picture(w, h, rgba, vf::MAX_WIDTH, vf::MAX_HEIGHT))
+                .and_then(|(w, h, rgba)| crate::video_window::scaled_bgrx(w, h, rgba))
             {
                 // A full queue: this picture is dropped, a newer one follows.
-                let _ = pictures.try_send(crate::video_window::raw_unit(&p));
+                let _ = pictures.try_send(crate::video_window::raw_unit(w, h, &px));
             }
             dirty = false;
             last_picture = now;
@@ -190,97 +189,4 @@ fn run(
     stop.store(true, Ordering::Relaxed);
     media.stop(now_ms());
     why
-}
-
-/// The RGBA screen as an I420 picture no larger than `max_w × max_h` (aspect kept, nearest
-/// sampling, even sides); BT.601 limited range, chroma from each 2×2 block's top left pixel.
-/// `None` for a size the window cannot show or data that does not fit the size.
-pub fn to_picture(w: u16, h: u16, rgba: &[u8], max_w: u32, max_h: u32) -> Option<vf::Picture> {
-    let (w, h) = (u32::from(w), u32::from(h));
-    if w == 0 || h == 0 || rgba.len() != (w as usize) * (h as usize) * 4 {
-        return None;
-    }
-    let (mut ow, mut oh) = (w, h);
-    if ow > max_w {
-        oh = (u64::from(oh) * u64::from(max_w) / u64::from(ow)) as u32;
-        ow = max_w;
-    }
-    if oh > max_h {
-        ow = (u64::from(ow) * u64::from(max_h) / u64::from(oh)) as u32;
-        oh = max_h;
-    }
-    let (ow, oh) = (ow & !1, oh & !1);
-    if ow < 16 || oh < 16 {
-        return None;
-    }
-    let pixel = |x: u32, y: u32| -> (i32, i32, i32) {
-        let sx = (u64::from(x) * u64::from(w) / u64::from(ow)) as usize;
-        let sy = (u64::from(y) * u64::from(h) / u64::from(oh)) as usize;
-        let i = (sy * w as usize + sx) * 4;
-        match rgba.get(i..i + 3) {
-            Some([r, g, b]) => (i32::from(*r), i32::from(*g), i32::from(*b)),
-            _ => (0, 0, 0),
-        }
-    };
-    let clamp = |v: i32| v.clamp(0, 255) as u8;
-    let (uw, uh) = (ow / 2, oh / 2);
-    let mut data = Vec::with_capacity(vf::Picture::i420_len(ow, oh));
-    for y in 0..oh {
-        for x in 0..ow {
-            let (r, g, b) = pixel(x, y);
-            data.push(clamp(((66 * r + 129 * g + 25 * b + 128) >> 8) + 16));
-        }
-    }
-    let mut v_plane = Vec::with_capacity((uw * uh) as usize);
-    for y in 0..uh {
-        for x in 0..uw {
-            let (r, g, b) = pixel(x * 2, y * 2);
-            data.push(clamp(((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128));
-            v_plane.push(clamp(((112 * r - 94 * g - 18 * b + 128) >> 8) + 128));
-        }
-    }
-    data.extend(v_plane);
-    Some(vf::Picture {
-        width: ow,
-        height: oh,
-        data,
-    })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    /// Sizes: kept when they fit, scaled down with the aspect kept, odd sides made even, data
-    /// that does not fit the size refused.
-    #[test]
-    fn picture_sizes() {
-        let rgba = vec![0u8; 800 * 600 * 4];
-        let p = to_picture(800, 600, &rgba, 1920, 1088).unwrap();
-        assert_eq!((p.width, p.height), (800, 600));
-        assert_eq!(p.data.len(), vf::Picture::i420_len(800, 600));
-        let rgba = vec![0u8; 2560 * 1440 * 4];
-        let p = to_picture(2560, 1440, &rgba, 1920, 1088).unwrap();
-        assert_eq!((p.width, p.height), (1920, 1080));
-        let rgba = vec![0u8; 801 * 601 * 4];
-        let p = to_picture(801, 601, &rgba, 1920, 1088).unwrap();
-        assert_eq!((p.width, p.height), (800, 600));
-        assert!(to_picture(800, 600, &[0; 16], 1920, 1088).is_none());
-        assert!(to_picture(8, 8, &[0; 256], 1920, 1088).is_none());
-    }
-
-    /// Colours (BT.601 limited range): white, black and pure red.
-    #[test]
-    fn picture_colours() {
-        let solid = |r: u8, g: u8, b: u8| {
-            let rgba: Vec<u8> = std::iter::repeat_n([r, g, b, 255], 16 * 16)
-                .flatten()
-                .collect();
-            let p = to_picture(16, 16, &rgba, 1920, 1088).unwrap();
-            (p.data[0], p.data[256], p.data[256 + 64])
-        };
-        assert_eq!(solid(255, 255, 255), (235, 128, 128));
-        assert_eq!(solid(0, 0, 0), (16, 128, 128));
-        assert_eq!(solid(255, 0, 0), (82, 90, 240));
-    }
 }

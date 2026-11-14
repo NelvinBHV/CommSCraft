@@ -506,6 +506,8 @@ name = "commscraft-rdp-view"
 version = "0.0.1"
 dependencies = [
  "ironrdp-core",
+ "ironrdp-dvc",
+ "ironrdp-egfx",
  "ironrdp-graphics",
  "ironrdp-pdu",
  "ironrdp-session",

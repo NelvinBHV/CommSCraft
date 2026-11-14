@@ -1888,8 +1888,10 @@ impl CallMedia {
                     return;
                 }
                 if let Some(data) = self.data.as_mut() {
-                    if media::classify(payload) == Kind::Rtcp {
-                        data.on_rtcp(payload);
+                    if media::classify(payload) == Kind::Rtcp && data.on_rtcp(payload) {
+                        if let Some(agent) = self.ice.as_mut() {
+                            agent.refresh_consent(now);
+                        }
                     }
                     if media::classify(payload) == Kind::Rtp {
                         let bytes = data.on_rtp(payload);

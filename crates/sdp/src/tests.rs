@@ -784,3 +784,58 @@ a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x
     )
     .is_err());
 }
+
+/// Function 43 over RDP: only the passive TCP candidate is answered (the sharer connects to it
+/// and takes RTP only from the first candidate it can use); the sharer's final offer after ICE
+/// (with `a=remote-candidates`) is answered with its candidate as our remote candidate for both
+/// components and `a=setup:passive`, which the sharer needs before it takes RTP.
+#[test]
+fn rdp_viewer_final_answer() {
+    let offer = "v=0\r\no=- 0 1 IN IP4 192.0.2.20\r\ns=session\r\nc=IN IP4 192.0.2.20\r\nt=0 0\r\n\
+m=applicationsharing 25012 TCP/RTP/SAVP 127\r\na=ice-ufrag:aaaa\r\na=ice-pwd:bbbbbbbbbbbbbbbbbbbbbbbb\r\n\
+a=candidate:2 1 TCP-ACT 2121006591 192.0.2.20 25012 typ host\r\n\
+a=crypto:2 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
+a=remote-candidates:1 192.0.2.10 40000 2 192.0.2.10 40000\r\n\
+a=setup:active\r\na=connection:existing\r\na=mid:1\r\na=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\n\
+a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\na=x-applicationsharing-contentflow:sendonly\r\n";
+    let mut local = local();
+    if let Some(ice) = local.ice.as_mut() {
+        let mut active = ice.candidates[0].clone();
+        active.transport = Transport::TcpActive;
+        active.port = 9;
+        ice.candidates[0].transport = Transport::TcpPassive;
+        ice.candidates[0].port = 40000;
+        ice.candidates.push(active);
+    }
+    let (a, _) = screen::answer_rdp(
+        offer.as_bytes(),
+        &local,
+        Key::new(1, [5; 30]),
+        Encryption::Required,
+    )
+    .unwrap();
+    let cands: Vec<&str> = a
+        .lines()
+        .filter(|l| l.starts_with("a=candidate:"))
+        .collect();
+    assert_eq!(cands.len(), 1, "{a}");
+    assert!(cands[0].contains("TCP-PASS") && cands[0].contains(" 40000 "));
+    assert!(
+        a.contains("a=remote-candidates:1 192.0.2.20 25012 2 192.0.2.20 25012\r\n"),
+        "{a}"
+    );
+    assert!(a.contains("a=setup:passive\r\na=connection:existing\r\n"));
+    // The first offer (no remote candidates): no remote candidates, setup active.
+    let first = offer.replace(
+        "a=remote-candidates:1 192.0.2.10 40000 2 192.0.2.10 40000\r\n",
+        "",
+    );
+    let (a, _) = screen::answer_rdp(
+        first.as_bytes(),
+        &local,
+        Key::new(1, [5; 30]),
+        Encryption::Required,
+    )
+    .unwrap();
+    assert!(!a.contains("a=remote-candidates") && a.contains("a=setup:active\r\n"));
+}
