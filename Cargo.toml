@@ -15,6 +15,7 @@ members = [
     "crates/gssapi",
     "crates/ocauthws",
     "crates/rgs",
+    "crates/rdp-view",
     "crates/tlsdsk",
     "crates/xml",
     "crates/provisioning",

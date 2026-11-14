@@ -173,6 +173,21 @@ pub(crate) fn screen_sdp_part(m: &Message) -> Option<(Vec<u8>, Option<String>)> 
     sdp_part(m, &sdp::screen::offered)
 }
 
+/// The SDP of an INVITE that offers RDP-based sharing from a sharer (function 43, SD-80).
+pub(crate) fn rdp_sdp_part(m: &Message) -> Option<(Vec<u8>, Option<String>)> {
+    sdp_part(m, &sdp::screen::offered_rdp_sharer)
+}
+
+/// What an incoming INVITE brings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Incoming {
+    Audio,
+    /// Video-based screen sharing.
+    Screen,
+    /// RDP-based sharing only.
+    Rdp,
+}
+
 /// The (last, i.e. preferred) SDP part of an INVITE body that `wanted` accepts, with its
 /// Content-ID.
 fn sdp_part(m: &Message, wanted: &dyn Fn(&[u8]) -> bool) -> Option<(Vec<u8>, Option<String>)> {
@@ -1063,7 +1078,7 @@ impl<R: Random> Engine<R> {
         &mut self,
         req: &Message,
         offer: Vec<u8>,
-        screen: bool,
+        kind: Incoming,
         now: u64,
         out: &mut Vec<Output>,
     ) {
@@ -1083,10 +1098,10 @@ impl<R: Random> Engine<R> {
             self.send_plain(r, now, out);
             return;
         }
-        let content_id = if screen {
-            screen_sdp_part(req)
-        } else {
-            audio_sdp_part(req)
+        let content_id = match kind {
+            Incoming::Screen => screen_sdp_part(req),
+            Incoming::Rdp => rdp_sdp_part(req),
+            Incoming::Audio => audio_sdp_part(req),
         }
         .and_then(|(_, id)| id);
         // RFC 3891 §3: Replaces must name one of our established calls, else 481.
@@ -1140,9 +1155,20 @@ impl<R: Random> Engine<R> {
                 video: None,
             },
         );
-        if screen {
+        if kind != Incoming::Audio {
             self.screen_calls.insert(id);
-            Self::call_event(out, Event::IncomingScreenShare { call: id, from });
+            let rdp = kind == Incoming::Rdp;
+            if rdp {
+                self.rdp_calls.insert(id);
+            }
+            Self::call_event(
+                out,
+                Event::IncomingScreenShare {
+                    call: id,
+                    from,
+                    rdp,
+                },
+            );
         } else {
             Self::call_event(out, Event::IncomingCall { call: id, from });
         }
@@ -1222,6 +1248,116 @@ impl<R: Random> Engine<R> {
                         status: 488,
                     },
                 );
+            }
+        }
+    }
+
+    /// `AcceptRdpShare` (function 43): answer an RDP-only sharing offer as viewer
+    /// (`sdp::screen::answer_rdp`) with our data stream's parameters.
+    pub(crate) fn accept_rdp(
+        &mut self,
+        id: CallId,
+        local: sdp::Local,
+        policy: sdp::Encryption,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let Some(c) = self.calls.get(&id) else { return };
+        if !matches!(c.state, CallState::Ringing { .. }) || !self.rdp_calls.contains(&id) {
+            return;
+        }
+        let invite = c.invite.clone();
+        let content_id = c.content_id.clone();
+        let fresh = local
+            .key
+            .clone()
+            .unwrap_or_else(|| sdp::Key::new(0, [0; 30]));
+        let answered = if policy != sdp::Encryption::Off && local.key.is_none() {
+            Err(sdp::Error::Crypto("no media key"))
+        } else {
+            sdp::screen::answer_rdp(&c.offer, &local, fresh, policy)
+        };
+        match answered {
+            Ok((body, rdp)) => {
+                let mut ok = response_to(&invite, 200, "OK");
+                for rr in invite.header_values("Record-Route") {
+                    ok.push_header("Record-Route", rr);
+                }
+                ok.push_header("Contact", &format!("<{}>", self.gruu));
+                if let Some(cid) = content_id {
+                    ok.push_header("ms-accepted-content-id", &cid);
+                }
+                ok.push_header("Content-Type", "application/sdp");
+                ok.body = body.into_bytes();
+                self.send_plain(ok, now, out);
+                let mut kept = local;
+                if let (Some(k), Some(tag)) =
+                    (kept.key.as_mut(), rdp.remote_key.as_ref().map(|r| r.tag))
+                {
+                    k.tag = tag;
+                }
+                if let Some(c) = self.calls.get_mut(&id) {
+                    c.state = CallState::Active;
+                    c.policy = policy;
+                    c.local = Some(kept);
+                }
+                Self::call_event(
+                    out,
+                    Event::ScreenRdp {
+                        call: id,
+                        rdp: Box::new(rdp),
+                    },
+                );
+            }
+            Err(e) => {
+                self.calls.remove(&id);
+                self.screen_calls.remove(&id);
+                self.rdp_calls.remove(&id);
+                self.answer_call_request(&invite, 488, "Not Acceptable Here", now, out);
+                out.push(Output::Event(Event::Notice(format!(
+                    "call {id}: shared window not viewable ({e:?})"
+                ))));
+                Self::call_event(
+                    out,
+                    Event::CallEnded {
+                        call: id,
+                        status: 488,
+                    },
+                );
+            }
+        }
+    }
+
+    /// A re-INVITE of the RDP sharer (final offer after ICE): the same answer.
+    fn on_rdp_reinvite(&mut self, id: CallId, req: &Message, now: u64, out: &mut Vec<Output>) {
+        let Some(c) = self.calls.get(&id) else { return };
+        let (Some(local), Some((offer, _))) = (c.local.clone(), rdp_sdp_part(req)) else {
+            let r = response_to(req, 488, "Not Acceptable Here");
+            self.send_plain(r, now, out);
+            return;
+        };
+        let key = local
+            .key
+            .clone()
+            .unwrap_or_else(|| sdp::Key::new(0, [0; 30]));
+        match sdp::screen::answer_rdp(&offer, &local, key, c.policy) {
+            Ok((body, rdp)) if c.policy == sdp::Encryption::Off || rdp.remote_key.is_some() => {
+                let mut ok = response_to(req, 200, "OK");
+                ok.push_header("Contact", &format!("<{}>", self.gruu));
+                ok.push_header("Content-Type", "application/sdp");
+                ok.body = body.into_bytes();
+                self.send_plain(ok, now, out);
+                Self::call_event(
+                    out,
+                    Event::ScreenRdp {
+                        call: id,
+                        rdp: Box::new(rdp),
+                    },
+                );
+            }
+            _ => {
+                let r = response_to(req, 488, "Not Acceptable Here");
+                self.send_plain(r, now, out);
             }
         }
     }
@@ -1420,6 +1556,7 @@ impl<R: Random> Engine<R> {
                     },
                 );
             }
+            "INVITE" if self.rdp_calls.contains(&id) => self.on_rdp_reinvite(id, req, now, out),
             "INVITE" if self.screen_calls.contains(&id) => {
                 self.on_screen_reinvite(id, req, now, out)
             }

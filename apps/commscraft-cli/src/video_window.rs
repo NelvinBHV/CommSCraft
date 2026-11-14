@@ -64,6 +64,188 @@ fn write_unit(out: &mut impl Write, unit: &[u8]) -> std::io::Result<()> {
 /// The next access unit; `None` at the end of the pipe. A length above the decoder's limit ends the
 /// stream rather than allocating it.
 fn read_unit(input: &mut impl Read) -> std::io::Result<Option<Vec<u8>>> {
+    read_bounded(input, vf::MAX_ACCESS_UNIT)
+}
+
+/// The largest shared screen sent to the window as it is; larger ones are scaled down (design:
+/// bounds the pipe's units).
+pub const MAX_RAW_WIDTH: u32 = 2560;
+pub const MAX_RAW_HEIGHT: u32 = 1600;
+/// The largest raw picture on the pipe: its size header and the pixels.
+const MAX_RAW_UNIT: usize = 8 + MAX_RAW_WIDTH as usize * MAX_RAW_HEIGHT as usize * 4;
+
+/// A raw picture on the pipe (shared windows over RDP, function 43): width and height (big
+/// endian), then the pixels in BGRX order (XRGB8888 little-endian, what Wayland shows).
+pub fn raw_unit(width: u32, height: u32, bgrx: &[u8]) -> Vec<u8> {
+    let mut unit = Vec::with_capacity(8 + bgrx.len());
+    unit.extend_from_slice(&width.to_be_bytes());
+    unit.extend_from_slice(&height.to_be_bytes());
+    unit.extend_from_slice(bgrx);
+    unit
+}
+
+/// Width, height and pixels of a raw unit, if size and length agree.
+fn raw_of(unit: &[u8]) -> Option<(u32, u32, &[u8])> {
+    let width = u32::from_be_bytes(unit.get(..4)?.try_into().ok()?);
+    let height = u32::from_be_bytes(unit.get(4..8)?.try_into().ok()?);
+    if width == 0 || height == 0 || width > MAX_RAW_WIDTH || height > MAX_RAW_HEIGHT {
+        return None;
+    }
+    let pixels = unit.get(8..)?;
+    (pixels.len() == width as usize * height as usize * 4).then_some((width, height, pixels))
+}
+
+/// The size of a `w × h` picture scaled down to fit `max_w × max_h`, aspect kept.
+fn fit(w: u32, h: u32, max_w: u32, max_h: u32) -> (u32, u32) {
+    let (mut ow, mut oh) = (w, h);
+    if ow > max_w {
+        oh = (u64::from(oh) * u64::from(max_w) / u64::from(ow)) as u32;
+        ow = max_w;
+    }
+    if oh > max_h {
+        ow = (u64::from(ow) * u64::from(max_h) / u64::from(oh)) as u32;
+        oh = max_h;
+    }
+    (ow, oh)
+}
+
+/// The RGBA screen as BGRX pixels no larger than the raw maximum (aspect kept, nearest
+/// sampling); `None` when the data does not fit the size.
+pub fn scaled_bgrx(w: u16, h: u16, rgba: &[u8]) -> Option<(u32, u32, Vec<u8>)> {
+    let (w, h) = (u32::from(w), u32::from(h));
+    if w == 0 || h == 0 || rgba.len() != w as usize * h as usize * 4 {
+        return None;
+    }
+    let (ow, oh) = fit(w, h, MAX_RAW_WIDTH, MAX_RAW_HEIGHT);
+    if ow == 0 || oh == 0 {
+        return None;
+    }
+    let mut out = Vec::with_capacity(ow as usize * oh as usize * 4);
+    for y in 0..oh {
+        let sy = (u64::from(y) * u64::from(h) / u64::from(oh)) as usize;
+        for x in 0..ow {
+            let sx = (u64::from(x) * u64::from(w) / u64::from(ow)) as usize;
+            let i = (sy * w as usize + sx) * 4;
+            match rgba.get(i..i + 3) {
+                Some([r, g, b]) => out.extend_from_slice(&[*b, *g, *r, 0xff]),
+                _ => out.extend_from_slice(&[0, 0, 0, 0xff]),
+            }
+        }
+    }
+    Some((ow, oh, out))
+}
+
+/// BGRX pixels as an I420 picture for the software window, no larger than `max_w × max_h`
+/// (aspect kept, nearest sampling, even sides); BT.601 limited range, chroma from each 2×2
+/// block's top left pixel. `None` for a size the window cannot show.
+fn i420_of_bgrx(w: u32, h: u32, bgrx: &[u8], max_w: u32, max_h: u32) -> Option<vf::Picture> {
+    if w == 0 || h == 0 || bgrx.len() != w as usize * h as usize * 4 {
+        return None;
+    }
+    let (ow, oh) = fit(w, h, max_w, max_h);
+    let (ow, oh) = (ow & !1, oh & !1);
+    if ow < 16 || oh < 16 {
+        return None;
+    }
+    let pixel = |x: u32, y: u32| -> (i32, i32, i32) {
+        let sx = (u64::from(x) * u64::from(w) / u64::from(ow)) as usize;
+        let sy = (u64::from(y) * u64::from(h) / u64::from(oh)) as usize;
+        let i = (sy * w as usize + sx) * 4;
+        match bgrx.get(i..i + 3) {
+            Some([b, g, r]) => (i32::from(*r), i32::from(*g), i32::from(*b)),
+            _ => (0, 0, 0),
+        }
+    };
+    let clamp = |v: i32| v.clamp(0, 255) as u8;
+    let (uw, uh) = (ow / 2, oh / 2);
+    let mut data = Vec::with_capacity(vf::Picture::i420_len(ow, oh));
+    for y in 0..oh {
+        for x in 0..ow {
+            let (r, g, b) = pixel(x, y);
+            data.push(clamp(((66 * r + 129 * g + 25 * b + 128) >> 8) + 16));
+        }
+    }
+    let mut v_plane = Vec::with_capacity((uw * uh) as usize);
+    for y in 0..uh {
+        for x in 0..uw {
+            let (r, g, b) = pixel(x * 2, y * 2);
+            data.push(clamp(((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128));
+            v_plane.push(clamp(((112 * r - 94 * g - 18 * b + 128) >> 8) + 128));
+        }
+    }
+    data.extend(v_plane);
+    Some(vf::Picture {
+        width: ow,
+        height: oh,
+        data,
+    })
+}
+
+/// The raw mode of the helper: pictures as they come, shown in the Wayland window from shared
+/// memory, else in the software window as I420.
+fn raw_main(title: &str) -> i32 {
+    let mut input = std::io::stdin().lock();
+    let mut wayland: Option<Window> = None;
+    let mut use_wayland = Window::in_wayland_session();
+    let mut window: Option<vf::Display> = None;
+    let mut size = (0, 0);
+    let mut closed = false;
+    while let Ok(Some(unit)) = read_bounded(&mut input, MAX_RAW_UNIT) {
+        let Some((width, height, pixels)) = raw_of(&unit) else {
+            continue;
+        };
+        if size != (width, height) {
+            println!("the shared window is {width}x{height}");
+            size = (width, height);
+            window = None;
+        }
+        if closed {
+            continue;
+        }
+        if use_wayland {
+            let shown = match wayland.as_mut() {
+                Some(w) => w.show_pixels(width, height, pixels),
+                None => Window::open(title).and_then(|mut w| {
+                    let r = w.show_pixels(width, height, pixels);
+                    wayland = Some(w);
+                    r
+                }),
+            };
+            match shown {
+                Ok(_) => continue,
+                Err(WindowError::Closed) => {
+                    closed = true;
+                    continue;
+                }
+                Err(e) => {
+                    println!("no Wayland window: {e:?}");
+                    wayland = None;
+                    use_wayland = false;
+                }
+            }
+        }
+        let Some(p) = i420_of_bgrx(width, height, pixels, vf::MAX_WIDTH, vf::MAX_HEIGHT) else {
+            continue;
+        };
+        if window.is_none() {
+            match vf::Display::open(title, p.width, p.height) {
+                Ok(w) => window = Some(w),
+                Err(e) => {
+                    println!("no window: {e:?}");
+                    return 2;
+                }
+            }
+        }
+        if let Some(w) = window.as_mut() {
+            if w.show(&p).is_err() {
+                window = None;
+            }
+        }
+    }
+    0
+}
+
+fn read_bounded(input: &mut impl Read, max: usize) -> std::io::Result<Option<Vec<u8>>> {
     let mut length = [0u8; 4];
     match input.read_exact(&mut length) {
         Ok(()) => {}
@@ -71,7 +253,7 @@ fn read_unit(input: &mut impl Read) -> std::io::Result<Option<Vec<u8>>> {
         Err(e) => return Err(e),
     }
     let length = u32::from_be_bytes(length) as usize;
-    if length > vf::MAX_ACCESS_UNIT {
+    if length > max {
         return Err(std::io::ErrorKind::InvalidData.into());
     }
     let mut unit = vec![0; length];
@@ -316,8 +498,12 @@ pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
         }
     }
     let id = args.next().unwrap_or_default();
-    let mut surfaces = args.next().as_deref() == Some("gpu") && Window::in_wayland_session();
+    let mode = args.next();
     let title = format!("CommSCraft – call {}", clean_notice(&id));
+    if mode.as_deref() == Some("raw") {
+        return raw_main(&title);
+    }
+    let mut surfaces = mode.as_deref() == Some("gpu") && Window::in_wayland_session();
     let mut decoder = match vf::init().and_then(|()| vf::Decoder::with_hardware(surfaces)) {
         Ok(d) => d,
         Err(e) => {
@@ -428,12 +614,12 @@ fn gpu_wanted() -> bool {
         && std::env::var("COMMSCRAFT_VIDEO_DECODE").map_or(true, |v| v.trim() != "cpu")
 }
 
-fn start(id: u32, gpu: bool) -> std::io::Result<Child> {
+fn start(id: u32, mode: &str) -> std::io::Result<Child> {
     let mut command = Command::new(std::env::current_exe()?);
     command
         .arg(COMMAND)
         .arg(id.to_string())
-        .arg(if gpu { "gpu" } else { "cpu" })
+        .arg(mode)
         .env_clear()
         .current_dir("/")
         .stdin(Stdio::piped())
@@ -501,6 +687,26 @@ fn feed(
 /// CPU, and the peer is asked for a new picture; a helper still failing then ends the received video
 /// and nothing else.
 pub fn spawn(input: Receiver<Vec<u8>>, stop: Arc<AtomicBool>, events: Sender<FromVideo>, id: u32) {
+    spawn_mode(input, stop, events, id, false);
+}
+
+/// The same for raw pictures ([`raw_unit`]): a shared window over RDP (function 43).
+pub fn spawn_raw(
+    input: Receiver<Vec<u8>>,
+    stop: Arc<AtomicBool>,
+    events: Sender<FromVideo>,
+    id: u32,
+) {
+    spawn_mode(input, stop, events, id, true);
+}
+
+fn spawn_mode(
+    input: Receiver<Vec<u8>>,
+    stop: Arc<AtomicBool>,
+    events: Sender<FromVideo>,
+    id: u32,
+    raw: bool,
+) {
     std::thread::spawn(move || {
         let notice = |text: String| {
             let _ = events.send(FromVideo::Notice(id, text));
@@ -509,7 +715,12 @@ pub fn spawn(input: Receiver<Vec<u8>>, stop: Arc<AtomicBool>, events: Sender<Fro
         let mut input = Some(input);
         let mut restarts = 0;
         loop {
-            let mut child = match start(id, gpu) {
+            let mode = match (raw, gpu) {
+                (true, _) => "raw",
+                (false, true) => "gpu",
+                (false, false) => "cpu",
+            };
+            let mut child = match start(id, mode) {
                 Ok(c) => c,
                 Err(e) => {
                     notice(format!("no video window process: {e}"));
@@ -589,6 +800,46 @@ mod tests {
         assert!(std::net::UdpSocket::bind("127.0.0.1:0").is_ok());
     }
 
+    /// Shared screens: RGBA becomes BGRX, kept when it fits, scaled down with the aspect kept;
+    /// data that does not fit the size is refused.
+    #[test]
+    fn shared_screen_pixels() {
+        let rgba: Vec<u8> = std::iter::repeat_n([10u8, 20, 30, 255], 4)
+            .flatten()
+            .collect();
+        let (w, h, px) = scaled_bgrx(2, 2, &rgba).unwrap();
+        assert_eq!((w, h), (2, 2));
+        assert_eq!(px.get(..4), Some(&[30u8, 20, 10, 255][..]));
+        let big = vec![0u8; 3840 * 2160 * 4];
+        let (w, h, px) = scaled_bgrx(3840, 2160, &big).unwrap();
+        assert_eq!((w, h), (2560, 1440));
+        assert_eq!(px.len(), 2560 * 1440 * 4);
+        assert!(scaled_bgrx(2, 2, &rgba[..15]).is_none());
+    }
+
+    /// The software window's I420 (BT.601 limited range): white, black, pure red; sizes made
+    /// even and fitted.
+    #[test]
+    fn shared_screen_i420() {
+        let solid = |r: u8, g: u8, b: u8| {
+            let px: Vec<u8> = std::iter::repeat_n([b, g, r, 255], 16 * 16)
+                .flatten()
+                .collect();
+            let p = i420_of_bgrx(16, 16, &px, 1920, 1088).unwrap();
+            (p.data[0], p.data[256], p.data[256 + 64])
+        };
+        assert_eq!(solid(255, 255, 255), (235, 128, 128));
+        assert_eq!(solid(0, 0, 0), (16, 128, 128));
+        assert_eq!(solid(255, 0, 0), (82, 90, 240));
+        let px = vec![0u8; 2560 * 1440 * 4];
+        let p = i420_of_bgrx(2560, 1440, &px, 1920, 1088).unwrap();
+        assert_eq!((p.width, p.height), (1920, 1080));
+        let px = vec![0u8; 801 * 601 * 4];
+        let p = i420_of_bgrx(801, 601, &px, 1920, 1088).unwrap();
+        assert_eq!((p.width, p.height), (800, 600));
+        assert!(i420_of_bgrx(8, 8, &[0; 256], 1920, 1088).is_none());
+    }
+
     /// Issue #144: without the system call filter or Landlock nothing is decoded unless the user
     /// allows it; a partial Landlock is taken with a note.
     #[test]
@@ -629,6 +880,14 @@ mod tests {
             read_unit(&mut [0u8, 0, 0, 9, 1].as_slice()).is_err(),
             "cut off"
         );
+        // Raw pictures: size and length must agree, the size is bounded.
+        let px = vec![7u8; 16 * 16 * 4];
+        let unit = raw_unit(16, 16, &px);
+        assert_eq!(raw_of(&unit), Some((16, 16, &px[..])));
+        assert_eq!(raw_of(&unit[..unit.len() - 1]), None);
+        let mut huge = unit.clone();
+        huge.splice(..4, (MAX_RAW_WIDTH + 1).to_be_bytes());
+        assert_eq!(raw_of(&huge), None);
     }
 
     /// The sandbox (checked in a child process, since it cannot be undone): the user's files and TCP

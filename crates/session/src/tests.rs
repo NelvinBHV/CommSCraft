@@ -4913,7 +4913,8 @@ a=rtcp:6613\r\na=sendonly\r\na=rtpmap:122 X-H264UC/90000\r\na=fmtp:122 packetiza
     assert_eq!(sends(&out).pop().unwrap().status_code(), Some(180));
     assert!(events(&out).contains(&Event::IncomingScreenShare {
         call: 1,
-        from: "sip:bob@contoso.com".into()
+        from: "sip:bob@contoso.com".into(),
+        rdp: false
     }));
     let out = e.command(
         Command::AcceptScreenShare {
@@ -5085,4 +5086,58 @@ a=rtcp:51633\r\na=sendonly\r\na=rtpmap:122 X-H264UC/90000\r\na=fmtp:122 packetiz
             .ok()
             .flatten()
             .is_some_and(|t| t.contains("applicationsharing"))));
+}
+
+/// Function 43 over RDP: a window-sharing INVITE (RDP only) rings as a shared screen with
+/// `rdp`; viewing answers with our TCP data stream and reports the RDP parameters.
+#[test]
+fn shared_window_over_rdp() {
+    let (mut e, mut server, _) = signed_in();
+    let mut m = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    m.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKrdp");
+    m.push_header("From", "<sip:bob@contoso.com>;tag=bobrdp");
+    m.push_header("To", "<sip:alice@contoso.com>");
+    m.push_header("Call-ID", "rdp1");
+    m.push_header("CSeq", "1 INVITE");
+    m.push_header("Contact", "<sip:bob@contoso.com;opaque=user:epid:y;gruu>");
+    m.push_header("Content-Type", "application/sdp");
+    m.body = "v=0\r\no=- 0 0 IN IP4 192.0.2.20\r\ns=session\r\nc=IN IP4 192.0.2.20\r\nt=0 0\r\n\
+m=applicationsharing 13635 TCP/RTP/AVP 127\r\na=ice-ufrag:aaaa\r\na=ice-pwd:bbbbbbbbbbbbbbbbbbbbbbbb\r\n\
+a=candidate:1 1 TCP-PASS 2120613887 192.0.2.20 28160 typ host\r\n\
+a=crypto:2 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
+a=setup:active\r\na=rtcp:13635\r\na=mid:1\r\na=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\n\
+a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\n"
+        .as_bytes()
+        .to_vec();
+    let out = e.on_message(&server.sign(m), NOW);
+    assert_eq!(sends(&out).pop().unwrap().status_code(), Some(180));
+    assert!(events(&out).contains(&Event::IncomingScreenShare {
+        call: 1,
+        from: "sip:bob@contoso.com".into(),
+        rdp: true
+    }));
+    let mut local = media_local(9, 4);
+    if let Some(ice) = local.ice.as_mut() {
+        for c in &mut ice.candidates {
+            c.transport = commscraft_sdp::Transport::TcpActive;
+            c.port = 9;
+        }
+    }
+    let out = e.command(
+        Command::AcceptRdpShare {
+            call: 1,
+            local: Box::new(local),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let ok = sends(&out).pop().unwrap();
+    assert_eq!(ok.status_code(), Some(200));
+    let body = String::from_utf8_lossy(&ok.body).to_string();
+    assert!(
+        body.contains("m=applicationsharing 9 TCP/RTP/SAVP 127") && body.contains("role:viewer")
+    );
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::ScreenRdp { call: 1, rdp } if rdp.remote_rtp.1 == 13635)));
 }
