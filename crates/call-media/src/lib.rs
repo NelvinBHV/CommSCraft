@@ -734,6 +734,13 @@ impl CallMedia {
         }
     }
 
+    /// Application sharing: the agreed `abs-send-time` header extension for our RTP packets.
+    pub fn set_data_abs_send_time(&mut self, id: Option<u8>) {
+        if let Some(d) = self.data.as_mut() {
+            d.set_abs_send_time(id);
+        }
+    }
+
     /// Application sharing: whether a path to the peer is there (ICE found one), so the first
     /// RDP bytes can go out.
     pub fn data_path_ready(&self) -> bool {

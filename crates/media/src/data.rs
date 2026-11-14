@@ -21,7 +21,8 @@ use crate::Error;
 /// The payload type of RDP (§3.1.5, p. 9).
 pub const RDP_PT: u8 = 127;
 /// Largest RTP payload: 1500 octets less IPv4/TCP (40), RFC 4571 framing (2), RTP header (12)
-/// and the SRTP authentication tag (10), rounded down (design; §2.2, p. 8).
+/// with the send time extension (8), MKI (1) and the SRTP authentication tag (10), rounded down
+/// (design; §2.2, p. 8).
 pub const DATA_MTU: usize = 1400;
 /// Out-of-order packets kept while a hole is open (design: over TCP nothing should be out of
 /// order at all; a relay may still reorder a little).
@@ -41,6 +42,8 @@ pub struct Data {
     /// When the next RTCP report is due (ms) and the CNAME it carries.
     next_rtcp: u64,
     cname: String,
+    /// The ID of the `abs-send-time` header extension, when agreed.
+    abs_send_time: Option<u8>,
     /// Received and sent payload octets.
     pub received: u64,
     pub sent: u64,
@@ -49,6 +52,35 @@ pub struct Data {
 /// The 90 kHz timestamp of `now_ms` (RTP clock of `x-data/90000`).
 fn ticks(now_ms: u64) -> u32 {
     (now_ms.wrapping_mul(90) & 0xffff_ffff) as u32
+}
+
+/// The 24-bit absolute send time of `now_ms` (Unix time): NTP seconds in 6.18 fixed point, the
+/// low 6 bits of the seconds and 18 bits of fraction (abs-send-time, WebRTC; the URI the
+/// Windows clients name).
+fn abs_send_time(now_ms: u64) -> u32 {
+    let secs = (now_ms / 1000).wrapping_add(2_208_988_800);
+    let frac = ((now_ms % 1000) << 18) / 1000;
+    (((secs & 0x3f) << 18) | frac) as u32 & 0x00ff_ffff
+}
+
+/// `packet` (a plain RTP packet without CSRCs or extension) with a one-byte header extension
+/// ([RFC8285] §4.2) carrying element `id` = the absolute send time: X bit, `0xBEDE`, length 1
+/// word, then ID/length octet and three value octets.
+fn with_abs_send_time(packet: &[u8], id: u8, now_ms: u64) -> Option<Vec<u8>> {
+    let (head, payload) = (packet.get(..12)?, packet.get(12..)?);
+    if head.first()? & 0x1f != 0 || !(1..=14).contains(&id) {
+        return None;
+    }
+    let mut out = Vec::with_capacity(packet.len() + 8);
+    out.extend_from_slice(head);
+    if let Some(b) = out.first_mut() {
+        *b |= 0x10;
+    }
+    let t = abs_send_time(now_ms).to_be_bytes();
+    out.extend_from_slice(&[0xbe, 0xde, 0x00, 0x01, (id << 4) | 2]);
+    out.extend_from_slice(t.get(1..4)?);
+    out.extend_from_slice(payload);
+    Some(out)
 }
 
 impl Data {
@@ -78,9 +110,24 @@ impl Data {
             broken: false,
             next_rtcp: 0,
             cname: "commscraft@linux".into(),
+            abs_send_time: None,
             received: 0,
             sent: 0,
         })
+    }
+
+    /// Sends every RTP packet with the `abs-send-time` header extension of this ID (agreed in
+    /// the SDP).
+    pub fn set_abs_send_time(&mut self, id: Option<u8>) {
+        self.abs_send_time = id.filter(|i| (1..=14).contains(i));
+    }
+
+    /// The packet with the agreed header extensions.
+    fn extend(&self, packet: Vec<u8>, now_ms: u64) -> Vec<u8> {
+        match self.abs_send_time {
+            Some(id) => with_abs_send_time(&packet, id, now_ms).unwrap_or(packet),
+            None => packet,
+        }
     }
 
     /// The CNAME of our reports (RFC 3550 §6.5.1).
@@ -128,6 +175,7 @@ impl Data {
             let Ok(p) = self.sender.packet_at(RDP_PT, false, &[], ts) else {
                 continue;
             };
+            let p = self.extend(p, now_ms);
             match self.tx_srtp.as_mut() {
                 Some(c) => out.extend(c.protect_rtp(&p).ok()),
                 None => out.push(p),
@@ -144,6 +192,7 @@ impl Data {
             let Ok(p) = self.sender.packet_at(RDP_PT, false, chunk, ts) else {
                 continue;
             };
+            let p = self.extend(p, now_ms);
             let wire = match self.tx_srtp.as_mut() {
                 Some(c) => match c.protect_rtp(&p) {
                     Ok(w) => w,
@@ -241,6 +290,26 @@ mod tests {
         }
         assert_eq!(got, msg);
         assert_eq!((tx.sent, rx.received), (5000, 5000));
+    }
+
+    /// RFC 8285 one-byte extension: X bit, 0xBEDE, one word with the absolute send time; the
+    /// receiver skips it and still gets the bytes; the packet stays within the size limit.
+    #[test]
+    fn abs_send_time_extension() {
+        let (mut tx, mut rx) = pair();
+        tx.set_abs_send_time(Some(1));
+        let packets = tx.send(&[7u8; 1400], 1_000_000);
+        let plain =
+            super::with_abs_send_time(&[0x80, 0x7f, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 9], 1, 500)
+                .unwrap();
+        assert_eq!(plain.get(..1), Some(&[0x90u8][..]));
+        assert_eq!(plain.get(12..17), Some(&[0xbe, 0xde, 0x00, 0x01, 0x12][..]));
+        // 2208988800 s + 0.5 s: seconds mod 64 = 0, fraction 0.5 = 1 << 17.
+        assert_eq!(plain.get(17..20), Some(&[0x02, 0x00, 0x00][..]));
+        assert_eq!(plain.last(), Some(&9));
+        assert!(packets.iter().all(|p| p.len() + 42 <= 1500));
+        let got: Vec<u8> = packets.iter().flat_map(|p| rx.on_rtp(p)).collect();
+        assert_eq!(got, vec![7u8; 1400]);
     }
 
     /// Empty packets for the probation carry nothing into the byte stream and keep the

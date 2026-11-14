@@ -103,6 +103,7 @@ fn run(
     ) {
         return format!("data stream: {e}");
     }
+    media.set_data_abs_send_time(rdp.abs_send_time);
     let (mut viewer, first) = match rv::Viewer::new(rv::Config {
         width: 1920,
         height: 1080,

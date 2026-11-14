@@ -716,6 +716,8 @@ a=candidate:1 1 TCP-PASS 2120613887 192.0.2.20 28160 typ host\r\na=candidate:1 2
 a=candidate:2 1 TCP-ACT 2121006591 192.0.2.20 13635 typ host\r\n\
 a=crypto:2 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
 a=setup:active\r\na=connection:new\r\na=rtcp:13635\r\na=mid:1\r\na=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\n\
+a=extmap:1 http:\\\\www.webrtc.org\\experiments\\rtp-hdrext\\abs-send-time\r\n\
+a=extmap:3 http:\\\\skype.com\\experiments\\rtp-hdrext\\fast_bandwidth_feedback\r\n\
 a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\na=x-applicationsharing-contentflow:sendonly\r\n";
     assert!(screen::offered_rdp_sharer(offer.as_bytes()));
     assert!(!screen::offered(offer.as_bytes()));
@@ -744,6 +746,12 @@ a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x
     assert!(!a.contains("a=setup") && a.contains("a=rtcp-mux\r\n"));
     parse(a.as_bytes()).unwrap();
     assert_eq!(n.remote_rtp.1, 13635);
+    // The send time extension is taken over with its ID, the other one is not.
+    assert_eq!(n.abs_send_time, Some(1));
+    assert!(a.contains(
+        "a=extmap:1 http:\\\\www.webrtc.org\\experiments\\rtp-hdrext\\abs-send-time\r\n"
+    ));
+    assert!(!a.contains("fast_bandwidth_feedback"));
     assert_eq!(n.remote_key.unwrap().tag, 2);
     assert!(n
         .remote_ice

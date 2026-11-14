@@ -123,6 +123,27 @@ pub struct NegotiatedRdp {
     pub remote_ice: Option<Ice>,
     pub remote_rtp: Endpoint,
     pub session_id: Option<String>,
+    /// The ID of the RTP header extension `abs-send-time` both sides use ([RFC8285]): the
+    /// Windows clients send every RDP packet with it (`tested-in-lab`); the sharer took no RTP
+    /// of ours without it (inference: the only difference left).
+    pub abs_send_time: Option<u8>,
+}
+
+/// The URI of the absolute send time extension as the Windows clients write it (with
+/// backslashes, `tested-in-lab`); compared without regard to the slashes' direction.
+const ABS_SEND_TIME: &str = "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
+
+/// The offered `a=extmap` of `abs-send-time`: its ID (1 … 14, the one-byte form) and the line.
+fn abs_send_time_of(m: &Media) -> Option<(u8, String)> {
+    m.attrs("extmap").find_map(|v| {
+        let (id, uri) = v.trim().split_once(' ')?;
+        let id: u8 = id.trim().parse().ok().filter(|i| (1..=14).contains(i))?;
+        let uri = uri.trim();
+        (uri.replace('\\', "/").eq_ignore_ascii_case(ABS_SEND_TIME)
+            && uri.len() <= 128
+            && uri.chars().all(|c| c.is_ascii_graphic()))
+        .then(|| (id, format!("a=extmap:{id} {uri}\r\n")))
+    })
 }
 
 fn rdp_line(s: &Session) -> Option<&Media> {
@@ -202,6 +223,10 @@ pub fn answer_rdp(
         section.push_str(&format!("a=mid:{mid}\r\n"));
     }
     section.push_str("a=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\n");
+    let abs_send_time = abs_send_time_of(m);
+    if let Some((_, line)) = &abs_send_time {
+        section.push_str(line);
+    }
     if let Some(id) = &session_id {
         section.push_str(&format!("a=x-applicationsharing-session-id:{id}\r\n"));
     }
@@ -227,6 +252,7 @@ pub fn answer_rdp(
             remote_ice: ice_of(m),
             remote_rtp: rtp,
             session_id,
+            abs_send_time: abs_send_time.map(|(id, _)| id),
         },
     ))
 }
