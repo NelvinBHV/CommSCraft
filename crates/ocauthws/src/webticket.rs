@@ -130,11 +130,24 @@ pub fn issue_token_request(
     ))
 }
 
-/// A ticket: the SAML assertion as sent by the issuer and when it expires.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// A ticket: the SAML assertion as sent by the issuer and when it expires. The assertion
+/// authorizes requests like a password: `Debug` shows only its length (security by design).
+#[derive(Clone, PartialEq, Eq)]
 pub struct WebTicket {
     pub assertion: String,
     pub expires: Option<u64>,
+}
+
+impl std::fmt::Debug for WebTicket {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WebTicket")
+            .field(
+                "assertion",
+                &format_args!("<{} bytes redacted>", self.assertion.len()),
+            )
+            .field("expires", &self.expires)
+            .finish()
+    }
 }
 
 /// Reads the IssueToken answer (example §4.2.2, pp. 62–64): the assertion inside

@@ -82,7 +82,7 @@ getrandom = "0.3.4"
 sha2 = "0.10.9"
 
 # RSA key generation for TLS-DSK (tests and debug builds) would take minutes unoptimized.
-[profile.dev.package.num-bigint-dig]
+[profile.dev.package.crypto-bigint]
 opt-level = 3
 [profile.dev.package.rsa]
 opt-level = 3

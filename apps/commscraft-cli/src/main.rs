@@ -1953,6 +1953,20 @@ fn ews_settings(
 /// the photos URL, else the EWS URL of the user's settings, with NTLM. The photo is kept under
 /// `$XDG_CACHE_HOME/commscraft/photos/exchange-<address>.<ext>` with its ETag next to it; the
 /// ETag goes back in If-None-Match, and a 304 keeps the cached photo (§3.1.5, pp. 8–9).
+/// The photo cache directory of an account and photo server, and a contact's file name stem
+/// there – all one-to-one (issue #145); `None` when a name would be too long.
+fn photo_cache(
+    base: &std::path::Path,
+    aor: &str,
+    host: &str,
+    email: &str,
+) -> Option<(PathBuf, String)> {
+    let account = cache_name(&aor.trim_start_matches("sip:").to_ascii_lowercase())?;
+    let server = cache_name(&host.to_ascii_lowercase())?;
+    let key = cache_name(&email.to_ascii_lowercase())?;
+    Some((base.join(account).join(server), key))
+}
+
 fn exchange_photo(
     engine: &mut commscraft_session::Engine<OsRandom>,
     tls: &TlsClient,
@@ -1993,18 +2007,16 @@ fn exchange_photo(
         .ok_or("no HOME")?
         .join("commscraft")
         .join("photos");
-    // The checked address as file name: letters, digits and `.-_@` only.
-    let key: String = email
-        .to_ascii_lowercase()
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || ".-_@".contains(c) {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect();
+    // Issue #145: one-to-one names (`cache_name`), in a directory per account and photo
+    // server, so two addresses, accounts or servers never share a photo or its ETag. The
+    // address is compared case-insensitively, as Exchange does (inference). The lossy names of
+    // the earlier layout are removed.
+    let legacy = legacy_cache_name(email);
+    for ext in ["jpg", "png", "etag"] {
+        let _ = std::fs::remove_file(dir.join(format!("exchange-{legacy}.{ext}")));
+    }
+    let (dir, key) = photo_cache(&dir, engine.aor(), &url.host, email)
+        .ok_or("address too long for the photo cache")?;
     let etag_file = dir.join(format!("exchange-{key}.etag"));
     let cached = ["jpg", "png"]
         .iter()
@@ -3121,7 +3133,7 @@ fn interactive(
                             .or_else(|| peers.get(&conversation).cloned())
                             .unwrap_or_default();
                         println!("[{conversation}] {who}: {text}");
-                        transcripts.entry(conversation).or_default().lines.push(
+                        transcripts.entry(conversation).or_default().add_line(
                             commscraft_ews::history::Line {
                                 time: now(),
                                 sender: who,
@@ -4854,13 +4866,14 @@ fn interactive(
                 }
                 _ => match current {
                     Some(c) => {
-                        transcripts.entry(c).or_default().lines.push(
-                            commscraft_ews::history::Line {
+                        transcripts
+                            .entry(c)
+                            .or_default()
+                            .add_line(commscraft_ews::history::Line {
                                 time: now(),
                                 sender: engine.aor().trim_start_matches("sip:").to_string(),
                                 text: line.clone(),
-                            },
-                        );
+                            });
                         Some(C::SendText {
                             conversation: c,
                             text: line.clone(),
@@ -5376,13 +5389,7 @@ fn transcript_participant(
     let Some(address) = uri.strip_prefix("sip:").filter(|a| !a.contains(';')) else {
         return;
     };
-    if t.participants
-        .iter()
-        .any(|p| p.address.eq_ignore_ascii_case(address))
-    {
-        return;
-    }
-    t.participants.push(commscraft_ews::history::Participant {
+    t.add_participant(commscraft_ews::history::Participant {
         name: name
             .filter(|n| !n.is_empty())
             .unwrap_or(address)
@@ -6119,6 +6126,54 @@ mod tests {
             assert_eq!(address_book_file_allowed(&c), allowed);
         }
         assert!(abs_today().is_some_and(|d| d > 0x24E0));
+    }
+
+    /// Issue #145: the photo cache is kept per account and photo server; the names are
+    /// one-to-one, so two contacts never share a photo or its ETag.
+    #[test]
+    fn photo_cache_names() {
+        let base = std::path::Path::new("/c");
+        let p = |aor: &str, host: &str, mail: &str| photo_cache(base, aor, host, mail).unwrap();
+        let a = p(
+            "sip:alice@contoso.com",
+            "mail.contoso.com",
+            "alice+team@contoso.com",
+        );
+        // These two collided before.
+        assert_ne!(
+            a,
+            p(
+                "sip:alice@contoso.com",
+                "mail.contoso.com",
+                "alice_team@contoso.com"
+            )
+        );
+        // Another account or another photo server: another directory.
+        assert_ne!(
+            a.0,
+            p("sip:bob@contoso.com", "mail.contoso.com", "x@contoso.com").0
+        );
+        assert_ne!(
+            a.0,
+            p(
+                "sip:alice@contoso.com",
+                "mail2.contoso.com",
+                "x@contoso.com"
+            )
+            .0
+        );
+        // Case does not matter; no name is `.`/`..` or holds a path separator.
+        assert_eq!(
+            a,
+            p(
+                "sip:Alice@Contoso.com",
+                "MAIL.contoso.com",
+                "Alice+Team@contoso.com"
+            )
+        );
+        let odd = p("sip:alice@contoso.com", "h", "../x/@y");
+        assert!(odd.0.starts_with(base) && !odd.1.contains('/') && !odd.1.contains(".."));
+        assert!(photo_cache(base, "sip:a@b", "h", &"x".repeat(300)).is_none());
     }
 
     /// Issues #124, #129: the address book cache is kept per account and per service URL; the
