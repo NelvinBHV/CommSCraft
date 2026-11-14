@@ -124,8 +124,7 @@ pub struct NegotiatedRdp {
     pub remote_rtp: Endpoint,
     pub session_id: Option<String>,
     /// The ID of the RTP header extension `abs-send-time` both sides use ([RFC8285]): the
-    /// Windows clients send every RDP packet with it (`tested-in-lab`); the sharer took no RTP
-    /// of ours without it (inference: the only difference left).
+    /// Windows clients send every RDP packet with it (`tested-in-lab`).
     pub abs_send_time: Option<u8>,
 }
 
@@ -159,7 +158,9 @@ fn rdp_line(s: &Session) -> Option<&Media> {
 /// host candidate) and key, role viewer and content flow recvonly (SD-81, CS-02), RTCP on the
 /// same port (`a=rtcp-mux`, as offered). No `a=setup`: with the offer's fingerprint it would
 /// choose DTLS-SRTP ([RFC5763] §5), we take the SDES key; the TCP connection comes from ICE.
-/// Every other line is rejected with port 0.
+/// As the Windows viewer answers (`tested-in-lab`): `TCP/RTP/SAVP` when encrypted, the offered
+/// `a=extmap` lines and `a=x-bwealgorithm:packetpair` taken over. Every other line is rejected
+/// with port 0.
 pub fn answer_rdp(
     offer: &[u8],
     local: &Local,
@@ -210,10 +211,12 @@ pub fn answer_rdp(
         .attr("mid")
         .map(str::trim)
         .filter(|v| !v.is_empty() && v.len() <= 16 && v.chars().all(|c| c.is_ascii_alphanumeric()));
-    let mut section = format!(
-        "m=applicationsharing {} {} 127\r\n",
-        local.rtp_port, m.proto
-    );
+    let proto = if my_key.is_some() {
+        "TCP/RTP/SAVP"
+    } else {
+        m.proto.as_str()
+    };
+    let mut section = format!("m=applicationsharing {} {proto} 127\r\n", local.rtp_port);
     transport_attributes(local, &mut section);
     if let Some(k) = &my_key {
         section.push_str(&format!("a=crypto:{}\r\n", k.attribute()));
@@ -224,8 +227,14 @@ pub fn answer_rdp(
     }
     section.push_str("a=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\n");
     let abs_send_time = abs_send_time_of(m);
-    if let Some((_, line)) = &abs_send_time {
-        section.push_str(line);
+    for v in m.attrs("extmap").take(8) {
+        let v = v.trim();
+        if v.len() <= 160 && v.chars().all(|c| c.is_ascii_graphic() || c == ' ') {
+            section.push_str(&format!("a=extmap:{v}\r\n"));
+        }
+    }
+    if m.attr("x-bwealgorithm").map(str::trim) == Some("packetpair") {
+        section.push_str("a=x-bwealgorithm:packetpair\r\n");
     }
     if let Some(id) = &session_id {
         section.push_str(&format!("a=x-applicationsharing-session-id:{id}\r\n"));

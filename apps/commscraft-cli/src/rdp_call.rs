@@ -104,6 +104,8 @@ fn run(
         return format!("data stream: {e}");
     }
     media.set_data_abs_send_time(rdp.abs_send_time);
+    // The Windows clients' CNAME is their SIP URI (`tested-in-lab`).
+    media.set_data_cname(&sip_uri);
     let (mut viewer, first) = match rv::Viewer::new(rv::Config {
         width: 1920,
         height: 1080,
@@ -159,9 +161,9 @@ fn run(
         if media.data_broken() {
             break "data lost (MS-RTASPF: the stream ends at a loss)".into();
         }
-        // The first RDP bytes once ICE selected the path (design: not on a pair still being
-        // checked).
-        if first.is_some() && selected {
+        // The first RDP bytes once ICE selected the path and the peer's first RTCP came in,
+        // as the Windows viewer does it (`tested-in-lab`).
+        if first.is_some() && selected && media.data_peer_heard() {
             if let Some(b) = first.take() {
                 media.send_data(&b, now);
             }

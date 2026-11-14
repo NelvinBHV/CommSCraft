@@ -718,6 +718,7 @@ a=crypto:2 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3OD
 a=setup:active\r\na=connection:new\r\na=rtcp:13635\r\na=mid:1\r\na=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\n\
 a=extmap:1 http:\\\\www.webrtc.org\\experiments\\rtp-hdrext\\abs-send-time\r\n\
 a=extmap:3 http:\\\\skype.com\\experiments\\rtp-hdrext\\fast_bandwidth_feedback\r\n\
+a=x-bwealgorithm:packetpair\r\n\
 a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\na=x-applicationsharing-contentflow:sendonly\r\n";
     assert!(screen::offered_rdp_sharer(offer.as_bytes()));
     assert!(!screen::offered(offer.as_bytes()));
@@ -735,7 +736,7 @@ a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x
     )
     .unwrap();
     assert!(
-        a.contains("m=applicationsharing 9 TCP/RTP/AVP 127\r\n"),
+        a.contains("m=applicationsharing 9 TCP/RTP/SAVP 127\r\n"),
         "{a}"
     );
     assert!(a.contains("TCP-ACT"));
@@ -751,7 +752,10 @@ a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x
     assert!(a.contains(
         "a=extmap:1 http:\\\\www.webrtc.org\\experiments\\rtp-hdrext\\abs-send-time\r\n"
     ));
-    assert!(!a.contains("fast_bandwidth_feedback"));
+    assert!(a.contains(
+        "a=extmap:3 http:\\\\skype.com\\experiments\\rtp-hdrext\\fast_bandwidth_feedback\r\n"
+    ));
+    assert!(a.contains("a=x-bwealgorithm:packetpair\r\n"));
     assert_eq!(n.remote_key.unwrap().tag, 2);
     assert!(n
         .remote_ice

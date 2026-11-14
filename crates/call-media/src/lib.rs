@@ -713,18 +713,9 @@ impl CallMedia {
         self.start_transport(&remote_ice, remote_rtp, remote_rtp, controlling, now)
     }
 
-    /// Application sharing: RDP bytes to the peer (function 43). The first bytes are preceded
-    /// by empty packets that get our source past the receiver's probation (`Data::probation`).
+    /// Application sharing: RDP bytes to the peer (function 43).
     pub fn send_data(&mut self, bytes: &[u8], now: u64) {
-        let Some(packets) = self.data.as_mut().map(|d| {
-            let mut p = if d.sent == 0 {
-                d.probation(2, now)
-            } else {
-                Vec::new()
-            };
-            p.extend(d.send(bytes, now));
-            p
-        }) else {
+        let Some(packets) = self.data.as_mut().map(|d| d.send(bytes, now)) else {
             return;
         };
         if let Some((l, r)) = self.rtp_path() {
@@ -734,11 +725,25 @@ impl CallMedia {
         }
     }
 
+    /// Application sharing: the CNAME of our reports (the Windows clients name their SIP URI).
+    pub fn set_data_cname(&mut self, cname: &str) {
+        if let Some(d) = self.data.as_mut() {
+            d.set_cname(cname);
+        }
+    }
+
     /// Application sharing: the agreed `abs-send-time` header extension for our RTP packets.
     pub fn set_data_abs_send_time(&mut self, id: Option<u8>) {
         if let Some(d) = self.data.as_mut() {
             d.set_abs_send_time(id);
         }
+    }
+
+    /// Application sharing: whether the peer's RTCP came in on the data stream.
+    pub fn data_peer_heard(&self) -> bool {
+        self.data
+            .as_ref()
+            .is_some_and(media::data::Data::peer_heard)
     }
 
     /// Application sharing: whether a path to the peer is there (ICE found one), so the first
@@ -1883,6 +1888,9 @@ impl CallMedia {
                     return;
                 }
                 if let Some(data) = self.data.as_mut() {
+                    if media::classify(payload) == Kind::Rtcp {
+                        data.on_rtcp(payload);
+                    }
                     if media::classify(payload) == Kind::Rtp {
                         let bytes = data.on_rtp(payload);
                         if !bytes.is_empty() {

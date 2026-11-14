@@ -44,6 +44,8 @@ pub struct Data {
     cname: String,
     /// The ID of the `abs-send-time` header extension, when agreed.
     abs_send_time: Option<u8>,
+    /// An authentic RTCP packet of the peer came in.
+    peer_heard: bool,
     /// Received and sent payload octets.
     pub received: u64,
     pub sent: u64,
@@ -111,6 +113,7 @@ impl Data {
             next_rtcp: 0,
             cname: "commscraft@linux".into(),
             abs_send_time: None,
+            peer_heard: false,
             received: 0,
             sent: 0,
         })
@@ -164,26 +167,6 @@ impl Data {
         self.broken
     }
 
-    /// `count` RTP/SRTP packets without payload: a receiver may take a new source only after
-    /// [RFC3550] §A.1's `MIN_SEQUENTIAL` packets in a row and drop those before (probation);
-    /// the RDP stream starts with a single packet (inference, design). Empty payloads add
-    /// nothing to the byte stream.
-    pub fn probation(&mut self, count: usize, now_ms: u64) -> Vec<Vec<u8>> {
-        let ts = ticks(now_ms);
-        let mut out = Vec::new();
-        for _ in 0..count {
-            let Ok(p) = self.sender.packet_at(RDP_PT, false, &[], ts) else {
-                continue;
-            };
-            let p = self.extend(p, now_ms);
-            match self.tx_srtp.as_mut() {
-                Some(c) => out.extend(c.protect_rtp(&p).ok()),
-                None => out.push(p),
-            }
-        }
-        out
-    }
-
     /// RTP/SRTP packets carrying `bytes` (split at [`DATA_MTU`]).
     pub fn send(&mut self, bytes: &[u8], now_ms: u64) -> Vec<Vec<u8>> {
         let ts = ticks(now_ms);
@@ -204,6 +187,21 @@ impl Data {
             out.push(wire);
         }
         out
+    }
+
+    /// A received RTCP/SRTCP packet: only noted when it is authentic (its content is not used).
+    pub fn on_rtcp(&mut self, packet: &[u8]) {
+        let ok = match self.rx_srtp.as_mut() {
+            Some(c) => c.unprotect_rtcp(packet).is_ok(),
+            None => rtp::parse_rtcp(packet).is_ok(),
+        };
+        self.peer_heard |= ok;
+    }
+
+    /// Whether the peer's RTCP came in: the Windows viewer starts RDP only after the first
+    /// reports went both ways (`tested-in-lab`).
+    pub fn peer_heard(&self) -> bool {
+        self.peer_heard
     }
 
     /// A received RTP/SRTP packet: the bytes that are now in order (possibly none).
@@ -312,16 +310,10 @@ mod tests {
         assert_eq!(got, vec![7u8; 1400]);
     }
 
-    /// Empty packets for the probation carry nothing into the byte stream and keep the
-    /// sequence numbers running; the report is SRTCP-protected and due every 5 s.
+    /// Our report is an SRTCP-protected sender report, due every 5 s.
     #[test]
-    fn probation_and_report() {
-        let (mut tx, mut rx) = pair();
-        let mut packets = tx.probation(2, 0);
-        assert_eq!(packets.len(), 2);
-        packets.extend(tx.send(b"rdp", 0));
-        let got: Vec<u8> = packets.iter().flat_map(|p| rx.on_rtp(p)).collect();
-        assert_eq!(got, b"rdp");
+    fn report_interval() {
+        let (mut tx, _) = pair();
         let first = tx.rtcp_due(10_000, 1).unwrap();
         assert_eq!(first.get(1), Some(&200), "a sender report");
         assert!(tx.rtcp_due(14_999, 1).is_none());

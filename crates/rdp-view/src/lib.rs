@@ -28,7 +28,9 @@ use ironrdp_pdu::gcc::{
     SupportedColorDepths,
 };
 use ironrdp_pdu::mcs;
-use ironrdp_pdu::nego::{ConnectionConfirm, ConnectionRequest, RequestFlags, SecurityProtocol};
+use ironrdp_pdu::nego::{
+    ConnectionConfirm, ConnectionRequest, NegoRequestData, RequestFlags, SecurityProtocol,
+};
 use ironrdp_pdu::rdp::capability_sets::{
     Bitmap, BitmapCache, BitmapDrawingFlags, Brush, CacheDefinition, CacheEntry, CapabilitySet,
     ClientConfirmActive, DemandActive, General, GeneralExtraFlags, GlyphCache, GlyphSupportLevel,
@@ -142,6 +144,21 @@ pub struct Viewer {
     image: Option<DecodedImage>,
 }
 
+/// The cookie's name: the first 9 characters of our SIP URI with its scheme, as the Windows
+/// viewer sends it (for sip:alice@contoso.com: `Cookie: mstshash=sip:alice`, `tested-in-lab`); printable characters only.
+fn cookie_name(sip_uri: &str) -> String {
+    let uri = sip_uri.trim();
+    let uri = if uri.starts_with("sip:") {
+        uri.to_string()
+    } else {
+        format!("sip:{uri}")
+    };
+    uri.chars()
+        .filter(|c| c.is_ascii_graphic())
+        .take(9)
+        .collect()
+}
+
 fn protocol(step: &str, e: impl std::fmt::Display) -> Error {
     Error::Protocol(format!("{step}: {e}"))
 }
@@ -158,7 +175,9 @@ impl Viewer {
     /// security, [MS-RDPBCGR] §2.2.1.1: `requestedProtocols` PROTOCOL_RDP = 0).
     pub fn new(config: Config) -> Result<(Viewer, Vec<u8>), Error> {
         let request = ConnectionRequest {
-            nego_data: None,
+            // The routing cookie `mstshash` ([MS-RDPBCGR] §2.2.1.1) as the Windows viewer
+            // sends it (`tested-in-lab`).
+            nego_data: Some(NegoRequestData::cookie(cookie_name(&config.sip_uri))),
             flags: RequestFlags::empty(),
             protocol: SecurityProtocol::empty(),
             correlation_info: None,

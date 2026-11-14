@@ -5135,7 +5135,7 @@ a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x
     assert_eq!(ok.status_code(), Some(200));
     let body = String::from_utf8_lossy(&ok.body).to_string();
     assert!(
-        body.contains("m=applicationsharing 9 TCP/RTP/AVP 127") && body.contains("role:viewer")
+        body.contains("m=applicationsharing 9 TCP/RTP/SAVP 127") && body.contains("role:viewer")
     );
     assert!(events(&out)
         .iter()
