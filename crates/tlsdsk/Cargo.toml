@@ -14,8 +14,9 @@ rustls.workspace = true
 # Signing the certificate request with the user's RSA key (constant time).
 ring = "=0.17.14"
 # Only to generate the RSA key pair (ring cannot); no private key operation runs in it.
-rsa = { version = "=0.9.10", default-features = false, features = ["std", "u64_digit"] }
-rand_core = { version = "0.6", features = ["getrandom"] }
+rsa = { version = "=0.10.0", default-features = false, features = ["std", "encoding", "getrandom"] }
+# The operating system's random source for the key generation.
+getrandom = { version = "=0.4.3", features = ["sys_rng"] }
 hmac.workspace = true
 sha2.workspace = true
 subtle.workspace = true

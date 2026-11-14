@@ -34,6 +34,21 @@ jobs:
       - name: Tests (specification test vectors)
         run: cargo test --locked
 
+  # Issue #147: known advisories (RustSec) for every crate in Cargo.lock, warnings such as
+  # unmaintained or unsound crates included. The native FFmpeg, ALSA and Kerberos libraries come
+  # from the build host's packages and are not covered here (see docs/security.md).
+  advisories:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: rustup toolchain install stable --profile minimal && rustup default stable
+      - name: cargo-audit (pinned)
+        run: cargo install --locked cargo-audit --version 0.23.0
+      - name: RustSec advisories of Cargo.lock
+        run: cargo audit --deny warnings
+
   docs:
     runs-on: ubuntu-latest
     timeout-minutes: 5

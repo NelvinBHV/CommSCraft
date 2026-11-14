@@ -688,3 +688,36 @@ mod voicemail_tests {
         assert!(parse_list(&err).is_err());
     }
 }
+
+/// Security: an open conversation keeps at most `MAX_LINES` lines (the newest) of bounded
+/// length and at most `MAX_PARTICIPANTS` distinct participants, however much a peer sends.
+#[test]
+fn open_transcript_is_bounded() {
+    use crate::history::{Conversation, Line, Participant, MAX_LINE, MAX_LINES, MAX_PARTICIPANTS};
+    let mut c = Conversation::default();
+    for i in 0..(MAX_LINES as u64 + 100) {
+        c.add_line(Line {
+            time: i,
+            sender: "bob".into(),
+            text: "x".repeat(MAX_LINE + 10),
+        });
+    }
+    assert_eq!(c.lines.len(), MAX_LINES);
+    assert_eq!(
+        c.lines.first().map(|l| l.time),
+        Some(100),
+        "the oldest lines go"
+    );
+    assert!(c.lines.iter().all(|l| l.text.chars().count() == MAX_LINE));
+    for i in 0..(MAX_PARTICIPANTS + 10) {
+        c.add_participant(Participant {
+            name: String::new(),
+            address: format!("u{i}@contoso.com"),
+        });
+    }
+    c.add_participant(Participant {
+        name: String::new(),
+        address: "U0@CONTOSO.COM".into(),
+    });
+    assert_eq!(c.participants.len(), MAX_PARTICIPANTS);
+}
