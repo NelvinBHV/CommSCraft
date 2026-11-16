@@ -108,6 +108,7 @@ impl<R: Random> Engine<R> {
                 video: None,
                 emergency: true,
                 screen: false,
+                rdp: false,
             },
             now,
             &mut call_out,

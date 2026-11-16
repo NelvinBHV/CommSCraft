@@ -5139,5 +5139,144 @@ a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x
     );
     assert!(events(&out)
         .iter()
-        .any(|ev| matches!(ev, Event::ScreenRdp { call: 1, rdp } if rdp.remote_rtp.1 == 13635)));
+        .any(|ev| matches!(ev, Event::ScreenRdp { call: 1, rdp, controlling: false } if rdp.remote_rtp.1 == 13635)));
+}
+
+/// Function 43 in meetings over RDP (a shared window, no screen video): the RDP viewer offer
+/// goes to the application sharing MCU, its answer starts the data stream with us as the ICE
+/// controlling side, the final offer after ICE is the RDP offer with remote candidates, and
+/// leaving ends the viewing call.
+#[test]
+fn meeting_window_viewing_over_rdp() {
+    const ASMCU: &str = "sip:alice@contoso.com;gruu;opaque=app:conf:applicationsharing:id:FC275ECD12493E4E9C27C894FE91E104";
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::JoinConference {
+            focus: FOCUS.into(),
+        },
+        NOW,
+    );
+    let focus_invite = find(&out, "INVITE");
+    let granted = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" requestId="1" C3PVersion="1" code="success"><addUser><conferenceKeys confEntity="{FOCUS}"/></addUser></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &focus_invite,
+            200,
+            Some("application/cccp+xml"),
+            &granted,
+            &[],
+        ),
+        NOW,
+    );
+    let roster_sub = find(&out, "SUBSCRIBE");
+    let doc = format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="full" version="1"><conference-description><conf-uris><entry><uri>{ASMCU}</uri><purpose>applicationsharing</purpose></entry></conf-uris></conference-description><users><user entity="sip:alice@contoso.com" state="full"><endpoint entity="{{F}}" msci:session-type="focus"><status>connected</status></endpoint></user></users></conference-info>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &roster_sub,
+            200,
+            Some("application/conference-info+xml"),
+            &doc,
+            &[("Expires", "3600")],
+        ),
+        NOW,
+    );
+    let conversation = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::Participants { conversation, .. } => Some(*conversation),
+            _ => None,
+        })
+        .or_else(|| {
+            events(&out).iter().find_map(|ev| match ev {
+                Event::ConversationStarted { conversation, .. } => Some(*conversation),
+                _ => None,
+            })
+        })
+        .unwrap_or(1);
+    let mut local = media_local(40000, 4);
+    if let Some(ice) = local.ice.as_mut() {
+        for c in &mut ice.candidates {
+            c.transport = commscraft_sdp::Transport::TcpPassive;
+            c.port = 40000;
+        }
+    }
+    let out = e.command(
+        Command::ViewConferenceRdp {
+            conversation,
+            local: Box::new(local.clone()),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let call = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::ConferenceScreen { call, .. } => Some(*call),
+            _ => None,
+        })
+        .expect("viewing call");
+    let invite = find(&out, "INVITE");
+    assert!(invite
+        .single("To")
+        .unwrap()
+        .unwrap()
+        .contains("app:conf:applicationsharing"));
+    let body = String::from_utf8_lossy(&invite.body).to_string();
+    assert!(
+        body.contains("m=applicationsharing 40000 TCP/RTP/SAVP 127\r\n"),
+        "{body}"
+    );
+    assert!(body.contains("a=x-applicationsharing-role:viewer\r\n"));
+    assert!(!body.contains("m=video") && !body.contains("m=audio"));
+    let answer_sdp = "v=0\r\no=- 2 0 IN IP4 192.0.2.20\r\ns=session\r\nc=IN IP4 192.0.2.20\r\nt=0 0\r\n\
+m=applicationsharing 5000 TCP/RTP/SAVP 127\r\na=ice-ufrag:cccc\r\na=ice-pwd:dddddddddddddddddddddddd\r\n\
+a=candidate:1 1 TCP-PASS 2120613887 192.0.2.20 5000 typ host\r\n\
+a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
+a=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\na=x-applicationsharing-session-id:1\r\n\
+a=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\n";
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            answer_sdp,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(sends(&out).iter().any(|m| m.method() == Some("ACK")));
+    assert!(events(&out).iter().any(|ev| matches!(ev,
+        Event::ScreenRdp { call: c, rdp, controlling: true } if *c == call && rdp.remote_rtp.1 == 5000)));
+    // The final offer after ICE: the RDP offer with the remote candidate.
+    let mut fin = local;
+    fin.remote_candidates = vec![(1, "192.0.2.20:5000".parse().unwrap())];
+    let out = e.command(
+        Command::UpdateCall {
+            call,
+            local: Box::new(fin),
+        },
+        NOW,
+    );
+    let reinvite = find(&out, "INVITE");
+    let body = String::from_utf8_lossy(&reinvite.body).to_string();
+    assert!(
+        body.contains("m=applicationsharing")
+            && body.contains("a=remote-candidates:1 192.0.2.20 5000"),
+        "{body}"
+    );
+    assert!(!body.contains("m=audio"));
+    // Leaving the conversation ends the viewing call.
+    let out = e.command(Command::EndConversation { conversation }, NOW);
+    assert!(sends(&out).iter().any(|m| m.method() == Some("BYE")
+        && m.single("To")
+            .ok()
+            .flatten()
+            .is_some_and(|t| t.contains("applicationsharing"))));
 }

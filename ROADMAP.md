@@ -1,8 +1,8 @@
 # CommSCraft roadmap
 
-**Stage: M1 and M5 done** · M0 done · M2, M3 built · M1, M4 and M5 closed · next M7, then M6 · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
+**Stage: M1 and M5 done** · M0 done · M2, M3 built · M1, M4 and M5 closed · next M6 (lab run of RDP in meetings), then M7 · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-14 · **Change:** minor (viewing a window shared over RDP)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-14 · **Change:** minor (windows shared over RDP in meetings, tested-offline)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **46 crates + 1 app** (`commscraft-cli`), **578 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **46 crates + 1 app** (`commscraft-cli`), **580 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -37,7 +37,7 @@ transfer can come later from interop captures.
    parts in [`docs/gaps.md`](docs/gaps.md).
 2. **M4 – conferences and telephony** (closed 2026-11-01): meetings (scheduling, options, lobby, audio, presenter commands, announcements, dial-out), PSTN calling, transfer, forwarding, team/delegate ringing, delegates, call park, E911, QoE; optional remainders in [`docs/gaps.md`](docs/gaps.md).
 3. **M5 – video** (closed 2026-11-09): 1:1 and meeting video with H.264 UC, simulcast, FEC, rate adaptation, picture control, bandwidth management, GPU encoding and decoding, the received video in a sandboxed process; optional remainders in [`docs/gaps.md`](docs/gaps.md).
-4. **M7 – Exchange integration** (next) and **M6 – viewing shared screens**; the graphical
+4. **M6 – viewing shared screens** (next: the lab run of RDP in meetings) and **M7 – Exchange integration**; the graphical
    interface (egui) comes after the milestones.
    Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
 
@@ -47,6 +47,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-16 | Viewing a window shared in a meeting over RDP (tested-offline): `/viewconf N` offers the application sharing MCU an RDP viewer line when no screen video is announced, takes its answer and sends the final offer after ICE. |
 | 2026-11-14 | Viewing a window shared 1:1 over RDP (`/view N` on an RDP-only offer, `tested-in-lab`): the application sharing data stream (RTP payload type 127 over ICE-TCP), the RDP viewer on IronRDP (`rdp-view`: own connection sequence, dynamic channels, graphics pipeline) and the screen in the Wayland window. |
 | 2026-11-14 | Security audit findings: the transcript of an open conversation is bounded (#143); the video window decodes nothing without its sandbox and system call filter unless the user allows it (#144); contact photos are cached per account and server under one-to-one names (#145); web tickets never show their assertion in debug output (#146); CI checks `Cargo.lock` against the RustSec database, and `rsa` is updated to 0.10 (#147). |
 | 2026-11-09 | Viewing the screen shared in a meeting (`/viewconf N`) through the application sharing MCU; ad-hoc conferences now include that MCU. |

@@ -839,3 +839,79 @@ a=x-applicationsharing-session-id:1\r\na=x-applicationsharing-role:sharer\r\na=x
     .unwrap();
     assert!(!a.contains("a=remote-candidates") && a.contains("a=setup:active\r\n"));
 }
+
+/// Function 43 in meetings over RDP: our viewer offer to the application sharing MCU – only the
+/// RDP line, passive candidate first, component 1, viewer role, the send time extension; the
+/// final offer with remote candidates; the MCU's answer read with its key for our tag.
+#[test]
+fn rdp_viewer_offer_to_the_mcu() {
+    let mut local = local();
+    local.key = Some(Key::new(1, [5; 30]));
+    if let Some(ice) = local.ice.as_mut() {
+        let mut active = ice.candidates[0].clone();
+        active.transport = Transport::TcpActive;
+        active.port = 9;
+        let mut passive = ice.candidates[0].clone();
+        passive.transport = Transport::TcpPassive;
+        passive.port = 40000;
+        let mut rtcp = passive.clone();
+        rtcp.component = 2;
+        ice.candidates = vec![active, passive, rtcp];
+    }
+    let o = screen::rdp_viewer_offer(&local, Encryption::Required).unwrap();
+    assert!(
+        o.contains("m=applicationsharing 40000 TCP/RTP/SAVP 127\r\n"),
+        "{o}"
+    );
+    let cands: Vec<&str> = o
+        .lines()
+        .filter(|l| l.starts_with("a=candidate:"))
+        .collect();
+    assert_eq!(cands.len(), 2);
+    assert!(cands[0].contains("TCP-PASS") && cands[1].contains("TCP-ACT"));
+    assert!(o.contains("a=crypto:1 "));
+    assert!(o.contains("a=setup:active\r\na=connection:new\r\n"));
+    assert!(o.contains("a=x-applicationsharing-role:viewer\r\n"));
+    assert!(o.contains("a=x-applicationsharing-contentflow:recvonly\r\n"));
+    assert!(o.contains(
+        "a=extmap:1 http:\\\\www.webrtc.org\\experiments\\rtp-hdrext\\abs-send-time\r\n"
+    ));
+    assert!(!o.contains("m=video") && !o.contains("m=audio"));
+    parse(o.as_bytes()).unwrap();
+    // The final offer after ICE.
+    let mut fin = local.clone();
+    fin.remote_candidates = vec![(1, "192.0.2.30:5000".parse().unwrap())];
+    let f = screen::rdp_viewer_offer(&fin, Encryption::Required).unwrap();
+    assert!(
+        f.contains("a=remote-candidates:1 192.0.2.30 5000\r\n")
+            && f.contains("a=connection:existing\r\n")
+    );
+    // No key under "required": refused.
+    let mut plain = local.clone();
+    plain.key = None;
+    assert!(screen::rdp_viewer_offer(&plain, Encryption::Required).is_err());
+
+    let answer = "v=0\r\no=- 0 0 IN IP4 192.0.2.30\r\ns=session\r\nc=IN IP4 192.0.2.30\r\nt=0 0\r\n\
+m=applicationsharing 5000 TCP/RTP/SAVP 127\r\na=ice-ufrag:aaaa\r\na=ice-pwd:bbbbbbbbbbbbbbbbbbbbbbbb\r\n\
+a=candidate:1 1 TCP-PASS 2120613887 192.0.2.30 5000 typ host\r\n\
+a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
+a=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\n\
+a=extmap:1 http:\\\\www.webrtc.org\\experiments\\rtp-hdrext\\abs-send-time\r\n\
+a=x-applicationsharing-session-id:7\r\na=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\n";
+    let key = Key::new(1, [5; 30]);
+    let n =
+        screen::rdp_answer_to_offer(answer.as_bytes(), Some(&key), Encryption::Required).unwrap();
+    assert_eq!(n.remote_rtp.1, 5000);
+    assert_eq!(n.remote_key.unwrap().tag, 1);
+    assert_eq!(n.session_id.as_deref(), Some("7"));
+    assert_eq!(n.abs_send_time, Some(1));
+    // Without the MCU's key under "required", or in the viewer role: refused.
+    let plain = answer.replace("a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n", "");
+    assert!(
+        screen::rdp_answer_to_offer(plain.as_bytes(), Some(&key), Encryption::Required).is_err()
+    );
+    let viewer = answer.replace("role:sharer", "role:viewer");
+    assert!(
+        screen::rdp_answer_to_offer(viewer.as_bytes(), Some(&key), Encryption::Required).is_err()
+    );
+}

@@ -819,6 +819,7 @@ impl<R: Random> Engine<R> {
                 video,
                 emergency: false,
                 screen: false,
+                rdp: false,
             },
             now,
             out,
@@ -878,6 +879,59 @@ impl<R: Random> Engine<R> {
         );
         if let Some(call) = started {
             self.screen_calls.insert(call);
+            if let Some(g) = self.group_mut(id) {
+                g.screen_call = Some(call);
+            }
+            out.push(Output::Event(Event::ConferenceScreen {
+                conversation: id,
+                call,
+            }));
+        }
+    }
+
+    /// `ViewConferenceRdp` (function 43): view a window shared in the conference – a call to its
+    /// application sharing MCU with our RDP viewer offer (`sdp::screen::rdp_viewer_offer`);
+    /// the call belongs to the conversation and ends with it.
+    pub(crate) fn view_conference_rdp(
+        &mut self,
+        id: ConversationId,
+        local: sdp::Local,
+        policy: sdp::Encryption,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let uri = match self.group_mut(id) {
+            Some(g) if g.lobby_since.is_some() => {
+                out.push(Output::Event(Event::Notice("still in the lobby".into())));
+                return;
+            }
+            Some(g) if g.screen_call.is_some() => {
+                out.push(Output::Event(Event::Notice("already viewing".into())));
+                return;
+            }
+            Some(g) => g.roster.as_uri.clone(),
+            None => None,
+        };
+        let Some(uri) = uri else {
+            out.push(Output::Event(Event::Notice(
+                "nothing is shared in this conference".into(),
+            )));
+            return;
+        };
+        let started = self.start_call_with(
+            &uri,
+            local,
+            policy,
+            crate::call::Extras {
+                rdp: true,
+                ..Default::default()
+            },
+            now,
+            out,
+        );
+        if let Some(call) = started {
+            self.screen_calls.insert(call);
+            self.rdp_calls.insert(call);
             if let Some(g) = self.group_mut(id) {
                 g.screen_call = Some(call);
             }

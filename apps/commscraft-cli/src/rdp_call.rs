@@ -32,8 +32,10 @@ pub enum ToRdp {
 }
 
 pub enum FromRdp {
-    /// Our data stream for the 200 OK.
+    /// Our data stream for the 200 OK (or, in a meeting, the offer).
     Ready(u32, Box<sdp::Local>),
+    /// ICE chose the path and we offered (a meeting): the final offer (IC-07).
+    Selected(u32, Box<sdp::Local>),
     Notice(u32, String),
     /// The viewing ended (the reason).
     Ended(u32, String),
@@ -123,6 +125,7 @@ fn run(
     let mut last_picture = 0u64;
     let mut selected = false;
     let mut final_answer = false;
+    let mut final_sent = false;
     let why = 'session: loop {
         match rx.try_recv() {
             Ok(ToRdp::Stop) | Err(mpsc::TryRecvError::Disconnected) => break "stopped".into(),
@@ -156,7 +159,16 @@ fn run(
                 },
                 cm::Event::Failed(why) => break 'session format!("data path: {why}"),
                 cm::Event::PeerBye => break 'session "the sharer stopped".into(),
-                cm::Event::Selected => selected = true,
+                cm::Event::Selected => {
+                    selected = true;
+                    // We offered (a meeting's MCU): the final offer goes out now.
+                    if controlling && !final_sent {
+                        final_sent = true;
+                        if let Some(d) = media.final_description() {
+                            let _ = events.send(FromRdp::Selected(id, Box::new(d)));
+                        }
+                    }
+                }
                 cm::Event::Dtmf(_) | cm::Event::Video(_) => {}
             }
         }
@@ -164,8 +176,13 @@ fn run(
             break "data lost (MS-RTASPF: the stream ends at a loss)".into();
         }
         // The first RDP bytes once ICE selected the path, the peer's first RTCP came in (as the
-        // Windows viewer does it, `tested-in-lab`) and the final offer was answered (design).
-        if first.is_some() && selected && media.data_peer_heard() && final_answer {
+        // Windows viewer does it, `tested-in-lab`) and, when we answered, the sharer's final
+        // offer was answered too (`tested-in-lab`); when we offered, our final offer went out.
+        if first.is_some()
+            && selected
+            && media.data_peer_heard()
+            && (final_answer || (controlling && final_sent))
+        {
             if let Some(b) = first.take() {
                 media.send_data(&b, now);
             }
