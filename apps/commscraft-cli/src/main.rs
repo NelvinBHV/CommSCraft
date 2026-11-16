@@ -3232,6 +3232,10 @@ fn interactive(
                                     let _ = h.tx.send(video_call::ToVideo::Source(msi));
                                 }
                             }
+                        } else {
+                            // No screen video any more (sharing ended, or a window is shared
+                            // over RDP now): `/viewconf` must not pick the video path.
+                            screen_source.remove(&conversation);
                         }
                         match sharer {
                             Some(p) if sharing_announced.insert(conversation) => println!(
@@ -4117,6 +4121,14 @@ fn interactive(
                         );
                         pending_conf_rdp.insert(id, conversation);
                         println!("* [{conversation}] preparing to view the shared window …");
+                        None
+                    }
+                    // Nobody shares: no viewing call that would show nothing.
+                    Some(conversation)
+                        if !sharing_announced.contains(&conversation)
+                            && !screen_source.contains_key(&conversation) =>
+                    {
+                        println!("* [{conversation}] nobody shares in this conversation right now");
                         None
                     }
                     // Function 43: view what is shared in a meeting (receive-only video).
