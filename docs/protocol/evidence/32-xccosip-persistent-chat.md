@@ -15,8 +15,13 @@ Sources: [MS-XCCOSIP] "Extensible Chat Control Over Session Initiation Protocol 
 
 ## Gaps
 - L-16: Neither the **Content-Type of the INFO body** nor the **SDP of the INVITE** to the chat server is given in the document; the examples in §4 (pp. 72–76) show only XML payloads.
-- Note: persistent chat still exists in SfB Server 2019 but is not used in every deployment – plan it as an **optional** function.
+- Note (corrected 2026-11-16): Skype for Business Server 2019 no longer supports persistent chat; it exists up to Skype for Business Server 2015 (official Microsoft documentation "Topology Basics for Skype for Business Server", Learn). It stays an **optional** function and can only be verified against a 2015 pool.
 
 ## Later finding (file 39)
 - L-16 **secondary evidence** (OB-17): INVITE to `ocschat@<domain>` or the pool URI with an IM SDP; XCCOS in INFO with `Content-Type: text/plain`.
 - L-16 stays secondary evidence (OB-17); interop test IT-05.
+
+## Implementation (2026-11-16)
+- `crates/xccos`: envelopes with a growing envid and seqid 1, the commands requri, getserverinfo (infoType of the SHOULD list, §3.1.4.3, p. 46), getassociations (MEMBER, maxResult; element `association`, §2.2.2.1.20, p. 30), bjoin (`chanid key="0"`, §2.2.2.1.9, p. 23), bccontext; sending grpchat with chatId 0 and originatingMessageId (§4.6, p. 76); the reply matching of §3.1.2.1.5 (p. 45) and the 10 s transaction timer; participants from the aib indexes into the users (§3.1.5.5, p. 47); LastReceivedMessageId per room. Tested against the examples §4.1–4.3 and §4.6 (pp. 73–76).
+- The bjoin reply example sends an `rpl:bccontext` under the bjoin's commandid after `rpl:bjoin` (p. 74), although the matching rule drops reply ids that do not fit the command (§3.1.2.1.5 step 6); the client takes it as the backchat of the join (inference from the example).
+- `crates/session` (`rooms`): INVITE with an IM SDP to `DefaultPersistentChatPoolUri` (when `EnablePersistentChat` is true; [MS-SIPREGE] §2.2.2.5.11, p. 71), XCCOS in INFO with `text/plain` (secondary evidence OB-17, IT-05), BYE after requri and a new dialog with the channel server (§3.1.3.5, p. 46). No lab run is possible with Skype for Business Server 2019.

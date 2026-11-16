@@ -1,6 +1,6 @@
 # CommSCraft architecture (planned)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-09 · **Change:** minor (response group agent, web tickets)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (crates psom and xccos)
 
 Rules for working in the code are in
 [`AGENTS.md`](../AGENTS.md).
@@ -67,7 +67,8 @@ The video window and its decoder run in a helper process of `commscraft-cli` (`v
 | `commscraft-session` | L4 | Session engine (sans-I/O): registration, bootstrap (endpoint publication, contact list), long-lived presence subscriptions with NOTIFY/refresh/resubscribe, client transactions with timeouts, incoming and outgoing IM conversations, events for a UI | OCS-UC03, PR-11…PR-33, SIP-04/07, AE-29/32, RFC 3261/3265 |
 | `commscraft-xml` | L0 | Bounded XML reader without DTD/entities, namespaces, explicit stack | docs/security.md |
 | `commscraft-provisioning` | L3 | Provisioning SUBSCRIBE, `provisionGroupList` parser, validated ServerConfiguration (HTTPS URLs with domain check, SIP URIs, port ranges) | RG-40…RG-44, K-RG-4 |
-| `commscraft-psom` | L3 | PSOM GenericInt, String, RPC frame | PO-04, PO-05, K-PO-2, K-PO-3 |
+| `commscraft-psom` | L3 | PSOM: encodings, records, interfaces and the client of the meeting content (whiteboard, slides, polls) | PO-01 … PO-08, K-PO-1 … K-PO-4 |
+| `commscraft-xccos` | L1 | Persistent chat (MS-XCCOSIP): commands, replies, room messages, transactions | XC-01 … XC-07 |
 
 Dependencies (pure Rust): RustCrypto `md4`, `md-5`, `hmac`, `sha1`, `aes`, plus
 `subtle` (constant-time comparison) and `zeroize` (wiping keys) in `sipae`. The adapter `net` adds

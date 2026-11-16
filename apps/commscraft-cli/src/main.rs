@@ -66,7 +66,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
-          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /view [N] (view a shared screen)  /viewconf [N] (view the screen or window shared in a meeting)  /content [N|stop] (whiteboard, slides and polls of a meeting)  /vote CONTENT CHOICE (in a poll)  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /view [N] (view a shared screen)  /viewconf [N] (view the screen or window shared in a meeting)  /content [N|stop] (whiteboard, slides and polls of a meeting)  /vote CONTENT CHOICE (in a poll)  /rooms [leave] (persistent chat rooms)  /room join N | history N | N TEXT  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /meeting ID  /cancelmeeting ID [static]
@@ -2534,6 +2534,9 @@ fn interactive(
     // Function 44: the content connection of each meeting (whiteboard, slides, polls).
     let (content_tx, content_rx) = mpsc::channel::<meeting_content::FromContent>();
     let mut content_handles: BTreeMap<u32, meeting_content::ContentHandle> = BTreeMap::new();
+    // Function 20: the persistent chat rooms listed, by number, and their names by URI.
+    let mut room_list: Vec<String> = Vec::new();
+    let mut room_names: BTreeMap<String, String> = BTreeMap::new();
     let mut rdp_offers: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
     let mut rdp_handles: BTreeMap<u32, rdp_call::RdpHandle> = BTreeMap::new();
     let mut pending_rdp: BTreeMap<u32, u32> = BTreeMap::new();
@@ -3312,6 +3315,88 @@ fn interactive(
                             println!("* [{conversation}] waiting in the lobby for admission …");
                         } else {
                             println!("* [{conversation}] admitted to the meeting");
+                        }
+                    }
+                    E::ChatRooms(ev) => {
+                        use commscraft_xccos::Event as X;
+                        let name = |names: &BTreeMap<String, String>, uri: &str| {
+                            names.get(uri).cloned().unwrap_or_else(|| uri.to_string())
+                        };
+                        match ev {
+                            X::ServerInfo { name, .. } => {
+                                let shown = if name.is_empty() {
+                                    "persistent chat".to_string()
+                                } else {
+                                    name
+                                };
+                                println!("* connected to {shown}");
+                            }
+                            X::Rooms(rooms) => {
+                                println!("* {} chat rooms (/room join N):", rooms.len());
+                                room_list.clear();
+                                for r in rooms {
+                                    room_names.insert(r.uri.clone(), r.name.clone());
+                                    room_list.push(r.uri.clone());
+                                    println!(
+                                        "  {}) {} – {}",
+                                        room_list.len(),
+                                        r.name,
+                                        r.description
+                                    );
+                                }
+                            }
+                            X::Joined(rooms) => {
+                                for r in rooms {
+                                    if !r.name.is_empty() {
+                                        room_names.insert(r.uri.clone(), r.name.clone());
+                                    }
+                                    println!(
+                                        "* joined {} ({} in the room){}",
+                                        name(&room_names, &r.uri),
+                                        r.participants.len(),
+                                        if r.topic.is_empty() {
+                                            String::new()
+                                        } else {
+                                            format!(" – {}", r.topic)
+                                        }
+                                    );
+                                }
+                            }
+                            X::History(rooms) => {
+                                for r in rooms {
+                                    for m in r.messages {
+                                        let who = if m.author_name.is_empty() {
+                                            m.author
+                                        } else {
+                                            m.author_name
+                                        };
+                                        println!(
+                                            "  [{}] {} {who}: {}",
+                                            name(&room_names, &m.room),
+                                            m.time,
+                                            m.text
+                                        );
+                                    }
+                                }
+                            }
+                            X::Message(m) => {
+                                if !m.ours {
+                                    let who = if m.author_name.is_empty() {
+                                        m.author
+                                    } else {
+                                        m.author_name
+                                    };
+                                    println!(
+                                        "* [{}] {who}: {}",
+                                        name(&room_names, &m.room),
+                                        m.text
+                                    );
+                                }
+                            }
+                            X::Failed { command, code } => {
+                                println!("* chat room command {command} failed ({code})")
+                            }
+                            X::ChannelServer(_) => {}
                         }
                     }
                     E::MeetingContent {
@@ -4132,6 +4217,50 @@ fn interactive(
                     }
                     println!("* preparing the call (gathering media addresses) …");
                     None
+                }
+                // Function 20: persistent chat rooms.
+                "/rooms" if arg.trim() == "leave" => Some(C::LeaveRooms),
+                "/rooms" => Some(C::ChatRooms),
+                "/room" => {
+                    let (sub, rest) = arg.trim().split_once(' ').unwrap_or((arg.trim(), ""));
+                    let pick = |s: &str| {
+                        s.trim()
+                            .parse::<usize>()
+                            .ok()
+                            .and_then(|n| n.checked_sub(1))
+                            .and_then(|i| room_list.get(i).cloned())
+                            .or_else(|| {
+                                s.trim()
+                                    .starts_with("ma-chan://")
+                                    .then(|| s.trim().to_string())
+                            })
+                    };
+                    match sub {
+                        "join" => match pick(rest) {
+                            Some(room) => Some(C::JoinRooms { rooms: vec![room] }),
+                            None => {
+                                println!("* /room join N (from /rooms)");
+                                None
+                            }
+                        },
+                        "history" => match pick(rest) {
+                            Some(room) => Some(C::RoomHistory { room }),
+                            None => {
+                                println!("* /room history N");
+                                None
+                            }
+                        },
+                        n => match (pick(n), rest.trim()) {
+                            (Some(room), text) if !text.is_empty() => Some(C::SendToRoom {
+                                room,
+                                text: text.to_string(),
+                            }),
+                            _ => {
+                                println!("* /room join N | history N | N TEXT");
+                                None
+                            }
+                        },
+                    }
                 }
                 // Function 44: join the web conferencing MCU, or leave it.
                 "/content" if arg.trim() == "stop" => {

@@ -7,6 +7,7 @@ members = [
     "crates/sip-identity",
     "crates/abs",
     "crates/psom",
+    "crates/xccos",
     "crates/sipcomp",
     "crates/turn-bwm",
     "crates/sip-msg",
