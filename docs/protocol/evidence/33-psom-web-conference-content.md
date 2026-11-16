@@ -30,3 +30,9 @@ Source: [MS-PSOM] "PSOM Shared Object Messaging Protocol", edition 20250520, 111
 ## Later findings (2026-10-27)
 - Recomputed in `crates/psom`: GenericInt table (p. 102), String example (p. 104), the complete ConnMgr frames `version`, `addProtocol` and `doneProtocols` of client and server (§4.1.4–4.1.5, pp. 93–95; frame = 0x16, 4-byte big-endian MessageLength, ProxyId, MethodIndex, parameters), and the decoding of the Meeting `addProtocol` frame (p. 96).
 - K-PO-2: the decoder accepts the two irregular forms with the meaning given in the table; the encoder follows the pseudo code.
+
+## Later findings (2026-11-16)
+- The client (`crates/psom`, client, iface, wire) reproduces the examples byte for byte: connection join (§4.1.1, p. 92), SetChannel 0 and the ConnMgr frames (§4.1.3–4.1.5, pp. 93–95), RPCOpen with `lookup` (§4.2, p. 96, 49 bytes), and decodes cSetUrlBase, Connect and cMeetingReady (§4.3, p. 97).
+- The example connects the part "contentUserManager"; the Children list of Meeting writes "ContentUserManager" (§3.1.4.1.6.1, p. 36). The client compares part names without regard to case (inference).
+- The server hash in the example Connect (`87 49 d5 9c 18 ed 9d 9e 0c`) is the ContentUserManager server hash of §3.1.4.1.7.1 (p. 37), confirming that a Connect carries the initiator's interface hash.
+- The content types of Q&A and shared links are not listed (§3.2.4.1.3.1, p. 57; schema p. 62): such content is shown without its extension (open).

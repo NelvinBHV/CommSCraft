@@ -11,7 +11,7 @@ application, a ranked work list, and nothing copied from Microsoft products.
 > **Stage: M1 (sign-in), M4, M5 (video) and M6 (viewing shared screens) closed, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search, audio and video calls, meetings and telephony (transfer, forwarding, park, delegates,
 > emergency calls) exist as building blocks that pass offline tests and whose main flows also ran in the owner's private lab (46 crates,
-> 584 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
+> 588 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
 > for the owner's runs on authorized servers; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
@@ -39,7 +39,7 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 ## What works today
 
 Status from [`docs/target-app-parity.md`](docs/target-app-parity.md) (2026-11-09): of 52 client
-functions, 26 are implemented and tested offline as a whole, 16 in parts, 4 not started.
+functions, 26 are implemented and tested offline as a whole, 17 in parts, 3 not started.
 
 | Area | In the code (tested offline) | Not yet |
 |---|---|---|

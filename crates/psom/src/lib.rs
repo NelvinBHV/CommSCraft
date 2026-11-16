@@ -28,7 +28,18 @@ pub enum Error {
     InvalidUtf8,
     /// Frame type other than 0x16, or MessageLength inconsistent with the frame.
     BadFrame,
+    /// An interface hash does not match ours for the same version (§3.2.3.1.2, p. 54), or a
+    /// required interface has no common version.
+    HashMismatch,
+    /// A call to or a connect of an object we do not know (§3.1.5, p. 51).
+    UnknownObject,
+    /// A method index the negotiated version does not declare (§3.1.5, p. 51).
+    UnknownMethod,
 }
+
+pub mod client;
+pub mod iface;
+pub mod wire;
 
 /// Encodes a GenericInt (§6.1, pseudo code §6.1.1).
 pub fn encode_generic_int(x: i64, out: &mut Vec<u8>) {
