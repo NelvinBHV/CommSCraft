@@ -49,6 +49,21 @@ fn add_conference_request_and_response() {
         d.child("conference-id").unwrap().namespace.as_deref(),
         Some(NS_MSCI)
     );
+    // Authenticated users become presenters, after the two separators of the schema.
+    let order: Vec<_> = d.elements().map(|e| e.name.as_str()).collect();
+    assert_eq!(
+        order,
+        [
+            "conference-id",
+            "admission-policy",
+            "separator",
+            "separator",
+            "autopromote"
+        ]
+    );
+    let promote = d.child("autopromote").unwrap();
+    assert_eq!(promote.namespace.as_deref(), Some(NS_MSCI));
+    assert_eq!(promote.text(), AUTOPROMOTE_COMPANY.to_string());
     // PV-12: one entity-view per MCU type, in order (the §4.1 example lists chat, audio-video …).
     let views: Vec<_> = ci
         .child("conference-view")

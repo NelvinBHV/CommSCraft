@@ -1,8 +1,8 @@
 # CommSCraft roadmap
 
-**Stage: M1 and M5 done** · M0 done · M2, M3 built · M1, M4 and M5 closed · next M6 (sharing in our own ad-hoc conferences), then M7 · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
+**Stage: M1, M5 and M6 done** · M0 done · M2, M3 built · M1, M4, M5 and M6 closed · next M7 · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (windows shared over RDP in meetings, tested-in-lab)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (M6 closed: sharing in our own ad-hoc conferences, invitations)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -37,7 +37,8 @@ transfer can come later from interop captures.
    parts in [`docs/gaps.md`](docs/gaps.md).
 2. **M4 – conferences and telephony** (closed 2026-11-01): meetings (scheduling, options, lobby, audio, presenter commands, announcements, dial-out), PSTN calling, transfer, forwarding, team/delegate ringing, delegates, call park, E911, QoE; optional remainders in [`docs/gaps.md`](docs/gaps.md).
 3. **M5 – video** (closed 2026-11-09): 1:1 and meeting video with H.264 UC, simulcast, FEC, rate adaptation, picture control, bandwidth management, GPU encoding and decoding, the received video in a sandboxed process; optional remainders in [`docs/gaps.md`](docs/gaps.md).
-4. **M6 – viewing shared screens** (next: sharing by others in our own ad-hoc conferences) and **M7 – Exchange integration**; the graphical
+4. **M6 – viewing shared screens** (closed 2026-11-16): screens shared by video and windows shared over RDP, 1:1, in meetings and in our own ad-hoc conferences; sharing one's own screen comes later.
+5. **M7 – Exchange integration** (next: persistent chat, PSOM content); the graphical
    interface (egui) comes after the milestones.
    Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
 
@@ -47,6 +48,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-16 | M6 closed. In ad-hoc conferences created by `commscraft-cli` (`/group`) authenticated users of the organization become presenters, so the Windows client offers sharing there; invitations go only as conference invitations, as the Windows client sends them (the IM MCU's dial-out was rejected by it and read as declined), and a refused invitation is reported; a conference can be viewed again after its viewing call ended. |
 | 2026-11-16 | Viewing a window shared in a meeting over RDP now `tested-in-lab`: the final offer names the active TCP candidate's real source port (the application sharing MCU refused port 9), and the MCU's RemoteFX tiles, sent under codec ID 0x0005, are decoded as RemoteFX. |
 | 2026-11-16 | Viewing a window shared in a meeting over RDP (tested-offline): `/viewconf N` offers the application sharing MCU an RDP viewer line when no screen video is announced, takes its answer and sends the final offer after ICE. |
 | 2026-11-14 | Viewing a window shared 1:1 over RDP (`/view N` on an RDP-only offer, `tested-in-lab`): the application sharing data stream (RTP payload type 127 over ICE-TCP), the RDP viewer on IronRDP (`rdp-view`: own connection sequence, dynamic channels, graphics pipeline) and the screen in the Wayland window. |

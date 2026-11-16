@@ -119,6 +119,17 @@ impl<R: Random> Engine<R> {
         self.convs.get_mut(&id).and_then(|c| c.group.as_deref_mut())
     }
 
+    /// Forgets the conference's audio and viewing calls that have ended: a call ends on many
+    /// paths (our hang-up, the MCU's BYE, a refused offer), and the conference must allow a
+    /// new one afterwards.
+    fn forget_ended_calls(&mut self, id: ConversationId) {
+        let calls = &self.calls;
+        if let Some(g) = self.convs.get_mut(&id).and_then(|c| c.group.as_deref_mut()) {
+            g.av_call = g.av_call.filter(|c| calls.contains_key(c));
+            g.screen_call = g.screen_call.filter(|c| calls.contains_key(c));
+        }
+    }
+
     /// `StartGroup`: addConference to the focus factory (PV-02, PV-09).
     pub(crate) fn start_group(&mut self, invite: &[String], now: u64, out: &mut Vec<Output>) {
         let Some(factory) = self.focus_factory.clone() else {
@@ -456,8 +467,8 @@ impl<R: Random> Engine<R> {
     }
 
     /// CI-30: the invitation to the conference sent to the invitee itself, as clients that take
-    /// conference invitations expect it (the MCU's dial-out is for those that cannot, archived
-    /// UCC API documentation "Invite Users to a Conference"): an INVITE with
+    /// conference invitations expect it (archived UCC API documentation "Invite Users to a
+    /// Conference"): an INVITE with
     /// `application/ms-conf-invite+xml` naming the focus. The invitee joins the focus on its own;
     /// a 200 is acknowledged and the dialog ended at once, as nothing else follows on it.
     /// `Supported: ms-sender` as in [SIPE] `sipe-conf.c` l. 808–811 (secondary evidence).
@@ -506,12 +517,17 @@ impl<R: Random> Engine<R> {
             _ => return,
         };
         for u in invitees {
-            self.dial_out(id, &u, now, out);
+            self.invite_participant(id, &u, now, out);
         }
     }
 
-    /// addUser dial-out over INFO in the focus dialog (CB-37).
-    pub(crate) fn dial_out(
+    /// Invites a participant: the conference invitation only (CI-30), as the Windows client
+    /// does it. The IM MCU's dial-out (addUser, CB-37) is not sent along any more: the Windows
+    /// client rejects it once it has the invitation (`52010`, "Reject the incoming dial out
+    /// from MCU"), and the failed addUser read as a declined invitation although the invitee
+    /// joined (`tested-in-lab`). Queued until the conference and its roster are known, which
+    /// tells whether audio is offered.
+    pub(crate) fn invite_participant(
         &mut self,
         id: ConversationId,
         invitee: &str,
@@ -524,47 +540,27 @@ impl<R: Random> Engine<R> {
             )));
             return;
         };
-        let mut random = [0u8; 16];
-        self.reg.fill_random(&mut random);
-        let request_id = self.next_c3p();
-        let aor = self.cfg.aor.clone();
         let Some(g) = self.group_mut(id) else {
             out.push(Output::Event(Event::Notice("no such conversation".into())));
             return;
         };
+        // A conference the IM MCU dialled us into goes on without the focus when the focus
+        // refused us (CI-13): then nobody is invited into it.
         if g.dialed_out && g.focus_dialog.is_none() {
             out.push(Output::Event(Event::Notice(
                 "invitations are only possible in conferences joined through the focus".into(),
             )));
             return;
         }
-        let (Some(focus), Some(chat), Some(mut d)) = (
-            g.focus.clone(),
-            g.roster.chat_uri.clone(),
-            g.focus_dialog.take(),
-        ) else {
+        // Joined through the focus, a dialled-out conference need not wait for the roster.
+        let ready = g.roster.chat_uri.is_some() || g.dialed_out;
+        let (Some(focus), true) = (g.focus.clone(), ready) else {
             if g.invitees.len() < MAX_INVITEES {
                 g.invitees.push(invitee);
             }
             return;
         };
-        let body = conf::add_user_dial_out(
-            request_id,
-            &aor,
-            &focus,
-            &chat,
-            &invitee,
-            &conf::guid(&random),
-        );
         let audio = !g.chat_only && g.roster.av_uri.is_some();
-        let mut m = d.request("INFO");
-        g.focus_dialog = Some(d);
-        let Ok(body) = body else { return };
-        self.complete(&mut m);
-        m.push_header("Supported", "timer");
-        m.push_header("Content-Type", conf::CONTENT_TYPE);
-        m.body = body.into_bytes();
-        self.send_request(m, Purpose::DialOut(id), now, out);
         self.send_invitation(&focus, &invitee, audio, now, out);
     }
 
@@ -783,6 +779,7 @@ impl<R: Random> Engine<R> {
         let ConfMedia { language, video } = extra;
         // CA-24: one language, no parameters – otherwise none is sent.
         let language = language.filter(|l| conf::valid_language_tag(l));
+        self.forget_ended_calls(id);
         let av = match self.group_mut(id) {
             Some(g) if g.lobby_since.is_some() => {
                 out.push(Output::Event(Event::Notice("still in the lobby".into())));
@@ -846,6 +843,7 @@ impl<R: Random> Engine<R> {
         now: u64,
         out: &mut Vec<Output>,
     ) {
+        self.forget_ended_calls(id);
         let uri = match self.group_mut(id) {
             Some(g) if g.lobby_since.is_some() => {
                 out.push(Output::Event(Event::Notice("still in the lobby".into())));
@@ -900,6 +898,7 @@ impl<R: Random> Engine<R> {
         now: u64,
         out: &mut Vec<Output>,
     ) {
+        self.forget_ended_calls(id);
         let uri = match self.group_mut(id) {
             Some(g) if g.lobby_since.is_some() => {
                 out.push(Output::Event(Event::Notice("still in the lobby".into())));
