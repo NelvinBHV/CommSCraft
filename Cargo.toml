@@ -48,6 +48,8 @@ members = [
     "crates/url",
     "crates/discovery",
     "crates/net",
+    "crates/ui",
+    "apps/commscraft",
     "apps/commscraft-cli",
 ]
 

@@ -1,6 +1,6 @@
 # Security by design
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (persistent chat; before: meeting content connection)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (desktop interface)
 
 CommSCraft handles passwords, Kerberos tickets, NTLM session keys and SRTP keys. It talks to
 servers and peers it cannot trust. Security is part of every design decision, not a later review.
@@ -83,6 +83,7 @@ This page lists the rules every crate follows and how each is enforced. The gene
 | Every request answered or dropped | The session engine drops unsigned requests without an answer, answers every signed one (unknown dialog 481, unsupported 405/488/501), bounds conversations (64) and subscriptions (128), and times out every client transaction | `session` |
 | Hostile-input tests | Every parser gets tests with malformed input and a deterministic mutation test (thousands of corrupted messages; must not panic) | `sip-msg` `mutated_inputs_never_panic` |
 | Minimal, reviewed dependencies | Pure Rust, mostly RustCrypto; new dependencies need a reason in the PR. No dependency on code from the specification package or from GPL projects | `Cargo.toml`, `Cargo.lock` (CI uses `--locked`) |
+| Interface shows only cleaned, bounded text | Text from the network is cleaned again before it is drawn (control characters, bidirectional overrides, invisible format characters removed; lengths cut); nothing is rendered as HTML, Markdown or rich text; conversations stay in memory, bounded, and are never written to disk; the sign-in password leaves the form once and is cleared, with the field's undo memory, and `Debug` hides it | `ui::model::clean`, `ui::model::AppState` (limits), `ui::views::signin`, `ui::app::SignIn` |
 | No real servers in development | Work happens offline against specification examples and own fixtures; besides the owner's runs, only the owner's isolated lab is used, and nothing about it is published | [`interop-tests.md`](interop-tests.md) |
 
 ## Rules for the next building blocks
@@ -103,4 +104,7 @@ This page lists the rules every crate follows and how each is enforced. The gene
   `Cargo.lock` against the RustSec database (`cargo audit --deny warnings`, pinned version),
   unmaintained and unsound crates included. The native FFmpeg, ALSA and Kerberos libraries are
   the build host's packages and are not covered; their patch state is the distribution's.
+  The desktop client is built without eframe's `accesskit` feature for now: its Linux adapter
+  still uses zbus 5, whose `zvariant`, `zvariant_derive` and `zbus_names` are listed as
+  unmaintained (RUSTSEC-2026-0370 … 0372); the screen reader bridge follows with zbus 6.
 - **Planned CI additions (free runners only):** longer fuzzing runs as a scheduled job.

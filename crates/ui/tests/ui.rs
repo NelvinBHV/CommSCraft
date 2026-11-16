@@ -1,0 +1,246 @@
+//! Interface tests through the accessibility tree (egui_kittest): no network, no GPU.
+
+// Test helpers may fail loudly.
+#![allow(clippy::expect_used)]
+
+use commscraft_ui::app::{CommsUi, UiIntent};
+use commscraft_ui::demo;
+use commscraft_ui::model::{AppEvent, CallState, Connection, Delivery, View};
+use commscraft_ui::text::Lang;
+use egui::{FontDefinitions, FontFamily};
+use egui_kittest::kittest::{NodeT, Queryable};
+use egui_kittest::Harness;
+
+const NOW: u64 = 1_779_000_000;
+
+struct State {
+    ui: CommsUi,
+    intents: Vec<UiIntent>,
+}
+
+fn fonts(ctx: &egui::Context) {
+    // egui's own fonts (tests only) and the bold family the application defines.
+    let mut defs = FontDefinitions::default();
+    let regular = defs
+        .families
+        .get(&FontFamily::Proportional)
+        .cloned()
+        .unwrap_or_default();
+    defs.families
+        .insert(FontFamily::Name(commscraft_ui::theme::BOLD.into()), regular);
+    ctx.set_fonts(defs);
+}
+
+fn harness(ui: CommsUi, size: (f32, f32)) -> Harness<'static, State> {
+    Harness::builder()
+        .with_size(egui::vec2(size.0, size.1))
+        .with_context_setup(fonts)
+        .build_ui_state(
+            |ui, s: &mut State| {
+                let out = s.ui.show(ui, NOW);
+                if s.ui.demo {
+                    for i in &out {
+                        demo::handle(&mut s.ui.state, i, NOW, Lang::De);
+                    }
+                }
+                s.intents.extend(out);
+            },
+            State {
+                ui,
+                intents: Vec::new(),
+            },
+        )
+}
+
+fn demo_ui(lang: Lang) -> CommsUi {
+    let mut ui = CommsUi::new(lang, 3600);
+    demo::start(&mut ui, NOW);
+    ui
+}
+
+/// The button with this label (a heading may carry the same words).
+fn button<'a>(h: &'a Harness<'static, State>, label: &'a str) -> egui_kittest::Node<'a> {
+    h.query_all_by_label(label)
+        .find(|n| n.accesskit_node().role() == egui::accesskit::Role::Button)
+        .expect("a button")
+}
+
+/// The text field with this accessible label (its caption has the same label).
+fn field<'a>(h: &'a Harness<'static, State>, label: &'a str) -> egui_kittest::Node<'a> {
+    h.query_all_by_label(label)
+        .find(|n| n.accesskit_node().role() == egui::accesskit::Role::TextInput)
+        .expect("a text field")
+}
+
+#[test]
+fn the_demo_is_marked_and_has_no_alarm_navigation() {
+    let mut h = harness(demo_ui(Lang::De), (1440.0, 900.0));
+    h.run();
+    assert!(h
+        .query_by_label_contains("DEMO · Keine Verbindung")
+        .is_some());
+    for word in ["Alarm", "Lage", "Eskalation", "Quittierung"] {
+        assert!(h.query_by_label_contains(word).is_none(), "{word}");
+    }
+    for view in ["Chats", "Kontakte", "Anrufe", "Meetings", "Einstellungen"] {
+        assert!(h.query_by_label(view).is_some(), "{view}");
+    }
+}
+
+#[test]
+fn the_rail_switches_views() {
+    let mut h = harness(demo_ui(Lang::De), (1440.0, 900.0));
+    h.run();
+    h.get_by_label("Kontakte").click();
+    h.run();
+    assert_eq!(h.state().ui.view(), View::Contacts);
+    assert!(h.query_by_label("Kontaktübersicht").is_some());
+    h.get_by_label("Anrufe").click();
+    h.run();
+    assert_eq!(h.state().ui.view(), View::Calls);
+    assert!(h.query_by_label("Anruf beenden").is_some());
+}
+
+#[test]
+fn enter_sends_and_the_demo_does_not_claim_delivery() {
+    let mut h = harness(demo_ui(Lang::De), (1440.0, 900.0));
+    h.run();
+    let composer = h.get_by_label("composer");
+    composer.focus();
+    composer.type_text("Hallo zusammen");
+    h.run();
+    h.key_press(egui::Key::Enter);
+    h.run();
+    let key = h.state().ui.selected_conversation().unwrap();
+    assert!(h.state().intents.contains(&UiIntent::SendMessage {
+        key,
+        text: "Hallo zusammen".into()
+    }));
+    let last = h
+        .state()
+        .ui
+        .state
+        .conversation(key)
+        .unwrap()
+        .messages
+        .back()
+        .unwrap()
+        .clone();
+    assert_eq!(last.text, "Hallo zusammen");
+    assert_eq!(last.delivery, Delivery::Unknown);
+    assert!(h.query_by_label_contains("Zustellung unbekannt").is_some());
+}
+
+#[test]
+fn missing_functions_are_disabled_with_a_reason() {
+    let mut h = harness(demo_ui(Lang::De), (1440.0, 900.0));
+    h.run();
+    for label in ["+ Datei", "Formatierung", "Im Chat suchen"] {
+        let node = h.get_by_label(label);
+        assert!(node.accesskit_node().is_disabled(), "{label}");
+    }
+}
+
+#[test]
+fn a_narrow_window_closes_the_context_panel() {
+    let mut h = harness(demo_ui(Lang::De), (1440.0, 900.0));
+    h.run();
+    assert!(h.query_by_label("Gruppeninformationen").is_some());
+    let mut h = harness(demo_ui(Lang::De), (1050.0, 800.0));
+    h.run();
+    assert!(h.query_by_label("Gruppeninformationen").is_none());
+}
+
+#[test]
+fn the_sign_in_clears_the_password() {
+    let ui = CommsUi::new(Lang::En, 0);
+    let mut h = harness(ui, (1280.0, 800.0));
+    h.run();
+    for (label, text) in [
+        ("SIP address", "mara@beispiel.invalid"),
+        ("User name", "mara"),
+        ("Password", "geheim-123"),
+    ] {
+        let f = field(&h, label);
+        f.focus();
+        f.type_text(text);
+        h.run();
+    }
+    h.run();
+    button(&h, "Sign in").click();
+    h.run();
+    let sent = h
+        .state()
+        .intents
+        .iter()
+        .find_map(|i| match i {
+            UiIntent::SignIn(f) => Some(f.clone()),
+            _ => None,
+        })
+        .expect("a sign-in intent");
+    assert_eq!(sent.address, "sip:mara@beispiel.invalid");
+    assert_eq!(sent.password, "geheim-123");
+    // The debug form never shows the password.
+    assert!(!format!("{sent:?}").contains("geheim"));
+    // The field is empty again; the address stays for the next attempt.
+    assert_eq!(
+        field(&h, "Password").accesskit_node().value(),
+        Some(String::new())
+    );
+}
+
+#[test]
+fn ringing_is_not_connected() {
+    let mut ui = CommsUi::new(Lang::De, 0);
+    ui.state.apply(AppEvent::Connection(Connection::Connected));
+    ui.state.apply(AppEvent::CallStarted {
+        id: 7,
+        peer: "sip:tim@beispiel.invalid".into(),
+        incoming: false,
+        at: NOW,
+    });
+    ui.state.apply(AppEvent::CallRinging { id: 7 });
+    ui.set_view(View::Calls);
+    let mut h = harness(ui, (1440.0, 900.0));
+    h.run();
+    assert!(h.query_all_by_label_contains("Es klingelt").count() > 0);
+    assert_eq!(h.query_all_by_label_contains("verbunden").count(), 0);
+    h.state_mut()
+        .ui
+        .state
+        .apply(AppEvent::CallConnected { id: 7, at: NOW });
+    h.run();
+    assert!(matches!(
+        h.state().ui.state.active_call().unwrap().state,
+        CallState::Connected { .. }
+    ));
+    assert!(h.query_all_by_label_contains("Audio verbunden").count() > 0);
+}
+
+#[test]
+fn search_names_its_sources() {
+    let mut ui = demo_ui(Lang::De);
+    ui.set_view(View::Chats);
+    let mut h = harness(ui, (1440.0, 900.0));
+    h.run();
+    let search = h.get_by_label("search");
+    search.focus();
+    search.type_text("weber");
+    h.run();
+    h.run();
+    assert!(h
+        .query_by_label_contains("Nachrichtentexte werden nicht durchsucht")
+        .is_some());
+    assert!(h.query_all_by_label_contains("Anna Weber").count() > 0);
+    assert!(h.state().intents.contains(&UiIntent::SearchDirectory {
+        text: "weber".into()
+    }));
+}
+
+#[test]
+fn english_texts_render() {
+    let mut h = harness(demo_ui(Lang::En), (1280.0, 800.0));
+    h.run();
+    assert!(h.query_by_label("Contacts").is_some());
+    assert!(h.query_by_label_contains("DEMO · Not connected").is_some());
+}
