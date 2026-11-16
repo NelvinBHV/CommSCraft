@@ -299,6 +299,13 @@ pub enum Command {
         video: Box<sdp::video::VideoLocal>,
         policy: sdp::Encryption,
     },
+    /// Function 43: view a window shared in a conference over RDP (its application sharing MCU;
+    /// our data stream's parameters).
+    ViewConferenceRdp {
+        conversation: ConversationId,
+        local: Box<sdp::Local>,
+        policy: sdp::Encryption,
+    },
     /// Function 43: view a shared window over RDP (our data stream's parameters).
     AcceptRdpShare {
         call: CallId,
@@ -504,10 +511,12 @@ pub enum Event {
         /// Only RDP is offered (window sharing): view it with [`Command::AcceptRdpShare`].
         rdp: bool,
     },
-    /// An RDP sharing call is answered (function 43): start the data stream with this.
+    /// An RDP sharing call is answered (function 43): start the data stream with this, as the
+    /// ICE controlling side when we made the call (a meeting's application sharing MCU).
     ScreenRdp {
         call: CallId,
         rdp: Box<sdp::screen::NegotiatedRdp>,
+        controlling: bool,
     },
     /// The call is established; the adapter starts ICE and media with these parameters.
     CallAnswered {
@@ -1967,6 +1976,11 @@ impl<R: Random> Engine<R> {
                 video,
                 policy,
             } => self.view_conference_screen(conversation, *video, policy, now, &mut out),
+            Command::ViewConferenceRdp {
+                conversation,
+                local,
+                policy,
+            } => self.view_conference_rdp(conversation, *local, policy, now, &mut out),
             Command::AcceptRdpShare {
                 call,
                 local,
@@ -2013,6 +2027,7 @@ impl<R: Random> Engine<R> {
                             video: None,
                             emergency: false,
                             screen: false,
+                            rdp: false,
                         },
                         now,
                         &mut out,

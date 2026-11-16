@@ -65,7 +65,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
-          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /view [N] (view a shared screen)  /viewconf [N] (view the screen shared in a meeting)  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /view [N] (view a shared screen)  /viewconf [N] (view the screen or window shared in a meeting)  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /meeting ID  /cancelmeeting ID [static]
@@ -2533,6 +2533,11 @@ fn interactive(
     let mut rdp_offers: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
     let mut rdp_handles: BTreeMap<u32, rdp_call::RdpHandle> = BTreeMap::new();
     let mut pending_rdp: BTreeMap<u32, u32> = BTreeMap::new();
+    // In meetings: viewers waiting for their data stream (id → conversation), their handles until
+    // the viewing call has an ID, and the call of each viewer (id → call).
+    let mut pending_conf_rdp: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut conf_rdp_handle: BTreeMap<u32, (u32, rdp_call::RdpHandle)> = BTreeMap::new();
+    let mut rdp_call_of: BTreeMap<u32, u32> = BTreeMap::new();
     let mut pending_conf_screen: BTreeMap<u32, u32> = BTreeMap::new();
     let mut conf_screen_video: BTreeMap<u32, u32> = BTreeMap::new();
     let mut sharing_announced: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
@@ -2784,14 +2789,15 @@ fn interactive(
                             });
                         }
                     }
-                    E::ScreenRdp { call, rdp } => {
-                        // Function 43: the answered RDP stream starts the viewer (we answered:
-                        // ICE controlled).
+                    E::ScreenRdp {
+                        call,
+                        rdp,
+                        controlling,
+                    } => {
+                        // Function 43: the answered RDP stream starts the viewer (ICE
+                        // controlling when we offered, in a meeting; controlled when we answered).
                         if let Some(h) = rdp_handles.get(&call) {
-                            let _ = h.tx.send(rdp_call::ToRdp::Start {
-                                rdp,
-                                controlling: false,
-                            });
+                            let _ = h.tx.send(rdp_call::ToRdp::Start { rdp, controlling });
                         }
                     }
                     E::IncomingScreenShare { call, from, rdp } => {
@@ -3300,6 +3306,17 @@ fn interactive(
                             println!("* [{conversation}] admitted to the meeting");
                         }
                     }
+                    E::ConferenceScreen { conversation, call }
+                        if conf_rdp_handle.contains_key(&conversation) =>
+                    {
+                        // Function 43 over RDP: the viewer of this meeting's shared window.
+                        if let Some((id, h)) = conf_rdp_handle.remove(&conversation) {
+                            rdp_handles.insert(call, h);
+                            rdp_call_of.insert(id, call);
+                            outgoing.insert(call);
+                        }
+                        println!("* [{conversation}] viewing the shared window (call {call})");
+                    }
                     E::ConferenceScreen { conversation, call } => {
                         // The viewing call offers (controlling ICE agent) and sends the final
                         // offer once ICE has chosen.
@@ -3516,6 +3533,24 @@ fn interactive(
         // Function 43: viewers of windows shared over RDP.
         while let Ok(r) = rdp_rx.try_recv() {
             match r {
+                rdp_call::FromRdp::Ready(id, local) if pending_conf_rdp.contains_key(&id) => {
+                    if let Some(conversation) = pending_conf_rdp.remove(&id) {
+                        let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
+                        outputs.extend(engine.command(
+                            C::ViewConferenceRdp {
+                                conversation,
+                                local,
+                                policy,
+                            },
+                            now(),
+                        ));
+                    }
+                }
+                rdp_call::FromRdp::Selected(id, local) => {
+                    if let Some(&call) = rdp_call_of.get(&id) {
+                        outputs.extend(engine.command(C::UpdateCall { call, local }, now()));
+                    }
+                }
                 rdp_call::FromRdp::Ready(id, local) => {
                     if let Some(call) = pending_rdp.remove(&id) {
                         let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
@@ -3532,6 +3567,8 @@ fn interactive(
                 rdp_call::FromRdp::Notice(id, n) => println!("* [window {id}] {n}"),
                 rdp_call::FromRdp::Ended(id, why) => {
                     pending_rdp.remove(&id);
+                    pending_conf_rdp.remove(&id);
+                    rdp_call_of.remove(&id);
                     println!("* [window {id}] {why}");
                 }
             }
@@ -4056,6 +4093,32 @@ fn interactive(
                     None
                 }
                 "/viewconf" => match arg.parse::<u32>().ok().or(current) {
+                    // Function 43 over RDP: someone shares in the meeting, but no screen video
+                    // is announced – a shared window, viewed through the application sharing
+                    // MCU over RDP.
+                    Some(conversation)
+                        if sharing_announced.contains(&conversation)
+                            && !screen_source.contains_key(&conversation) =>
+                    {
+                        let id = next_media;
+                        next_media = next_media.wrapping_add(1).max(1);
+                        conf_rdp_handle.insert(
+                            conversation,
+                            (
+                                id,
+                                rdp_call::spawn(
+                                    id,
+                                    local_ip,
+                                    engine.own_aor().to_string(),
+                                    rdp_tx.clone(),
+                                    video_tx.clone(),
+                                ),
+                            ),
+                        );
+                        pending_conf_rdp.insert(id, conversation);
+                        println!("* [{conversation}] preparing to view the shared window …");
+                        None
+                    }
                     // Function 43: view what is shared in a meeting (receive-only video).
                     Some(conversation) => {
                         let relay = engine.media_relay().and_then(calls::relay_from);

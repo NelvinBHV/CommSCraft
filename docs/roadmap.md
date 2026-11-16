@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-14 · **Change:** minor (viewing a window shared over RDP)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (windows shared over RDP in meetings, tested-offline)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -8,12 +8,12 @@ A milestone is done when its gate passes offline; "verified" always means an int
 owner on an authorized server. Runs in the owner's private lab are shown as `tested-in-lab`; their
 details are not published.
 
-## Current focus (M7 – Exchange and extras, then M6)
+## Current focus (M6 – viewing shared screens, then M7)
 
 **Offline first**: every gate ends at `tested-offline`; what also ran in the owner's lab is `tested-in-lab`, and
 "verified" waits for the owner's runs ([`interop-tests.md`](interop-tests.md)).
 
-| Milestone | State (2026-11-09) | What exists | Missing before the gate |
+| Milestone | State (2026-11-16) | What exists | Missing before the gate |
 |---|---|---|---|
 | M0 | done | analysis in [`protocol/`](protocol/), workspace, CI, specification test vectors | – |
 | M1 | done (tested-offline, tested-in-lab) | discovery (Autodiscover HTTPS-only, DNS SRV, trust model), TLS adapter, NTLM, Kerberos (system GSSAPI) and TLS-DSK with a user certificate + MS-SIPAE, REGISTER (GRUU, refresh, redirect, deregister), keep-alive, provisioning, sign-out, `commscraft-cli` | owner verification |
@@ -21,10 +21,10 @@ details are not published.
 | M3 | in progress | G.711, G.722, ALSA/PipeWire adapter, RTP/RTCP, DTMF, SRTP, SDP, STUN, MS-TURN, MS-AVEDGEA, ICE agent (UDP and TCP relay on 443 with pseudo-TLS), call signalling incl. hold/resume and early media, media core with the MS-RTP RTCP profile, bandwidth management (call admission control) and runtime, CLI `/call` `/answer` `/hangup` `/dtmf` `/mute` `/hold` `/resume` | redundancy, early answer as the callee, TCP-only mode, own music on hold, bandwidth management for video; owner verification (IT-23 … IT-29) |
 | M4 | done (tested-offline, tested-in-lab) | meetings: scheduling (create, list, change, cancel; options, presenters, static meeting), join (focus URI, meeting link), lobby, roster, conference audio via the A/V MCU (SRTP sent, SRTP/SSRTP received), muting ourselves, presenter commands, announcements, dialling out to phones, PSTN calling, call transfer, forwarding, call park, quality reports, emergency calls with location, team and delegate ringing, delegates and calls on behalf of the boss, meeting options in the running meeting | E911 rest (WLAN/LLDP identifiers), PSTN dial-in details |
 | M5 | done (tested-offline, tested-in-lab) | H.264 UC RTP payload (`h264uc`), camera capture, H.264 encoding on the GPU or CPU and decoding (`video-ffmpeg`), video SDP (`sdp::video`), PLI/VSR (`rtp::feedback`), video core (`media::video`) and transport (`call-media`), 1:1 video calls (session and CLI), video in meetings, bandwidth estimation and rate adaptation (`media::rate`), picture control (function 31), the video window process with Landlock and a system call filter, bandwidth management of the video stream | owner verification; by decision not done: temporal enhancement layers, more than three simulcast sizes, Reed-Solomon FEC, GPU decoding without Wayland |
-| M6 | in progress | viewing a shared screen 1:1 and in meetings (video-based screen sharing, H.264 UC) and a window shared 1:1 over RDP (`tested-in-lab`); building blocks: MPPC test vectors | RDP over RTP in meetings |
+| M6 | in progress | viewing a shared screen 1:1 and in meetings (video-based screen sharing, H.264 UC) and a window shared 1:1 over RDP (`tested-in-lab`); a window shared in a meeting over RDP through the application sharing MCU (tested-offline); building blocks: MPPC test vectors | the lab run of RDP in meetings |
 | M7 | in progress | calendar and out-of-office state from Exchange (function 16), conversation history in Exchange (function 49), voicemail list and listening (function 38), response group agent with web tickets (function 47); building blocks: PSOM test vectors | persistent chat, PSOM content (SILK deferred until legal clearance; UCWA not planned) |
 
-Next steps in order: M7 (calendar state and out-of-office note, conversation history in Exchange, voicemail), then M6 (viewing shared screens); the M3 remainders above are optional or need captures.
+Next steps in order: M6 (the lab run of a window shared over RDP in a meeting), then the rest of M7 (persistent chat, PSOM content); the M3 remainders above are optional or need captures.
 
 ## Milestones
 

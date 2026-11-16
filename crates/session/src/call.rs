@@ -52,6 +52,9 @@ pub(crate) struct Extras<'a> {
     /// Viewing a shared screen (function 43): the offer is `sdp::screen::viewer_offer` of
     /// `video`, without audio.
     pub screen: bool,
+    /// Viewing a shared window over RDP (function 43): the offer is
+    /// `sdp::screen::rdp_viewer_offer` of the call's local description, without audio.
+    pub rdp: bool,
 }
 
 /// One more MIME part of an outgoing INVITE (the PIDF-LO of an emergency call). The fields come
@@ -296,6 +299,13 @@ impl<R: Random> Engine<R> {
             return None;
         }
         let offer = match extras.video {
+            _ if extras.rdp => match sdp::screen::rdp_viewer_offer(&local, policy) {
+                Ok(o) => o,
+                Err(_) => {
+                    out.push(Output::Event(Event::Notice("unusable data stream".into())));
+                    return None;
+                }
+            },
             Some(v) if extras.screen => match sdp::screen::viewer_offer(v, policy) {
                 Ok(o) => o,
                 Err(_) => {
@@ -690,6 +700,10 @@ impl<R: Random> Engine<R> {
             );
             return;
         }
+        if self.rdp_calls.contains(&id) {
+            self.on_rdp_answer(id, d, resp, now, out);
+            return;
+        }
         if self.screen_calls.contains(&id) {
             self.on_screen_answer(id, d, resp, now, out);
             return;
@@ -756,6 +770,63 @@ impl<R: Random> Engine<R> {
 
     /// The answer of the application sharing MCU to our viewer offer (function 43): the screen
     /// video stream, or BYE when it is unusable.
+    /// The MCU's answer to our RDP viewer offer (function 43 in meetings): the data stream
+    /// starts with us as the ICE controlling side.
+    fn on_rdp_answer(
+        &mut self,
+        id: CallId,
+        d: Dialog,
+        resp: &Message,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let Some(c) = self.calls.get_mut(&id) else {
+            return;
+        };
+        let key = c.local.as_ref().and_then(|l| l.key.clone());
+        let rdp = sdp_part(resp, &|b| {
+            sdp::parse(b)
+                .ok()
+                .is_some_and(|s| s.media.iter().any(|m| m.kind == "applicationsharing"))
+        })
+        .ok_or(sdp::Error::Syntax("no RDP line in the answer"))
+        .and_then(|(b, _)| sdp::screen::rdp_answer_to_offer(&b, key.as_ref(), c.policy));
+        match rdp {
+            Ok(rdp) => {
+                c.dialog = Some(d);
+                c.state = CallState::Active;
+                c.early.clear();
+                Self::call_event(
+                    out,
+                    Event::ScreenRdp {
+                        call: id,
+                        rdp: Box::new(rdp),
+                        controlling: true,
+                    },
+                );
+            }
+            Err(e) => {
+                let mut d2 = d;
+                let mut bye = d2.request("BYE");
+                self.complete(&mut bye);
+                self.send_request(bye, Purpose::Ignore, now, out);
+                self.calls.remove(&id);
+                self.screen_calls.remove(&id);
+                self.rdp_calls.remove(&id);
+                out.push(Output::Event(Event::Notice(format!(
+                    "call {id}: the shared window cannot be viewed ({e:?})"
+                ))));
+                Self::call_event(
+                    out,
+                    Event::CallEnded {
+                        call: id,
+                        status: 488,
+                    },
+                );
+            }
+        }
+    }
+
     fn on_screen_answer(
         &mut self,
         id: CallId,
@@ -942,10 +1013,24 @@ impl<R: Random> Engine<R> {
         local.key = c.local.as_ref().and_then(|l| l.key.clone());
         local.ssrtp = c.local.as_ref().is_some_and(|l| l.ssrtp);
         let hold = local.direction != sdp::Direction::SendRecv;
+        // Viewing a window over RDP (function 43): the final offer is the RDP viewer offer with
+        // the selected candidates and the remote candidates (IC-07).
+        let rdp_body = if self.rdp_calls.contains(&id) {
+            match sdp::screen::rdp_viewer_offer(&local, c.policy) {
+                Ok(b) => Some(b),
+                Err(_) => {
+                    c.dialog = Some(d);
+                    return;
+                }
+            }
+        } else {
+            None
+        };
         // The video line stays in every re-INVITE with its key; its direction is its own (a client
         // without a camera only receives) as far as the audio line's allows (hold); with music on
         // hold it is inactive – a=feature:MoH belongs to the audio line only (SD-07).
         let body = match &c.video {
+            _ if rdp_body.is_some() => rdp_body.unwrap_or_default(),
             Some(v) => {
                 let mut v = v.clone();
                 v.media.direction = if local.music_on_hold {
@@ -1306,6 +1391,7 @@ impl<R: Random> Engine<R> {
                     Event::ScreenRdp {
                         call: id,
                         rdp: Box::new(rdp),
+                        controlling: false,
                     },
                 );
             }
@@ -1352,6 +1438,7 @@ impl<R: Random> Engine<R> {
                     Event::ScreenRdp {
                         call: id,
                         rdp: Box::new(rdp),
+                        controlling: false,
                     },
                 );
             }

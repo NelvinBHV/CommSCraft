@@ -460,6 +460,7 @@ impl<R: Random> Engine<R> {
                 video: None,
                 emergency: false,
                 screen: false,
+                rdp: false,
             },
             now,
             out,
