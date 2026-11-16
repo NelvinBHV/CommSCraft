@@ -177,6 +177,16 @@ fn when(app: &CommsUi, at: u64) -> String {
     }
 }
 
+/// The name an avatar shows: a group titled after its members (addresses, a list) shows the
+/// group mark instead of one member's initials.
+fn group_avatar<'a>(app: &CommsUi, group: bool, title: &'a str) -> &'a str {
+    if group && (title.contains('@') || title.contains(',') || title.trim().is_empty()) {
+        app.t.group_chat
+    } else {
+        title
+    }
+}
+
 fn row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     let Some(c) = app.state.conversation(key) else {
         return;
@@ -191,6 +201,7 @@ fn row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     let line = preview(app, c);
     let time = when(app, c.last_activity);
     let unread = c.unread;
+    let is_group = c.is_group();
     let ended = matches!(c.state, ConvState::Ended | ConvState::Failed(_));
     let w = ui.available_width();
     let (rect, resp) = ui.allocate_exact_size(Vec2::new(w, 72.0), Sense::click());
@@ -213,7 +224,8 @@ fn row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
             .max_rect(rect.shrink2(Vec2::new(10.0, 12.0)))
             .layout(Layout::left_to_right(Align::Center)),
     );
-    widgets::avatar(&mut child, &title, 44.0, presence, pal);
+    let avatar_name = group_avatar(app, is_group, &title);
+    widgets::avatar(&mut child, avatar_name, 44.0, presence, pal);
     child.add_space(4.0);
     child.vertical(|ui| {
         ui.horizontal(|ui| {
@@ -356,6 +368,7 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
         .as_ref()
         .and_then(|p| app.state.contacts.get(p))
         .map(|k| k.presence);
+    let avatar_name = group_avatar(app, peer.is_none(), &title).to_string();
     egui::Panel::top(("chat-head", key.0))
         .exact_size(74.0)
         .frame(
@@ -366,7 +379,7 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
         )
         .show(ui, |ui| {
             ui.horizontal_centered(|ui| {
-                widgets::avatar(ui, &title, 44.0, presence, pal);
+                widgets::avatar(ui, &avatar_name, 44.0, presence, pal);
                 ui.add_space(6.0);
                 ui.vertical(|ui| {
                     ui.add_space(2.0);

@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-16 · **Last updated:** 2026-11-16 · **Change:** new (phase 1: offline demo)
+> **Last reviewed:** 2026-11-16 · **Last updated:** 2026-11-16 · **Change:** minor (phase 2: session adapter, tested-in-lab)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -19,14 +19,46 @@ apps/commscraft        window (eframe, OpenGL, Wayland/X11), system fonts, brand
 | Phase | Content | State |
 |---|---|---|
 | 1 | Shell and the three screens with demo data: chats (list, conversation, composer, group details), contacts and presence, calls (active call, controls, history), meetings, settings with the capability overview; keyboard, focus, scaling, high contrast, German and English | done (tested-offline) |
-| 2 | The session adapter: sign-in, contacts and presence, 1:1 and group chat, delivery, typing, audio calls, meetings, invitations | next |
-| 3 | UX additions on existing data: favourites kept locally, filters, address book search, keyboard navigation | – |
+| 2 | The session adapter: sign-in, contacts and presence, 1:1 and group chat, delivery, typing, audio calls, meetings, invitations | done (tested-offline; `tested-in-lab`: sign-in, contacts and presence, 1:1 and group chat both ways, outgoing calls with ringing, connected, hold, resume, hang-up; an incoming call is shown – answering it is still open in the lab) |
+| 3 | UX additions on existing data: favourites kept locally, filters, address book search, keyboard navigation | next |
 | 4 | QA against the specification and the reference images | – |
 
 `commscraft --demo` shows the interface with made-up people at `beispiel.invalid` and never opens a
 network connection; every demo conversation, call and meeting carries a visible demo mark, and the
 status bar says "DEMO · not connected to a real server". Without `--demo` the sign-in screen
-appears; this build has no session adapter yet and says so.
+appears and the client signs in through the session engine.
+
+## The session adapter (phase 2)
+
+`apps/commscraft/src/session.rs` runs one worker thread per sign-in. It owns the TLS connection,
+the session engine and the media threads of calls; the interface talks to it through two bounded
+queues (commands 256, events 4096) and never waits for the network in a frame.
+
+- **Sign-in:** Autodiscover and DNS SRV like the command-line tool (shared crate
+  `commscraft-client`), NTLM with the password typed in the form, TLS always verified against the
+  system trust store plus an optional `--ca-file`. A server outside the SIP domain is used only
+  when its domain is listed in `~/.config/commscraft/trusted-domains`; the desktop client never
+  asks in a dialog yet and says how to trust it. TLS-DSK and Kerberos are offered by the
+  command-line tool only.
+- **Mapping:** engine events become typed `AppEvent`s (contacts, presence with the published
+  display name, conversations, delivery, typing, roster, invitations, calls, meetings, notices);
+  interface intents become engine commands. The interface's own conversation key is tied to the
+  session's ID with `Engine::next_conversation_id`, so a failed opening reaches the right
+  conversation. Groups (ours, joined meetings, an MCU that dials us) are shown as groups.
+- **Calls:** the media thread of `commscraft-client::calls` (ICE, SRTP, G.722/G.711, ALSA); a call
+  shows *connected* only after `CallAnswered`. Calls go only to SIP addresses picked in the
+  interface – never to phone numbers – so the engine's emergency call path is not reached from
+  here. A transfer request is declined and a screen share offer refused, with a notice (the
+  command-line tool offers both).
+- **Not in the desktop client yet** (gated with a reason): video, transfer, viewing shared
+  screens, meeting content, persistent chat, the address book search on the server.
+
+`--sign-in sip:ADDRESS --user USER [--domain D] [--server H:P]` signs in at start with the
+password from standard input; `--commands FILE` follows a file of test commands (`view`, `chat`,
+`select`, `send`, `group`, `accept`, `call`, `answer`, `hangup`, `hold`, `resume`, `mute`,
+`unmute`, `status`, `shot`, `quit`) that trigger exactly the actions of the interface – for the
+owner's lab runs and screenshots. `COMMSCRAFT_VERBOSE=1` prints one line per SIP message (method
+or status and CSeq, never headers).
 
 ## Honest capability gates
 
@@ -36,9 +68,8 @@ in Settings → "Functions and their state").
 
 | Function | Gate today | Why |
 |---|---|---|
-| 1:1 chat, group chat, presence, address book search, audio call, hold, meetings | preview (demo) | the session has them; the adapter is phase 2 |
-| transfer | unavailable in the demo | the session has it; not shown in the demo |
-| video call, persistent chat rooms, viewing shared screens, meeting content | unavailable | the command-line tool offers them; not in this interface yet |
+| 1:1 chat, group chat, presence, audio call, hold, meetings | available when signed in; preview in the demo | through the session adapter |
+| address book search on the server, transfer, video call, persistent chat rooms, viewing shared screens, meeting content | unavailable | the command-line tool offers them; not in this interface yet |
 | file transfer, formatted text, history search, read receipts | unavailable | not implemented (no public specification for file transfer; `text/plain` only; no archive or index; delivery is not reading) |
 
 Delivery is shown as what it is: *sending*, *delivered* (the server or peer accepted the MESSAGE),

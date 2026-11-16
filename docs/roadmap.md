@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (desktop interface phase 1: offline demo)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (desktop interface phase 2: session adapter)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -24,9 +24,9 @@ details are not published.
 | M6 | done (tested-offline, tested-in-lab) | viewing a shared screen 1:1 and in meetings (video-based screen sharing, H.264 UC), a window shared over RDP 1:1 and in meetings through the application sharing MCU, also in ad-hoc conferences created by `commscraft-cli` (authenticated users are presenters and may share); building blocks: MPPC test vectors | owner verification; sharing one's own screen comes later (not in M6) |
 | M7 | done (tested-offline, tested-in-lab) | calendar and out-of-office state from Exchange (function 16), conversation history in Exchange (function 49), voicemail list and listening (function 38), response group agent with web tickets (function 47); meeting content through the web conferencing MCU – whiteboard, polls with voting, slides (function 44, `tested-in-lab`, drawing waits for the GUI), persistent chat rooms (function 20, tested-offline: Skype for Business Server 2019 has none) | owner verification; drawing and creating meeting content with the GUI (SILK deferred until legal clearance; UCWA not planned) |
 
-| GUI | in progress (phase 1 done, tested-offline) | the desktop client `commscraft` with the interface crate `ui` (egui): shell, chats, contacts, calls, meetings, settings with demo data and capability gates ([`ui/README.md`](ui/README.md)) | phase 2 the session adapter, phase 3 UX additions, phase 4 QA against the specification |
+| GUI | in progress (phases 1 and 2 done, tested-offline, tested-in-lab) | the desktop client `commscraft` with the interface crate `ui` (egui): shell, chats, contacts, calls, meetings, settings with capability gates; the session adapter (sign-in, contacts, presence, chat 1:1 and group, audio calls, meetings) ([`ui/README.md`](ui/README.md)) | phase 3 UX additions, phase 4 QA against the specification |
 
-Next steps in order: all milestones from M1 to M7 are closed apart from the owner's verification; the graphical interface (egui) is being built in four phases – the session adapter is next; the optional M3 points (some need captures) stay open.
+Next steps in order: all milestones from M1 to M7 are closed apart from the owner's verification; the graphical interface (egui) is being built in four phases – the UX additions are next; the optional M3 points (some need captures) stay open.
 
 ## Milestones
 

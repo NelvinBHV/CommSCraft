@@ -174,6 +174,9 @@ pub struct CommsUi {
     pub(crate) last_search: String,
     pub(crate) intents: Vec<UiIntent>,
     pub(crate) window_width: f32,
+    /// The next group conversation that appears is selected (the user just started or joined
+    /// one).
+    pub(crate) select_next_group: bool,
 }
 
 impl CommsUi {
@@ -203,6 +206,7 @@ impl CommsUi {
             last_search: String::new(),
             intents: Vec::new(),
             window_width: 1440.0,
+            select_next_group: false,
         }
     }
 
@@ -240,7 +244,46 @@ impl CommsUi {
         self.selected_contact = Some(uri.to_string());
     }
 
+    /// The intents emitted outside a frame (by `chat_with` and the like).
+    pub fn take_intents(&mut self) -> Vec<UiIntent> {
+        std::mem::take(&mut self.intents)
+    }
+
+    /// The next group conversation that appears is the one the user asked for: select it.
+    pub fn expect_group(&mut self) {
+        self.select_next_group = true;
+    }
+
+    /// Applies an adapter event; a group the user just started or joined is selected.
+    pub fn apply(&mut self, e: crate::model::AppEvent) {
+        let new_group = match &e {
+            crate::model::AppEvent::GroupStarted { session, .. } => {
+                self.select_next_group && self.state.key_of_session(*session).is_none()
+            }
+            _ => false,
+        };
+        let session = match &e {
+            crate::model::AppEvent::GroupStarted { session, .. } => Some(*session),
+            _ => None,
+        };
+        self.state.apply(e);
+        if new_group {
+            self.select_next_group = false;
+            if let Some(k) = session.and_then(|s| self.state.key_of_session(s)) {
+                self.select_conversation(k);
+            }
+        }
+    }
+
     pub fn emit(&mut self, i: UiIntent) {
+        if matches!(
+            i,
+            UiIntent::StartGroup { .. }
+                | UiIntent::JoinMeeting { .. }
+                | UiIntent::AcceptInvitation { .. }
+        ) {
+            self.select_next_group = true;
+        }
         self.intents.push(i);
     }
 
@@ -320,6 +363,15 @@ impl CommsUi {
         theme::apply(ctx, &pal);
         ctx.set_zoom_factor(self.prefs.scale.clamp(1.0, 2.0));
         self.window_width = ctx.content_rect().width();
+        // What is on screen is read: the open conversation has no unread messages.
+        if self.view == View::Chats {
+            if let Some(c) = self
+                .selected_conv
+                .and_then(|k| self.state.conversation_mut(k))
+            {
+                c.unread = 0;
+            }
+        }
         self.shortcuts(ctx);
         views::shell::statusbar(self, ui, &pal);
         views::shell::topbar(self, ui, &pal);

@@ -1,16 +1,21 @@
 //! CommSCraft desktop client: the egui window around `commscraft-ui`.
 //!
-//! `commscraft --demo` shows the interface with made-up data and never opens a network
-//! connection. `--screenshot FILE` saves the first settled frame as PNG and quits (used for the
-//! documentation screenshots).
+//! Without arguments it shows the sign-in and then works through the session engine (a worker
+//! thread, `session.rs`). `commscraft --demo` shows the interface with made-up data and never
+//! //! opens a network connection. `--screenshot FILE` saves the first settled frame as PNG and
+//! quits (used for the documentation screenshots). `--commands FILE` follows a file of test
+//! commands (`script.rs`) that trigger the same actions as the interface.
 
 mod fonts;
+mod script;
+mod session;
 
 use commscraft_ui::app::{CommsUi, UiIntent};
 use commscraft_ui::demo;
-use commscraft_ui::model::{AppEvent, Connection, View};
+use commscraft_ui::model::{AppEvent, Connection, NoticeKind, View};
 use commscraft_ui::text::Lang;
 use eframe::egui;
+use session::ToWorker;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -19,7 +24,12 @@ const ICON: &[u8] = include_bytes!("../../../assets/branding/CommSCraft-icon-128
 
 const USAGE: &str =
     "usage: commscraft [--demo] [--lang de|en] [--view chats|contacts|calls|meetings|settings]
-                  [--size WIDTHxHEIGHT] [--screenshot FILE.png]";
+                  [--size WIDTHxHEIGHT] [--screenshot FILE.png] [--screenshot-after SECONDS]
+                  [--ca-file PEM] [--commands FILE]
+                  [--sign-in sip:ADDRESS --user USER [--domain DOMAIN] [--server HOST:PORT]]
+  --ca-file    adds an enterprise CA to the system trust store (never replaces the checks)
+  --sign-in    signs in at start; the password is the first line of standard input
+  --commands   follows FILE for test commands (see the documentation in docs/ui/README.md)";
 
 struct Args {
     demo: bool,
@@ -27,6 +37,10 @@ struct Args {
     view: View,
     size: (f32, f32),
     screenshot: Option<PathBuf>,
+    screenshot_after: u64,
+    ca_file: Option<PathBuf>,
+    sign_in: Option<commscraft_ui::app::SignIn>,
+    commands: Option<PathBuf>,
 }
 
 fn parse_args() -> Result<Args, String> {
@@ -36,7 +50,13 @@ fn parse_args() -> Result<Args, String> {
         view: View::Chats,
         size: (1440.0, 900.0),
         screenshot: None,
+        screenshot_after: 0,
+        ca_file: None,
+        sign_in: None,
+        commands: None,
     };
+    let mut form = commscraft_ui::app::SignIn::default();
+    let mut scripted = false;
     let mut it = std::env::args().skip(1);
     while let Some(arg) = it.next() {
         match arg.as_str() {
@@ -69,14 +89,47 @@ fn parse_args() -> Result<Args, String> {
                 a.size = (w, h);
             }
             "--screenshot" => a.screenshot = Some(PathBuf::from(it.next().ok_or(USAGE)?)),
+            "--screenshot-after" => {
+                a.screenshot_after = it
+                    .next()
+                    .and_then(|v| v.parse().ok())
+                    .filter(|v| *v <= 600)
+                    .ok_or(USAGE)?
+            }
+            "--ca-file" => a.ca_file = Some(PathBuf::from(it.next().ok_or(USAGE)?)),
+            "--commands" => a.commands = Some(PathBuf::from(it.next().ok_or(USAGE)?)),
+            "--sign-in" => {
+                scripted = true;
+                form.address = it.next().ok_or(USAGE)?;
+            }
+            "--user" => form.user = it.next().ok_or(USAGE)?,
+            "--domain" => form.domain = it.next().ok_or(USAGE)?,
+            "--server" => form.server = it.next().ok_or(USAGE)?,
             "-h" | "--help" => return Err(USAGE.into()),
             other => return Err(format!("unknown argument {other}\n{USAGE}")),
         }
     }
+    if scripted {
+        form.address = commscraft_ui::normalise_address(&form.address)
+            .ok_or("--sign-in: not a SIP address")?;
+        if form.user.trim().is_empty() {
+            return Err("--sign-in needs --user".into());
+        }
+        let mut line = String::new();
+        std::io::stdin()
+            .read_line(&mut line)
+            .map_err(|e| e.to_string())?;
+        form.password = line.trim_end_matches(['\r', '\n']).to_string();
+        line.clear();
+        if form.password.is_empty() {
+            return Err("--sign-in: no password on standard input".into());
+        }
+        a.sign_in = Some(form);
+    }
     Ok(a)
 }
 
-fn now() -> u64 {
+pub(crate) fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
@@ -153,12 +206,21 @@ fn save_png(path: &std::path::Path, image: &egui::ColorImage) -> Result<(), Stri
     writer.write_image_data(&bytes).map_err(|e| e.to_string())
 }
 
-struct DesktopApp {
-    ui: CommsUi,
+pub(crate) struct DesktopApp {
+    pub(crate) ui: CommsUi,
     lang: Lang,
-    screenshot: Option<PathBuf>,
+    /// Screenshots to take, each with "close the window afterwards".
+    pub(crate) shots: std::collections::VecDeque<(PathBuf, bool)>,
+    commands: Option<std::sync::mpsc::Receiver<String>>,
+    pub(crate) close_at: Option<std::time::Instant>,
     frames: u32,
     shot_rx: Option<std::sync::mpsc::Receiver<std::sync::Arc<egui::ColorImage>>>,
+    worker: Option<session::Worker>,
+    worker_done: bool,
+    ctx: Option<egui::Context>,
+    ca: Option<Vec<u8>>,
+    started: std::time::Instant,
+    screenshot_after: u64,
 }
 
 impl DesktopApp {
@@ -166,23 +228,131 @@ impl DesktopApp {
         demo::start(&mut self.ui, now());
     }
 
-    fn handle(&mut self, intent: UiIntent) {
+    pub(crate) fn handle(&mut self, intent: UiIntent) {
         if self.ui.demo {
             match intent {
-                UiIntent::SignOut => {
-                    self.ui = CommsUi::new(self.lang, self.ui.utc_offset);
-                    self.ui.logo = None;
-                }
+                UiIntent::SignOut => self.reset(),
                 i => demo::handle(&mut self.ui.state, &i, now(), self.lang),
             }
             return;
         }
-        match intent {
-            UiIntent::StartDemo => self.start_demo(),
-            UiIntent::SignIn(_) => self.ui.state.apply(AppEvent::Connection(Connection::Failed(
-                "this build has no session adapter yet".into(),
-            ))),
-            _ => {}
+        if let UiIntent::StartDemo = intent {
+            self.start_demo();
+            return;
+        }
+        if let UiIntent::SignIn(form) = intent {
+            let ctx = self.ctx.clone();
+            let repaint: Box<dyn Fn() + Send> = Box::new(move || {
+                if let Some(c) = &ctx {
+                    c.request_repaint();
+                }
+            });
+            self.worker = Some(session::Worker::start(form, self.ca.clone(), repaint));
+            return;
+        }
+        if matches!(
+            intent,
+            UiIntent::StartGroup { .. }
+                | UiIntent::JoinMeeting { .. }
+                | UiIntent::AcceptInvitation { .. }
+        ) {
+            self.ui.expect_group();
+        }
+        let state = &mut self.ui.state;
+        let session_of = |k| state.conversation(k).and_then(|c| c.session);
+        let cmd = match intent {
+            UiIntent::SetPresence(p) => Some(ToWorker::SetPresence(p)),
+            UiIntent::StartConversation { key, peer } => {
+                Some(ToWorker::StartConversation { key, peer })
+            }
+            UiIntent::SendMessage { key, text } => Some(ToWorker::SendText {
+                key,
+                session: session_of(key),
+                text,
+            }),
+            UiIntent::Typing { key, typing } => Some(ToWorker::Typing {
+                key,
+                session: session_of(key),
+                typing,
+            }),
+            UiIntent::EndConversation { key } => Some(ToWorker::EndConversation {
+                key,
+                session: session_of(key),
+            }),
+            UiIntent::StartGroup { invite } => Some(ToWorker::StartGroup { invite }),
+            UiIntent::InviteToGroup { key, peer } => {
+                session_of(key).map(|session| ToWorker::InviteToGroup { session, peer })
+            }
+            UiIntent::JoinMeeting { focus } => Some(ToWorker::JoinConference { focus }),
+            UiIntent::AcceptInvitation { index } => {
+                if index < state.invitations.len() {
+                    let inv = state.invitations.remove(index);
+                    Some(ToWorker::JoinConference { focus: inv.focus })
+                } else {
+                    None
+                }
+            }
+            UiIntent::DeclineInvitation { index } => {
+                if index < state.invitations.len() {
+                    state.invitations.remove(index);
+                }
+                None
+            }
+            UiIntent::RefreshMeetings => Some(ToWorker::RefreshMeetings),
+            UiIntent::CallUser { peer } => Some(ToWorker::CallUser { peer }),
+            UiIntent::AnswerCall { id } => Some(ToWorker::AnswerCall { id }),
+            UiIntent::HangUp { id } => Some(ToWorker::HangUp { id }),
+            UiIntent::Hold { id, hold } => Some(ToWorker::Hold { id, hold }),
+            UiIntent::Mute { id, muted } => Some(ToWorker::Mute { id, muted }),
+            UiIntent::SignOut => {
+                if self.worker.is_none() {
+                    self.reset();
+                    return;
+                }
+                Some(ToWorker::SignOut)
+            }
+            UiIntent::SearchDirectory { .. }
+            | UiIntent::PrefsChanged
+            | UiIntent::StartDemo
+            | UiIntent::SignIn(_) => None,
+        };
+        if let Some(c) = cmd {
+            let sent = self.worker.as_ref().is_some_and(|w| w.send(c));
+            if !sent {
+                self.ui.state.apply(AppEvent::Notice(
+                    NoticeKind::Error,
+                    "the session is not running or busy – the action was not sent".into(),
+                    now(),
+                ));
+            }
+        }
+    }
+
+    /// Back to the sign-in screen with an empty state (nothing of the last session stays).
+    fn reset(&mut self) {
+        let logo = self.ui.logo.take();
+        let view = self.ui.view();
+        self.ui = CommsUi::new(self.lang, self.ui.utc_offset);
+        self.ui.logo = logo;
+        self.ui.set_view(view);
+        self.worker = None;
+    }
+
+    fn pump_session(&mut self) {
+        let Some(w) = &self.worker else { return };
+        let mut ended = false;
+        for e in w.events(512) {
+            if let AppEvent::Connection(c) = &e {
+                ended = matches!(c, Connection::SignedOut);
+                if matches!(c, Connection::Failed(_) | Connection::Disconnected(_)) {
+                    // The worker has stopped; a new sign-in starts a new one.
+                    self.worker_done = true;
+                }
+            }
+            self.ui.apply(e);
+        }
+        if ended {
+            self.reset();
         }
     }
 }
@@ -203,34 +373,60 @@ impl eframe::App for DesktopApp {
                     Some(ctx.load_texture("brand-icon", img, egui::TextureOptions::LINEAR));
             }
         }
+        if self.ctx.is_none() {
+            self.ctx = Some(ctx.clone());
+        }
+        self.pump_session();
+        if self.worker_done {
+            self.worker_done = false;
+            self.worker = None;
+        }
         let intents = self.ui.show(ui, now());
         for i in intents {
             self.handle(i);
         }
         // Call timers and typing timeouts are shown in seconds.
         ctx.request_repaint_after(Duration::from_millis(500));
-        if let Some(path) = self.screenshot.clone() {
-            self.frames += 1;
-            if self.frames == 6 && self.shot_rx.is_none() {
-                let (tx, rx) = std::sync::mpsc::channel();
-                self.shot_rx = Some(rx);
-                let repaint = ctx.clone();
-                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
-                    egui::ScreenshotCallback::new(move |image| {
-                        let _ = tx.send(image);
-                        repaint.request_repaint();
-                    }),
-                ));
+        self.frames += 1;
+        if let Some(rx) = &self.commands {
+            let lines: Vec<String> = rx.try_iter().take(16).collect();
+            for l in lines {
+                script::run(self, &l);
             }
-            let shot = self.shot_rx.as_ref().and_then(|rx| rx.try_recv().ok());
-            if let Some(image) = shot {
+        }
+        if self
+            .close_at
+            .is_some_and(|t| t.elapsed() >= Duration::from_secs(5))
+        {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        }
+        let due = self.frames >= 6 && self.started.elapsed().as_secs() >= self.screenshot_after;
+        if due && self.shot_rx.is_none() && !self.shots.is_empty() {
+            let (tx, rx) = std::sync::mpsc::channel();
+            self.shot_rx = Some(rx);
+            let repaint = ctx.clone();
+            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
+                egui::ScreenshotCallback::new(move |image| {
+                    let _ = tx.send(image);
+                    repaint.request_repaint();
+                }),
+            ));
+        }
+        let shot = self.shot_rx.as_ref().and_then(|rx| rx.try_recv().ok());
+        if let Some(image) = shot {
+            self.shot_rx = None;
+            if let Some((path, close)) = self.shots.pop_front() {
                 match save_png(&path, &image) {
                     Ok(()) => println!("saved {}", path.display()),
                     Err(e) => eprintln!("screenshot: {e}"),
                 }
-                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                if close {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                }
             }
-            ctx.request_repaint();
+        }
+        if !self.shots.is_empty() || self.commands.is_some() {
+            ctx.request_repaint_after(Duration::from_millis(100));
         }
     }
 }
@@ -244,6 +440,16 @@ fn main() {
         }
     };
     let lang = args.lang.unwrap_or_else(system_lang);
+    let ca = match &args.ca_file {
+        Some(p) => match std::fs::read(p) {
+            Ok(b) => Some(b),
+            Err(e) => {
+                eprintln!("commscraft: {}: {e}", p.display());
+                std::process::exit(2);
+            }
+        },
+        None => None,
+    };
     let offset = utc_offset();
     let fonts = match fonts::system_fonts() {
         Ok(f) => f,
@@ -281,12 +487,22 @@ fn main() {
             let mut app = DesktopApp {
                 ui,
                 lang,
-                screenshot: args.screenshot,
+                shots: args.screenshot.map(|p| (p, true)).into_iter().collect(),
+                commands: args.commands.map(script::follow),
+                close_at: None,
                 frames: 0,
                 shot_rx: None,
+                worker: None,
+                worker_done: false,
+                ctx: Some(cc.egui_ctx.clone()),
+                ca,
+                started: std::time::Instant::now(),
+                screenshot_after: args.screenshot_after,
             };
             if args.demo {
                 app.start_demo();
+            } else if let Some(form) = args.sign_in {
+                app.handle(UiIntent::SignIn(form));
             }
             Ok(Box::new(app))
         }),

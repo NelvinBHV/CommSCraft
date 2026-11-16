@@ -529,7 +529,21 @@ dependencies = [
 name = "commscraft"
 version = "0.0.1"
 dependencies = [
+ "commscraft-audio-alsa",
+ "commscraft-client",
+ "commscraft-conf",
+ "commscraft-net",
+ "commscraft-ocer",
+ "commscraft-presence",
+ "commscraft-provisioning",
+ "commscraft-register",
+ "commscraft-sdp",
+ "commscraft-session",
+ "commscraft-sip-msg",
+ "commscraft-sipae",
  "commscraft-ui",
+ "commscraft-url",
+ "commscraft-xml",
  "eframe",
  "png",
 ]
@@ -581,6 +595,7 @@ dependencies = [
  "commscraft-audio-alsa",
  "commscraft-avedgea",
  "commscraft-call-media",
+ "commscraft-client",
  "commscraft-conf",
  "commscraft-discovery",
  "commscraft-dlx",
@@ -620,6 +635,26 @@ dependencies = [
  "landlock",
  "libc",
  "seccompiler",
+ "zeroize",
+]
+
+[[package]]
+name = "commscraft-client"
+version = "0.0.1"
+dependencies = [
+ "commscraft-audio-alsa",
+ "commscraft-avedgea",
+ "commscraft-call-media",
+ "commscraft-discovery",
+ "commscraft-media",
+ "commscraft-net",
+ "commscraft-provisioning",
+ "commscraft-qoe",
+ "commscraft-register",
+ "commscraft-sdp",
+ "commscraft-tones",
+ "commscraft-turn-bwm",
+ "commscraft-url",
  "zeroize",
 ]
 

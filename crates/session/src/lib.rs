@@ -829,6 +829,12 @@ impl<R: Random> Engine<R> {
         &self.cfg.aor
     }
 
+    /// The ID the next `StartConversation` or `StartGroup` will get (to map an interface's own
+    /// conversation to the session's before it is answered).
+    pub fn next_conversation_id(&self) -> ConversationId {
+        self.next_conv
+    }
+
     /// The endpoint ID (EPID).
     pub fn epid(&self) -> &str {
         &self.cfg.epid

@@ -152,7 +152,6 @@ fn profile(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             Presence::Available,
             Presence::Busy,
             Presence::DoNotDisturb,
-            Presence::BeRightBack,
             Presence::Away,
         ] {
             let selected = app.state.me.presence == p;
