@@ -24,13 +24,14 @@
 //! screen size is bounded ([`MAX_SIDE`]).
 
 use ironrdp_core::{decode, encode_vec, impl_as_any};
-use ironrdp_dvc::DrdynvcClient;
+use ironrdp_dvc::{DrdynvcClient, DvcClientProcessor, DvcMessage, DvcProcessor};
 use ironrdp_egfx::client::{GraphicsPipelineClient, GraphicsPipelineHandler};
 use ironrdp_egfx::pdu::{
     CapabilitiesV103Flags, CapabilitiesV104Flags, CapabilitiesV107Flags, CapabilitiesV10Flags,
     CapabilitiesV8Flags, CapabilitySet as EgfxCapabilitySet,
 };
 use ironrdp_graphics::image_processing::PixelFormat;
+use ironrdp_graphics::zgfx;
 use ironrdp_pdu::gcc::{
     ChannelDef, ChannelName, ChannelOptions, ClientCoreData, ClientCoreOptionalData,
     ClientEarlyCapabilityFlags, ClientGccBlocks, ClientNetworkData, ClientSecurityData, ColorDepth,
@@ -60,7 +61,9 @@ use ironrdp_pdu::rdp::ClientInfoPdu;
 use ironrdp_pdu::x224::{X224Data, X224};
 use ironrdp_pdu::Action;
 use ironrdp_session::image::DecodedImage;
-use ironrdp_session::{ActiveStage, ActiveStageBuilder, ActiveStageOutput};
+use ironrdp_session::{
+    composite_graphics_pipeline, ActiveStage, ActiveStageBuilder, ActiveStageOutput,
+};
 use ironrdp_svc::{StaticChannelSet, SvcClientProcessor, SvcMessage, SvcProcessor};
 use std::borrow::Cow;
 
@@ -131,6 +134,105 @@ impl SvcProcessor for Encomsp {
 }
 
 impl SvcClientProcessor for Encomsp {}
+
+/// Largest decompressed graphics pipeline message we accept. The format would allow 65 535
+/// segments of up to 65 535 bytes each ([MS-RDPEGFX] 20260511 §3.1.9.1.2, p. 79); 16 MiB holds
+/// a full 4K frame in 32 bits per pixel and bounds what a hostile peer can make us allocate.
+const MAX_GFX_MESSAGE: usize = 16 * 1024 * 1024;
+
+/// RDPGFX_CMDID_WIRETOSURFACE_1 ([MS-RDPEGFX] 20260511 §2.2.1.5, p. 17).
+const CMD_WIRE_TO_SURFACE_1: u16 = 0x0001;
+/// RDPGFX_CODECID_CAVIDEO, RemoteFX ([MS-RDPEGFX] 20260511 §2.2.2.1, p. 19).
+const CODEC_CAVIDEO: u16 = 0x0003;
+/// The codec ID the application sharing MCU puts on RemoteFX tiles: not in the list of
+/// [MS-RDPEGFX] §2.2.2.1, but its bitmap data is a RemoteFX stream, starting with TS_RFX_SYNC
+/// (block type 0xCCC0, magic 0xCACCACCA, version 0x0100; [MS-RDPRFX] 20240423 §2.2.2.2.1,
+/// p. 20) (`tested-in-lab`, inference from the observed bytes).
+const CODEC_MCU_REMOTEFX: u16 = 0x0005;
+
+/// Rewrites the MCU's RemoteFX codec ID to RDPGFX_CODECID_CAVIDEO in every
+/// RDPGFX_WIRE_TO_SURFACE_PDU_1 of a decompressed graphics message. The message is a sequence
+/// of PDUs, each starting with RDPGFX_HEADER (cmdId, flags, pduLength over the whole PDU;
+/// [MS-RDPEGFX] §2.2.1.5, p. 16), the codec ID following the surface ID (§2.2.2.1, p. 19). A
+/// malformed length stops the walk; IronRDP's decoder then reports it.
+fn fix_codec_ids(message: &mut [u8]) {
+    let mut at = 0usize;
+    while let Some(rest) = message.get_mut(at..) {
+        let Some(h) = rest.get(..8).and_then(|h| <[u8; 8]>::try_from(h).ok()) else {
+            return;
+        };
+        let cmd = u16::from_le_bytes([h[0], h[1]]);
+        let Ok(len) = usize::try_from(u32::from_le_bytes([h[4], h[5], h[6], h[7]])) else {
+            return;
+        };
+        if len < 8 || len > rest.len() {
+            return;
+        }
+        if cmd == CMD_WIRE_TO_SURFACE_1 && len >= 12 {
+            if let Some(codec) = rest.get_mut(10..12) {
+                if *codec == CODEC_MCU_REMOTEFX.to_le_bytes() {
+                    codec.copy_from_slice(&CODEC_CAVIDEO.to_le_bytes());
+                }
+            }
+        }
+        at = at.saturating_add(len);
+    }
+}
+
+/// The graphics pipeline behind a filter for the MCU's codec ID: decompresses each message
+/// with its own bulk decompressor ([MS-RDPEGFX] §2.2.5, p. 72; §3.1.9.1, p. 79), rewrites the codec IDs and
+/// hands the message on uncompressed to IronRDP's pipeline client.
+struct GfxCodecIds {
+    inner: GraphicsPipelineClient,
+    zgfx: zgfx::Decompressor,
+}
+
+impl GfxCodecIds {
+    fn new(inner: GraphicsPipelineClient) -> Self {
+        Self {
+            inner,
+            zgfx: zgfx::Decompressor::new(),
+        }
+    }
+}
+
+impl_as_any!(GfxCodecIds);
+
+impl DvcProcessor for GfxCodecIds {
+    fn channel_name(&self) -> &str {
+        self.inner.channel_name()
+    }
+
+    fn start(&mut self, channel_id: u32) -> ironrdp_pdu::PduResult<Vec<DvcMessage>> {
+        self.inner.start(channel_id)
+    }
+
+    fn process(
+        &mut self,
+        channel_id: u32,
+        payload: &[u8],
+    ) -> ironrdp_pdu::PduResult<Vec<DvcMessage>> {
+        let mut message = Vec::new();
+        self.zgfx
+            .decompress(payload, &mut message)
+            .map_err(|e| ironrdp_pdu::pdu_other_err!("graphics pipeline", source: e))?;
+        if message.len() > MAX_GFX_MESSAGE {
+            return Err(ironrdp_pdu::pdu_other_err!(
+                "graphics pipeline",
+                "message too large"
+            ));
+        }
+        fix_codec_ids(&mut message);
+        self.inner
+            .process(channel_id, &zgfx::wrap_uncompressed(&message))
+    }
+
+    fn close(&mut self, channel_id: u32) {
+        self.inner.close(channel_id);
+    }
+}
+
+impl DvcClientProcessor for GfxCodecIds {}
 
 /// The static channels we ask for: `drdynvc` and `encomsp`.
 const STATIC_CHANNELS: usize = 2;
@@ -212,6 +314,18 @@ fn cookie_name(sip_uri: &str) -> String {
 
 fn protocol(step: &str, e: impl std::fmt::Display) -> Error {
     Error::Protocol(format!("{step}: {e}"))
+}
+
+/// An error with its chain of sources, so the cause below IronRDP's context reaches the log.
+fn with_sources(e: &dyn std::error::Error) -> String {
+    let mut msg = e.to_string();
+    let mut src = e.source();
+    while let Some(s) = src {
+        msg.push_str(": ");
+        msg.push_str(&s.to_string());
+        src = s.source();
+    }
+    msg
 }
 
 fn x224<T>(pdu: T) -> Result<Vec<u8>, Error>
@@ -643,7 +757,7 @@ impl Viewer {
             return Ok(State::WaitFinalization { share_id, font_map });
         }
         let mut channels = StaticChannelSet::new();
-        let gfx = GraphicsPipelineClient::new(Box::new(Gfx), None);
+        let gfx = GfxCodecIds::new(GraphicsPipelineClient::new(Box::new(Gfx), None));
         channels.insert(DrdynvcClient::new().with_dynamic_channel(gfx));
         channels.insert(Encomsp::default());
         if let Some(&id) = self.static_channels.first() {
@@ -684,7 +798,7 @@ impl Viewer {
         };
         let outputs = stage
             .process(image, action, pdu, None)
-            .map_err(|e| protocol("screen update", e))?;
+            .map_err(|e| protocol("screen update", with_sources(&e)))?;
         let mut ended = false;
         for o in outputs {
             match o {
@@ -705,6 +819,27 @@ impl Viewer {
                     ended = true;
                 }
                 _ => {}
+            }
+        }
+        // The pipeline sits behind `GfxCodecIds`, so the active stage does not find it by its
+        // type: what it decoded is composited here, as IronRDP describes for a pipeline
+        // registered under another processor.
+        if let Some(mut gfx) = stage.get_dvc_mut::<GfxCodecIds>() {
+            let done = composite_graphics_pipeline(&mut gfx.processor_mut().inner, image)
+                .map_err(|e| protocol("graphics pipeline", with_sources(&e)))?;
+            let full = (image.width(), image.height());
+            let region = if done.reset && full.0 > 0 && full.1 > 0 {
+                Some((0, 0, full.0.saturating_sub(1), full.1.saturating_sub(1)))
+            } else {
+                done.region.map(|r| (r.left, r.top, r.right, r.bottom))
+            };
+            if let Some((left, top, right, bottom)) = region {
+                out.push(Event::Updated {
+                    left,
+                    top,
+                    right,
+                    bottom,
+                });
             }
         }
         Ok(ended)
