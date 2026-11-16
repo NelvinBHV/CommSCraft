@@ -10,11 +10,13 @@ use egui::{RichText, Ui};
 
 /// Shortest text that is sent to the address book search.
 const MIN_DIRECTORY: usize = 3;
+/// How long the search text rests before the server is asked (ms).
+const SETTLE_MS: u64 = 600;
 
 pub fn results(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     let t = app.t;
     let needle = app.search.trim().to_lowercase();
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         ui.add_space(8.0);
         ui.label(
             RichText::new(t.search_results)
@@ -23,7 +25,7 @@ pub fn results(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 .color(pal.ink),
         );
     });
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         ui.add_space(8.0);
         ui.label(
             RichText::new(t.search_scope)
@@ -51,11 +53,21 @@ pub fn results(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         .map(|c| (c.key, c.title.clone()))
         .collect();
     let gate = app.state.capabilities.directory_search.clone();
+    // The server is asked once the text has rested for a moment (not on every key).
     if gate.usable() && needle.chars().count() >= MIN_DIRECTORY && app.last_search != needle {
-        app.last_search = needle.clone();
-        app.emit(UiIntent::SearchDirectory {
-            text: app.search.trim().to_string(),
-        });
+        let time = ui.input(|i| i.time);
+        let settle = std::time::Duration::from_millis(SETTLE_MS);
+        if app.search_pending.0 != needle {
+            app.search_pending = (needle.clone(), time);
+            ui.ctx().request_repaint_after(settle);
+        } else if (time - app.search_pending.1) * 1000.0 >= SETTLE_MS as f64 {
+            app.last_search = needle.clone();
+            app.emit(UiIntent::SearchDirectory {
+                text: app.search.trim().to_string(),
+            });
+        } else {
+            ui.ctx().request_repaint_after(settle);
+        }
     }
     let directory: Vec<String> = app
         .state
@@ -68,12 +80,12 @@ pub fn results(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         .id_salt("search")
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.add_space(8.0);
                 widgets::section(ui, t.source_contact_list, pal);
             });
             if contacts.is_empty() {
-                ui.horizontal(|ui| {
+                ui.horizontal_wrapped(|ui| {
                     ui.add_space(8.0);
                     ui.label(RichText::new(t.nothing_found).color(pal.muted));
                 });
@@ -82,12 +94,12 @@ pub fn results(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 crate::views::contacts::row(app, ui, pal, &uri);
             }
             ui.add_space(8.0);
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.add_space(8.0);
                 widgets::section(ui, t.conversations, pal);
             });
             if convs.is_empty() {
-                ui.horizontal(|ui| {
+                ui.horizontal_wrapped(|ui| {
                     ui.add_space(8.0);
                     ui.label(RichText::new(t.nothing_found).color(pal.muted));
                 });
@@ -102,26 +114,26 @@ pub fn results(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 }
             }
             ui.add_space(8.0);
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.add_space(8.0);
                 widgets::section(ui, t.source_directory, pal);
             });
             match &gate {
                 crate::model::Gate::Unavailable(r) => {
-                    ui.horizontal(|ui| {
+                    ui.horizontal_wrapped(|ui| {
                         ui.add_space(8.0);
                         ui.label(RichText::new(t.reason(*r)).color(pal.muted));
                     });
                 }
                 _ if needle.chars().count() < MIN_DIRECTORY => {
-                    ui.horizontal(|ui| {
+                    ui.horizontal_wrapped(|ui| {
                         ui.add_space(8.0);
                         ui.label(RichText::new(t.search_more_letters).color(pal.muted));
                     });
                 }
                 _ => {
                     if directory.is_empty() {
-                        ui.horizontal(|ui| {
+                        ui.horizontal_wrapped(|ui| {
                             ui.add_space(8.0);
                             ui.label(RichText::new(t.nothing_found).color(pal.muted));
                         });
@@ -132,7 +144,7 @@ pub fn results(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 }
             }
             ui.add_space(8.0);
-            ui.horizontal(|ui| {
+            ui.horizontal_wrapped(|ui| {
                 ui.add_space(8.0);
                 ui.label(
                     RichText::new(t.no_message_search)

@@ -7,6 +7,7 @@
 //! commands (`script.rs`) that trigger the same actions as the interface.
 
 mod fonts;
+mod prefs;
 mod script;
 mod session;
 
@@ -232,6 +233,8 @@ impl DesktopApp {
         if self.ui.demo {
             match intent {
                 UiIntent::SignOut => self.reset(),
+                // The demo never writes the user's preferences.
+                UiIntent::PrefsChanged => {}
                 i => demo::handle(&mut self.ui.state, &i, now(), self.lang),
             }
             return;
@@ -311,10 +314,14 @@ impl DesktopApp {
                 }
                 Some(ToWorker::SignOut)
             }
-            UiIntent::SearchDirectory { .. }
-            | UiIntent::PrefsChanged
-            | UiIntent::StartDemo
-            | UiIntent::SignIn(_) => None,
+            UiIntent::SearchDirectory { text } => Some(ToWorker::Search { text }),
+            UiIntent::PrefsChanged => {
+                if let Err(e) = prefs::save(&self.ui.prefs) {
+                    eprintln!("preferences not saved: {e}");
+                }
+                None
+            }
+            UiIntent::StartDemo | UiIntent::SignIn(_) => None,
         };
         if let Some(c) = cmd {
             let sent = self.worker.as_ref().is_some_and(|w| w.send(c));
@@ -332,8 +339,14 @@ impl DesktopApp {
     fn reset(&mut self) {
         let logo = self.ui.logo.take();
         let view = self.ui.view();
+        let kept = if self.ui.demo {
+            prefs::load()
+        } else {
+            self.ui.prefs.clone()
+        };
         self.ui = CommsUi::new(self.lang, self.ui.utc_offset);
         self.ui.logo = logo;
+        self.ui.prefs = kept;
         self.ui.set_view(view);
         self.worker = None;
     }
@@ -484,6 +497,10 @@ fn main() {
             cc.egui_ctx.set_fonts(fonts);
             let mut ui = CommsUi::new(lang, offset);
             ui.set_view(args.view);
+            // Screenshots use the defaults, not the user's preferences.
+            if args.screenshot.is_none() && !args.demo {
+                ui.prefs = prefs::load();
+            }
             let mut app = DesktopApp {
                 ui,
                 lang,

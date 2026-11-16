@@ -13,6 +13,7 @@ commscraft-ui = { path = "../../crates/ui" }
 commscraft-audio-alsa = { path = "../../crates/audio-alsa" }
 commscraft-client = { path = "../../crates/client" }
 commscraft-conf = { path = "../../crates/conf" }
+commscraft-dlx = { path = "../../crates/dlx" }
 commscraft-net = { path = "../../crates/net" }
 commscraft-ocer = { path = "../../crates/ocer" }
 commscraft-presence = { path = "../../crates/presence" }
