@@ -306,3 +306,103 @@ pub fn answer_rdp(
 pub fn offered_rdp_sharer(offer: &[u8]) -> bool {
     parse(offer).ok().is_some_and(|s| rdp_line(&s).is_some())
 }
+
+/// The `abs-send-time` element we offer, in the form the Windows clients write (`tested-in-lab`).
+const ABS_SEND_TIME_OFFER: &str =
+    "a=extmap:1 http:\\\\www.webrtc.org\\experiments\\rtp-hdrext\\abs-send-time\r\n";
+
+/// Our offer as RDP viewer to the application sharing MCU of a meeting, for a shared window
+/// (no screen video; [MS-CONFAS] §3.2.5.1.2, pp. 15–16; MS-SDPEXT §3.1.5.18): only
+/// `m=applicationsharing` over TCP in the viewer role, content flow recvonly, with our ICE
+/// candidates – the passive one first, as the Windows sharer took the first remote candidate it
+/// could use as the only source of RTP (`tested-in-lab`, 1:1) –, our key, RTCP on the same
+/// connection and the send time extension the Windows clients use (inference: as in 1:1). The
+/// final offer after ICE carries `local.remote_candidates` and `a=connection:existing`.
+pub fn rdp_viewer_offer(local: &Local, policy: Encryption) -> Result<String, Error> {
+    let encrypted = policy != Encryption::Off && local.key.is_some();
+    if policy == Encryption::Required && !encrypted {
+        return Err(Error::Unencrypted);
+    }
+    let proto = if policy == Encryption::Required {
+        "TCP/RTP/SAVP"
+    } else {
+        "TCP/RTP/AVP"
+    };
+    let mut one = local.clone();
+    if let Some(ice) = one.ice.as_mut() {
+        ice.candidates.retain(|c| c.component == 1);
+        // Passive first, then the rest in their order.
+        ice.candidates
+            .sort_by_key(|c| c.transport != crate::Transport::TcpPassive);
+    }
+    let port = one
+        .ice
+        .as_ref()
+        .and_then(|i| i.candidates.first())
+        .map_or(one.rtp_port, |c| c.port);
+    let mut out = header(&one);
+    out.push_str(&format!("m=applicationsharing {port} {proto} 127\r\n"));
+    transport_attributes(&one, &mut out);
+    if encrypted {
+        if let Some(k) = &one.key {
+            out.push_str(&format!("a=crypto:{}\r\n", k.attribute()));
+        }
+    }
+    out.push_str(if one.remote_candidates.is_empty() {
+        "a=setup:active\r\na=connection:new\r\n"
+    } else {
+        "a=setup:active\r\na=connection:existing\r\n"
+    });
+    out.push_str("a=mid:1\r\na=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\n");
+    out.push_str(ABS_SEND_TIME_OFFER);
+    out.push_str("a=x-applicationsharing-role:viewer\r\na=x-applicationsharing-media-type:rdp\r\na=x-applicationsharing-contentflow:recvonly\r\n");
+    Ok(out)
+}
+
+/// The MCU's answer to [`rdp_viewer_offer`]: its active `m=applicationsharing` line (the reverse
+/// role, sharer; [MS-CONFAS] §3.2.5.1.2), its key for our tag, ICE, address, the session ID it
+/// names and the send time extension if it takes it. A plaintext answer is refused under
+/// `Encryption::Required`.
+pub fn rdp_answer_to_offer(
+    answer: &[u8],
+    our_key: Option<&Key>,
+    policy: Encryption,
+) -> Result<NegotiatedRdp, Error> {
+    let s = parse(answer)?;
+    let m = s
+        .media
+        .iter()
+        .find(|m| m.kind == "applicationsharing" && m.port != 0)
+        .ok_or(Error::Syntax("no RDP line in the answer"))?;
+    if m.attr("x-applicationsharing-role")
+        .is_some_and(|r| r.trim() != "sharer")
+    {
+        return Err(Error::Syntax("the answer is not in the sharer role"));
+    }
+    let keys = keys_of(m);
+    let remote_key = match our_key {
+        Some(k) => keys.into_iter().find(|r| r.tag == k.tag),
+        None => None,
+    };
+    if policy == Encryption::Required && remote_key.is_none() {
+        return Err(Error::Unencrypted);
+    }
+    if let (Some(mine), Some(theirs)) = (our_key, &remote_key) {
+        if mine.key == theirs.key {
+            return Err(Error::Crypto("peer reused our key"));
+        }
+    }
+    let (rtp, _) = endpoints(&s, m)?;
+    let session_id = m
+        .attr("x-applicationsharing-session-id")
+        .map(str::trim)
+        .filter(|v| !v.is_empty() && v.len() <= 32 && v.chars().all(|c| c.is_ascii_alphanumeric()))
+        .map(str::to_string);
+    Ok(NegotiatedRdp {
+        remote_key,
+        remote_ice: ice_of(m),
+        remote_rtp: rtp,
+        session_id,
+        abs_send_time: abs_send_time_of(m).map(|(id, _)| id),
+    })
+}
