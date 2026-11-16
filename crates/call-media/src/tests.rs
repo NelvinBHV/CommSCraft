@@ -852,3 +852,64 @@ fn video_stream_bandwidth_reservation() {
         "{rates:?}"
     );
 }
+
+/// Two data streams over loopback TCP (passive and active host candidates): once ICE has
+/// selected, a final offer naming an active candidate gives the connection's real source port,
+/// not port 9 (the MCU refused port 9 with a media connectivity failure, `tested-in-lab`).
+#[test]
+fn final_offer_names_active_source_port() {
+    let ip: IpAddr = "127.0.0.1".parse().unwrap();
+    let t0 = now_ms();
+    let mut a = CallMedia::prepare_data(ip, t0).unwrap();
+    let mut b = CallMedia::prepare_data(ip, t0).unwrap();
+    let (da, db) = (a.local_description(), b.local_description());
+    let actives = |d: &sdp::Local| {
+        d.ice
+            .as_ref()
+            .unwrap()
+            .candidates
+            .iter()
+            .filter(|c| c.transport == sdp::Transport::TcpActive)
+            .map(|c| c.port)
+            .collect::<Vec<_>>()
+    };
+    assert!(actives(&da).iter().all(|&p| p == 9), "offered with port 9");
+    a.start_data(Some(b.key()), &db.ice, (db.address, db.rtp_port), true, t0)
+        .unwrap();
+    b.start_data(Some(a.key()), &da.ice, (da.address, da.rtp_port), false, t0)
+        .unwrap();
+    let mut selected = (false, false);
+    let deadline = t0 + 15_000;
+    while !(selected.0 && selected.1) && now_ms() < deadline {
+        let now = now_ms();
+        selected.0 |= a.poll(now).contains(&Event::Selected);
+        selected.1 |= b.poll(now).contains(&Event::Selected);
+        std::thread::sleep(std::time::Duration::from_millis(2));
+    }
+    assert_eq!(selected, (true, true), "ICE completed on both sides");
+    let mut seen_active = false;
+    for fin in [
+        a.final_description().unwrap(),
+        b.final_description().unwrap(),
+    ] {
+        // Component 1 only: the data stream's SDP lists no others (`a=rtcp-mux`).
+        let cands: Vec<_> = fin
+            .ice
+            .as_ref()
+            .unwrap()
+            .candidates
+            .iter()
+            .filter(|c| c.component == 1)
+            .collect();
+        assert_eq!(cands.len(), 1, "only the selected candidate: {cands:?}");
+        if cands[0].transport == sdp::Transport::TcpActive {
+            seen_active = true;
+            assert_ne!(cands[0].port, 9);
+            assert_eq!(fin.rtp_port, cands[0].port);
+        }
+    }
+    assert!(
+        seen_active,
+        "one side reaches the other over its active candidate"
+    );
+}

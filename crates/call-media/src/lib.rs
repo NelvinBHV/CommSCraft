@@ -630,6 +630,38 @@ impl CallMedia {
             ice.candidates
                 .retain(|c| keep.contains(&(SocketAddr::new(c.address, c.port), tr(c.transport))));
         }
+        // An active TCP candidate is offered with port 9 (RFC 6544 §4.5). Once its connection
+        // carries the selected pair, the final offer names the connection's real source port:
+        // the peer binds its receive side to the address in the final offer, and the
+        // application sharing MCU refused port 9 with a media connectivity failure
+        // (`tested-in-lab`, like the Windows clients do).
+        let keep: Vec<(SocketAddr, ice::Transport)> = keep
+            .into_iter()
+            .enumerate()
+            .map(|(i, (addr, t))| {
+                let (local, peer) = if i == 0 {
+                    (rtp_l, rtp_r)
+                } else {
+                    rtcp.unwrap_or((rtp_l, rtp_r))
+                };
+                match (t, self.active_source(local, peer)) {
+                    (ice::Transport::TcpActive, Some(src)) => {
+                        if let Some(ice) = d.ice.as_mut() {
+                            let component = if i == 0 { 1 } else { 2 };
+                            for c in ice.candidates.iter_mut().filter(|c| {
+                                c.transport == sdp::Transport::TcpActive
+                                    && c.component == component
+                                    && SocketAddr::new(c.address, c.port) == addr
+                            }) {
+                                c.port = src.port();
+                            }
+                        }
+                        (SocketAddr::new(addr.ip(), src.port()), t)
+                    }
+                    _ => (addr, t),
+                }
+            })
+            .collect();
         if let Some((a, _)) = keep.first() {
             d.address = a.ip();
             d.rtp_port = a.port();
@@ -641,6 +673,25 @@ impl CallMedia {
             .chain(rtcp.map(|(_, r)| (2, r)))
             .collect();
         Some(d)
+    }
+
+    /// The source address of the connection our active TCP candidate `local` opened to `peer`.
+    fn active_source(&self, local: usize, peer: SocketAddr) -> Option<SocketAddr> {
+        let &(sock, transport) = self.candidate_socket.get(local)?;
+        if transport != ice::Transport::TcpActive {
+            return None;
+        }
+        match self.sockets.get(sock)? {
+            Socket::TcpHost(h) => h
+                .conns
+                .iter()
+                .find(|c| c.peer == peer && !c.accepted && !c.failed)?
+                .stream
+                .as_ref()?
+                .local_addr()
+                .ok(),
+            _ => None,
+        }
     }
 
     pub fn key(&self) -> &sdp::Key {

@@ -248,3 +248,80 @@ fn hostile_input() {
     let (mut v, _) = Viewer::new(config()).unwrap();
     assert!(v.on_bytes(&[0x00, 0x04, 0x00, 0x00]).is_err());
 }
+
+/// One RDPGFX PDU: header (cmdId, flags 0, pduLength) and body.
+fn gfx_pdu(cmd: u16, body: &[u8]) -> Vec<u8> {
+    let mut p = cmd.to_le_bytes().to_vec();
+    p.extend_from_slice(&0u16.to_le_bytes());
+    p.extend_from_slice(&u32::try_from(body.len() + 8).unwrap().to_le_bytes());
+    p.extend_from_slice(body);
+    p
+}
+
+/// RDPGFX_WIRE_TO_SURFACE_PDU_1 head: surface 0, the codec, XRGB, a 64×64 rectangle, no data.
+fn wire_to_surface(codec: u16) -> Vec<u8> {
+    let mut b = 0u16.to_le_bytes().to_vec();
+    b.extend_from_slice(&codec.to_le_bytes());
+    b.push(0x20);
+    for v in [0u16, 0, 64, 64] {
+        b.extend_from_slice(&v.to_le_bytes());
+    }
+    b.extend_from_slice(&0u32.to_le_bytes());
+    gfx_pdu(CMD_WIRE_TO_SURFACE_1, &b)
+}
+
+/// The MCU's RemoteFX codec ID becomes CAVIDEO in every WireToSurface1 of a message; other
+/// commands and other codecs stay as they are.
+#[test]
+fn mcu_remotefx_codec_id_rewritten() {
+    let solid_fill = gfx_pdu(0x0004, &[5, 0, 0, 0]);
+    let mut msg = [
+        wire_to_surface(CODEC_MCU_REMOTEFX),
+        solid_fill.clone(),
+        wire_to_surface(0x000a),
+        wire_to_surface(CODEC_MCU_REMOTEFX),
+    ]
+    .concat();
+    fix_codec_ids(&mut msg);
+    let expected = [
+        wire_to_surface(CODEC_CAVIDEO),
+        solid_fill,
+        wire_to_surface(0x000a),
+        wire_to_surface(CODEC_CAVIDEO),
+    ]
+    .concat();
+    assert_eq!(msg, expected);
+}
+
+/// Hostile lengths stop the walk without touching the rest or panicking.
+#[test]
+fn codec_id_walk_bounded() {
+    // pduLength 0 and pduLength beyond the message: nothing after them is rewritten.
+    for bad in [0u32, 4, 1_000_000] {
+        let mut head = 0x0004u16.to_le_bytes().to_vec();
+        head.extend_from_slice(&0u16.to_le_bytes());
+        head.extend_from_slice(&bad.to_le_bytes());
+        let mut msg = [head, wire_to_surface(CODEC_MCU_REMOTEFX)].concat();
+        let before = msg.clone();
+        fix_codec_ids(&mut msg);
+        assert_eq!(msg, before, "length {bad}");
+    }
+    // Too short for a codec ID, truncated header, empty message.
+    let mut short = gfx_pdu(CMD_WIRE_TO_SURFACE_1, &[0, 0]);
+    let before = short.clone();
+    fix_codec_ids(&mut short);
+    assert_eq!(short, before);
+    fix_codec_ids(&mut [1, 0, 0]);
+    fix_codec_ids(&mut []);
+}
+
+/// The filter in front of the pipeline keeps the pipeline's channel name, and garbage instead
+/// of bulk-compressed data is an error, not a panic.
+#[test]
+fn gfx_filter_errors_on_garbage() {
+    let mut f = GfxCodecIds::new(GraphicsPipelineClient::new(Box::new(Gfx), None));
+    assert_eq!(f.channel_name(), ironrdp_egfx::CHANNEL_NAME);
+    assert!(f.start(1).is_ok());
+    assert!(f.process(1, &[0xff, 0xff, 0xff]).is_err());
+    assert!(f.process(1, &[]).is_err());
+}
