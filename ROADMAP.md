@@ -1,8 +1,8 @@
 # CommSCraft roadmap
 
-**Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · next: the graphical interface · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
+**Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface in progress (phase 1 of 4: offline demo) · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (M7 closed: persistent chat tested-offline)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (desktop interface phase 1: offline demo)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **47 crates + 1 app** (`commscraft-cli`), **601 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **48 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **628 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -40,6 +40,9 @@ transfer can come later from interop captures.
 4. **M6 – viewing shared screens** (closed 2026-11-16): screens shared by video and windows shared over RDP, 1:1, in meetings and in our own ad-hoc conferences; sharing one's own screen comes later.
 5. **M7 – Exchange integration and extras** (closed 2026-11-16): calendar and out-of-office state, conversation history, voicemail, response group agent, meeting content (whiteboard, polls, slides), persistent chat rooms (offline only); the graphical
    interface (egui) comes after the milestones.
+6. **Desktop interface (egui)** (in progress): phase 1 – the shell and the screens for chats,
+   contacts, calls and meetings with demo data, honest capability gates – done; next the session
+   adapter, then UX additions and QA ([`docs/ui/README.md`](docs/ui/README.md)).
    Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
 
 Hours are not estimated.
@@ -48,6 +51,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-16 | Desktop interface phase 1 (tested-offline): crate `ui` (egui; blue and slate tokens, layout 66/92/300/290/28, chats with composer and group details, contacts and presence, calls with controls and history, meetings, settings with the capability overview, search over real sources, German and English, keyboard shortcuts, high contrast, scaling) and the app `commscraft` (`--demo` without network, system fonts, the unchanged brand icon, `--screenshot`); interface tests through the accessibility tree. |
 | 2026-11-16 | M7 closed: persistent chat rooms (`xccos`, tested-offline – Skype for Business Server 2019 has none): the pool from provisioning, the channel server, rooms, joining with backchat, history, messages; CLI `/rooms`, `/room`. |
 | 2026-11-16 | M7: meeting content `tested-in-lab` – `/content` joins the web conferencing MCU (addUser dial-in, TLS), shows whiteboards (annotations counted), polls (question, choices, results) and slides, `/vote` votes; ad-hoc conferences ask for the web conferencing MCU. Found in the lab: application methods count alphabetically (K-PO-1), two printed interface hashes are wrong (K-PO-4). |
 | 2026-11-16 | M7: the PSOM client for meeting content (`psom`, tested-offline): connection join, versioning of all documented interfaces, the root channel, the content list, polls with voting, slides, annotations; byte for byte against the examples of MS-PSOM §4. |

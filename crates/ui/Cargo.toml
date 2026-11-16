@@ -1,0 +1,20 @@
+[package]
+name = "commscraft-ui"
+description = "Desktop interface (egui): theme, view model, views and demo fixtures; no protocol code"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+# The interface toolkit. No bundled fonts: the application loads the system's sans font.
+egui = { version = "=0.37.0", default-features = false }
+
+[dev-dependencies]
+# Tests only: egui's own fonts so that layouts can be measured without system fonts.
+egui = { version = "=0.37.0", default-features = false, features = ["default_fonts"] }
+egui_kittest = { version = "=0.37.0" }
+
+[lints]
+workspace = true

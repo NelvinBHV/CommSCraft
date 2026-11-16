@@ -10,9 +10,9 @@ application, a ranked work list, and nothing copied from Microsoft products.
 
 > **Stage: M1 (sign-in), M4, M5 (video), M6 (viewing shared screens) and M7 (Exchange and extras) closed, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search, audio and video calls, meetings and telephony (transfer, forwarding, park, delegates,
-> emergency calls) exist as building blocks that pass offline tests and whose main flows also ran in the owner's private lab (47 crates,
-> 601 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
-> for the owner's runs on authorized servers; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
+> emergency calls) exist as building blocks that pass offline tests and whose main flows also ran in the owner's private lab (48 crates,
+> 628 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
+> for the owner's runs on authorized servers. The desktop interface `commscraft` (egui) exists as an offline demo; its connection to the session engine is the next step. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
 CommSCraft is not affiliated with, endorsed by or sponsored by Microsoft. "Skype for Business",
@@ -66,6 +66,15 @@ cargo build --release
 are allowed to test. In `interactive` mode the commands are `/contacts`, `/status`, `/chat`,
 `/group`, `/invite`, `/join`, `/search`, `/call`, `/answer`, `/hangup`, `/dtmf`, `/mute`, `/to`,
 `/end`, `/quit`; `commscraft-cli` without arguments prints the full usage.
+
+The desktop client is in progress (phase 1: an offline demo, no network connection at all):
+
+```
+./target/release/commscraft --demo                      # German or English from LANG; --lang de|en
+```
+
+It needs a system sans font (found through fontconfig, nothing is bundled). Screens and the
+capability gates are described in [`docs/ui/README.md`](docs/ui/README.md).
 
 ## How the work is documented
 

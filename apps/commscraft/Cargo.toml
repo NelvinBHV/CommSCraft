@@ -1,0 +1,21 @@
+[package]
+name = "commscraft"
+description = "CommSCraft desktop client for Linux (egui): the interface on top of the session engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-ui = { path = "../../crates/ui" }
+# Window and OpenGL rendering on Wayland and X11; no bundled fonts (the system's sans font is
+# loaded at start). Without the `accesskit` feature for now: its Linux adapter pulls in zbus 5 with
+# crates RustSec lists as unmaintained (RUSTSEC-2026-0370 … 0372); the accessibility tree is still
+# built by egui and tested, the screen reader bridge follows once the adapter moves to zbus 6.
+eframe = { version = "=0.37.0", default-features = false, features = ["clipboard", "glow", "wayland", "x11"] }
+# Decoding the unchanged brand icon (PNG) for the window and the top bar.
+png = "0.18"
+
+[lints]
+workspace = true
