@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-16 · **Last updated:** 2026-11-16 · **Change:** minor (phase 4: QA)
+> **Last reviewed:** 2026-11-16 · **Last updated:** 2026-11-16 · **Change:** minor (desktop client: transfer, Kerberos)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -38,7 +38,8 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   `commscraft-client`), NTLM with the password typed in the form, TLS always verified against the
   system trust store plus an optional `--ca-file`. A server outside the SIP domain is used only
   when its domain is listed in `~/.config/commscraft/trusted-domains`; the desktop client never
-  asks in a dialog yet and says how to trust it. TLS-DSK and Kerberos are offered by the
+  asks in a dialog yet and says how to trust it. Kerberos can be tried first (a checkbox: the
+  system's ticket, else the password; NTLM stays the fallback); TLS-DSK is offered by the
   command-line tool only.
 - **Mapping:** engine events become typed `AppEvent`s (contacts, presence with the published
   display name, conversations, delivery, typing, roster, invitations, calls, meetings, notices);
@@ -48,17 +49,19 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
 - **Calls:** the media thread of `commscraft-client::calls` (ICE, SRTP, G.722/G.711, ALSA); a call
   shows *connected* only after `CallAnswered`. Calls go only to SIP addresses picked in the
   interface – never to phone numbers – so the engine's emergency call path is not reached from
-  here. A transfer request is declined and a screen share offer refused, with a notice (the
-  command-line tool offers both).
+  here. The call tile *Transfer* sends a blind transfer (REFER) to an address picked in the address
+  dialog; the result is reported, and the call ends only when the transfer succeeded. A
+  transfer request of the other side is declined and a screen share offer refused, with a notice
+  (the command-line tool offers both).
 - **Address book search:** MS-DLX through the shared `commscraft-client::directory` with the
   registrar's NTLM; asked once the search text has rested for 600 ms; results are shown with
   their source and are not kept as contacts.
-- **Not in the desktop client yet** (gated with a reason): video, transfer, viewing shared
-  screens, meeting content, persistent chat.
+- **Not in the desktop client yet** (gated with a reason): video, viewing shared screens,
+  meeting content, persistent chat.
 
 `--sign-in sip:ADDRESS --user USER [--domain D] [--server H:P]` signs in at start with the
 password from standard input; `--commands FILE` follows a file of test commands (`view`, `chat`,
-`select`, `search`, `send`, `group`, `accept`, `call`, `answer`, `hangup`, `hold`, `resume`, `mute`,
+`select`, `search`, `send`, `group`, `accept`, `call`, `transfer`, `answer`, `hangup`, `hold`, `resume`, `mute`,
 `unmute`, `status`, `shot`, `quit`) that trigger exactly the actions of the interface – for the
 owner's lab runs and screenshots. `COMMSCRAFT_VERBOSE=1` prints one line per SIP message (method
 or status and CSeq, never headers).
@@ -71,8 +74,8 @@ in Settings → "Functions and their state").
 
 | Function | Gate today | Why |
 |---|---|---|
-| 1:1 chat, group chat, presence, address book search, audio call, hold, meetings | available when signed in; preview in the demo | through the session adapter |
-| transfer, video call, persistent chat rooms, viewing shared screens, meeting content | unavailable | the command-line tool offers them; not in this interface yet |
+| 1:1 chat, group chat, presence, address book search, audio call, hold, transfer (blind), meetings | available when signed in; preview in the demo (transfer: not shown in the demo) | through the session adapter |
+| video call, persistent chat rooms, viewing shared screens, meeting content | unavailable | the command-line tool offers them; not in this interface yet |
 | file transfer, formatted text, history search, read receipts | unavailable | not implemented (no public specification for file transfer; `text/plain` only; no archive or index; delivery is not reading) |
 
 Delivery is shown as what it is: *sending*, *delivered* (the server or peer accepted the MESSAGE),
@@ -134,9 +137,10 @@ reference designs (1440 × 900), with screenshots of the real build (above).
 | Security | no secrets in logs (the trace prints method or status and CSeq only), the password leaves the form once and is cleared, no TLS bypass, no end-to-end claim (the privacy text says TLS and SRTP are not end-to-end encryption), no chat content on disk |
 | Accessibility | labels on all interactive elements (the tests use them); contrast tested; the Linux screen reader bridge is still missing (AccessKit's adapter on zbus 5 is listed as unmaintained) |
 
-Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): TLS-DSK and Kerberos sign-in, trusting a
-foreign server domain in a dialog, the screen reader bridge, and video, transfer, viewing shared
-screens, meeting content and persistent chat in the interface.
+Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): TLS-DSK sign-in, trusting a foreign server
+domain in a dialog, the screen reader bridge, and video, viewing shared screens, meeting content
+and persistent chat in the interface. Added after the QA: blind transfer (`tested-in-lab`) and
+Kerberos as an option of the sign-in (tested offline; the lab signs in with NTLM).
 
 ## Data and security
 

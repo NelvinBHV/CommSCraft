@@ -1,6 +1,6 @@
 //! Screen 1: conversations – the list, the conversation with its composer, group details.
 
-use crate::app::{ChatFilter, CommsUi, NewChat, UiIntent};
+use crate::app::{AddressFor, ChatFilter, CommsUi, NewChat, UiIntent};
 use crate::format;
 use crate::model::{ConvKey, ConvState, Conversation, Delivery, Gate, Message, MAX_TEXT};
 use crate::theme::{self, Palette};
@@ -738,7 +738,7 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                                     if r.clicked() {
                                         app.new_chat = Some(NewChat {
                                             text: String::new(),
-                                            members: vec![format!("conv:{}", key.0)],
+                                            purpose: AddressFor::Invite(key),
                                         });
                                     }
                                 }
@@ -874,20 +874,15 @@ pub fn new_chat_dialog(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
         return;
     };
     let t = app.t;
-    let invite_into: Option<ConvKey> = dlg
-        .members
-        .first()
-        .and_then(|m| m.strip_prefix("conv:"))
-        .and_then(|k| k.parse().ok())
-        .map(ConvKey);
+    let purpose = dlg.purpose;
     let mut keep = true;
     let modal = egui::Modal::new(egui::Id::unique("new-chat")).show(ctx, |ui| {
         ui.set_width(440.0);
         ui.label(
-            RichText::new(if invite_into.is_some() {
-                t.invite_title
-            } else {
-                t.new_chat_title
+            RichText::new(match purpose {
+                AddressFor::NewChat => t.new_chat_title,
+                AddressFor::Invite(_) => t.invite_title,
+                AddressFor::Transfer(_) => t.transfer_title,
             })
             .size(theme::text::PANEL_TITLE)
             .family(crate::theme::bold())
@@ -934,21 +929,26 @@ pub fn new_chat_dialog(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
             }
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                 let ok = address.is_some();
-                let label = if invite_into.is_some() {
-                    t.invite
-                } else {
-                    t.start_chat
+                let label = match purpose {
+                    AddressFor::NewChat => t.start_chat,
+                    AddressFor::Invite(_) => t.invite,
+                    AddressFor::Transfer(_) => t.transfer,
                 };
                 if (widgets::primary(ui, label, ok, pal).clicked() || (enter && ok)) && ok {
                     if let Some(a) = address.clone() {
-                        match invite_into {
-                            Some(k) => app.emit(UiIntent::InviteToGroup { key: k, peer: a }),
-                            None => app.chat_with(&a),
+                        match purpose {
+                            AddressFor::Invite(k) => {
+                                app.emit(UiIntent::InviteToGroup { key: k, peer: a })
+                            }
+                            AddressFor::Transfer(id) => {
+                                app.emit(UiIntent::Transfer { id, peer: a })
+                            }
+                            AddressFor::NewChat => app.chat_with(&a),
                         }
                     }
                     keep = false;
                 }
-                if invite_into.is_none() {
+                if purpose == AddressFor::NewChat {
                     let gate = app.state.capabilities.group_chat.clone();
                     if let Some(r) =
                         widgets::gated(ui, t.start_group, &gate, t, pal, |ui, l, en| {

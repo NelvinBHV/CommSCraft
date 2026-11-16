@@ -66,6 +66,8 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                             false,
                             busy,
                         );
+                        ui.checkbox(&mut app.sign_in.kerberos, t.sign_in_kerberos)
+                            .on_hover_text(t.sign_in_kerberos_tip);
                         if let Connection::Failed(why) = &app.state.connection {
                             ui.add_space(4.0);
                             ui.label(
@@ -94,6 +96,7 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                                     domain: form.domain.clone(),
                                     password: String::new(),
                                     server: form.server.clone(),
+                                    kerberos: form.kerberos,
                                 };
                                 egui::text_edit::TextEditState::default().store(ui.ctx(), pw_id);
                                 app.emit(UiIntent::SignIn(form));

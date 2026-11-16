@@ -73,6 +73,11 @@ pub enum ToWorker {
         id: u32,
         muted: bool,
     },
+    /// Blind transfer (REFER) to an address.
+    Transfer {
+        id: u32,
+        peer: String,
+    },
     /// Address book search on the server (MS-DLX).
     Search {
         text: String,
@@ -208,7 +213,7 @@ pub fn online_capabilities() -> Capabilities {
         directory_search: Gate::Available,
         audio_call: Gate::Available,
         hold: Gate::Available,
-        transfer: cli.clone(),
+        transfer: Gate::Available,
         video_call: cli.clone(),
         meetings: Gate::Available,
         file_transfer: none.clone(),
@@ -667,6 +672,13 @@ impl Session {
                 out.event(AppEvent::CallMuted { id, muted });
                 Vec::new()
             }
+            ToWorker::Transfer { id, peer } => self.engine.command(
+                C::Transfer {
+                    call: id,
+                    to: commscraft_session::TransferTarget::Address(peer),
+                },
+                t,
+            ),
             ToWorker::Search { text } => {
                 self.search(&text, out);
                 Vec::new()
@@ -1055,6 +1067,17 @@ impl Session {
                     at: t,
                 })
             }
+            E::TransferResult { call, status } => {
+                if (200..300).contains(&status) {
+                    out.notice(NoticeKind::Info, "the call was transferred");
+                } else {
+                    out.notice(
+                        NoticeKind::Error,
+                        format!("transfer of the call failed ({status}); the call stays"),
+                    );
+                }
+                let _ = call;
+            }
             E::TransferRequested { call, .. } => {
                 out.notice(
                     NoticeKind::Info,
@@ -1179,6 +1202,7 @@ mod tests {
         assert!(!c.file_transfer.usable());
         assert!(!c.read_receipts.usable());
         assert!(!c.video_call.usable());
+        assert!(c.transfer.usable() && c.directory_search.usable());
     }
 
     #[test]
