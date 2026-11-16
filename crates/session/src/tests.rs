@@ -5407,3 +5407,169 @@ fn meeting_content_join() {
     );
     assert!(sends(&out).is_empty());
 }
+
+/// The envid of an XCCOS body we sent.
+fn xccos_envid(m: &Message) -> String {
+    let b = String::from_utf8(m.body.clone()).unwrap();
+    let start = b.find("envid=\"").unwrap() + 7;
+    b[start..].split('"').next().unwrap().to_string()
+}
+
+/// Function 20 ([MS-XCCOSIP] §3.1.3–3.1.13): the pool from provisioning, cmd:requri there,
+/// BYE and a new dialog with the channel server, getserverinfo and getassociations, joining a
+/// room, sending to it and receiving a message – XCCOS in INFO with `text/plain` (OB-17).
+#[test]
+fn persistent_chat_flow() {
+    const POOL: &str =
+        "sip:chatpool.contoso.com@contoso.com;gruu;opaque=srvr:GroupChat:k_7TLwJGsVy7jWMyTAtJcwAA";
+    const SRV: &str = "sip:chat1.contoso.com@contoso.com;gruu;opaque=srvr:GroupChat:abc";
+    const ROOM: &str = "ma-chan://contoso.com/93489432-b6be-4c67-932f-09e39a162072";
+    let (mut e, mut server, out) = signed_in();
+    // Without the configuration there is no pool.
+    let none = e.command(Command::ChatRooms, NOW);
+    assert!(sends(&none).is_empty());
+    let sub = sends(&out)
+        .into_iter()
+        .find(|m| m.single("Event").unwrap() == Some("vnd-microsoft-provisioning-v2"))
+        .unwrap();
+    let doc = format!(
+        r#"<provisionGroupList xmlns="http://schemas.microsoft.com/2006/09/sip/provisiongrouplist-notification"><provisionGroup name="persistentChatConfiguration"><propertyEntryList><property name="EnablePersistentChat">true</property><property name="DefaultPersistentChatPoolUri">{POOL}</property></propertyEntryList></provisionGroup></provisionGroupList>"#
+    );
+    e.on_message(
+        &answer(
+            &mut server,
+            &sub,
+            200,
+            Some("application/vnd-microsoft-roaming-provisioning-v2+xml"),
+            &doc,
+            &[("Event", "vnd-microsoft-provisioning-v2")],
+        ),
+        NOW,
+    );
+    let out = e.command(Command::ChatRooms, NOW);
+    let invite = find(&out, "INVITE");
+    assert_eq!(Engine::<Counter>::request_uri(&invite), Some(POOL));
+    assert!(String::from_utf8_lossy(&invite.body).contains("m=message"));
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            "v=0\r\nm=message 5060 sip null\r\na=accept-types:text/plain\r\n",
+            &[],
+        ),
+        NOW,
+    );
+    assert!(sends(&out).iter().any(|m| m.method() == Some("ACK")));
+    let requri = find(&out, "INFO");
+    assert_eq!(requri.single("Content-Type").unwrap(), Some("text/plain"));
+    assert!(String::from_utf8_lossy(&requri.body).contains("cmd:requri"));
+    let env = xccos_envid(&requri);
+    let reply = format!(
+        r#"<xccos ver="1" envid="9" xmlns="urn:parlano:xml:ns:xccos"><rpl id="rpl:requri" seqid="1"><commandid seqid="1" envid="{env}"/><resp code="200">SUCCESS_OK</resp><data><uib uri="{SRV}"/></data></rpl></xccos>"#
+    );
+    let info = peer_request(
+        &mut server,
+        &invite,
+        "INFO",
+        1,
+        Some("text/plain"),
+        &reply,
+        &[],
+    );
+    let out = e.on_message(&info, NOW);
+    assert_eq!(sends(&out)[0].status_code(), Some(200));
+    let bye = find(&out, "BYE");
+    assert_eq!(
+        bye.call_id().unwrap(),
+        invite.call_id().unwrap(),
+        "BYE on the pool"
+    );
+    let invite2 = find(&out, "INVITE");
+    assert_eq!(Engine::<Counter>::request_uri(&invite2), Some(SRV));
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite2,
+            200,
+            Some("application/sdp"),
+            "v=0\r\nm=message 5060 sip null\r\na=accept-types:text/plain\r\n",
+            &[],
+        ),
+        NOW,
+    );
+    let infos: Vec<_> = sends(&out)
+        .into_iter()
+        .filter(|m| m.method() == Some("INFO"))
+        .collect();
+    assert_eq!(infos.len(), 2);
+    assert!(String::from_utf8_lossy(&infos[0].body).contains("cmd:getserverinfo"));
+    assert!(String::from_utf8_lossy(&infos[1].body)
+        .contains("<association domain=\"contoso.com\" type=\"MEMBER\" maxResult=\"100\" />"));
+    let env = xccos_envid(&infos[1]);
+    let rooms = format!(
+        r#"<xccos ver="1" envid="10" xmlns="urn:parlano:xml:ns:xccos"><rpl id="rpl:getassociations" seqid="1"><commandid seqid="1" envid="{env}"/><resp code="200">SUCCESS_OK</resp><data><association domain="contoso.com" type="MEMBER"><chanib name="Projects" description="Public projects" uri="{ROOM}"/></association></data></rpl></xccos>"#
+    );
+    let info = peer_request(
+        &mut server,
+        &invite2,
+        "INFO",
+        1,
+        Some("text/plain"),
+        &rooms,
+        &[],
+    );
+    let out = e.on_message(&info, NOW);
+    assert!(events(&out).iter().any(|ev| matches!(ev,
+        Event::ChatRooms(commscraft_xccos::Event::Rooms(r)) if r.len() == 1 && r[0].name == "Projects")));
+    // Join and send.
+    let out = e.command(
+        Command::JoinRooms {
+            rooms: vec![ROOM.into()],
+        },
+        NOW,
+    );
+    assert!(String::from_utf8_lossy(&find(&out, "INFO").body).contains("cmd:bjoin"));
+    let out = e.command(
+        Command::SendToRoom {
+            room: ROOM.into(),
+            text: "Hallo".into(),
+        },
+        NOW,
+    );
+    let sent = String::from_utf8(find(&out, "INFO").body.clone()).unwrap();
+    assert!(
+        sent.contains("<chat>Hallo</chat>") && sent.contains("chatId=\"0\""),
+        "{sent}"
+    );
+    // A message from somebody else.
+    let msg = format!(
+        r#"<xccos ver="1" envid="11" xmlns="urn:parlano:xml:ns:xccos"><grpchat id="grpchat" seqid="1" chanUri="{ROOM}" author="sip:bob@contoso.com" authdisp="Bob" alert="false" chatId="5" ts="2026-11-16T20:00:00Z"><chat>Moin</chat></grpchat></xccos>"#
+    );
+    let info = peer_request(
+        &mut server,
+        &invite2,
+        "INFO",
+        2,
+        Some("text/plain"),
+        &msg,
+        &[],
+    );
+    let out = e.on_message(&info, NOW);
+    assert!(events(&out).iter().any(|ev| matches!(ev,
+        Event::ChatRooms(commscraft_xccos::Event::Message(m)) if m.text == "Moin" && m.author_name == "Bob")));
+    // Not a room URI; leaving sends BYE.
+    let out = e.command(
+        Command::JoinRooms {
+            rooms: vec!["http://x".into()],
+        },
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+    let out = e.command(Command::LeaveRooms, NOW);
+    assert_eq!(
+        find(&out, "BYE").call_id().unwrap(),
+        invite2.call_id().unwrap()
+    );
+}

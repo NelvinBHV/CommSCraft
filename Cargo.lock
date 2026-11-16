@@ -341,6 +341,7 @@ dependencies = [
  "commscraft-url",
  "commscraft-video-ffmpeg",
  "commscraft-video-wayland",
+ "commscraft-xccos",
  "commscraft-xml",
  "landlock",
  "libc",
@@ -575,6 +576,7 @@ dependencies = [
  "commscraft-register",
  "commscraft-sdp",
  "commscraft-sip-msg",
+ "commscraft-xccos",
  "commscraft-xml",
 ]
 
@@ -678,6 +680,13 @@ dependencies = [
  "rustix",
  "wayland-client",
  "wayland-protocols",
+]
+
+[[package]]
+name = "commscraft-xccos"
+version = "0.0.1"
+dependencies = [
+ "commscraft-xml",
 ]
 
 [[package]]

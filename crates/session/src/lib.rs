@@ -161,6 +161,24 @@ pub enum Command {
     StartGroup {
         invite: Vec<String>,
     },
+    /// Persistent chat (function 20): connect to the chat rooms of the pool from provisioning
+    /// and list ours, answered by [`Event::ChatRooms`].
+    ChatRooms,
+    /// Join chat rooms by their URI (`ma-chan://…`).
+    JoinRooms {
+        rooms: Vec<String>,
+    },
+    /// The most recent messages of a room.
+    RoomHistory {
+        room: String,
+    },
+    /// A message to a room.
+    SendToRoom {
+        room: String,
+        text: String,
+    },
+    /// Leave the chat rooms.
+    LeaveRooms,
     /// Invite one more participant into a group conversation.
     InviteToGroup {
         conversation: ConversationId,
@@ -501,6 +519,8 @@ pub enum Event {
         call: CallId,
         from: String,
     },
+    /// What the persistent chat server tells (function 20).
+    ChatRooms(commscraft_xccos::Event),
     /// The web conferencing MCU accepted us: how to open its PSOM connection (function 44).
     MeetingContent {
         conversation: ConversationId,
@@ -661,6 +681,10 @@ enum Purpose {
     DialOut(ConversationId),
     /// CI-30: our invitation INVITE to an invitee.
     ConfInvitation,
+    /// The INVITE to the persistent chat pool or channel server.
+    RoomsInvite,
+    /// An XCCOS INFO in the persistent chat dialog.
+    RoomsInfo,
     MediaRelay(u32),
     CallInvite(CallId),
     CallReinvite(CallId),
@@ -729,6 +753,9 @@ pub struct Engine<R: Random> {
     emergency_calls: Vec<CallId>,
     /// Focus factory URI from provisioning (PV-01).
     focus_factory: Option<String>,
+    /// The persistent chat pool from provisioning (function 20), when enabled.
+    persistent_chat_pool: Option<String>,
+    rooms: Option<Box<rooms::Rooms>>,
     /// Call park server from provisioning (callParkServerUri, CK-01).
     call_park: Option<String>,
     parks: Vec<park::Park>,
@@ -835,6 +862,8 @@ impl<R: Random> Engine<R> {
             location: None,
             emergency_calls: Vec::new(),
             focus_factory: None,
+            persistent_chat_pool: None,
+            rooms: None,
             call_park: None,
             parks: Vec::new(),
             next_park: 0,
@@ -1892,6 +1921,29 @@ impl<R: Random> Engine<R> {
                 }
             }
             Command::StartGroup { invite } => self.start_group(&invite, now, &mut out),
+            Command::ChatRooms => self.rooms_connect(now, &mut out),
+            Command::JoinRooms { rooms } => {
+                let guids: Vec<String> = rooms
+                    .iter()
+                    .filter_map(|r| commscraft_xccos::room_guid(r).map(str::to_string))
+                    .collect();
+                if guids.len() == rooms.len() && !guids.is_empty() {
+                    self.rooms_command(
+                        &commscraft_xccos::Command::BatchJoin { rooms: guids },
+                        now,
+                        &mut out,
+                    );
+                } else {
+                    out.push(Output::Event(Event::Notice("not a chat room URI".into())));
+                }
+            }
+            Command::RoomHistory { room } => self.rooms_command(
+                &commscraft_xccos::Command::History { room, last: 50 },
+                now,
+                &mut out,
+            ),
+            Command::SendToRoom { room, text } => self.rooms_send(&room, &text, now, &mut out),
+            Command::LeaveRooms => self.rooms_leave(now, &mut out),
             Command::InviteToGroup { conversation, to } => {
                 self.invite_participant(conversation, &to, now, &mut out)
             }
@@ -2154,6 +2206,7 @@ impl<R: Random> Engine<R> {
         self.on_registrar_events(events, now, &mut out);
         self.contact_edit_tick(now, &mut out);
         self.privacy_tick(now, &mut out);
+        self.rooms_tick(now, &mut out);
         if let Some(k) = &mut self.keepalive {
             if let Some(bytes) = k.on_tick(now) {
                 out.push(Output::SendRaw(bytes));
@@ -2473,6 +2526,17 @@ impl<R: Random> Engine<R> {
                         ))));
                         self.location_policy = Some(policy);
                     }
+                    // Function 20: the persistent chat pool, when enabled ([MS-SIPREGE]
+                    // §2.2.2.5.11, p. 71).
+                    if let Some(g) = p.group("persistentChatConfiguration") {
+                        let enabled = g
+                            .get("EnablePersistentChat")
+                            .is_some_and(|v| v.trim().eq_ignore_ascii_case("true"));
+                        self.persistent_chat_pool = g
+                            .get("DefaultPersistentChatPoolUri")
+                            .filter(|_| enabled)
+                            .and_then(|u| pres::checked_sip_uri(u.trim()).ok());
+                    }
                     if let Some(g) = p.group("ServerConfiguration") {
                         let mut c = prov::ServerConfiguration::from_group(g, &self.user_domain());
                         if let Some(u) = p.group("userSetting") {
@@ -2635,6 +2699,13 @@ impl<R: Random> Engine<R> {
                     self.on_c3p_answer(id, &resp.body, out);
                 }
             }
+            Purpose::RoomsInvite => {
+                if resp.status_code().is_some_and(|c| (200..300).contains(&c)) {
+                    let req = p.request.clone();
+                    self.on_rooms_answer(&req, resp, now, out);
+                }
+            }
+            Purpose::RoomsInfo => {}
             Purpose::ConfInvitation => {
                 if resp.status_code().is_some_and(|c| (200..300).contains(&c)) {
                     let req = p.request.clone();
@@ -2752,6 +2823,10 @@ impl<R: Random> Engine<R> {
                 conversation: id,
                 status: code,
             })),
+            Purpose::RoomsInvite => self.rooms_failed(code, out),
+            Purpose::RoomsInfo => out.push(Output::Event(Event::Notice(format!(
+                "the chat room server did not take the request ({code})"
+            )))),
             // The invitation is the only way we invite (CI-30): its failure is the invitee's.
             Purpose::ConfInvitation => {
                 let invitee = match &p.request.start {
@@ -2827,6 +2902,10 @@ impl<R: Random> Engine<R> {
         }
         if let Some(id) = self.focus_of(req) {
             self.on_focus_request(id, req, now, out);
+            return;
+        }
+        if self.rooms_of(req) {
+            self.on_rooms_request(req, now, out);
             return;
         }
         if let Some(i) = self
@@ -2948,6 +3027,7 @@ pub mod media_control;
 mod park;
 mod privacy;
 mod qoe;
+mod rooms;
 mod schedule;
 mod transfer;
 
