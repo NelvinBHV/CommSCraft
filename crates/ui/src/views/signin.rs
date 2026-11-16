@@ -68,6 +68,8 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                         );
                         ui.checkbox(&mut app.sign_in.kerberos, t.sign_in_kerberos)
                             .on_hover_text(t.sign_in_kerberos_tip);
+                        ui.checkbox(&mut app.sign_in.tls_dsk, t.sign_in_tls_dsk)
+                            .on_hover_text(t.sign_in_tls_dsk_tip);
                         if let Connection::Failed(why) = &app.state.connection {
                             ui.add_space(4.0);
                             ui.label(
@@ -97,6 +99,7 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                                     password: String::new(),
                                     server: form.server.clone(),
                                     kerberos: form.kerberos,
+                                    tls_dsk: form.tls_dsk,
                                 };
                                 egui::text_edit::TextEditState::default().store(ui.ctx(), pw_id);
                                 app.emit(UiIntent::SignIn(form));

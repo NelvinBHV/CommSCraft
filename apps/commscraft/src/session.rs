@@ -309,6 +309,7 @@ struct Session {
     signed_in: bool,
     signing_out: Option<Instant>,
     profile: Profile,
+    certificate_tried: bool,
     tls: TlsClient,
     trust: setup::Trust,
 }
@@ -431,8 +432,28 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         policy: commscraft_sipae::Policy::default(),
         ntlm_legacy: false,
     };
-    let reg =
+    // Function 5: the principal is the account in the realm of the SIP domain (realm = DNS
+    // domain in capitals, the usual Active Directory layout; inference, as in the CLI); the
+    // ticket cache is used when it holds a ticket for it, else the password.
+    let kerberos = form.kerberos.then(|| {
+        Box::new(commscraft_gssapi::Kerberos::new(
+            commscraft_gssapi::Credentials::Password {
+                principal: format!("{}@{}", form.user.trim(), user_domain.to_ascii_uppercase()),
+                password: zeroize::Zeroizing::new(password.reveal().to_string()),
+            },
+        ))
+    });
+    let mut reg =
         Registrar::new(cfg, password, rng).map_err(|e| fail(format!("configuration: {e:?}")))?;
+    if let Some(k) = kerberos {
+        reg = reg.with_kerberos(k);
+    }
+    // Function 6: the account's user certificate and the trust anchors of the connection.
+    if form.tls_dsk {
+        let dir = commscraft_client::tlsdsk::identity_dir(&aor)
+            .ok_or_else(|| fail("no place for the TLS-DSK certificate".into()))?;
+        reg = reg.with_tls_dsk(Box::new(commscraft_tlsdsk::TlsDsk::new(dir, tls.roots())));
+    }
     let ecfg = commscraft_session::Config {
         aor: aor.clone(),
         epid,
@@ -468,6 +489,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         signed_in: false,
         signing_out: None,
         profile: Profile::default(),
+        certificate_tried: false,
         tls,
         trust,
     };
@@ -850,7 +872,10 @@ impl Session {
                         .next()
                         .unwrap_or("")
                         .to_string();
-                    let organisation = aor.rsplit_once('@').map(|(_, d)| d.to_string()).unwrap_or_default();
+                    let organisation = aor
+                        .rsplit_once('@')
+                        .map(|(_, d)| d.to_string())
+                        .unwrap_or_default();
                     self.profile = Profile {
                         uri: aor,
                         name,
@@ -864,10 +889,49 @@ impl Session {
             }
             E::SignedOut => return Some(Ok(())),
             E::RegistrationEnded(why) => return Some(Err(Ended::Lost(why))),
-            E::CertificateNeeded { .. } => {
-                return Some(Err(Ended::Failed(
-                    "the server asks for TLS-DSK; the desktop client does not offer it yet (commscraft-cli --tls-dsk does)".into(),
-                )))
+            E::CertificateNeeded { sts_uri } => {
+                // Function 6: get the user certificate once, then start the sign-in again.
+                if self.certificate_tried {
+                    return Some(Err(Ended::Failed(
+                        "the server still asks for a certificate".into(),
+                    )));
+                }
+                self.certificate_tried = true;
+                out.notice(NoticeKind::Info, "getting a user certificate for TLS-DSK …");
+                let Some(dir) = commscraft_client::tlsdsk::identity_dir(self.engine.aor()) else {
+                    return Some(Err(Ended::Failed("no place for the certificate".into())));
+                };
+                let aor = self.engine.aor().to_string();
+                let epid = self.engine.epid().to_string();
+                let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
+                let engine = &mut self.engine;
+                let mut ntlm =
+                    |n: &[u8], c: &[u8], cert: Option<&[u8]>| engine.http_ntlm(n, c, now(), cert);
+                let mut log = |l: &str| {
+                    if verbose() {
+                        eprintln!("{l}");
+                    }
+                };
+                match commscraft_client::tlsdsk::provision_certificate(
+                    &self.tls,
+                    &self.trust,
+                    &sts_uri,
+                    &aor,
+                    &epid,
+                    &dir,
+                    &ua,
+                    &mut ntlm,
+                    &mut log,
+                ) {
+                    Ok(days) => {
+                        out.notice(
+                            NoticeKind::Info,
+                            format!("user certificate received (valid for {days} more days)"),
+                        );
+                        more.extend(self.engine.start(now()));
+                    }
+                    Err(e) => return Some(Err(Ended::Failed(format!("TLS-DSK: {e}")))),
+                }
             }
             E::Provisioned(c) => self.services = Some(c),
             E::ContactList(l) => out.event(AppEvent::Contacts(contacts_of(&l))),
@@ -989,7 +1053,11 @@ impl Session {
                 let others: Vec<String> = participants
                     .iter()
                     .filter(|p| p.uri != own && p.in_chat())
-                    .map(|p| p.name.clone().unwrap_or_else(|| p.uri.trim_start_matches("sip:").to_string()))
+                    .map(|p| {
+                        p.name
+                            .clone()
+                            .unwrap_or_else(|| p.uri.trim_start_matches("sip:").to_string())
+                    })
                     .take(3)
                     .collect();
                 if !others.is_empty() {
@@ -1020,9 +1088,10 @@ impl Session {
                     subject: invitation.subject.unwrap_or_default(),
                 }))
             }
-            E::ConferenceLobby { waiting: true, .. } => {
-                out.notice(NoticeKind::Info, "waiting in the lobby until a presenter admits you")
-            }
+            E::ConferenceLobby { waiting: true, .. } => out.notice(
+                NoticeKind::Info,
+                "waiting in the lobby until a presenter admits you",
+            ),
             E::Meetings(list) => out.event(AppEvent::Meetings(
                 list.iter().filter_map(meeting_of).collect(),
             )),
@@ -1117,10 +1186,7 @@ impl Session {
                     .map(str::to_string)
                     .or(diagnostic.reason)
                     .unwrap_or_default();
-                out.notice(
-                    NoticeKind::Warning,
-                    format!("{method} {status}: {why}"),
-                );
+                out.notice(NoticeKind::Warning, format!("{method} {status}: {why}"));
             }
             E::Notice(n) => out.notice(NoticeKind::Info, n),
             // Not shown by the desktop interface yet.
