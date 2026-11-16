@@ -400,6 +400,16 @@ pub struct Meeting {
     pub demo: bool,
 }
 
+/// A server outside the user's SIP domain, named over verified HTTPS by `named_by`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TrustQuestion {
+    pub host: String,
+    /// The domain that would be trusted from now on.
+    pub domain: String,
+    pub user_domain: String,
+    pub named_by: String,
+}
+
 /// An invitation to a group conversation or meeting; joining is the user's decision.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Invitation {
@@ -537,6 +547,8 @@ pub enum AppEvent {
     },
     Meetings(Vec<Meeting>),
     Invitation(Invitation),
+    /// Discovery named a server outside the SIP domain: may the password go there?
+    TrustQuestion(TrustQuestion),
     Notice(NoticeKind, String, u64),
 }
 
@@ -554,6 +566,8 @@ pub struct AppState {
     pub meetings: Vec<Meeting>,
     pub invitations: Vec<Invitation>,
     pub notices: VecDeque<Notice>,
+    /// A trust question waiting for the user's answer.
+    pub trust_question: Option<TrustQuestion>,
     next_key: u64,
 }
 
@@ -571,6 +585,7 @@ impl Default for AppState {
             meetings: Vec::new(),
             invitations: Vec::new(),
             notices: VecDeque::new(),
+            trust_question: None,
             next_key: 1,
         }
     }
@@ -1037,6 +1052,14 @@ impl AppState {
                 }
             }
             AppEvent::Notice(kind, text, at) => self.notice(kind, &text, at),
+            AppEvent::TrustQuestion(q) => {
+                self.trust_question = Some(TrustQuestion {
+                    host: label(&q.host),
+                    domain: label(&q.domain),
+                    user_domain: label(&q.user_domain),
+                    named_by: label(&q.named_by),
+                })
+            }
         }
     }
 }

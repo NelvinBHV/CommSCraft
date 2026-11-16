@@ -317,6 +317,7 @@ impl DesktopApp {
                 Some(ToWorker::SignOut)
             }
             UiIntent::SearchDirectory { text } => Some(ToWorker::Search { text }),
+            UiIntent::AnswerTrust(a) => Some(ToWorker::Trust(a)),
             UiIntent::PrefsChanged => {
                 if let Err(e) = prefs::save(&self.ui.prefs) {
                     eprintln!("preferences not saved: {e}");

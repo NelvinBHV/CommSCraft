@@ -279,6 +279,8 @@ texts! {
     sign_in_server_hint: "host:port – leer: automatisch suchen", "host:port – empty: find automatically";
     sign_in: "Anmelden", "Sign in";
     sign_in_again: "Neu anmelden", "Sign in again";
+    trust_title: "Server außerhalb Ihrer Domäne", "Server outside your domain";
+    trust_no: "Nicht vertrauen", "Do not trust";
     sign_in_kerberos: "Kerberos versuchen (Windows-Domäne)", "Try Kerberos (Windows domain)";
     sign_in_kerberos_tip: "Nutzt ein vorhandenes Kerberos-Ticket des Systems, sonst das Kennwort; NTLM bleibt der Rückfall.", "Uses the system's Kerberos ticket if there is one, else the password; NTLM stays the fallback.";
     signing_in: "Anmeldung läuft …", "Signing in …";
@@ -474,6 +476,26 @@ impl Texts {
         match self.lang {
             Lang::De => format!("{who} schreibt …"),
             Lang::En => format!("{who} is typing …"),
+        }
+    }
+
+    pub fn trust_body(
+        &self,
+        host: &str,
+        user_domain: &str,
+        named_by: &str,
+        domain: &str,
+    ) -> String {
+        match self.lang {
+            Lang::De => format!("Der Server {host} gehört nicht zu Ihrer SIP-Domäne {user_domain}. Er wurde von {named_by} über eine geprüfte HTTPS-Verbindung genannt. Wenn Sie Servern in {domain} vertrauen, geht Ihre Anmeldung (und das Kennwort) dorthin; die Entscheidung wird gespeichert."),
+            Lang::En => format!("The server {host} is not in your SIP domain {user_domain}. It was named by {named_by} over a verified HTTPS connection. If you trust servers in {domain}, your sign-in (and password) goes there; the decision is remembered."),
+        }
+    }
+
+    pub fn trust_yes(&self, domain: &str) -> String {
+        match self.lang {
+            Lang::De => format!("{domain} vertrauen"),
+            Lang::En => format!("Trust {domain}"),
         }
     }
 

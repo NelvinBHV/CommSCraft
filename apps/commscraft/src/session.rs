@@ -3,8 +3,8 @@
 //! [`AppEvent`]s; nothing in the egui frame waits for the network.
 //!
 //! Security by design: TLS is always verified (system trust store); discovery uses only targets
-//! in the user's SIP domain or domains the user trusts in `~/.config/commscraft/trusted-domains`
-//! (the desktop client never asks in a dialog yet, so a foreign server is refused with a hint);
+//! in the user's SIP domain, domains the user trusts in `~/.config/commscraft/trusted-domains`,
+//! or an Autodiscover target the user trusts in the dialog (remembered there);
 //! the password goes into the registrar's wiped container at once; both queues are bounded.
 //! Calls go only to SIP addresses chosen in the interface, never to phone numbers, so the
 //! emergency call path of the engine is not touched from here.
@@ -73,6 +73,8 @@ pub enum ToWorker {
         id: u32,
         muted: bool,
     },
+    /// The user's answer to a trust question of discovery.
+    Trust(bool),
     /// Blind transfer (REFER) to an address.
     Transfer {
         id: u32,
@@ -344,7 +346,6 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
     let tls = TlsClient::new(ca).map_err(|e| fail(e.to_string()))?;
     let mut trust = setup::Trust::load(&[]);
     let targets = if form.server.trim().is_empty() {
-        let mut foreign = Vec::new();
         let mut log = |line: &str| {
             if verbose() {
                 eprintln!(
@@ -353,11 +354,34 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
                 );
             }
         };
-        let mut confirm = |host: &str, _: &str, _: &str, _: &mut setup::Trust| {
-            foreign.push(host.to_string());
-            false
-        };
-        let t = setup::discover(
+        // A server outside the SIP domain: the user decides in a dialog (as the CLI asks on the
+        // terminal); without an answer within two minutes it is not trusted.
+        let mut confirm =
+            |host: &str, user_domain: &str, named_by: &str, trust: &mut setup::Trust| {
+                let domain = setup::Trust::domain_of(host);
+                out.event(AppEvent::TrustQuestion(
+                    commscraft_ui::model::TrustQuestion {
+                        host: host.to_string(),
+                        domain: domain.clone(),
+                        user_domain: user_domain.to_string(),
+                        named_by: named_by.to_string(),
+                    },
+                ));
+                let until = Instant::now() + Duration::from_secs(120);
+                let yes = loop {
+                    let left = until.saturating_duration_since(Instant::now());
+                    match cmds.recv_timeout(left) {
+                        Ok(ToWorker::Trust(a)) => break a,
+                        Ok(ToWorker::SignOut) | Err(_) => break false,
+                        Ok(_) => {}
+                    }
+                };
+                if yes {
+                    trust.remember(&domain);
+                }
+                yes
+            };
+        setup::discover(
             &tls,
             &aor,
             &user_domain,
@@ -368,17 +392,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
                 confirm: &mut confirm,
             },
         )
-        .map_err(fail)?;
-        for host in foreign {
-            out.notice(
-                NoticeKind::Warning,
-                format!(
-                    "{host} is outside your SIP domain; to trust it, add {} to ~/.config/commscraft/trusted-domains",
-                    setup::Trust::domain_of(&host)
-                ),
-            );
-        }
-        t
+        .map_err(fail)?
     } else {
         vec![parse_server(&form.server).ok_or_else(|| fail("server: host:port expected".into()))?]
     };
@@ -672,6 +686,8 @@ impl Session {
                 out.event(AppEvent::CallMuted { id, muted });
                 Vec::new()
             }
+            // Only asked during discovery; a late answer has nothing to decide.
+            ToWorker::Trust(_) => Vec::new(),
             ToWorker::Transfer { id, peer } => self.engine.command(
                 C::Transfer {
                     call: id,

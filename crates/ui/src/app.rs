@@ -75,6 +75,8 @@ pub enum UiIntent {
     },
     /// The local preferences changed (favourites, contrast, scale).
     PrefsChanged,
+    /// The answer to a trust question (true: trust the domain and remember it).
+    AnswerTrust(bool),
 }
 
 /// The sign-in form. The password leaves the form with the intent; the field is cleared.
@@ -406,6 +408,7 @@ impl CommsUi {
             self.state.connection,
             Connection::SignedOut | Connection::Connecting | Connection::Failed(_)
         ) && !self.demo;
+        views::signin::trust_dialog(self, ctx, &pal);
         if signed_out {
             views::signin::show(self, ui, &pal);
         } else {

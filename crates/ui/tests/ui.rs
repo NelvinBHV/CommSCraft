@@ -340,3 +340,25 @@ fn a_connected_call_can_be_transferred() {
         peer: "sip:erin@beispiel.invalid".into()
     }));
 }
+
+#[test]
+fn a_foreign_server_needs_an_explicit_yes() {
+    use commscraft_ui::model::TrustQuestion;
+    let mut ui = CommsUi::new(Lang::De, 0);
+    ui.state.apply(AppEvent::Connection(Connection::Connecting));
+    ui.state.apply(AppEvent::TrustQuestion(TrustQuestion {
+        host: "sip.hoster.invalid".into(),
+        domain: "hoster.invalid".into(),
+        user_domain: "beispiel.invalid".into(),
+        named_by: "lyncdiscover.beispiel.invalid".into(),
+    }));
+    let mut h = harness(ui, (1280.0, 800.0));
+    h.run();
+    assert!(h
+        .query_by_label_contains("sip.hoster.invalid gehört nicht zu Ihrer SIP-Domäne")
+        .is_some());
+    button(&h, "Nicht vertrauen").click();
+    h.run();
+    assert!(h.state().intents.contains(&UiIntent::AnswerTrust(false)));
+    assert!(h.state().ui.state.trust_question.is_none());
+}

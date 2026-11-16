@@ -147,3 +147,46 @@ fn field(
     ui.add_space(4.0);
     r.id
 }
+
+/// The trust question of discovery: a server outside the SIP domain, named over verified
+/// HTTPS. Only an explicit yes trusts it (and remembers the domain); closing means no.
+pub fn trust_dialog(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
+    let Some(q) = app.state.trust_question.clone() else {
+        return;
+    };
+    let t = app.t;
+    let mut answer = None;
+    let modal = egui::Modal::new(egui::Id::unique("trust")).show(ctx, |ui| {
+        ui.set_width(480.0);
+        ui.label(
+            RichText::new(t.trust_title)
+                .size(theme::text::PANEL_TITLE)
+                .family(crate::theme::bold())
+                .color(pal.ink),
+        );
+        ui.add_space(6.0);
+        ui.add(
+            egui::Label::new(
+                RichText::new(t.trust_body(&q.host, &q.user_domain, &q.named_by, &q.domain))
+                    .color(pal.ink),
+            )
+            .wrap(),
+        );
+        ui.add_space(10.0);
+        ui.horizontal(|ui| {
+            if widgets::secondary(ui, t.trust_no, true, pal).clicked() {
+                answer = Some(false);
+            }
+            if widgets::primary(ui, &t.trust_yes(&q.domain), true, pal).clicked() {
+                answer = Some(true);
+            }
+        });
+    });
+    if modal.should_close() && answer.is_none() {
+        answer = Some(false);
+    }
+    if let Some(a) = answer {
+        app.state.trust_question = None;
+        app.emit(UiIntent::AnswerTrust(a));
+    }
+}
