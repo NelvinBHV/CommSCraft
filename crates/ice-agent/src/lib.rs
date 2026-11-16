@@ -540,6 +540,17 @@ impl Agent {
         );
     }
 
+    /// Consent from authenticated media of the peer on the selected path (design, for the
+    /// application sharing stream: the Windows sharer answers no consent check after it
+    /// nominated the pair, `tested-in-lab`, but sends SRTCP reports on the TCP connection it
+    /// opened itself – an authenticated packet on that path shows the same will to receive as
+    /// a consent response, RFC 7675 §1).
+    pub fn refresh_consent(&mut self, now: u64) {
+        if self.selected.is_some() {
+            self.consent_deadline = Some(now + CONSENT_TIMEOUT_MS);
+        }
+    }
+
     /// Note that media went out (resets the keep-alive timer, IC-05).
     pub fn on_media_sent(&mut self, now: u64) {
         self.last_sent = now;

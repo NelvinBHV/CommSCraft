@@ -299,6 +299,12 @@ pub enum Command {
         video: Box<sdp::video::VideoLocal>,
         policy: sdp::Encryption,
     },
+    /// Function 43: view a shared window over RDP (our data stream's parameters).
+    AcceptRdpShare {
+        call: CallId,
+        local: Box<sdp::Local>,
+        policy: sdp::Encryption,
+    },
     /// Function 43: view a shared screen (video-based screen sharing, receive only).
     AcceptScreenShare {
         call: CallId,
@@ -495,6 +501,13 @@ pub enum Event {
     IncomingScreenShare {
         call: CallId,
         from: String,
+        /// Only RDP is offered (window sharing): view it with [`Command::AcceptRdpShare`].
+        rdp: bool,
+    },
+    /// An RDP sharing call is answered (function 43): start the data stream with this.
+    ScreenRdp {
+        call: CallId,
+        rdp: Box<sdp::screen::NegotiatedRdp>,
     },
     /// The call is established; the adapter starts ICE and media with these parameters.
     CallAnswered {
@@ -684,8 +697,9 @@ pub struct Engine<R: Random> {
     /// Function 16: what the server has of the calendar publications, and their versions.
     calendar: pres::calendar::Calendar,
     calendar_versions: [u32; pres::calendar::SLOTS],
-    /// Function 43: calls that bring a shared screen to view.
+    /// Function 43: calls that bring a shared screen to view, and those of them over RDP.
     screen_calls: std::collections::BTreeSet<CallId>,
+    rdp_calls: std::collections::BTreeSet<CallId>,
     /// The routing rules the user published last (restored after an emergency call).
     routing_rules: pres::Forwarding,
     /// The rules above were published by this session (only then they are restored).
@@ -797,6 +811,7 @@ impl<R: Random> Engine<R> {
             calendar: pres::calendar::Calendar::default(),
             calendar_versions: [0; pres::calendar::SLOTS],
             screen_calls: std::collections::BTreeSet::new(),
+            rdp_calls: std::collections::BTreeSet::new(),
             routing_rules: pres::Forwarding::default(),
             routing_known: false,
             location_policy: None,
@@ -1670,11 +1685,15 @@ impl<R: Random> Engine<R> {
             return;
         }
         if let Some((offer, _)) = call::screen_sdp_part(req) {
-            self.on_incoming_call(req, offer, true, now, out);
+            self.on_incoming_call(req, offer, call::Incoming::Screen, now, out);
             return;
         }
         if let Some(offer) = call::audio_sdp(req) {
-            self.on_incoming_call(req, offer, false, now, out);
+            self.on_incoming_call(req, offer, call::Incoming::Audio, now, out);
+            return;
+        }
+        if let Some((offer, _)) = call::rdp_sdp_part(req) {
+            self.on_incoming_call(req, offer, call::Incoming::Rdp, now, out);
             return;
         }
         let is_sdp = header_token(req, "Content-Type").as_deref() == Some("application/sdp");
@@ -1948,6 +1967,11 @@ impl<R: Random> Engine<R> {
                 video,
                 policy,
             } => self.view_conference_screen(conversation, *video, policy, now, &mut out),
+            Command::AcceptRdpShare {
+                call,
+                local,
+                policy,
+            } => self.accept_rdp(call, *local, policy, now, &mut out),
             Command::AcceptScreenShare {
                 call,
                 video,

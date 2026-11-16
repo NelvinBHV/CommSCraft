@@ -856,6 +856,7 @@ impl Audio {
     }
 }
 
+pub mod data;
 pub mod rate;
 pub mod video;
 pub use video::{Video, VideoEvent};

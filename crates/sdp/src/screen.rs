@@ -115,3 +115,194 @@ pub fn viewer_offer(video: &VideoLocal, policy: Encryption) -> Result<String, Er
     )?);
     Ok(out)
 }
+
+/// What the viewer needs of a sharer's RDP line (SD-80, SD-81).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NegotiatedRdp {
+    pub remote_key: Option<Key>,
+    pub remote_ice: Option<Ice>,
+    pub remote_rtp: Endpoint,
+    pub session_id: Option<String>,
+    /// The ID of the RTP header extension `abs-send-time` both sides use ([RFC8285]): the
+    /// Windows clients send every RDP packet with it (`tested-in-lab`).
+    pub abs_send_time: Option<u8>,
+}
+
+/// The URI of the absolute send time extension as the Windows clients write it (with
+/// backslashes, `tested-in-lab`); compared without regard to the slashes' direction.
+const ABS_SEND_TIME: &str = "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time";
+
+/// The offered `a=extmap` of `abs-send-time`: its ID (1 … 14, the one-byte form) and the line.
+fn abs_send_time_of(m: &Media) -> Option<(u8, String)> {
+    m.attrs("extmap").find_map(|v| {
+        let (id, uri) = v.trim().split_once(' ')?;
+        let id: u8 = id.trim().parse().ok().filter(|i| (1..=14).contains(i))?;
+        let uri = uri.trim();
+        (uri.replace('\\', "/").eq_ignore_ascii_case(ABS_SEND_TIME)
+            && uri.len() <= 128
+            && uri.chars().all(|c| c.is_ascii_graphic()))
+        .then(|| (id, format!("a=extmap:{id} {uri}\r\n")))
+    })
+}
+
+fn rdp_line(s: &Session) -> Option<&Media> {
+    s.media.iter().find(|m| {
+        m.kind == "applicationsharing"
+            && m.port != 0
+            && m.attr("x-applicationsharing-role") == Some("sharer")
+    })
+}
+
+/// Our answer as RDP viewer to a sharer's offer without screen video (window sharing sends only
+/// RDP, `tested-in-lab`): `m=applicationsharing` over TCP with our ICE candidates (an active TCP
+/// host candidate) and key, role viewer and content flow recvonly (SD-81, CS-02), RTCP on the
+/// same port (`a=rtcp-mux`, as offered); the SDES key, no fingerprint (so no DTLS-SRTP even
+/// with `a=setup`, [RFC5763] §5); the TCP connection comes from ICE.
+/// As the Windows viewer answers (`tested-in-lab`): `TCP/RTP/SAVP` when encrypted, the offered
+/// `a=extmap` lines and `a=x-bwealgorithm:packetpair` taken over. Every other line is rejected
+/// with port 0.
+pub fn answer_rdp(
+    offer: &[u8],
+    local: &Local,
+    fresh_key: Key,
+    policy: Encryption,
+) -> Result<(String, NegotiatedRdp), Error> {
+    let s = parse(offer)?;
+    let index = s
+        .media
+        .iter()
+        .position(|m| {
+            m.kind == "applicationsharing"
+                && m.port != 0
+                && m.attr("x-applicationsharing-role") == Some("sharer")
+        })
+        .ok_or(Error::Syntax("no RDP line"))?;
+    let m = rdp_line(&s).ok_or(Error::Syntax("no RDP line"))?;
+    if !m.formats.contains(&127) {
+        return Err(Error::Syntax("no x-data payload type"));
+    }
+    let offered = keys_of(m).into_iter().next();
+    let (my_key, remote_key) = match (offered, policy) {
+        (Some(k), Encryption::Required | Encryption::Optional { .. }) => {
+            let mut mine = fresh_key;
+            mine.tag = k.tag;
+            if mine.key == k.key {
+                return Err(Error::Crypto("peer reused our key"));
+            }
+            (Some(mine), Some(k))
+        }
+        (
+            None,
+            Encryption::Off
+            | Encryption::Optional {
+                allow_plaintext: true,
+            },
+        ) => (None, None),
+        (Some(_), Encryption::Off) => (None, None),
+        _ => return Err(Error::Unencrypted),
+    };
+    let (rtp, _) = endpoints(&s, m)?;
+    let session_id = m
+        .attr("x-applicationsharing-session-id")
+        .map(str::trim)
+        .filter(|v| !v.is_empty() && v.len() <= 32 && v.chars().all(|c| c.is_ascii_alphanumeric()))
+        .map(str::to_string);
+    let mid = m
+        .attr("mid")
+        .map(str::trim)
+        .filter(|v| !v.is_empty() && v.len() <= 16 && v.chars().all(|c| c.is_ascii_alphanumeric()));
+    let proto = if my_key.is_some() {
+        "TCP/RTP/SAVP"
+    } else {
+        m.proto.as_str()
+    };
+    let mut section = format!("m=applicationsharing {} {proto} 127\r\n", local.rtp_port);
+    // RTCP shares the connection (`a=rtcp-mux`): candidates of component 1 only, no `a=rtcp`,
+    // as the Windows viewer answers (`tested-in-lab`). Only the passive TCP candidate when
+    // there is one: the Windows sharer connects to it, and it takes the first remote candidate
+    // it can use as the only source of the RTP it accepts – with our active candidate (port 9)
+    // listed, it bound its receiver to that port and dropped all our RTP (`tested-in-lab`).
+    let mut one = local.clone();
+    // The sharer's final offer after ICE names our candidate in `a=remote-candidates`; the
+    // Windows viewer then answers with the sharer's candidate as its remote candidate for both
+    // components and `a=setup:passive`, and only with that answer the sharer's transport
+    // becomes connected and its receiver takes RTP (`tested-in-lab`).
+    let final_offer = m.attr("remote-candidates").is_some();
+    if final_offer {
+        let theirs = ice_of(m).and_then(|i| {
+            i.candidates
+                .into_iter()
+                .find(|c| c.component == 1)
+                .map(|c| std::net::SocketAddr::new(c.address, c.port))
+        });
+        one.remote_candidates = theirs.map(|a| vec![(1, a), (2, a)]).unwrap_or_default();
+    }
+    if let Some(ice) = one.ice.as_mut() {
+        ice.candidates.retain(|c| c.component == 1);
+        if ice
+            .candidates
+            .iter()
+            .any(|c| c.transport == crate::Transport::TcpPassive)
+        {
+            ice.candidates
+                .retain(|c| c.transport == crate::Transport::TcpPassive);
+        }
+    }
+    transport_attributes(&one, &mut section);
+    if let Some(k) = &my_key {
+        section.push_str(&format!("a=crypto:{}\r\n", k.attribute()));
+    }
+    // The Windows viewer's setup and connection attributes (without a fingerprint: no DTLS).
+    section.push_str(if final_offer {
+        "a=setup:passive\r\na=connection:existing\r\n"
+    } else {
+        "a=setup:active\r\na=connection:existing\r\n"
+    });
+    if let Some(mid) = mid {
+        section.push_str(&format!("a=mid:{mid}\r\n"));
+    }
+    section.push_str("a=rtpmap:127 x-data/90000\r\na=rtcp-mux\r\n");
+    let abs_send_time = abs_send_time_of(m);
+    for v in m.attrs("extmap").take(8) {
+        let v = v.trim();
+        if v.len() <= 160 && v.chars().all(|c| c.is_ascii_graphic() || c == ' ') {
+            section.push_str(&format!("a=extmap:{v}\r\n"));
+        }
+    }
+    if m.attr("x-bwealgorithm").map(str::trim) == Some("packetpair") {
+        section.push_str("a=x-bwealgorithm:packetpair\r\n");
+    }
+    if let Some(id) = &session_id {
+        section.push_str(&format!("a=x-applicationsharing-session-id:{id}\r\n"));
+    }
+    section.push_str("a=x-applicationsharing-role:viewer\r\na=x-applicationsharing-media-type:rdp\r\na=x-applicationsharing-contentflow:recvonly\r\n");
+    let mut out = header(local);
+    for (i, line) in s.media.iter().enumerate() {
+        if i == index {
+            out.push_str(&section);
+        } else {
+            let fmts: Vec<String> = line.formats.iter().map(u8::to_string).collect();
+            let fmts = if fmts.is_empty() {
+                "0".to_string()
+            } else {
+                fmts.join(" ")
+            };
+            out.push_str(&format!("m={} 0 {} {fmts}\r\n", line.kind, line.proto));
+        }
+    }
+    Ok((
+        out,
+        NegotiatedRdp {
+            remote_key,
+            remote_ice: ice_of(m),
+            remote_rtp: rtp,
+            session_id,
+            abs_send_time: abs_send_time.map(|(id, _)| id),
+        },
+    ))
+}
+
+/// Whether an SDP offers RDP-based sharing from a sharer.
+pub fn offered_rdp_sharer(offer: &[u8]) -> bool {
+    parse(offer).ok().is_some_and(|s| rdp_line(&s).is_some())
+}

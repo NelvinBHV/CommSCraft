@@ -281,7 +281,7 @@ fn run(
                 cm::Event::Failed(why) => Some(FromMedia::Failed(id, why)),
                 cm::Event::PeerBye => Some(FromMedia::PeerBye(id)),
                 // The audio stream carries no video.
-                cm::Event::Video(_) => None,
+                cm::Event::Video(_) | cm::Event::Data(_) => None,
             };
             if let Some(r) = report {
                 let _ = events.send(r);

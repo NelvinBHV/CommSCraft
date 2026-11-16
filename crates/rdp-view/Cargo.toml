@@ -1,0 +1,21 @@
+[package]
+name = "commscraft-rdp-view"
+description = "RDP viewer of application sharing (adapter around IronRDP): connection sequence and screen updates"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+ironrdp-core = "0.3"
+ironrdp-pdu = "0.11"
+ironrdp-session = { version = "0.13", default-features = false }
+ironrdp-graphics = "0.11"
+ironrdp-svc = "0.10"
+# The dynamic channels and the graphics pipeline (MS-RDPEGFX) the Windows sharer draws with.
+ironrdp-dvc = "0.10"
+ironrdp-egfx = "0.5"
+
+[lints]
+workspace = true
