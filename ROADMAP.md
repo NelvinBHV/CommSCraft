@@ -2,7 +2,7 @@
 
 **Stage: M1, M5 and M6 done** · M0 done · M2, M3 built · M1, M4, M5 and M6 closed · next M7 · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (M6 closed: sharing in our own ad-hoc conferences, invitations)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (M7: PSOM client for meeting content, tested-offline)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,11 +16,11 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **26** tested-offline as a whole, **16** in parts, **4** not started, 6 not planned/needs captures; **39** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Implementation status of the 52 functions | **26** tested-offline as a whole, **17** in parts, **3** not started, 6 not planned/needs captures; **39** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **46 crates + 1 app** (`commscraft-cli`), **584 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **46 crates + 1 app** (`commscraft-cli`), **588 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -48,6 +48,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-16 | M7: the PSOM client for meeting content (`psom`, tested-offline): connection join, versioning of all documented interfaces, the root channel, the content list, polls with voting, slides, annotations; byte for byte against the examples of MS-PSOM §4. |
 | 2026-11-16 | M6 closed. In ad-hoc conferences created by `commscraft-cli` (`/group`) authenticated users of the organization become presenters, so the Windows client offers sharing there; invitations go only as conference invitations, as the Windows client sends them (the IM MCU's dial-out was rejected by it and read as declined), and a refused invitation is reported; a conference can be viewed again after its viewing call ended; `/viewconf` says when nobody shares and takes the RDP path once a screen video has ended. |
 | 2026-11-16 | Viewing a window shared in a meeting over RDP now `tested-in-lab`: the final offer names the active TCP candidate's real source port (the application sharing MCU refused port 9), and the MCU's RemoteFX tiles, sent under codec ID 0x0005, are decoded as RemoteFX. |
 | 2026-11-16 | Viewing a window shared in a meeting over RDP (tested-offline): `/viewconf N` offers the application sharing MCU an RDP viewer line when no screen video is announced, takes its answer and sends the final offer after ICE. |

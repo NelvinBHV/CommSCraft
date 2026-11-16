@@ -1,6 +1,6 @@
 [package]
 name = "commscraft-psom"
-description = "MS-PSOM encodings: GenericInt, String, RPC message framing"
+description = "MS-PSOM: encodings, records and the client of the web conferencing content (whiteboard, slides, polls)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -237,3 +237,350 @@ fn frame_malformed() {
         Err(Error::BadFrame)
     );
 }
+
+mod client_flow {
+    use super::hex;
+    use crate::client::{Client, Event, SIGNATURE};
+    use crate::iface::{self, Kind, INTERFACES};
+    use crate::wire::{Op, Record};
+    use crate::{encode_generic_int, encode_string, Error};
+
+    const TOKEN: &str = "3000000000000000E36032154C544908";
+
+    fn rpc(op: &Op) -> Vec<u8> {
+        Record::Rpc(op.encode().unwrap()).encode().unwrap()
+    }
+
+    fn call(proxy: i64, method: u8, params: Vec<u8>) -> Vec<u8> {
+        rpc(&Op::Call {
+            proxy,
+            method,
+            params,
+        })
+    }
+
+    fn records(mut bytes: &[u8]) -> Vec<Record> {
+        let mut out = Vec::new();
+        while let Some((r, used)) = Record::decode(bytes).unwrap() {
+            out.push(r);
+            bytes = &bytes[used..];
+        }
+        assert!(bytes.is_empty());
+        out
+    }
+
+    fn ops(bytes: &[u8]) -> Vec<Op> {
+        records(bytes)
+            .into_iter()
+            .filter_map(|r| match r {
+                Record::Rpc(b) => Some(Op::decode(&b).unwrap()),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// The server side of versioning: version, an addProtocol per interface with the same
+    /// sums, doneProtocols.
+    fn server_versioning(skip: Option<Kind>, tamper: Option<Kind>) -> Vec<u8> {
+        let mut out = Vec::new();
+        let mut p = Vec::new();
+        encode_generic_int(iface::CONNMGR_SERVER_HASH, &mut p);
+        out.extend(call(0, 1, p));
+        for i in INTERFACES.iter().filter(|i| Some(i.kind) != skip) {
+            let mut p = Vec::new();
+            encode_string(i.name, &mut p).unwrap();
+            encode_generic_int(i.versions.len() as i64, &mut p);
+            for v in i.versions {
+                encode_generic_int(i64::from(v.version), &mut p);
+            }
+            encode_generic_int(i.versions.len() as i64, &mut p);
+            for v in i.versions {
+                let h = if Some(i.kind) == tamper {
+                    v.sum().wrapping_add(1)
+                } else {
+                    v.sum()
+                };
+                encode_generic_int(h, &mut p);
+            }
+            out.extend(call(0, 2, p));
+        }
+        out.extend(call(0, 3, Vec::new()));
+        out
+    }
+
+    fn connected() -> Client {
+        let (mut c, _) = Client::new(TOKEN, 0).unwrap();
+        c.on_bytes(&SIGNATURE, 0).unwrap();
+        let events = c.on_bytes(&server_versioning(None, None), 0).unwrap();
+        assert_eq!(events, [Event::Connected]);
+        c.take_output();
+        c
+    }
+
+    /// §4.1.1–4.1.5 and §4.2 (pp. 92–96): the connection join, then on the server's signature
+    /// SetChannel 0, version, the addProtocols and doneProtocols; after the server's versioning
+    /// RPCOpen of channel 2 with lookup and SetChannel 2, byte for byte as in the examples.
+    #[test]
+    fn connection_and_versioning_as_in_the_examples() {
+        let (mut c, first) = Client::new(TOKEN, 0).unwrap();
+        let mut expected = hex("70 77 32 00 00 00 00 00 00 00 00 20");
+        expected.extend_from_slice(TOKEN.as_bytes());
+        assert_eq!(first, expected);
+        assert!(c.on_bytes(&SIGNATURE[..2], 0).unwrap().is_empty());
+        assert!(
+            c.take_output().is_empty(),
+            "nothing before the confirmation"
+        );
+        assert!(c.on_bytes(&SIGNATURE[2..], 0).unwrap().is_empty());
+        let out = c.take_output();
+        assert_eq!(&out[..5], &hex("04 00 00 00 00")[..]);
+        assert_eq!(
+            &out[5..21],
+            &hex("16 00 00 00 0b 00 01 87 73 7d da 8b 97 1e 72 85")[..]
+        );
+        let sent = ops(&out);
+        let add: Vec<_> = sent
+            .iter()
+            .filter(|o| matches!(o, Op::Call { method: 2, .. }))
+            .collect();
+        assert_eq!(add.len(), INTERFACES.len(), "one addProtocol per interface");
+        assert_eq!(out[out.len() - 7..], hex("16 00 00 00 02 00 03")[..]);
+        // The ConnMgr addProtocol as in §4.1.5 (p. 95), sent by the client the same way.
+        let connmgr = hex("16,00,00,00,40,00,02,00,30,9d,88,91,71,7b,56,59,21,2c,47,28,ff,ff,83,ed,aa,92,87,67,61,0a,71,27,23,09,34,c9,ce,82,f0,ab,ba,84,68,7c,44,1a,15,39,03,56,ca,f5,c5,d2,80,b9,9d,01,01,01,87,01,65,85,61,94,5a,b9,51");
+        assert!(out.windows(connmgr.len()).any(|w| w == connmgr));
+
+        let events = c.on_bytes(&server_versioning(None, None), 0).unwrap();
+        assert_eq!(events, [Event::Connected]);
+        let out = c.take_output();
+        let lookup = hex("37 00 00 00 02 00 00 00 28 00 05 00 12 9a 90 b4 4e 3f 51 4d 24 38 01 19 a4 e8 ce d1 a2 a8 8a 00 07 c7 f5 df e9 be bb 8b 8f 6e 14 7b cb cb 37 8e f7");
+        assert_eq!(out[..49], lookup[..], "§4.2 lookup, 49 bytes");
+        assert_eq!(out[49..], hex("04 00 00 00 02")[..]);
+        assert!(c.is_open());
+        assert_eq!(c.negotiated(Kind::Content), Some(20));
+        assert_eq!(c.negotiated(Kind::ContentManager), Some(10));
+    }
+
+    /// §4.3 (p. 97): SetChannel 2, cSetUrlBase, Connect ContentUserManager and cMeetingReady
+    /// from the example bytes; then content, its extension and a poll with a vote.
+    #[test]
+    fn meeting_content_and_poll() {
+        let mut c = connected();
+        let mut s = hex("04 00 00 00 02");
+        s.extend(hex("16 00 00 00 26 00 04 00 22 d6 bb 94 81 38 3c 0b 50 3e 36 05 09 e6 fe 82 de a1 b2 df 62 7d 4d 52 20 24 02 16 ea ff 84 8d fd ef da"));
+        s.extend(hex("16 00 00 00 1f 84 00 00 12 ad b0 9e 75 77 4d 40 10 25 02 0a c4 fb c5 dd aa bb 9d 87 49 d5 9c 18 ed 9d 9e 0c"));
+        // The server connects ContentManager (its 2nd connect: our id −2) with the server hash.
+        s.extend(rpc(&Op::Connect {
+            parent: 0,
+            part: "ContentManager".into(),
+            hash: 3_800_622_354_142_801_969,
+        }));
+        s.extend(hex("16 00 00 00 02 00 01"));
+        let events = c.on_bytes(&s, 0).unwrap();
+        assert_eq!(
+            events,
+            [
+                Event::UrlBase("http://example.com/conference/1015".into()),
+                Event::Ready
+            ]
+        );
+        // Users: ContentUserManager is our −1, the server addresses it as +1.
+        let mut p = Vec::new();
+        encode_generic_int(1, &mut p);
+        encode_generic_int(5, &mut p);
+        encode_generic_int(1, &mut p);
+        encode_string("sip:bob@contoso.com", &mut p).unwrap();
+        encode_generic_int(1, &mut p);
+        encode_string("Bob", &mut p).unwrap();
+        let ev = c.on_bytes(&call(1, 1, p), 0).unwrap();
+        assert_eq!(
+            ev,
+            [Event::UsersAdded(vec![(
+                5,
+                "sip:bob@contoso.com".into(),
+                "Bob".into()
+            )])]
+        );
+        // cContentAdded(7, "Content.Poll") on ContentManager (+2): we connect "content.7".
+        let mut p = Vec::new();
+        encode_generic_int(7, &mut p);
+        encode_string("Content.Poll", &mut p).unwrap();
+        let ev = c.on_bytes(&call(2, 1, p), 0).unwrap();
+        assert_eq!(
+            ev,
+            [Event::ContentAdded {
+                content: 7,
+                kind: "Content.Poll".into()
+            }]
+        );
+        assert_eq!(
+            ops(&c.take_output()),
+            [Op::Connect {
+                parent: -2,
+                part: "content.7".into(),
+                hash: 974_079_596_268_293_062
+            }]
+        );
+        // Content (our +1, the server's −1): cSetTitle, then cConnectCompleted → extension.
+        let mut p = Vec::new();
+        encode_string("Lunch?", &mut p).unwrap();
+        let mut s = call(-1, 9, p);
+        s.extend(call(-1, 1, Vec::new()));
+        let ev = c.on_bytes(&s, 0).unwrap();
+        assert_eq!(
+            ev,
+            [Event::Title {
+                content: 7,
+                title: "Lunch?".into()
+            }]
+        );
+        assert_eq!(
+            ops(&c.take_output()),
+            [Op::Connect {
+                parent: 1,
+                part: "extendedContent".into(),
+                hash: -1_572_291_151_947_590_318
+            }]
+        );
+        // PollContent (our +2): cSetQuestion and cSetResults.
+        let mut p = Vec::new();
+        encode_string("Pizza or pasta?", &mut p).unwrap();
+        encode_generic_int(2, &mut p);
+        encode_string("Pizza", &mut p).unwrap();
+        encode_string("Pasta", &mut p).unwrap();
+        p.push(0);
+        encode_string("", &mut p).unwrap();
+        let mut s = call(-2, 4, p);
+        let mut p = Vec::new();
+        encode_generic_int(2, &mut p);
+        encode_generic_int(3, &mut p);
+        encode_generic_int(1, &mut p);
+        s.extend(call(-2, 5, p));
+        let ev = c.on_bytes(&s, 0).unwrap();
+        assert_eq!(
+            ev,
+            [
+                Event::PollQuestion {
+                    content: 7,
+                    question: "Pizza or pasta?".into(),
+                    choices: vec!["Pizza".into(), "Pasta".into()]
+                },
+                Event::PollResults {
+                    content: 7,
+                    results: vec![3, 1]
+                }
+            ]
+        );
+        c.vote(7, 1).unwrap();
+        assert_eq!(
+            ops(&c.take_output()),
+            [Op::Call {
+                proxy: 2,
+                method: 5,
+                params: vec![1]
+            }]
+        );
+        assert!(c.vote(7, 7).is_err(), "at most 7 choices");
+        assert!(c.vote(8, 0).is_err(), "no such poll");
+        // The keep-alive goes on channel zero and back.
+        c.tick(30_000).unwrap();
+        assert_eq!(
+            c.take_output(),
+            hex("04 00 00 00 00 16 00 00 00 02 00 06 04 00 00 00 02")
+        );
+        // A removed content forgets its objects; calls to them end the connection.
+        let mut p = Vec::new();
+        encode_generic_int(7, &mut p);
+        assert_eq!(
+            c.on_bytes(&call(2, 4, p), 0).unwrap(),
+            [Event::ContentRemoved(7)]
+        );
+        assert_eq!(
+            c.on_bytes(&call(-2, 5, vec![0]), 0),
+            Err(Error::UnknownObject)
+        );
+    }
+
+    /// Hostile or unexpected input ends the connection.
+    #[test]
+    fn hostile_input_ends_the_connection() {
+        // A wrong confirmation.
+        let (mut c, _) = Client::new(TOKEN, 0).unwrap();
+        assert!(c.on_bytes(b"nope", 0).is_err());
+        // The same version with another hash, and a missing required interface.
+        let (mut c, _) = Client::new(TOKEN, 0).unwrap();
+        c.on_bytes(&SIGNATURE, 0).unwrap();
+        assert_eq!(
+            c.on_bytes(&server_versioning(None, Some(Kind::Poll)), 0),
+            Err(Error::HashMismatch)
+        );
+        let (mut c, _) = Client::new(TOKEN, 0).unwrap();
+        c.on_bytes(&SIGNATURE, 0).unwrap();
+        assert_eq!(
+            c.on_bytes(&server_versioning(Some(Kind::Meeting), None), 0),
+            Err(Error::HashMismatch)
+        );
+        // A method index beyond the version, a call to an unknown object, an unknown child,
+        // a wrong connect hash, an RPCOpen from the server, an oversized record.
+        let mut c = connected();
+        c.on_bytes(&hex("04 00 00 00 02"), 0).unwrap();
+        assert_eq!(
+            c.on_bytes(&call(0, 5, Vec::new()), 0),
+            Err(Error::UnknownMethod)
+        );
+        let mut c = connected();
+        c.on_bytes(&hex("04 00 00 00 02"), 0).unwrap();
+        assert_eq!(
+            c.on_bytes(&call(9, 1, Vec::new()), 0),
+            Err(Error::UnknownObject)
+        );
+        let mut c = connected();
+        c.on_bytes(&hex("04 00 00 00 02"), 0).unwrap();
+        let unknown = rpc(&Op::Connect {
+            parent: 0,
+            part: "Surprise".into(),
+            hash: 1,
+        });
+        assert_eq!(c.on_bytes(&unknown, 0), Err(Error::UnknownObject));
+        let mut c = connected();
+        c.on_bytes(&hex("04 00 00 00 02"), 0).unwrap();
+        let wrong = rpc(&Op::Connect {
+            parent: 0,
+            part: "ContentManager".into(),
+            hash: 1,
+        });
+        assert_eq!(c.on_bytes(&wrong, 0), Err(Error::HashMismatch));
+        let mut c = connected();
+        let open = Record::RpcOpen {
+            channel: 2,
+            body: vec![0, 5],
+        };
+        assert!(c.on_bytes(&open.encode().unwrap(), 0).is_err());
+        let mut c = connected();
+        assert!(c.on_bytes(&hex("16 7f ff ff ff"), 0).is_err());
+        // A Break with its reason closes; nothing after it is read.
+        let mut c = connected();
+        let brk = Record::Break("bye".into()).encode().unwrap();
+        assert_eq!(
+            brk,
+            hex("06 00 00 00 03 62 79 65"),
+            "§2.2.1.1.3 example, p. 20"
+        );
+        assert_eq!(c.on_bytes(&brk, 0).unwrap(), [Event::Closed("bye".into())]);
+        assert!(c.on_bytes(&call(0, 1, Vec::new()), 0).unwrap().is_empty());
+    }
+
+    /// Parameters: booleans are 0 or 1, arrays are bounded by the bytes left.
+    #[test]
+    fn reader_bounds() {
+        use crate::wire::Reader;
+        assert!(Reader::new(&[2]).boolean().is_err());
+        let mut big = Vec::new();
+        encode_generic_int(1_000_000, &mut big);
+        assert!(Reader::new(&big).ints().is_err());
+        assert!(
+            Reader::new(&[3, 1]).ints().is_err(),
+            "count beyond the bytes"
+        );
+        assert_eq!(Reader::new(&[2, 5, 6]).bytes().unwrap(), [5, 6]);
+    }
+}
