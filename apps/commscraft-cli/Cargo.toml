@@ -32,6 +32,7 @@ commscraft-g711 = { path = "../../crates/g711" }
 commscraft-g722 = { path = "../../crates/g722" }
 commscraft-call-media = { path = "../../crates/call-media" }
 commscraft-conf = { path = "../../crates/conf" }
+commscraft-psom = { path = "../../crates/psom" }
 commscraft-park = { path = "../../crates/park" }
 commscraft-qoe = { path = "../../crates/qoe" }
 commscraft-lis = { path = "../../crates/lis" }

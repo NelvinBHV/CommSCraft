@@ -28,6 +28,7 @@ macro_rules! eprint {
 
 mod calls;
 mod cues;
+mod meeting_content;
 mod rdp_call;
 mod term;
 mod video_call;
@@ -65,7 +66,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /delegate add|remove sip:URI (delegates)  /callfor sip:BOSS sip:URI|number (call as delegate)
           /team sip:A [sip:B …] [SECONDS] | off   /delegates sip:A [SECONDS] [skip] | off (team and delegate ringing)
           /location [lookup | city COUNTRY;STATE;CITY | pick N | COUNTRY;STATE;CITY;STREET;NUMBER;POSTCODE;ROOM;NAME] (emergency location)
-          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /view [N] (view a shared screen)  /viewconf [N] (view the screen or window shared in a meeting)  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
+          /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /view [N] (view a shared screen)  /viewconf [N] (view the screen or window shared in a meeting)  /content [N|stop] (whiteboard, slides and polls of a meeting)  /vote CONTENT CHOICE (in a poll)  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
           /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /meeting ID  /cancelmeeting ID [static]
@@ -2530,6 +2531,9 @@ fn interactive(
     // Function 43 over RDP: calls offering only RDP (a shared window), the viewer of each call
     // being viewed, and the viewers waiting for their data stream (id → call).
     let (rdp_tx, rdp_rx) = mpsc::channel::<rdp_call::FromRdp>();
+    // Function 44: the content connection of each meeting (whiteboard, slides, polls).
+    let (content_tx, content_rx) = mpsc::channel::<meeting_content::FromContent>();
+    let mut content_handles: BTreeMap<u32, meeting_content::ContentHandle> = BTreeMap::new();
     let mut rdp_offers: std::collections::BTreeSet<u32> = std::collections::BTreeSet::new();
     let mut rdp_handles: BTreeMap<u32, rdp_call::RdpHandle> = BTreeMap::new();
     let mut pending_rdp: BTreeMap<u32, u32> = BTreeMap::new();
@@ -3310,6 +3314,24 @@ fn interactive(
                             println!("* [{conversation}] admitted to the meeting");
                         }
                     }
+                    E::MeetingContent {
+                        conversation,
+                        connection,
+                    } => {
+                        if let Some(old) = content_handles.remove(&conversation) {
+                            let _ = old.tx.send(meeting_content::ToContent::Stop);
+                        }
+                        println!("* [{conversation}] connecting to the meeting content …");
+                        content_handles.insert(
+                            conversation,
+                            meeting_content::spawn(
+                                conversation,
+                                connection,
+                                tls.clone(),
+                                content_tx.clone(),
+                            ),
+                        );
+                    }
                     E::ConferenceScreen { conversation, call }
                         if conf_rdp_handle.contains_key(&conversation) =>
                     {
@@ -3422,6 +3444,9 @@ fn interactive(
                     } => println!("* [{conversation}] message not delivered ({status})"),
                     E::ConversationEnded { conversation } => {
                         println!("* [{conversation}] ended");
+                        if let Some(h) = content_handles.remove(&conversation) {
+                            let _ = h.tx.send(meeting_content::ToContent::Stop);
+                        }
                         if let Some(t) = transcripts.remove(&conversation) {
                             let wanted = services
                                 .as_deref()
@@ -3531,6 +3556,18 @@ fn interactive(
                 Err(e) => {
                     println!("* address book not updated: {e}");
                     book_next = Some(t + 3_600);
+                }
+            }
+        }
+        // Function 44: what the meeting content reports.
+        while let Ok(c) = content_rx.try_recv() {
+            match c {
+                meeting_content::FromContent::Line(conversation, line) => {
+                    println!("* [{conversation}] {line}")
+                }
+                meeting_content::FromContent::Ended(conversation, reason) => {
+                    content_handles.remove(&conversation);
+                    println!("* [{conversation}] meeting content ended: {reason}");
                 }
             }
         }
@@ -4094,6 +4131,44 @@ fn interactive(
                         println!("* EMERGENCY CALL to {dial} – preparing …");
                     }
                     println!("* preparing the call (gathering media addresses) …");
+                    None
+                }
+                // Function 44: join the web conferencing MCU, or leave it.
+                "/content" if arg.trim() == "stop" => {
+                    match current.and_then(|c| content_handles.remove(&c)) {
+                        Some(h) => {
+                            let _ = h.tx.send(meeting_content::ToContent::Stop);
+                        }
+                        None => println!("* no meeting content connection"),
+                    }
+                    None
+                }
+                "/content" => match arg.parse::<u32>().ok().or(current) {
+                    Some(conversation) => Some(C::ConferenceControl {
+                        conversation,
+                        action: commscraft_session::ConferenceAction::JoinContent,
+                    }),
+                    None => {
+                        println!("* /content N – no meeting conversation");
+                        None
+                    }
+                },
+                "/vote" => {
+                    let mut words = arg.split_whitespace();
+                    let content = words.next().and_then(|w| w.parse::<i64>().ok());
+                    let choice = words.next().and_then(|w| w.parse::<i64>().ok());
+                    match (
+                        current.and_then(|c| content_handles.get(&c)),
+                        content,
+                        choice,
+                    ) {
+                        (Some(h), Some(content), Some(choice)) => {
+                            let _ =
+                                h.tx.send(meeting_content::ToContent::Vote { content, choice });
+                        }
+                        (None, _, _) => println!("* no meeting content connection – /content"),
+                        _ => println!("* /vote CONTENT CHOICE"),
+                    }
                     None
                 }
                 "/viewconf" => match arg.parse::<u32>().ok().or(current) {

@@ -324,6 +324,7 @@ dependencies = [
  "commscraft-park",
  "commscraft-presence",
  "commscraft-provisioning",
+ "commscraft-psom",
  "commscraft-qoe",
  "commscraft-rdp-view",
  "commscraft-register",

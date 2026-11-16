@@ -1019,3 +1019,74 @@ fn roster_screen_sharing() {
     assert_eq!(carol.endpoints[0].screen_source, None);
     assert_ne!(carol.endpoints[0].sharing, Some(true));
 }
+
+/// CB-36 ([MS-CONFBAS] §2.2.3.17, pp. 46–47): the addUser dial-in to the web conferencing MCU –
+/// the requester as user, the role asked for, joining-method dialed-in, the MCU as mcuUri.
+#[test]
+fn add_user_dial_in_request() {
+    let focus = "sip:alice@contoso.com;gruu;opaque=app:conf:focus:id:5D3747C";
+    let data = "sip:alice@contoso.com;gruu;opaque=app:conf:data-conf:id:5D3747C";
+    let x = add_user_dial_in(9, "sip:bob@contoso.com", focus, data, "{GUID}", true).unwrap();
+    let root = parse(&x);
+    let add = root.child("addUser").unwrap();
+    assert!(add
+        .attributes
+        .iter()
+        .any(|a| a.name.ends_with("mcuUri") && a.value == data));
+    let user = add.child("user").unwrap();
+    assert_eq!(user.attr("entity"), Some("sip:bob@contoso.com"));
+    assert_eq!(
+        user.child("roles").unwrap().child("entry").unwrap().text(),
+        "presenter"
+    );
+    let ep = user.child("endpoint").unwrap();
+    assert_eq!(ep.attr("entity"), Some("{GUID}"));
+    assert_eq!(ep.child("joining-method").unwrap().text(), "dialed-in");
+    let x = add_user_dial_in(9, "sip:bob@contoso.com", focus, data, "{GUID}", false).unwrap();
+    assert!(x.contains("<ci:entry>attendee</ci:entry>"));
+    assert!(add_user_dial_in(9, "sip:bob@contoso.com", focus, "not a uri", "{G}", false).is_err());
+}
+
+/// §2.2.3.18 (pp. 47–49): the connection-info of the dial-in response and what the PSOM
+/// connection takes from it; the server's `https://` in front of pwsURI is accepted.
+#[test]
+fn dial_in_response_connection_info() {
+    let resp = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" xmlns:mscp="http://schemas.microsoft.com/rtc/2005/08/cccpextensions" requestId="9" C3PVersion="1" code="success"><addUser><conferenceKeys confEntity="sip:alice@contoso.com;gruu;opaque=app:conf:focus:id:5D3747C"/><user xmlns="urn:ietf:params:xml:ns:conference-info" entity="sip:bob@contoso.com"/><connection-info xmlns="http://schemas.microsoft.com/rtc/2005/08/cccpextensions"><entry><key>sAuthId</key><value>3000000000000000E36032154C544908</value></entry><entry><key>pwrpc.modes</key><value>tls</value></entry><entry><key>pwrpc.port</key><value>8057</value></entry><entry><key>pwrpc.pwsURI</key><value>https://pool1.contoso.com:8057</value></entry><entry><key>alternativeName</key><value>pool1.contoso.com</value></entry></connection-info></addUser></response>"#;
+    let r = parse_response(resp).unwrap();
+    assert_eq!(r.connection_info.len(), 5);
+    let c = DataConnection::from_info(&r.connection_info).unwrap();
+    assert_eq!(
+        c,
+        DataConnection {
+            auth_id: "3000000000000000E36032154C544908".into(),
+            host: "pool1.contoso.com".into(),
+            port: 8057,
+            certificate_name: "pool1.contoso.com".into(),
+        }
+    );
+    let base = r.connection_info.clone();
+    let with = |key: &str, value: &str| {
+        let mut info: Vec<(String, String)> =
+            base.iter().filter(|(k, _)| k != key).cloned().collect();
+        info.push((key.to_string(), value.to_string()));
+        DataConnection::from_info(&info)
+    };
+    assert!(
+        with("pwrpc.pwsURI", "pool1.contoso.com:8057").is_ok(),
+        "the documented form"
+    );
+    assert!(with("sAuthId", "abc").is_err(), "only digits and A–F");
+    assert!(with("sAuthId", "").is_err());
+    assert!(
+        with("pwrpc.modes", "fwdtls").is_err(),
+        "only tls is implemented"
+    );
+    assert!(
+        with("pwrpc.pwsURI", "pool1.contoso.com").is_err(),
+        "no port"
+    );
+    assert!(with("pwrpc.pwsURI", "pool1.contoso.com:0").is_err());
+    assert!(with("pwrpc.pwsURI", "evil host:8057").is_err());
+    assert!(with("alternativeName", "a/b").is_err());
+    assert!(DataConnection::from_info(&[]).is_err());
+}

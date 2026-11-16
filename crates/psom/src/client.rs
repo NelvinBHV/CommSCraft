@@ -31,8 +31,6 @@ const SRV_ADD_PROTOCOL: u8 = 2;
 const SRV_DONE_PROTOCOLS: u8 = 3;
 const SRV_LOOKUP: u8 = 5;
 const SRV_PING: u8 = 6;
-// PollContent server method sVote (§3.1.4.1.14.1, p. 48).
-const POLL_VOTE: u8 = 5;
 
 /// What the meeting content tells us.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -247,9 +245,11 @@ impl Client {
             .and_then(|c| c.extension)
             .filter(|p| self.objects.get(p).is_some_and(|o| o.kind == Kind::Poll))
             .ok_or(Error::BadFrame)?;
+        let v = self.version_of(Kind::Poll).ok_or(Error::UnknownObject)?;
+        let method = iface::server_index(Kind::Poll, &v, "sVote").ok_or(Error::UnknownMethod)?;
         let mut params = Vec::new();
         encode_generic_int(choice, &mut params);
-        self.send_on(2, &call(ext, POLL_VOTE, params))
+        self.send_on(2, &call(ext, method, params))
     }
 
     /// Closes the connection: Close records on the root channel, then on channel zero
@@ -320,14 +320,11 @@ impl Client {
         for i in iface::INTERFACES {
             let mut p = Vec::new();
             encode_string(i.name, &mut p)?;
-            let mut versions: Vec<(i64, i64)> = i
+            let versions: Vec<(i64, i64)> = i
                 .versions
                 .iter()
                 .map(|v| (i64::from(v.version), v.sum()))
                 .collect();
-            if i.kind == Kind::Meeting {
-                versions.insert(0, (1, iface::MEETING_V1_SUM));
-            }
             let count = i64::try_from(versions.len()).map_err(|_| Error::Overflow)?;
             encode_generic_int(count, &mut p);
             for (v, _) in &versions {
@@ -546,18 +543,15 @@ impl Client {
     ) -> Result<(), Error> {
         let obj = self.objects.get(&id).cloned().ok_or(Error::UnknownObject)?;
         let v = self.version_of(obj.kind).ok_or(Error::UnknownObject)?;
-        if method == 0 || method > v.client_methods {
-            return Err(Error::UnknownMethod);
-        }
+        let name = iface::client_method(obj.kind, &v, method).ok_or(Error::UnknownMethod)?;
         let mut r = Reader::new(params);
         let content = obj.content.unwrap_or(0);
-        match (obj.kind, method) {
-            // Meeting: cMeetingReady 1, cSetInfo 2 (ignored), cSetServerTime 3, cSetUrlBase 4
-            // (§3.2.4.1.1.1, p. 56; index 4 confirmed by the example §4.3, p. 97).
-            (Kind::Meeting, 1) => events.push(Event::Ready),
-            (Kind::Meeting, 4) => events.push(Event::UrlBase(r.string()?)),
-            // ContentUserManager: cUsersAdded 1, cUsersRemoved 2 (§3.2.4.1.2.1, p. 57).
-            (Kind::ContentUserManager, 1) => {
+        match (obj.kind, name) {
+            // Meeting (§3.2.4.1.1.1, p. 56); cSetInfo is ignored.
+            (Kind::Meeting, "cMeetingReady") => events.push(Event::Ready),
+            (Kind::Meeting, "cSetUrlBase") => events.push(Event::UrlBase(r.string()?)),
+            // ContentUserManager (§3.2.4.1.2.1, p. 57).
+            (Kind::ContentUserManager, "cUsersAdded") => {
                 let ids = r.ints()?;
                 let uris = r.strings()?;
                 let names = r.strings()?;
@@ -572,11 +566,12 @@ impl Client {
                     .collect();
                 events.push(Event::UsersAdded(users));
             }
-            (Kind::ContentUserManager, 2) => events.push(Event::UsersRemoved(r.ints()?)),
-            // ContentManager: cContentAdded 1, cContentRemoved 4, cSetActiveContent 6,
-            // cSetActivePresenter 7 (§3.2.4.1.3.1, pp. 57–58). Content is connected by us as
+            (Kind::ContentUserManager, "cUsersRemoved") => {
+                events.push(Event::UsersRemoved(r.ints()?))
+            }
+            // ContentManager (§3.2.4.1.3.1, pp. 57–58). Content is connected by us as
             // "content.<id>" (§3.1.4.1.4.2, p. 33).
-            (Kind::ContentManager, 1) => {
+            (Kind::ContentManager, "cContentAdded") => {
                 let cid = r.int()?;
                 let kind = r.string()?;
                 if self.contents.len() >= MAX_OBJECTS {
@@ -593,7 +588,7 @@ impl Client {
                 );
                 events.push(Event::ContentAdded { content: cid, kind });
             }
-            (Kind::ContentManager, 4) => {
+            (Kind::ContentManager, "cContentRemoved") => {
                 let cid = r.int()?;
                 if let Some(c) = self.contents.remove(&cid) {
                     for p in c.proxy.into_iter().chain(c.extension) {
@@ -603,12 +598,15 @@ impl Client {
                 }
                 events.push(Event::ContentRemoved(cid));
             }
-            (Kind::ContentManager, 6) => events.push(Event::ActiveContent(r.int()?)),
-            (Kind::ContentManager, 7) => events.push(Event::ActivePresenter(r.int()?)),
-            // Content: cConnectCompleted 1 – then we connect "extendedContent" (§3.1.4.1.5.2,
-            // p. 36) –, cSetNativeFileInfo 5, cSetOwnerId 6, cSetPresentInfo 7, cSetTitle 9
-            // (§3.1.4.1.5.1, pp. 33–35).
-            (Kind::Content, 1) => {
+            (Kind::ContentManager, "cSetActiveContent") => {
+                events.push(Event::ActiveContent(r.int()?))
+            }
+            (Kind::ContentManager, "cSetActivePresenter") => {
+                events.push(Event::ActivePresenter(r.int()?))
+            }
+            // Content (§3.1.4.1.5.1, pp. 33–35): on cConnectCompleted we connect
+            // "extendedContent" (§3.1.4.1.5.2, p. 36).
+            (Kind::Content, "cConnectCompleted") => {
                 let ext_kind = self
                     .contents
                     .get(&content)
@@ -621,7 +619,7 @@ impl Client {
                     }
                 }
             }
-            (Kind::Content, 5) => {
+            (Kind::Content, "cSetNativeFileInfo") => {
                 let name = r.string()?;
                 let _key = r.bytes()?;
                 let _iv = r.bytes()?;
@@ -633,11 +631,11 @@ impl Client {
                     size,
                 });
             }
-            (Kind::Content, 6) => events.push(Event::Owner {
+            (Kind::Content, "cSetOwnerId") => events.push(Event::Owner {
                 content,
                 user: r.int()?,
             }),
-            (Kind::Content, 7) => {
+            (Kind::Content, "cSetPresentInfo") => {
                 let presented = r.boolean()?;
                 let presenter = r.int()?;
                 events.push(Event::Presented {
@@ -646,21 +644,20 @@ impl Client {
                     presenter,
                 });
             }
-            (Kind::Content, 9) => events.push(Event::Title {
+            (Kind::Content, "cSetTitle") => events.push(Event::Title {
                 content,
                 title: r.string()?,
             }),
-            // PollContent: cSetLocalVote 2, cSetOpenState 3, cSetQuestion 4, cSetResults 5,
-            // cSetResultsState 6 (§3.1.4.1.14.1, p. 48).
-            (Kind::Poll, 2) => events.push(Event::PollLocalVote {
+            // PollContent (§3.1.4.1.14.1, p. 48).
+            (Kind::Poll, "cSetLocalVote") => events.push(Event::PollLocalVote {
                 content,
                 choice: r.int()?,
             }),
-            (Kind::Poll, 3) => events.push(Event::PollOpen {
+            (Kind::Poll, "cSetOpenState") => events.push(Event::PollOpen {
                 content,
                 open: r.boolean()?,
             }),
-            (Kind::Poll, 4) => {
+            (Kind::Poll, "cSetQuestion") => {
                 let question = r.string()?;
                 let choices = r.strings()?;
                 events.push(Event::PollQuestion {
@@ -669,25 +666,25 @@ impl Client {
                     choices,
                 });
             }
-            (Kind::Poll, 5) => events.push(Event::PollResults {
+            (Kind::Poll, "cSetResults") => events.push(Event::PollResults {
                 content,
                 results: r.ints()?,
             }),
-            (Kind::Poll, 6) => events.push(Event::PollResultsVisible {
+            (Kind::Poll, "cSetResultsState") => events.push(Event::PollResultsVisible {
                 content,
                 visible: r.boolean()?,
             }),
-            // PptContent: cSetLocation 4, cSetSlideCount 9 (§3.1.4.1.11.1, pp. 41–44).
-            (Kind::Ppt, 4) => events.push(Event::SlideLocation {
+            // PptContent (§3.1.4.1.11.1, pp. 41–44).
+            (Kind::Ppt, "cSetLocation") => events.push(Event::SlideLocation {
                 content,
                 location: r.string()?,
             }),
-            (Kind::Ppt, 9) => events.push(Event::Slides {
+            (Kind::Ppt, "cSetSlideCount") => events.push(Event::Slides {
                 content,
                 count: r.int()?,
             }),
-            // SharedNotesContent: cSetNotesTitles 3 (§3.1.4.1.15.1, p. 49).
-            (Kind::SharedNotes, 3) => {
+            // SharedNotesContent (§3.1.4.1.15.1, p. 49).
+            (Kind::SharedNotes, "cSetNotesTitles") => {
                 let notebook = r.string()?;
                 let section = r.string()?;
                 let page = r.string()?;
@@ -698,20 +695,26 @@ impl Client {
                     page,
                 });
             }
-            // AnnotationContainer: cAddAnnotationBatch 1 (ids first), cClearAnnotations 4,
-            // cRemoveAnnotation 13, cRemoveAnnotations 14 (§3.1.4.1.12.1, pp. 46–47).
-            (Kind::AnnotationContainer, 1 | 4 | 13 | 14) => {
+            // AnnotationContainer (§3.1.4.1.12.1, pp. 46–47): cAddAnnotationBatch starts with
+            // the ids.
+            (
+                Kind::AnnotationContainer,
+                "cAddAnnotationBatch"
+                | "cClearAnnotations"
+                | "cRemoveAnnotation"
+                | "cRemoveAnnotations",
+            ) => {
                 let set = self.annotations.entry(id).or_default();
-                match method {
-                    1 => {
+                match name {
+                    "cAddAnnotationBatch" => {
                         for a in r.ints()? {
                             if set.len() < MAX_ANNOTATIONS {
                                 set.insert(a);
                             }
                         }
                     }
-                    4 => set.clear(),
-                    13 => {
+                    "cClearAnnotations" => set.clear(),
+                    "cRemoveAnnotation" => {
                         set.remove(&r.int()?);
                     }
                     _ => {

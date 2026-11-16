@@ -129,6 +129,9 @@ pub enum ConferenceAction {
     DialOut {
         number: String,
     },
+    /// Join the web conferencing MCU (whiteboard, slides, polls; function 44): addUser
+    /// dial-in, answered by [`Event::MeetingContent`].
+    JoinContent,
 }
 
 /// What the user asks for.
@@ -497,6 +500,11 @@ pub enum Event {
     IncomingCall {
         call: CallId,
         from: String,
+    },
+    /// The web conferencing MCU accepted us: how to open its PSOM connection (function 44).
+    MeetingContent {
+        conversation: ConversationId,
+        connection: conf::DataConnection,
     },
     /// The viewing call of a conference's shared screen got this call ID (function 43).
     ConferenceScreen {

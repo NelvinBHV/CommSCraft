@@ -154,6 +154,45 @@ impl TlsClient {
         server_name: &str,
         timeout: Duration,
     ) -> Result<SipConnection, NetError> {
+        Ok(SipConnection {
+            tls: self.handshake(addr, server_name, timeout)?,
+            decoder: StreamDecoder::new(Limits::default()),
+        })
+    }
+
+    /// A TLS connection for raw bytes (the PSOM connection of the web conferencing MCU):
+    /// resolves `host`, connects to the first address that accepts, and verifies the
+    /// certificate for `certificate_name` – the `alternativeName` the server names in place of
+    /// the host ([MS-PSOM] 20250520 §3.2.3.1.1.1, p. 53).
+    pub fn connect_stream(
+        &self,
+        host: &str,
+        port: u16,
+        certificate_name: &str,
+        timeout: Duration,
+    ) -> Result<TlsStream, NetError> {
+        let host = commscraft_url::dns_host(host).ok_or(NetError::BadHostName)?;
+        let addrs: Vec<SocketAddr> = (host.as_str(), port)
+            .to_socket_addrs()
+            .map_err(NetError::Resolve)?
+            .collect();
+        let mut last = None;
+        for addr in addrs {
+            match self.handshake(addr, certificate_name, timeout) {
+                Ok(tls) => return Ok(TlsStream { tls }),
+                Err(e @ NetError::Connect(_)) => last = Some(e),
+                Err(e) => return Err(e),
+            }
+        }
+        Err(last.unwrap_or(NetError::Resolve(std::io::Error::other("no address"))))
+    }
+
+    fn handshake(
+        &self,
+        addr: SocketAddr,
+        server_name: &str,
+        timeout: Duration,
+    ) -> Result<StreamOwned<ClientConnection, TcpStream>, NetError> {
         let name = commscraft_url::dns_host(server_name).ok_or(NetError::BadHostName)?;
         let name = ServerName::try_from(name).map_err(|_| NetError::BadHostName)?;
         let tcp = TcpStream::connect_timeout(&addr, timeout).map_err(NetError::Connect)?;
@@ -167,10 +206,44 @@ impl TlsClient {
         while tls.conn.is_handshaking() {
             tls.conn.complete_io(&mut tls.sock).map_err(NetError::Tls)?;
         }
-        Ok(SipConnection {
-            tls,
-            decoder: StreamDecoder::new(Limits::default()),
-        })
+        Ok(tls)
+    }
+}
+
+/// A TLS connection carrying raw bytes (blocking).
+pub struct TlsStream {
+    tls: StreamOwned<ClientConnection, TcpStream>,
+}
+
+impl TlsStream {
+    pub fn send(&mut self, bytes: &[u8]) -> Result<(), NetError> {
+        use std::io::Write;
+        self.tls.write_all(bytes).map_err(NetError::Io)?;
+        self.tls.flush().map_err(NetError::Io)
+    }
+
+    /// Reads what is there into `buf`: `Ok(0)` when the peer closed, `Ok(None)` on a timeout.
+    pub fn recv(&mut self, buf: &mut [u8]) -> Result<Option<usize>, NetError> {
+        use std::io::Read;
+        match self.tls.read(buf) {
+            Ok(n) => Ok(Some(n)),
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                ) =>
+            {
+                Ok(None)
+            }
+            Err(e) => Err(NetError::Io(e)),
+        }
+    }
+
+    pub fn set_timeout(&mut self, timeout: Duration) -> Result<(), NetError> {
+        self.tls
+            .sock
+            .set_read_timeout(Some(timeout))
+            .map_err(NetError::Io)
     }
 }
 
