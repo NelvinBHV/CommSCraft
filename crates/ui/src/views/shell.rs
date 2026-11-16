@@ -446,6 +446,13 @@ pub fn statusbar(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                         app.prefs.context_open = true;
                         app.emit(UiIntent::PrefsChanged);
                     }
+                    // After a lost connection: back to the sign-in (the state is cleared).
+                    if matches!(app.state.connection, Connection::Disconnected(_))
+                        && !app.demo
+                        && ui.small_button(app.t.sign_in_again).clicked()
+                    {
+                        app.emit(UiIntent::SignOut);
+                    }
                     if let Some(n) = app.state.notices.back() {
                         let c = match n.kind {
                             NoticeKind::Info => pal.muted,

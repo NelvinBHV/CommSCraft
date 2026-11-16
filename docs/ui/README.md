@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-16 · **Last updated:** 2026-11-16 · **Change:** minor (phase 3: preferences, address book search)
+> **Last reviewed:** 2026-11-16 · **Last updated:** 2026-11-16 · **Change:** minor (phase 4: QA)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -19,9 +19,9 @@ apps/commscraft        window (eframe, OpenGL, Wayland/X11), system fonts, brand
 | Phase | Content | State |
 |---|---|---|
 | 1 | Shell and the three screens with demo data: chats (list, conversation, composer, group details), contacts and presence, calls (active call, controls, history), meetings, settings with the capability overview; keyboard, focus, scaling, high contrast, German and English | done (tested-offline) |
-| 2 | The session adapter: sign-in, contacts and presence, 1:1 and group chat, delivery, typing, audio calls, meetings, invitations | done (tested-offline; `tested-in-lab`: sign-in, contacts and presence, 1:1 and group chat both ways, outgoing calls with ringing, connected, hold, resume, hang-up; an incoming call is shown – answering it is still open in the lab) |
+| 2 | The session adapter: sign-in, contacts and presence, 1:1 and group chat, delivery, typing, audio calls, meetings, invitations | done (tested-offline; `tested-in-lab`: sign-in, contacts and presence, 1:1 and group chat both ways, outgoing calls with ringing, connected, hold, resume, hang-up; incoming calls answered and hung up) |
 | 3 | UX additions on existing data: favourites and display preferences kept locally, filters, the address book search on the server (settled text only), keyboard navigation | done (tested-offline; the address book search `tested-in-lab`) |
-| 4 | QA against the specification and the reference images | next |
+| 4 | QA against the specification and the reference images | done (see QA below) |
 
 `commscraft --demo` shows the interface with made-up people at `beispiel.invalid` and never opens a
 network connection; every demo conversation, call and meeting carries a visible demo mark, and the
@@ -116,6 +116,27 @@ Deviations from the reference images, on purpose:
 addresses and group titles), high contrast, scale and whether the side panel is shown. No chat
 content, presence or password is ever written there; the file is read bounded (64 KiB, 500
 favourites) and malformed lines are skipped. The demo and screenshot runs never read or write it.
+
+## QA (phase 4)
+
+Checked against the owner's UI specification and acceptance checklist and against the three
+reference designs (1440 × 900), with screenshots of the real build (above).
+
+| Area | Result |
+|---|---|
+| Project integrity | `AGENTS.md`/`CLAUDE.md` unchanged; egui as decided; the protocol core has no interface dependency (`crates/ui` depends only on egui; the session engine gained one accessor, `next_conversation_id`); Linux desktop only; no alarm, situation, escalation or acknowledgement function (a test checks the screens for such words); the emergency call code is unchanged and not reachable from the desktop client (it calls SIP addresses only) |
+| Layout | top bar 66, rail 92, list 300, context 290 (can be hidden, closes below 1100 px), status bar 28; screens for chats, contacts, calls, meetings, settings; usable at 1440 × 900, 1280 × 800 and at 200 % scale (test) |
+| Colours | the blue and slate tokens in `theme.rs`; deviation: secondary text `#586A80` and success text `#177A59` for 4.5:1 (tested); status always with a word |
+| Typography | system sans, bold and monospace faces through fontconfig (none bundled); sizes 22/19/14.5/13.5/11.5 pt; deviation from the references: the system face instead of Inter when Inter is not installed |
+| Raster and icons | 8 px spacing, radius 8–10; deviation: two-letter monograms instead of drawn icons in the rail and call tiles |
+| Interaction, keyboard, focus | Ctrl+K, Ctrl+N, Ctrl+1…4, Esc, Enter/Shift+Enter, Tab and arrow keys in the lists; visible focus rings on rows, rail buttons and tiles; drafts kept per conversation; scroll position kept per conversation |
+| Data states | demo marked everywhere; delivery is never shown as read; a call is connected only after the answer (test); empty lists, offline, failed sign-in, a lost connection (with "sign in again"), a missing microphone (notice, the call goes on) all have words (tests and lab) |
+| Security | no secrets in logs (the trace prints method or status and CSeq only), the password leaves the form once and is cleared, no TLS bypass, no end-to-end claim (the privacy text says TLS and SRTP are not end-to-end encryption), no chat content on disk |
+| Accessibility | labels on all interactive elements (the tests use them); contrast tested; the Linux screen reader bridge is still missing (AccessKit's adapter on zbus 5 is listed as unmaintained) |
+
+Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): TLS-DSK and Kerberos sign-in, trusting a
+foreign server domain in a dialog, the screen reader bridge, and video, transfer, viewing shared
+screens, meeting content and persistent chat in the interface.
 
 ## Data and security
 
