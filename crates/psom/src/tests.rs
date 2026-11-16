@@ -388,16 +388,16 @@ mod client_flow {
         encode_generic_int(1, &mut p);
         encode_generic_int(5, &mut p);
         encode_generic_int(1, &mut p);
-        encode_string("sip:dave@contoso.com", &mut p).unwrap();
+        encode_string("sip:bob@contoso.com", &mut p).unwrap();
         encode_generic_int(1, &mut p);
-        encode_string("Dave", &mut p).unwrap();
+        encode_string("Bob", &mut p).unwrap();
         let ev = c.on_bytes(&call(1, 1, p), 0).unwrap();
         assert_eq!(
             ev,
             [Event::UsersAdded(vec![(
                 5,
-                "sip:dave@contoso.com".into(),
-                "Dave".into()
+                "sip:bob@contoso.com".into(),
+                "Bob".into()
             )])]
         );
         // cContentAdded(7, "Content.Poll") on ContentManager (+2): we connect "content.7".
