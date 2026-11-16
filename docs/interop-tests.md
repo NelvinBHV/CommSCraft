@@ -1,6 +1,6 @@
 # Interop test cases for the owner
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-11-16 · **Change:** minor (M6: IT-02, IT-03, IT-21 after the lab runs, IT-34 viewing shared screens)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-11-16 · **Change:** minor (IT-35 meeting content; before: M6 cases)
 
 After the fourth search ([`protocol/evidence/39-evidence-for-open-points.md`](protocol/evidence/39-evidence-for-open-points.md),
 OB-39 … OB-51) no open point needs more document research. What is left is the observable behaviour
@@ -63,6 +63,7 @@ of the tested deployment.
 | IT-31 | PSTN calls | MS-OCPSTN §3.2/§3.3/§3.5/§3.7, RE-40 (tested offline) | `/call` a local number (e.g. an extension or 0…) and a +E.164 number: does the server normalise with the location profile? Incoming from the PSTN: is the caller number shown, does `/callback N` reach it? Hears the announcement/ringback (early media)? | Only checked numbers and profile names in SIP URIs | M4 |
 | IT-32 | Call transfer | RFC 3515/3891/3892/5589, MS-SIPRE §3.14, OB-25 (tested offline) | `/transfer N sip:…` (blind) and `/transfer N M` (after a consultation call M): does the peer end up with the target? Being transferred by a Windows client: does the new call connect and the old one end? | REFER only in a call dialog; Replaces only for our own calls | M4 |
 | IT-33 | Call forwarding and simultaneous ring | MS-SIPRE §2.2.9/§3.9, MS-PRES §2.2.2.7.7, K-RE-2 (tested offline) | `/forward noanswer +49… 15`, `/forward voicemail`, `/simring +49…`, `/forward off`: is the setting accepted (no 409 loop), does a test call follow it, does a Windows client of the same user show the setting? | Only checked targets published; private category | M4 |
+| IT-35 | Meeting content (M7) | MS-PSOM (client tested offline against the examples), MS-CONFBAS addUser dial-in; `tested-in-lab` | In a meeting a presenter adds a whiteboard, a poll and a PowerPoint deck: `/content`, then `/vote CONTENT N` – are all three listed, are poll results and slide changes shown, is the vote counted? | – | M7 |
 | IT-34 | Viewing shared screens (M6) | MS-CONFAS, MS-RTASPF, MS-RDPBCGR, MS-RDPEGFX; video-based sharing with H.264 UC (tested offline; `tested-in-lab`) | A colleague shares a window and then the desktop, 1:1 and in a meeting: `/view N` or `/viewconf N` – is the shared content shown, does it follow changes, does ending the sharing close the window? | – | M6 |
 | IT-19 | Whole M1 flow | Everything in IT-07, IT-14 … IT-18 | `commscraft-cli sign-in … --authorized`: registration, keep-alive, provisioning summary, sign-out | – | M1 |
 | IT-13 | O-EX-3 (optional) | Folder and item type of the conversation history (OB-22) | Body layout written by the Windows client, so that both clients' entries look alike | Own layout | optional |

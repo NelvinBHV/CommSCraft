@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (M7: PSOM client for meeting content, tested-offline)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (M7: meeting content – whiteboard and polls – tested-in-lab)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -22,7 +22,7 @@ details are not published.
 | M4 | done (tested-offline, tested-in-lab) | meetings: scheduling (create, list, change, cancel; options, presenters, static meeting), join (focus URI, meeting link), lobby, roster, conference audio via the A/V MCU (SRTP sent, SRTP/SSRTP received), muting ourselves, presenter commands, announcements, dialling out to phones, PSTN calling, call transfer, forwarding, call park, quality reports, emergency calls with location, team and delegate ringing, delegates and calls on behalf of the boss, meeting options in the running meeting | E911 rest (WLAN/LLDP identifiers), PSTN dial-in details |
 | M5 | done (tested-offline, tested-in-lab) | H.264 UC RTP payload (`h264uc`), camera capture, H.264 encoding on the GPU or CPU and decoding (`video-ffmpeg`), video SDP (`sdp::video`), PLI/VSR (`rtp::feedback`), video core (`media::video`) and transport (`call-media`), 1:1 video calls (session and CLI), video in meetings, bandwidth estimation and rate adaptation (`media::rate`), picture control (function 31), the video window process with Landlock and a system call filter, bandwidth management of the video stream | owner verification; by decision not done: temporal enhancement layers, more than three simulcast sizes, Reed-Solomon FEC, GPU decoding without Wayland |
 | M6 | done (tested-offline, tested-in-lab) | viewing a shared screen 1:1 and in meetings (video-based screen sharing, H.264 UC), a window shared over RDP 1:1 and in meetings through the application sharing MCU, also in ad-hoc conferences created by `commscraft-cli` (authenticated users are presenters and may share); building blocks: MPPC test vectors | owner verification; sharing one's own screen comes later (not in M6) |
-| M7 | in progress | calendar and out-of-office state from Exchange (function 16), conversation history in Exchange (function 49), voicemail list and listening (function 38), response group agent with web tickets (function 47); building blocks: the PSOM client for meeting content (tested-offline) | persistent chat, joining the web conferencing MCU and showing its content (SILK deferred until legal clearance; UCWA not planned) |
+| M7 | in progress | calendar and out-of-office state from Exchange (function 16), conversation history in Exchange (function 49), voicemail list and listening (function 38), response group agent with web tickets (function 47); meeting content through the web conferencing MCU – whiteboard, polls with voting, slides (function 44, `tested-in-lab`, drawing waits for the GUI) | persistent chat (SfB Server 2019 has none: offline only) (SILK deferred until legal clearance; UCWA not planned) |
 
 Next steps in order: the rest of M7 (persistent chat, PSOM content); the M3 remainders above are optional or need captures.
 

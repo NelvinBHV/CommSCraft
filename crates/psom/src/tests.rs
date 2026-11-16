@@ -368,11 +368,12 @@ mod client_flow {
         let mut s = hex("04 00 00 00 02");
         s.extend(hex("16 00 00 00 26 00 04 00 22 d6 bb 94 81 38 3c 0b 50 3e 36 05 09 e6 fe 82 de a1 b2 df 62 7d 4d 52 20 24 02 16 ea ff 84 8d fd ef da"));
         s.extend(hex("16 00 00 00 1f 84 00 00 12 ad b0 9e 75 77 4d 40 10 25 02 0a c4 fb c5 dd aa bb 9d 87 49 d5 9c 18 ed 9d 9e 0c"));
-        // The server connects ContentManager (its 2nd connect: our id −2) with the server hash.
+        // The server connects ContentManager (its 2nd connect: our id −2) with the server hash
+        // of the negotiated version 10 (K-PO-4).
         s.extend(rpc(&Op::Connect {
             parent: 0,
-            part: "ContentManager".into(),
-            hash: 3_800_622_354_142_801_969,
+            part: "contentManager".into(),
+            hash: -7_533_840_286_919_557_416,
         }));
         s.extend(hex("16 00 00 00 02 00 01"));
         let events = c.on_bytes(&s, 0).unwrap();
@@ -404,7 +405,8 @@ mod client_flow {
         let mut p = Vec::new();
         encode_generic_int(7, &mut p);
         encode_string("Content.Poll", &mut p).unwrap();
-        let ev = c.on_bytes(&call(2, 1, p), 0).unwrap();
+        // Application methods count alphabetically (K-PO-1): cContentAdded is 2 in version 10.
+        let ev = c.on_bytes(&call(2, 2, p), 0).unwrap();
         assert_eq!(
             ev,
             [Event::ContentAdded {
@@ -423,7 +425,7 @@ mod client_flow {
         // Content (our +1, the server's −1): cSetTitle, then cConnectCompleted → extension.
         let mut p = Vec::new();
         encode_string("Lunch?", &mut p).unwrap();
-        let mut s = call(-1, 9, p);
+        let mut s = call(-1, 12, p);
         s.extend(call(-1, 1, Vec::new()));
         let ev = c.on_bytes(&s, 0).unwrap();
         assert_eq!(
@@ -491,7 +493,7 @@ mod client_flow {
         let mut p = Vec::new();
         encode_generic_int(7, &mut p);
         assert_eq!(
-            c.on_bytes(&call(2, 4, p), 0).unwrap(),
+            c.on_bytes(&call(2, 5, p), 0).unwrap(),
             [Event::ContentRemoved(7)]
         );
         assert_eq!(
@@ -583,4 +585,50 @@ mod client_flow {
         );
         assert_eq!(Reader::new(&[2, 5, 6]).bytes().unwrap(), [5, 6]);
     }
+}
+
+/// K-PO-1: ConnMgr counts its methods in declaration order (the examples), every application
+/// interface in ordinal alphabetical order (`tested-in-lab`).
+#[test]
+fn method_indices() {
+    use crate::iface::{client_method, interface, server_index, Kind};
+    let cm = interface(Kind::ContentManager).unwrap();
+    let v10 = cm.versions.iter().find(|v| v.version == 10).unwrap();
+    let v2 = cm.versions.iter().find(|v| v.version == 2).unwrap();
+    assert_eq!(
+        client_method(Kind::ContentManager, v10, 1),
+        Some("cAdvertiseContentCreationManifest")
+    );
+    assert_eq!(
+        client_method(Kind::ContentManager, v10, 2),
+        Some("cContentAdded")
+    );
+    assert_eq!(
+        client_method(Kind::ContentManager, v2, 1),
+        Some("cContentAdded")
+    );
+    assert_eq!(client_method(Kind::ContentManager, v10, 10), None);
+    assert_eq!(client_method(Kind::ContentManager, v10, 0), None);
+    let content = interface(Kind::Content).unwrap();
+    let v20 = content.versions.iter().find(|v| v.version == 20).unwrap();
+    assert_eq!(
+        client_method(Kind::Content, v20, 8),
+        Some("cSetPresentInfo")
+    );
+    assert_eq!(client_method(Kind::Content, v20, 12), Some("cSetTitle"));
+    let meeting = &interface(Kind::Meeting).unwrap().versions[0];
+    assert_eq!(
+        client_method(Kind::Meeting, meeting, 4),
+        Some("cSetUrlBase"),
+        "§4.3"
+    );
+    let connmgr = &interface(Kind::ConnMgr).unwrap().versions[0];
+    assert_eq!(server_index(Kind::ConnMgr, connmgr, "version"), Some(1));
+    assert_eq!(
+        server_index(Kind::ConnMgr, connmgr, "lookup"),
+        Some(5),
+        "§4.2"
+    );
+    let poll = &interface(Kind::Poll).unwrap().versions[0];
+    assert_eq!(server_index(Kind::Poll, poll, "sVote"), Some(5));
 }

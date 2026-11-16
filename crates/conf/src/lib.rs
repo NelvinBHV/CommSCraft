@@ -123,6 +123,9 @@ pub enum McuType {
     AudioVideo,
     /// The application sharing MCU (screen sharing, CB-01; [MS-CONFAS] §1.3, p. 8).
     ApplicationSharing,
+    /// The web conferencing MCU (whiteboard, slides, polls; [MS-CONFPRO] 20250520 §4.1, p. 41,
+    /// lists it as `data-conf`).
+    DataConf,
 }
 
 impl McuType {
@@ -131,6 +134,7 @@ impl McuType {
             McuType::Chat => "chat",
             McuType::AudioVideo => "audio-video",
             McuType::ApplicationSharing => "applicationsharing",
+            McuType::DataConf => "data-conf",
         }
     }
 }
@@ -646,6 +650,9 @@ pub struct Response {
     /// addUser: the user and the granted role.
     pub user: Option<String>,
     pub role: Option<String>,
+    /// addUser dial-in: the connection-info key/value pairs (CB-36; [MS-CONFBAS] 20250520
+    /// §2.2.3.18, pp. 47–49), at most 64, keys and values printable.
+    pub connection_info: Vec<(String, String)>,
 }
 
 fn attr_local<'a>(e: &'a Element, local: &str) -> Option<&'a str> {
@@ -693,7 +700,117 @@ pub fn parse_response(xml: &str) -> Result<Response, Error> {
             .and_then(|u| u.child("roles"))
             .and_then(|r| r.child("entry"))
             .map(|e| printable(&e.text())),
+        connection_info: cmd
+            .and_then(|c| c.child("connection-info"))
+            .map(|ci| {
+                ci.children_named("entry")
+                    .filter_map(|e| {
+                        let k = e.child("key")?.text();
+                        let v = e.child("value")?.text();
+                        Some((printable(k.trim()), printable(v.trim())))
+                    })
+                    .take(64)
+                    .collect()
+            })
+            .unwrap_or_default(),
     })
+}
+
+/// How to reach the web conferencing MCU, from the connection-info of the addUser dial-in
+/// response ([MS-CONFBAS] 20250520 §2.2.3.18, p. 48): only the `tls` mode, where
+/// `pwrpc.pwsURI` names `fqdn:port` and `alternativeName` the certificate name to verify.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DataConnection {
+    pub auth_id: String,
+    pub host: String,
+    pub port: u16,
+    pub certificate_name: String,
+}
+
+impl DataConnection {
+    pub fn from_info(info: &[(String, String)]) -> Result<Self, Error> {
+        // The web conferencing keys are case-sensitive (p. 48).
+        let get = |k: &str| {
+            info.iter()
+                .find(|(key, _)| key == k)
+                .map(|(_, v)| v.as_str())
+        };
+        let auth_id = get("sAuthId").ok_or(Error::BadValue("sAuthId"))?;
+        // "decimal digits and the letters A–F" (p. 48).
+        if auth_id.is_empty()
+            || auth_id.len() > 256
+            || !auth_id
+                .chars()
+                .all(|c| c.is_ascii_digit() || ('A'..='F').contains(&c))
+        {
+            return Err(Error::BadValue("sAuthId"));
+        }
+        if get("pwrpc.modes") != Some("tls") {
+            return Err(Error::BadValue("pwrpc.modes"));
+        }
+        let uri = get("pwrpc.pwsURI").ok_or(Error::BadValue("pwrpc.pwsURI"))?;
+        // The document gives "[fqdn]:[port]" ([MS-PSOM] §3.2.3.1.1.1, p. 53); the server sends
+        // it with an `https://` scheme in front (`tested-in-lab`), which is taken off.
+        let uri = uri
+            .get(..8)
+            .filter(|s| s.eq_ignore_ascii_case("https://"))
+            .map_or(uri, |_| uri.get(8..).unwrap_or(""));
+        let uri = uri.strip_suffix('/').unwrap_or(uri);
+        let (host, port) = uri
+            .rsplit_once(':')
+            .ok_or(Error::BadValue("pwrpc.pwsURI"))?;
+        let port: u16 = port.parse().map_err(|_| Error::BadValue("pwrpc.pwsURI"))?;
+        let host_ok = |h: &str| {
+            !h.is_empty()
+                && h.len() <= 253
+                && h.chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
+        };
+        if !host_ok(host) || port == 0 {
+            return Err(Error::BadValue("pwrpc.pwsURI"));
+        }
+        let certificate_name = get("alternativeName").unwrap_or(host);
+        if !host_ok(certificate_name) {
+            return Err(Error::BadValue("alternativeName"));
+        }
+        Ok(Self {
+            auth_id: auth_id.to_string(),
+            host: host.to_string(),
+            port,
+            certificate_name: certificate_name.to_string(),
+        })
+    }
+}
+
+/// addUser dial-in over INFO to the focus: we join an MCU ourselves (CB-36; [MS-CONFBAS]
+/// 20250520 §2.2.3.17, pp. 46–47: the user is the requester, joining-method `dialed-in`,
+/// the endpoint a GUID). For the web conferencing MCU the response carries what the PSOM
+/// connection needs; no INVITE follows, as the MCU is not reached over SIP (§3.11, p. 111).
+/// The role asked for is the one we have in the conference ("presenter" or "attendee", p. 46).
+pub fn add_user_dial_in(
+    request_id: u32,
+    from: &str,
+    focus: &str,
+    mcu: &str,
+    endpoint_guid: &str,
+    presenter: bool,
+) -> Result<String, Error> {
+    let focus_c = uri(focus)?;
+    let mcu = uri(mcu)?;
+    let user = uri(from)?;
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<addUser mscp:mcuUri=\"{}\"><conferenceKeys confEntity=\"{}\"/><ci:user xmlns:ci=\"{NS_CI}\" entity=\"{}\"><ci:roles><ci:entry>{}</ci:entry></ci:roles><ci:endpoint entity=\"{}\" xmlns:msci=\"{NS_MSCI}\"><ci:joining-method>dialed-in</ci:joining-method></ci:endpoint></ci:user></addUser>",
+            escape(&mcu),
+            escape(&focus_c),
+            escape(&user),
+            if presenter { "presenter" } else { "attendee" },
+            escape(endpoint_guid)
+        ),
+    )
 }
 
 /// One endpoint of a participant.
@@ -768,6 +885,8 @@ pub struct Roster {
     pub av_uri: Option<String>,
     /// MCU conference URI with purpose `applicationsharing` (CS-01).
     pub as_uri: Option<String>,
+    /// MCU conference URI with purpose `data-conf`, the web conferencing MCU (CB-22).
+    pub data_uri: Option<String>,
     pub participants: Vec<Participant>,
     /// Lock state and meeting options (CB-43).
     pub settings: Settings,
@@ -814,6 +933,7 @@ impl Roster {
                     "chat" => self.chat_uri = u,
                     "audio-video" => self.av_uri = u,
                     "applicationsharing" => self.as_uri = u,
+                    "data-conf" => self.data_uri = u,
                     _ => {}
                 }
             }

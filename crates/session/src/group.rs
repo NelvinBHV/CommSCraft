@@ -163,9 +163,11 @@ impl<R: Random> Engine<R> {
         self.send_add_conference(id, &factory, now, out);
     }
 
-    /// addConference with the IM MCU, the A/V MCU and the application sharing MCU, so that the
-    /// conversation can add audio and carry a shared screen later (PV-12); after a
-    /// `mcuTypeNotAvailable` refusal without application sharing, then with the IM MCU only.
+    /// addConference with the IM MCU, the A/V MCU, the application sharing MCU and the web
+    /// conferencing MCU, so that the conversation can add audio, a shared screen and meeting
+    /// content later (PV-12; the MCU set of the example in [MS-CONFPRO] §4.1, p. 41); after a
+    /// `mcuTypeNotAvailable` refusal without application sharing and web conferencing, then with
+    /// the IM MCU only.
     fn send_add_conference(
         &mut self,
         id: ConversationId,
@@ -185,6 +187,7 @@ impl<R: Random> Engine<R> {
                 conf::McuType::Chat,
                 conf::McuType::AudioVideo,
                 conf::McuType::ApplicationSharing,
+                conf::McuType::DataConf,
             ]
         };
         let mut random = [0u8; 16];
@@ -578,6 +581,19 @@ impl<R: Random> Engine<R> {
                 r.command,
                 r.reason.clone().unwrap_or_else(|| "failure".into())
             ))));
+        }
+        // CB-36: the web conferencing MCU's dial-in answer names its PSOM connection.
+        if r.command == "addUser" && r.code == conf::Code::Success && !r.connection_info.is_empty()
+        {
+            match conf::DataConnection::from_info(&r.connection_info) {
+                Ok(connection) => out.push(Output::Event(Event::MeetingContent {
+                    conversation: id,
+                    connection,
+                })),
+                Err(e) => out.push(Output::Event(Event::Notice(format!(
+                    "[{id}] the meeting content cannot be reached ({e:?})"
+                )))),
+            }
         }
         if r.command == "addUser" && r.code == conf::Code::Failure {
             out.push(Output::Event(Event::Notice(format!(
@@ -1023,7 +1039,9 @@ impl<R: Random> Engine<R> {
     ) {
         let aor = self.cfg.aor.clone();
         let Some(g) = self.group_mut(id) else { return };
-        if !g.roster.is_presenter(&aor) {
+        let presenter = g.roster.is_presenter(&aor);
+        // Joining the meeting content is for every participant; the rest is for presenters.
+        if !presenter && !matches!(action, ConferenceAction::JoinContent) {
             out.push(Output::Event(Event::Notice(
                 "only presenters can do that".into(),
             )));
@@ -1156,6 +1174,24 @@ impl<R: Random> Engine<R> {
                             enabled,
                         )
                     },
+                    now,
+                    out,
+                );
+            }
+            ConferenceAction::JoinContent => {
+                let data = self.group_mut(id).and_then(|g| g.roster.data_uri.clone());
+                let Some(data) = data else {
+                    out.push(Output::Event(Event::Notice(
+                        "this conference has no web conferencing (data-conf) MCU".into(),
+                    )));
+                    return;
+                };
+                let mut random = [0u8; 16];
+                self.reg.fill_random(&mut random);
+                let guid = conf::guid(&random);
+                self.send_c3p(
+                    id,
+                    |r, f, focus, _| conf::add_user_dial_in(r, f, focus, &data, &guid, presenter),
                     now,
                     out,
                 );

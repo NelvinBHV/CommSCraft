@@ -11,7 +11,7 @@ application, a ranked work list, and nothing copied from Microsoft products.
 > **Stage: M1 (sign-in), M4, M5 (video) and M6 (viewing shared screens) closed, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search, audio and video calls, meetings and telephony (transfer, forwarding, park, delegates,
 > emergency calls) exist as building blocks that pass offline tests and whose main flows also ran in the owner's private lab (46 crates,
-> 588 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
+> 594 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
 > for the owner's runs on authorized servers; there is no graphical interface yet. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
@@ -47,7 +47,7 @@ functions, 26 are implemented and tested offline as a whole, 17 in parts, 3 not 
 | Presence and contacts | own state, contacts' presence (live), contact list (read and edit, on the server or in Exchange), privacy relationships and blocking, address book search, distribution lists, offline address book, contact photos (directory and Exchange) | calendar and out-of-office state |
 | Instant messaging | 1:1 with typing indicator, group conversations (ad-hoc conference, invitations, delivery reports) | rich text, file transfer |
 | Audio calls | G.722 and G.711, SRTP, ICE, MS-TURN relay over UDP and over TCP 443 (pseudo-TLS), DTMF, mute, hold/resume, early media, call admission control, ALSA/PipeWire devices; ringing, notification sound and music on hold (the approved CommSCraft sound pack, or a WAV file of the user's; `off` and a volume per sound) | – |
-| Meetings | schedule, join by address or meeting link, lobby, roster, audio and video in the A/V MCU (SRTP/SSRTP), mute yourself; view what others share (screen or window); as presenter: admit, roles, lock, remove, mute others or the audience | sharing one's own screen, whiteboard, PowerPoint |
+| Meetings | schedule, join by address or meeting link, lobby, roster, audio and video in the A/V MCU (SRTP/SSRTP), mute yourself; view what others share (screen or window); whiteboards, polls (with voting) and slides of the meeting; as presenter: admit, roles, lock, remove, mute others or the audience | sharing one's own screen, drawing whiteboards and slides, creating content |
 | Telephony | phone numbers with the dial plan (phone-context), calls from gateways with caller number, call back, anonymous callers, early media, call transfer (blind and with consultation), call forwarding and simultaneous ring, team and delegate calls, call park, emergency calls with location, voicemail (list, listening), response group agent | – |
 | Video, screen sharing | video calls and meeting video (H.264), viewing shared screens (1:1 and in meetings) and windows shared over RDP (1:1 and in meetings) | sharing one's own screen |
 | Exchange | contact photos, contact list (unified contact store), calendar state and out-of-office note (own and contacts'), conversation history, voicemail list and listening | – |

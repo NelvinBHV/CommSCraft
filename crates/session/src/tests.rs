@@ -5310,3 +5310,100 @@ a=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\n"
                 .flatten()
                 .is_some_and(|t| t.contains("applicationsharing"))));
 }
+
+/// Function 44: an attendee joins the web conferencing MCU – addUser dial-in over INFO in the
+/// focus dialog with the conference role; the answer's connection-info becomes MeetingContent.
+#[test]
+fn meeting_content_join() {
+    const DATA: &str =
+        "sip:alice@contoso.com;gruu;opaque=app:conf:data-conf:id:FC275ECD12493E4E9C27C894FE91E104";
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::JoinConference {
+            focus: FOCUS.into(),
+        },
+        NOW,
+    );
+    let focus_invite = find(&out, "INVITE");
+    let granted = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" requestId="1" C3PVersion="1" code="success"><addUser><conferenceKeys confEntity="{FOCUS}"/></addUser></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &focus_invite,
+            200,
+            Some("application/cccp+xml"),
+            &granted,
+            &[],
+        ),
+        NOW,
+    );
+    let roster_sub = find(&out, "SUBSCRIBE");
+    let doc = format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" entity="{FOCUS}" state="full" version="1"><conference-description><conf-uris><entry><uri>{DATA}</uri><purpose>data-conf</purpose></entry></conf-uris></conference-description><users><user entity="sip:alice@contoso.com" state="full"><roles><entry>attendee</entry></roles></user></users></conference-info>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &roster_sub,
+            200,
+            Some("application/conference-info+xml"),
+            &doc,
+            &[("Expires", "3600")],
+        ),
+        NOW,
+    );
+    let conversation = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::ConversationStarted { conversation, .. } => Some(*conversation),
+            Event::Participants { conversation, .. } => Some(*conversation),
+            _ => None,
+        })
+        .unwrap_or(1);
+    // Also an attendee may join the content (the presenter check does not apply).
+    let out = e.command(
+        Command::ConferenceControl {
+            conversation,
+            action: ConferenceAction::JoinContent,
+        },
+        NOW,
+    );
+    let info = find(&out, "INFO");
+    assert_eq!(info.call_id().unwrap(), focus_invite.call_id().unwrap());
+    let body = String::from_utf8(info.body.clone()).unwrap();
+    assert!(
+        body.contains(DATA)
+            && body.contains("dialed-in")
+            && body.contains("<ci:entry>attendee</ci:entry>"),
+        "{body}"
+    );
+    let answer_body = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" requestId="2" C3PVersion="1" code="success"><addUser><conferenceKeys confEntity="{FOCUS}"/><user xmlns="urn:ietf:params:xml:ns:conference-info" entity="sip:alice@contoso.com"/><connection-info xmlns="http://schemas.microsoft.com/rtc/2005/08/cccpextensions"><entry><key>sAuthId</key><value>30000000E36032154C544908</value></entry><entry><key>pwrpc.modes</key><value>tls</value></entry><entry><key>pwrpc.pwsURI</key><value>pool1.contoso.com:8057</value></entry><entry><key>alternativeName</key><value>pool1.contoso.com</value></entry></connection-info></addUser></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &info,
+            200,
+            Some("application/cccp+xml"),
+            &answer_body,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(events(&out).iter().any(|ev| matches!(ev,
+        Event::MeetingContent { conversation: c, connection }
+            if *c == conversation && connection.port == 8057 && connection.host == "pool1.contoso.com")));
+    // Without a web conferencing MCU there is nothing to join.
+    let (mut e2, _, _) = signed_in();
+    let out = e2.command(
+        Command::ConferenceControl {
+            conversation: 99,
+            action: ConferenceAction::JoinContent,
+        },
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+}
