@@ -73,6 +73,10 @@ pub enum ToWorker {
         id: u32,
         muted: bool,
     },
+    /// Address book search on the server (MS-DLX).
+    Search {
+        text: String,
+    },
     SignOut,
 }
 
@@ -201,7 +205,7 @@ pub fn online_capabilities() -> Capabilities {
         chat: Gate::Available,
         group_chat: Gate::Available,
         presence: Gate::Available,
-        directory_search: cli.clone(),
+        directory_search: Gate::Available,
         audio_call: Gate::Available,
         hold: Gate::Available,
         transfer: cli.clone(),
@@ -298,6 +302,28 @@ struct Session {
     signed_in: bool,
     signing_out: Option<Instant>,
     profile: Profile,
+    tls: TlsClient,
+    trust: setup::Trust,
+}
+
+/// Directory entries with a SIP address as interface contacts.
+pub fn directory_contacts(found: &[commscraft_dlx::Entry]) -> Vec<Contact> {
+    found
+        .iter()
+        .filter_map(|e| {
+            let uri = e.sip_uri.as_deref()?;
+            let mut c = Contact::new(
+                uri,
+                e.display_name.as_deref().unwrap_or(""),
+                Source::Directory,
+            );
+            c.title = e.title.clone().unwrap_or_default();
+            c.department = e.department.clone().unwrap_or_default();
+            c.company = e.company.clone().unwrap_or_default();
+            c.phone = e.phone.clone().unwrap_or_default();
+            Some(c)
+        })
+        .collect()
 }
 
 fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) -> Result<(), Ended> {
@@ -423,6 +449,8 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         signed_in: false,
         signing_out: None,
         profile: Profile::default(),
+        tls,
+        trust,
     };
     let started = Instant::now();
     let mut outputs = s.engine.start(now());
@@ -441,8 +469,11 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
             s.stop_media();
             return Ok(());
         }
+        let mut search = None;
         for _ in 0..COMMANDS_PER_ROUND {
             match cmds.try_recv() {
+                // Only the newest search of a round runs (the user is still typing).
+                Ok(ToWorker::Search { text }) => search = Some(text),
                 Ok(c) => outputs.extend(s.command(c, out)),
                 Err(TryRecvError::Empty) => break,
                 // The window closed: sign out.
@@ -453,6 +484,9 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
                     break;
                 }
             }
+        }
+        if let Some(text) = search {
+            s.search(&text, out);
         }
         while let Ok(m) = media_rx.try_recv() {
             outputs.extend(s.media_event(m, out));
@@ -633,10 +667,43 @@ impl Session {
                 out.event(AppEvent::CallMuted { id, muted });
                 Vec::new()
             }
+            ToWorker::Search { text } => {
+                self.search(&text, out);
+                Vec::new()
+            }
             ToWorker::SignOut => {
                 self.signing_out = Some(Instant::now());
                 self.stop_media();
                 self.engine.command(C::SignOut, t)
+            }
+        }
+    }
+
+    /// The address book search runs here, bounded by the HTTP timeouts (15 s); incoming SIP
+    /// waits in the socket meanwhile.
+    fn search(&mut self, text: &str, out: &Out) {
+        let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
+        let engine = &mut self.engine;
+        let mut ntlm =
+            |n: &[u8], c: &[u8], cert: Option<&[u8]>| engine.http_ntlm(n, c, now(), cert);
+        let mut log = |l: &str| {
+            if verbose() {
+                eprintln!("{l}");
+            }
+        };
+        match commscraft_client::directory::search(
+            &self.tls,
+            &self.trust,
+            self.services.as_deref(),
+            text,
+            &ua,
+            &mut ntlm,
+            &mut log,
+        ) {
+            Ok(found) => out.event(AppEvent::SearchResults(directory_contacts(&found))),
+            Err(e) => {
+                out.event(AppEvent::SearchResults(Vec::new()));
+                out.notice(NoticeKind::Warning, format!("address book search: {e}"));
             }
         }
     }
@@ -1112,5 +1179,23 @@ mod tests {
         assert!(!c.file_transfer.usable());
         assert!(!c.read_receipts.usable());
         assert!(!c.video_call.usable());
+    }
+
+    #[test]
+    fn directory_entries_without_address_are_skipped() {
+        let e = |uri: Option<&str>, name: &str| commscraft_dlx::Entry {
+            display_name: Some(name.into()),
+            sip_uri: uri.map(str::to_string),
+            mail: None,
+            title: Some("Einkauf".into()),
+            department: None,
+            company: None,
+            phone: None,
+            photo: None,
+        };
+        let c = directory_contacts(&[e(Some("sip:x@beispiel.invalid"), "X"), e(None, "Y")]);
+        assert_eq!(c.len(), 1);
+        assert_eq!(c[0].source, Source::Directory);
+        assert_eq!(c[0].title, "Einkauf");
     }
 }

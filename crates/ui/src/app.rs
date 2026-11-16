@@ -172,6 +172,8 @@ pub struct CommsUi {
     pub(crate) sign_in: SignIn,
     pub(crate) typing_since: BTreeMap<ConvKey, u64>,
     pub(crate) last_search: String,
+    /// The search text waiting to settle before it goes to the server, and since when (s).
+    pub(crate) search_pending: (String, f64),
     pub(crate) intents: Vec<UiIntent>,
     pub(crate) window_width: f32,
     /// The next group conversation that appears is selected (the user just started or joined
@@ -204,6 +206,7 @@ impl CommsUi {
             sign_in: SignIn::default(),
             typing_since: BTreeMap::new(),
             last_search: String::new(),
+            search_pending: (String::new(), 0.0),
             intents: Vec::new(),
             window_width: 1440.0,
             select_next_group: false,
@@ -216,6 +219,11 @@ impl CommsUi {
         } else {
             theme::LIGHT
         }
+    }
+
+    /// Puts text into the global search (as typed by the user).
+    pub fn set_search(&mut self, text: &str) {
+        self.search = text.chars().take(128).collect();
     }
 
     pub fn view(&self) -> View {

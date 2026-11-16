@@ -12,6 +12,9 @@ commscraft-audio-alsa = { path = "../audio-alsa" }
 commscraft-avedgea = { path = "../avedgea" }
 commscraft-call-media = { path = "../call-media" }
 commscraft-discovery = { path = "../discovery" }
+commscraft-dlx = { path = "../dlx" }
+commscraft-ntlm = { path = "../ntlm" }
+commscraft-sipae = { path = "../sipae" }
 commscraft-media = { path = "../media" }
 commscraft-net = { path = "../net" }
 commscraft-provisioning = { path = "../provisioning" }

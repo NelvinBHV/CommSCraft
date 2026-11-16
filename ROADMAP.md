@@ -1,8 +1,8 @@
 # CommSCraft roadmap
 
-**Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface in progress (phases 1 and 2 of 4: screens and session adapter) · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
+**Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface in progress (phases 1–3 of 4 done: screens, session adapter, UX) · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (desktop interface phase 2: session adapter)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (desktop interface phase 3: preferences, address book search)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **634 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **636 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -43,7 +43,7 @@ transfer can come later from interop captures.
 6. **Desktop interface (egui)** (in progress): phase 1 – the shell and the screens for chats,
    contacts, calls and meetings with demo data, honest capability gates – and phase 2 – the
    session adapter (sign-in, chat 1:1 and group, presence, audio calls, meetings; `tested-in-lab`
-   in its main flows) – done; next UX additions and QA ([`docs/ui/README.md`](docs/ui/README.md)).
+   in its main flows) – and phase 3 – local preferences and favourites, the address book search on the server – done; next the QA phase ([`docs/ui/README.md`](docs/ui/README.md)).
    Details and gates: [`docs/roadmap.md`](docs/roadmap.md).
 
 Hours are not estimated.
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-16 | Desktop interface phase 3: favourites and display preferences kept locally (`desktop.conf`, no chat content), the address book search on the server in the global search (MS-DLX through the shared `client::directory`, `tested-in-lab`), wrapped hints in the search list. |
 | 2026-11-16 | Desktop interface phase 2: the session adapter of `commscraft` (a worker thread with bounded queues: sign-in with Autodiscover and NTLM, contacts and presence, 1:1 and group chat with delivery and typing, roster, invitations, audio calls with hold and mute, meetings) – `tested-in-lab` for sign-in, chat both ways 1:1 and in a group, and outgoing calls (ringing, connected, hold, resume, hang-up); the shared client runtime (`client`: discovery and trust, endpoint ID, call media, ringing and music on hold) now serves the CLI and the desktop client. |
 | 2026-11-16 | Desktop interface phase 1 (tested-offline): crate `ui` (egui; blue and slate tokens, layout 66/92/300/290/28, chats with composer and group details, contacts and presence, calls with controls and history, meetings, settings with the capability overview, search over real sources, German and English, keyboard shortcuts, high contrast, scaling) and the app `commscraft` (`--demo` without network, system fonts, the unchanged brand icon, `--screenshot`); interface tests through the accessibility tree. |
 | 2026-11-16 | M7 closed: persistent chat rooms (`xccos`, tested-offline – Skype for Business Server 2019 has none): the pool from provisioning, the channel server, rooms, joining with backchat, history, messages; CLI `/rooms`, `/room`. |

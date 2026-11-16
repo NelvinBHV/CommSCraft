@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-16 · **Last updated:** 2026-11-16 · **Change:** minor (phase 2: session adapter, tested-in-lab)
+> **Last reviewed:** 2026-11-16 · **Last updated:** 2026-11-16 · **Change:** minor (phase 3: preferences, address book search)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -20,8 +20,8 @@ apps/commscraft        window (eframe, OpenGL, Wayland/X11), system fonts, brand
 |---|---|---|
 | 1 | Shell and the three screens with demo data: chats (list, conversation, composer, group details), contacts and presence, calls (active call, controls, history), meetings, settings with the capability overview; keyboard, focus, scaling, high contrast, German and English | done (tested-offline) |
 | 2 | The session adapter: sign-in, contacts and presence, 1:1 and group chat, delivery, typing, audio calls, meetings, invitations | done (tested-offline; `tested-in-lab`: sign-in, contacts and presence, 1:1 and group chat both ways, outgoing calls with ringing, connected, hold, resume, hang-up; an incoming call is shown – answering it is still open in the lab) |
-| 3 | UX additions on existing data: favourites kept locally, filters, address book search, keyboard navigation | next |
-| 4 | QA against the specification and the reference images | – |
+| 3 | UX additions on existing data: favourites and display preferences kept locally, filters, the address book search on the server (settled text only), keyboard navigation | done (tested-offline; the address book search `tested-in-lab`) |
+| 4 | QA against the specification and the reference images | next |
 
 `commscraft --demo` shows the interface with made-up people at `beispiel.invalid` and never opens a
 network connection; every demo conversation, call and meeting carries a visible demo mark, and the
@@ -50,12 +50,15 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   interface – never to phone numbers – so the engine's emergency call path is not reached from
   here. A transfer request is declined and a screen share offer refused, with a notice (the
   command-line tool offers both).
+- **Address book search:** MS-DLX through the shared `commscraft-client::directory` with the
+  registrar's NTLM; asked once the search text has rested for 600 ms; results are shown with
+  their source and are not kept as contacts.
 - **Not in the desktop client yet** (gated with a reason): video, transfer, viewing shared
-  screens, meeting content, persistent chat, the address book search on the server.
+  screens, meeting content, persistent chat.
 
 `--sign-in sip:ADDRESS --user USER [--domain D] [--server H:P]` signs in at start with the
 password from standard input; `--commands FILE` follows a file of test commands (`view`, `chat`,
-`select`, `send`, `group`, `accept`, `call`, `answer`, `hangup`, `hold`, `resume`, `mute`,
+`select`, `search`, `send`, `group`, `accept`, `call`, `answer`, `hangup`, `hold`, `resume`, `mute`,
 `unmute`, `status`, `shot`, `quit`) that trigger exactly the actions of the interface – for the
 owner's lab runs and screenshots. `COMMSCRAFT_VERBOSE=1` prints one line per SIP message (method
 or status and CSeq, never headers).
@@ -68,8 +71,8 @@ in Settings → "Functions and their state").
 
 | Function | Gate today | Why |
 |---|---|---|
-| 1:1 chat, group chat, presence, audio call, hold, meetings | available when signed in; preview in the demo | through the session adapter |
-| address book search on the server, transfer, video call, persistent chat rooms, viewing shared screens, meeting content | unavailable | the command-line tool offers them; not in this interface yet |
+| 1:1 chat, group chat, presence, address book search, audio call, hold, meetings | available when signed in; preview in the demo | through the session adapter |
+| transfer, video call, persistent chat rooms, viewing shared screens, meeting content | unavailable | the command-line tool offers them; not in this interface yet |
 | file transfer, formatted text, history search, read receipts | unavailable | not implemented (no public specification for file transfer; `text/plain` only; no archive or index; delivery is not reading) |
 
 Delivery is shown as what it is: *sending*, *delivered* (the server or peer accepted the MESSAGE),
@@ -107,6 +110,13 @@ Deviations from the reference images, on purpose:
   conversation; each conversation keeps its scroll position and only follows new messages while it
   is at the bottom.
 
+## Local preferences (phase 3)
+
+`~/.config/commscraft/desktop.conf` (mode 0600, written atomically) keeps favourites (SIP
+addresses and group titles), high contrast, scale and whether the side panel is shown. No chat
+content, presence or password is ever written there; the file is read bounded (64 KiB, 500
+favourites) and malformed lines are skipped. The demo and screenshot runs never read or write it.
+
 ## Data and security
 
 - The interface keeps conversations in memory only, bounded (500 messages per conversation, 200
@@ -130,6 +140,10 @@ saves its own first settled frame):
 | Meetings | Settings | Sign-in | 1280 × 800, English |
 |---|---|---|---|
 | ![Meetings](screenshots/meetings.png) | ![Settings](screenshots/settings.png) | ![Sign-in](screenshots/signin.png) | ![1280](screenshots/chats-1280-en.png) |
+
+| Search (sources named, message texts not searched) |
+|---|
+| ![Search](screenshots/search.png) |
 
 ## Checks
 

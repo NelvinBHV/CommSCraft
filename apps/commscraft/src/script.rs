@@ -3,6 +3,7 @@
 //! they exist for scripted tests on the owner's lab and for screenshots.
 //!
 //! `view chats|contacts|calls|meetings|settings` · `chat sip:ADDRESS` · `select TEXT|group` ·
+//! `search TEXT` ·
 //! `send TEXT` (to the selected conversation) · `group sip:ADDRESS` · `accept` (the first invitation) ·
 //! `call sip:ADDRESS` · `answer` · `hangup` · `hold` · `resume` · `mute` · `unmute` ·
 //! `status available|busy|dnd|away` · `shot FILE.png` · `quit` (signs out and closes).
@@ -98,6 +99,7 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 });
             }
         }
+        "search" => app.ui.set_search(arg),
         "group" => app.handle(UiIntent::StartGroup {
             invite: vec![arg.to_string()],
         }),

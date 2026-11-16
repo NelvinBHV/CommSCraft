@@ -232,9 +232,19 @@ fn search_names_its_sources() {
         .query_by_label_contains("Nachrichtentexte werden nicht durchsucht")
         .is_some());
     assert!(h.query_all_by_label_contains("Anna Weber").count() > 0);
-    assert!(h.state().intents.contains(&UiIntent::SearchDirectory {
-        text: "weber".into()
-    }));
+    // Asked once for the settled text, not once per key.
+    let asked: Vec<&UiIntent> = h
+        .state()
+        .intents
+        .iter()
+        .filter(|i| matches!(i, UiIntent::SearchDirectory { .. }))
+        .collect();
+    assert_eq!(
+        asked,
+        vec![&UiIntent::SearchDirectory {
+            text: "weber".into()
+        }]
+    );
 }
 
 #[test]

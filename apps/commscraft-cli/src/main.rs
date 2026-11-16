@@ -1093,66 +1093,7 @@ fn im_actions(
 /// hosts in the user's SIP domain or a trusted domain get credentials. NTLM over HTTP per MS-NTHT
 /// (NEGOTIATE in the first request, AUTHENTICATE after the 401 with the CHALLENGE, all on one
 /// connection). Blocks the loop for at most the HTTP timeout. Returns status and body text.
-fn dlx_call(
-    engine: &mut commscraft_session::Engine<OsRandom>,
-    tls: &TlsClient,
-    trust: &Trust,
-    services: Option<&commscraft_provisioning::ServerConfiguration>,
-    action: &str,
-    body: &str,
-    verbose: bool,
-) -> Result<(u16, String), String> {
-    let c = services.ok_or("no provisioning yet (address book service unknown)")?;
-    if c.dlx_enabled == Some(false) {
-        return Err("the address book web service is disabled by the server".into());
-    }
-    let candidates: Vec<&commscraft_provisioning::ServiceUrl> = [
-        &c.dlx_internal,
-        &c.dlx_external,
-        &c.abwq_internal,
-        &c.abwq_external,
-    ]
-    .into_iter()
-    .flatten()
-    .collect();
-    if candidates.is_empty() {
-        return Err("the server announced no address book web service".into());
-    }
-    let mut last = String::from("no usable service");
-    for s in candidates {
-        if !s.in_user_domain && !trust.trusts(&s.host) {
-            last = format!(
-                "{} is outside your SIP domain; add --trust-domain to use it",
-                s.host
-            );
-            continue;
-        }
-        let Some(url) = commscraft_url::parse_https(&s.url) else {
-            continue;
-        };
-        if verbose {
-            println!("  POST {} ({action})", s.url);
-        }
-        match ntlm_post(
-            engine,
-            tls,
-            &url,
-            &[
-                ("Content-Type", commscraft_dlx::CONTENT_TYPE),
-                ("SOAPAction", action),
-            ],
-            body,
-        ) {
-            Ok(r) if r.status == 401 => return Err("not authorized (401)".into()),
-            Ok(r) => return Ok((r.status, String::from_utf8_lossy(&r.body).to_string())),
-            Err(e) => last = e,
-        }
-    }
-    Err(last)
-}
-
-/// A POST with NTLM per MS-NTHT on one connection: NEGOTIATE in the first request,
-/// AUTHENTICATE after the 401 with the CHALLENGE (as for the address book search).
+/// A POST with NTLM per MS-NTHT on one connection (see `commscraft_client::directory`).
 fn ntlm_post(
     engine: &mut commscraft_session::Engine<OsRandom>,
     tls: &TlsClient,
@@ -1160,37 +1101,8 @@ fn ntlm_post(
     headers: &[(&str, &str)],
     body: &str,
 ) -> Result<commscraft_net::http::HttpResponse, String> {
-    use commscraft_sipae::base64;
-    let negotiate =
-        commscraft_ntlm::messages::negotiate_message(commscraft_ntlm::messages::HTTP_NEGOTIATE);
-    let mut auth_err: Option<String> = None;
-    commscraft_net::http::post_with_auth(
-        tls,
-        url,
-        headers,
-        body.as_bytes(),
-        &user_agent(),
-        Duration::from_secs(15),
-        &mut |challenge, cert| match challenge {
-            None => Ok(format!("NTLM {}", base64::encode(&negotiate))),
-            Some(ch) => {
-                let token = ch
-                    .strip_prefix("NTLM ")
-                    .and_then(|b| base64::decode(b.trim()).ok());
-                let answer = token
-                    .ok_or_else(|| "no NTLM challenge".to_string())
-                    .and_then(|t| engine.http_ntlm(&negotiate, &t, now(), cert));
-                match answer {
-                    Ok(a) => Ok(format!("NTLM {}", base64::encode(&a))),
-                    Err(e) => {
-                        auth_err = Some(e);
-                        Err(commscraft_net::NetError::Io(std::io::Error::other("NTLM")))
-                    }
-                }
-            }
-        },
-    )
-    .map_err(|e| auth_err.take().unwrap_or_else(|| e.to_string()))
+    let mut ntlm = |n: &[u8], c: &[u8], cert: Option<&[u8]>| engine.http_ntlm(n, c, now(), cert);
+    commscraft_client::directory::ntlm_post(tls, url, headers, body, &user_agent(), &mut ntlm)
 }
 
 /// Address book search (MS-DLX SearchAbEntry, OB-44).
@@ -1202,23 +1114,21 @@ fn search(
     query: &str,
     verbose: bool,
 ) -> Result<Vec<commscraft_dlx::Entry>, String> {
-    let body = commscraft_dlx::search_request(query).map_err(|e| format!("{e:?}"))?;
-    let (status, text) = dlx_call(
-        engine,
+    let mut ntlm = |n: &[u8], c: &[u8], cert: Option<&[u8]>| engine.http_ntlm(n, c, now(), cert);
+    let mut log = |l: &str| {
+        if verbose {
+            println!("{l}");
+        }
+    };
+    commscraft_client::directory::search(
         tls,
         trust,
         services,
-        commscraft_dlx::SOAP_ACTION,
-        &body,
-        verbose,
-    )?;
-    // A SOAP fault comes with 500.
-    match commscraft_dlx::parse_response(&text) {
-        Ok(found) if status == 200 => Ok(found),
-        Err(commscraft_dlx::Error::Fault(f)) => Err(format!("server fault: {f}")),
-        Err(e) if status == 200 => Err(format!("{e:?}")),
-        _ => Err(format!("HTTP {status}")),
-    }
+        query,
+        &user_agent(),
+        &mut ntlm,
+        &mut log,
+    )
 }
 
 /// Distribution list expansion (MS-DLX ExpandDistributionList, DL-04).
@@ -1230,22 +1140,21 @@ fn expand(
     group: &str,
     verbose: bool,
 ) -> Result<commscraft_dlx::Expansion, String> {
-    let body = commscraft_dlx::expand_request(group).map_err(|e| format!("{e:?}"))?;
-    let (status, text) = dlx_call(
-        engine,
+    let mut ntlm = |n: &[u8], c: &[u8], cert: Option<&[u8]>| engine.http_ntlm(n, c, now(), cert);
+    let mut log = |l: &str| {
+        if verbose {
+            println!("{l}");
+        }
+    };
+    commscraft_client::directory::expand(
         tls,
         trust,
         services,
-        commscraft_dlx::EXPAND_SOAP_ACTION,
-        &body,
-        verbose,
-    )?;
-    match commscraft_dlx::parse_expand_response(&text) {
-        Ok(x) if status == 200 => Ok(x),
-        Err(commscraft_dlx::Error::Fault(f)) => Err(format!("server fault: {f}")),
-        Err(e) if status == 200 => Err(format!("{e:?}")),
-        _ => Err(format!("HTTP {status}")),
-    }
+        group,
+        &user_agent(),
+        &mut ntlm,
+        &mut log,
+    )
 }
 
 /// How many days back the newest full address book file is looked for (design: the server
