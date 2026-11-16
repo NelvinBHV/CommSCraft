@@ -267,9 +267,16 @@ pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                                         ((ui.available_width() - 2.0 * 160.0 - 12.0) / 2.0)
                                             .max(0.0),
                                     );
-                                    if widgets::primary(ui, t.answer, caps.audio_call.usable(), pal)
-                                        .clicked()
-                                    {
+                                    // As large as the red button next to it.
+                                    let answer = egui::Button::new(
+                                        RichText::new(t.answer)
+                                            .color(pal.on_primary)
+                                            .family(crate::theme::bold()),
+                                    )
+                                    .fill(pal.success_text)
+                                    .stroke(egui::Stroke::NONE)
+                                    .min_size(Vec2::new(160.0, 40.0));
+                                    if ui.add_enabled(caps.audio_call.usable(), answer).clicked() {
                                         app.emit(UiIntent::AnswerCall { id: call.id });
                                     }
                                     if widgets::danger(ui, t.decline, pal).clicked() {
