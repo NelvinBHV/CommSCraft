@@ -320,15 +320,22 @@ pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                                         pal,
                                     );
                                     gate_tip(v, &caps.video_call, app);
+                                    let transfer_ok = connected && caps.transfer.usable();
                                     let x = widgets::call_tile(
                                         ui,
                                         t.mono_transfer,
                                         t.transfer,
                                         false,
-                                        false,
+                                        transfer_ok,
                                         pal,
                                     );
-                                    gate_tip(x, &caps.transfer, app);
+                                    let x = gate_tip(x, &caps.transfer, app);
+                                    if x.clicked() && transfer_ok {
+                                        app.new_chat = Some(crate::app::NewChat {
+                                            text: String::new(),
+                                            purpose: crate::app::AddressFor::Transfer(call.id),
+                                        });
+                                    }
                                 });
                             }
                             ui.add_space(18.0);

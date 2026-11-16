@@ -533,6 +533,7 @@ dependencies = [
  "commscraft-client",
  "commscraft-conf",
  "commscraft-dlx",
+ "commscraft-gssapi",
  "commscraft-net",
  "commscraft-ocer",
  "commscraft-presence",
@@ -547,6 +548,7 @@ dependencies = [
  "commscraft-xml",
  "eframe",
  "png",
+ "zeroize",
 ]
 
 [[package]]

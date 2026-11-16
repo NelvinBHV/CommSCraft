@@ -41,6 +41,11 @@ pub enum UiIntent {
     CallUser {
         peer: String,
     },
+    /// Blind transfer of a call to an address (REFER).
+    Transfer {
+        id: u32,
+        peer: String,
+    },
     AnswerCall {
         id: u32,
     },
@@ -81,6 +86,8 @@ pub struct SignIn {
     pub password: String,
     /// `host:port`; empty means Autodiscover and DNS.
     pub server: String,
+    /// Try Kerberos first (the system's ticket cache, else the password), NTLM as fallback.
+    pub kerberos: bool,
 }
 
 impl std::fmt::Debug for SignIn {
@@ -91,6 +98,7 @@ impl std::fmt::Debug for SignIn {
             .field("domain", &self.domain)
             .field("password", &"<hidden>")
             .field("server", &self.server)
+            .field("kerberos", &self.kerberos)
             .finish()
     }
 }
@@ -139,11 +147,22 @@ impl Default for Prefs {
     }
 }
 
-/// The dialog for a new conversation or group.
+/// What the address dialog is for.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum AddressFor {
+    #[default]
+    NewChat,
+    /// Invite into this group conversation.
+    Invite(ConvKey),
+    /// Transfer this call (blind transfer).
+    Transfer(u32),
+}
+
+/// The address dialog: a new conversation or group, an invitation, a transfer target.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct NewChat {
     pub text: String,
-    pub members: Vec<String>,
+    pub purpose: AddressFor,
 }
 
 /// The whole interface: state from the adapter plus the interface's own state.

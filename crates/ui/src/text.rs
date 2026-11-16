@@ -134,6 +134,7 @@ texts! {
     delivery_title: "Zustellung", "Delivery";
     delivery_body: "„Zugestellt“ heißt: der Server oder die Gegenstelle hat die Nachricht angenommen. Gelesen ist damit nicht bestätigt.", "“Delivered” means the server or peer accepted the message. It does not confirm that it was read.";
     invite_title: "In die Gruppe einladen", "Invite to the group";
+    transfer_title: "Anruf übertragen", "Transfer the call";
     new_chat_title: "Neue Unterhaltung", "New conversation";
     new_chat_body: "SIP-Adresse eingeben oder einen Kontakt wählen.", "Enter a SIP address or pick a contact.";
     address_hint: "name@firma.example", "name@company.example";
@@ -278,6 +279,8 @@ texts! {
     sign_in_server_hint: "host:port – leer: automatisch suchen", "host:port – empty: find automatically";
     sign_in: "Anmelden", "Sign in";
     sign_in_again: "Neu anmelden", "Sign in again";
+    sign_in_kerberos: "Kerberos versuchen (Windows-Domäne)", "Try Kerberos (Windows domain)";
+    sign_in_kerberos_tip: "Nutzt ein vorhandenes Kerberos-Ticket des Systems, sonst das Kennwort; NTLM bleibt der Rückfall.", "Uses the system's Kerberos ticket if there is one, else the password; NTLM stays the fallback.";
     signing_in: "Anmeldung läuft …", "Signing in …";
     start_demo: "Demo ansehen", "View demo";
     start_demo_tip: "Oberfläche mit erfundenen Daten, ohne Server", "The interface with made-up data, without a server";

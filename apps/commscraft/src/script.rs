@@ -5,7 +5,7 @@
 //! `view chats|contacts|calls|meetings|settings` · `chat sip:ADDRESS` · `select TEXT|group` ·
 //! `search TEXT` ·
 //! `send TEXT` (to the selected conversation) · `group sip:ADDRESS` · `accept` (the first invitation) ·
-//! `call sip:ADDRESS` · `answer` · `hangup` · `hold` · `resume` · `mute` · `unmute` ·
+//! `call sip:ADDRESS` · `transfer sip:ADDRESS` · `answer` · `hangup` · `hold` · `resume` · `mute` · `unmute` ·
 //! `status available|busy|dnd|away` · `shot FILE.png` · `quit` (signs out and closes).
 
 use crate::{now, DesktopApp};
@@ -109,6 +109,14 @@ pub fn run(app: &mut DesktopApp, line: &str) {
             app.handle(UiIntent::CallUser {
                 peer: arg.to_string(),
             })
+        }
+        "transfer" => {
+            if let Some(c) = app.ui.state.active_call().cloned() {
+                app.handle(UiIntent::Transfer {
+                    id: c.id,
+                    peer: arg.to_string(),
+                });
+            }
         }
         "answer" | "hangup" | "hold" | "resume" | "mute" | "unmute" => {
             let Some(c) = app.ui.state.active_call().cloned() else {

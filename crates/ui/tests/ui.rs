@@ -300,3 +300,43 @@ fn double_scale_still_lays_out() {
     h.run();
     assert!(h.query_by_label("Chats").is_some());
 }
+
+#[test]
+fn a_connected_call_can_be_transferred() {
+    use commscraft_ui::model::{Capabilities, Gate};
+    let mut ui = CommsUi::new(Lang::De, 0);
+    ui.state.apply(AppEvent::Connection(Connection::Connected));
+    let mut caps = Capabilities::offline();
+    caps.audio_call = Gate::Available;
+    caps.transfer = Gate::Available;
+    ui.state.apply(AppEvent::Capabilities(caps));
+    ui.state.apply(AppEvent::CallStarted {
+        id: 3,
+        peer: "sip:tim@beispiel.invalid".into(),
+        incoming: false,
+        at: NOW,
+    });
+    ui.state.apply(AppEvent::CallConnected { id: 3, at: NOW });
+    ui.set_view(View::Calls);
+    let mut h = harness(ui, (1440.0, 900.0));
+    h.run();
+    button(&h, "Übertragen").click();
+    h.run();
+    assert!(h.query_by_label("Anruf übertragen").is_some());
+    // The dialog's field has the focus: type the target and confirm.
+    h.query_all_by_role(egui::accesskit::Role::TextInput)
+        .find(|n| n.accesskit_node().is_focused())
+        .expect("the focused address field")
+        .type_text("erin@beispiel.invalid");
+    h.run();
+    let confirm = h
+        .query_all_by_label("Übertragen")
+        .rfind(|n| n.accesskit_node().role() == egui::accesskit::Role::Button)
+        .expect("the confirm button");
+    confirm.click();
+    h.run();
+    assert!(h.state().intents.contains(&UiIntent::Transfer {
+        id: 3,
+        peer: "sip:erin@beispiel.invalid".into()
+    }));
+}
