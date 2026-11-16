@@ -48,6 +48,7 @@ members = [
     "crates/url",
     "crates/discovery",
     "crates/net",
+    "crates/client",
     "crates/ui",
     "apps/commscraft",
     "apps/commscraft-cli",

@@ -202,8 +202,9 @@ fn contact_list_updates_keep_known_presence() {
     s.apply(AppEvent::Contacts(vec![c.clone()]));
     s.apply(AppEvent::Presence {
         uri: "sip:f@beispiel.invalid".into(),
-        presence: Presence::Busy,
+        presence: Some(Presence::Busy),
         note: "Termin".into(),
+        name: Some("Frieda".into()),
     });
     s.apply(AppEvent::Contacts(vec![c]));
     assert_eq!(

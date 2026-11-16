@@ -14,3 +14,8 @@ mod views;
 pub mod widgets;
 
 pub use app::{CommsUi, UiIntent};
+
+/// `name@domain` or `sip:name@domain` → `sip:name@domain` (the check of the sign-in form).
+pub fn normalise_address(text: &str) -> Option<String> {
+    views::chats::normalise_address(text)
+}

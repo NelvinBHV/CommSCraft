@@ -442,8 +442,11 @@ pub enum AppEvent {
     Contacts(Vec<Contact>),
     Presence {
         uri: String,
-        presence: Presence,
+        /// `None`: the notification carried no state (only a note or a name): keep the state.
+        presence: Option<Presence>,
         note: String,
+        /// The display name the contact publishes (fills an empty name of the contact list).
+        name: Option<String>,
     },
     /// Results of a directory or address book search (shown separately, not kept as contacts).
     SearchResults(Vec<Contact>),
@@ -774,13 +777,29 @@ impl AppState {
                 uri,
                 presence,
                 note,
+                name,
             } => {
                 if let Some(c) = self.contacts.get_mut(&uri) {
-                    c.presence = presence;
+                    if let Some(p) = presence {
+                        c.presence = p;
+                    }
                     c.note = clean(&note, 1024, false);
+                    if let Some(n) = name.filter(|n| !n.trim().is_empty()) {
+                        if c.name.trim().is_empty() {
+                            c.name = label(&n);
+                            // Conversations titled with the bare address take the name.
+                            let bare = uri.strip_prefix("sip:").unwrap_or(&uri).to_string();
+                            for conv in &mut self.conversations {
+                                if conv.peer.as_deref() == Some(uri.as_str()) && conv.title == bare
+                                {
+                                    conv.title = label(&n);
+                                }
+                            }
+                        }
+                    }
                 }
-                if uri == self.me.uri {
-                    self.me.presence = presence;
+                if let (true, Some(p)) = (uri == self.me.uri, presence) {
+                    self.me.presence = p;
                 }
             }
             AppEvent::SearchResults(r) => {

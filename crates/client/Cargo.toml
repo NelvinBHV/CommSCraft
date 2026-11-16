@@ -1,0 +1,27 @@
+[package]
+name = "commscraft-client"
+description = "Shared client runtime of the command-line tool and the desktop client: discovery with the trust model, the endpoint ID, the media thread of a call, ringing and music on hold"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-audio-alsa = { path = "../audio-alsa" }
+commscraft-avedgea = { path = "../avedgea" }
+commscraft-call-media = { path = "../call-media" }
+commscraft-discovery = { path = "../discovery" }
+commscraft-media = { path = "../media" }
+commscraft-net = { path = "../net" }
+commscraft-provisioning = { path = "../provisioning" }
+commscraft-register = { path = "../register" }
+commscraft-qoe = { path = "../qoe" }
+commscraft-sdp = { path = "../sdp" }
+commscraft-tones = { path = "../tones" }
+commscraft-turn-bwm = { path = "../turn-bwm" }
+commscraft-url = { path = "../url" }
+zeroize.workspace = true
+
+[lints]
+workspace = true
