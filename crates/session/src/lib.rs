@@ -1885,7 +1885,7 @@ impl<R: Random> Engine<R> {
             }
             Command::StartGroup { invite } => self.start_group(&invite, now, &mut out),
             Command::InviteToGroup { conversation, to } => {
-                self.dial_out(conversation, &to, now, &mut out)
+                self.invite_participant(conversation, &to, now, &mut out)
             }
             Command::JoinConference { focus } => self.join_conference(&focus, now, &mut out),
             Command::ScheduleMeeting {
@@ -2744,9 +2744,16 @@ impl<R: Random> Engine<R> {
                 conversation: id,
                 status: code,
             })),
-            // The dial-out of the same invitee reports the outcome; a client that takes no
-            // invitation answers it with an error and is reached that way.
-            Purpose::ConfInvitation => {}
+            // The invitation is the only way we invite (CI-30): its failure is the invitee's.
+            Purpose::ConfInvitation => {
+                let invitee = match &p.request.start {
+                    commscraft_sip_msg::StartLine::Request { uri, .. } => uri.clone(),
+                    _ => String::new(),
+                };
+                out.push(Output::Event(Event::Notice(format!(
+                    "invitation of {invitee} failed ({code})"
+                ))));
+            }
             // An optional report that timed out is not repeated.
             Purpose::ReportError => {}
             Purpose::Ignore => {}

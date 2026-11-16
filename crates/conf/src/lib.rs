@@ -137,7 +137,13 @@ impl McuType {
 
 /// addConference to the focus factory for an ad-hoc conference (PV-02, PV-03, PV-06, PV-12;
 /// [MS-CONFPRO] §4.1, p. 41): the given MCU types (each at most once, at least one), admission
-/// policy `openAuthenticated` as in the example.
+/// policy `openAuthenticated` as in the example. Authenticated users of the organization are
+/// promoted to presenters on joining (`autopromote` 0x8000, [MS-CONFPRO] 20250520 §2.2.1.2,
+/// p. 15): without it the default is nobody, and an invited Windows client offers no screen or
+/// window sharing in the conversation, since only presenters share (`tested-in-lab`). The
+/// example promotes everyone; we stay with the organization (design), the organizer can widen
+/// it with the meeting options. The element follows two separators ([MS-CONFBAS] 20250520
+/// §6.3.1, p. 202).
 pub fn add_conference(
     request_id: u32,
     organizer: &str,
@@ -168,7 +174,7 @@ pub fn add_conference(
         organizer,
         focus_factory,
         &format!(
-            "<addConference><ci:conference-info xmlns:ci=\"{NS_CI}\" entity=\"\" xmlns:msci=\"{NS_MSCI}\"><ci:conference-description><msci:conference-id>{conference_id}</msci:conference-id><msci:admission-policy>openAuthenticated</msci:admission-policy></ci:conference-description><msci:conference-view>{views}</msci:conference-view></ci:conference-info></addConference>"
+            "<addConference><ci:conference-info xmlns:ci=\"{NS_CI}\" entity=\"\" xmlns:msci=\"{NS_MSCI}\"><ci:conference-description><msci:conference-id>{conference_id}</msci:conference-id><msci:admission-policy>openAuthenticated</msci:admission-policy><cis:separator xmlns:cis=\"{NS_SEPARATOR}\"/><cis:separator xmlns:cis=\"{NS_SEPARATOR}\"/><msci:autopromote>{AUTOPROMOTE_COMPANY}</msci:autopromote></ci:conference-description><msci:conference-view>{views}</msci:conference-view></ci:conference-info></addConference>"
         ),
     )
 }

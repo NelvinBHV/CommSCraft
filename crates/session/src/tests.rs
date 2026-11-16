@@ -756,15 +756,12 @@ fn group_conversation_flow() {
         panic!()
     };
     assert_eq!(peer, FOCUS);
-    let dial_out = find(&out, "INFO");
-    assert_eq!(
-        dial_out.call_id().unwrap(),
-        focus_invite.call_id().unwrap(),
-        "in the focus dialog"
+    // No dial-out of the IM MCU: the Windows client rejects it once it has the invitation.
+    assert!(
+        !sends(&out).iter().any(|m| m.method() == Some("INFO")),
+        "no addUser dial-out"
     );
-    let b = String::from_utf8(dial_out.body.clone()).unwrap();
-    assert!(b.contains("sip:bob@contoso.com") && b.contains("dialed-out") && b.contains(CHAT));
-    // CI-30: and the invitation to bob himself, naming the focus; accepted, it is acknowledged
+    // CI-30: the invitation to bob himself, naming the focus; accepted, it is acknowledged
     // and ended at once.
     let invitation = sends(&out)
         .into_iter()
@@ -791,9 +788,22 @@ fn group_conversation_flow() {
         .collect();
     assert_eq!(acked, ["ACK", "BYE"]);
     assert!(events(&accepted).is_empty());
-    assert!(
-        events(&e.on_message(&answer(&mut server, &dial_out, 202, None, "", &[]), NOW)).is_empty()
+    // An invitation the invitee refuses is reported with its status.
+    let out = e.command(
+        Command::InviteToGroup {
+            conversation,
+            to: "sip:carol@contoso.com".into(),
+        },
+        NOW,
     );
+    let carol = find(&out, "INVITE");
+    assert_eq!(
+        carol.single("Content-Type").unwrap(),
+        Some("application/ms-conf-invite+xml")
+    );
+    let refused = e.on_message(&answer(&mut server, &carol, 603, None, "", &[]), NOW);
+    assert!(events(&refused).iter().any(|ev| matches!(ev,
+        Event::Notice(n) if n == "invitation of sip:carol@contoso.com failed (603)")));
     // The final C3P answer as INFO of the focus: failure is reported.
     let fail = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" xmlns:ci="urn:ietf:params:xml:ns:conference-info" requestId="3" C3PVersion="1" code="failure" reason="userDoesntExist"><addUser><ci:user entity="sip:bob@contoso.com"/></addUser></response>"#;
     let info = peer_request(
@@ -5255,7 +5265,7 @@ a=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\n"
     assert!(events(&out).iter().any(|ev| matches!(ev,
         Event::ScreenRdp { call: c, rdp, controlling: true } if *c == call && rdp.remote_rtp.1 == 5000)));
     // The final offer after ICE: the RDP offer with the remote candidate.
-    let mut fin = local;
+    let mut fin = local.clone();
     fin.remote_candidates = vec![(1, "192.0.2.20:5000".parse().unwrap())];
     let out = e.command(
         Command::UpdateCall {
@@ -5272,11 +5282,31 @@ a=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\n"
         "{body}"
     );
     assert!(!body.contains("m=audio"));
-    // Leaving the conversation ends the viewing call.
+    // Once the viewing call has ended, the conference can be viewed again (the conference
+    // kept the ended call and answered "already viewing", `tested-in-lab`).
+    let out = e.command(Command::Hangup { call }, NOW);
+    assert!(sends(&out).iter().any(|m| m.method() == Some("BYE")));
+    let out = e.command(
+        Command::ViewConferenceRdp {
+            conversation,
+            local: Box::new(local),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    assert!(!events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::Notice(n) if n == "already viewing")));
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::ConferenceScreen { call: c, .. } if *c != call)));
+    // Leaving the conversation ends the new viewing call, still unanswered.
     let out = e.command(Command::EndConversation { conversation }, NOW);
-    assert!(sends(&out).iter().any(|m| m.method() == Some("BYE")
-        && m.single("To")
-            .ok()
-            .flatten()
-            .is_some_and(|t| t.contains("applicationsharing"))));
+    assert!(sends(&out)
+        .iter()
+        .any(|m| matches!(m.method(), Some("BYE" | "CANCEL"))
+            && m.single("To")
+                .ok()
+                .flatten()
+                .is_some_and(|t| t.contains("applicationsharing"))));
 }
