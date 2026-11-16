@@ -331,8 +331,7 @@ fn a_connected_call_can_be_transferred() {
     h.run();
     let confirm = h
         .query_all_by_label("Übertragen")
-        .filter(|n| n.accesskit_node().role() == egui::accesskit::Role::Button)
-        .next_back()
+        .rfind(|n| n.accesskit_node().role() == egui::accesskit::Role::Button)
         .expect("the confirm button");
     confirm.click();
     h.run();
