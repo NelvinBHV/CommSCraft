@@ -1089,10 +1089,6 @@ fn im_actions(
     Ok(())
 }
 
-/// A SOAP call to the MS-DLX service (OB-44): the endpoint comes from in-band provisioning; only
-/// hosts in the user's SIP domain or a trusted domain get credentials. NTLM over HTTP per MS-NTHT
-/// (NEGOTIATE in the first request, AUTHENTICATE after the 401 with the CHALLENGE, all on one
-/// connection). Blocks the loop for at most the HTTP timeout. Returns status and body text.
 /// A POST with NTLM per MS-NTHT on one connection (see `commscraft_client::directory`).
 fn ntlm_post(
     engine: &mut commscraft_session::Engine<OsRandom>,

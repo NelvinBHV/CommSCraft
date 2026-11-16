@@ -277,6 +277,7 @@ texts! {
     sign_in_server: "Server (optional)", "Server (optional)";
     sign_in_server_hint: "host:port – leer: automatisch suchen", "host:port – empty: find automatically";
     sign_in: "Anmelden", "Sign in";
+    sign_in_again: "Neu anmelden", "Sign in again";
     signing_in: "Anmeldung läuft …", "Signing in …";
     start_demo: "Demo ansehen", "View demo";
     start_demo_tip: "Oberfläche mit erfundenen Daten, ohne Server", "The interface with made-up data, without a server";

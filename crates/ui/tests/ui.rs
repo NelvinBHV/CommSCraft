@@ -254,3 +254,49 @@ fn english_texts_render() {
     assert!(h.query_by_label("Contacts").is_some());
     assert!(h.query_by_label_contains("DEMO · Not connected").is_some());
 }
+
+#[test]
+fn a_failed_sign_in_says_why() {
+    let mut ui = CommsUi::new(Lang::De, 0);
+    ui.state.apply(AppEvent::Connection(Connection::Failed(
+        "no server reachable".into(),
+    )));
+    let mut h = harness(ui, (1280.0, 800.0));
+    h.run();
+    assert!(h
+        .query_by_label_contains("Anmeldung fehlgeschlagen: no server reachable")
+        .is_some());
+    // Still the sign-in form, no conversation view behind it.
+    assert!(h.query_by_label("Nachrichten").is_none());
+}
+
+#[test]
+fn empty_and_offline_states_have_words() {
+    let mut ui = CommsUi::new(Lang::De, 0);
+    ui.state.apply(AppEvent::Connection(Connection::Connected));
+    ui.set_view(View::Contacts);
+    let mut h = harness(ui, (1440.0, 900.0));
+    h.run();
+    assert!(h.query_by_label("Die Kontaktliste ist leer.").is_some());
+    h.state_mut()
+        .ui
+        .state
+        .apply(AppEvent::Connection(Connection::Disconnected("TLS".into())));
+    h.run();
+    assert!(h
+        .query_by_label_contains("Verbindung getrennt – TLS")
+        .is_some());
+    // The way back is offered.
+    button(&h, "Neu anmelden").click();
+    h.run();
+    assert!(h.state().intents.contains(&UiIntent::SignOut));
+}
+
+#[test]
+fn double_scale_still_lays_out() {
+    let mut ui = demo_ui(Lang::De);
+    ui.prefs.scale = 2.0;
+    let mut h = harness(ui, (1440.0, 900.0));
+    h.run();
+    assert!(h.query_by_label("Chats").is_some());
+}
