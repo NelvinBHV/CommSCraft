@@ -90,6 +90,8 @@ pub struct SignIn {
     pub server: String,
     /// Try Kerberos first (the system's ticket cache, else the password), NTLM as fallback.
     pub kerberos: bool,
+    /// Sign in with TLS-DSK (a user certificate, got once with the password).
+    pub tls_dsk: bool,
 }
 
 impl std::fmt::Debug for SignIn {
@@ -101,6 +103,7 @@ impl std::fmt::Debug for SignIn {
             .field("password", &"<hidden>")
             .field("server", &self.server)
             .field("kerberos", &self.kerberos)
+            .field("tls_dsk", &self.tls_dsk)
             .finish()
     }
 }

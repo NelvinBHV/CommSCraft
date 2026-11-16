@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (desktop client: trust dialog)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (desktop client: TLS-DSK; Kerberos option wired)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **641 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **642 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-16 | Desktop client: TLS-DSK sign-in (user certificate from the certificate service, then the TLS-DSK handshake; `tested-in-lab`, also from the stored certificate), the provisioning code shared with the CLI (`client::tlsdsk`); the Kerberos option of the sign-in is now wired to the registrar (it had no effect before; its NTLM fallback with the reason is `tested-in-lab`). |
 | 2026-11-16 | Desktop client: the trust dialog for a server outside the SIP domain that Autodiscover names (explicit yes, remembered in `trusted-domains`; tested offline). |
 | 2026-11-16 | Desktop client: blind transfer from the call screen (`tested-in-lab`: REFER accepted, the target rings) and Kerberos as a sign-in option (ticket cache, else the password; NTLM fallback). |
 | 2026-11-16 | Desktop interface phase 4 (QA): checked against the owner's specification and acceptance checklist (report in `docs/ui/README.md`); answering incoming calls now `tested-in-lab`; "sign in again" after a lost connection; tests for failed sign-in, empty and offline states and 200 % scale. |

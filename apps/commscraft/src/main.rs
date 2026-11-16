@@ -27,7 +27,7 @@ const USAGE: &str =
     "usage: commscraft [--demo] [--lang de|en] [--view chats|contacts|calls|meetings|settings]
                   [--size WIDTHxHEIGHT] [--screenshot FILE.png] [--screenshot-after SECONDS]
                   [--ca-file PEM] [--commands FILE]
-                  [--sign-in sip:ADDRESS --user USER [--domain DOMAIN] [--server HOST:PORT] [--kerberos]]
+                  [--sign-in sip:ADDRESS --user USER [--domain DOMAIN] [--server HOST:PORT] [--kerberos] [--tls-dsk]]
   --ca-file    adds an enterprise CA to the system trust store (never replaces the checks)
   --sign-in    signs in at start; the password is the first line of standard input
   --commands   follows FILE for test commands (see the documentation in docs/ui/README.md)";
@@ -107,6 +107,7 @@ fn parse_args() -> Result<Args, String> {
             "--domain" => form.domain = it.next().ok_or(USAGE)?,
             "--server" => form.server = it.next().ok_or(USAGE)?,
             "--kerberos" => form.kerberos = true,
+            "--tls-dsk" => form.tls_dsk = true,
             "-h" | "--help" => return Err(USAGE.into()),
             other => return Err(format!("unknown argument {other}\n{USAGE}")),
         }

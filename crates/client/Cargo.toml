@@ -15,6 +15,9 @@ commscraft-discovery = { path = "../discovery" }
 commscraft-dlx = { path = "../dlx" }
 commscraft-ntlm = { path = "../ntlm" }
 commscraft-sipae = { path = "../sipae" }
+commscraft-ocauthws = { path = "../ocauthws" }
+commscraft-sip-identity = { path = "../sip-identity" }
+commscraft-tlsdsk = { path = "../tlsdsk" }
 commscraft-media = { path = "../media" }
 commscraft-net = { path = "../net" }
 commscraft-provisioning = { path = "../provisioning" }

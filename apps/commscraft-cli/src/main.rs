@@ -2068,27 +2068,16 @@ fn lis_city(
 /// The interactive mode on top of the session engine. Lines from the terminal arrive through a
 /// thread and a channel; network input and the clock are handled in this loop. Everything shown
 /// comes from the engine's checked events (control characters already removed).
-/// Where the TLS-DSK identity of an account is kept: `$XDG_DATA_HOME/commscraft/tlsdsk/ACCOUNT`
-/// (directory 0700, files 0600; the account name encoded one-to-one).
+/// Where the TLS-DSK identity of an account is kept (see `commscraft_client::tlsdsk`).
 fn tls_dsk_dir(aor: &str) -> Option<PathBuf> {
-    let base = std::env::var_os("XDG_DATA_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))?;
-    Some(
-        base.join("commscraft")
-            .join("tlsdsk")
-            .join(cache_name(aor.trim_start_matches("sip:"))?),
-    )
+    commscraft_client::tlsdsk::identity_dir(aor)
 }
 
 /// The NTLM AUTHENTICATE for an HTTP challenge: (NEGOTIATE, CHALLENGE, server certificate).
 type NtlmAnswer<'a> = dyn FnMut(&[u8], &[u8], Option<&[u8]>) -> Result<Vec<u8>, String> + 'a;
 
-/// Function 6: the user certificate from the certificate provisioning service ([MS-OCAUTHWS]
-/// GetAndPublishCert, AW-10 … AW-15) – a new RSA key and PKCS#10 request, sent with NTLM to the
-/// service's Windows-authentication binding at `sts_uri` (only a host in the user's SIP domain
-/// or a trusted domain gets credentials); the issued certificate must carry the new key and is
-/// stored with it in `dir`. The device ID is the endpoint's `+sip.instance` (AW-14).
+/// Function 6: the user certificate from the certificate provisioning service (see
+/// `commscraft_client::tlsdsk::provision_certificate`).
 #[allow(clippy::too_many_arguments)]
 fn provision_certificate(
     tls: &TlsClient,
@@ -2100,87 +2089,29 @@ fn provision_certificate(
     ntlm: &mut NtlmAnswer<'_>,
     verbose: bool,
 ) -> Result<(), String> {
-    use commscraft_sipae::base64;
-    let url = commscraft_url::parse_https(sts_uri).ok_or("unusable certificate service URL")?;
-    let domain = aor.rsplit('@').next().unwrap_or_default();
-    if !commscraft_url::in_domain(&url.host, domain) && !trust.trusts(&url.host) {
-        return Err(format!(
-            "{} is outside your SIP domain; add --trust-domain to use it",
-            url.host
-        ));
-    }
-    let device = commscraft_sip_identity::instance_uuid_from_epid(epid)
-        .map_err(|_| "no device ID".to_string())?;
-    let mut id = [0u8; 16];
-    commscraft_register::Random::fill(&mut OsRandom, &mut id);
-    let request_id = format!(
-        "{}-{}-{}-{}-{}",
-        hex_of(&id[..4]),
-        hex_of(&id[4..6]),
-        hex_of(&id[6..8]),
-        hex_of(&id[8..10]),
-        hex_of(&id[10..])
-    );
-    let entity = aor.trim_start_matches("sip:");
-    println!(
-        "* getting a user certificate for TLS-DSK (RSA {} bits) …",
-        commscraft_tlsdsk::KEY_BITS
-    );
-    let request = commscraft_tlsdsk::Request::generate(entity).map_err(|e| format!("{e:?}"))?;
-    let body = commscraft_ocauthws::certificate_request(aor, &device, &request.csr, &request_id)
-        .map_err(|e| format!("{e:?}"))?;
-    if verbose {
-        println!("  POST {sts_uri} (GetAndPublishCert)");
-    }
-    let negotiate =
-        commscraft_ntlm::messages::negotiate_message(commscraft_ntlm::messages::HTTP_NEGOTIATE);
-    let mut auth_err: Option<String> = None;
-    let r = commscraft_net::http::post_with_auth(
-        tls,
-        &url,
-        &[
-            ("Content-Type", commscraft_ocauthws::CONTENT_TYPE),
-            ("SOAPAction", commscraft_ocauthws::SOAP_ACTION),
-        ],
-        body.as_bytes(),
-        &user_agent(),
-        Duration::from_secs(30),
-        &mut |challenge, cert| match challenge {
-            None => Ok(format!("NTLM {}", base64::encode(&negotiate))),
-            Some(ch) => {
-                let token = ch
-                    .strip_prefix("NTLM ")
-                    .and_then(|b| base64::decode(b.trim()).ok());
-                match token
-                    .ok_or_else(|| "no NTLM challenge".to_string())
-                    .and_then(|t| ntlm(&negotiate, &t, cert))
-                {
-                    Ok(a) => Ok(format!("NTLM {}", base64::encode(&a))),
-                    Err(e) => {
-                        auth_err = Some(e);
-                        Err(commscraft_net::NetError::Io(std::io::Error::other("NTLM")))
-                    }
+    let mut log = |l: &str| {
+        if verbose || !l.starts_with(' ') {
+            println!(
+                "{}",
+                if l.starts_with(' ') {
+                    l.to_string()
+                } else {
+                    format!("* {l}")
                 }
-            }
-        },
-    )
-    .map_err(|e| auth_err.take().unwrap_or_else(|| e.to_string()))?;
-    if verbose {
-        println!("  HTTP {} ({} bytes)", r.status, r.body.len());
-        for (name, value) in r.headers.iter().filter(|(n, _)| n.starts_with("x-ms")) {
-            println!("    {name}: {}", term::clean(value));
+            );
         }
-    }
-    if r.status == 401 {
-        return Err("the certificate service refused the credentials (401)".into());
-    }
-    let text = String::from_utf8_lossy(&r.body);
-    let certificate = commscraft_ocauthws::parse_certificate_answer(&text, aor)
-        .map_err(|e| format!("certificate service: {e:?} (HTTP {})", r.status))?;
-    let identity =
-        commscraft_tlsdsk::Identity::new(request, certificate).map_err(|e| format!("{e:?}"))?;
-    identity.store(dir).map_err(|e| format!("{e:?}"))?;
-    let days = identity.remaining().unwrap_or(0) / 86_400;
+    };
+    let days = commscraft_client::tlsdsk::provision_certificate(
+        tls,
+        trust,
+        sts_uri,
+        aor,
+        epid,
+        dir,
+        &user_agent(),
+        ntlm,
+        &mut log,
+    )?;
     println!("* user certificate received (valid for {days} more days)");
     Ok(())
 }

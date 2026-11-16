@@ -279,6 +279,8 @@ texts! {
     sign_in_server_hint: "host:port – leer: automatisch suchen", "host:port – empty: find automatically";
     sign_in: "Anmelden", "Sign in";
     sign_in_again: "Neu anmelden", "Sign in again";
+    sign_in_tls_dsk: "Mit Benutzerzertifikat (TLS-DSK)", "With a user certificate (TLS-DSK)";
+    sign_in_tls_dsk_tip: "Holt beim ersten Mal ein Zertifikat beim Zertifikatsdienst des Servers (mit dem Kennwort) und meldet sich danach damit an.", "Gets a certificate from the server's certificate service the first time (with the password) and signs in with it afterwards.";
     trust_title: "Server außerhalb Ihrer Domäne", "Server outside your domain";
     trust_no: "Nicht vertrauen", "Do not trust";
     sign_in_kerberos: "Kerberos versuchen (Windows-Domäne)", "Try Kerberos (Windows domain)";
