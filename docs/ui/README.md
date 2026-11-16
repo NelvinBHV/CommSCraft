@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-16 · **Last updated:** 2026-11-16 · **Change:** minor (desktop client: transfer, Kerberos)
+> **Last reviewed:** 2026-11-16 · **Last updated:** 2026-11-16 · **Change:** minor (desktop client: trust dialog)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -37,8 +37,9 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
 - **Sign-in:** Autodiscover and DNS SRV like the command-line tool (shared crate
   `commscraft-client`), NTLM with the password typed in the form, TLS always verified against the
   system trust store plus an optional `--ca-file`. A server outside the SIP domain is used only
-  when its domain is listed in `~/.config/commscraft/trusted-domains`; the desktop client never
-  asks in a dialog yet and says how to trust it. Kerberos can be tried first (a checkbox: the
+  when its domain is listed in `~/.config/commscraft/trusted-domains` or – for a server named by
+  Autodiscover over verified HTTPS – when the user trusts it in a dialog (an explicit yes; it is
+  then remembered there; no answer within two minutes or closing the dialog means no). Kerberos can be tried first (a checkbox: the
   system's ticket, else the password; NTLM stays the fallback); TLS-DSK is offered by the
   command-line tool only.
 - **Mapping:** engine events become typed `AppEvent`s (contacts, presence with the published
@@ -137,10 +138,10 @@ reference designs (1440 × 900), with screenshots of the real build (above).
 | Security | no secrets in logs (the trace prints method or status and CSeq only), the password leaves the form once and is cleared, no TLS bypass, no end-to-end claim (the privacy text says TLS and SRTP are not end-to-end encryption), no chat content on disk |
 | Accessibility | labels on all interactive elements (the tests use them); contrast tested; the Linux screen reader bridge is still missing (AccessKit's adapter on zbus 5 is listed as unmaintained) |
 
-Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): TLS-DSK sign-in, trusting a foreign server
-domain in a dialog, the screen reader bridge, and video, viewing shared screens, meeting content
-and persistent chat in the interface. Added after the QA: blind transfer (`tested-in-lab`) and
-Kerberos as an option of the sign-in (tested offline; the lab signs in with NTLM).
+Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): TLS-DSK sign-in, the screen reader bridge, and video, viewing shared screens, meeting content
+and persistent chat in the interface. Added after the QA: blind transfer (`tested-in-lab`),
+Kerberos as an option of the sign-in and the trust dialog for a foreign server domain (both
+tested offline; the lab signs in with NTLM and its servers are in its domain).
 
 ## Data and security
 
