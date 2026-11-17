@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: sign-in with address and password)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: contact photos)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **626 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **660 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-17 | Contact photos in the desktop client (`tested-in-lab`): the photo code of the CLI moved into the shared `client::photos`; the desktop client fetches photos in a thread of its own (NTLM through the session worker) and shows 96 × 96 thumbnails instead of initials; directory photo files are cached under one-to-one names too. |
 | 2026-11-17 | Desktop client: sign-in with the sign-in address and the password only (user name optional, the address as user principal name); with a stored TLS-DSK certificate or a Kerberos ticket without a password, and a clear request for the password when the certificate is missing or expired; no password is stored. |
 | 2026-11-17 | Desktop client: no telephony shown (owner's choice) – no phone tab, no keypad for numbers, no phones area in the options; calls to contacts and tones in a call stay. |
 | 2026-11-17 | Desktop client in the operating structure of the Windows client with an own look: a narrow main window (presence, note line, tabs for contacts, conversations, phone, meetings and rooms, options and main menu), conversations and calls in windows of their own (egui viewports), notifications for calls, invitations and messages, an options window with 13 areas wired to the local preferences, the contact card; own line icons; `--embed-windows` for screenshots (`tested-in-lab`: sign-in, a conversation window, a call window). |

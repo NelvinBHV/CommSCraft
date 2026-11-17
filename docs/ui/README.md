@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: sign-in with address and password; password only when needed)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: contact photos)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -75,6 +75,12 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
 - **Address book search:** MS-DLX through the shared `commscraft-client::directory` with the
   registrar's NTLM; asked once the search text has rested for 600 ms; results are shown with
   their source and are not kept as contacts.
+- **Contact photos:** a thread of its own fetches the photos of the user, the contacts, search
+  hits and conversation partners with the shared `commscraft-client::photos` (the address book's
+  photo; with the photo policy *all photos* first Exchange's), so SIP never waits for HTTP; the
+  NTLM step comes from the session worker over a channel. The photo is decoded there in pure Rust
+  (JPEG with zune-jpeg, PNG; at most 1024 pixels a side) into a 96 × 96 thumbnail. *Options →
+  personal → show pictures of contacts* switches them off. `tested-in-lab`.
 - **Persistent chat rooms:** offered only when provisioning names a persistent chat pool
   (otherwise *unavailable: disabled by the server*). *Rooms* in the chat list → *Load chat
   rooms* connects to the pool, lists the rooms the user is a member of, joins them and asks for
