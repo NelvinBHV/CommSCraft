@@ -693,6 +693,8 @@ pub enum AppEvent {
         session: u32,
         sharer: Option<String>,
     },
+    /// Calls can be rated (the server has a quality service).
+    QualityRating(bool),
     ConferenceCall {
         id: u32,
         session: u32,
@@ -860,6 +862,10 @@ pub struct AppState {
     /// The user's automatic reply while it is on.
     pub out_of_office: Option<String>,
     next_key: u64,
+    /// Calls can be rated (quality service of the server).
+    pub quality_rating: bool,
+    /// The ended call offered for rating: call ID and peer.
+    pub rate_call: Option<(u32, String)>,
 }
 
 impl Default for AppState {
@@ -881,6 +887,8 @@ impl Default for AppState {
             distribution: Vec::new(),
             groups: Vec::new(),
             subscribers: Vec::new(),
+            quality_rating: false,
+            rate_call: None,
             appointments: None,
             out_of_office: None,
             next_key: 1,
@@ -1067,6 +1075,10 @@ impl AppState {
             seconds,
             status,
         };
+        // A connected call (not a meeting's audio) may be rated afterwards.
+        if self.quality_rating && seconds > 0 && c.conference.is_none() {
+            self.rate_call = Some((id, c.peer.clone()));
+        }
         self.calls.retain(|c| c.id != id);
         self.call_history.push_front(record);
         self.call_history.truncate(MAX_CALL_HISTORY);
@@ -1436,6 +1448,7 @@ impl AppState {
                 }
             }
             AppEvent::MeetingCancelled(id) => self.meetings.retain(|m| m.conference_id != id),
+            AppEvent::QualityRating(on) => self.quality_rating = on,
             AppEvent::ConferenceSharing { session, sharer } => {
                 if let Some(c) = self.by_session(session) {
                     c.sharer = sharer.map(|s| label(&s));

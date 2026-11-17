@@ -19,6 +19,8 @@ pub enum Icon {
     ChevronDown,
     ChevronRight,
     Speaker,
+    /// A five-pointed star (call rating).
+    Star,
 }
 
 /// Draws an icon into `rect` (square-ish) with a 1.6 px line.
@@ -67,6 +69,17 @@ pub fn draw(p: &Painter, rect: Rect, icon: Icon, colour: Color32) {
                 );
             }
             p.circle_stroke(c, r * 0.62, s);
+        }
+        Icon::Star => {
+            // Ten points, alternating outer and inner radius, starting at the top.
+            let pts: Vec<Pos2> = (0..10)
+                .map(|i| {
+                    let k = if i % 2 == 0 { 0.9 } else { 0.38 };
+                    let a = std::f32::consts::PI * (i as f32) / 5.0 - std::f32::consts::FRAC_PI_2;
+                    at(k * a.cos(), k * a.sin())
+                })
+                .collect();
+            p.add(egui::Shape::closed_line(pts, s));
         }
         Icon::Chat => {
             let body = Rect::from_min_max(at(-0.8, -0.65), at(0.8, 0.4));

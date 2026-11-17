@@ -294,6 +294,8 @@ fn a_connected_call_can_be_transferred_from_its_window() {
     h.run();
     button(&h, "Übertragen").click();
     h.run();
+    h.get_by_label("An eine Person …").click();
+    h.run();
     assert!(h.query_by_label_contains("Anruf übertragen").is_some());
 }
 
@@ -820,4 +822,69 @@ fn a_shared_screen_in_a_meeting_is_offered_for_viewing() {
     });
     h.run();
     assert!(h.query_by_label_contains("gibt frei").is_none());
+}
+
+#[test]
+fn an_ended_call_can_be_rated_when_the_server_has_a_quality_service() {
+    let mut ui = demo_quiet();
+    ui.state.apply(AppEvent::QualityRating(true));
+    ui.state.apply(AppEvent::CallStarted {
+        id: 5,
+        peer: "sip:anna@beispiel.invalid".into(),
+        incoming: false,
+        at: NOW - 60,
+    });
+    ui.state.apply(AppEvent::CallConnected {
+        id: 5,
+        at: NOW - 50,
+    });
+    ui.state.apply(AppEvent::CallEnded {
+        id: 5,
+        status: 200,
+        at: NOW,
+    });
+    let mut h = harness(ui, (420.0, 760.0));
+    h.run();
+    h.get_by_label("4 von 5").click();
+    h.run();
+    assert!(h
+        .state()
+        .intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::RateCall { id: 5, stars: 4 })));
+    assert!(h.state().ui.state.rate_call.is_none());
+}
+
+#[test]
+fn a_call_is_transferred_to_the_party_of_another_call() {
+    use commscraft_ui::model::CallState;
+    let mut ui = online();
+    for (id, peer) in [(1, "sip:anna@b.de"), (2, "sip:tim@b.de")] {
+        ui.state.apply(AppEvent::CallStarted {
+            id,
+            peer: peer.into(),
+            incoming: false,
+            at: NOW - 60,
+        });
+        ui.state.apply(AppEvent::CallConnected { id, at: NOW - 50 });
+    }
+    assert!(ui
+        .state
+        .calls
+        .iter()
+        .all(|c| matches!(c.state, CallState::Connected { .. })));
+    let mut h = harness(ui, BIG);
+    h.run();
+    h.run();
+    // Both call windows are open; the first one's transfer menu offers the other call.
+    // (Embedded windows overlap in tests: the top one, drawn last, takes the click.)
+    h.get_all_by_label("Übertragen").last().unwrap().click();
+    h.run();
+    h.get_by_label_contains("Mit Rückfrage an").click();
+    h.run();
+    assert!(h.state().intents.iter().any(|i| matches!(
+        i,
+        UiIntent::TransferToCall { id: 1, target: 2 }
+            | UiIntent::TransferToCall { id: 2, target: 1 }
+    )));
 }

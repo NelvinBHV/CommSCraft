@@ -429,6 +429,11 @@ texts! {
     meetings_hint: "Eine Besprechung links wählen oder mit „Jetzt besprechen“ eine Gruppe öffnen.", "Pick a meeting on the left or open a group with “Meet now”.";
     meet_now: "Jetzt besprechen", "Meet now";
     untitled_conferences: "Konferenzen ohne Betreff (aus Gruppenunterhaltungen) werden nicht aufgeführt.", "conferences without a subject (from group conversations) are not listed.";
+    transfer_to_person: "An eine Person …", "To a person …";
+    transfer_to_call: "Mit Rückfrage an", "Consulted, to";
+    rate_call_question: "Wie war die Qualität des Anrufs mit", "How was the quality of the call with";
+    stars: "von 5", "of 5";
+    not_now: "Nicht jetzt", "Not now";
     shares_screen: "gibt frei", "is sharing";
     view_shared: "Anzeigen", "View";
     join_meeting_video: "Der Besprechung mit Video beitreten", "Join the meeting with video";

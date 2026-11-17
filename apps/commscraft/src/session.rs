@@ -124,6 +124,16 @@ pub enum ToWorker {
     ResetStatus,
     /// Join a meeting by its https link.
     JoinMeetingLink(String),
+    /// Rate an ended call.
+    RateCall {
+        id: u32,
+        stars: u8,
+    },
+    /// Attended transfer to another call's party.
+    TransferToCall {
+        id: u32,
+        target: u32,
+    },
     /// Join the audio of a meeting (group conversation by session ID).
     JoinMeetingAudio {
         session: u32,
@@ -1995,6 +2005,21 @@ impl Session {
             }
             // Only asked during discovery; a late answer has nothing to decide.
             ToWorker::Trust(_) => Vec::new(),
+            ToWorker::RateCall { id, stars } => self.engine.command(
+                C::RateCall {
+                    call: id,
+                    stars,
+                    feedback: None,
+                },
+                t,
+            ),
+            ToWorker::TransferToCall { id, target } => self.engine.command(
+                C::Transfer {
+                    call: id,
+                    to: commscraft_session::TransferTarget::Call(target),
+                },
+                t,
+            ),
             ToWorker::Transfer { id, peer } => self.engine.command(
                 C::Transfer {
                     call: id,
@@ -2909,6 +2934,7 @@ impl Session {
             E::CallEarlyMediaEnded { call } => self.to_media(call, calls::ToMedia::EndEarly),
             E::CallUpdated { call, media } => self.to_media(call, calls::ToMedia::Update(media)),
             E::CallEnded { call, status } => {
+                out.event(AppEvent::QualityRating(self.engine.quality_service()));
                 self.cues.stop_ring(call);
                 self.stop_video(call);
                 if let Some(id) = self.media_of_call.remove(&call) {
