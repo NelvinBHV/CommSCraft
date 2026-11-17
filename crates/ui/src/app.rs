@@ -102,6 +102,10 @@ pub enum UiIntent {
     JoinMeetingLink {
         link: String,
     },
+    /// Join the audio of the meeting of this group conversation.
+    JoinMeetingAudio {
+        key: ConvKey,
+    },
     /// A presenter's command in the meeting of this conversation.
     ConferenceCommand {
         key: ConvKey,

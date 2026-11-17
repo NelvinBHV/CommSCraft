@@ -190,6 +190,12 @@ pub fn run(app: &mut DesktopApp, line: &str) {
             conference_id: arg.trim().to_string(),
         }),
         "meetings" => app.handle(UiIntent::RefreshMeetings),
+        // `meetingaudio`: join the audio of the selected meeting
+        "meetingaudio" => {
+            if let Some(key) = app.ui.selected_conversation() {
+                app.handle(UiIntent::JoinMeetingAudio { key })
+            }
+        }
         // `joinlink https://…`
         "joinlink" => app.handle(UiIntent::JoinMeetingLink {
             link: arg.trim().to_string(),

@@ -213,14 +213,22 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                         app.call(p, true);
                     }
                 }
-                let call_gate = if peer.is_some() && idle {
+                // A person: a call; a meeting (group conversation): join its audio.
+                let meeting = peer.is_none() && c.is_group() && c.state == ConvState::Open;
+                let call_gate = if (peer.is_some() || meeting) && idle {
                     caps.audio_call.clone()
                 } else {
                     Gate::Unavailable(crate::model::Reason::NotImplemented)
                 };
-                if bar_button(ui, t, pal, Icon::Phone, t.call, &call_gate, false).clicked() {
-                    if let Some(p) = &peer {
-                        app.call(p, false);
+                let label = if meeting {
+                    t.join_meeting_audio
+                } else {
+                    t.call
+                };
+                if bar_button(ui, t, pal, Icon::Phone, label, &call_gate, false).clicked() {
+                    match &peer {
+                        Some(p) => app.call(p, false),
+                        None => app.emit(UiIntent::JoinMeetingAudio { key }),
                     }
                 }
                 let present =
@@ -507,7 +515,11 @@ fn call(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, id: u32) {
     };
     let caps = app.state.capabilities.clone();
     let connected = matches!(call.state, CallState::Connected { .. });
-    let name = app.state.name_of(&call.peer);
+    // The audio of a meeting is named like its conversation.
+    let name = match call.conference.and_then(|k| app.state.conversation(k)) {
+        Some(c) => c.title.clone(),
+        None => app.state.name_of(&call.peer),
+    };
     egui::CentralPanel::default()
         .frame(
             Frame::new()
@@ -613,25 +625,29 @@ fn controls(
                     muted: !call.muted,
                 });
             }
-            if ui
-                .add_enabled(
-                    connected && caps.hold.usable(),
-                    egui::Button::new(if call.held { t.resume } else { t.hold })
-                        .selected(call.held),
-                )
-                .clicked()
+            // Holding and transferring belong to calls with a person, not to a meeting's audio.
+            let person = call.conference.is_none();
+            if person
+                && ui
+                    .add_enabled(
+                        connected && caps.hold.usable(),
+                        egui::Button::new(if call.held { t.resume } else { t.hold })
+                            .selected(call.held),
+                    )
+                    .clicked()
             {
                 app.emit(UiIntent::Hold {
                     id: call.id,
                     hold: !call.held,
                 });
             }
-            if ui
-                .add_enabled(
-                    connected && caps.transfer.usable(),
-                    egui::Button::new(t.transfer),
-                )
-                .clicked()
+            if person
+                && ui
+                    .add_enabled(
+                        connected && caps.transfer.usable(),
+                        egui::Button::new(t.transfer),
+                    )
+                    .clicked()
             {
                 app.new_chat = Some(NewChat {
                     text: String::new(),
