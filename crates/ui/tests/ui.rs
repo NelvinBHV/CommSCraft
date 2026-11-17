@@ -472,3 +472,30 @@ fn a_shared_screen_is_offered_for_viewing() {
     h.run();
     assert!(h.state().intents.contains(&UiIntent::ViewScreen { id: 4 }));
 }
+
+#[test]
+fn meeting_content_shows_polls_with_voting() {
+    let mut h = harness(demo_ui(Lang::De), (1440.0, 900.0));
+    h.run();
+    // The demo group is selected; its details offer the meeting content.
+    button(&h, "Inhalte anzeigen").click();
+    h.run();
+    assert!(h.query_by_label_contains("Welcher Termin passt?").is_some());
+    assert!(h
+        .query_by_label_contains("Präsentiert von: Anna Weber")
+        .is_some());
+    assert!(h.query_by_label_contains("4 Anmerkungen").is_some());
+    // Empty choices are no choice.
+    assert_eq!(h.query_all_by_label_contains(" · 0").count(), 0);
+    button(&h, "Mittwoch · 1").click();
+    h.run();
+    let key = h.state().ui.selected_conversation().unwrap();
+    assert!(h.state().intents.contains(&UiIntent::Vote {
+        key,
+        content: 2,
+        choice: 1
+    }));
+    button(&h, "Inhalte schließen").click();
+    h.run();
+    assert!(h.query_by_label("Inhalte anzeigen").is_some());
+}

@@ -9,7 +9,7 @@
 //! Calls go only to SIP addresses chosen in the interface, never to phone numbers, so the
 //! emergency call path of the engine is not touched from here.
 
-use commscraft_client::{calls, cues, rdp_call, setup, video_call};
+use commscraft_client::{calls, cues, meeting_content, rdp_call, setup, video_call};
 use commscraft_net::{OsRandom, SipConnection, TlsClient};
 use commscraft_presence as pres;
 use commscraft_register::{Config as RegConfig, Password, Registrar};
@@ -94,6 +94,18 @@ pub enum ToWorker {
     /// View the screen or window someone shares (function 43).
     ViewScreen {
         id: u32,
+    },
+    /// The content of a meeting conversation (function 44).
+    JoinContent {
+        session: u32,
+    },
+    LeaveContent {
+        session: u32,
+    },
+    Vote {
+        session: u32,
+        content: i64,
+        choice: i64,
     },
     /// Persistent chat: connect, list our rooms, join them.
     LoadRooms,
@@ -237,6 +249,7 @@ pub fn online_capabilities(rooms: bool) -> Capabilities {
         meetings: Gate::Available,
         file_transfer: none.clone(),
         rich_text: none.clone(),
+        meeting_content: Gate::Available,
         persistent_chat: if rooms {
             Gate::Available
         } else {
@@ -334,6 +347,9 @@ struct Session {
     /// Rooms whose history was asked for (once per room and sign-in).
     room_history: BTreeSet<String>,
     v: Videos,
+    content_tx: mpsc::Sender<meeting_content::FromContent>,
+    /// Meeting content connections by conversation, with the users they named.
+    content: BTreeMap<u32, (meeting_content::ContentHandle, BTreeMap<i64, String>)>,
     tls: TlsClient,
     trust: setup::Trust,
 }
@@ -384,6 +400,20 @@ impl Videos {
             rdp_call_of: BTreeMap::new(),
             viewing: BTreeSet::new(),
         }
+    }
+}
+
+/// The slide number of a slide location (`<PptLocation><SlideNumber>…`, [MS-PSOM] §3.1.4.1.11,
+/// p. 41) as "slide N", else the text cut short.
+pub fn slide_of(location: &str) -> String {
+    let number = location
+        .split_once("SlideNumber>")
+        .and_then(|(_, rest)| rest.split_once('<'))
+        .map(|(n, _)| n.trim())
+        .filter(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_digit()));
+    match number {
+        Some(n) => format!("slide {n}"),
+        None => location.chars().take(60).collect(),
     }
 }
 
@@ -567,6 +597,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
     let (media_tx, media_rx) = mpsc::channel();
     let (video_tx, video_rx) = mpsc::channel();
     let (rdp_tx, rdp_rx) = mpsc::channel();
+    let (content_tx, content_rx) = mpsc::channel();
     let (cues, cue_notices) = cues::Cues::from_env();
     for n in cue_notices {
         out.notice(NoticeKind::Info, n);
@@ -594,6 +625,8 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         certificate_tried: false,
         room_history: BTreeSet::new(),
         v: Videos::new(video_tx, rdp_tx),
+        content_tx,
+        content: BTreeMap::new(),
         tls,
         trust,
     };
@@ -641,6 +674,9 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         }
         while let Ok(r) = rdp_rx.try_recv() {
             outputs.extend(s.rdp_event(r, out));
+        }
+        while let Ok(c) = content_rx.try_recv() {
+            s.content_event(c, out);
         }
         match s.conn.recv() {
             Ok(Some(m)) => {
@@ -988,6 +1024,105 @@ impl Session {
         for (_, h) in std::mem::take(&mut self.v.rdp) {
             let _ = h.tx.send(rdp_call::ToRdp::Stop);
         }
+        for (_, (h, _)) in std::mem::take(&mut self.content) {
+            let _ = h.tx.send(meeting_content::ToContent::Stop);
+        }
+    }
+
+    fn stop_content(&mut self, conversation: u32) {
+        if let Some((h, _)) = self.content.remove(&conversation) {
+            let _ = h.tx.send(meeting_content::ToContent::Stop);
+        }
+    }
+
+    /// What the meeting content reports, as changes for the interface.
+    fn content_event(&mut self, c: meeting_content::FromContent, out: &Out) {
+        use commscraft_psom::client::Event as P;
+        use commscraft_ui::content::{ContentChange as Ch, ContentKind};
+        let (session, e) = match c {
+            meeting_content::FromContent::Line(..) => return,
+            meeting_content::FromContent::Ended(session, reason) => {
+                self.content.remove(&session);
+                out.event(AppEvent::ContentEnded { session, reason });
+                return;
+            }
+            meeting_content::FromContent::Event(session, e) => (session, *e),
+        };
+        let Some((_, users)) = self.content.get_mut(&session) else {
+            return;
+        };
+        let change = match e {
+            P::Connected => Ch::Connected,
+            P::UsersAdded(list) => {
+                for (id, uri, name) in list {
+                    if users.len() < 2000 {
+                        users.insert(id, if name.is_empty() { uri } else { name });
+                    }
+                }
+                return;
+            }
+            P::UsersRemoved(ids) => {
+                for id in ids {
+                    users.remove(&id);
+                }
+                return;
+            }
+            P::ContentAdded { content, kind } => Ch::Added {
+                id: content,
+                kind: ContentKind::of(&kind),
+            },
+            P::ContentRemoved(id) => Ch::Removed(id),
+            P::Title { content, title } => Ch::Title { id: content, title },
+            P::ActiveContent(id) => Ch::Presented(id),
+            P::ActivePresenter(0) => Ch::Presenter(String::new()),
+            P::ActivePresenter(u) => {
+                Ch::Presenter(users.get(&u).cloned().unwrap_or_else(|| u.to_string()))
+            }
+            P::FileInfo {
+                content,
+                name,
+                size,
+            } => Ch::File {
+                id: content,
+                name,
+                size,
+            },
+            P::PollQuestion {
+                content,
+                question,
+                choices,
+            } => Ch::PollQuestion {
+                id: content,
+                question,
+                choices,
+            },
+            P::PollResults { content, results } => Ch::PollResults {
+                id: content,
+                results,
+            },
+            P::PollOpen { content, open } => Ch::PollOpen { id: content, open },
+            P::PollLocalVote { content, choice } => Ch::Voted {
+                id: content,
+                choice,
+            },
+            P::Annotations { content, count } => Ch::Annotations { id: content, count },
+            P::Slides { content, count } => Ch::Slides {
+                id: content,
+                count: usize::try_from(count).unwrap_or(0),
+            },
+            P::SlideLocation { content, location } => Ch::SlideAt {
+                id: content,
+                at: slide_of(&location),
+            },
+            P::Owner { .. }
+            | P::Presented { .. }
+            | P::Ready
+            | P::UrlBase(_)
+            | P::PollResultsVisible { .. }
+            | P::NotesTitles { .. }
+            | P::Closed(_) => return,
+        };
+        out.event(AppEvent::Content { session, change });
     }
 
     fn session_of(&self, key: ConvKey, session: Option<u32>) -> Option<u32> {
@@ -1156,6 +1291,32 @@ impl Session {
             ),
             ToWorker::Search { text } => {
                 self.search(&text, out);
+                Vec::new()
+            }
+            ToWorker::JoinContent { session } => self.engine.command(
+                C::ConferenceControl {
+                    conversation: session,
+                    action: commscraft_session::ConferenceAction::JoinContent,
+                },
+                t,
+            ),
+            ToWorker::LeaveContent { session } => {
+                self.stop_content(session);
+                out.event(AppEvent::ContentEnded {
+                    session,
+                    reason: "closed".into(),
+                });
+                Vec::new()
+            }
+            ToWorker::Vote {
+                session,
+                content,
+                choice,
+            } => {
+                if let Some((h, _)) = self.content.get(&session) {
+                    let _ =
+                        h.tx.send(meeting_content::ToContent::Vote { content, choice });
+                }
                 Vec::new()
             }
             ToWorker::LoadRooms => {
@@ -1567,7 +1728,24 @@ impl Session {
                 recipient,
                 status,
             }),
+            E::MeetingContent {
+                conversation,
+                connection,
+            } => {
+                self.stop_content(conversation);
+                out.event(AppEvent::ContentConnecting {
+                    session: conversation,
+                });
+                let h = meeting_content::spawn(
+                    conversation,
+                    connection,
+                    self.tls.clone(),
+                    self.content_tx.clone(),
+                );
+                self.content.insert(conversation, (h, BTreeMap::new()));
+            }
             E::ConversationEnded { conversation } => {
+                self.stop_content(conversation);
                 self.opened.remove(&conversation);
                 self.keys.retain(|_, v| *v != conversation);
                 out.event(AppEvent::ConversationEnded {
@@ -1621,6 +1799,13 @@ impl Session {
             }
             E::ConferenceInvitation { from, invitation } => {
                 self.cues.notify(now_ms());
+                out.notice(
+                    NoticeKind::Info,
+                    format!(
+                        "{} invites you to a meeting (Meetings)",
+                        from.trim_start_matches("sip:")
+                    ),
+                );
                 out.event(AppEvent::Invitation(commscraft_ui::model::Invitation {
                     from,
                     focus: invitation.focus,

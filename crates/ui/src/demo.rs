@@ -132,6 +132,7 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
             last_activity: last,
             demo: true,
             room: None,
+            content: None,
         });
         key
     };
@@ -426,6 +427,59 @@ pub fn handle(state: &mut AppState, intent: &UiIntent, now: u64, lang: Lang) {
                 "Demo: message shown, not sent",
             );
         }
+        UiIntent::JoinContent { key } => {
+            // Illustrative content: a whiteboard and an open poll (marked like all demo data).
+            use crate::content::{ContentChange as Ch, ContentKind, MeetingContent};
+            let mut m = MeetingContent::default();
+            for ch in [
+                Ch::Connected,
+                Ch::Added {
+                    id: 1,
+                    kind: ContentKind::Whiteboard,
+                },
+                Ch::Title {
+                    id: 1,
+                    title: if de { "Ideen" } else { "Ideas" }.into(),
+                },
+                Ch::Annotations { id: 1, count: 4 },
+                Ch::Added {
+                    id: 2,
+                    kind: ContentKind::Poll,
+                },
+                Ch::PollQuestion {
+                    id: 2,
+                    question: if de {
+                        "Welcher Termin passt?"
+                    } else {
+                        "Which date suits you?"
+                    }
+                    .into(),
+                    choices: vec!["Montag".into(), "Mittwoch".into(), String::new()],
+                },
+                Ch::PollResults {
+                    id: 2,
+                    results: vec![2, 1],
+                },
+                Ch::PollOpen { id: 2, open: true },
+                Ch::Presented(2),
+                Ch::Presenter("Anna Weber".into()),
+            ] {
+                m.apply(ch);
+            }
+            if let Some(c) = state.conversation_mut(*key) {
+                c.content = Some(m);
+            }
+        }
+        UiIntent::LeaveContent { key } => {
+            if let Some(c) = state.conversation_mut(*key) {
+                c.content = None;
+            }
+        }
+        UiIntent::Vote { .. } => notice(
+            state,
+            "Demo: Die Stimme wird nicht gesendet",
+            "Demo: the vote is not sent",
+        ),
         UiIntent::LoadRooms => notice(
             state,
             "Demo: Die Räume sind Beispieldaten – es gibt keinen Chat-Server",

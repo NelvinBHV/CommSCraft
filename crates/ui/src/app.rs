@@ -89,6 +89,19 @@ pub enum UiIntent {
     PrefsChanged,
     /// The answer to a trust question (true: trust the domain and remember it).
     AnswerTrust(bool),
+    /// The content of the meeting of this group conversation (function 44).
+    JoinContent {
+        key: ConvKey,
+    },
+    LeaveContent {
+        key: ConvKey,
+    },
+    /// A vote in a poll of the meeting content.
+    Vote {
+        key: ConvKey,
+        content: i64,
+        choice: i64,
+    },
     /// Persistent chat: connect to the chat server, list our rooms and join them.
     LoadRooms,
     /// A message to a persistent chat room.

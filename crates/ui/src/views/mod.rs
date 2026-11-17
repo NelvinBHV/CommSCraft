@@ -4,6 +4,7 @@
 pub mod calls;
 pub mod chats;
 pub mod contacts;
+pub mod content;
 pub mod meetings;
 pub mod search;
 pub mod settings;

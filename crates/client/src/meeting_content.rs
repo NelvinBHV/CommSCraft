@@ -14,9 +14,11 @@ pub enum ToContent {
     Stop,
 }
 
-/// Lines for the terminal, or the end of the connection.
+/// Lines for the terminal, the events themselves (for a graphical interface), or the end of the
+/// connection.
 pub enum FromContent {
     Line(u32, String),
+    Event(u32, Box<Event>),
     Ended(u32, String),
 }
 
@@ -248,6 +250,7 @@ fn run(
                 .map_err(|e| format!("protocol error ({e:?})"))?;
             let closed = events.iter().any(|e| matches!(e, Event::Closed(_)));
             for e in events {
+                let _ = out.send(FromContent::Event(conversation, Box::new(e.clone())));
                 if let Some(line) = shown.line(e) {
                     let _ = out.send(FromContent::Line(conversation, line));
                 }

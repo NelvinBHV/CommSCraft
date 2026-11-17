@@ -907,6 +907,9 @@ pub fn context(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             ui.label(RichText::new(t.more_members(c.participants.len() - 50)).color(pal.muted));
         }
         ui.add_space(14.0);
+        if c.is_group() && c.state == ConvState::Open {
+            crate::views::content::block(app, ui, pal, c.key);
+        }
     } else if let Some(k) = c.peer.as_ref().and_then(|p| app.state.contacts.get(p)) {
         let mut parts = Vec::new();
         for v in [&k.title, &k.department, &k.company] {

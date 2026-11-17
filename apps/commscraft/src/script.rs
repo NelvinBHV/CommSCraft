@@ -4,9 +4,10 @@
 //!
 //! `view chats|contacts|calls|meetings|settings` · `chat sip:ADDRESS` · `select TEXT|group` ·
 //! `search TEXT` ·
-//! `send TEXT` (to the selected conversation) · `group sip:ADDRESS` · `accept` (the first invitation) ·
+//! `send TEXT` (to the selected conversation) · `group sip:ADDRESS` · `accept [N]` (the first invitation, or invitation N from 0) ·
 //! `call sip:ADDRESS` · `videocall sip:ADDRESS` · `transfer sip:ADDRESS` · `answer` · `answervideo` ·
 //! `viewscreen` · `hangup` · `hold` · `resume` · `mute` · `unmute` ·
+//! `content` · `vote CONTENT CHOICE` ·
 //! `status available|busy|dnd|away` · `shot FILE.png` · `quit` (signs out and closes).
 
 use crate::{now, DesktopApp};
@@ -104,7 +105,27 @@ pub fn run(app: &mut DesktopApp, line: &str) {
         "group" => app.handle(UiIntent::StartGroup {
             invite: vec![arg.to_string()],
         }),
-        "accept" => app.handle(UiIntent::AcceptInvitation { index: 0 }),
+        "accept" => app.handle(UiIntent::AcceptInvitation {
+            index: arg.parse().unwrap_or(0),
+        }),
+        // The content of the selected meeting conversation; `vote CONTENT CHOICE` in its polls.
+        "content" => {
+            if let Some(key) = app.ui.selected_conversation() {
+                app.handle(UiIntent::JoinContent { key })
+            }
+        }
+        "vote" => {
+            let mut w = arg.split_whitespace().map(|x| x.parse::<i64>().ok());
+            if let (Some(key), Some(Some(content)), Some(Some(choice))) =
+                (app.ui.selected_conversation(), w.next(), w.next())
+            {
+                app.handle(UiIntent::Vote {
+                    key,
+                    content,
+                    choice,
+                })
+            }
+        }
         "call" => {
             app.ui.set_view(View::Calls);
             app.handle(UiIntent::CallUser {

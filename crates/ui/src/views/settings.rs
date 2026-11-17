@@ -84,7 +84,7 @@ pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     );
                     ui.label(RichText::new(t.capabilities_body).color(pal.muted));
                     ui.add_space(10.0);
-                    let rows: [(&str, &Gate); 14] = [
+                    let rows: [(&str, &Gate); 15] = [
                         (t.cap_chat, &c.chat),
                         (t.cap_group_chat, &c.group_chat),
                         (t.cap_presence, &c.presence),
@@ -97,6 +97,7 @@ pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                         (t.cap_files, &c.file_transfer),
                         (t.cap_rich_text, &c.rich_text),
                         (t.cap_persistent_chat, &c.persistent_chat),
+                        (t.cap_meeting_content, &c.meeting_content),
                         (t.cap_history_search, &c.history_search),
                         (t.cap_read_receipts, &c.read_receipts),
                     ];
