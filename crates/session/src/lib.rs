@@ -521,6 +521,11 @@ pub enum Event {
     },
     /// What the persistent chat server tells (function 20).
     ChatRooms(commscraft_xccos::Event),
+    /// A message to a room was not sent or not taken (status 0: not sent at all).
+    RoomNotSent {
+        room: String,
+        status: u16,
+    },
     /// The web conferencing MCU accepted us: how to open its PSOM connection (function 44).
     MeetingContent {
         conversation: ConversationId,
@@ -685,6 +690,8 @@ enum Purpose {
     RoomsInvite,
     /// An XCCOS INFO in the persistent chat dialog.
     RoomsInfo,
+    /// A message to this room.
+    RoomsSend(String),
     MediaRelay(u32),
     CallInvite(CallId),
     CallReinvite(CallId),
@@ -833,6 +840,11 @@ impl<R: Random> Engine<R> {
     /// conversation to the session's before it is answered).
     pub fn next_conversation_id(&self) -> ConversationId {
         self.next_conv
+    }
+
+    /// Whether provisioning named a persistent chat pool (function 20).
+    pub fn has_persistent_chat(&self) -> bool {
+        self.persistent_chat_pool.is_some()
     }
 
     /// The endpoint ID (EPID).
@@ -2711,7 +2723,7 @@ impl<R: Random> Engine<R> {
                     self.on_rooms_answer(&req, resp, now, out);
                 }
             }
-            Purpose::RoomsInfo => {}
+            Purpose::RoomsInfo | Purpose::RoomsSend(_) => {}
             Purpose::ConfInvitation => {
                 if resp.status_code().is_some_and(|c| (200..300).contains(&c)) {
                     let req = p.request.clone();
@@ -2830,6 +2842,10 @@ impl<R: Random> Engine<R> {
                 status: code,
             })),
             Purpose::RoomsInvite => self.rooms_failed(code, out),
+            Purpose::RoomsSend(room) => out.push(Output::Event(Event::RoomNotSent {
+                room: room.clone(),
+                status: code,
+            })),
             Purpose::RoomsInfo => out.push(Output::Event(Event::Notice(format!(
                 "the chat room server did not take the request ({code})"
             )))),

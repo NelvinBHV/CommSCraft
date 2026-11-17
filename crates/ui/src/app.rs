@@ -77,6 +77,13 @@ pub enum UiIntent {
     PrefsChanged,
     /// The answer to a trust question (true: trust the domain and remember it).
     AnswerTrust(bool),
+    /// Persistent chat: connect to the chat server, list our rooms and join them.
+    LoadRooms,
+    /// A message to a persistent chat room.
+    SendToRoom {
+        room: String,
+        text: String,
+    },
 }
 
 /// The sign-in form. The password leaves the form with the intent; the field is cleared.
@@ -114,6 +121,8 @@ pub enum ChatFilter {
     All,
     Unread,
     Groups,
+    /// Persistent chat rooms.
+    Rooms,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -322,9 +331,10 @@ impl CommsUi {
     /// The key a conversation is remembered by as favourite.
     pub fn favorite_id(&self, key: ConvKey) -> Option<String> {
         let c = self.state.conversation(key)?;
-        Some(match &c.peer {
-            Some(p) => p.clone(),
-            None => format!("group:{}", c.title),
+        Some(match (&c.peer, &c.room) {
+            (Some(p), _) => p.clone(),
+            (None, Some(r)) => format!("room:{}", r.uri),
+            (None, None) => format!("group:{}", c.title),
         })
     }
 

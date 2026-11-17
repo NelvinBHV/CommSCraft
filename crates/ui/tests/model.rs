@@ -212,3 +212,115 @@ fn contact_list_updates_keep_known_presence() {
         Presence::Busy
     );
 }
+
+#[test]
+fn room_messages_are_counted_once_and_our_echo_confirms_delivery() {
+    let mut s = online();
+    s.apply(AppEvent::SignedIn(Profile {
+        uri: "sip:mara@beispiel.invalid".into(),
+        ..Profile::default()
+    }));
+    let uri = "ma-chan://beispiel.invalid/0d3f-1";
+    s.apply(AppEvent::Room {
+        uri: uri.into(),
+        name: "Raum".into(),
+        topic: String::new(),
+        participants: Vec::new(),
+        joined: false,
+    });
+    let key = s.room_key(uri).unwrap();
+    assert_eq!(s.conversation(key).unwrap().state, ConvState::Opening);
+    assert!(s.conversation(key).unwrap().is_room());
+    assert!(!s.conversation(key).unwrap().is_group());
+    s.apply(AppEvent::Room {
+        uri: uri.into(),
+        name: "Raum".into(),
+        topic: "Thema".into(),
+        participants: vec!["sip:tim@beispiel.invalid".into()],
+        joined: true,
+    });
+    assert_eq!(s.conversations.len(), 1);
+    let c = s.conversation(key).unwrap();
+    assert_eq!(c.state, ConvState::Open);
+    assert_eq!(c.participants.len(), 1);
+    assert_eq!(c.room.as_ref().unwrap().topic, "Thema");
+    let post = |id, text: &str, author: &str, ours| RoomPost {
+        author: author.into(),
+        name: "Tim".into(),
+        text: text.into(),
+        at: 100,
+        chat_id: id,
+        ours,
+    };
+    s.apply(AppEvent::RoomPosts {
+        room: uri.into(),
+        posts: vec![
+            post(1, "alt", "sip:tim@beispiel.invalid", false),
+            post(2, "eigen", "sip:mara@beispiel.invalid", false),
+        ],
+        history: true,
+    });
+    // The history again (after a new join): nothing twice; history is not unread.
+    s.apply(AppEvent::RoomPosts {
+        room: uri.into(),
+        posts: vec![post(2, "eigen", "sip:mara@beispiel.invalid", false)],
+        history: true,
+    });
+    let c = s.conversation(key).unwrap();
+    assert_eq!(c.messages.len(), 2);
+    assert_eq!(c.unread, 0);
+    assert_eq!(c.messages[1].sender, None);
+    s.apply(AppEvent::OwnText {
+        key,
+        text: "neu".into(),
+        at: 200,
+    });
+    s.apply(AppEvent::RoomPosts {
+        room: uri.into(),
+        posts: vec![post(3, "neu", "sip:mara@beispiel.invalid", true)],
+        history: false,
+    });
+    let c = s.conversation(key).unwrap();
+    assert_eq!(c.messages.len(), 3);
+    assert_eq!(c.messages[2].delivery, Delivery::Delivered);
+    s.apply(AppEvent::RoomPosts {
+        room: uri.into(),
+        posts: vec![post(4, "hi", "sip:tim@beispiel.invalid", false)],
+        history: false,
+    });
+    assert_eq!(s.conversation(key).unwrap().unread, 1);
+    // A message not taken stays visible as not delivered.
+    s.apply(AppEvent::OwnText {
+        key,
+        text: "weg".into(),
+        at: 300,
+    });
+    s.apply(AppEvent::RoomNotSent {
+        room: uri.into(),
+        status: 408,
+    });
+    assert_eq!(
+        s.conversation(key)
+            .unwrap()
+            .messages
+            .back()
+            .unwrap()
+            .delivery,
+        Delivery::Failed(408)
+    );
+}
+
+#[test]
+fn a_room_needs_a_room_uri() {
+    let mut s = online();
+    for bad in ["sip:x@y", "ma-chan://", "ma-chan://d/", "ma-chan://d/a b"] {
+        s.apply(AppEvent::Room {
+            uri: bad.into(),
+            name: "x".into(),
+            topic: String::new(),
+            participants: Vec::new(),
+            joined: true,
+        });
+    }
+    assert!(s.conversations.is_empty());
+}

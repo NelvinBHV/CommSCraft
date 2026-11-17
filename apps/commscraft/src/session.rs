@@ -17,7 +17,7 @@ use commscraft_session::{Command as C, Engine, Event as E, Output};
 use commscraft_ui::app::SignIn;
 use commscraft_ui::model::{
     AppEvent, Capabilities, Connection, Contact, ConvKey, Gate, Meeting, NoticeKind, Participant,
-    Presence, Profile, Reason, Source,
+    Presence, Profile, Reason, RoomPost, Source,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::mpsc::{self, Receiver, SyncSender, TryRecvError};
@@ -82,6 +82,12 @@ pub enum ToWorker {
     },
     /// Address book search on the server (MS-DLX).
     Search {
+        text: String,
+    },
+    /// Persistent chat: connect, list our rooms, join them.
+    LoadRooms,
+    SendToRoom {
+        room: String,
         text: String,
     },
     SignOut,
@@ -204,8 +210,9 @@ pub fn parse_server(v: &str) -> Option<(String, u16)> {
     (port != 0).then_some((host, port))
 }
 
-/// The capabilities once signed in: what the desktop interface offers through the session.
-pub fn online_capabilities() -> Capabilities {
+/// The capabilities once signed in: what the desktop interface offers through the session;
+/// persistent chat only when provisioning named a chat pool.
+pub fn online_capabilities(rooms: bool) -> Capabilities {
     let cli = Gate::Unavailable(Reason::CliOnly);
     let none = Gate::Unavailable(Reason::NotImplemented);
     Capabilities {
@@ -220,7 +227,11 @@ pub fn online_capabilities() -> Capabilities {
         meetings: Gate::Available,
         file_transfer: none.clone(),
         rich_text: none.clone(),
-        persistent_chat: cli,
+        persistent_chat: if rooms {
+            Gate::Available
+        } else {
+            Gate::Unavailable(Reason::ServerDisabled)
+        },
         history_search: none.clone(),
         read_receipts: none,
     }
@@ -310,8 +321,37 @@ struct Session {
     signing_out: Option<Instant>,
     profile: Profile,
     certificate_tried: bool,
+    /// Rooms whose history was asked for (once per room and sign-in).
+    room_history: BTreeSet<String>,
     tls: TlsClient,
     trust: setup::Trust,
+}
+
+/// A room of the chat server as an interface event.
+pub fn room_event(r: &commscraft_xccos::Room, joined: bool) -> AppEvent {
+    AppEvent::Room {
+        uri: r.uri.clone(),
+        name: r.name.clone(),
+        topic: if r.topic.is_empty() {
+            r.description.clone()
+        } else {
+            r.topic.clone()
+        },
+        participants: r.participants.clone(),
+        joined,
+    }
+}
+
+/// A room message for the interface; the time is the server's (xs:dateTime), else now.
+pub fn room_post(m: &commscraft_xccos::ChatMessage) -> RoomPost {
+    RoomPost {
+        author: m.author.clone(),
+        name: m.author_name.clone(),
+        text: m.text.clone(),
+        at: commscraft_xml::parse_xs_datetime(&m.time).unwrap_or_else(now),
+        chat_id: m.chat_id,
+        ours: m.ours,
+    }
 }
 
 /// Directory entries with a SIP address as interface contacts.
@@ -490,6 +530,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         signing_out: None,
         profile: Profile::default(),
         certificate_tried: false,
+        room_history: BTreeSet::new(),
         tls,
         trust,
     };
@@ -721,10 +762,88 @@ impl Session {
                 self.search(&text, out);
                 Vec::new()
             }
+            ToWorker::LoadRooms => {
+                self.room_history.clear();
+                self.engine.command(C::ChatRooms, t)
+            }
+            ToWorker::SendToRoom { room, text } => {
+                self.engine.command(C::SendToRoom { room, text }, t)
+            }
             ToWorker::SignOut => {
                 self.signing_out = Some(Instant::now());
                 self.stop_media();
-                self.engine.command(C::SignOut, t)
+                let mut o = self.engine.command(C::LeaveRooms, t);
+                o.extend(self.engine.command(C::SignOut, t));
+                o
+            }
+        }
+    }
+
+    /// Persistent chat events: the room list is joined at once, each joined room's history is
+    /// asked for once.
+    fn rooms_event(&mut self, x: commscraft_xccos::Event, out: &Out) -> Vec<Output> {
+        use commscraft_xccos::Event as X;
+        let t = now();
+        match x {
+            X::ChannelServer(_) => Vec::new(),
+            X::ServerInfo { name, .. } => {
+                let shown = if name.trim().is_empty() {
+                    "persistent chat".to_string()
+                } else {
+                    name
+                };
+                out.notice(NoticeKind::Info, format!("connected to {shown}"));
+                Vec::new()
+            }
+            X::Rooms(rooms) => {
+                if rooms.is_empty() {
+                    out.notice(NoticeKind::Info, "you are a member of no chat room");
+                }
+                let uris: Vec<String> = rooms.iter().map(|r| r.uri.clone()).collect();
+                for r in rooms {
+                    out.event(room_event(&r, false));
+                }
+                if uris.is_empty() {
+                    Vec::new()
+                } else {
+                    self.engine.command(C::JoinRooms { rooms: uris }, t)
+                }
+            }
+            X::Joined(rooms) => {
+                let mut o = Vec::new();
+                for r in rooms {
+                    out.event(room_event(&r, true));
+                    if self.room_history.len() < 200 && self.room_history.insert(r.uri.clone()) {
+                        o.extend(self.engine.command(C::RoomHistory { room: r.uri }, t));
+                    }
+                }
+                o
+            }
+            X::History(rooms) => {
+                for r in rooms {
+                    let posts = r.messages.iter().map(room_post).collect();
+                    out.event(AppEvent::RoomPosts {
+                        room: r.uri,
+                        posts,
+                        history: true,
+                    });
+                }
+                Vec::new()
+            }
+            X::Message(m) => {
+                out.event(AppEvent::RoomPosts {
+                    room: m.room.clone(),
+                    posts: vec![room_post(&m)],
+                    history: false,
+                });
+                Vec::new()
+            }
+            X::Failed { command, code } => {
+                out.notice(
+                    NoticeKind::Warning,
+                    format!("chat room command {command} failed ({code})"),
+                );
+                Vec::new()
             }
         }
     }
@@ -883,7 +1002,9 @@ impl Session {
                         organisation,
                     };
                     out.event(AppEvent::SignedIn(self.profile.clone()));
-                    out.event(AppEvent::Capabilities(online_capabilities()));
+                    out.event(AppEvent::Capabilities(online_capabilities(
+                        self.engine.has_persistent_chat(),
+                    )));
                     out.event(AppEvent::Connection(Connection::Connected));
                 }
             }
@@ -933,7 +1054,16 @@ impl Session {
                     Err(e) => return Some(Err(Ended::Failed(format!("TLS-DSK: {e}")))),
                 }
             }
-            E::Provisioned(c) => self.services = Some(c),
+            E::Provisioned(c) => {
+                self.services = Some(c);
+                if self.signed_in {
+                    out.event(AppEvent::Capabilities(online_capabilities(
+                        self.engine.has_persistent_chat(),
+                    )));
+                }
+            }
+            E::ChatRooms(x) => more.extend(self.rooms_event(x, out)),
+            E::RoomNotSent { room, status } => out.event(AppEvent::RoomNotSent { room, status }),
             E::ContactList(l) => out.event(AppEvent::Contacts(contacts_of(&l))),
             E::ContactsInExchange => out.notice(
                 NoticeKind::Info,
@@ -1279,7 +1409,7 @@ mod tests {
 
     #[test]
     fn the_desktop_gates_match_what_it_wires() {
-        let c = online_capabilities();
+        let c = online_capabilities(false);
         assert!(c.chat.usable() && c.audio_call.usable() && c.meetings.usable());
         assert!(!c.file_transfer.usable());
         assert!(!c.read_receipts.usable());

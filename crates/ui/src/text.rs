@@ -84,6 +84,12 @@ texts! {
     filter_all: "Alle", "All";
     filter_unread: "Ungelesen", "Unread";
     filter_groups: "Gruppen", "Groups";
+    filter_rooms: "Räume", "Rooms";
+    load_rooms: "Chatrooms laden", "Load chat rooms";
+    load_rooms_tip: "Verbindet mit dem Persistent-Chat-Server, listet die eigenen Räume und tritt ihnen bei", "Connects to the persistent chat server, lists your rooms and joins them";
+    no_rooms: "Noch keine Chatrooms geladen.", "No chat rooms loaded yet.";
+    chat_room: "Chatroom", "Chat room";
+    room_joining: "Beitritt läuft …", "Joining …";
     filter_online: "Online", "Online";
     filter_favorites: "Favoriten", "Favourites";
     filter_missed: "Verpasst", "Missed";

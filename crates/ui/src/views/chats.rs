@@ -19,6 +19,7 @@ fn conv_matches(app: &CommsUi, c: &Conversation) -> bool {
         ChatFilter::All => true,
         ChatFilter::Unread => c.unread > 0,
         ChatFilter::Groups => c.is_group(),
+        ChatFilter::Rooms => c.is_room(),
     }
 }
 
@@ -67,7 +68,30 @@ pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         ) {
             app.chat_filter = ChatFilter::Groups;
         }
+        let rooms = app.state.capabilities.persistent_chat.clone();
+        if let Some(r) = widgets::gated(ui, t.filter_rooms, &rooms, t, pal, |ui, l, en| {
+            let selected = app.chat_filter == ChatFilter::Rooms;
+            ui.add_enabled_ui(en, |ui| widgets::chip_response(ui, l, selected, pal))
+                .inner
+        }) {
+            if r.clicked() {
+                app.chat_filter = ChatFilter::Rooms;
+            }
+        }
     });
+    if app.chat_filter == ChatFilter::Rooms && app.state.capabilities.persistent_chat.usable() {
+        ui.add_space(6.0);
+        ui.horizontal(|ui| {
+            ui.add_space(8.0);
+            if ui
+                .button(t.load_rooms)
+                .on_hover_text(t.load_rooms_tip)
+                .clicked()
+            {
+                app.emit(UiIntent::LoadRooms);
+            }
+        });
+    }
     ui.add_space(6.0);
     let mut order: Vec<(bool, u64, ConvKey)> = app
         .state
@@ -89,7 +113,9 @@ pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             if order.is_empty() {
                 ui.add_space(20.0);
                 ui.label(
-                    RichText::new(if app.state.conversations.is_empty() {
+                    RichText::new(if app.chat_filter == ChatFilter::Rooms {
+                        t.no_rooms
+                    } else if app.state.conversations.is_empty() {
                         t.no_conversations
                     } else {
                         t.no_conversations_filter
@@ -201,7 +227,8 @@ fn row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     let line = preview(app, c);
     let time = when(app, c.last_activity);
     let unread = c.unread;
-    let is_group = c.is_group();
+    let is_group = c.peer.is_none();
+    let is_room = c.is_room();
     let ended = matches!(c.state, ConvState::Ended | ConvState::Failed(_));
     let w = ui.available_width();
     let (rect, resp) = ui.allocate_exact_size(Vec2::new(w, 72.0), Sense::click());
@@ -307,7 +334,7 @@ fn row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                 ui.close();
             }
         }
-        if !ended && ui.button(app.t.end_conversation).clicked() {
+        if !ended && !is_room && ui.button(app.t.end_conversation).clicked() {
             app.emit(UiIntent::EndConversation { key });
             ui.close();
         }
@@ -346,7 +373,19 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     };
     let title = c.title.clone();
     let peer = c.peer.clone();
-    let subtitle = if c.is_group() {
+    let subtitle = if let Some(r) = &c.room {
+        let n = c.participants.len();
+        let mut s = if c.state == ConvState::Opening {
+            format!("{} · {}", t.chat_room, t.room_joining)
+        } else {
+            format!("{} · {}", t.chat_room, t.members_count(n))
+        };
+        if !r.topic.is_empty() {
+            s.push_str(" · ");
+            s.push_str(&r.topic);
+        }
+        s
+    } else if c.is_group() {
         let n = c.participants.len();
         format!("{} · {}", t.group_chat, t.members_count(n))
     } else {
@@ -632,10 +671,19 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     let Some(c) = app.state.conversation(key) else {
         return;
     };
-    let open = matches!(c.state, ConvState::Open | ConvState::Opening);
+    let room = c.room.as_ref().map(|r| r.uri.clone());
+    // A room takes messages once joined; a conversation already while it opens.
+    let open = match room {
+        Some(_) => c.state == ConvState::Open,
+        None => matches!(c.state, ConvState::Open | ConvState::Opening),
+    };
     let title = c.title.clone();
     let peer = c.peer.clone();
-    let chat_gate = app.state.capabilities.chat.clone();
+    let chat_gate = if room.is_some() {
+        app.state.capabilities.persistent_chat.clone()
+    } else {
+        app.state.capabilities.chat.clone()
+    };
     let can_send = open && chat_gate.usable();
     let file_gate = app.state.capabilities.file_transfer.clone();
     let rich_gate = app.state.capabilities.rich_text.clone();
@@ -685,7 +733,7 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                         && ui.input(|i| i.key_pressed(Key::Enter) && i.modifiers.is_none());
                     let text_len = app.drafts.get(&key).map_or(0, |d| d.chars().count());
                     // Typing notifications: on the first key press, off after a pause.
-                    if r.changed() && text_len > 0 {
+                    if r.changed() && text_len > 0 && room.is_none() {
                         if !app.typing_since.contains_key(&key) {
                             app.emit(UiIntent::Typing { key, typing: true });
                         }
@@ -725,10 +773,13 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                                     text: text.clone(),
                                     at: app.now,
                                 });
-                                app.emit(UiIntent::SendMessage { key, text });
+                                match room.clone() {
+                                    Some(room) => app.emit(UiIntent::SendToRoom { room, text }),
+                                    None => app.emit(UiIntent::SendMessage { key, text }),
+                                }
                                 app.focus_composer = true;
                             }
-                            if peer.is_none() && open {
+                            if peer.is_none() && room.is_none() && open {
                                 let gate = app.state.capabilities.group_chat.clone();
                                 if let Some(r) =
                                     widgets::gated(ui, t.invite, &gate, t, pal, |ui, l, en| {
@@ -760,7 +811,11 @@ pub fn context(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         ui.label(RichText::new(t.select_conversation_hint).color(pal.muted));
         return;
     };
-    if c.is_group() {
+    // Groups and rooms both have a member list.
+    let many = c.peer.is_none();
+    if c.is_room() {
+        context_title(app, ui, pal, t.chat_room);
+    } else if c.is_group() {
         context_title(app, ui, pal, t.group_info);
     } else {
         context_title(app, ui, pal, t.contact_info);
@@ -778,7 +833,7 @@ pub fn context(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 .family(crate::theme::bold())
                 .color(pal.ink),
         );
-        let sub = if c.is_group() {
+        let sub = if many {
             t.members_count(c.participants.len())
         } else {
             c.peer
@@ -790,7 +845,7 @@ pub fn context(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         ui.label(RichText::new(sub).size(theme::text::SMALL).color(pal.muted));
     });
     ui.add_space(14.0);
-    if c.is_group() {
+    if many {
         widgets::rule(ui, pal);
         ui.add_space(10.0);
         ui.label(

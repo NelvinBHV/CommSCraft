@@ -48,6 +48,17 @@ pub fn clean(text: &str, max: usize, keep_newlines: bool) -> String {
     out
 }
 
+/// A room URI as the chat server writes it: `ma-chan://<domain>/<id>`.
+fn room_uri_ok(uri: &str) -> Option<()> {
+    let rest = uri.strip_prefix("ma-chan://")?;
+    let (domain, id) = rest.split_once('/')?;
+    let ok = !domain.is_empty()
+        && !id.is_empty()
+        && uri.len() <= MAX_LABEL
+        && !uri.chars().any(|c| c.is_control() || c.is_whitespace());
+    ok.then_some(())
+}
+
 fn label(text: &str) -> String {
     clean(text, MAX_LABEL, false)
 }
@@ -145,7 +156,8 @@ impl Capabilities {
             hold: off.clone(),
             transfer: off.clone(),
             video_call: off.clone(),
-            meetings: off,
+            meetings: off.clone(),
+            persistent_chat: off,
             ..Self::never()
         }
     }
@@ -162,12 +174,13 @@ impl Capabilities {
             transfer: Gate::Unavailable(Reason::DemoOnly),
             video_call: Gate::Unavailable(Reason::CliOnly),
             meetings: Gate::Preview,
+            persistent_chat: Gate::Preview,
             ..Self::never()
         }
     }
 
     /// Functions the project does not have (file transfer, rich text, history search, read
-    /// receipts) or that the desktop interface does not offer (persistent chat rooms).
+    /// receipts).
     fn never() -> Self {
         let none = Gate::Unavailable(Reason::NotImplemented);
         Self {
@@ -182,7 +195,7 @@ impl Capabilities {
             meetings: none.clone(),
             file_transfer: none.clone(),
             rich_text: none.clone(),
-            persistent_chat: Gate::Unavailable(Reason::CliOnly),
+            persistent_chat: none.clone(),
             history_search: none.clone(),
             read_receipts: none,
         }
@@ -324,11 +337,42 @@ pub struct Conversation {
     pub last_activity: u64,
     /// Set by the demo for illustrative content (shown with a demo mark).
     pub demo: bool,
+    /// A persistent chat room instead of a conversation of the session.
+    pub room: Option<RoomInfo>,
+}
+
+/// A persistent chat room (function 20): a room of the chat server, not an ad-hoc group.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct RoomInfo {
+    /// `ma-chan://…`
+    pub uri: String,
+    pub topic: String,
+    /// The highest message number seen (a message comes again with the history).
+    pub last_chat_id: u64,
+}
+
+/// One message of a room from the chat server.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct RoomPost {
+    pub author: String,
+    pub name: String,
+    pub text: String,
+    /// Unix seconds.
+    pub at: u64,
+    /// The server's message number (0: none).
+    pub chat_id: u64,
+    /// Our own message coming back from the server.
+    pub ours: bool,
 }
 
 impl Conversation {
+    /// An ad-hoc group conversation (a room is not one).
     pub fn is_group(&self) -> bool {
-        self.peer.is_none()
+        self.peer.is_none() && self.room.is_none()
+    }
+
+    pub fn is_room(&self) -> bool {
+        self.room.is_some()
     }
 
     pub fn last_text(&self) -> Option<&Message> {
@@ -549,6 +593,25 @@ pub enum AppEvent {
     Invitation(Invitation),
     /// Discovery named a server outside the SIP domain: may the password go there?
     TrustQuestion(TrustQuestion),
+    /// A persistent chat room: listed (not joined yet) or joined, with its participants.
+    Room {
+        uri: String,
+        name: String,
+        topic: String,
+        participants: Vec<String>,
+        joined: bool,
+    },
+    /// Messages of a room; `history` ones are not counted as unread.
+    RoomPosts {
+        room: String,
+        posts: Vec<RoomPost>,
+        history: bool,
+    },
+    /// A message to a room was not accepted.
+    RoomNotSent {
+        room: String,
+        status: u16,
+    },
     Notice(NoticeKind, String, u64),
 }
 
@@ -695,8 +758,23 @@ impl AppState {
             },
             last_activity: 0,
             demo: false,
+            room: None,
         });
         key
+    }
+
+    /// The conversation of a room.
+    pub fn room_key(&self, uri: &str) -> Option<ConvKey> {
+        self.conversations
+            .iter()
+            .find(|c| c.room.as_ref().is_some_and(|r| r.uri == uri))
+            .map(|c| c.key)
+    }
+
+    fn room_mut(&mut self, uri: &str) -> Option<&mut Conversation> {
+        self.conversations
+            .iter_mut()
+            .find(|c| c.room.as_ref().is_some_and(|r| r.uri == uri))
     }
 
     fn notice(&mut self, kind: NoticeKind, text: &str, at: u64) {
@@ -1052,6 +1130,119 @@ impl AppState {
                 }
             }
             AppEvent::Notice(kind, text, at) => self.notice(kind, &text, at),
+            AppEvent::Room {
+                uri,
+                name,
+                topic,
+                participants,
+                joined,
+            } => {
+                if room_uri_ok(&uri).is_none() {
+                    return;
+                }
+                let uri = label(&uri);
+                let title = if name.trim().is_empty() {
+                    uri.clone()
+                } else {
+                    label(&name)
+                };
+                let key = match self.room_key(&uri) {
+                    Some(k) => k,
+                    None => {
+                        let k = self.new_conversation(None, None, title.clone(), None);
+                        if let Some(c) = self.conversation_mut(k) {
+                            c.room = Some(RoomInfo {
+                                uri: uri.clone(),
+                                ..RoomInfo::default()
+                            });
+                        }
+                        k
+                    }
+                };
+                let names: Vec<Participant> = participants
+                    .iter()
+                    .take(1000)
+                    .map(|p| Participant {
+                        uri: label(p),
+                        name: self.name_of(p),
+                        presenter: false,
+                    })
+                    .collect();
+                if let Some(c) = self.conversation_mut(key) {
+                    c.title = title;
+                    if let Some(r) = c.room.as_mut() {
+                        if !topic.is_empty() || joined {
+                            r.topic = label(&topic);
+                        }
+                    }
+                    if joined {
+                        c.state = ConvState::Open;
+                        c.participants = names;
+                    }
+                }
+            }
+            AppEvent::RoomPosts {
+                room,
+                posts,
+                history,
+            } => {
+                let me = self.me.uri.clone();
+                let names: Vec<String> = posts.iter().map(|p| self.name_of(&p.author)).collect();
+                let Some(c) = self.room_mut(&room) else {
+                    return;
+                };
+                for (p, known) in posts.into_iter().zip(names) {
+                    let last = c.room.as_ref().map_or(0, |r| r.last_chat_id);
+                    if p.chat_id != 0 && p.chat_id <= last {
+                        continue;
+                    }
+                    if let Some(r) = c.room.as_mut() {
+                        r.last_chat_id = r.last_chat_id.max(p.chat_id);
+                    }
+                    let own = p.ours || (!me.is_empty() && p.author == me);
+                    // Our message coming back: the server took it.
+                    if p.ours {
+                        if let Some(m) = c
+                            .messages
+                            .iter_mut()
+                            .find(|m| m.sender.is_none() && m.delivery == Delivery::Sending)
+                        {
+                            m.delivery = Delivery::Delivered;
+                            continue;
+                        }
+                    }
+                    let sender = if own {
+                        None
+                    } else if p.name.trim().is_empty() {
+                        Some(label(&p.author))
+                    } else {
+                        // The room's display name, unless the contact list knows better.
+                        Some(label(if known != p.author { &known } else { &p.name }))
+                    };
+                    if !own && !history {
+                        c.unread = c.unread.saturating_add(1);
+                    }
+                    c.push(Message {
+                        sender,
+                        text: clean(&p.text, MAX_TEXT, true),
+                        at: p.at,
+                        delivery: if own {
+                            Delivery::Delivered
+                        } else {
+                            Delivery::Unknown
+                        },
+                    });
+                }
+            }
+            AppEvent::RoomNotSent { room, status } => {
+                if let Some(m) = self.room_mut(&room).and_then(|c| {
+                    c.messages
+                        .iter_mut()
+                        .find(|m| m.sender.is_none() && m.delivery == Delivery::Sending)
+                }) {
+                    m.delivery = Delivery::Failed(status);
+                }
+            }
             AppEvent::TrustQuestion(q) => {
                 self.trust_question = Some(TrustQuestion {
                     host: label(&q.host),
