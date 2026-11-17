@@ -43,6 +43,8 @@ enum Job {
     Contacts(Option<Box<ContactChange>>),
     /// The focus of a meeting link (join manager).
     MeetingLink(String),
+    /// A finished conversation for the Conversation History folder.
+    SaveHistory(Box<commscraft_ews::history::Conversation>),
 }
 
 /// A change of the contact list in Exchange with the list and identifiers it applies to.
@@ -57,6 +59,8 @@ pub enum Done {
     Thumb(Thumb),
     /// The focus URI of a meeting link.
     MeetingFocus(Result<String, String>),
+    /// A conversation saved in the Conversation History folder, or why not.
+    HistorySaved(Result<(), String>),
     /// The contact list from Exchange (after a change, if one was asked for).
     Contacts(
         Result<
@@ -119,6 +123,11 @@ impl Photos {
         let _ = self.tx.try_send(Job::Contacts(change.map(Box::new)));
     }
 
+    /// Saves a finished conversation in the Conversation History folder.
+    pub fn save_history(&self, t: commscraft_ews::history::Conversation) {
+        let _ = self.tx.try_send(Job::SaveHistory(Box::new(t)));
+    }
+
     /// Asks the join manager for the focus of a meeting link.
     pub fn meeting_link(&self, link: &str) {
         let _ = self.tx.try_send(Job::MeetingLink(link.to_string()));
@@ -172,6 +181,26 @@ fn run(
                     &mut log,
                 );
                 if done.send(Done::Expanded(email, found)).is_err() {
+                    return;
+                }
+                continue;
+            }
+            Job::SaveHistory(t) => {
+                if settings.is_none() {
+                    settings = Some(
+                        commscraft_client::photos::ews_settings(
+                            tls, trust, aor, &ua, &mut ntlm, &mut log,
+                        )
+                        .ok(),
+                    );
+                }
+                let saved = match settings.as_ref() {
+                    Some(Some(s)) => commscraft_client::exchange::save_conversation(
+                        tls, trust, aor, s, &t, &ua, &mut ntlm, &mut log,
+                    ),
+                    _ => Err("Exchange is not reachable".into()),
+                };
+                if done.send(Done::HistorySaved(saved)).is_err() {
                     return;
                 }
                 continue;

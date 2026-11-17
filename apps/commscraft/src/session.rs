@@ -112,6 +112,8 @@ pub enum ToWorker {
         camera: String,
         sounds: bool,
         quiet_busy: bool,
+        /// Save IM conversations in the Conversation History folder (unless the server decides).
+        save_history: bool,
     },
     /// Tones in a call (DTMF, RFC 4733).
     Dtmf {
@@ -423,6 +425,25 @@ fn meeting_of(m: &commscraft_conf::schedule::Meeting) -> Option<Meeting> {
     })
 }
 
+/// Function 49: a participant of a conversation for its history entry – a SIP address without
+/// parameters (not a conference focus) becomes a recipient once.
+fn history_participant(
+    t: &mut commscraft_ews::history::Conversation,
+    uri: &str,
+    name: Option<&str>,
+) {
+    let Some(address) = uri.strip_prefix("sip:").filter(|a| !a.contains(';')) else {
+        return;
+    };
+    t.add_participant(commscraft_ews::history::Participant {
+        name: name
+            .filter(|n| !n.is_empty())
+            .unwrap_or(address)
+            .to_string(),
+        address: address.to_string(),
+    });
+}
+
 /// Meetings whose details are asked for after a listing (design; the listing itself names at
 /// most `MAX_MEETINGS`).
 const MEETING_DETAILS: usize = commscraft_conf::schedule::MAX_MEETINGS;
@@ -497,6 +518,10 @@ struct Session {
     v: Videos,
     /// Ringing and alert sounds (the options); fewer while busy.
     sounds: bool,
+    /// The user's choice to keep IM conversations in Exchange.
+    save_history: bool,
+    /// IM conversations as they go, for the Conversation History folder (function 49).
+    transcripts: BTreeMap<u32, commscraft_ews::history::Conversation>,
     quiet_busy: bool,
     content_tx: mpsc::Sender<meeting_content::FromContent>,
     /// Meeting content connections by conversation, with the users they named.
@@ -974,6 +999,8 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         password_given,
         v: Videos::new(video_tx, rdp_tx),
         sounds: true,
+        save_history: true,
+        transcripts: BTreeMap::new(),
         quiet_busy: false,
         content_tx,
         content: BTreeMap::new(),
@@ -1068,6 +1095,13 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
                     })
                 }
                 crate::photos::Done::Calendar(Err(e)) => trace_line(&format!("calendar: {e}")),
+                crate::photos::Done::HistorySaved(Ok(())) => {
+                    trace_line("conversation saved in the Conversation History folder")
+                }
+                crate::photos::Done::HistorySaved(Err(e)) => out.notice(
+                    NoticeKind::Warning,
+                    format!("conversation not saved in Exchange: {e}"),
+                ),
                 crate::photos::Done::MeetingFocus(Ok(focus)) => {
                     outputs.extend(s.engine.command(C::JoinConference { focus }, now()));
                 }
@@ -1542,6 +1576,17 @@ impl Session {
 
     /// Asks the photo thread for the photos of the user and the contacts, once provisioning
     /// (the photo policy, the address book service) is known; the thread fetches each once.
+    /// A contact's name from the contact list, if it has one.
+    fn contact_name(&self, uri: &str) -> Option<String> {
+        self.contact_list
+            .as_ref()?
+            .contacts
+            .iter()
+            .find(|c| c.uri == uri)
+            .map(|c| c.name.clone())
+            .filter(|n| !n.trim().is_empty())
+    }
+
     /// The contact list is kept in Exchange (the server said so, or marks its copy migrated).
     fn in_exchange(&self) -> bool {
         self.engine.contacts_in_exchange()
@@ -1762,7 +1807,21 @@ impl Session {
                 self.engine.command(C::StartConversation { to: peer }, t)
             }
             ToWorker::SendText { key, session, text } => match self.session_of(key, session) {
-                Some(conversation) => self.engine.command(C::SendText { conversation, text }, t),
+                Some(conversation) => {
+                    let me = if self.profile.name.is_empty() {
+                        self.profile.uri.trim_start_matches("sip:").to_string()
+                    } else {
+                        self.profile.name.clone()
+                    };
+                    self.transcripts.entry(conversation).or_default().add_line(
+                        commscraft_ews::history::Line {
+                            time: t,
+                            sender: me,
+                            text: text.clone(),
+                        },
+                    );
+                    self.engine.command(C::SendText { conversation, text }, t)
+                }
                 None => {
                     out.notice(
                         NoticeKind::Error,
@@ -1977,7 +2036,9 @@ impl Session {
                 camera,
                 sounds,
                 quiet_busy,
+                save_history,
             } => {
+                self.save_history = save_history;
                 self.v.camera = if camera.is_empty() {
                     std::env::var("COMMSCRAFT_CAMERA").unwrap_or_else(|_| "/dev/video0".into())
                 } else {
@@ -2463,6 +2524,12 @@ impl Session {
                 peer,
                 incoming,
             } => {
+                let name = self.contact_name(&peer);
+                history_participant(
+                    self.transcripts.entry(conversation).or_default(),
+                    &peer,
+                    name.as_deref(),
+                );
                 if self.groups.contains(&conversation) || is_conference_uri(&peer) {
                     self.groups.insert(conversation);
                     out.event(AppEvent::GroupStarted {
@@ -2496,6 +2563,17 @@ impl Session {
                 if self.alert_sounds() {
                     self.cues.notify(now_ms());
                 }
+                let who = sender.clone().unwrap_or_default();
+                let name = self.contact_name(&who);
+                let entry = self.transcripts.entry(conversation).or_default();
+                if !who.is_empty() {
+                    history_participant(entry, &who, name.as_deref());
+                }
+                entry.add_line(commscraft_ews::history::Line {
+                    time: t,
+                    sender: name.unwrap_or_else(|| who.trim_start_matches("sip:").to_string()),
+                    text: text.clone(),
+                });
                 out.event(AppEvent::Text {
                     session: conversation,
                     sender,
@@ -2546,6 +2624,18 @@ impl Session {
                 self.content.insert(conversation, (h, BTreeMap::new()));
             }
             E::ConversationEnded { conversation } => {
+                // Function 49: the finished conversation into the Conversation History folder,
+                // as the server's policy says, else as the user chose.
+                if let Some(tr) = self.transcripts.remove(&conversation) {
+                    let wanted = self
+                        .services
+                        .as_deref()
+                        .and_then(|c| c.im_auto_archiving)
+                        .unwrap_or(self.save_history);
+                    if let (true, Some(p)) = (wanted && !tr.lines.is_empty(), &self.photos) {
+                        p.save_history(tr);
+                    }
+                }
                 self.stop_content(conversation);
                 self.opened.remove(&conversation);
                 self.keys.retain(|_, v| *v != conversation);
@@ -3099,6 +3189,22 @@ mod tests {
             }
         )
         .is_err());
+    }
+
+    #[test]
+    fn history_participants_are_people_once() {
+        let mut t = commscraft_ews::history::Conversation::default();
+        history_participant(&mut t, "sip:bob@beispiel.invalid", Some("Bob"));
+        history_participant(&mut t, "sip:BOB@beispiel.invalid", None);
+        // A conference focus or a parameterised address is no recipient.
+        history_participant(
+            &mut t,
+            "sip:a@beispiel.invalid;gruu;opaque=app:conf:focus:id:X",
+            None,
+        );
+        history_participant(&mut t, "tel:+49", None);
+        assert_eq!(t.participants.len(), 1);
+        assert_eq!(t.participants[0].name, "Bob");
     }
 
     #[test]

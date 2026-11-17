@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: view what is shared in a meeting)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: conversations saved in Exchange)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -89,6 +89,10 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   A/V MCU through the signed-in session); the call window carries the meeting's name and offers
   no hold or transfer; the camera button joins with audio and video (the A/V MCU's video in its
   own window). `tested-in-lab` (connected; a picture from another participant not checked yet).
+- **Conversation history in Exchange:** a finished IM conversation is saved in the user's
+  Conversation History folder (EWS CreateItem, in the background thread) – as the server's
+  archiving policy says, else as chosen in *Options › IM* (on by default). Reading the folder
+  back is not built yet. `tested-in-lab`.
 - **Shared screens in meetings:** when someone shares in a meeting, the conversation says so
   and offers *View*: a screen shared as video comes as receive-only video from the application
   sharing MCU (the sharer's source asked for), a shared window over RDP; both in the isolated

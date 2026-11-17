@@ -317,6 +317,35 @@ fn ucs_call(
     )
 }
 
+/// Function 49: saves a finished conversation in the Conversation History folder (CreateItem,
+/// EX-09, OB-22).
+#[allow(clippy::too_many_arguments)]
+pub fn save_conversation(
+    tls: &TlsClient,
+    trust: &Trust,
+    aor: &str,
+    settings: &commscraft_ews::UserSettings,
+    t: &commscraft_ews::history::Conversation,
+    user_agent: &str,
+    ntlm: &mut HttpNtlm<'_>,
+    log: &mut dyn FnMut(&str),
+) -> Result<(), String> {
+    use commscraft_ews::history;
+    let body = history::save_request(t).map_err(|e| format!("{e:?}"))?;
+    let answer = ews_call(
+        tls,
+        trust,
+        aor,
+        settings,
+        ("CreateItem", history::CREATE_ITEM_ACTION),
+        &body,
+        user_agent,
+        ntlm,
+        log,
+    )?;
+    history::parse_save_answer(&answer).map_err(|e| format!("{e:?}"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
