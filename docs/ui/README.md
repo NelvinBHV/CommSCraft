@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: no telephony shown)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: sign-in with address and password; password only when needed)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -35,8 +35,10 @@ appears and the client signs in through the session engine.
 the session engine and the media threads of calls; the interface talks to it through two bounded
 queues (commands 256, events 4096) and never waits for the network in a frame.
 
-- **Sign-in:** Autodiscover and DNS SRV like the command-line tool (shared crate
-  `commscraft-client`), NTLM with the password typed in the form, TLS always verified against the
+- **Sign-in:** the sign-in address and the password are enough, as with the Windows client: the
+  user name is optional and defaults to the address (the user principal name, with an empty NTLM
+  domain – an inference to be confirmed in the lab); Autodiscover and DNS SRV like the
+  command-line tool (shared crate `commscraft-client`), NTLM with the password typed in the form, TLS always verified against the
   system trust store plus an optional `--ca-file`. A server outside the SIP domain is used only
   when its domain is listed in `~/.config/commscraft/trusted-domains` or – for a server named by
   Autodiscover over verified HTTPS – when the user trusts it in a dialog (an explicit yes; it is
@@ -44,6 +46,9 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   system's ticket, else the password; NTLM stays the fallback, and the reason is shown); TLS-DSK
   (a checkbox) gets the user certificate once from the server's certificate service with the
   password (shared `commscraft-client::tlsdsk`) and signs in with it afterwards.
+  With TLS-DSK (a stored, valid certificate) or Kerberos (the system's ticket) the password may
+  stay empty; when the stored certificate is missing or has expired, the sign-in says that the
+  password is needed. No password is stored.
 - **Mapping:** engine events become typed `AppEvent`s (contacts, presence with the published
   display name, conversations, delivery, typing, roster, invitations, calls, meetings, notices);
   interface intents become engine commands. The interface's own conversation key is tied to the
@@ -91,7 +96,7 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
 - **Not in the desktop client yet** (gated with a reason): video and screen viewing inside
   meetings, drawing slides and whiteboard ink.
 
-`--sign-in sip:ADDRESS --user USER [--domain D] [--server H:P]` signs in at start with the
+`--sign-in sip:ADDRESS [--user USER] [--domain D] [--server H:P]` signs in at start with the
 password from standard input; `--commands FILE` follows a file of test commands (`view`, `chat`,
 `select`, `search`, `send`, `group`, `accept`, `call`, `videocall`, `transfer`, `answer`, `answervideo`, `viewscreen`, `hangup`, `hold`, `resume`, `mute`,
 `unmute`, `status`, `shot`, `quit`) that trigger exactly the actions of the interface – for the

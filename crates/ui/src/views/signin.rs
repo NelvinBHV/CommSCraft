@@ -81,8 +81,11 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                         let address_ok = normalise_address(&app.sign_in.address).is_some();
                         let ok = !busy
                             && address_ok
-                            && !app.sign_in.user.trim().is_empty()
-                            && !app.sign_in.password.is_empty();
+                            // A password, or a way without one: the stored certificate
+                            // (TLS-DSK) or the system's Kerberos ticket.
+                            && (!app.sign_in.password.is_empty()
+                                || app.sign_in.tls_dsk
+                                || app.sign_in.kerberos);
                         let enter = ui.input(|i| i.key_pressed(egui::Key::Enter));
                         ui.horizontal(|ui| {
                             let label = if busy { t.signing_in } else { t.sign_in };

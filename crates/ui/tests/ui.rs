@@ -79,8 +79,8 @@ fn the_sign_in_clears_the_password() {
     let mut h = harness(ui, (1280.0, 800.0));
     h.run();
     for (label, text) in [
-        ("SIP address", "mara@beispiel.invalid"),
-        ("User name", "mara"),
+        ("Sign-in address", "mara@beispiel.invalid"),
+        ("User name (optional)", "mara"),
         ("Password", "geheim-123"),
     ] {
         let f = field(&h, label);
@@ -497,4 +497,48 @@ fn sharing_our_own_screen_is_disabled_with_a_reason() {
         .get_by_label("Bildschirm freigeben")
         .accesskit_node()
         .is_disabled());
+}
+
+#[test]
+fn the_sign_in_needs_only_the_address_and_the_password() {
+    let mut h = harness(CommsUi::new(Lang::En, 0), (420.0, 760.0));
+    h.run();
+    for (label, text) in [
+        ("Sign-in address", "mara@beispiel.invalid"),
+        ("Password", "geheim"),
+    ] {
+        let f = field(&h, label);
+        f.focus();
+        f.type_text(text);
+        h.run();
+    }
+    button(&h, "Sign in").click();
+    h.run();
+    let sent = h
+        .state()
+        .intents
+        .iter()
+        .find_map(|i| match i {
+            UiIntent::SignIn(f) => Some(f.clone()),
+            _ => None,
+        })
+        .expect("a sign-in intent");
+    // The user name stays empty: the adapter signs in with the address itself.
+    assert_eq!(sent.user, "");
+    assert_eq!(sent.server, "");
+}
+
+#[test]
+fn the_stored_certificate_signs_in_without_a_password() {
+    let mut h = harness(CommsUi::new(Lang::En, 0), (420.0, 760.0));
+    h.run();
+    let f = field(&h, "Sign-in address");
+    f.focus();
+    f.type_text("mara@beispiel.invalid");
+    h.run();
+    // Without a password and without a certificate or Kerberos: not yet.
+    assert!(button(&h, "Sign in").accesskit_node().is_disabled());
+    h.get_by_label_contains("TLS-DSK").click();
+    h.run();
+    assert!(!button(&h, "Sign in").accesskit_node().is_disabled());
 }

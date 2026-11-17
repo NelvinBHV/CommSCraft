@@ -27,7 +27,7 @@ const USAGE: &str =
     "usage: commscraft [--demo] [--lang de|en] [--view chats|contacts|calls|meetings|settings]
                   [--size WIDTHxHEIGHT] [--screenshot FILE.png] [--screenshot-after SECONDS]
                   [--ca-file PEM] [--commands FILE] [--embed-windows]
-                  [--sign-in sip:ADDRESS --user USER [--domain DOMAIN] [--server HOST:PORT] [--kerberos] [--tls-dsk]]
+                  [--sign-in sip:ADDRESS [--user USER] [--domain DOMAIN] [--server HOST:PORT] [--kerberos] [--tls-dsk]]
   --ca-file    adds an enterprise CA to the system trust store (never replaces the checks)
   --sign-in    signs in at start; the password is the first line of standard input
   --commands   follows FILE for test commands (see the documentation in docs/ui/README.md)";
@@ -119,9 +119,6 @@ fn parse_args() -> Result<Args, String> {
     if scripted {
         form.address = commscraft_ui::normalise_address(&form.address)
             .ok_or("--sign-in: not a SIP address")?;
-        if form.user.trim().is_empty() {
-            return Err("--sign-in needs --user".into());
-        }
         let mut line = String::new();
         std::io::stdin()
             .read_line(&mut line)

@@ -355,6 +355,8 @@ struct Session {
     signing_out: Option<Instant>,
     profile: Profile,
     certificate_tried: bool,
+    /// The sign-in came with a password (a certificate can be got with it).
+    password_given: bool,
     /// Rooms whose history was asked for (once per room and sign-in).
     room_history: BTreeSet<String>,
     v: Videos,
@@ -562,6 +564,19 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         std::net::SocketAddr::V6(v6) => format!("[{}]", v6.ip()),
     };
     let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
+    // Without a user name the sign-in address is the account, as the Windows client does it:
+    // the user principal name `name@domain` with an empty NTLM domain (inference: Active
+    // Directory takes the UPN as NTLM user name; to be confirmed in the lab).
+    let user = match form.user.trim() {
+        "" => aor.trim_start_matches("sip:").to_string(),
+        u => u.to_string(),
+    };
+    let ntlm_domain = if form.user.trim().is_empty() {
+        String::new()
+    } else {
+        form.domain.trim().to_string()
+    };
+    let password_given = !password.reveal().is_empty();
     let cfg = RegConfig {
         aor: aor.clone(),
         registrar_uri: format!("sip:{user_domain}"),
@@ -569,8 +584,8 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         local_host: host.clone(),
         local_port: local.port(),
         user_agent: ua.clone(),
-        user: form.user.trim().to_string(),
-        domain: form.domain.trim().to_string(),
+        user: user.clone(),
+        domain: ntlm_domain,
         workstation: "COMMSCRAFT".into(),
         subnet: None,
         policy: commscraft_sipae::Policy::default(),
@@ -582,7 +597,11 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
     let kerberos = form.kerberos.then(|| {
         Box::new(commscraft_gssapi::Kerberos::new(
             commscraft_gssapi::Credentials::Password {
-                principal: format!("{}@{}", form.user.trim(), user_domain.to_ascii_uppercase()),
+                principal: match user.split_once('@') {
+                    // A UPN: the realm is its domain in capitals.
+                    Some((name, realm)) => format!("{name}@{}", realm.to_ascii_uppercase()),
+                    None => format!("{user}@{}", user_domain.to_ascii_uppercase()),
+                },
                 password: zeroize::Zeroizing::new(password.reveal().to_string()),
             },
         ))
@@ -638,6 +657,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         profile: Profile::default(),
         certificate_tried: false,
         room_history: BTreeSet::new(),
+        password_given,
         v: Videos::new(video_tx, rdp_tx),
         sounds: true,
         quiet_busy: false,
@@ -1632,6 +1652,13 @@ impl Session {
                 if self.certificate_tried {
                     return Some(Err(Ended::Failed(
                         "the server still asks for a certificate".into(),
+                    )));
+                }
+                // Getting a certificate needs the password: without one (a sign-in with the
+                // stored certificate, which is missing or expired now) the user is asked for it.
+                if !self.password_given {
+                    return Some(Err(Ended::Failed(
+                        "password needed: the stored certificate is missing or has expired".into(),
                     )));
                 }
                 self.certificate_tried = true;
