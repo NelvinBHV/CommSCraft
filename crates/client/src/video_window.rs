@@ -63,7 +63,8 @@ fn write_unit(out: &mut impl Write, unit: &[u8]) -> std::io::Result<()> {
 }
 
 /// The next access unit; `None` at the end of the pipe. A length above the decoder's limit ends the
-/// stream rather than allocating it.
+/// stream rather than allocating it (the helper reads with this limit through [`read_units`]).
+#[cfg(test)]
 fn read_unit(input: &mut impl Read) -> std::io::Result<Option<Vec<u8>>> {
     read_bounded(input, vf::MAX_ACCESS_UNIT)
 }
@@ -185,13 +186,13 @@ fn i420_of_bgrx(w: u32, h: u32, bgrx: &[u8], max_w: u32, max_h: u32) -> Option<v
 /// The raw mode of the helper: pictures as they come, shown in the Wayland window from shared
 /// memory, else in the software window as I420.
 fn raw_main(title: &str) -> i32 {
-    let mut input = std::io::stdin().lock();
+    let units = read_units(MAX_RAW_UNIT);
     let mut wayland: Option<Window> = None;
     let mut use_wayland = Window::in_wayland_session();
     let mut window: Option<vf::Display> = None;
     let mut size = (0, 0);
     let mut closed = false;
-    while let Ok(Some(unit)) = read_bounded(&mut input, MAX_RAW_UNIT) {
+    while let Some(unit) = next_unit(&units, wayland.as_mut(), &mut closed) {
         let Some((width, height, pixels)) = raw_of(&unit) else {
             continue;
         };
@@ -244,6 +245,46 @@ fn raw_main(title: &str) -> i32 {
         }
     }
     0
+}
+
+/// How often the window handles the user's input while no picture comes (a still screen).
+const IDLE: Duration = Duration::from_millis(50);
+
+/// The units of the pipe, read by a thread of their own into a bounded queue (two units: the
+/// pipe and the client wait when the window is behind).
+fn read_units(max: usize) -> Receiver<Vec<u8>> {
+    let (tx, rx) = std::sync::mpsc::sync_channel(2);
+    std::thread::spawn(move || {
+        let mut input = std::io::stdin().lock();
+        while let Ok(Some(unit)) = read_bounded(&mut input, max) {
+            if tx.send(unit).is_err() {
+                return;
+            }
+        }
+    });
+    rx
+}
+
+/// The next unit; meanwhile the window follows the user (resize, maximize, move, close).
+/// `None` at the end of the pipe.
+fn next_unit(
+    units: &Receiver<Vec<u8>>,
+    mut window: Option<&mut Window>,
+    closed: &mut bool,
+) -> Option<Vec<u8>> {
+    loop {
+        match units.recv_timeout(IDLE) {
+            Ok(unit) => return Some(unit),
+            Err(RecvTimeoutError::Disconnected) => return None,
+            Err(RecvTimeoutError::Timeout) => {
+                if let Some(w) = window.as_deref_mut().filter(|_| !*closed) {
+                    if w.idle() == Err(WindowError::Closed) {
+                        *closed = true;
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn read_bounded(input: &mut impl Read, max: usize) -> std::io::Result<Option<Vec<u8>>> {
@@ -512,14 +553,14 @@ pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
             return 2;
         }
     };
-    let mut input = std::io::stdin().lock();
+    let units = read_units(vf::MAX_ACCESS_UNIT);
     let mut surface_window: Option<Window> = None;
     let mut window: Option<vf::Display> = None;
     let mut failed = false;
     let mut announced = false;
     let mut closed = false;
     let mut size = (0, 0);
-    while let Ok(Some(unit)) = read_unit(&mut input) {
+    while let Some(unit) = next_unit(&units, surface_window.as_mut(), &mut closed) {
         let decoded = if surfaces {
             decoder.decode_to_surfaces(&unit)
         } else {
