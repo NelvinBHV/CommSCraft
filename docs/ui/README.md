@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: appointments from Exchange)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: password in the keyring on request)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -48,7 +48,11 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   password (shared `commscraft-client::tlsdsk`) and signs in with it afterwards.
   With TLS-DSK (a stored, valid certificate) or Kerberos (the system's ticket) the password may
   stay empty; when the stored certificate is missing or has expired, the sign-in says that the
-  password is needed. No password is stored.
+  password is needed. A password is stored only when the user ticks *remember the password in
+  the keyring*, and only after a successful sign-in: in the system's keyring (Secret Service over
+  D-Bus, or the keyring portal in a sandbox) through `oo7` on zbus 6, one item per sign-in
+  address; the next start offers the last address and may sign in with the field empty;
+  *Options → personal → remove the stored password* deletes it (`tested-in-lab`).
 - **Mapping:** engine events become typed `AppEvent`s (contacts, presence with the published
   display name, conversations, delivery, typing, roster, invitations, calls, meetings, notices);
   interface intents become engine commands. The interface's own conversation key is tied to the

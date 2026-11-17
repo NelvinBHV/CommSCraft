@@ -41,6 +41,9 @@ pub fn parse(text: &str) -> Prefs {
             "high_contrast" => p.high_contrast = v == "true",
             "lang" => p.lang = commscraft_ui::text::Lang::from_locale(v),
             "always_on_top" => p.always_on_top = v == "true",
+            "last_address" if commscraft_ui::normalise_address(v).as_deref() == Some(v) => {
+                p.last_address = v.to_string()
+            }
             "show_pictures" => p.show_pictures = v != "false",
             "compact_contacts" => p.compact_contacts = v == "true",
             "sort_by_availability" => p.sort_by_availability = v == "true",
@@ -107,6 +110,10 @@ pub fn format(p: &Prefs) -> String {
         out.push_str(&format!("{k}={v}\n"));
     }
     out.push_str(&format!("chat_text_size={}\n", p.chat_text_size));
+    if commscraft_ui::normalise_address(&p.last_address).as_deref() == Some(p.last_address.as_str())
+    {
+        out.push_str(&format!("last_address={}\n", p.last_address));
+    }
     if p.camera.starts_with("/dev/") {
         out.push_str(&format!("camera={}\n", p.camera));
     }
@@ -185,6 +192,7 @@ mod tests {
             sounds: false,
             camera: "/dev/video2".into(),
             chat_text_size: 16.0,
+            last_address: "sip:mara@beispiel.invalid".into(),
             ..Default::default()
         };
         p.favorites

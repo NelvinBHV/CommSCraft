@@ -11,6 +11,7 @@ mod photos;
 mod prefs;
 mod script;
 mod session;
+mod vault;
 
 use commscraft_ui::app::{CommsUi, UiIntent};
 use commscraft_ui::demo;
@@ -28,7 +29,7 @@ const USAGE: &str =
     "usage: commscraft [--demo] [--lang de|en] [--view chats|contacts|calls|meetings|settings]
                   [--size WIDTHxHEIGHT] [--screenshot FILE.png] [--screenshot-after SECONDS]
                   [--ca-file PEM] [--commands FILE] [--embed-windows]
-                  [--sign-in sip:ADDRESS [--user USER] [--domain DOMAIN] [--server HOST:PORT] [--kerberos] [--tls-dsk]]
+                  [--sign-in sip:ADDRESS [--user USER] [--domain DOMAIN] [--server HOST:PORT] [--kerberos] [--tls-dsk] [--remember]]
   --ca-file    adds an enterprise CA to the system trust store (never replaces the checks)
   --sign-in    signs in at start; the password is the first line of standard input
   --commands   follows FILE for test commands (see the documentation in docs/ui/README.md)";
@@ -113,6 +114,7 @@ fn parse_args() -> Result<Args, String> {
             "--server" => form.server = it.next().ok_or(USAGE)?,
             "--kerberos" => form.kerberos = true,
             "--tls-dsk" => form.tls_dsk = true,
+            "--remember" => form.remember = true,
             "-h" | "--help" => return Err(USAGE.into()),
             other => return Err(format!("unknown argument {other}\n{USAGE}")),
         }
@@ -126,7 +128,8 @@ fn parse_args() -> Result<Args, String> {
             .map_err(|e| e.to_string())?;
         form.password = line.trim_end_matches(['\r', '\n']).to_string();
         line.clear();
-        if form.password.is_empty() {
+        // An empty line: the keyring's password (with --remember, for the last address).
+        if form.password.is_empty() && !form.remember {
             return Err("--sign-in: no password on standard input".into());
         }
         a.sign_in = Some(form);
@@ -225,6 +228,8 @@ pub(crate) struct DesktopApp {
     shot_rx: Option<std::sync::mpsc::Receiver<std::sync::Arc<egui::ColorImage>>>,
     worker: Option<session::Worker>,
     worker_done: bool,
+    /// The password to keep in the keyring once the sign-in succeeded (the user asked for it).
+    pending_store: Option<(String, zeroize::Zeroizing<String>)>,
     ctx: Option<egui::Context>,
     ca: Option<Vec<u8>>,
     started: std::time::Instant,
@@ -265,7 +270,27 @@ impl DesktopApp {
             self.start_demo();
             return;
         }
-        if let UiIntent::SignIn(form) = intent {
+        if let UiIntent::SignIn(mut form) = intent {
+            // The keyring's password when the field stayed empty.
+            if form.password.is_empty()
+                && self.ui.stored_password_for.as_deref() == Some(form.address.as_str())
+            {
+                match vault::load(&form.address) {
+                    Some(pw) => form.password = pw.to_string(),
+                    None => self.ui.state.apply(AppEvent::Notice(
+                        NoticeKind::Warning,
+                        "the keyring gave no password".into(),
+                        now(),
+                    )),
+                }
+            }
+            self.pending_store = (form.remember && !form.password.is_empty()).then(|| {
+                (
+                    form.address.clone(),
+                    zeroize::Zeroizing::new(form.password.clone()),
+                )
+            });
+            self.ui.prefs.last_address = form.address.clone();
             let ctx = self.ctx.clone();
             let repaint: Box<dyn Fn() + Send> = Box::new(move || {
                 if let Some(c) = &ctx {
@@ -372,6 +397,14 @@ impl DesktopApp {
                 })
             }
             UiIntent::Dtmf { id, digits } => Some(ToWorker::Dtmf { id, digits }),
+            UiIntent::ForgetPassword => {
+                if let Some(account) = self.ui.stored_password_for.take() {
+                    if let Err(e) = vault::forget(&account) {
+                        eprintln!("keyring: {e}");
+                    }
+                }
+                None
+            }
             UiIntent::Quit | UiIntent::Minimize | UiIntent::FocusMain => None,
             UiIntent::StartDemo | UiIntent::SignIn(_) => None,
         };
@@ -403,6 +436,23 @@ impl DesktopApp {
         self.worker = None;
     }
 
+    /// After a successful sign-in: keep the password if asked, remember the address.
+    fn after_sign_in(&mut self) {
+        if let Some((account, pw)) = self.pending_store.take() {
+            match vault::store(&account, &pw) {
+                Ok(()) => self.ui.stored_password_for = Some(account),
+                Err(e) => self.ui.state.apply(AppEvent::Notice(
+                    NoticeKind::Warning,
+                    format!("the password could not be kept in the keyring ({e})"),
+                    now(),
+                )),
+            }
+        }
+        if let Err(e) = prefs::save(&self.ui.prefs) {
+            eprintln!("preferences not saved: {e}");
+        }
+    }
+
     fn pump_session(&mut self) {
         let Some(w) = &self.worker else { return };
         let mut ended = false;
@@ -414,7 +464,14 @@ impl DesktopApp {
                     self.worker_done = true;
                 }
             }
+            if matches!(e, AppEvent::Connection(Connection::Failed(_))) {
+                self.pending_store = None;
+            }
+            let signed_in = matches!(e, AppEvent::SignedIn(_));
             self.ui.apply(e);
+            if signed_in {
+                self.after_sign_in();
+            }
         }
         if ended {
             self.reset();
@@ -585,6 +642,14 @@ fn main() {
             // Screenshots use the defaults, not the user's preferences.
             if args.screenshot.is_none() && !args.demo {
                 ui.prefs = prefs::load();
+                // The last sign-in address, and whether the keyring holds its password.
+                let last = ui.prefs.last_address.clone();
+                if !last.is_empty() {
+                    ui.set_sign_in_address(last.trim_start_matches("sip:"));
+                    if vault::has(&last) {
+                        ui.stored_password_for = Some(last);
+                    }
+                }
             }
             ui.prefs.lang = lang;
             let mut app = DesktopApp {
@@ -602,6 +667,7 @@ fn main() {
                 shot_since: None,
                 worker: None,
                 worker_done: false,
+                pending_store: None,
                 ctx: Some(cc.egui_ctx.clone()),
                 ca,
                 started: std::time::Instant::now(),
