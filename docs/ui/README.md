@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: video calls and viewing shared screens)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: meeting content)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -77,8 +77,18 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   sends it back (*delivered*); a refused or unsent one is *not delivered*. Messages that come
   again with the history are shown once (by the server's message number). `tested-offline`:
   Skype for Business Server 2019 has no persistent chat.
-- **Not in the desktop client yet** (gated with a reason): meeting content, video and screen
-  viewing in meetings.
+- **Meeting content:** in a meeting's group conversation, details → *Meeting content* → *Show
+  content* joins the web conferencing server (PSOM over TLS, the shared
+  `commscraft-client::meeting_content`): who presents and what, whiteboards with their number of
+  annotations, slides with count and position, notes, files, and polls with question, choices,
+  results, open or closed, and voting (*your vote* only once the server confirms it). Slides and
+  whiteboard ink are not drawn yet (said in the panel). `tested-in-lab`: joining, a whiteboard and
+  a poll created on the Windows client, voting from the desktop client (the Windows client counted
+  the vote).
+- **Invitations** to meetings wait under *Meetings*; the rail shows how many, the status bar names
+  who invites; the same invitation sent twice is listed once.
+- **Not in the desktop client yet** (gated with a reason): video and screen viewing inside
+  meetings, drawing slides and whiteboard ink.
 
 `--sign-in sip:ADDRESS --user USER [--domain D] [--server H:P]` signs in at start with the
 password from standard input; `--commands FILE` follows a file of test commands (`view`, `chat`,
@@ -98,7 +108,8 @@ in Settings → "Functions and their state").
 | 1:1 chat, group chat, presence, address book search, audio call, hold, transfer (blind), meetings | available when signed in; preview in the demo (transfer: not shown in the demo) | through the session adapter |
 | persistent chat rooms | available when signed in and provisioning names a chat pool, else unavailable (disabled by the server); preview in the demo | through the session adapter |
 | video call (1:1), viewing a screen shared 1:1 | available when signed in; preview in the demo | through the session adapter and the video window process |
-| meeting content, video and screen viewing in meetings | unavailable | the command-line tool offers them; not in this interface yet |
+| meeting content (whiteboards, slides, polls with voting) | available when signed in; preview in the demo | through the session adapter (PSOM) |
+| video and screen viewing in meetings | not offered | the command-line tool offers them; not in this interface yet |
 | file transfer, formatted text, history search, read receipts | unavailable | not implemented (no public specification for file transfer; `text/plain` only; no archive or index; delivery is not reading) |
 
 Delivery is shown as what it is: *sending*, *delivered* (the server or peer accepted the MESSAGE),
@@ -160,8 +171,8 @@ reference designs (1440 × 900), with screenshots of the real build (above).
 | Security | no secrets in logs (the trace prints method or status and CSeq only), the password leaves the form once and is cleared, no TLS bypass, no end-to-end claim (the privacy text says TLS and SRTP are not end-to-end encryption), no chat content on disk |
 | Accessibility | labels on all interactive elements (the tests use them); contrast tested; the Linux screen reader bridge is still missing (AccessKit's adapter on zbus 5 is listed as unmaintained) |
 
-Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): the screen reader bridge, and meeting content and video in meetings in the
-interface. Added after the QA: video calls and viewing screens shared 1:1 (`tested-in-lab`), persistent chat rooms (tested offline), blind transfer and TLS-DSK sign-in (both
+Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): the screen reader bridge, video and screen viewing inside meetings, and drawing
+slides and whiteboard ink. Added after the QA: meeting content with polls and voting (`tested-in-lab`), video calls and viewing screens shared 1:1 (`tested-in-lab`), persistent chat rooms (tested offline), blind transfer and TLS-DSK sign-in (both
 `tested-in-lab`), Kerberos as an option of the sign-in (`tested-in-lab` only its fallback to NTLM:
 the test host has no Kerberos configuration) and the trust dialog for a foreign server domain
 (tested offline: the lab's servers are in its domain).

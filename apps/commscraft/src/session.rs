@@ -1799,6 +1799,13 @@ impl Session {
             }
             E::ConferenceInvitation { from, invitation } => {
                 self.cues.notify(now_ms());
+                out.notice(
+                    NoticeKind::Info,
+                    format!(
+                        "{} invites you to a meeting (Meetings)",
+                        from.trim_start_matches("sip:")
+                    ),
+                );
                 out.event(AppEvent::Invitation(commscraft_ui::model::Invitation {
                     from,
                     focus: invitation.focus,

@@ -126,7 +126,15 @@ fn entry(
         facts.push(item.slide_at.clone());
     }
     if item.annotations > 0 || item.kind == ContentKind::Whiteboard {
-        facts.push(format!("{} {}", item.annotations, t.content_annotations));
+        facts.push(format!(
+            "{} {}",
+            item.annotations,
+            if item.annotations == 1 {
+                t.content_annotation
+            } else {
+                t.content_annotations
+            }
+        ));
     }
     if let Some((name, size)) = &item.file {
         facts.push(format!("{name} ({})", crate::format::bytes(*size)));

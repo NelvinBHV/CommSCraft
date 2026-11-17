@@ -296,6 +296,7 @@ texts! {
     content_file: "Datei", "File";
     content_other: "Inhalt", "Content";
     content_annotations: "Anmerkungen", "annotations";
+    content_annotation: "Anmerkung", "annotation";
     content_slide_count: "Folien", "slides";
     content_poll_open: "Abstimmung offen", "Voting open";
     content_poll_closed: "Abstimmung geschlossen", "Voting closed";

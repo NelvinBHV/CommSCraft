@@ -350,3 +350,16 @@ fn only_an_incoming_call_offers_video_and_a_video_failure_is_cleaned() {
     assert_eq!(s.calls[1].kind, CallKind::Video);
     assert_eq!(s.calls[1].video, VideoState::Failed("no camerax".into()));
 }
+
+#[test]
+fn the_same_invitation_is_listed_once() {
+    let mut s = online();
+    for _ in 0..2 {
+        s.apply(AppEvent::Invitation(Invitation {
+            from: "sip:erin@beispiel.invalid".into(),
+            focus: "sip:erin@beispiel.invalid;gruu;opaque=app:conf:focus:id:X".into(),
+            subject: String::new(),
+        }));
+    }
+    assert_eq!(s.invitations.len(), 1);
+}

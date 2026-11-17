@@ -1203,7 +1203,10 @@ impl AppState {
                     .collect();
             }
             AppEvent::Invitation(i) => {
-                if self.invitations.len() < 20 {
+                // The same conference again (the inviting client may send it twice): once.
+                let focus = label(&i.focus);
+                if self.invitations.len() < 20 && !self.invitations.iter().any(|v| v.focus == focus)
+                {
                     self.invitations.push(Invitation {
                         from: label(&i.from),
                         focus: label(&i.focus),

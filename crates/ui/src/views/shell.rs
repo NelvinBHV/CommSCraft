@@ -213,6 +213,8 @@ pub fn rail(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 let badge = match item.view {
                     View::Chats => unread,
                     View::Calls => usize::from(app.state.active_call().is_some()),
+                    // Invitations wait under Meetings: the rail shows them from everywhere.
+                    View::Meetings => app.state.invitations.len(),
                     _ => 0,
                 };
                 if rail_button(ui, &item, app.view == item.view, badge, pal).clicked() {
