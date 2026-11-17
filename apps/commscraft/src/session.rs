@@ -130,6 +130,10 @@ pub enum ToWorker {
     JoinMeetingVideo {
         session: u32,
     },
+    /// View what is shared in a meeting.
+    ViewMeetingScreen {
+        session: u32,
+    },
     ScheduleMeeting {
         subject: String,
         minutes: u64,
@@ -655,6 +659,20 @@ struct Videos {
     /// Screen shares we view whose stream is not negotiated yet: they have no audio answer, so
     /// the negotiated stream is what connects them.
     viewing: BTreeSet<u32>,
+    /// Meetings in which someone shares (conversation), and the screen video source if the
+    /// sharing is announced as video (CA-13); without a source a window is shared over RDP.
+    sharing: BTreeSet<u32>,
+    screen_source: BTreeMap<u32, u32>,
+    /// Viewing a meeting's shared screen: receive-only video being prepared (video ID →
+    /// conversation), then the conversation's video ID until its viewing call is known.
+    conf_screen_pending: BTreeMap<u32, u32>,
+    conf_screen_video: BTreeMap<u32, u32>,
+    /// The video ID of the meeting screen being viewed, by conversation (source changes).
+    conf_viewing: BTreeMap<u32, u32>,
+    /// Viewing a meeting's shared window over RDP: RDP ID → conversation, and the viewer by
+    /// conversation until its call is known.
+    conf_rdp_pending: BTreeMap<u32, u32>,
+    conf_rdp: BTreeMap<u32, (u32, rdp_call::RdpHandle)>,
 }
 
 impl Videos {
@@ -677,6 +695,13 @@ impl Videos {
             pending_rdp: BTreeMap::new(),
             rdp_call_of: BTreeMap::new(),
             viewing: BTreeSet::new(),
+            sharing: BTreeSet::new(),
+            screen_source: BTreeMap::new(),
+            conf_screen_pending: BTreeMap::new(),
+            conf_screen_video: BTreeMap::new(),
+            conf_viewing: BTreeMap::new(),
+            conf_rdp_pending: BTreeMap::new(),
+            conf_rdp: BTreeMap::new(),
         }
     }
 }
@@ -1349,6 +1374,21 @@ impl Session {
         use video_call::FromVideo as V;
         let t = now();
         match e {
+            V::Ready(vid, local) if self.v.conf_screen_pending.contains_key(&vid) => {
+                let Some(conversation) = self.v.conf_screen_pending.remove(&vid) else {
+                    return Vec::new();
+                };
+                self.v.conf_screen_video.insert(conversation, vid);
+                let policy = self.policy();
+                self.engine.command(
+                    C::ViewConferenceScreen {
+                        conversation,
+                        video: local,
+                        policy,
+                    },
+                    t,
+                )
+            }
             V::Ready(vid, local) => match self.v.pending_screen.remove(&vid) {
                 Some(call) => {
                     self.v.of_call.insert(call, vid);
@@ -1409,6 +1449,20 @@ impl Session {
         use rdp_call::FromRdp as R;
         let t = now();
         match e {
+            R::Ready(rid, local) if self.v.conf_rdp_pending.contains_key(&rid) => {
+                let Some(conversation) = self.v.conf_rdp_pending.remove(&rid) else {
+                    return Vec::new();
+                };
+                let policy = self.policy();
+                self.engine.command(
+                    C::ViewConferenceRdp {
+                        conversation,
+                        local,
+                        policy,
+                    },
+                    t,
+                )
+            }
             R::Ready(rid, local) => match self.v.pending_rdp.remove(&rid) {
                 Some(call) => {
                     self.v.rdp_call_of.insert(rid, call);
@@ -1758,6 +1812,29 @@ impl Session {
                 },
                 t,
             ),
+            ToWorker::ViewMeetingScreen { session } => {
+                if self.v.sharing.contains(&session) && !self.v.screen_source.contains_key(&session)
+                {
+                    // A window shared over RDP, through the application sharing MCU.
+                    let rid = self.next_id();
+                    let h = rdp_call::spawn(
+                        rid,
+                        self.local_ip,
+                        self.engine.own_aor().to_string(),
+                        self.v.rdp_tx.clone(),
+                        self.v.video_tx.clone(),
+                    );
+                    self.v.conf_rdp.insert(session, (rid, h));
+                    self.v.conf_rdp_pending.insert(rid, session);
+                } else if self.v.screen_source.contains_key(&session) {
+                    // A screen shared as video: a receive-only video stream.
+                    let vid = self.spawn_video(None, false);
+                    self.v.conf_screen_pending.insert(vid, session);
+                } else {
+                    out.notice(NoticeKind::Info, "nobody shares in this meeting right now");
+                }
+                Vec::new()
+            }
             ToWorker::JoinMeetingVideo { session } => {
                 let (aid, bwm) = self.spawn_media_with_video(None, None);
                 self.pending_conf.insert(aid, session);
@@ -2509,6 +2586,38 @@ impl Session {
                     session: conversation,
                     title: self.group_title(conversation),
                 });
+                // Function 43: who shares, and whether as video (its source) or a window.
+                let sharer = participants
+                    .iter()
+                    .find(|p| p.endpoints.iter().any(|e| e.sharing == Some(true)));
+                match sharer.and_then(|p| p.endpoints.iter().find_map(|e| e.screen_source)) {
+                    Some(msi) => {
+                        if self.v.screen_source.insert(conversation, msi) != Some(msi) {
+                            // CA-13: the screen being viewed follows the new source.
+                            if let Some(h) = self
+                                .v
+                                .conf_viewing
+                                .get(&conversation)
+                                .and_then(|vid| self.v.handles.get(vid))
+                            {
+                                let _ = h.tx.send(video_call::ToVideo::Source(msi));
+                            }
+                        }
+                    }
+                    None => {
+                        self.v.screen_source.remove(&conversation);
+                    }
+                }
+                let sharer_name = sharer.map(|p| p.name.clone().unwrap_or_else(|| p.uri.clone()));
+                if sharer_name.is_some() {
+                    self.v.sharing.insert(conversation);
+                } else {
+                    self.v.sharing.remove(&conversation);
+                }
+                out.event(AppEvent::ConferenceSharing {
+                    session: conversation,
+                    sharer: sharer_name,
+                });
                 out.event(AppEvent::Participants {
                     session: conversation,
                     participants: participants
@@ -2590,6 +2699,39 @@ impl Session {
             }
             E::MeetingCancelled { conference_id } => {
                 out.event(AppEvent::MeetingCancelled(conference_id))
+            }
+            // The viewing call of a meeting's shared screen or window (function 43).
+            E::ConferenceScreen { conversation, call } => {
+                out.event(AppEvent::CallStarted {
+                    id: call,
+                    peer: String::new(),
+                    incoming: false,
+                    at: t,
+                });
+                out.event(AppEvent::ConferenceCall {
+                    id: call,
+                    session: conversation,
+                });
+                out.event(AppEvent::CallVideo {
+                    id: call,
+                    state: VideoState::Starting,
+                });
+                self.outgoing.insert(call);
+                self.v.viewing.insert(call);
+                if let Some((rid, h)) = self.v.conf_rdp.remove(&conversation) {
+                    self.v.rdp.insert(call, h);
+                    self.v.rdp_call_of.insert(rid, call);
+                } else if let Some(vid) = self.v.conf_screen_video.remove(&conversation) {
+                    self.v.of_call.insert(call, vid);
+                    self.v.conf_viewing.insert(conversation, vid);
+                    // CA-13: ask the MCU for the sharer's stream.
+                    if let (Some(msi), Some(h)) = (
+                        self.v.screen_source.get(&conversation),
+                        self.v.handles.get(&vid),
+                    ) {
+                        let _ = h.tx.send(video_call::ToVideo::Source(*msi));
+                    }
+                }
             }
             E::ConferenceAudio { conversation, call } => {
                 trace_line(&format!(

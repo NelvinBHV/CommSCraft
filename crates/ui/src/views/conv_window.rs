@@ -253,6 +253,26 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                 });
             });
         });
+    // Someone shares in the meeting: say so and offer to view it.
+    if let (Some(sharer), true) = (c.sharer.clone(), c.is_group() && c.state == ConvState::Open) {
+        egui::Panel::top(("conv-sharing", key.0))
+            .frame(
+                Frame::new()
+                    .fill(pal.primary_soft)
+                    .inner_margin(Margin::symmetric(10, 6)),
+            )
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    widgets::ellipsis(
+                        ui,
+                        RichText::new(format!("{sharer} {}", t.shares_screen)).color(pal.ink),
+                    );
+                    if ui.button(t.view_shared).clicked() {
+                        app.emit(UiIntent::ViewMeetingScreen { key });
+                    }
+                });
+            });
+    }
     if app.participants_open.contains(&key) || c.content.is_some() {
         egui::Panel::right(("conv-side", key.0))
             .default_size(230.0)

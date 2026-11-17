@@ -366,6 +366,8 @@ pub struct Conversation {
     /// One peer, or `None` for a group.
     pub peer: Option<String>,
     pub participants: Vec<Participant>,
+    /// Who shares in this meeting right now.
+    pub sharer: Option<String>,
     pub messages: VecDeque<Message>,
     pub unread: usize,
     pub typing: bool,
@@ -686,6 +688,11 @@ pub enum AppEvent {
     },
     Meetings(Vec<Meeting>),
     /// This call is the audio of the meeting of a group conversation (session ID).
+    /// Someone shares in the meeting of a group conversation (their name), or nobody does.
+    ConferenceSharing {
+        session: u32,
+        sharer: Option<String>,
+    },
     ConferenceCall {
         id: u32,
         session: u32,
@@ -994,6 +1001,7 @@ impl AppState {
             title,
             peer,
             participants: Vec::new(),
+            sharer: None,
             messages: VecDeque::new(),
             unread: 0,
             typing: false,
@@ -1428,6 +1436,11 @@ impl AppState {
                 }
             }
             AppEvent::MeetingCancelled(id) => self.meetings.retain(|m| m.conference_id != id),
+            AppEvent::ConferenceSharing { session, sharer } => {
+                if let Some(c) = self.by_session(session) {
+                    c.sharer = sharer.map(|s| label(&s));
+                }
+            }
             AppEvent::ConferenceCall { id, session } => {
                 let key = self.by_session(session).map(|c| c.key);
                 if let Some(c) = self.calls.iter_mut().find(|c| c.id == id) {

@@ -110,6 +110,10 @@ pub enum UiIntent {
     JoinMeetingVideo {
         key: ConvKey,
     },
+    /// View what is shared in the meeting.
+    ViewMeetingScreen {
+        key: ConvKey,
+    },
     /// A presenter's command in the meeting of this conversation.
     ConferenceCommand {
         key: ConvKey,
