@@ -1,6 +1,6 @@
 # Where CommSCraft falls short of the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: no telephony shown)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: sign-in with address and password)
 
 The work list, ranked by how much each item blocks the alpha gate in
 [`roadmap.md`](roadmap.md#alpha-gate-core-workflows) (**A** = blocks alpha). Each entry says what is

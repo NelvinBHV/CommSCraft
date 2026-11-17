@@ -429,9 +429,9 @@ texts! {
     preview_hint: "Vorschau mit Demo-Daten – ohne Wirkung", "Preview with demo data – no effect";
     sign_in_title: "Anmelden", "Sign in";
     sign_in_body: "Bei Skype for Business Server Ihrer Organisation.", "To your organisation's Skype for Business Server.";
-    sign_in_address: "SIP-Adresse", "SIP address";
-    sign_in_user: "Benutzername", "User name";
-    sign_in_user_hint: "z. B. mkleinert", "e.g. mkleinert";
+    sign_in_address: "Anmeldeadresse", "Sign-in address";
+    sign_in_user: "Benutzername (optional)", "User name (optional)";
+    sign_in_user_hint: "leer: wie die Anmeldeadresse", "empty: as the sign-in address";
     sign_in_domain: "Windows-Domäne (optional)", "Windows domain (optional)";
     sign_in_domain_hint: "z. B. FIRMA", "e.g. COMPANY";
     sign_in_password: "Kennwort", "Password";
@@ -440,7 +440,7 @@ texts! {
     sign_in: "Anmelden", "Sign in";
     sign_in_again: "Neu anmelden", "Sign in again";
     sign_in_tls_dsk: "Mit Benutzerzertifikat (TLS-DSK)", "With a user certificate (TLS-DSK)";
-    sign_in_tls_dsk_tip: "Holt beim ersten Mal ein Zertifikat beim Zertifikatsdienst des Servers (mit dem Kennwort) und meldet sich danach damit an.", "Gets a certificate from the server's certificate service the first time (with the password) and signs in with it afterwards.";
+    sign_in_tls_dsk_tip: "Holt beim ersten Mal ein Zertifikat beim Zertifikatsdienst des Servers (mit dem Kennwort) und meldet sich danach damit an – ohne Kennwort, solange es gültig ist.", "Gets a certificate from the server's certificate service the first time (with the password) and signs in with it afterwards – without a password while it is valid.";
     trust_title: "Server außerhalb Ihrer Domäne", "Server outside your domain";
     trust_no: "Nicht vertrauen", "Do not trust";
     sign_in_kerberos: "Kerberos versuchen (Windows-Domäne)", "Try Kerberos (Windows domain)";
