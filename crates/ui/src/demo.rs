@@ -5,7 +5,7 @@ use crate::app::UiIntent;
 use crate::model::{
     AppEvent, AppState, Call, CallDirection, CallRecord, CallState, Capabilities, Connection,
     Contact, ConvKey, ConvState, Delivery, Meeting, Message, NoticeKind, Participant, Presence,
-    Profile, Source,
+    Profile, RoomPost, Source,
 };
 use crate::text::Lang;
 
@@ -131,6 +131,7 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
             state: ConvState::Open,
             last_activity: last,
             demo: true,
+            room: None,
         });
         key
     };
@@ -315,6 +316,47 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
         },
     ];
     let _ = group;
+    // A persistent chat room (illustrative, marked like every demo conversation).
+    let room = format!("ma-chan://{DOMAIN}/0d3f6a1c-demo");
+    state.apply(AppEvent::Room {
+        uri: room.clone(),
+        name: if de {
+            "Wissensaustausch"
+        } else {
+            "Knowledge sharing"
+        }
+        .into(),
+        topic: if de {
+            "Tipps und Fragen rund um die Arbeit"
+        } else {
+            "Tips and questions about work"
+        }
+        .into(),
+        participants: vec![uri("anna.weber"), uri("tim.lange"), uri("mara.klein")],
+        joined: true,
+    });
+    state.apply(AppEvent::RoomPosts {
+        room: room.clone(),
+        posts: vec![RoomPost {
+            author: uri("tim.lange"),
+            name: "Tim Lange".into(),
+            text: if de {
+                "Die Vorlage für Protokolle liegt jetzt im Teamordner."
+            } else {
+                "The minutes template is in the team folder now."
+            }
+            .into(),
+            at: now.saturating_sub(26 * 3600),
+            chat_id: 1,
+            ours: false,
+        }],
+        history: true,
+    });
+    if let Some(k) = state.room_key(&room) {
+        if let Some(c) = state.conversation_mut(k) {
+            c.demo = true;
+        }
+    }
 }
 
 /// Starts the demo in an interface: data, the group conversation and one contact selected.
@@ -367,6 +409,25 @@ pub fn handle(state: &mut AppState, intent: &UiIntent, now: u64, lang: Lang) {
                 "Demo: message shown, not sent",
             );
         }
+        UiIntent::SendToRoom { room, .. } => {
+            if let Some(k) = state.room_key(room) {
+                if let Some(c) = state.conversation_mut(k) {
+                    if let Some(m) = c.messages.iter_mut().rev().find(|m| m.sender.is_none()) {
+                        m.delivery = Delivery::Unknown;
+                    }
+                }
+            }
+            notice(
+                state,
+                "Demo: Nachricht nur angezeigt, nicht gesendet",
+                "Demo: message shown, not sent",
+            );
+        }
+        UiIntent::LoadRooms => notice(
+            state,
+            "Demo: Die Räume sind Beispieldaten – es gibt keinen Chat-Server",
+            "Demo: the rooms are sample data – there is no chat server",
+        ),
         UiIntent::StartConversation { key, .. } => {
             if let Some(c) = state.conversation_mut(*key) {
                 c.state = ConvState::Open;

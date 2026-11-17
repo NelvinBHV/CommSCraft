@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-16 · **Last updated:** 2026-11-16 · **Change:** minor (desktop client: TLS-DSK; Kerberos option wired)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: persistent chat rooms)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -58,8 +58,16 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
 - **Address book search:** MS-DLX through the shared `commscraft-client::directory` with the
   registrar's NTLM; asked once the search text has rested for 600 ms; results are shown with
   their source and are not kept as contacts.
+- **Persistent chat rooms:** offered only when provisioning names a persistent chat pool
+  (otherwise *unavailable: disabled by the server*). *Rooms* in the chat list → *Load chat
+  rooms* connects to the pool, lists the rooms the user is a member of, joins them and asks for
+  each room's history once. A room is a conversation of its own kind – not an ad-hoc group: no
+  typing notifications, no invitations, no "end". Our message is *sending* until the chat server
+  sends it back (*delivered*); a refused or unsent one is *not delivered*. Messages that come
+  again with the history are shown once (by the server's message number). `tested-offline`:
+  Skype for Business Server 2019 has no persistent chat.
 - **Not in the desktop client yet** (gated with a reason): video, viewing shared screens,
-  meeting content, persistent chat.
+  meeting content.
 
 `--sign-in sip:ADDRESS --user USER [--domain D] [--server H:P]` signs in at start with the
 password from standard input; `--commands FILE` follows a file of test commands (`view`, `chat`,
@@ -77,7 +85,8 @@ in Settings → "Functions and their state").
 | Function | Gate today | Why |
 |---|---|---|
 | 1:1 chat, group chat, presence, address book search, audio call, hold, transfer (blind), meetings | available when signed in; preview in the demo (transfer: not shown in the demo) | through the session adapter |
-| video call, persistent chat rooms, viewing shared screens, meeting content | unavailable | the command-line tool offers them; not in this interface yet |
+| persistent chat rooms | available when signed in and provisioning names a chat pool, else unavailable (disabled by the server); preview in the demo | through the session adapter |
+| video call, viewing shared screens, meeting content | unavailable | the command-line tool offers them; not in this interface yet |
 | file transfer, formatted text, history search, read receipts | unavailable | not implemented (no public specification for file transfer; `text/plain` only; no archive or index; delivery is not reading) |
 
 Delivery is shown as what it is: *sending*, *delivered* (the server or peer accepted the MESSAGE),
@@ -139,8 +148,8 @@ reference designs (1440 × 900), with screenshots of the real build (above).
 | Security | no secrets in logs (the trace prints method or status and CSeq only), the password leaves the form once and is cleared, no TLS bypass, no end-to-end claim (the privacy text says TLS and SRTP are not end-to-end encryption), no chat content on disk |
 | Accessibility | labels on all interactive elements (the tests use them); contrast tested; the Linux screen reader bridge is still missing (AccessKit's adapter on zbus 5 is listed as unmaintained) |
 
-Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): the screen reader bridge, and video, viewing shared screens, meeting content
-and persistent chat in the interface. Added after the QA: blind transfer and TLS-DSK sign-in (both
+Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): the screen reader bridge, and video, viewing shared screens and meeting content
+in the interface. Added after the QA: persistent chat rooms (tested offline), blind transfer and TLS-DSK sign-in (both
 `tested-in-lab`), Kerberos as an option of the sign-in (`tested-in-lab` only its fallback to NTLM:
 the test host has no Kerberos configuration) and the trust dialog for a foreign server domain
 (tested offline: the lab's servers are in its domain).

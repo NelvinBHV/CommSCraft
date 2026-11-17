@@ -27,6 +27,7 @@ commscraft-sipae = { path = "../../crates/sipae" }
 commscraft-tlsdsk = { path = "../../crates/tlsdsk" }
 commscraft-url = { path = "../../crates/url" }
 commscraft-xml = { path = "../../crates/xml" }
+commscraft-xccos = { path = "../../crates/xccos" }
 zeroize.workspace = true
 # Window and OpenGL rendering on Wayland and X11; no bundled fonts (the system's sans font is
 # loaded at start). Without the `accesskit` feature for now: its Linux adapter pulls in zbus 5 with

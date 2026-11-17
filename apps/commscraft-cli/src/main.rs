@@ -3186,6 +3186,9 @@ fn interactive(
                             "* the contact list is kept in Exchange, which is not reachable"
                         ),
                     },
+                    E::RoomNotSent { room, status } => {
+                        println!("* not sent to {room} ({status})")
+                    }
                     E::Notice(n) => println!("* {n}"),
                 },
             }

@@ -362,3 +362,45 @@ fn a_foreign_server_needs_an_explicit_yes() {
     assert!(h.state().intents.contains(&UiIntent::AnswerTrust(false)));
     assert!(h.state().ui.state.trust_question.is_none());
 }
+
+#[test]
+fn a_room_is_listed_apart_and_its_messages_go_to_the_room() {
+    let mut h = harness(demo_ui(Lang::De), (1440.0, 900.0));
+    h.run();
+    button(&h, "Räume").click();
+    h.run();
+    assert!(h.query_by_label("Chatrooms laden").is_some());
+    // Only the room is listed under "Räume", not the group or the one-to-one chats.
+    // (A list row is labelled "<title>, <unread>"; the open group's header stays.)
+    assert!(h.query_by_label_contains("Projekt Nord,").is_none());
+    h.get_by_label_contains("Wissensaustausch,").click();
+    h.run();
+    assert!(h.query_by_label_contains("Chatroom · 3").is_some());
+    let composer = h.get_by_label("composer");
+    composer.focus();
+    composer.type_text("Danke für die Vorlage");
+    h.run();
+    h.key_press(egui::Key::Enter);
+    h.run();
+    let room = h
+        .state()
+        .ui
+        .state
+        .conversation(h.state().ui.selected_conversation().unwrap())
+        .unwrap()
+        .room
+        .clone()
+        .unwrap()
+        .uri;
+    assert!(h.state().intents.contains(&UiIntent::SendToRoom {
+        room,
+        text: "Danke für die Vorlage".into()
+    }));
+    // No typing notification and no "end" for a room.
+    assert!(!h
+        .state()
+        .intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::Typing { .. })));
+    assert!(h.query_by_label_contains("Zustellung unbekannt").is_some());
+}

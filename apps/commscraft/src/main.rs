@@ -306,6 +306,8 @@ impl DesktopApp {
             UiIntent::RefreshMeetings => Some(ToWorker::RefreshMeetings),
             UiIntent::CallUser { peer } => Some(ToWorker::CallUser { peer }),
             UiIntent::Transfer { id, peer } => Some(ToWorker::Transfer { id, peer }),
+            UiIntent::LoadRooms => Some(ToWorker::LoadRooms),
+            UiIntent::SendToRoom { room, text } => Some(ToWorker::SendToRoom { room, text }),
             UiIntent::AnswerCall { id } => Some(ToWorker::AnswerCall { id }),
             UiIntent::HangUp { id } => Some(ToWorker::HangUp { id }),
             UiIntent::Hold { id, hold } => Some(ToWorker::Hold { id, hold }),

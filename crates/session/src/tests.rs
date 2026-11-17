@@ -5543,6 +5543,13 @@ fn persistent_chat_flow() {
         sent.contains("<chat>Hallo</chat>") && sent.contains("chatId=\"0\""),
         "{sent}"
     );
+    // The server does not take it: the interface hears which room.
+    let out = e.on_message(
+        &answer(&mut server, &find(&out, "INFO"), 500, None, "", &[]),
+        NOW,
+    );
+    assert!(events(&out).iter().any(|ev| matches!(ev,
+        Event::RoomNotSent { room, status: 500 } if room == ROOM)));
     // A message from somebody else.
     let msg = format!(
         r#"<xccos ver="1" envid="11" xmlns="urn:parlano:xml:ns:xccos"><grpchat id="grpchat" seqid="1" chanUri="{ROOM}" author="sip:bob@contoso.com" authdisp="Bob" alert="false" chatId="5" ts="2026-11-16T20:00:00Z"><chat>Moin</chat></grpchat></xccos>"#
@@ -5572,4 +5579,20 @@ fn persistent_chat_flow() {
         find(&out, "BYE").call_id().unwrap(),
         invite2.call_id().unwrap()
     );
+}
+
+#[test]
+fn a_room_message_without_rooms_is_reported_as_not_sent() {
+    let (mut e, _server, _out) = signed_in();
+    let out = e.command(
+        Command::SendToRoom {
+            room: "ma-chan://contoso.com/aa-bb".into(),
+            text: "Hallo".into(),
+        },
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::RoomNotSent { status: 0, .. })));
 }

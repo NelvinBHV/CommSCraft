@@ -110,6 +110,11 @@ pub fn presence_badge(ui: &mut Ui, p: Presence, t: &Texts, pal: &Palette) -> Res
 
 /// A filter chip; returns true when clicked.
 pub fn chip(ui: &mut Ui, label: &str, selected: bool, pal: &Palette) -> bool {
+    chip_response(ui, label, selected, pal).clicked()
+}
+
+/// A filter chip, with its response (for a gated chip).
+pub fn chip_response(ui: &mut Ui, label: &str, selected: bool, pal: &Palette) -> Response {
     let text = RichText::new(label).color(if selected { pal.primary } else { pal.muted });
     let b = egui::Button::new(text)
         .fill(if selected {
@@ -123,7 +128,7 @@ pub fn chip(ui: &mut Ui, label: &str, selected: bool, pal: &Palette) -> bool {
         ))
         .min_size(Vec2::new(52.0, 30.0))
         .selected(selected);
-    ui.add(b).clicked()
+    ui.add(b)
 }
 
 /// An upper-case section title in the list panel.

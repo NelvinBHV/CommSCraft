@@ -546,6 +546,7 @@ dependencies = [
  "commscraft-tlsdsk",
  "commscraft-ui",
  "commscraft-url",
+ "commscraft-xccos",
  "commscraft-xml",
  "eframe",
  "png",

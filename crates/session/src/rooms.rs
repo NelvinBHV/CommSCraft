@@ -139,13 +139,19 @@ impl<R: Random> Engine<R> {
     /// A message to a room (§3.1.13, p. 55).
     pub(crate) fn rooms_send(&mut self, room: &str, text: &str, now: u64, out: &mut Vec<Output>) {
         let time = commscraft_xml::xs_datetime(now).unwrap_or_default();
+        let not_sent = |out: &mut Vec<Output>, why: String| {
+            out.push(Output::Event(Event::Notice(why)));
+            out.push(Output::Event(Event::RoomNotSent {
+                room: room.to_string(),
+                status: 0,
+            }));
+        };
         let Some(r) = self.rooms.as_mut() else {
-            out.push(Output::Event(Event::Notice(
-                "not connected to the chat rooms – /rooms".into(),
-            )));
+            not_sent(out, "not connected to the chat rooms – /rooms".into());
             return;
         };
         let Some(mut d) = r.dialog.take() else {
+            not_sent(out, "the chat room server is not connected yet".into());
             return;
         };
         let body = r.client.chat(room, text, &time);
@@ -156,11 +162,9 @@ impl<R: Random> Engine<R> {
                 self.complete(&mut m);
                 m.push_header("Content-Type", CONTENT_TYPE);
                 m.body = body.into_bytes();
-                self.send_request(m, Purpose::RoomsInfo, now, out);
+                self.send_request(m, Purpose::RoomsSend(room.to_string()), now, out);
             }
-            Err(e) => out.push(Output::Event(Event::Notice(format!(
-                "not sent to the room ({e:?})"
-            )))),
+            Err(e) => not_sent(out, format!("not sent to the room ({e:?})")),
         }
     }
 
