@@ -45,6 +45,8 @@ zune-jpeg = "0.5.15"
 # The Linux keyring (Secret Service, or the portal in a sandbox) on zbus 6; no tokio: the
 # async-std runtime of zbus, block_on from futures-lite; cryptography in Rust.
 oo7 = { version = "=0.7.1", default-features = false, features = ["async-std", "native_crypto"] }
+# The session's idle time over D-Bus (status automation): the zbus 6 that oo7 already brings.
+zbus = { version = "=6.3.0", default-features = false }
 futures-lite = "2"
 
 [lints]

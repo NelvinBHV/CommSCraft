@@ -187,7 +187,6 @@ texts! {
     opt_favorites_group: "Gruppe „Favoriten“ zeigen", "Show the Favourites group";
     opt_files: "Dateispeicherung", "File saving";
     opt_general: "Allgemein", "General";
-    opt_idle: "Nach Inaktivität „Inaktiv“ bzw. „Abwesend“ zeigen", "Show Inactive or Away after idle time";
     opt_im: "Chat", "IM";
     opt_language: "Sprache", "Language";
     opt_location: "Standort", "Location";
@@ -215,7 +214,9 @@ texts! {
     opt_sounds_body: "Klingeln, Hinweistöne und Wartemusik können zusätzlich mit COMMSCRAFT_RING, COMMSCRAFT_NOTIFY und COMMSCRAFT_HOLD_MUSIC durch eigene Dateien ersetzt werden.", "Ringing, alert sounds and music on hold can also be replaced by own files with COMMSCRAFT_RING, COMMSCRAFT_NOTIFY and COMMSCRAFT_HOLD_MUSIC.";
     opt_spelling: "Rechtschreibung beim Tippen prüfen", "Check spelling as I type";
     opt_status: "Status", "Status";
-    opt_status_body: "Der Status wird nur so veröffentlicht, wie Sie ihn wählen.", "The status is published only as you choose it.";
+    opt_status_body: "Die Leerlaufzeit kommt vom Desktop (GNOME oder KDE); ohne sie bleibt der Status, wie Sie ihn wählen. 0 Minuten schaltet den Schritt ab.", "The idle time comes from the desktop (GNOME or KDE); without it the status stays as you choose it. 0 minutes turns the step off.";
+    opt_inactive_after: "Als inaktiv anzeigen nach", "Show me as inactive after";
+    opt_away_after: "Als abwesend anzeigen nach weiteren", "Show me as away after a further";
     opt_tabs: "Unterhaltungen als Reiter in einem Fenster", "Conversations as tabs in one window";
     opt_text_size: "Schriftgröße im Chat", "Chat text size";
     opt_two_lines: "Name und Status (zweizeilig)", "Name and status (two lines)";
@@ -542,6 +543,13 @@ impl Texts {
                     "Abwesend"
                 } else {
                     "Away"
+                }
+            }
+            Presence::Inactive => {
+                if de {
+                    "Inaktiv"
+                } else {
+                    "Inactive"
                 }
             }
             Presence::OffWork => {

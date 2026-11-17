@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: personal note, be right back, off work, reset status)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: status automation when idle, inactive state)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -89,7 +89,13 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   (12500), off work (away with the activity `off-work`) and appear away, and *Reset status*
   (the manual state removed, the server works it out again); the personal note is published when
   its field is left (`note` category, containers 200/300/400) and a note set elsewhere comes into
-  the field. Contacts show *be right back* and *off work* too. `tested-in-lab`.
+  the field. Contacts show *be right back*, *off work* and *inactive* too. `tested-in-lab`.
+- **Status automation:** after the idle minutes set in *Options › Status* (default 5) the
+  endpoint's machine state becomes idle (5000, shown as *inactive*), after further minutes
+  (default 5) away (15500); keyboard or mouse make it active again (3500). The idle time comes
+  from the desktop session over D-Bus (GNOME's Mutter idle monitor, else
+  `org.freedesktop.ScreenSaver`); without it nothing changes. The own state shown is the one the
+  server works out (the own address in the batch presence subscription). `tested-in-lab`.
 - **Editing the contact list:** add a person (the add button, the contact menu, search results,
   the *New* view), move a contact into another group, remove it; add, rename and delete groups
   (only empty ones). A list kept in Exchange is read and changed there (EWS UCS operations,

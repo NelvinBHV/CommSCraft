@@ -7,6 +7,7 @@
 //! commands (`script.rs`) that trigger the same actions as the interface.
 
 mod fonts;
+mod idle;
 mod photos;
 mod prefs;
 mod script;
@@ -234,9 +235,38 @@ pub(crate) struct DesktopApp {
     ca: Option<Vec<u8>>,
     started: std::time::Instant,
     screenshot_after: u64,
+    /// The desktop session's idle time (status automation).
+    idle: Option<idle::Idle>,
+    /// The machine activity last handed to the session.
+    machine: commscraft_presence::MachineActivity,
+    /// A test script's idle time in place of the desktop's (`idle SECONDS`).
+    pub(crate) idle_override: Option<u64>,
 }
 
 impl DesktopApp {
+    /// The status automation: idle time against the user's limits; a change goes to the
+    /// session, which publishes the machine state again.
+    fn idle_tick(&mut self) {
+        if self.worker.is_none() {
+            self.machine = commscraft_presence::MachineActivity::Active;
+            return;
+        }
+        let idle = self.idle.get_or_insert_with(idle::Idle::start);
+        let a = idle::activity(
+            self.idle_override.or(idle.seconds()),
+            self.ui.prefs.inactive_minutes,
+            self.ui.prefs.away_minutes,
+        );
+        if a != self.machine
+            && self
+                .worker
+                .as_ref()
+                .is_some_and(|w| w.send(ToWorker::MachineActivity(a)))
+        {
+            self.machine = a;
+        }
+    }
+
     fn start_demo(&mut self) {
         demo::start(&mut self.ui, now());
     }
@@ -529,6 +559,7 @@ impl eframe::App for DesktopApp {
             self.ctx = Some(ctx.clone());
         }
         self.pump_session();
+        self.idle_tick();
         if self.worker_done {
             self.worker_done = false;
             self.worker = None;
@@ -702,6 +733,9 @@ fn main() {
                 ca,
                 started: std::time::Instant::now(),
                 screenshot_after: args.screenshot_after,
+                idle: None,
+                machine: commscraft_presence::MachineActivity::Active,
+                idle_override: None,
             };
             if args.demo {
                 app.start_demo();

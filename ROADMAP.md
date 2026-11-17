@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: personal note, be right back, off work, reset status)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: status automation when idle, inactive state)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **676 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **679 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-17 | Status automation in the desktop client (`tested-in-lab`): the session's idle time over D-Bus (GNOME, KDE) against the limits in *Options › Status* sets the endpoint's machine state (`MachineActivity`: active 3500, idle 5000, away 15500 – the values of the specification's examples; session command `SetMachineActivity`); the availability class 4500–5999 is shown as *inactive*; the own state shown follows the server's aggregate. |
 | 2026-11-17 | Own presence in the desktop client (`tested-in-lab`): the personal note is published and removed (`presence::publish_note_body`, session command `SetNote`, version conflicts retried), new states *be right back* and *off work* (`UserStatus::BeRightBack`/`OffWork`), *Reset status* removes the manual state (`clear_state_body`, `ResetStatus`); contacts show both new states. |
 | 2026-11-17 | The desktop client edits the contact list (`tested-in-lab`): add (also from search results and the new *New* view of people who added the user), move, remove, groups; a list kept in Exchange is read and changed there – the Exchange contact list code moved from the command-line client into the shared `client::exchange`; Exchange's group kinds map to the default group, favourites and hidden groups. The contact menu sets the privacy relationship, blocking included. |
 | 2026-11-17 | Distribution groups in the desktop client's contact list (`tested-in-lab`): the server's group extension in `externalURI` is read (`presence::group_extension`), a distribution group opens with its members from the address book, their presence (new session command `WatchPresence`) and photos; the server's favourites fill *Favourites*. Exchange Autodiscover for photos and appointments runs once per sign-in. Found in the lab: sign-in with the address only works (UPN). |

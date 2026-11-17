@@ -555,6 +555,7 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     p,
                     Presence::Away
                         | Presence::BeRightBack
+                        | Presence::Inactive
                         | Presence::OffWork
                         | Presence::Offline
                         | Presence::Unknown

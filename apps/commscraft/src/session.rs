@@ -120,6 +120,8 @@ pub enum ToWorker {
     },
     /// Back to the automatic state.
     ResetStatus,
+    /// How active the user is at keyboard and mouse.
+    MachineActivity(pres::MachineActivity),
     /// The personal note (empty: removed).
     SetNote(String),
     /// The members of a distribution group (address book).
@@ -293,7 +295,7 @@ pub fn presence_of(availability: u32, activity: Option<&str>) -> Presence {
         A::Away if activity == Some("off-work") => Presence::OffWork,
         A::Away if (12000..15000).contains(&availability) => Presence::BeRightBack,
         A::Online => Presence::Available,
-        A::Idle => Presence::Away,
+        A::Idle => Presence::Inactive,
         A::Busy | A::BusyIdle if in_call => Presence::InACall,
         A::Busy | A::BusyIdle => Presence::Busy,
         A::DoNotDisturb => Presence::DoNotDisturb,
@@ -310,7 +312,7 @@ fn user_status(p: Presence) -> Option<pres::UserStatus> {
         Presence::DoNotDisturb => pres::UserStatus::DoNotDisturb,
         Presence::BeRightBack => pres::UserStatus::BeRightBack,
         Presence::OffWork => pres::UserStatus::OffWork,
-        Presence::Away => pres::UserStatus::Away,
+        Presence::Away | Presence::Inactive => pres::UserStatus::Away,
         Presence::Offline | Presence::Unknown => return None,
     })
 }
@@ -1505,6 +1507,10 @@ impl Session {
         let t = now();
         match c {
             ToWorker::ResetStatus => self.engine.command(C::ResetStatus, t),
+            ToWorker::MachineActivity(a) => {
+                trace_line(&format!("machine state: {a:?}"));
+                self.engine.command(C::SetMachineActivity(a), t)
+            }
             ToWorker::SetNote(n) => self.engine.command(C::SetNote(Some(n)), t),
             ToWorker::SetPresence(p) => match user_status(p) {
                 Some(st) => self.engine.command(C::SetStatus(st), t),
@@ -2005,6 +2011,14 @@ impl Session {
                         note: String::new(),
                     };
                     out.event(AppEvent::SignedIn(self.profile.clone()));
+                    // The own presence as the server works it out (machine state, calendar, other
+                    // endpoints): the own address joins the batch subscription.
+                    more.extend(self.engine.command(
+                        C::WatchPresence {
+                            uris: vec![self.profile.uri.clone()],
+                        },
+                        now(),
+                    ));
                     self.photos = Some(crate::photos::Photos::start(
                         self.tls.clone(),
                         self.trust.clone(),
@@ -2490,7 +2504,7 @@ mod tests {
         assert_eq!(presence_of(3500, None), Presence::Available);
         assert_eq!(presence_of(6500, Some("on-the-phone")), Presence::InACall);
         assert_eq!(presence_of(6500, None), Presence::Busy);
-        assert_eq!(presence_of(4500, None), Presence::Away);
+        assert_eq!(presence_of(4500, None), Presence::Inactive);
         assert_eq!(presence_of(12500, None), Presence::BeRightBack);
         assert_eq!(presence_of(15500, None), Presence::Away);
         assert_eq!(presence_of(15500, Some("off-work")), Presence::OffWork);

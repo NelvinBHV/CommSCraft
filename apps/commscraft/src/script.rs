@@ -233,6 +233,8 @@ pub fn run(app: &mut DesktopApp, line: &str) {
             };
             app.handle(UiIntent::SetPresence(p));
         }
+        // `idle SECONDS` (a test's idle time instead of the desktop's; `idle` alone: the desktop's)
+        "idle" => app.idle_override = arg.trim().parse().ok(),
         // `note TEXT` (empty: remove the note)
         "note" => app.handle(UiIntent::SetNote(arg.trim().to_string())),
         // `shot FILE [conv|call|options]`: the main window, or the first window of that kind.

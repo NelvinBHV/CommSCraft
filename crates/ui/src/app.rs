@@ -228,6 +228,10 @@ pub struct Prefs {
     pub meeting_participants: bool,
     /// The last sign-in address (no secret; offered in the sign-in form).
     pub last_address: String,
+    /// Inactive after this many idle minutes (0: never).
+    pub inactive_minutes: u32,
+    /// Away after this many more minutes of being inactive (0: never).
+    pub away_minutes: u32,
 }
 
 impl Default for Prefs {
@@ -252,6 +256,8 @@ impl Default for Prefs {
             camera: String::new(),
             meeting_participants: false,
             last_address: String::new(),
+            inactive_minutes: 5,
+            away_minutes: 5,
         }
     }
 }

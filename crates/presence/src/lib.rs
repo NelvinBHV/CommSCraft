@@ -696,6 +696,28 @@ pub fn endpoint_instances(endpoint_id: &str) -> (u32, u32) {
     (device, device ^ 0x0000_5a5a)
 }
 
+/// How active this endpoint is, as its `machineState` says: active 3500, idle 5000, away 15500
+/// (the values of the specification's machineState examples: §2.2.2.7.1, p. 52; §4.3.1.1,
+/// p. 145; §4.3.4, p. 163 of v20180427). The client watches keyboard and mouse to choose it
+/// (§2.2.2.7.1, machineState).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum MachineActivity {
+    #[default]
+    Active,
+    Idle,
+    Away,
+}
+
+impl MachineActivity {
+    pub fn availability(self) -> u32 {
+        match self {
+            Self::Active => 3500,
+            Self::Idle => 5000,
+            Self::Away => 15500,
+        }
+    }
+}
+
 /// Body of the SERVICE that publishes this endpoint's `device` category (capabilities: text) and
 /// its `machineState` into container 2 (PR-31, PR-33; §3.8.5.2.1, p. 126; §2.2.2.7.2, pp. 53–54),
 /// both with `expireType="endpoint"`. `availability` is 3500 for an active endpoint (§4.3).
