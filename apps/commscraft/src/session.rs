@@ -114,6 +114,8 @@ pub enum ToWorker {
         quiet_busy: bool,
         /// Save IM conversations in the Conversation History folder (unless the server decides).
         save_history: bool,
+        /// The ALSA device for calls (empty: the default).
+        audio_device: String,
     },
     /// Tones in a call (DTMF, RFC 4733).
     Dtmf {
@@ -530,6 +532,8 @@ struct Session {
     sounds: bool,
     /// The user's choice to keep IM conversations in Exchange.
     save_history: bool,
+    /// The ALSA device for calls (empty: the default).
+    audio_device: String,
     /// IM conversations as they go, for the Conversation History folder (function 49).
     transcripts: BTreeMap<u32, commscraft_ews::history::Conversation>,
     quiet_busy: bool,
@@ -1010,6 +1014,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         v: Videos::new(video_tx, rdp_tx),
         sounds: true,
         save_history: true,
+        audio_device: String::new(),
         transcripts: BTreeMap::new(),
         quiet_busy: false,
         content_tx,
@@ -1233,7 +1238,7 @@ impl Session {
             self.local_ip,
             relay,
             bwm,
-            commscraft_audio_alsa::Config::default(),
+            self.audio_config(),
             self.media_tx.clone(),
         );
         self.media.insert(id, h);
@@ -1586,6 +1591,20 @@ impl Session {
 
     /// Asks the photo thread for the photos of the user and the contacts, once provisioning
     /// (the photo policy, the address book service) is known; the thread fetches each once.
+    /// The audio device for calls: the user's choice if the adapter accepts it, else the
+    /// default.
+    fn audio_config(&self) -> commscraft_audio_alsa::Config {
+        let chosen = commscraft_audio_alsa::Config {
+            device: self.audio_device.clone(),
+            ..Default::default()
+        };
+        if !self.audio_device.is_empty() && chosen.validate().is_ok() {
+            chosen
+        } else {
+            commscraft_audio_alsa::Config::default()
+        }
+    }
+
     /// A contact's name from the contact list, if it has one.
     fn contact_name(&self, uri: &str) -> Option<String> {
         self.contact_list
@@ -2062,8 +2081,10 @@ impl Session {
                 sounds,
                 quiet_busy,
                 save_history,
+                audio_device,
             } => {
                 self.save_history = save_history;
+                self.audio_device = audio_device;
                 self.v.camera = if camera.is_empty() {
                     std::env::var("COMMSCRAFT_CAMERA").unwrap_or_else(|_| "/dev/video0".into())
                 } else {
