@@ -106,6 +106,46 @@ pub fn run(app: &mut DesktopApp, line: &str) {
         "group" => app.handle(UiIntent::StartGroup {
             invite: vec![arg.to_string()],
         }),
+        // `addcontact sip:ADDRESS [GROUP]` · `removecontact sip:ADDRESS` ·
+        // `movecontact sip:ADDRESS GROUP` · `addgroup NAME` · `delgroup NAME`
+        "addcontact" | "movecontact" => {
+            let (uri, group) = match arg.split_once(' ') {
+                Some((u, g)) => (u.to_string(), Some(g.trim().to_string())),
+                None => (arg.to_string(), None),
+            };
+            if cmd == "addcontact" {
+                let name = app.ui.state.known_name(&uri);
+                app.handle(UiIntent::AddContact { uri, name, group })
+            } else if let Some(group) = group {
+                app.handle(UiIntent::MoveContact { uri, group })
+            }
+        }
+        // `relation sip:ADDRESS blocked|colleagues|workgroup|family|external|auto`
+        "relation" => {
+            use commscraft_ui::model::Relation as R;
+            let (uri, r) = arg.split_once(' ').unwrap_or((arg, ""));
+            let relation = match r.trim() {
+                "blocked" => Some(R::Blocked),
+                "colleagues" => Some(R::Colleagues),
+                "workgroup" => Some(R::Workgroup),
+                "family" => Some(R::Family),
+                "external" => Some(R::External),
+                _ => None,
+            };
+            app.handle(UiIntent::SetRelation {
+                uri: uri.to_string(),
+                relation,
+            })
+        }
+        "removecontact" => app.handle(UiIntent::RemoveContact {
+            uri: arg.to_string(),
+        }),
+        "addgroup" => app.handle(UiIntent::AddGroup {
+            name: arg.to_string(),
+        }),
+        "delgroup" => app.handle(UiIntent::DeleteGroup {
+            name: arg.to_string(),
+        }),
         "accept" => app.handle(UiIntent::AcceptInvitation {
             index: arg.parse().unwrap_or(0),
         }),

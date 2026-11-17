@@ -122,6 +122,9 @@ pub enum ToWorker {
     ExpandGroup {
         email: String,
     },
+    /// A change of the contact list or of a privacy relationship, by names as the interface
+    /// knows them.
+    Contacts(ContactChange),
     /// Persistent chat: connect, list our rooms, join them.
     LoadRooms,
     SendToRoom {
@@ -417,8 +420,129 @@ struct Session {
     calendar_at: Option<Instant>,
     /// The contact list's addresses (their photos are asked for once provisioning is known).
     contact_uris: Vec<String>,
+    /// The last contact list (group IDs for changes from the interface).
+    contact_list: Option<pres::ContactList>,
+    /// The Exchange identifiers behind a contact list kept in Exchange.
+    ucs_ids: commscraft_client::exchange::UcsIds,
+    /// Contact lists from Exchange handed to the engine and not yet seen back as its event.
+    exchange_lists: u32,
     tls: TlsClient,
     trust: setup::Trust,
+}
+
+/// A contact list change asked for by the interface.
+#[derive(Debug)]
+pub enum ContactChange {
+    Add {
+        uri: String,
+        name: String,
+        group: Option<String>,
+    },
+    Remove {
+        uri: String,
+    },
+    Move {
+        uri: String,
+        group: String,
+    },
+    AddGroup {
+        name: String,
+    },
+    RenameGroup {
+        name: String,
+        to: String,
+    },
+    DeleteGroup {
+        name: String,
+    },
+    Relation {
+        uri: String,
+        relation: Option<commscraft_ui::model::Relation>,
+    },
+    Acknowledge {
+        uri: String,
+    },
+}
+
+/// The engine's change for an interface change, with the group IDs of the last contact list.
+pub fn contact_command(l: Option<&pres::ContactList>, c: ContactChange) -> Result<C, String> {
+    use commscraft_ui::model::Relation as R;
+    let plain = |name: &str| {
+        l.and_then(|l| {
+            l.groups
+                .iter()
+                .find(|g| {
+                    g.name == name
+                        && pres::group_extension(&g.external) == pres::GroupExtension::Plain
+                })
+                .map(|g| g.id)
+        })
+    };
+    let default_group = || {
+        l.and_then(|l| l.groups.iter().find(|g| g.name == "~").or(l.groups.first()))
+            .map_or(1, |g| g.id)
+    };
+    Ok(match c {
+        ContactChange::Add { uri, name, group } => C::EditContacts(pres::ContactEdit::Set {
+            uri,
+            name,
+            groups: vec![group
+                .as_deref()
+                .and_then(plain)
+                .unwrap_or_else(default_group)],
+            subscribed: true,
+        }),
+        ContactChange::Remove { uri } => C::EditContacts(pres::ContactEdit::Delete { uri }),
+        ContactChange::Move { uri, group } => {
+            let l = l.ok_or("the contact list is not loaded yet")?;
+            let c = l
+                .contacts
+                .iter()
+                .find(|c| c.uri == uri)
+                .ok_or("not in the contact list")?;
+            let target = plain(&group).ok_or("no such group")?;
+            // The favourites (and other special groups) stay; the plain groups are replaced.
+            let mut groups: Vec<u32> = c
+                .groups
+                .iter()
+                .copied()
+                .filter(|g| {
+                    l.groups.iter().any(|x| {
+                        x.id == *g
+                            && pres::group_extension(&x.external) != pres::GroupExtension::Plain
+                    })
+                })
+                .collect();
+            groups.push(target);
+            C::EditContacts(pres::ContactEdit::Set {
+                uri,
+                name: c.name.clone(),
+                groups,
+                subscribed: c.subscribed,
+            })
+        }
+        ContactChange::AddGroup { name } => C::EditContacts(pres::ContactEdit::AddGroup { name }),
+        ContactChange::RenameGroup { name, to } => {
+            C::EditContacts(pres::ContactEdit::RenameGroup {
+                id: plain(&name).ok_or("no such group")?,
+                name: to,
+            })
+        }
+        ContactChange::DeleteGroup { name } => C::EditContacts(pres::ContactEdit::DeleteGroup {
+            id: plain(&name).ok_or("no such group")?,
+        }),
+        ContactChange::Relation { uri, relation } => C::SetRelationship {
+            uri,
+            relationship: relation.map(|r| match r {
+                R::External => pres::Relationship::External,
+                R::Colleagues => pres::Relationship::Colleagues,
+                R::Workgroup => pres::Relationship::Workgroup,
+                R::Family => pres::Relationship::Family,
+                R::Blocked => pres::Relationship::Blocked,
+            }),
+        },
+        ContactChange::Acknowledge { uri } => C::AcknowledgeSubscriber { uri },
+    })
 }
 
 /// The video streams and RDP viewers of the calls (function 28, function 43).
@@ -745,6 +869,9 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         photo_done: thumb_tx,
         calendar_at: None,
         contact_uris: Vec::new(),
+        contact_list: None,
+        ucs_ids: Default::default(),
+        exchange_lists: 0,
         tls,
         trust,
     };
@@ -827,6 +954,15 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
                     })
                 }
                 crate::photos::Done::Calendar(Err(e)) => trace_line(&format!("calendar: {e}")),
+                crate::photos::Done::Contacts(Ok((list, ids))) => {
+                    s.ucs_ids = ids;
+                    s.exchange_lists += 1;
+                    outputs.extend(s.engine.set_exchange_contacts(list, now()));
+                }
+                crate::photos::Done::Contacts(Err(e)) => out.notice(
+                    NoticeKind::Warning,
+                    format!("the contact list in Exchange: {e}"),
+                ),
                 crate::photos::Done::Expanded(email, found) => {
                     use commscraft_dlx::ExpandStatus as X;
                     let (members, partial) = match found {
@@ -1222,6 +1358,15 @@ impl Session {
 
     /// Asks the photo thread for the photos of the user and the contacts, once provisioning
     /// (the photo policy, the address book service) is known; the thread fetches each once.
+    /// The contact list is kept in Exchange (the server said so, or marks its copy migrated).
+    fn in_exchange(&self) -> bool {
+        self.engine.contacts_in_exchange()
+            || self
+                .contact_list
+                .as_ref()
+                .is_some_and(|l| l.ucs_mode.as_deref() == Some("migrated"))
+    }
+
     fn want_photos(&self) {
         let (Some(p), Some(services)) = (&self.photos, self.services.as_deref()) else {
             return;
@@ -1560,6 +1705,26 @@ impl Session {
                 }
                 Vec::new()
             }
+            ToWorker::Contacts(c) => match contact_command(self.contact_list.as_ref(), c) {
+                // The list is in Exchange: the change goes there (the relationships stay SIP).
+                Ok(C::EditContacts(edit)) if self.in_exchange() => {
+                    match (&self.photos, self.engine.contact_list()) {
+                        (Some(p), Some(l)) => {
+                            p.contacts(Some((edit, l.clone(), self.ucs_ids.clone())))
+                        }
+                        _ => out.notice(
+                            NoticeKind::Warning,
+                            "the contact list in Exchange is not reachable",
+                        ),
+                    }
+                    Vec::new()
+                }
+                Ok(cmd) => self.engine.command(cmd, t),
+                Err(e) => {
+                    out.notice(NoticeKind::Warning, format!("contact list: {e}"));
+                    Vec::new()
+                }
+            },
             ToWorker::ExpandGroup { email } => {
                 if let Some(p) = &self.photos {
                     p.expand(&email, self.services.as_deref());
@@ -1904,16 +2069,46 @@ impl Session {
             E::ChatRooms(x) => more.extend(self.rooms_event(x, out)),
             E::RoomNotSent { room, status } => out.event(AppEvent::RoomNotSent { room, status }),
             E::ContactList(l) => {
+                trace_line(&format!(
+                    "contact list: {} contacts, groups {:?}",
+                    l.contacts.len(),
+                    l.groups.iter().map(|g| g.name.as_str()).collect::<Vec<_>>()
+                ));
+                // A list the server marks as migrated to Exchange is its copy ([MS-OXWSCOS],
+                // interop: the server still sends it); changes and their identifiers come from
+                // Exchange, so the list is read there – and kept in Exchange's numbering.
+                if self.exchange_lists > 0 {
+                    self.exchange_lists -= 1;
+                } else if l.ucs_mode.as_deref() == Some("migrated") {
+                    if let Some(p) = &self.photos {
+                        p.contacts(None);
+                    }
+                }
                 let list = contacts_of(&l);
                 out.event(AppEvent::DistributionGroups(distribution_groups_of(&l)));
+                out.event(AppEvent::Groups(
+                    l.groups
+                        .iter()
+                        .filter(|g| {
+                            g.name != "~"
+                                && pres::group_extension(&g.external) == pres::GroupExtension::Plain
+                        })
+                        .map(|g| g.name.clone())
+                        .collect(),
+                ));
+                self.contact_list = Some(l.clone());
                 self.contact_uris = list.iter().map(|c| c.uri.clone()).take(2000).collect();
                 out.event(AppEvent::Contacts(list));
                 self.want_photos();
             }
-            E::ContactsInExchange => out.notice(
-                NoticeKind::Info,
-                "the contact list is kept in Exchange; the desktop client does not read it yet",
-            ),
+            // Function 11: the list lives in Exchange – read it there (EX-04/EX-05).
+            E::ContactsInExchange => match &self.photos {
+                Some(p) => p.contacts(None),
+                None => out.notice(
+                    NoticeKind::Info,
+                    "the contact list is kept in Exchange, which is not reachable",
+                ),
+            },
             E::Presence(p) => out.event(AppEvent::Presence {
                 presence: p
                     .availability
@@ -2232,6 +2427,12 @@ impl Session {
                     kind: CallKind::Screen,
                 });
             }
+            E::NewSubscriber { uri, name } => {
+                out.event(AppEvent::NewSubscriber(commscraft_ui::model::Subscriber {
+                    uri,
+                    name,
+                }))
+            }
             E::Diagnostic {
                 method,
                 status,
@@ -2364,6 +2565,93 @@ mod tests {
             distribution_groups_of(&l),
             vec![("Lab Team".to_string(), "team@beispiel.invalid".to_string())]
         );
+    }
+
+    #[test]
+    fn interface_changes_become_engine_commands_with_group_ids() {
+        let g = |id, name: &str, ext: &str| pres::Group {
+            id,
+            name: name.into(),
+            external: ext.into(),
+        };
+        let l = pres::ContactList {
+            groups: vec![
+                g(1, "~", ""),
+                g(
+                    2,
+                    "Pinned Contacts",
+                    "<groupExtension groupType=\"pinnedGroup\"/>",
+                ),
+                g(3, "Team", ""),
+            ],
+            contacts: vec![pres::Contact {
+                uri: "sip:bob@beispiel.invalid".into(),
+                name: "Bob".into(),
+                groups: vec![1, 2],
+                subscribed: true,
+                extension: false,
+            }],
+            ..pres::ContactList::default()
+        };
+        let add = |group: Option<&str>| {
+            contact_command(
+                Some(&l),
+                ContactChange::Add {
+                    uri: "sip:eve@beispiel.invalid".into(),
+                    name: String::new(),
+                    group: group.map(String::from),
+                },
+            )
+        };
+        assert!(
+            matches!(add(Some("Team")), Ok(C::EditContacts(pres::ContactEdit::Set { groups, .. })) if groups == vec![3])
+        );
+        // An unknown group, or none: the default group.
+        assert!(
+            matches!(add(None), Ok(C::EditContacts(pres::ContactEdit::Set { groups, .. })) if groups == vec![1])
+        );
+        assert!(
+            matches!(add(Some("Pinned Contacts")), Ok(C::EditContacts(pres::ContactEdit::Set { groups, .. })) if groups == vec![1])
+        );
+        // Moving keeps the favourites and replaces the plain group.
+        let moved = contact_command(
+            Some(&l),
+            ContactChange::Move {
+                uri: "sip:bob@beispiel.invalid".into(),
+                group: "Team".into(),
+            },
+        );
+        assert!(
+            matches!(moved, Ok(C::EditContacts(pres::ContactEdit::Set { groups, name, .. })) if groups == vec![2, 3] && name == "Bob")
+        );
+        assert!(contact_command(
+            Some(&l),
+            ContactChange::DeleteGroup {
+                name: "Pinned Contacts".into()
+            }
+        )
+        .is_err());
+        assert!(matches!(
+            contact_command(
+                Some(&l),
+                ContactChange::Relation {
+                    uri: "sip:eve@beispiel.invalid".into(),
+                    relation: Some(commscraft_ui::model::Relation::Blocked),
+                }
+            ),
+            Ok(C::SetRelationship {
+                relationship: Some(pres::Relationship::Blocked),
+                ..
+            })
+        ));
+        assert!(contact_command(
+            None,
+            ContactChange::Move {
+                uri: "sip:bob@beispiel.invalid".into(),
+                group: "Team".into()
+            }
+        )
+        .is_err());
     }
 
     #[test]

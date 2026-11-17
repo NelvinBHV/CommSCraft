@@ -39,11 +39,30 @@ enum Job {
     Photo(String, Option<Box<ServerConfiguration>>),
     Calendar(commscraft_provisioning::CalendarPolicy),
     Expand(String, Option<Box<ServerConfiguration>>),
+    /// The contact list kept in Exchange: read it, or change it and read it again.
+    Contacts(Option<Box<ContactChange>>),
 }
+
+/// A change of the contact list in Exchange with the list and identifiers it applies to.
+pub type ContactChange = (
+    commscraft_presence::ContactEdit,
+    commscraft_presence::ContactList,
+    commscraft_client::exchange::UcsIds,
+);
 
 /// What the thread found.
 pub enum Done {
     Thumb(Thumb),
+    /// The contact list from Exchange (after a change, if one was asked for).
+    Contacts(
+        Result<
+            (
+                commscraft_presence::ContactList,
+                commscraft_client::exchange::UcsIds,
+            ),
+            String,
+        >,
+    ),
     /// The members of a distribution group (MS-DLX ExpandDistributionList).
     Expanded(String, Result<commscraft_dlx::Expansion, String>),
     Calendar(
@@ -89,6 +108,11 @@ impl Photos {
             email.to_string(),
             services.map(|s| Box::new(s.clone())),
         ));
+    }
+
+    /// Asks for the contact list kept in Exchange, after this change if one is given.
+    pub fn contacts(&self, change: Option<ContactChange>) {
+        let _ = self.tx.try_send(Job::Contacts(change.map(Box::new)));
     }
 
     /// Asks for the user's appointments and automatic reply.
@@ -139,6 +163,40 @@ fn run(
                     &mut log,
                 );
                 if done.send(Done::Expanded(email, found)).is_err() {
+                    return;
+                }
+                continue;
+            }
+            Job::Contacts(change) => {
+                if settings.is_none() {
+                    settings = Some(
+                        commscraft_client::photos::ews_settings(
+                            tls, trust, aor, &ua, &mut ntlm, &mut log,
+                        )
+                        .ok(),
+                    );
+                }
+                let found = match (settings.as_ref(), change) {
+                    (Some(Some(s)), None) => commscraft_client::exchange::contact_list(
+                        tls, trust, aor, s, &ua, &mut ntlm, &mut log,
+                    ),
+                    (Some(Some(s)), Some(c)) => {
+                        let (edit, list, ids) = *c;
+                        commscraft_client::exchange::change_contact_list(
+                            tls,
+                            trust,
+                            aor,
+                            s,
+                            &edit,
+                            (&list, &ids),
+                            &ua,
+                            &mut ntlm,
+                            &mut log,
+                        )
+                    }
+                    _ => Err("Exchange is not reachable".into()),
+                };
+                if done.send(Done::Contacts(found)).is_err() {
                     return;
                 }
                 continue;

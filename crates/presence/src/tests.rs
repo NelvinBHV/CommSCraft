@@ -957,3 +957,11 @@ fn group_extensions() {
         assert_eq!(group_extension(plain), GroupExtension::Plain, "{plain}");
     }
 }
+
+#[test]
+fn another_group_extension_is_a_special_group() {
+    assert_eq!(
+        group_extension("<groupExtension groupType=\"tagged\"/>"),
+        GroupExtension::Other
+    );
+}

@@ -320,6 +320,17 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
         },
     ];
     let _ = group;
+    // Someone who added the user (the "New" view).
+    state.apply(AppEvent::NewSubscriber(crate::model::Subscriber {
+        uri: uri("jana.koch"),
+        name: "Jana Koch".into(),
+    }));
+    // The plain groups of the contact list (for moving and adding into them).
+    let mut groups: Vec<String> = state.contacts.values().map(|c| c.group.clone()).collect();
+    groups.sort();
+    groups.dedup();
+    groups.retain(|g| !g.is_empty());
+    state.apply(AppEvent::Groups(groups));
     // A distribution group in the contact list; its members come when it is opened.
     state.apply(AppEvent::DistributionGroups(vec![(
         if de {
@@ -477,6 +488,13 @@ pub fn handle(state: &mut AppState, intent: &UiIntent, now: u64, lang: Lang) {
             "Demo: Die Stimme wird nicht gesendet",
             "Demo: the vote is not sent",
         ),
+        UiIntent::AddContact { uri, name, group } => {
+            let mut c = Contact::new(uri, name, Source::Demo);
+            c.group = group.clone().unwrap_or_default();
+            let mut all: Vec<Contact> = state.contacts.values().cloned().collect();
+            all.push(c);
+            state.apply(AppEvent::Contacts(all));
+        }
         UiIntent::ExpandGroup { email } => {
             let members = ["anna.weber", "tim.lange", "max.richter"]
                 .iter()

@@ -621,3 +621,23 @@ fn a_distribution_group_lists_its_members_when_open() {
         1
     );
 }
+
+#[test]
+fn the_new_view_adds_a_subscriber_to_the_contacts() {
+    let mut h = harness(demo_quiet(), (420.0, 760.0));
+    h.run();
+    h.get_by_label("NEU").click();
+    h.run();
+    assert!(h.query_by_label_contains("Jana Koch").is_some());
+    h.get_by_label("Zu Kontakten hinzufügen").click();
+    h.run();
+    let i = &h.state().intents;
+    assert!(i.iter().any(
+        |i| matches!(i, UiIntent::AddContact { uri, name, group: None }
+        if uri.starts_with("sip:jana.koch@") && name == "Jana Koch")
+    ));
+    assert!(i
+        .iter()
+        .any(|i| matches!(i, UiIntent::AcknowledgeSubscriber { uri } if uri.starts_with("sip:jana.koch@"))));
+    assert!(h.state().ui.state.subscribers.is_empty());
+}
