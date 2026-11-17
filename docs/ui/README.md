@@ -71,7 +71,7 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
 
 `--sign-in sip:ADDRESS --user USER [--domain D] [--server H:P]` signs in at start with the
 password from standard input; `--commands FILE` follows a file of test commands (`view`, `chat`,
-`select`, `search`, `send`, `group`, `accept`, `call`, `transfer`, `answer`, `hangup`, `hold`, `resume`, `mute`,
+`select`, `search`, `send`, `group`, `accept`, `call`, `videocall`, `transfer`, `answer`, `answervideo`, `viewscreen`, `hangup`, `hold`, `resume`, `mute`,
 `unmute`, `status`, `shot`, `quit`) that trigger exactly the actions of the interface – for the
 owner's lab runs and screenshots. `COMMSCRAFT_VERBOSE=1` prints one line per SIP message (method
 or status and CSeq, never headers).

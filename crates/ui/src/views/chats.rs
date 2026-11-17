@@ -450,7 +450,25 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                             })
                         {
                             if r.clicked() {
-                                app.emit(UiIntent::CallUser { peer: p });
+                                app.emit(UiIntent::CallUser { peer: p.clone() });
+                                app.view = crate::model::View::Calls;
+                            }
+                        }
+                        if let Some(r) = widgets::gated(
+                            ui,
+                            t.video_call,
+                            &caps.video_call,
+                            t,
+                            pal,
+                            |ui, l, en| {
+                                ui.add_enabled(
+                                    en && app.state.active_call().is_none(),
+                                    egui::Button::new(l),
+                                )
+                            },
+                        ) {
+                            if r.clicked() {
+                                app.emit(UiIntent::VideoCall { peer: p });
                                 app.view = crate::model::View::Calls;
                             }
                         }

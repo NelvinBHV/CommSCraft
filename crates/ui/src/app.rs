@@ -49,6 +49,18 @@ pub enum UiIntent {
     AnswerCall {
         id: u32,
     },
+    /// A call with audio and video (function 28).
+    VideoCall {
+        peer: String,
+    },
+    /// Answer an incoming call with video.
+    AnswerVideo {
+        id: u32,
+    },
+    /// View the screen or window someone shares (function 43).
+    ViewScreen {
+        id: u32,
+    },
     HangUp {
         id: u32,
     },

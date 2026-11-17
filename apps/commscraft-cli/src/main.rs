@@ -26,11 +26,8 @@ macro_rules! eprint {
     ($($t:tt)*) => { ::std::eprint!("{}", $crate::term::clean(&format!($($t)*))) };
 }
 
-mod meeting_content;
-mod rdp_call;
 mod term;
-mod video_call;
-mod video_window;
+use commscraft_client::{meeting_content, rdp_call, video_call, video_window};
 
 use std::io::{BufRead, IsTerminal, Write};
 use std::path::PathBuf;

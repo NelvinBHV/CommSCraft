@@ -5,7 +5,8 @@
 //! `view chats|contacts|calls|meetings|settings` · `chat sip:ADDRESS` · `select TEXT|group` ·
 //! `search TEXT` ·
 //! `send TEXT` (to the selected conversation) · `group sip:ADDRESS` · `accept` (the first invitation) ·
-//! `call sip:ADDRESS` · `transfer sip:ADDRESS` · `answer` · `hangup` · `hold` · `resume` · `mute` · `unmute` ·
+//! `call sip:ADDRESS` · `videocall sip:ADDRESS` · `transfer sip:ADDRESS` · `answer` · `answervideo` ·
+//! `viewscreen` · `hangup` · `hold` · `resume` · `mute` · `unmute` ·
 //! `status available|busy|dnd|away` · `shot FILE.png` · `quit` (signs out and closes).
 
 use crate::{now, DesktopApp};
@@ -110,6 +111,12 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 peer: arg.to_string(),
             })
         }
+        "videocall" => {
+            app.ui.set_view(View::Calls);
+            app.handle(UiIntent::VideoCall {
+                peer: arg.to_string(),
+            })
+        }
         "transfer" => {
             if let Some(c) = app.ui.state.active_call().cloned() {
                 app.handle(UiIntent::Transfer {
@@ -118,7 +125,8 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 });
             }
         }
-        "answer" | "hangup" | "hold" | "resume" | "mute" | "unmute" => {
+        "answer" | "answervideo" | "viewscreen" | "hangup" | "hold" | "resume" | "mute"
+        | "unmute" => {
             let Some(c) = app.ui.state.active_call().cloned() else {
                 eprintln!("commands: no call");
                 return;
@@ -126,6 +134,11 @@ pub fn run(app: &mut DesktopApp, line: &str) {
             let i = match cmd {
                 "answer" if c.state == CallState::Incoming => UiIntent::AnswerCall { id: c.id },
                 "answer" => return,
+                "answervideo" if c.state == CallState::Incoming => {
+                    UiIntent::AnswerVideo { id: c.id }
+                }
+                "viewscreen" if c.state == CallState::Incoming => UiIntent::ViewScreen { id: c.id },
+                "answervideo" | "viewscreen" => return,
                 "hangup" => UiIntent::HangUp { id: c.id },
                 "hold" => UiIntent::Hold {
                     id: c.id,

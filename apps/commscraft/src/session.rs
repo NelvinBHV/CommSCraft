@@ -9,15 +9,15 @@
 //! Calls go only to SIP addresses chosen in the interface, never to phone numbers, so the
 //! emergency call path of the engine is not touched from here.
 
-use commscraft_client::{calls, cues, setup};
+use commscraft_client::{calls, cues, rdp_call, setup, video_call};
 use commscraft_net::{OsRandom, SipConnection, TlsClient};
 use commscraft_presence as pres;
 use commscraft_register::{Config as RegConfig, Password, Registrar};
 use commscraft_session::{Command as C, Engine, Event as E, Output};
 use commscraft_ui::app::SignIn;
 use commscraft_ui::model::{
-    AppEvent, Capabilities, Connection, Contact, ConvKey, Gate, Meeting, NoticeKind, Participant,
-    Presence, Profile, Reason, RoomPost, Source,
+    AppEvent, CallKind, Capabilities, Connection, Contact, ConvKey, Gate, Meeting, NoticeKind,
+    Participant, Presence, Profile, Reason, RoomPost, Source, VideoState,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::mpsc::{self, Receiver, SyncSender, TryRecvError};
@@ -83,6 +83,17 @@ pub enum ToWorker {
     /// Address book search on the server (MS-DLX).
     Search {
         text: String,
+    },
+    /// A call with audio and video (function 28).
+    VideoCall {
+        peer: String,
+    },
+    AnswerVideo {
+        id: u32,
+    },
+    /// View the screen or window someone shares (function 43).
+    ViewScreen {
+        id: u32,
     },
     /// Persistent chat: connect, list our rooms, join them.
     LoadRooms,
@@ -213,7 +224,6 @@ pub fn parse_server(v: &str) -> Option<(String, u16)> {
 /// The capabilities once signed in: what the desktop interface offers through the session;
 /// persistent chat only when provisioning named a chat pool.
 pub fn online_capabilities(rooms: bool) -> Capabilities {
-    let cli = Gate::Unavailable(Reason::CliOnly);
     let none = Gate::Unavailable(Reason::NotImplemented);
     Capabilities {
         chat: Gate::Available,
@@ -223,7 +233,7 @@ pub fn online_capabilities(rooms: bool) -> Capabilities {
         audio_call: Gate::Available,
         hold: Gate::Available,
         transfer: Gate::Available,
-        video_call: cli.clone(),
+        video_call: Gate::Available,
         meetings: Gate::Available,
         file_transfer: none.clone(),
         rich_text: none.clone(),
@@ -323,8 +333,54 @@ struct Session {
     certificate_tried: bool,
     /// Rooms whose history was asked for (once per room and sign-in).
     room_history: BTreeSet<String>,
+    v: Videos,
     tls: TlsClient,
     trust: setup::Trust,
+}
+
+/// The video streams and RDP viewers of the calls (function 28, function 43).
+struct Videos {
+    video_tx: mpsc::Sender<video_call::FromVideo>,
+    rdp_tx: mpsc::Sender<rdp_call::FromRdp>,
+    /// The camera device (`COMMSCRAFT_CAMERA`, else `/dev/video0`); opened only once a video
+    /// stream is negotiated.
+    camera: String,
+    handles: BTreeMap<u32, video_call::VideoHandle>,
+    of_call: BTreeMap<u32, u32>,
+    /// Audio stream → video stream of a video call that is not sent yet.
+    for_audio: BTreeMap<u32, u32>,
+    ready_audio: BTreeMap<u32, Box<commscraft_sdp::Local>>,
+    ready_video: BTreeMap<u32, Box<commscraft_sdp::video::VideoLocal>>,
+    /// Video stream → the screen sharing call it will view.
+    pending_screen: BTreeMap<u32, u32>,
+    /// Offered screen shares: call → only RDP offered.
+    screen_offers: BTreeMap<u32, bool>,
+    rdp: BTreeMap<u32, rdp_call::RdpHandle>,
+    pending_rdp: BTreeMap<u32, u32>,
+    rdp_call_of: BTreeMap<u32, u32>,
+}
+
+impl Videos {
+    fn new(
+        video_tx: mpsc::Sender<video_call::FromVideo>,
+        rdp_tx: mpsc::Sender<rdp_call::FromRdp>,
+    ) -> Self {
+        Self {
+            video_tx,
+            rdp_tx,
+            camera: std::env::var("COMMSCRAFT_CAMERA").unwrap_or_else(|_| "/dev/video0".into()),
+            handles: BTreeMap::new(),
+            of_call: BTreeMap::new(),
+            for_audio: BTreeMap::new(),
+            ready_audio: BTreeMap::new(),
+            ready_video: BTreeMap::new(),
+            pending_screen: BTreeMap::new(),
+            screen_offers: BTreeMap::new(),
+            rdp: BTreeMap::new(),
+            pending_rdp: BTreeMap::new(),
+            rdp_call_of: BTreeMap::new(),
+        }
+    }
 }
 
 /// A room of the chat server as an interface event.
@@ -505,6 +561,8 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
     conn.set_timeout(Duration::from_millis(100))
         .map_err(|e| fail(e.to_string()))?;
     let (media_tx, media_rx) = mpsc::channel();
+    let (video_tx, video_rx) = mpsc::channel();
+    let (rdp_tx, rdp_rx) = mpsc::channel();
     let (cues, cue_notices) = cues::Cues::from_env();
     for n in cue_notices {
         out.notice(NoticeKind::Info, n);
@@ -531,6 +589,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         profile: Profile::default(),
         certificate_tried: false,
         room_history: BTreeSet::new(),
+        v: Videos::new(video_tx, rdp_tx),
         tls,
         trust,
     };
@@ -573,6 +632,12 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         while let Ok(m) = media_rx.try_recv() {
             outputs.extend(s.media_event(m, out));
         }
+        while let Ok(v) = video_rx.try_recv() {
+            outputs.extend(s.video_event(v, out));
+        }
+        while let Ok(r) = rdp_rx.try_recv() {
+            outputs.extend(s.rdp_event(r, out));
+        }
         match s.conn.recv() {
             Ok(Some(m)) => {
                 trace("<<<", &m);
@@ -602,6 +667,15 @@ impl Session {
     }
 
     fn spawn_media(&mut self, peer: Option<&str>, offer_call: Option<u32>) -> u32 {
+        self.spawn_media_with_video(peer, offer_call).0
+    }
+
+    /// The audio stream of a call, and the bandwidth settings for its video stream.
+    fn spawn_media_with_video(
+        &mut self,
+        peer: Option<&str>,
+        offer_call: Option<u32>,
+    ) -> (u32, Option<commscraft_call_media::BwmConfig>) {
         let id = self.next_media;
         self.next_media = self.next_media.wrapping_add(1).max(1);
         let relay = self.engine.media_relay().and_then(calls::relay_from);
@@ -619,6 +693,10 @@ impl Session {
             ),
             None => calls::bandwidth_config(enabled, self.engine.own_aor(), peer, None),
         };
+        let video_bwm = calls::video_bandwidth_config(
+            bwm.as_ref(),
+            offer_call.and_then(|c| self.engine.incoming_offer(c).map(|(_, o)| o)),
+        );
         let h = calls::spawn(
             id,
             self.local_ip,
@@ -628,7 +706,261 @@ impl Session {
             self.media_tx.clone(),
         );
         self.media.insert(id, h);
+        (id, video_bwm)
+    }
+
+    fn next_id(&mut self) -> u32 {
+        let id = self.next_media;
+        self.next_media = self.next_media.wrapping_add(1).max(1);
         id
+    }
+
+    /// A video stream (function 28; without a camera for a shared screen).
+    fn spawn_video(&mut self, bwm: Option<commscraft_call_media::BwmConfig>, camera: bool) -> u32 {
+        let vid = self.next_id();
+        let relay = self.engine.media_relay().and_then(calls::relay_from);
+        let h = video_call::spawn(
+            vid,
+            self.local_ip,
+            relay,
+            bwm,
+            if camera {
+                self.v.camera.clone()
+            } else {
+                String::new()
+            },
+            self.v.video_tx.clone(),
+        );
+        self.v.handles.insert(vid, h);
+        vid
+    }
+
+    fn to_video(&self, call: u32, m: video_call::ToVideo) {
+        if let Some(h) = self
+            .v
+            .of_call
+            .get(&call)
+            .and_then(|vid| self.v.handles.get(vid))
+        {
+            let _ = h.tx.send(m);
+        }
+    }
+
+    /// Ends the video and the RDP viewer of a call.
+    fn stop_video(&mut self, call: u32) {
+        if let Some(h) = self
+            .v
+            .of_call
+            .remove(&call)
+            .and_then(|v| self.v.handles.remove(&v))
+        {
+            let _ = h.tx.send(video_call::ToVideo::Stop);
+        }
+        if let Some(h) = self.v.rdp.remove(&call) {
+            let _ = h.tx.send(rdp_call::ToRdp::Stop);
+        }
+        self.v.screen_offers.remove(&call);
+    }
+
+    /// A video call goes out (or is answered) once its audio and its video stream are ready.
+    fn start_video_calls(&mut self, out: &Out) -> Vec<Output> {
+        let t = now();
+        let policy = self.policy();
+        let both: Vec<(u32, u32)> = self
+            .v
+            .for_audio
+            .iter()
+            .filter(|(a, v)| {
+                self.v.ready_audio.contains_key(a) && self.v.ready_video.contains_key(v)
+            })
+            .map(|(a, v)| (*a, *v))
+            .collect();
+        let mut o = Vec::new();
+        for (aid, vid) in both {
+            self.v.for_audio.remove(&aid);
+            let (Some(local), Some(video)) = (
+                self.v.ready_audio.remove(&aid),
+                self.v.ready_video.remove(&vid),
+            ) else {
+                continue;
+            };
+            if let Some(to) = self.pending_out.remove(&aid) {
+                let call = self.engine.next_call_id();
+                self.media_of_call.insert(call, aid);
+                self.v.of_call.insert(call, vid);
+                self.outgoing.insert(call);
+                out.event(AppEvent::CallStarted {
+                    id: call,
+                    peer: to.clone(),
+                    incoming: false,
+                    at: t,
+                });
+                out.event(AppEvent::CallKind {
+                    id: call,
+                    kind: CallKind::Video,
+                });
+                out.event(AppEvent::CallVideo {
+                    id: call,
+                    state: VideoState::Starting,
+                });
+                o.extend(self.engine.command(
+                    C::VideoCall {
+                        to,
+                        local,
+                        video,
+                        policy,
+                    },
+                    t,
+                ));
+            } else if let Some(call) = self.pending_in.remove(&aid) {
+                self.media_of_call.insert(call, aid);
+                self.v.of_call.insert(call, vid);
+                out.event(AppEvent::CallKind {
+                    id: call,
+                    kind: CallKind::Video,
+                });
+                out.event(AppEvent::CallVideo {
+                    id: call,
+                    state: VideoState::Starting,
+                });
+                o.extend(self.engine.command(
+                    C::AcceptVideoCall {
+                        call,
+                        local,
+                        video,
+                        policy,
+                    },
+                    t,
+                ));
+            } else if let Some(h) = self.v.handles.remove(&vid) {
+                let _ = h.tx.send(video_call::ToVideo::Stop);
+            }
+        }
+        o
+    }
+
+    fn call_of_video(&self, vid: u32) -> Option<u32> {
+        self.v
+            .of_call
+            .iter()
+            .find(|(_, v)| **v == vid)
+            .map(|(c, _)| *c)
+    }
+
+    fn video_event(&mut self, e: video_call::FromVideo, out: &Out) -> Vec<Output> {
+        use video_call::FromVideo as V;
+        let t = now();
+        match e {
+            V::Ready(vid, local) => match self.v.pending_screen.remove(&vid) {
+                Some(call) => {
+                    self.v.of_call.insert(call, vid);
+                    let policy = self.policy();
+                    self.engine.command(
+                        C::AcceptScreenShare {
+                            call,
+                            video: local,
+                            policy,
+                        },
+                        t,
+                    )
+                }
+                None => {
+                    self.v.ready_video.insert(vid, local);
+                    self.start_video_calls(out)
+                }
+            },
+            V::Selected(vid, local) => match self.call_of_video(vid) {
+                Some(call) => self
+                    .engine
+                    .command(C::SetCallVideo { call, video: local }, t),
+                None => Vec::new(),
+            },
+            V::Notice(_, n) => {
+                out.notice(NoticeKind::Info, format!("video: {n}"));
+                Vec::new()
+            }
+            // Only meetings switch sources.
+            V::Stalled(_) => Vec::new(),
+            V::PictureUpdate(vid) => match self.call_of_video(vid) {
+                Some(call) => self.engine.command(C::RequestPictureUpdate { call }, t),
+                None => Vec::new(),
+            },
+            V::Failed(vid, why) => {
+                self.v.handles.remove(&vid);
+                self.v.ready_video.remove(&vid);
+                if let Some(call) = self.v.pending_screen.remove(&vid) {
+                    out.event(AppEvent::CallVideo {
+                        id: call,
+                        state: VideoState::Failed(why),
+                    });
+                    return self.engine.command(C::Hangup { call }, t);
+                }
+                if let Some(call) = self.call_of_video(vid) {
+                    self.v.of_call.remove(&call);
+                    out.event(AppEvent::CallVideo {
+                        id: call,
+                        state: VideoState::Failed(why),
+                    });
+                }
+                Vec::new()
+            }
+        }
+    }
+
+    fn rdp_event(&mut self, e: rdp_call::FromRdp, out: &Out) -> Vec<Output> {
+        use rdp_call::FromRdp as R;
+        let t = now();
+        match e {
+            R::Ready(rid, local) => match self.v.pending_rdp.remove(&rid) {
+                Some(call) => {
+                    self.v.rdp_call_of.insert(rid, call);
+                    let policy = self.policy();
+                    self.engine.command(
+                        C::AcceptRdpShare {
+                            call,
+                            local,
+                            policy,
+                        },
+                        t,
+                    )
+                }
+                None => Vec::new(),
+            },
+            R::Selected(rid, local) => match self.v.rdp_call_of.get(&rid) {
+                Some(&call) => self.engine.command(C::UpdateCall { call, local }, t),
+                None => Vec::new(),
+            },
+            R::Notice(rid, n) => {
+                if let Some(&call) = self.v.rdp_call_of.get(&rid) {
+                    if n.starts_with("viewing") {
+                        out.event(AppEvent::CallVideo {
+                            id: call,
+                            state: VideoState::Window,
+                        });
+                    }
+                }
+                out.notice(NoticeKind::Info, n);
+                Vec::new()
+            }
+            R::Ended(rid, why) => {
+                let call = self
+                    .v
+                    .pending_rdp
+                    .remove(&rid)
+                    .or_else(|| self.v.rdp_call_of.remove(&rid));
+                match call {
+                    Some(call) if self.v.rdp.remove(&call).is_some() => {
+                        out.event(AppEvent::CallVideo {
+                            id: call,
+                            state: VideoState::Failed(why),
+                        });
+                        // Viewing was all the call was for.
+                        self.engine.command(C::Hangup { call }, t)
+                    }
+                    _ => Vec::new(),
+                }
+            }
+        }
     }
 
     fn to_media(&self, call: u32, m: calls::ToMedia) {
@@ -644,6 +976,12 @@ impl Session {
     fn stop_media(&mut self) {
         for (_, h) in std::mem::take(&mut self.media) {
             let _ = h.tx.send(calls::ToMedia::Stop);
+        }
+        for (_, h) in std::mem::take(&mut self.v.handles) {
+            let _ = h.tx.send(video_call::ToVideo::Stop);
+        }
+        for (_, h) in std::mem::take(&mut self.v.rdp) {
+            let _ = h.tx.send(rdp_call::ToRdp::Stop);
         }
     }
 
@@ -726,6 +1064,57 @@ impl Session {
                 self.pending_in.insert(id, call);
                 Vec::new()
             }
+            ToWorker::VideoCall { peer } => {
+                let (aid, bwm) = self.spawn_media_with_video(Some(&peer), None);
+                self.pending_out.insert(aid, peer);
+                let vid = self.spawn_video(bwm, true);
+                self.v.for_audio.insert(aid, vid);
+                Vec::new()
+            }
+            ToWorker::AnswerVideo { id: call } => {
+                self.cues.stop_ring(call);
+                let video = self.engine.incoming_video(call);
+                let (aid, bwm) = self.spawn_media_with_video(None, Some(call));
+                self.pending_in.insert(aid, call);
+                if video {
+                    let vid = self.spawn_video(bwm, true);
+                    self.v.for_audio.insert(aid, vid);
+                } else {
+                    out.notice(
+                        NoticeKind::Info,
+                        "the call offers no video – answered with audio",
+                    );
+                }
+                Vec::new()
+            }
+            ToWorker::ViewScreen { id: call } => {
+                self.cues.stop_ring(call);
+                match self.v.screen_offers.remove(&call) {
+                    // Only RDP offered: a shared window.
+                    Some(true) => {
+                        let rid = self.next_id();
+                        let h = rdp_call::spawn(
+                            rid,
+                            self.local_ip,
+                            self.engine.own_aor().to_string(),
+                            self.v.rdp_tx.clone(),
+                            self.v.video_tx.clone(),
+                        );
+                        self.v.rdp.insert(call, h);
+                        self.v.pending_rdp.insert(rid, call);
+                    }
+                    Some(false) => {
+                        let vid = self.spawn_video(None, false);
+                        self.v.pending_screen.insert(vid, call);
+                    }
+                    None => return Vec::new(),
+                }
+                out.event(AppEvent::CallVideo {
+                    id: call,
+                    state: VideoState::Starting,
+                });
+                Vec::new()
+            }
             ToWorker::HangUp { id } => {
                 self.cues.stop_ring(id);
                 self.engine.command(C::Hangup { call: id }, t)
@@ -734,6 +1123,7 @@ impl Session {
                 let music = self.cues.hold_music(false);
                 let with_music = music.is_some();
                 self.to_media(id, calls::ToMedia::Hold { hold, music });
+                self.to_video(id, video_call::ToVideo::Hold(hold));
                 out.event(AppEvent::CallHeld { id, held: hold });
                 self.engine.command(
                     C::Hold {
@@ -881,6 +1271,10 @@ impl Session {
         let t = now();
         let policy = self.policy();
         match m {
+            calls::FromMedia::Ready(id, local) if self.v.for_audio.contains_key(&id) => {
+                self.v.ready_audio.insert(id, local);
+                self.start_video_calls(out)
+            }
             calls::FromMedia::Ready(id, local) => {
                 if let Some(to) = self.pending_out.remove(&id) {
                     let call = self.engine.next_call_id();
@@ -927,6 +1321,15 @@ impl Session {
                     None => {
                         self.pending_out.remove(&id);
                         self.pending_in.remove(&id);
+                        self.v.ready_audio.remove(&id);
+                        if let Some(h) = self
+                            .v
+                            .for_audio
+                            .remove(&id)
+                            .and_then(|vid| self.v.handles.remove(&vid))
+                        {
+                            let _ = h.tx.send(video_call::ToVideo::Stop);
+                        }
                         Vec::new()
                     }
                 }
@@ -1237,7 +1640,40 @@ impl Session {
                     peer: from,
                     incoming: true,
                     at: t,
-                })
+                });
+                if self.engine.incoming_video(call) {
+                    out.event(AppEvent::CallOffersVideo { id: call });
+                }
+            }
+            E::CallVideo { call, video } => {
+                self.to_video(
+                    call,
+                    video_call::ToVideo::Start {
+                        video,
+                        controlling: self.outgoing.contains(&call),
+                    },
+                );
+                if self.v.of_call.contains_key(&call) {
+                    out.event(AppEvent::CallVideo {
+                        id: call,
+                        state: VideoState::Window,
+                    });
+                }
+            }
+            // PL-50: a freeze comes only from an MCU – ignored in 1:1 calls.
+            E::CallVideoControl { call, control } => {
+                if control != commscraft_session::media_control::VideoControl::Freeze {
+                    self.to_video(call, video_call::ToVideo::Control(control));
+                }
+            }
+            E::ScreenRdp {
+                call,
+                rdp,
+                controlling,
+            } => {
+                if let Some(h) = self.v.rdp.get(&call) {
+                    let _ = h.tx.send(rdp_call::ToRdp::Start { rdp, controlling });
+                }
             }
             E::CallRinging { call } => out.event(AppEvent::CallRinging { id: call }),
             E::CallAnswered {
@@ -1270,6 +1706,7 @@ impl Session {
             E::CallUpdated { call, media } => self.to_media(call, calls::ToMedia::Update(media)),
             E::CallEnded { call, status } => {
                 self.cues.stop_ring(call);
+                self.stop_video(call);
                 if let Some(id) = self.media_of_call.remove(&call) {
                     if let Some(h) = self.media.remove(&id) {
                         let _ = h.tx.send(calls::ToMedia::Stop);
@@ -1300,12 +1737,19 @@ impl Session {
                 );
                 more.extend(self.engine.command(C::DeclineTransfer { call }, t));
             }
-            E::IncomingScreenShare { call, .. } => {
-                out.notice(
-                    NoticeKind::Info,
-                    "someone shares a screen; viewing is not in the desktop client yet (commscraft-cli /view)",
-                );
-                more.extend(self.engine.command(C::Hangup { call }, t));
+            E::IncomingScreenShare { call, from, rdp } => {
+                self.cues.start_ring(call);
+                self.v.screen_offers.insert(call, rdp);
+                out.event(AppEvent::CallStarted {
+                    id: call,
+                    peer: from,
+                    incoming: true,
+                    at: t,
+                });
+                out.event(AppEvent::CallKind {
+                    id: call,
+                    kind: CallKind::Screen,
+                });
             }
             E::Diagnostic {
                 method,

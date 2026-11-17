@@ -211,6 +211,15 @@ texts! {
     call_kind: "Gesprächsart", "Call type";
     call_kind_audio: "Audio · 1:1", "Audio · 1:1";
     call_kind_conference: "Audio · Konferenz", "Audio · conference";
+    call_kind_video: "Audio und Video · 1:1", "Audio and video · 1:1";
+    call_kind_screen: "Bildschirmfreigabe ansehen", "Viewing a shared screen";
+    answer_video: "Mit Video annehmen", "Answer with video";
+    video_call: "Videoanruf", "Video call";
+    screen_offered: "teilt einen Bildschirm", "shares a screen";
+    view_screen: "Ansehen", "View";
+    video_starting: "Video wird verbunden …", "Connecting video …";
+    video_window: "Das Bild erscheint in einem eigenen, abgeschotteten Fenster.", "The picture appears in a separate, sandboxed window.";
+    video_failed: "Video beendet", "Video ended";
     participants: "Teilnehmer", "Participants";
     connection_state: "Verbindungsstatus", "Connection state";
     audio_devices: "Audiogeräte", "Audio devices";

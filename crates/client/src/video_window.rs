@@ -1,5 +1,6 @@
-//! The video window in a process of its own (`commscraft-cli video-window ID gpu|cpu`): it decodes
-//! the received video and shows it; the client hands it access units over a pipe.
+//! The video window in a process of its own (`<client> video-window ID gpu|cpu`, the command-line
+//! tool or the desktop client): it decodes the received video and shows it; the client hands it
+//! access units over a pipe.
 //!
 //! Why a process: on an integrated AMD GPU with VCN 4 a GPU encoder changing next to a GPU decoder
 //! in the same process hangs the video engine, in separate processes it does not (measured, evidence

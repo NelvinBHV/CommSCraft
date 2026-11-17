@@ -306,6 +306,9 @@ impl DesktopApp {
             UiIntent::RefreshMeetings => Some(ToWorker::RefreshMeetings),
             UiIntent::CallUser { peer } => Some(ToWorker::CallUser { peer }),
             UiIntent::Transfer { id, peer } => Some(ToWorker::Transfer { id, peer }),
+            UiIntent::VideoCall { peer } => Some(ToWorker::VideoCall { peer }),
+            UiIntent::AnswerVideo { id } => Some(ToWorker::AnswerVideo { id }),
+            UiIntent::ViewScreen { id } => Some(ToWorker::ViewScreen { id }),
             UiIntent::LoadRooms => Some(ToWorker::LoadRooms),
             UiIntent::SendToRoom { room, text } => Some(ToWorker::SendToRoom { room, text }),
             UiIntent::AnswerCall { id } => Some(ToWorker::AnswerCall { id }),
@@ -451,6 +454,12 @@ impl eframe::App for DesktopApp {
 }
 
 fn main() {
+    // The sandboxed video window process (function 28, function 43) runs from this binary.
+    if std::env::args().nth(1).as_deref() == Some(commscraft_client::video_window::COMMAND) {
+        std::process::exit(commscraft_client::video_window::helper_main(
+            std::env::args().skip(2),
+        ));
+    }
     let args = match parse_args() {
         Ok(a) => a,
         Err(e) => {

@@ -33,23 +33,12 @@ commscraft-g711 = { path = "../../crates/g711" }
 commscraft-g722 = { path = "../../crates/g722" }
 commscraft-call-media = { path = "../../crates/call-media" }
 commscraft-conf = { path = "../../crates/conf" }
-commscraft-psom = { path = "../../crates/psom" }
 commscraft-xccos = { path = "../../crates/xccos" }
 commscraft-park = { path = "../../crates/park" }
 commscraft-qoe = { path = "../../crates/qoe" }
 commscraft-lis = { path = "../../crates/lis" }
-commscraft-media = { path = "../../crates/media" }
-commscraft-h264uc = { path = "../../crates/h264uc" }
-commscraft-video-ffmpeg = { path = "../../crates/video-ffmpeg" }
-commscraft-video-wayland = { path = "../../crates/video-wayland" }
-# The kernel's sandbox (Landlock) for the video window process.
-landlock = "=0.4.7"
-# Its system call filter (seccomp-BPF, pure Rust, no libseccomp) and the system call numbers.
-seccompiler = "=0.5.0"
-libc = "0.2"
 commscraft-turn-bwm = { path = "../../crates/turn-bwm" }
 commscraft-sdp = { path = "../../crates/sdp" }
-commscraft-rdp-view = { path = "../../crates/rdp-view" }
 commscraft-rtp = { path = "../../crates/rtp" }
 commscraft-avedgea = { path = "../../crates/avedgea" }
 commscraft-ntlm = { path = "../../crates/ntlm" }

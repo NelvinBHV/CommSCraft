@@ -2,7 +2,7 @@
 
 use crate::app::{CallFilter, CommsUi, UiIntent};
 use crate::format;
-use crate::model::{CallDirection, CallState, Gate};
+use crate::model::{CallDirection, CallKind, CallState, Gate, VideoState};
 use crate::theme::{self, Palette};
 use crate::views::shell::{context_block, context_title};
 use crate::widgets;
@@ -246,11 +246,29 @@ pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                             } else {
                                 pal.muted
                             };
-                            ui.label(
-                                RichText::new(state_text(app, call.state, call.held))
-                                    .size(theme::text::NAME)
-                                    .color(colour),
-                            );
+                            let state = if call.kind == CallKind::Screen
+                                && call.state == CallState::Incoming
+                            {
+                                t.screen_offered.to_string()
+                            } else {
+                                state_text(app, call.state, call.held)
+                            };
+                            ui.label(RichText::new(state).size(theme::text::NAME).color(colour));
+                            let video = match &call.video {
+                                VideoState::None => None,
+                                VideoState::Starting => Some(t.video_starting.to_string()),
+                                VideoState::Window => Some(t.video_window.to_string()),
+                                VideoState::Failed(why) => {
+                                    Some(format!("{}: {why}", t.video_failed))
+                                }
+                            };
+                            if let Some(v) = video {
+                                ui.label(
+                                    RichText::new(v)
+                                        .size(theme::text::SMALL + 0.5)
+                                        .color(pal.muted),
+                                );
+                            }
                             if call.demo {
                                 ui.label(
                                     RichText::new(t.demo_call)
@@ -262,22 +280,53 @@ pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                             widgets::rule(ui, pal);
                             ui.add_space(14.0);
                             if call.state == CallState::Incoming {
+                                let screen = call.kind == CallKind::Screen;
+                                let with_video = !screen && call.offers_video;
+                                let buttons = if with_video { 3.0 } else { 2.0 };
                                 ui.horizontal(|ui| {
                                     ui.add_space(
-                                        ((ui.available_width() - 2.0 * 160.0 - 12.0) / 2.0)
+                                        ((ui.available_width()
+                                            - buttons * 160.0
+                                            - (buttons - 1.0) * 12.0)
+                                            / 2.0)
                                             .max(0.0),
                                     );
                                     // As large as the red button next to it.
-                                    let answer = egui::Button::new(
-                                        RichText::new(t.answer)
-                                            .color(pal.on_primary)
-                                            .family(crate::theme::bold()),
-                                    )
-                                    .fill(pal.success_text)
-                                    .stroke(egui::Stroke::NONE)
-                                    .min_size(Vec2::new(160.0, 40.0));
-                                    if ui.add_enabled(caps.audio_call.usable(), answer).clicked() {
-                                        app.emit(UiIntent::AnswerCall { id: call.id });
+                                    let green = |label: &str| {
+                                        egui::Button::new(
+                                            RichText::new(label)
+                                                .color(pal.on_primary)
+                                                .family(crate::theme::bold()),
+                                        )
+                                        .fill(pal.success_text)
+                                        .stroke(egui::Stroke::NONE)
+                                        .min_size(Vec2::new(160.0, 40.0))
+                                    };
+                                    if screen {
+                                        let r = ui.add_enabled(
+                                            caps.video_call.usable(),
+                                            green(t.view_screen),
+                                        );
+                                        if gate_tip(r, &caps.video_call, app).clicked() {
+                                            app.emit(UiIntent::ViewScreen { id: call.id });
+                                        }
+                                    } else {
+                                        let answer = green(t.answer);
+                                        if ui
+                                            .add_enabled(caps.audio_call.usable(), answer)
+                                            .clicked()
+                                        {
+                                            app.emit(UiIntent::AnswerCall { id: call.id });
+                                        }
+                                    }
+                                    if with_video {
+                                        let r = ui.add_enabled(
+                                            caps.video_call.usable(),
+                                            green(t.answer_video),
+                                        );
+                                        if gate_tip(r, &caps.video_call, app).clicked() {
+                                            app.emit(UiIntent::AnswerVideo { id: call.id });
+                                        }
                                     }
                                     if widgets::danger(ui, t.decline, pal).clicked() {
                                         app.emit(UiIntent::HangUp { id: call.id });
@@ -318,11 +367,13 @@ pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                                             hold: !call.held,
                                         });
                                     }
+                                    // Video is chosen when the call starts or is answered.
                                     let v = widgets::call_tile(
                                         ui,
                                         t.mono_video,
                                         t.video,
-                                        false,
+                                        call.kind != CallKind::Audio
+                                            && call.video == VideoState::Window,
                                         false,
                                         pal,
                                     );
@@ -387,10 +438,11 @@ pub fn context(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 ui,
                 pal,
                 t.call_kind,
-                if c.conference.is_some() {
-                    t.call_kind_conference
-                } else {
-                    t.call_kind_audio
+                match (c.conference.is_some(), c.kind) {
+                    (true, _) => t.call_kind_conference,
+                    (false, CallKind::Video) => t.call_kind_video,
+                    (false, CallKind::Screen) => t.call_kind_screen,
+                    (false, CallKind::Audio) => t.call_kind_audio,
                 },
             );
             context_block(
