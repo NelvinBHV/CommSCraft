@@ -5290,8 +5290,7 @@ fn voicemail_list(
     voicemail::parse_list(&answer).map_err(|e| format!("{e:?}"))
 }
 
-/// Function 49: saves a finished conversation in the Conversation History folder (CreateItem,
-/// EX-09, OB-22).
+/// Function 49: saves a finished conversation (shared `client::exchange::save_conversation`).
 fn save_conversation(
     engine: &mut commscraft_session::Engine<OsRandom>,
     tls: &TlsClient,
@@ -5300,18 +5299,23 @@ fn save_conversation(
     t: &commscraft_ews::history::Conversation,
     verbose: bool,
 ) -> Result<(), String> {
-    use commscraft_ews::history;
-    let body = history::save_request(t).map_err(|e| format!("{e:?}"))?;
-    let answer = ews_call(
-        engine,
+    let aor = engine.aor().to_string();
+    let mut ntlm = |n: &[u8], c: &[u8], cert: Option<&[u8]>| engine.http_ntlm(n, c, now(), cert);
+    let mut log = |l: &str| {
+        if verbose {
+            println!("{l}");
+        }
+    };
+    commscraft_client::exchange::save_conversation(
         tls,
         trust,
+        &aor,
         settings,
-        ("CreateItem", history::CREATE_ITEM_ACTION),
-        &body,
-        verbose,
-    )?;
-    history::parse_save_answer(&answer).map_err(|e| format!("{e:?}"))
+        t,
+        &user_agent(),
+        &mut ntlm,
+        &mut log,
+    )
 }
 
 /// One EWS operation `(name, soapAction)` at the user's EWS URL, with NTLM; the answer's text

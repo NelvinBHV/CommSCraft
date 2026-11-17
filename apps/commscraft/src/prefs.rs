@@ -57,6 +57,7 @@ pub fn parse(text: &str) -> Prefs {
             "sounds" => p.sounds = v != "false",
             "quiet_sounds_busy" => p.quiet_sounds_busy = v == "true",
             "meeting_participants" => p.meeting_participants = v == "true",
+            "save_history" => p.save_history = v != "false",
             // A device file only: printable, absolute, bounded.
             "camera"
                 if v.starts_with("/dev/") && v.len() <= 200 && !v.chars().any(char::is_control) =>
@@ -119,6 +120,7 @@ pub fn format(p: &Prefs) -> String {
         ("sounds", p.sounds),
         ("quiet_sounds_busy", p.quiet_sounds_busy),
         ("meeting_participants", p.meeting_participants),
+        ("save_history", p.save_history),
     ] {
         out.push_str(&format!("{k}={v}\n"));
     }
@@ -217,6 +219,7 @@ mod tests {
             last_address: "sip:mara@beispiel.invalid".into(),
             inactive_minutes: 0,
             away_minutes: 30,
+            save_history: false,
             ..Default::default()
         };
         p.favorites

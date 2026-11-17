@@ -245,6 +245,8 @@ fn page_ui(
                         egui::WidgetInfo::labeled(egui::Role::Slider, true, t.opt_text_size)
                     });
             });
+            // The server's policy, when it sets one, decides; this is the user's choice.
+            ui.checkbox(&mut p.save_history, t.opt_save_history);
             missing(ui, t, t.opt_spelling, ni);
             missing(ui, t, t.opt_emoticons, ni);
             missing(ui, t, t.opt_tabs, ni);

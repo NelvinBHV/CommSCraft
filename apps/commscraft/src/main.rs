@@ -328,6 +328,16 @@ impl DesktopApp {
                 }
             });
             self.worker = Some(session::Worker::start(form, self.ca.clone(), repaint));
+            // The worker starts with the defaults: the user's settings at once.
+            let p = &self.ui.prefs;
+            if let Some(w) = &self.worker {
+                w.send(ToWorker::Settings {
+                    camera: p.camera.trim().to_string(),
+                    sounds: p.sounds,
+                    quiet_busy: p.quiet_sounds_busy,
+                    save_history: p.save_history,
+                });
+            }
             return;
         }
         if matches!(
@@ -464,6 +474,7 @@ impl DesktopApp {
                     camera: p.camera.trim().to_string(),
                     sounds: p.sounds,
                     quiet_busy: p.quiet_sounds_busy,
+                    save_history: p.save_history,
                 })
             }
             UiIntent::Dtmf { id, digits } => Some(ToWorker::Dtmf { id, digits }),

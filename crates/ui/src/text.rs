@@ -210,7 +210,7 @@ texts! {
     opt_dnd_sharing: "„Nicht stören“ während einer Freigabe", "Do Not Disturb while sharing";
     opt_emoticons: "Emoticons anzeigen", "Show emoticons";
     opt_exchange: "Exchange", "Exchange";
-    opt_exchange_body: "Kalenderstatus, Abwesenheitsnotiz, Unterhaltungsverlauf und Voicemail aus Exchange bietet zurzeit das Kommandozeilenwerkzeug.", "Calendar state, out-of-office note, conversation history and voicemail from Exchange are offered by the command-line tool for now.";
+    opt_exchange_body: "Termine, Abwesenheitsnotiz und das Speichern von Unterhaltungen nutzen Exchange; Voicemail bietet zurzeit das Kommandozeilenwerkzeug.", "Appointments, the out-of-office note and saving conversations use Exchange; voicemail is offered by the command-line tool for now.";
     opt_favorites_group: "Gruppe „Favoriten“ zeigen", "Show the Favourites group";
     opt_files: "Dateispeicherung", "File saving";
     opt_general: "Allgemein", "General";
@@ -242,6 +242,7 @@ texts! {
     opt_spelling: "Rechtschreibung beim Tippen prüfen", "Check spelling as I type";
     opt_status: "Status", "Status";
     opt_status_body: "Die Leerlaufzeit kommt vom Desktop (GNOME oder KDE); ohne sie bleibt der Status, wie Sie ihn wählen. 0 Minuten schaltet den Schritt ab.", "The idle time comes from the desktop (GNOME or KDE); without it the status stays as you choose it. 0 minutes turns the step off.";
+    opt_save_history: "IM-Unterhaltungen im Exchange-Ordner „Unterhaltungsverlauf“ speichern", "Save IM conversations in the Exchange Conversation History folder";
     opt_inactive_after: "Als inaktiv anzeigen nach", "Show me as inactive after";
     opt_away_after: "Als abwesend anzeigen nach weiteren", "Show me as away after a further";
     opt_tabs: "Unterhaltungen als Reiter in einem Fenster", "Conversations as tabs in one window";

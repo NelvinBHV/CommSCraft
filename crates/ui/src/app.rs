@@ -265,6 +265,8 @@ pub struct Prefs {
     pub meeting_participants: bool,
     /// The last sign-in address (no secret; offered in the sign-in form).
     pub last_address: String,
+    /// Keep IM conversations in the Conversation History folder in Exchange.
+    pub save_history: bool,
     /// Inactive after this many idle minutes (0: never).
     pub inactive_minutes: u32,
     /// Away after this many more minutes of being inactive (0: never).
@@ -293,6 +295,7 @@ impl Default for Prefs {
             camera: String::new(),
             meeting_participants: false,
             last_address: String::new(),
+            save_history: true,
             inactive_minutes: 5,
             away_minutes: 5,
         }

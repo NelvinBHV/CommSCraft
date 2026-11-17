@@ -191,6 +191,12 @@ pub fn run(app: &mut DesktopApp, line: &str) {
         }),
         "meetings" => app.handle(UiIntent::RefreshMeetings),
         // `meetingaudio`: join the audio of the selected meeting
+        // `end`: end the selected conversation
+        "end" => {
+            if let Some(key) = app.ui.selected_conversation() {
+                app.handle(UiIntent::EndConversation { key })
+            }
+        }
         // `meetingscreen`: view what is shared in the selected meeting
         "meetingscreen" => {
             if let Some(key) = app.ui.selected_conversation() {
