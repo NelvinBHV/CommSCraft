@@ -660,6 +660,11 @@ pub enum AppEvent {
         room: String,
         status: u16,
     },
+    /// The user's appointments and automatic reply from Exchange.
+    Calendar {
+        appointments: Option<Vec<Appointment>>,
+        out_of_office: Option<String>,
+    },
     /// A contact's photo (side × side RGBA).
     ContactPhoto {
         uri: String,
@@ -694,6 +699,28 @@ impl std::fmt::Debug for Photo {
     }
 }
 
+/// How an appointment shows the user's time.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Busy {
+    Free,
+    Tentative,
+    Busy,
+    OutOfOffice,
+}
+
+/// An appointment of the user's calendar (subject and location absent for a private one).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Appointment {
+    pub start: u64,
+    pub end: u64,
+    pub busy: Busy,
+    pub subject: String,
+    pub location: String,
+}
+
+/// Appointments kept at most.
+pub const MAX_APPOINTMENTS: usize = 200;
+
 /// Photos kept at most.
 pub const MAX_PHOTOS: usize = 2000;
 
@@ -715,6 +742,10 @@ pub struct AppState {
     pub trust_question: Option<TrustQuestion>,
     /// Contact photos by address.
     pub photos: BTreeMap<String, Photo>,
+    /// The user's appointments from Exchange (`None`: not loaded or switched off by the server).
+    pub appointments: Option<Vec<Appointment>>,
+    /// The user's automatic reply while it is on.
+    pub out_of_office: Option<String>,
     next_key: u64,
 }
 
@@ -734,6 +765,8 @@ impl Default for AppState {
             notices: VecDeque::new(),
             trust_question: None,
             photos: BTreeMap::new(),
+            appointments: None,
+            out_of_office: None,
             next_key: 1,
         }
     }
@@ -1343,6 +1376,27 @@ impl AppState {
                         },
                     });
                 }
+            }
+            AppEvent::Calendar {
+                appointments,
+                out_of_office,
+            } => {
+                self.appointments = appointments.map(|list| {
+                    let mut list: Vec<Appointment> = list
+                        .into_iter()
+                        .filter(|a| a.end >= a.start)
+                        .take(MAX_APPOINTMENTS)
+                        .map(|a| Appointment {
+                            subject: label(&a.subject),
+                            location: label(&a.location),
+                            ..a
+                        })
+                        .collect();
+                    list.sort_by_key(|a| a.start);
+                    list
+                });
+                // Some(""): the replies are on, without a text.
+                self.out_of_office = out_of_office.map(|t| clean(&t, 500, false));
             }
             AppEvent::ContactPhoto { uri, side, rgba } => {
                 let ok = (16..=256).contains(&side) && rgba.len() == side * side * 4;

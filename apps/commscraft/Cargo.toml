@@ -15,6 +15,7 @@ commscraft-client = { path = "../../crates/client" }
 commscraft-conf = { path = "../../crates/conf" }
 commscraft-dlx = { path = "../../crates/dlx" }
 commscraft-gssapi = { path = "../../crates/gssapi" }
+commscraft-ews = { path = "../../crates/ews" }
 commscraft-net = { path = "../../crates/net" }
 commscraft-ocer = { path = "../../crates/ocer" }
 commscraft-presence = { path = "../../crates/presence" }

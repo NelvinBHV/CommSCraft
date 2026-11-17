@@ -16,8 +16,8 @@ use commscraft_register::{Config as RegConfig, Password, Registrar};
 use commscraft_session::{Command as C, Engine, Event as E, Output};
 use commscraft_ui::app::SignIn;
 use commscraft_ui::model::{
-    AppEvent, CallKind, Capabilities, Connection, Contact, ConvKey, Gate, Meeting, NoticeKind,
-    Participant, Presence, Profile, Reason, RoomPost, Source, VideoState,
+    AppEvent, Appointment, Busy, CallKind, Capabilities, Connection, Contact, ConvKey, Gate,
+    Meeting, NoticeKind, Participant, Presence, Profile, Reason, RoomPost, Source, VideoState,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::mpsc::{self, Receiver, SyncSender, TryRecvError};
@@ -369,7 +369,9 @@ struct Session {
     /// The thread that fetches contact photos (started once signed in).
     photos: Option<crate::photos::Photos>,
     photo_ntlm: mpsc::Sender<crate::photos::NtlmAsk>,
-    photo_done: mpsc::Sender<crate::photos::Thumb>,
+    photo_done: mpsc::Sender<crate::photos::Done>,
+    /// When the appointments were last asked for.
+    calendar_at: Option<Instant>,
     /// The contact list's addresses (their photos are asked for once provisioning is known).
     contact_uris: Vec<String>,
     tls: TlsClient,
@@ -436,6 +438,30 @@ pub fn slide_of(location: &str) -> String {
     match number {
         Some(n) => format!("slide {n}"),
         None => location.chars().take(60).collect(),
+    }
+}
+
+/// An appointment for the interface (subject and location only where the event is not private).
+pub fn appointment_of(e: &commscraft_ews::calendar::CalendarEvent) -> Appointment {
+    use commscraft_ews::calendar::FreeBusy as F;
+    Appointment {
+        start: e.start,
+        end: e.end,
+        busy: match e.busy {
+            F::Free | F::NoData => Busy::Free,
+            F::Tentative => Busy::Tentative,
+            F::Busy => Busy::Busy,
+            F::Oof => Busy::OutOfOffice,
+        },
+        subject: e.subject.clone().unwrap_or_default(),
+        location: e.location.clone().unwrap_or_default(),
+    }
+}
+
+/// One line of the trace (`COMMSCRAFT_VERBOSE`).
+fn trace_line(l: &str) {
+    if verbose() {
+        eprintln!("{l}");
     }
 }
 
@@ -638,7 +664,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
     let (rdp_tx, rdp_rx) = mpsc::channel();
     let (content_tx, content_rx) = mpsc::channel();
     let (ntlm_tx, ntlm_rx) = mpsc::channel::<crate::photos::NtlmAsk>();
-    let (thumb_tx, thumb_rx) = mpsc::channel::<crate::photos::Thumb>();
+    let (thumb_tx, thumb_rx) = mpsc::channel::<crate::photos::Done>();
     let (cues, cue_notices) = cues::Cues::from_env();
     for n in cue_notices {
         out.notice(NoticeKind::Info, n);
@@ -674,6 +700,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         photos: None,
         photo_ntlm: ntlm_tx,
         photo_done: thumb_tx,
+        calendar_at: None,
         contact_uris: Vec::new(),
         tls,
         trust,
@@ -733,12 +760,40 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
                 .http_ntlm(&a.negotiate, &a.challenge, now(), a.cert.as_deref());
             let _ = a.reply.send(r);
         }
-        while let Ok(t) = thumb_rx.try_recv() {
-            out.event(AppEvent::ContactPhoto {
-                uri: t.uri,
-                side: t.side,
-                rgba: t.rgba,
-            });
+        while let Ok(d) = thumb_rx.try_recv() {
+            match d {
+                crate::photos::Done::Thumb(t) => out.event(AppEvent::ContactPhoto {
+                    uri: t.uri,
+                    side: t.side,
+                    rgba: t.rgba,
+                }),
+                crate::photos::Done::Calendar(Ok((events, oof))) => {
+                    let t = now();
+                    trace_line(&format!(
+                        "calendar: {} appointments, automatic replies {}",
+                        events.as_ref().map_or(0, Vec::len),
+                        if oof.as_ref().is_some_and(|o| o.active(t)) {
+                            "on"
+                        } else {
+                            "off"
+                        }
+                    ));
+                    out.event(AppEvent::Calendar {
+                        appointments: events.map(|l| l.iter().map(appointment_of).collect()),
+                        out_of_office: oof.filter(|o| o.active(t)).map(|o| o.message),
+                    })
+                }
+                crate::photos::Done::Calendar(Err(e)) => trace_line(&format!("calendar: {e}")),
+            }
+        }
+        // The appointments: once provisioning is known, then every 15 minutes.
+        if s.calendar_at
+            .is_none_or(|t| t.elapsed() >= Duration::from_secs(15 * 60))
+        {
+            if let (Some(p), Some(c)) = (&s.photos, s.services.as_deref()) {
+                p.calendar(&c.calendar);
+                s.calendar_at = Some(Instant::now());
+            }
         }
         match s.conn.recv() {
             Ok(Some(m)) => {

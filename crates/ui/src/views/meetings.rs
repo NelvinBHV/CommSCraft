@@ -40,6 +40,7 @@ pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         .id_salt("meeting-list")
         .auto_shrink([false, false])
         .show(ui, |ui| {
+            calendar(app, ui, pal);
             if !app.state.invitations.is_empty() {
                 ui.horizontal(|ui| {
                     ui.add_space(8.0);
@@ -134,4 +135,99 @@ pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 }
             }
         });
+}
+
+/// The user's appointments from Exchange, by day, and the automatic reply when it is on.
+fn calendar(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    if let Some(text) = app.state.out_of_office.clone() {
+        widgets::hint(
+            ui,
+            pal,
+            Some(t.oof_on),
+            if text.is_empty() {
+                t.oof_no_text
+            } else {
+                &text
+            },
+        );
+        ui.add_space(8.0);
+    }
+    let Some(list) = app.state.appointments.clone() else {
+        return;
+    };
+    ui.horizontal(|ui| {
+        ui.add_space(8.0);
+        widgets::section(ui, t.calendar_title, pal);
+    });
+    let today = crate::format::day(app.now, app.utc_offset);
+    let upcoming: Vec<_> = list
+        .iter()
+        .filter(|a| a.end > app.now || crate::format::day(a.start, app.utc_offset) == today)
+        .collect();
+    if upcoming.is_empty() {
+        ui.horizontal(|ui| {
+            ui.add_space(8.0);
+            ui.label(RichText::new(t.calendar_empty).color(pal.muted));
+        });
+    }
+    let mut last_day = None;
+    for a in upcoming {
+        let day = crate::format::day(a.start, app.utc_offset);
+        if last_day != Some(day) {
+            last_day = Some(day);
+            let word = match day - today {
+                0 => t.today.to_string(),
+                1 => t.tomorrow.to_string(),
+                _ => crate::format::date(a.start, app.utc_offset),
+            };
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                ui.add_space(8.0);
+                ui.label(
+                    RichText::new(word)
+                        .size(theme::text::SMALL)
+                        .family(crate::theme::bold())
+                        .color(pal.muted),
+                );
+            });
+        }
+        let subject = if a.subject.is_empty() {
+            t.private_appointment.to_string()
+        } else {
+            a.subject.clone()
+        };
+        let busy = match a.busy {
+            crate::model::Busy::Free => t.busy_free,
+            crate::model::Busy::Tentative => t.busy_tentative,
+            crate::model::Busy::Busy => t.busy_busy,
+            crate::model::Busy::OutOfOffice => t.busy_oof,
+        };
+        let now_running = a.start <= app.now && app.now < a.end;
+        ui.horizontal(|ui| {
+            ui.add_space(8.0);
+            ui.vertical(|ui| {
+                let head = format!(
+                    "{}–{}  {subject}",
+                    crate::format::clock(a.start, app.utc_offset),
+                    crate::format::clock(a.end, app.utc_offset)
+                );
+                let text = RichText::new(head).color(pal.ink);
+                ui.label(if now_running {
+                    text.family(crate::theme::bold())
+                } else {
+                    text
+                });
+                let mut sub = busy.to_string();
+                if !a.location.is_empty() {
+                    sub = format!("{sub} · {}", a.location);
+                }
+                if now_running {
+                    sub = format!("{} · {sub}", t.now_running);
+                }
+                ui.label(RichText::new(sub).size(theme::text::SMALL).color(pal.muted));
+            });
+        });
+    }
+    ui.add_space(10.0);
 }

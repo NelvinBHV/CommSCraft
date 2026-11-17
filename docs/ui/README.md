@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: contact photos)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: appointments from Exchange)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -81,6 +81,11 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   NTLM step comes from the session worker over a channel. The photo is decoded there in pure Rust
   (JPEG with zune-jpeg, PNG; at most 1024 pixels a side) into a 96 × 96 thumbnail. *Options →
   personal → show pictures of contacts* switches them off. `tested-in-lab`.
+- **Appointments from Exchange:** the same thread asks for the user's appointments of four days
+  (GetUserAvailability) and the automatic reply (GetUserOofSettings) through the shared
+  `commscraft-client::exchange`, after sign-in and then every 15 minutes, as the server's calendar
+  settings allow; the meetings tab shows them by day (subject and location only for appointments
+  that are not private) and says when automatic replies are on. `tested-in-lab`.
 - **Persistent chat rooms:** offered only when provisioning names a persistent chat pool
   (otherwise *unavailable: disabled by the server*). *Rooms* in the chat list → *Load chat
   rooms* connects to the pool, lists the rooms the user is a member of, joins them and asks for

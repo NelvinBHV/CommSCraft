@@ -5335,41 +5335,24 @@ fn ews_call(
     body: &str,
     verbose: bool,
 ) -> Result<String, String> {
-    let base = settings
-        .https_url(&["InternalEwsUrl", "ExternalEwsUrl"])
-        .ok_or("Exchange named no web services URL")?;
-    let url = commscraft_url::parse_https(base).ok_or("unusable EWS URL")?;
-    let own = engine
-        .aor()
-        .rsplit('@')
-        .next()
-        .unwrap_or_default()
-        .to_string();
-    if !commscraft_url::in_domain(&url.host, &own) && !trust.trusts(&url.host) {
-        return Err(format!(
-            "{} is outside your SIP domain; add --trust-domain to use it",
-            url.host
-        ));
-    }
-    if verbose {
-        println!("  POST {base} ({name})");
-    }
-    let r = ntlm_post(
-        engine,
+    let aor = engine.aor().to_string();
+    let mut ntlm = |n: &[u8], c: &[u8], cert: Option<&[u8]>| engine.http_ntlm(n, c, now(), cert);
+    let mut log = |l: &str| {
+        if verbose {
+            println!("{l}");
+        }
+    };
+    commscraft_client::exchange::ews_call(
         tls,
-        &url,
-        &[
-            ("Content-Type", commscraft_ews::CONTENT_TYPE),
-            ("SOAPAction", action),
-        ],
+        trust,
+        &aor,
+        settings,
+        (name, action),
         body,
-    )?;
-    match r.status {
-        401 => Err("not authorized at Exchange (401)".into()),
-        // A SOAP fault comes with 500.
-        200 | 500 => Ok(String::from_utf8_lossy(&r.body).to_string()),
-        s => Err(format!("HTTP {s}")),
-    }
+        &user_agent(),
+        &mut ntlm,
+        &mut log,
+    )
 }
 
 /// The contact list from Exchange (GetImItemList, EX-04/EX-05) in the form the session keeps:

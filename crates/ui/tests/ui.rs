@@ -542,3 +542,40 @@ fn the_stored_certificate_signs_in_without_a_password() {
     h.run();
     assert!(!button(&h, "Sign in").accesskit_node().is_disabled());
 }
+
+#[test]
+fn appointments_and_automatic_replies_show_in_the_meetings_tab() {
+    use commscraft_ui::model::{Appointment, Busy};
+    let mut ui = online();
+    ui.state.apply(AppEvent::Calendar {
+        appointments: Some(vec![
+            Appointment {
+                start: NOW + 3600,
+                end: NOW + 7200,
+                busy: Busy::Busy,
+                subject: "Planung".into(),
+                location: "Raum 1".into(),
+            },
+            Appointment {
+                start: NOW + 86_400,
+                end: NOW + 90_000,
+                busy: Busy::Tentative,
+                subject: String::new(),
+                location: String::new(),
+            },
+        ]),
+        out_of_office: Some("Bis Montag im Urlaub".into()),
+    });
+    let mut h = harness(ui, (420.0, 760.0));
+    h.run();
+    button(&h, "Besprechungen").click();
+    h.run();
+    assert!(h.query_by_label_contains("Planung").is_some());
+    assert!(h.query_by_label_contains("Gebucht · Raum 1").is_some());
+    // A private appointment shows no subject.
+    assert!(h.query_by_label_contains("Privater Termin").is_some());
+    assert!(h
+        .query_by_label_contains("Automatische Antworten sind an")
+        .is_some());
+    assert!(h.query_by_label_contains("Bis Montag im Urlaub").is_some());
+}
