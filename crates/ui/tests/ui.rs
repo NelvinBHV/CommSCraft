@@ -186,15 +186,12 @@ fn online() -> CommsUi {
 fn the_main_window_has_the_four_tabs_and_marks_the_demo() {
     let mut h = harness(demo_quiet(), (420.0, 760.0));
     h.run();
-    for tab in [
-        "Kontakte",
-        "Unterhaltungen",
-        "Telefon",
-        "Besprechungen",
-        "Optionen",
-    ] {
+    for tab in ["Kontakte", "Unterhaltungen", "Besprechungen", "Optionen"] {
         assert!(h.query_by_label(tab).is_some(), "{tab}");
     }
+    // No telephony in this interface: no phone tab, no keypad for numbers.
+    assert!(h.query_by_label("Telefon").is_none());
+    assert!(h.query_by_label("Telefone").is_none());
     assert!(h.query_by_label_contains("DEMO").is_some());
     assert!(h
         .query_by_label_contains("Anna Weber, Beschäftigt")

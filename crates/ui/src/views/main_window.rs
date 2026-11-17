@@ -40,7 +40,6 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         .show(ui, |ui| match app.tab {
             MainTab::Contacts => contacts(app, ui, pal),
             MainTab::Conversations => conversations(app, ui, pal),
-            MainTab::Phone => phone(app, ui, pal),
             MainTab::Meetings => crate::views::meetings::list(app, ui, pal),
             MainTab::Rooms => rooms(app, ui, pal),
         });
@@ -136,7 +135,6 @@ fn tabs(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 t.tab_conversations,
                 missed,
             ),
-            (MainTab::Phone, Icon::Keypad, t.tab_phone, 0),
             (
                 MainTab::Meetings,
                 Icon::Calendar,
@@ -845,90 +843,4 @@ fn rooms(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 conversation_row(app, ui, pal, k);
             }
         });
-}
-
-fn phone(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
-    let t = app.t;
-    ui.label(RichText::new(t.phone_address).color(pal.muted));
-    let r = ui.add(
-        egui::TextEdit::singleline(&mut app.dial)
-            .hint_text("sip:name@domain")
-            .char_limit(256)
-            .desired_width(f32::INFINITY),
-    );
-    r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::TextInput, true, "dial"));
-    ui.add_space(6.0);
-    // The keypad: digits go into the field (and as tones into a running call).
-    egui::Grid::new("keypad")
-        .spacing([8.0, 8.0])
-        .show(ui, |ui| {
-            for row in [
-                ["1", "2", "3"],
-                ["4", "5", "6"],
-                ["7", "8", "9"],
-                ["*", "0", "#"],
-            ] {
-                for k in row {
-                    if ui
-                        .add_sized([72.0, 40.0], egui::Button::new(RichText::new(k).size(18.0)))
-                        .clicked()
-                    {
-                        match app.state.active_call().map(|c| c.id) {
-                            Some(id) => app.emit(UiIntent::Dtmf {
-                                id,
-                                digits: k.to_string(),
-                            }),
-                            None => app.dial.push_str(k),
-                        }
-                    }
-                }
-                ui.end_row();
-            }
-        });
-    ui.add_space(8.0);
-    let address = crate::views::chats::normalise_address(&app.dial);
-    ui.horizontal(|ui| {
-        let caps = app.state.capabilities.clone();
-        let idle = app.state.active_call().is_none();
-        if ui
-            .add_enabled(
-                address.is_some() && idle && caps.audio_call.usable(),
-                egui::Button::new(t.call),
-            )
-            .clicked()
-        {
-            if let Some(a) = address.clone() {
-                app.call(&a, false);
-            }
-        }
-        if ui
-            .add_enabled(
-                address.is_some() && idle && caps.video_call.usable(),
-                egui::Button::new(t.video_call),
-            )
-            .clicked()
-        {
-            if let Some(a) = address {
-                app.call(&a, true);
-            }
-        }
-    });
-    ui.add_space(6.0);
-    ui.label(
-        RichText::new(t.phone_numbers_unavailable)
-            .size(theme::text::SMALL)
-            .color(pal.muted),
-    );
-    ui.add_space(10.0);
-    widgets::rule(ui, pal);
-    ui.label(
-        RichText::new(t.voicemail)
-            .family(theme::bold())
-            .color(pal.ink),
-    );
-    ui.label(
-        RichText::new(t.voicemail_unavailable)
-            .size(theme::text::SMALL)
-            .color(pal.muted),
-    );
 }

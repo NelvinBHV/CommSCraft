@@ -8,17 +8,16 @@ use crate::text::{Lang, Texts};
 use crate::theme::{self, Palette};
 use egui::{Frame, Margin, RichText, Ui};
 
-pub const AUDIO: usize = 9;
-pub const VIDEO: usize = 10;
+pub const AUDIO: usize = 8;
+pub const VIDEO: usize = 9;
 
-fn areas(t: &Texts) -> [&'static str; 14] {
+fn areas(t: &Texts) -> [&'static str; 13] {
     [
         t.opt_general,
         t.opt_personal,
         t.opt_contacts,
         t.opt_status,
         t.opt_picture,
-        t.opt_phones,
         t.opt_alerts,
         t.opt_im,
         t.opt_sounds,
@@ -201,12 +200,6 @@ fn page_ui(
             missing(ui, t, t.opt_show_my_picture, ni)
         }),
         5 => {
-            group(ui, pal, t.opt_phone_numbers, |ui| {
-                missing(ui, t, t.opt_publish_numbers, ni)
-            });
-            group(ui, pal, t.opt_tty, |ui| missing(ui, t, t.opt_tty_mode, ni));
-        }
-        6 => {
             group(ui, pal, t.opt_alerts_general, |ui| {
                 ui.checkbox(&mut p.message_alerts, t.opt_message_alerts);
             });
@@ -217,7 +210,7 @@ fn page_ui(
                 missing(ui, t, t.opt_block_strangers, ni)
             });
         }
-        7 => group(ui, pal, t.opt_im, |ui| {
+        6 => group(ui, pal, t.opt_im, |ui| {
             ui.horizontal(|ui| {
                 ui.label(t.opt_text_size);
                 ui.add(egui::Slider::new(&mut p.chat_text_size, 12.0..=20.0).step_by(1.0))
@@ -229,18 +222,18 @@ fn page_ui(
             missing(ui, t, t.opt_emoticons, ni);
             missing(ui, t, t.opt_tabs, ni);
         }),
-        8 => group(ui, pal, t.opt_sounds, |ui| {
+        7 => group(ui, pal, t.opt_sounds, |ui| {
             ui.checkbox(&mut p.sounds, t.opt_play_sounds);
             ui.add_enabled_ui(p.sounds, |ui| {
                 ui.checkbox(&mut p.quiet_sounds_busy, t.opt_quiet_busy);
             });
             note(ui, pal, t.opt_sounds_body);
         }),
-        9 => group(ui, pal, t.opt_audio, |ui| {
+        8 => group(ui, pal, t.opt_audio, |ui| {
             note(ui, pal, t.audio_devices_body);
             missing(ui, t, t.opt_audio_choose, ni);
         }),
-        10 => group(ui, pal, t.opt_video, |ui| {
+        9 => group(ui, pal, t.opt_video, |ui| {
             ui.label(t.opt_camera);
             ui.add(
                 egui::TextEdit::singleline(&mut p.camera)
@@ -259,10 +252,10 @@ fn page_ui(
                 );
             }
         }),
-        11 => group(ui, pal, t.opt_files, |ui| {
+        10 => group(ui, pal, t.opt_files, |ui| {
             missing(ui, t, t.opt_save_files, ni)
         }),
-        12 => group(ui, pal, t.opt_recording, |ui| {
+        11 => group(ui, pal, t.opt_recording, |ui| {
             missing(ui, t, t.opt_record, ni)
         }),
         _ => group(ui, pal, t.opt_meetings, |ui| {

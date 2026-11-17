@@ -210,7 +210,6 @@ pub enum MainTab {
     #[default]
     Contacts,
     Conversations,
-    Phone,
     Meetings,
     /// Persistent chat rooms (only when the server offers them).
     Rooms,
@@ -300,7 +299,6 @@ pub struct CommsUi {
     /// The newest warning the user closed (its time).
     pub(crate) dismissed_alert: u64,
     pub(crate) collapsed: BTreeSet<String>,
-    pub(crate) dial: String,
     pub(crate) windows: Vec<Win>,
     pub(crate) focus_window: Option<Win>,
     pub(crate) options_page: usize,
@@ -348,7 +346,6 @@ impl CommsUi {
             note: String::new(),
             dismissed_alert: 0,
             collapsed: BTreeSet::new(),
-            dial: String::new(),
             windows: Vec::new(),
             focus_window: None,
             options_page: 0,
@@ -384,7 +381,11 @@ impl CommsUi {
         self.tab = match v {
             View::Chats => MainTab::Conversations,
             View::Contacts => MainTab::Contacts,
-            View::Calls => MainTab::Phone,
+            // No telephony in this interface: calls are listed with the conversations.
+            View::Calls => {
+                self.conv_filter = ConvFilter::Calls;
+                MainTab::Conversations
+            }
             View::Meetings => MainTab::Meetings,
             View::Settings => {
                 self.open_options(0);
@@ -443,7 +444,7 @@ impl CommsUi {
     }
 
     pub fn open_options(&mut self, page: usize) {
-        self.options_page = page.min(13);
+        self.options_page = page.min(12);
         self.open_window(Win::Options);
     }
 
