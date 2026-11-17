@@ -397,6 +397,7 @@ impl DesktopApp {
                 })
             }
             UiIntent::Dtmf { id, digits } => Some(ToWorker::Dtmf { id, digits }),
+            UiIntent::ExpandGroup { email } => Some(ToWorker::ExpandGroup { email }),
             UiIntent::ForgetPassword => {
                 if let Some(account) = self.ui.stored_password_for.take() {
                     if let Err(e) = vault::forget(&account) {

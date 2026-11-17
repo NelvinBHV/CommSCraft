@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: password in the keyring on request)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: distribution groups in the contact list)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -37,7 +37,7 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
 
 - **Sign-in:** the sign-in address and the password are enough, as with the Windows client: the
   user name is optional and defaults to the address (the user principal name, with an empty NTLM
-  domain – an inference to be confirmed in the lab); Autodiscover and DNS SRV like the
+  domain; `tested-in-lab`); Autodiscover and DNS SRV like the
   command-line tool (shared crate `commscraft-client`), NTLM with the password typed in the form, TLS always verified against the
   system trust store plus an optional `--ca-file`. A server outside the SIP domain is used only
   when its domain is listed in `~/.config/commscraft/trusted-domains` or – for a server named by
@@ -85,6 +85,11 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   NTLM step comes from the session worker over a channel. The photo is decoded there in pure Rust
   (JPEG with zune-jpeg, PNG; at most 1024 pixels a side) into a 96 × 96 thumbnail. *Options →
   personal → show pictures of contacts* switches them off. `tested-in-lab`.
+- **Distribution groups and favourites of the contact list:** a group the user added from the
+  address book is shown as a distribution list (its `externalURI` names the list's mail address,
+  `presence::group_extension`); opened, its members come from the address book (MS-DLX
+  ExpandDistributionList, in the background thread) with their presence (a `WatchPresence` batch
+  subscription) and photos; the server's favourites group fills *Favourites*. `tested-in-lab`.
 - **Appointments from Exchange:** the same thread asks for the user's appointments of four days
   (GetUserAvailability) and the automatic reply (GetUserOofSettings) through the shared
   `commscraft-client::exchange`, after sign-in and then every 15 minutes, as the server's calendar

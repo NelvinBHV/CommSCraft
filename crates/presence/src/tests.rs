@@ -214,7 +214,8 @@ fn contact_lists_of_the_examples() {
         l.groups[1],
         Group {
             id: 2,
-            name: "Team".into()
+            name: "Team".into(),
+            external: String::new()
         }
     );
     assert_eq!(l.contacts[1].uri, "sip:contact2@tradewind.com");
@@ -929,4 +930,30 @@ fn contact_out_of_office_and_meeting() {
     assert_eq!(p.meeting.as_deref(), Some("Review (Room 1)"));
     assert!(p.note_is_oof);
     assert_eq!(p.note.as_deref(), Some("Away until Monday"));
+}
+
+#[test]
+fn group_extensions() {
+    assert_eq!(
+        group_extension(
+            "<groupExtension groupType=\"dg\"><email>team@contoso.com</email></groupExtension>"
+        ),
+        GroupExtension::Distribution {
+            email: "team@contoso.com".into()
+        }
+    );
+    assert_eq!(
+        group_extension("<groupExtension groupType=\"pinnedGroup\"><email/></groupExtension>"),
+        GroupExtension::Pinned
+    );
+    for plain in [
+        "",
+        "ldap://x",
+        "<groupExtension groupType=\"dg\"><email>no address</email></groupExtension>",
+        "<groupExtension groupType=\"dg\"><email/></groupExtension>",
+        "<other groupType=\"dg\"/>",
+        "<groupExtension groupType=\"dg\"><email>a@b",
+    ] {
+        assert_eq!(group_extension(plain), GroupExtension::Plain, "{plain}");
+    }
 }

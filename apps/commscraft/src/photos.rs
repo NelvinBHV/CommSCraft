@@ -38,11 +38,14 @@ pub struct Thumb {
 enum Job {
     Photo(String, Option<Box<ServerConfiguration>>),
     Calendar(commscraft_provisioning::CalendarPolicy),
+    Expand(String, Option<Box<ServerConfiguration>>),
 }
 
 /// What the thread found.
 pub enum Done {
     Thumb(Thumb),
+    /// The members of a distribution group (MS-DLX ExpandDistributionList).
+    Expanded(String, Result<commscraft_dlx::Expansion, String>),
     Calendar(
         Result<
             (
@@ -76,6 +79,14 @@ impl Photos {
     pub fn want(&self, uri: &str, services: Option<&ServerConfiguration>) {
         let _ = self.tx.try_send(Job::Photo(
             uri.to_string(),
+            services.map(|s| Box::new(s.clone())),
+        ));
+    }
+
+    /// Asks for the members of a distribution group.
+    pub fn expand(&self, email: &str, services: Option<&ServerConfiguration>) {
+        let _ = self.tx.try_send(Job::Expand(
+            email.to_string(),
             services.map(|s| Box::new(s.clone())),
         ));
     }
@@ -117,15 +128,32 @@ fn run(
         };
         let (uri, services) = match job {
             Job::Photo(uri, services) => (uri, services),
+            Job::Expand(email, services) => {
+                let found = commscraft_client::directory::expand(
+                    tls,
+                    trust,
+                    services.as_deref(),
+                    &email,
+                    &ua,
+                    &mut ntlm,
+                    &mut log,
+                );
+                if done.send(Done::Expanded(email, found)).is_err() {
+                    return;
+                }
+                continue;
+            }
             Job::Calendar(policy) => {
                 if settings.is_none() {
-                    settings = commscraft_client::photos::ews_settings(
-                        tls, trust, aor, &ua, &mut ntlm, &mut log,
-                    )
-                    .ok();
+                    settings = Some(
+                        commscraft_client::photos::ews_settings(
+                            tls, trust, aor, &ua, &mut ntlm, &mut log,
+                        )
+                        .ok(),
+                    );
                 }
                 let found = match settings.as_ref() {
-                    Some(s) => commscraft_client::exchange::appointments(
+                    Some(Some(s)) => commscraft_client::exchange::appointments(
                         tls,
                         trust,
                         aor,
@@ -136,7 +164,7 @@ fn run(
                         &mut ntlm,
                         &mut log,
                     ),
-                    None => Err("no Exchange web services".into()),
+                    _ => Err("no Exchange web services".into()),
                 };
                 if done.send(Done::Calendar(found)).is_err() {
                     return;

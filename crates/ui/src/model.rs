@@ -242,6 +242,8 @@ pub struct Contact {
     pub note: String,
     pub group: String,
     pub source: Source,
+    /// In the server's favourites group.
+    pub pinned: bool,
 }
 
 impl Contact {
@@ -257,6 +259,7 @@ impl Contact {
             note: String::new(),
             group: String::new(),
             source,
+            pinned: false,
         }
     }
 
@@ -660,6 +663,14 @@ pub enum AppEvent {
         room: String,
         status: u16,
     },
+    /// The distribution groups of the contact list: name and mail address.
+    DistributionGroups(Vec<(String, String)>),
+    /// The members of a distribution group, or why there are none.
+    DistributionMembers {
+        email: String,
+        members: Result<Vec<Contact>, String>,
+        partial: bool,
+    },
     /// The user's appointments and automatic reply from Exchange.
     Calendar {
         appointments: Option<Vec<Appointment>>,
@@ -721,6 +732,22 @@ pub struct Appointment {
 /// Appointments kept at most.
 pub const MAX_APPOINTMENTS: usize = 200;
 
+/// A distribution group the user added to the contact list; its members come from the address
+/// book when it is opened.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DistGroup {
+    pub name: String,
+    pub email: String,
+    pub members: Option<Vec<Contact>>,
+    /// Why the members could not be listed.
+    pub error: Option<String>,
+    /// The server lists only part of the members.
+    pub partial: bool,
+}
+
+/// Members of a distribution group kept at most.
+pub const MAX_DG_MEMBERS: usize = 1000;
+
 /// Photos kept at most.
 pub const MAX_PHOTOS: usize = 2000;
 
@@ -742,6 +769,8 @@ pub struct AppState {
     pub trust_question: Option<TrustQuestion>,
     /// Contact photos by address.
     pub photos: BTreeMap<String, Photo>,
+    /// The distribution groups of the contact list.
+    pub distribution: Vec<DistGroup>,
     /// The user's appointments from Exchange (`None`: not loaded or switched off by the server).
     pub appointments: Option<Vec<Appointment>>,
     /// The user's automatic reply while it is on.
@@ -765,6 +794,7 @@ impl Default for AppState {
             notices: VecDeque::new(),
             trust_question: None,
             photos: BTreeMap::new(),
+            distribution: Vec::new(),
             appointments: None,
             out_of_office: None,
             next_key: 1,
@@ -991,6 +1021,17 @@ impl AppState {
                 note,
                 name,
             } => {
+                // Members of an opened distribution group show their presence too.
+                for g in &mut self.distribution {
+                    for m in g.members.iter_mut().flatten() {
+                        if m.uri == uri {
+                            if let Some(p) = presence {
+                                m.presence = p;
+                            }
+                            m.note = clean(&note, 1024, false);
+                        }
+                    }
+                }
                 if let Some(c) = self.contacts.get_mut(&uri) {
                     if let Some(p) = presence {
                         c.presence = p;
@@ -1375,6 +1416,45 @@ impl AppState {
                             Delivery::Unknown
                         },
                     });
+                }
+            }
+            AppEvent::DistributionGroups(list) => {
+                let old = std::mem::take(&mut self.distribution);
+                self.distribution = list
+                    .into_iter()
+                    .take(200)
+                    .map(|(name, email)| {
+                        let email = label(&email);
+                        let kept = old.iter().find(|g| g.email == email);
+                        DistGroup {
+                            name: label(&name),
+                            members: kept.and_then(|g| g.members.clone()),
+                            error: None,
+                            partial: kept.is_some_and(|g| g.partial),
+                            email,
+                        }
+                    })
+                    .collect();
+            }
+            AppEvent::DistributionMembers {
+                email,
+                members,
+                partial,
+            } => {
+                if let Some(g) = self.distribution.iter_mut().find(|g| g.email == email) {
+                    match members {
+                        Ok(list) => {
+                            g.members = Some(
+                                list.into_iter()
+                                    .take(MAX_DG_MEMBERS)
+                                    .map(Contact::cleaned)
+                                    .collect(),
+                            );
+                            g.error = None;
+                            g.partial = partial;
+                        }
+                        Err(e) => g.error = Some(label(&e)),
+                    }
                 }
             }
             AppEvent::Calendar {

@@ -384,3 +384,33 @@ fn photos_are_taken_only_in_their_bounds() {
     }
     assert_eq!(s.photos.len(), 1);
 }
+
+#[test]
+fn distribution_group_members_keep_their_presence() {
+    let mut s = online();
+    s.apply(AppEvent::DistributionGroups(vec![(
+        "Team".into(),
+        "team@beispiel.invalid".into(),
+    )]));
+    let bob = Contact::new("sip:bob@beispiel.invalid", "Bob", Source::Directory);
+    s.apply(AppEvent::DistributionMembers {
+        email: "team@beispiel.invalid".into(),
+        members: Ok(vec![bob]),
+        partial: true,
+    });
+    s.apply(AppEvent::Presence {
+        uri: "sip:bob@beispiel.invalid".into(),
+        presence: Some(Presence::Busy),
+        note: String::new(),
+        name: None,
+    });
+    let g = &s.distribution[0];
+    assert!(g.partial);
+    assert_eq!(g.members.as_ref().unwrap()[0].presence, Presence::Busy);
+    // The list again (a new contact list): the members stay until asked again.
+    s.apply(AppEvent::DistributionGroups(vec![(
+        "Team".into(),
+        "team@beispiel.invalid".into(),
+    )]));
+    assert!(s.distribution[0].members.is_some());
+}

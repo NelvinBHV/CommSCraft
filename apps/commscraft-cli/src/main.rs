@@ -5375,6 +5375,7 @@ fn exchange_contact_list(
         list.groups.push(commscraft_presence::Group {
             id: n,
             name: g.name.clone(),
+            external: String::new(),
         });
         if let Some(id) = &g.id {
             ids.groups.push((n, id.clone()));
@@ -5796,10 +5797,12 @@ mod tests {
                 commscraft_presence::Group {
                     id: 1,
                     name: "Other Contacts".into(),
+                    external: String::new(),
                 },
                 commscraft_presence::Group {
                     id: 2,
                     name: "Team".into(),
+                    external: String::new(),
                 },
             ],
             contacts: vec![commscraft_presence::Contact {

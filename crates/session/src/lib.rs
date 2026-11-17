@@ -39,6 +39,8 @@ pub const TRANSACTION_TIMEOUT: u64 = 32;
 pub const MAX_CONVERSATIONS: usize = 64;
 /// Open INVITEs whose progress diagnostics are kept for an error report (ER-04; design).
 const MAX_PROGRESS_CALLS: usize = 16;
+/// Addresses watched besides the contact list (design: ten full batches).
+pub const MAX_WATCHED: usize = 1000;
 /// Upper bound of presence subscriptions (batches and single ones; design).
 pub const MAX_SUBSCRIPTIONS: usize = 128;
 /// Retry delay after a subscription ended or failed (design).
@@ -296,6 +298,12 @@ pub enum Command {
     /// Add or remove a delegate of ours (setDelegates, PR-21).
     /// Changes the contact list (SIP-08): one change at a time.
     EditContacts(pres::ContactEdit),
+    /// Also watch the presence of these addresses (members of a distribution group the user
+    /// opened): they join the batch subscriptions of the contact list, at most
+    /// [`MAX_WATCHED`] of them.
+    WatchPresence {
+        uris: Vec<String>,
+    },
     /// Tells the server the user has seen this new subscriber (PR-19).
     AcknowledgeSubscriber {
         uri: String,
@@ -781,6 +789,8 @@ pub struct Engine<R: Random> {
     /// Accepted transfers whose call the transferor already ended.
     left_transfers: HashMap<CallId, (transfer::Incoming, u64)>,
     contact_list: Option<pres::ContactList>,
+    /// Addresses watched besides the contact list (`WatchPresence`).
+    watched: Vec<String>,
     /// PR-51: the client can reach Exchange (`ms-ucs`), and the server moved the contact list
     /// there.
     ucs: bool,
@@ -895,6 +905,7 @@ impl<R: Random> Engine<R> {
             calls: HashMap::new(),
             left_transfers: HashMap::new(),
             contact_list: None,
+            watched: Vec::new(),
             ucs: false,
             contacts_in_exchange: false,
             containers: None,
@@ -1524,6 +1535,13 @@ impl<R: Random> Engine<R> {
                 !matches!(p.purpose, Purpose::Subscribe(i) | Purpose::Refresh(i) if i >= first)
             });
         }
+        // The watched addresses go with the contact list's.
+        let mut uris = uris;
+        for w in &self.watched {
+            if !uris.contains(w) {
+                uris.push(w.clone());
+            }
+        }
         let aor = self.cfg.aor.clone();
         for chunk in uris.chunks(pres::MAX_BATCH) {
             if self.subs.len() >= MAX_SUBSCRIPTIONS {
@@ -2117,6 +2135,26 @@ impl<R: Random> Engine<R> {
             },
             Command::SetDelegate { uri, add } => self.set_delegate(&uri, add, now, &mut out),
             Command::EditContacts(edit) => self.edit_contacts(edit, now, &mut out),
+            Command::WatchPresence { uris } => {
+                let mut added = false;
+                for u in uris {
+                    let Ok(u) = pres::checked_sip_uri(&u) else {
+                        continue;
+                    };
+                    if self.watched.len() < MAX_WATCHED && !self.watched.contains(&u) {
+                        self.watched.push(u);
+                        added = true;
+                    }
+                }
+                if added {
+                    let uris: Vec<String> = self
+                        .contact_list
+                        .as_ref()
+                        .map(|l| l.contacts.iter().map(|c| c.uri.clone()).collect())
+                        .unwrap_or_default();
+                    self.replace_presence_subscriptions(uris, now, &mut out);
+                }
+            }
             Command::AcknowledgeSubscriber { uri } => {
                 self.acknowledge_subscriber(&uri, now, &mut out)
             }
