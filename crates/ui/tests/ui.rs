@@ -743,6 +743,7 @@ fn the_meeting_audio_is_joined_from_a_group_conversation() {
     use commscraft_ui::model::ConvState;
     let mut ui = demo_quiet();
     ui.state.capabilities.audio_call = Gate::Available;
+    ui.state.capabilities.video_call = Gate::Available;
     let c = ui
         .state
         .conversations
@@ -755,6 +756,14 @@ fn the_meeting_audio_is_joined_from_a_group_conversation() {
     let mut h = harness(ui, BIG);
     h.run();
     open_conversation(&mut h, "Projekt Nord");
+    h.get_by_label("Der Besprechung mit Video beitreten")
+        .click();
+    h.run();
+    assert!(h
+        .state()
+        .intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::JoinMeetingVideo { key: k } if *k == key)));
     h.get_by_label("Audio der Besprechung beitreten").click();
     h.run();
     assert!(h

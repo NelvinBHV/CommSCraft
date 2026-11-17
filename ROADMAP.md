@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: meeting audio)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: join a meeting with video)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-18 | Joining a meeting with video in the desktop client (`JoinConferenceVideo`, the A/V MCU's video in the isolated video window): audio and video connect in the lab; a picture from another participant is not checked yet. |
 | 2026-11-17 | Meeting audio in the desktop client (`tested-in-lab`): the meeting conversation's phone button joins the conference audio (`JoinConferenceAudio` to the A/V MCU); the call belongs to the meeting (`Call.conference`), is named like it and has no hold or transfer. |
 | 2026-11-17 | Planned meetings in the desktop client (`tested-in-lab`): plan (subject, lifetime, admission), join, copy the link, change and cancel from the meetings tab; the list asks for each meeting's details and lists only meetings with a subject. The machine state chosen before the sign-in is kept for the first endpoint publication (instead of a "not signed in" notice). |
 | 2026-11-17 | Meeting control in the desktop client: lobby (admit, deny, admit all), roles, mute, remove, lock and mute the audience from the participant list and the meeting menu; join a meeting by its https link (`client::setup::meeting_focus`, moved from the command-line client). Found in the lab and fixed: role changes were refused (400) because `user-roles` was sent in the C3P namespace – it is in the conference-info namespace now (`tested-in-lab`). |

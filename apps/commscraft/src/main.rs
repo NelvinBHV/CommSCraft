@@ -370,6 +370,9 @@ impl DesktopApp {
             UiIntent::JoinMeetingAudio { key } => {
                 session_of(key).map(|session| ToWorker::JoinMeetingAudio { session })
             }
+            UiIntent::JoinMeetingVideo { key } => {
+                session_of(key).map(|session| ToWorker::JoinMeetingVideo { session })
+            }
             UiIntent::ScheduleMeeting {
                 subject,
                 minutes,
