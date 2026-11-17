@@ -120,6 +120,13 @@ pub enum ToWorker {
     },
     /// Back to the automatic state.
     ResetStatus,
+    /// Join a meeting by its https link.
+    JoinMeetingLink(String),
+    /// A presenter's command in a meeting.
+    ConferenceCommand {
+        session: u32,
+        command: commscraft_ui::model::ConfCommand,
+    },
     /// How active the user is at keyboard and mouse.
     MachineActivity(pres::MachineActivity),
     /// The personal note (empty: removed).
@@ -968,6 +975,12 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
                     })
                 }
                 crate::photos::Done::Calendar(Err(e)) => trace_line(&format!("calendar: {e}")),
+                crate::photos::Done::MeetingFocus(Ok(focus)) => {
+                    outputs.extend(s.engine.command(C::JoinConference { focus }, now()));
+                }
+                crate::photos::Done::MeetingFocus(Err(e)) => {
+                    out.notice(NoticeKind::Warning, format!("meeting link not usable: {e}"))
+                }
                 crate::photos::Done::Contacts(Ok((list, ids))) => {
                     s.ucs_ids = ids;
                     s.exchange_lists += 1;
@@ -1507,6 +1520,36 @@ impl Session {
         let t = now();
         match c {
             ToWorker::ResetStatus => self.engine.command(C::ResetStatus, t),
+            ToWorker::JoinMeetingLink(link) => {
+                match &self.photos {
+                    Some(p) => p.meeting_link(&link),
+                    None => out.notice(NoticeKind::Warning, "not signed in"),
+                }
+                Vec::new()
+            }
+            ToWorker::ConferenceCommand { session, command } => {
+                use commscraft_session::ConferenceAction as A;
+                use commscraft_ui::model::ConfCommand as K;
+                let action = match command {
+                    K::Admit(users) => A::Lobby { users, admit: true },
+                    K::Deny(user) => A::Lobby {
+                        users: vec![user],
+                        admit: false,
+                    },
+                    K::Role { user, presenter } => A::Role { user, presenter },
+                    K::Remove(user) => A::Remove { user },
+                    K::MuteUser { user, mute } => A::MuteUser { user, mute },
+                    K::MuteAudience(m) => A::MuteAudience(m),
+                    K::Lock(l) => A::Lock(l),
+                };
+                self.engine.command(
+                    C::ConferenceControl {
+                        conversation: session,
+                        action,
+                    },
+                    t,
+                )
+            }
             ToWorker::MachineActivity(a) => {
                 trace_line(&format!("machine state: {a:?}"));
                 self.engine.command(C::SetMachineActivity(a), t)
@@ -2295,6 +2338,8 @@ impl Session {
                             uri: p.uri.clone(),
                             name: p.name.clone().unwrap_or_default(),
                             presenter: p.roles.iter().any(|r| r == "presenter"),
+                            waiting: p.waiting(),
+                            muted: p.audio_muted(),
                         })
                         .collect(),
                 });

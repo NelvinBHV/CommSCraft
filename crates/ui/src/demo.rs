@@ -124,6 +124,8 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
                     uri: uri(p),
                     name: String::new(),
                     presenter: *p == "anna.weber",
+                    waiting: false,
+                    muted: None,
                 })
                 .collect(),
             messages: msgs.into(),

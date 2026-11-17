@@ -660,3 +660,45 @@ fn the_note_is_published_when_the_field_is_left() {
         .iter()
         .any(|i| matches!(i, UiIntent::SetNote(n) if n == "Heute im Büro")));
 }
+
+#[test]
+fn a_presenter_admits_from_the_lobby_and_promotes() {
+    use commscraft_ui::model::{ConfCommand, ConvState, Participant};
+    let mut ui = demo_quiet();
+    let me = ui.state.me.uri.clone();
+    let p = |uri: &str, presenter, waiting, muted| Participant {
+        uri: uri.into(),
+        name: String::new(),
+        presenter,
+        waiting,
+        muted,
+    };
+    let c = ui
+        .state
+        .conversations
+        .iter_mut()
+        .find(|c| c.title == "Projekt Nord")
+        .unwrap();
+    c.state = ConvState::Open;
+    c.participants = vec![
+        p(&me, true, false, Some(false)),
+        p("sip:gast@beispiel.invalid", false, true, None),
+        p("sip:tim@b.de", false, false, Some(false)),
+    ];
+    let mut h = harness(ui, BIG);
+    h.run();
+    open_conversation(&mut h, "Projekt Nord");
+    h.get_by_label("Teilnehmer").click();
+    h.run();
+    assert!(h.query_by_label_contains("Im Wartebereich (1)").is_some());
+    h.get_by_label("Zulassen").click();
+    h.run();
+    assert!(h.state().intents.iter().any(|i| matches!(i,
+        UiIntent::ConferenceCommand { command: ConfCommand::Admit(u), .. } if u == &vec!["sip:gast@beispiel.invalid".to_string()])));
+    h.get_by_label_contains("tim@b.de").click_secondary();
+    h.run();
+    h.get_by_label("Zum Referenten machen").click();
+    h.run();
+    assert!(h.state().intents.iter().any(|i| matches!(i,
+        UiIntent::ConferenceCommand { command: ConfCommand::Role { user, presenter: true }, .. } if user == "sip:tim@b.de")));
+}

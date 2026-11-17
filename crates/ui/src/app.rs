@@ -82,6 +82,15 @@ pub enum UiIntent {
     JoinMeeting {
         focus: String,
     },
+    /// Join a meeting by its https link (the join manager names the focus).
+    JoinMeetingLink {
+        link: String,
+    },
+    /// A presenter's command in the meeting of this conversation.
+    ConferenceCommand {
+        key: ConvKey,
+        command: crate::model::ConfCommand,
+    },
     RefreshMeetings,
     AcceptInvitation {
         index: usize,
@@ -365,6 +374,8 @@ pub struct CommsUi {
     pub(crate) collapsed: BTreeSet<String>,
     /// The name dialog: a new group, or renaming one (its old name).
     pub(crate) group_dialog: Option<(Option<String>, String)>,
+    /// The meeting link typed in the meetings tab.
+    pub(crate) meeting_link: String,
     /// Distribution groups whose members were asked for.
     pub(crate) expanded_groups: BTreeSet<String>,
     pub(crate) windows: Vec<Win>,
@@ -421,6 +432,7 @@ impl CommsUi {
             dismissed_alert: 0,
             collapsed: BTreeSet::new(),
             group_dialog: None,
+            meeting_link: String::new(),
             expanded_groups: BTreeSet::new(),
             windows: Vec::new(),
             focus_window: None,

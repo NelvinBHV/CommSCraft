@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: status automation when idle, inactive state)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: meeting lobby and presenter commands, join by link)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -85,6 +85,11 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   NTLM step comes from the session worker over a channel. The photo is decoded there in pure Rust
   (JPEG with zune-jpeg, PNG; at most 1024 pixels a side) into a 96 × 96 thumbnail. *Options →
   personal → show pictures of contacts* switches them off. `tested-in-lab`.
+- **Meeting control:** a presenter sees the lobby in the participant list (admit, deny, admit
+  all) and has a menu per participant (make presenter or attendee, mute or unmute, remove) and
+  meeting commands in *More* (mute or unmute the audience, lock or unlock); the meetings tab
+  joins a meeting by its https link (the join manager names the focus, in the background
+  thread). `tested-in-lab` (roles, lock, remove; the lobby and muting only offline).
 - **Own presence:** the status menu offers available, busy, do not disturb, be right back
   (12500), off work (away with the activity `off-work`) and appear away, and *Reset status*
   (the manual state removed, the server works it out again); the personal note is published when

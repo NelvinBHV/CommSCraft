@@ -366,6 +366,10 @@ impl DesktopApp {
                 session_of(key).map(|session| ToWorker::InviteToGroup { session, peer })
             }
             UiIntent::JoinMeeting { focus } => Some(ToWorker::JoinConference { focus }),
+            UiIntent::JoinMeetingLink { link } => Some(ToWorker::JoinMeetingLink(link)),
+            UiIntent::ConferenceCommand { key, command } => {
+                session_of(key).map(|session| ToWorker::ConferenceCommand { session, command })
+            }
             UiIntent::JoinContent { key } => {
                 session_of(key).map(|session| ToWorker::JoinContent { session })
             }

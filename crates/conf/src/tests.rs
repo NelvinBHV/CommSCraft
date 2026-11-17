@@ -440,7 +440,7 @@ fn presenter_commands() {
     assert!(set_lobby_access(5, me, FOCUS, &[], true).is_err());
     assert!(set_lobby_access(5, me, FOCUS, &["sip:x@y.z><a/>".to_string()], true).is_err());
     let b = modify_user_roles(6, me, FOCUS, "sip:cathy@fabrikam.com", Role::Presenter).unwrap();
-    assert!(b.contains(&format!("<modifyUserRoles><userKeys confEntity=\"{FOCUS}\" userEntity=\"sip:cathy@fabrikam.com\"/><user-roles><entry>presenter</entry></user-roles></modifyUserRoles>")));
+    assert!(b.contains(&format!("<modifyUserRoles><userKeys confEntity=\"{FOCUS}\" userEntity=\"sip:cathy@fabrikam.com\"/><user-roles xmlns=\"{NS_CI}\"><entry>presenter</entry></user-roles></modifyUserRoles>")));
     let b = modify_conference_lock(7, me, FOCUS, true).unwrap();
     assert!(b.contains(&format!("<modifyConferenceLock><conferenceKeys confEntity=\"{FOCUS}\"/><locked>true</locked></modifyConferenceLock>")));
     let b = delete_user(8, me, FOCUS, "sip:cathy@fabrikam.com").unwrap();

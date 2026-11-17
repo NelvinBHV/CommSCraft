@@ -331,6 +331,30 @@ pub struct Participant {
     pub uri: String,
     pub name: String,
     pub presenter: bool,
+    /// Waits in the meeting's lobby.
+    pub waiting: bool,
+    /// The audio in the meeting: `Some(muted)`.
+    pub muted: Option<bool>,
+}
+
+/// A presenter's command in a meeting.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ConfCommand {
+    /// Admit these users from the lobby (empty: everyone waiting).
+    Admit(Vec<String>),
+    /// Turn a user in the lobby away.
+    Deny(String),
+    Role {
+        user: String,
+        presenter: bool,
+    },
+    Remove(String),
+    MuteUser {
+        user: String,
+        mute: bool,
+    },
+    MuteAudience(bool),
+    Lock(bool),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1188,6 +1212,8 @@ impl AppState {
                             uri: label(&p.uri),
                             name: label(&p.name),
                             presenter: p.presenter,
+                            waiting: p.waiting,
+                            muted: p.muted,
                         })
                         .collect();
                 }
@@ -1406,6 +1432,8 @@ impl AppState {
                         uri: label(p),
                         name: self.name_of(p),
                         presenter: false,
+                        waiting: false,
+                        muted: None,
                     })
                     .collect();
                 if let Some(c) = self.conversation_mut(key) {

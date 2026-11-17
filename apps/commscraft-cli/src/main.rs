@@ -978,24 +978,8 @@ fn run(a: Args) -> Result<(), String> {
     }
 }
 
-/// The focus URI of a meeting link from the join manager (CB-40/CB-41, [MS-CONFBAS] §2.2.6):
-/// a GET over verified TLS with the client Accept header, no credentials, no redirects followed.
-/// Inference: our own User-Agent is sent, not the product string of §2.2.6.1.
 fn meeting_focus(tls: &TlsClient, link: &str) -> Result<String, String> {
-    let url = commscraft_url::parse_https(link).ok_or("not a usable https address")?;
-    let r = commscraft_net::http::get(
-        tls,
-        &url,
-        commscraft_conf::MEETING_ACCEPT,
-        &user_agent(),
-        Duration::from_secs(15),
-    )
-    .map_err(|e| e.to_string())?;
-    if r.status != 200 {
-        return Err(format!("HTTP {}", r.status));
-    }
-    let body = String::from_utf8(r.body).map_err(|_| "answer is not UTF-8")?;
-    commscraft_conf::parse_meeting(&body).map_err(|e| format!("{e:?}"))
+    commscraft_client::setup::meeting_focus(tls, link, &user_agent())
 }
 
 fn user_agent() -> String {
