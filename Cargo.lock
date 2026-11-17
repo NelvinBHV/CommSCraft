@@ -693,6 +693,7 @@ dependencies = [
  "futures-lite",
  "oo7",
  "png",
+ "zbus",
  "zeroize",
  "zune-jpeg",
 ]

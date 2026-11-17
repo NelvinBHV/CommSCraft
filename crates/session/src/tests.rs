@@ -5691,3 +5691,30 @@ fn reset_status_removes_the_manual_state() {
         vec![Event::OwnStatus(pres::UserStatus::Online)]
     );
 }
+
+#[test]
+fn machine_activity_republishes_the_machine_state_on_change_only() {
+    let (mut e, _server, _) = signed_in();
+    let out = e.command(
+        Command::SetMachineActivity(pres::MachineActivity::Idle),
+        NOW,
+    );
+    let m = sends(&out).pop().unwrap();
+    let body = String::from_utf8_lossy(&m.body).to_string();
+    assert!(
+        body.contains("xsi:type=\"machineState\"><availability>5000</availability>"),
+        "{body}"
+    );
+    // The same activity again: nothing is sent.
+    let out = e.command(
+        Command::SetMachineActivity(pres::MachineActivity::Idle),
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+    let out = e.command(
+        Command::SetMachineActivity(pres::MachineActivity::Away),
+        NOW,
+    );
+    let body = String::from_utf8_lossy(&sends(&out).pop().unwrap().body).to_string();
+    assert!(body.contains("<availability>15500</availability>"));
+}

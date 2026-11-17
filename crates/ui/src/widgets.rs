@@ -53,7 +53,9 @@ pub fn presence_colour(p: Presence, pal: &Palette) -> Color32 {
     match p {
         Presence::Available => pal.success,
         Presence::Busy | Presence::InACall | Presence::DoNotDisturb => pal.error,
-        Presence::BeRightBack | Presence::Away | Presence::OffWork => pal.warning,
+        Presence::BeRightBack | Presence::Inactive | Presence::Away | Presence::OffWork => {
+            pal.warning
+        }
         Presence::Offline | Presence::Unknown => pal.quiet,
     }
 }
@@ -114,7 +116,7 @@ pub fn presence_badge(ui: &mut Ui, p: Presence, t: &Texts, pal: &Palette) -> Res
         Presence::Busy | Presence::InACall | Presence::DoNotDisturb => {
             Color32::from_rgb(0xFC, 0xE8, 0xEC)
         }
-        Presence::BeRightBack | Presence::Away | Presence::OffWork => {
+        Presence::BeRightBack | Presence::Inactive | Presence::Away | Presence::OffWork => {
             Color32::from_rgb(0xF8, 0xEF, 0xD9)
         }
         _ => pal.message_incoming,

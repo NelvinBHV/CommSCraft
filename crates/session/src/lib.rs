@@ -147,6 +147,8 @@ pub enum Command {
     ResetStatus,
     /// Publishes the personal note; `None` or an empty text removes it.
     SetNote(Option<String>),
+    /// How active this endpoint is (keyboard and mouse): its machine state is published again.
+    SetMachineActivity(pres::MachineActivity),
     /// Function 16: publish the calendar and out-of-office state read from Exchange; only what
     /// changed since the last publication is sent (MS-PRES §3.8.5.3).
     PublishCalendar(Box<pres::calendar::Calendar>),
@@ -764,6 +766,8 @@ pub struct Engine<R: Random> {
     note_versions: [u32; 3],
     /// The note last asked for (published again after a version conflict).
     last_note: Option<String>,
+    /// This endpoint's activity as last published in its machine state.
+    machine: pres::MachineActivity,
     /// Function 16: what the server has of the calendar publications, and their versions.
     calendar: pres::calendar::Calendar,
     calendar_versions: [u32; pres::calendar::SLOTS],
@@ -896,6 +900,7 @@ impl<R: Random> Engine<R> {
             conflict_retries: [0; 7],
             note_versions: [0; 3],
             last_note: None,
+            machine: pres::MachineActivity::Active,
             calendar: pres::calendar::Calendar::default(),
             calendar_versions: [0; pres::calendar::SLOTS],
             screen_calls: std::collections::BTreeSet::new(),
@@ -1202,7 +1207,7 @@ impl<R: Random> Engine<R> {
             &self.cfg.aor,
             &endpoint,
             &self.cfg.machine_name,
-            3500,
+            self.machine.availability(),
             self.endpoint_versions,
         ) else {
             return;
@@ -1977,6 +1982,12 @@ impl<R: Random> Engine<R> {
             Command::SetStatus(s) => self.publish_status(s, now, &mut out),
             Command::ResetStatus => self.reset_status(now, &mut out),
             Command::SetNote(n) => self.publish_note(n.as_deref(), now, &mut out),
+            Command::SetMachineActivity(a) => {
+                if a != self.machine {
+                    self.machine = a;
+                    self.publish_endpoint(now, &mut out);
+                }
+            }
             Command::PublishCalendar(c) => self.publish_calendar(*c, now, &mut out),
             Command::SetForwarding(f) => self.publish_routing(f, now, &mut out),
             Command::StartConversation { to } => self.start_conversation(&to, now, &mut out),

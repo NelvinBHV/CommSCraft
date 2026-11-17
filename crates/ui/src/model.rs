@@ -215,6 +215,8 @@ pub enum Presence {
     InACall,
     DoNotDisturb,
     BeRightBack,
+    /// Available but idle at keyboard and mouse (the availability class 4500–5999).
+    Inactive,
     Away,
     /// Away with the activity "off work".
     OffWork,

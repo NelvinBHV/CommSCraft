@@ -27,6 +27,9 @@ fn valid_favorite(v: &str) -> bool {
             || v.starts_with("room:ma-chan://"))
 }
 
+/// Longest idle limit in minutes (design).
+pub const MAX_IDLE_MINUTES: u32 = 360;
+
 pub fn parse(text: &str) -> Prefs {
     let mut p = Prefs::default();
     for line in text.lines() {
@@ -68,6 +71,16 @@ pub fn parse(text: &str) -> Prefs {
                 }
             }
             "context_open" => p.context_open = v != "false",
+            "inactive_minutes" => {
+                if let Ok(m) = v.parse::<u32>() {
+                    p.inactive_minutes = m.min(MAX_IDLE_MINUTES);
+                }
+            }
+            "away_minutes" => {
+                if let Ok(m) = v.parse::<u32>() {
+                    p.away_minutes = m.min(MAX_IDLE_MINUTES);
+                }
+            }
             "scale" => {
                 if let Ok(s) = v.parse::<f32>() {
                     if (1.0..=2.0).contains(&s) {
@@ -110,6 +123,8 @@ pub fn format(p: &Prefs) -> String {
         out.push_str(&format!("{k}={v}\n"));
     }
     out.push_str(&format!("chat_text_size={}\n", p.chat_text_size));
+    out.push_str(&format!("inactive_minutes={}\n", p.inactive_minutes));
+    out.push_str(&format!("away_minutes={}\n", p.away_minutes));
     if commscraft_ui::normalise_address(&p.last_address).as_deref() == Some(p.last_address.as_str())
     {
         out.push_str(&format!("last_address={}\n", p.last_address));
@@ -183,6 +198,13 @@ mod tests {
     use super::*;
 
     #[test]
+    fn idle_limits_are_bounded() {
+        let p = parse("inactive_minutes=99999\naway_minutes=-3\n");
+        assert_eq!(p.inactive_minutes, MAX_IDLE_MINUTES);
+        assert_eq!(p.away_minutes, 5);
+    }
+
+    #[test]
     fn round_trip_and_hostile_lines() {
         let mut p = Prefs {
             high_contrast: true,
@@ -193,6 +215,8 @@ mod tests {
             camera: "/dev/video2".into(),
             chat_text_size: 16.0,
             last_address: "sip:mara@beispiel.invalid".into(),
+            inactive_minutes: 0,
+            away_minutes: 30,
             ..Default::default()
         };
         p.favorites

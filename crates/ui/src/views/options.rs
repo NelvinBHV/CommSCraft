@@ -203,7 +203,23 @@ fn page_ui(
             });
         }
         3 => group(ui, pal, t.opt_status, |ui| {
-            missing(ui, t, t.opt_idle, ni);
+            // The status automation: inactive, then away (0 minutes: that step is off).
+            ui.horizontal(|ui| {
+                ui.label(t.opt_inactive_after);
+                ui.add(
+                    egui::DragValue::new(&mut p.inactive_minutes)
+                        .range(0..=360)
+                        .suffix(" min"),
+                );
+            });
+            ui.horizontal(|ui| {
+                ui.label(t.opt_away_after);
+                ui.add(
+                    egui::DragValue::new(&mut p.away_minutes)
+                        .range(0..=360)
+                        .suffix(" min"),
+                );
+            });
             missing(ui, t, t.opt_dnd_sharing, ni);
             note(ui, pal, t.opt_status_body);
         }),
