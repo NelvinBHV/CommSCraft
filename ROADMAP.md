@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: window structure of the Windows client)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: no telephony shown)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,7 +52,8 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
-| 2026-11-17 | Desktop client in the operating structure of the Windows client with an own look: a narrow main window (presence, note line, tabs for contacts, conversations, phone, meetings and rooms, options and main menu), conversations and calls in windows of their own (egui viewports), notifications for calls, invitations and messages, an options window with 14 areas wired to the local preferences, the contact card; own line icons; `--embed-windows` for screenshots (`tested-in-lab`: sign-in, a conversation window, a call window). |
+| 2026-11-17 | Desktop client: no telephony shown (owner's choice) – no phone tab, no keypad for numbers, no phones area in the options; calls to contacts and tones in a call stay. |
+| 2026-11-17 | Desktop client in the operating structure of the Windows client with an own look: a narrow main window (presence, note line, tabs for contacts, conversations, phone, meetings and rooms, options and main menu), conversations and calls in windows of their own (egui viewports), notifications for calls, invitations and messages, an options window with 13 areas wired to the local preferences, the contact card; own line icons; `--embed-windows` for screenshots (`tested-in-lab`: sign-in, a conversation window, a call window). |
 | 2026-11-17 | Desktop client: meeting content in a meeting's details – presenter, whiteboards, slides, notes, files and polls with voting (`tested-in-lab`: a poll created on the Windows client, the vote counted there); invitations show in the rail and the status bar and are listed once. |
 | 2026-11-17 | Desktop client: video calls (out, and answering with video) and viewing screens shared 1:1 – video-based and over RDP – in the sandboxed video window process, now in the shared `client` crate with the RDP viewer and meeting content (`tested-in-lab`: video call out, a shared desktop and a shared window viewed); the video window scales the picture to its size, can be maximized and resized (owner's feedback in the lab). |
 | 2026-11-17 | Desktop client: persistent chat rooms (tested offline) – the *Rooms* filter of the chat list, offered only when provisioning names a chat pool; rooms are listed, joined and their history fetched once; our message is *delivered* only when the chat server sends it back, a refused one (new session event `RoomNotSent`) is *not delivered*. |

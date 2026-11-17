@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** major (desktop client: the window structure of the Windows client with an own look)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: no telephony shown)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -128,7 +128,7 @@ copied (clean-room rule).
 
 - **Main window** (420 × 760 by default, at least 340 × 480): the personal note line (shown;
   publishing it is not built), picture, name, the status menu (available, busy, do not disturb,
-  away; sign out, quit), then the tabs *Contacts*, *Conversations*, *Phone*, *Meetings* and – where
+  away; sign out, quit), then the tabs *Contacts*, *Conversations*, *Meetings* and – where
   the server offers persistent chat – *Rooms*; on the right the options button and the main menu
   (*File*, *Meet now*, *Tools*, *Help*). A yellow bar shows the newest warning until it is closed;
   the footer has the audio device button and the state of the connection in words.
@@ -137,9 +137,9 @@ copied (clean-room rule).
   not built. A contact opens with a double click; its menu offers a message, a call, a video call,
   the favourite mark and the contact card.
 - **Conversations:** all, missed (unread), calls (the call history).
-- **Phone:** a keypad for tones in a running call and calls to SIP addresses; dialling phone
-  numbers stays disabled in this interface (the emergency call handling for it is open);
-  voicemail is offered by the command-line tool.
+- **No telephony:** the interface shows no phone tab, no keypad for numbers and no phones area in
+  the options (owner's choice); calls and video calls go to contacts, the keypad of a running call
+  sends tones. The emergency call code of the session stays out of reach of the interface.
 - **Conversation window:** head (picture, title, status or members), history, composer, and the
   bar at the bottom: participants, video call, call, *Present* (sharing one's own screen or window,
   slides, whiteboard and polls are not built and say so; the meeting content can be shown), and
@@ -149,7 +149,7 @@ copied (clean-room rule).
 - **Notifications:** incoming calls (answer, with video, decline; *view* for a shared screen),
   meeting invitations (join, decline) and new messages in conversations that are not open (open,
   ignore), in one small window that stays on top.
-- **Options:** 14 areas (general, personal, contact list, status, my picture, phones, alerts, IM,
+- **Options:** 13 areas (general, personal, contact list, status, my picture, alerts, IM,
   sounds, audio device, video device, file saving, recording, meetings). What works changes the
   local preferences (language, always on top, high contrast, scale, contact list display and
   order, away group, favourites group, message alerts, quiet while do not disturb, chat text
@@ -224,9 +224,9 @@ the test host has no Kerberos configuration) and the trust dialog for a foreign 
 Made with `commscraft --demo --lang de --view VIEW --screenshot FILE` (the program saves its own
 first settled frame); the windows of their own with `--embed-windows --size 1400x860`:
 
-| Contacts | Conversations | Phone | Meetings |
-|---|---|---|---|
-| ![Contacts](screenshots/main-contacts.png) | ![Conversations](screenshots/main-conversations.png) | ![Phone](screenshots/main-phone.png) | ![Meetings](screenshots/main-meetings.png) |
+| Contacts | Conversations | Meetings |
+|---|---|---|
+| ![Contacts](screenshots/main-contacts.png) | ![Conversations](screenshots/main-conversations.png) | ![Meetings](screenshots/main-meetings.png) |
 
 | Conversation window and notifications | Options | Sign-in |
 |---|---|---|

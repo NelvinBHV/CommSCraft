@@ -6,7 +6,6 @@ use egui::{epaint::PathStroke, Color32, Painter, Pos2, Rect, Stroke, Vec2};
 pub enum Icon {
     Person,
     Clock,
-    Keypad,
     Calendar,
     Gear,
     Chat,
@@ -49,13 +48,6 @@ pub fn draw(p: &Painter, rect: Rect, icon: Icon, colour: Color32) {
             p.circle_stroke(c, r * 0.8, s);
             p.line_segment([c, at(0.0, -0.5)], s);
             p.line_segment([c, at(0.38, 0.12)], s);
-        }
-        Icon::Keypad => {
-            for y in [-0.6, 0.0, 0.6] {
-                for x in [-0.6, 0.0, 0.6] {
-                    p.circle_filled(at(x, y), r * 0.13, colour);
-                }
-            }
         }
         Icon::Calendar => {
             let body = Rect::from_min_max(at(-0.75, -0.55), at(0.75, 0.8));
