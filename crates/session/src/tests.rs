@@ -5627,3 +5627,67 @@ fn watched_addresses_join_the_presence_subscriptions() {
     );
     assert!(sends(&again).is_empty());
 }
+
+#[test]
+fn personal_note_with_version_conflict_and_removal() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(Command::SetNote(Some("Bis 17 Uhr da".into())), NOW);
+    let first = sends(&out).pop().unwrap();
+    let body = String::from_utf8_lossy(&first.body).to_string();
+    assert!(body.contains("categoryName=\"note\" instance=\"0\" container=\"300\" version=\"0\""));
+    assert!(body.contains("<body type=\"personal\" uri=\"\">Bis 17 Uhr da</body>"));
+    // Another endpoint published a note before: the versions of the fault, then the retry.
+    let fault = r#"<Fault><Faultcode>Client.BadCall.WrongDelta</Faultcode><details><operation index="1" version="0" curVersion="2"/><operation index="2" version="0" curVersion="2"/><operation index="3" version="0" curVersion="2"/></details></Fault>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &first,
+            409,
+            Some("application/msrtc-fault+xml"),
+            fault,
+            &[],
+        ),
+        NOW,
+    );
+    let retry = sends(&out).pop().unwrap();
+    let body = String::from_utf8_lossy(&retry.body).to_string();
+    assert!(
+        body.contains("Bis 17 Uhr da") && body.contains("container=\"200\" version=\"2\""),
+        "{body}"
+    );
+    e.on_message(&answer(&mut server, &retry, 200, None, "", &[]), NOW);
+    // Removing it: expires="0" with the versions after the publication.
+    let out = e.command(Command::SetNote(Some("  ".into())), NOW);
+    let clear = sends(&out).pop().unwrap();
+    let body = String::from_utf8_lossy(&clear.body).to_string();
+    assert!(
+        body.contains("container=\"300\" version=\"3\" expireType=\"static\" expires=\"0\""),
+        "{body}"
+    );
+    assert!(!body.contains("<note"));
+}
+
+#[test]
+fn reset_status_removes_the_manual_state() {
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(Command::SetStatus(pres::UserStatus::OffWork), NOW);
+    let set = sends(&out).pop().unwrap();
+    let body = String::from_utf8_lossy(&set.body).to_string();
+    assert!(
+        body.contains("<availability>15500</availability><activity token=\"off-work\"/>"),
+        "{body}"
+    );
+    e.on_message(&answer(&mut server, &set, 200, None, "", &[]), NOW);
+    let out = e.command(Command::ResetStatus, NOW);
+    let reset = sends(&out).pop().unwrap();
+    let body = String::from_utf8_lossy(&reset.body).to_string();
+    assert!(
+        body.contains("container=\"2\" version=\"1\"") && body.contains("expires=\"0\"/>"),
+        "{body}"
+    );
+    let out = e.on_message(&answer(&mut server, &reset, 200, None, "", &[]), NOW);
+    assert_eq!(
+        events(&out),
+        vec![Event::OwnStatus(pres::UserStatus::Online)]
+    );
+}

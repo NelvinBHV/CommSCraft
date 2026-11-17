@@ -118,6 +118,10 @@ pub enum ToWorker {
         id: u32,
         digits: String,
     },
+    /// Back to the automatic state.
+    ResetStatus,
+    /// The personal note (empty: removed).
+    SetNote(String),
     /// The members of a distribution group (address book).
     ExpandGroup {
         email: String,
@@ -278,10 +282,16 @@ pub fn online_capabilities(rooms: bool) -> Capabilities {
     }
 }
 
-pub fn presence_of(class: pres::Availability, activity: Option<&str>) -> Presence {
+/// The interface presence for an availability number and activity token. Within the away
+/// class, 12000–14999 is *be right back* (the server's own value 12500 for it, [MS-PRES]
+/// §3.7.5.5 table, p. 114 of v20180427) and the token `off-work` is *off work*.
+pub fn presence_of(availability: u32, activity: Option<&str>) -> Presence {
     use pres::Availability as A;
     let in_call = activity.is_some_and(|a| a == "on-the-phone" || a == "in-a-conference");
+    let class = A::from_number(availability);
     match class {
+        A::Away if activity == Some("off-work") => Presence::OffWork,
+        A::Away if (12000..15000).contains(&availability) => Presence::BeRightBack,
         A::Online => Presence::Available,
         A::Idle => Presence::Away,
         A::Busy | A::BusyIdle if in_call => Presence::InACall,
@@ -298,7 +308,9 @@ fn user_status(p: Presence) -> Option<pres::UserStatus> {
         Presence::Available => pres::UserStatus::Online,
         Presence::Busy | Presence::InACall => pres::UserStatus::Busy,
         Presence::DoNotDisturb => pres::UserStatus::DoNotDisturb,
-        Presence::Away | Presence::BeRightBack => pres::UserStatus::Away,
+        Presence::BeRightBack => pres::UserStatus::BeRightBack,
+        Presence::OffWork => pres::UserStatus::OffWork,
+        Presence::Away => pres::UserStatus::Away,
         Presence::Offline | Presence::Unknown => return None,
     })
 }
@@ -1492,6 +1504,8 @@ impl Session {
     fn command(&mut self, c: ToWorker, out: &Out) -> Vec<Output> {
         let t = now();
         match c {
+            ToWorker::ResetStatus => self.engine.command(C::ResetStatus, t),
+            ToWorker::SetNote(n) => self.engine.command(C::SetNote(Some(n)), t),
             ToWorker::SetPresence(p) => match user_status(p) {
                 Some(st) => self.engine.command(C::SetStatus(st), t),
                 None => Vec::new(),
@@ -1988,6 +2002,7 @@ impl Session {
                         name,
                         presence: Presence::Available,
                         organisation,
+                        note: String::new(),
                     };
                     out.event(AppEvent::SignedIn(self.profile.clone()));
                     self.photos = Some(crate::photos::Photos::start(
@@ -2112,7 +2127,7 @@ impl Session {
             E::Presence(p) => out.event(AppEvent::Presence {
                 presence: p
                     .availability
-                    .map(|_| presence_of(p.class(), p.activity.as_deref())),
+                    .map(|a| presence_of(a, p.activity.as_deref())),
                 note: p.note.clone().unwrap_or_default(),
                 name: p.display_name.clone(),
                 uri: p.uri,
@@ -2124,8 +2139,8 @@ impl Session {
                 name: None,
             }),
             E::OwnStatus(s) => out.event(AppEvent::OwnPresence(presence_of(
-                pres::Availability::from_number(s.availability()),
-                None,
+                s.availability(),
+                s.activity(),
             ))),
             E::OwnStatusFailed(code) => {
                 out.notice(NoticeKind::Error, format!("status not changed ({code})"))
@@ -2472,20 +2487,27 @@ mod tests {
 
     #[test]
     fn presence_classes() {
-        use pres::Availability as A;
-        assert_eq!(presence_of(A::Online, None), Presence::Available);
-        assert_eq!(
-            presence_of(A::Busy, Some("on-the-phone")),
-            Presence::InACall
-        );
-        assert_eq!(presence_of(A::Busy, None), Presence::Busy);
-        assert_eq!(presence_of(A::Idle, None), Presence::Away);
-        assert_eq!(presence_of(A::Unknown, None), Presence::Unknown);
+        assert_eq!(presence_of(3500, None), Presence::Available);
+        assert_eq!(presence_of(6500, Some("on-the-phone")), Presence::InACall);
+        assert_eq!(presence_of(6500, None), Presence::Busy);
+        assert_eq!(presence_of(4500, None), Presence::Away);
+        assert_eq!(presence_of(12500, None), Presence::BeRightBack);
+        assert_eq!(presence_of(15500, None), Presence::Away);
+        assert_eq!(presence_of(15500, Some("off-work")), Presence::OffWork);
+        assert_eq!(presence_of(0, None), Presence::Unknown);
         assert_eq!(user_status(Presence::Offline), None);
-        assert_eq!(
-            user_status(Presence::BeRightBack),
-            Some(pres::UserStatus::Away)
-        );
+        // Each choosable state round-trips through what is published.
+        for p in [
+            Presence::Available,
+            Presence::Busy,
+            Presence::DoNotDisturb,
+            Presence::BeRightBack,
+            Presence::OffWork,
+            Presence::Away,
+        ] {
+            let s = user_status(p).unwrap();
+            assert_eq!(presence_of(s.availability(), s.activity()), p);
+        }
     }
 
     #[test]

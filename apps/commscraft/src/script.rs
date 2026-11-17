@@ -226,10 +226,15 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 "busy" => Presence::Busy,
                 "dnd" => Presence::DoNotDisturb,
                 "away" => Presence::Away,
+                "brb" => Presence::BeRightBack,
+                "offwork" => Presence::OffWork,
+                "reset" => return app.handle(UiIntent::ResetStatus),
                 _ => Presence::Available,
             };
             app.handle(UiIntent::SetPresence(p));
         }
+        // `note TEXT` (empty: remove the note)
+        "note" => app.handle(UiIntent::SetNote(arg.trim().to_string())),
         // `shot FILE [conv|call|options]`: the main window, or the first window of that kind.
         "shot" => {
             let mut w = arg.split_whitespace();

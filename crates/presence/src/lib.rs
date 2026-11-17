@@ -84,13 +84,19 @@ impl Availability {
 }
 
 /// A state the user sets manually. Numbers as in the specification examples (3500 online,
-/// 6500 busy, 9500 do not disturb, 15500 away; §2.2.2.7.1, §4.5).
+/// 6500 busy, 9500 do not disturb, 15500 away; §2.2.2.7.1, §4.5). *Be right back* is 12500: the
+/// value the server itself gives the class 12000–14999 (§3.7.5.5, table, p. 114 of v20180427;
+/// inference that a client publishes the same). *Off work* is away (15500, inference) with the
+/// activity token `off-work` (documented: `activityTokenTypeEnum`, `stateType` with
+/// `availability` and `activity`, §6, pp. 217–218 of v20180427).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UserStatus {
     Online,
     Busy,
     DoNotDisturb,
+    BeRightBack,
     Away,
+    OffWork,
 }
 
 impl UserStatus {
@@ -99,8 +105,14 @@ impl UserStatus {
             Self::Online => 3500,
             Self::Busy => 6500,
             Self::DoNotDisturb => 9500,
-            Self::Away => 15500,
+            Self::BeRightBack => 12500,
+            Self::Away | Self::OffWork => 15500,
         }
+    }
+
+    /// The activity token published with the state, if any.
+    pub fn activity(self) -> Option<&'static str> {
+        (self == Self::OffWork).then_some("off-work")
     }
 
     pub fn parse(s: &str) -> Option<Self> {
@@ -109,6 +121,8 @@ impl UserStatus {
             "busy" => Some(Self::Busy),
             "dnd" | "do-not-disturb" => Some(Self::DoNotDisturb),
             "away" => Some(Self::Away),
+            "brb" | "be-right-back" => Some(Self::BeRightBack),
+            "off-work" | "offwork" => Some(Self::OffWork),
             _ => None,
         }
     }
@@ -176,9 +190,88 @@ pub fn publish_state_body(
         b.push_str(&format!(
             "<publication categoryName=\"state\" instance=\"{USER_STATE_INSTANCE}\" container=\"{container}\" version=\"{version}\" {expire}>\
              <state xmlns=\"{NS_STATE}\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" manual=\"true\" xsi:type=\"userState\">\
-             <availability>{}</availability></state></publication>",
-            status.availability()
+             <availability>{}</availability>{}</state></publication>",
+            status.availability(),
+            status
+                .activity()
+                .map(|a| format!("<activity token=\"{a}\"/>"))
+                .unwrap_or_default()
         ));
+    }
+    b.push_str("</publications></publish>");
+    Ok(b)
+}
+
+/// Body of a SERVICE that removes the manual user state from containers 2 and 3 (`expires="0"`
+/// with the current versions, example §4.2.2, pp. 139–140 of v20180427): the aggregated state
+/// is then worked out from the machine and calendar states again (§3.8.5.1.2.2).
+pub fn clear_state_body(
+    aor: &str,
+    versions: [u32; 2],
+    endpoint_id: Option<&str>,
+) -> Result<String, Error> {
+    let aor = checked_sip_uri(aor)?;
+    let expire = match endpoint_id {
+        Some(id) if id.chars().all(|c| c.is_ascii_hexdigit() || c == '-') => {
+            format!("expireType=\"endpoint\" endpointId=\"{id}\"")
+        }
+        Some(_) => return Err(Error::UnsafeUri),
+        None => "expireType=\"static\"".to_string(),
+    };
+    let mut b = format!(
+        "<publish xmlns=\"{NS_PUBLISH}\"><publications uri=\"{}\">",
+        escape(&aor)
+    );
+    for (container, version) in [2u32, 3].iter().zip(versions) {
+        b.push_str(&format!(
+            "<publication categoryName=\"state\" instance=\"{USER_STATE_INSTANCE}\" container=\"{container}\" version=\"{version}\" {expire} expires=\"0\"/>"
+        ));
+    }
+    b.push_str("</publications></publish>");
+    Ok(b)
+}
+
+/// Longest personal note published (design; the text is also made printable).
+pub const MAX_PERSONAL_NOTE: usize = 512;
+/// Containers of the personal note, in the order of the publications ([MS-PRES] §4.2.1,
+/// pp. 136–137 of v20180427: 300, 400, 200).
+pub const NOTE_CONTAINERS: [u32; 3] = [300, 400, 200];
+
+/// Body of a SERVICE that publishes the personal note (`note` category, instance 0, type
+/// `personal`, static, containers 200, 300 and 400 – §2.2.2.2.1, example §4.2.1, pp. 136–137 of
+/// v20180427) or, with `None` or an empty text, removes it (`expires="0"`, example §4.2.2,
+/// pp. 139–140). `versions` follow [`NOTE_CONTAINERS`].
+pub fn publish_note_body(
+    aor: &str,
+    note: Option<&str>,
+    versions: [u32; 3],
+) -> Result<String, Error> {
+    let aor = checked_sip_uri(aor)?;
+    let text: String = note
+        .map(|n| {
+            printable(n)
+                .trim()
+                .chars()
+                .take(MAX_PERSONAL_NOTE)
+                .collect()
+        })
+        .unwrap_or_default();
+    let mut b = format!(
+        "<publish xmlns=\"{NS_PUBLISH}\"><publications uri=\"{}\">",
+        escape(&aor)
+    );
+    for (container, version) in NOTE_CONTAINERS.iter().zip(versions) {
+        if text.is_empty() {
+            b.push_str(&format!(
+                "<publication categoryName=\"note\" instance=\"0\" container=\"{container}\" version=\"{version}\" expireType=\"static\" expires=\"0\"/>"
+            ));
+        } else {
+            b.push_str(&format!(
+                "<publication categoryName=\"note\" instance=\"0\" container=\"{container}\" version=\"{version}\" expireType=\"static\">\
+                 <note xmlns=\"http://schemas.microsoft.com/2006/09/sip/note\"><body type=\"personal\" uri=\"\">{}</body></note></publication>",
+                escape(&text)
+            ));
+        }
     }
     b.push_str("</publications></publish>");
     Ok(b)

@@ -10,10 +10,12 @@ use crate::widgets;
 use egui::{Align, CornerRadius, Frame, Layout, Margin, RichText, Sense, Stroke, Ui, Vec2};
 
 /// The presences a user can choose (the session publishes them).
-pub const CHOOSABLE: [Presence; 4] = [
+pub const CHOOSABLE: [Presence; 6] = [
     Presence::Available,
     Presence::Busy,
     Presence::DoNotDisturb,
+    Presence::BeRightBack,
+    Presence::OffWork,
     Presence::Away,
 ];
 
@@ -48,14 +50,27 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
 fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     let t = app.t;
     let online = app.state.connection.is_online() || app.demo;
-    // The personal note: shown, but publishing it is not built yet.
+    // The personal note: published when the field is left or Enter is pressed; a note set
+    // elsewhere (another endpoint, the last session) comes into the field.
+    if app.state.me.note != app.seen_note {
+        app.seen_note = app.state.me.note.clone();
+        app.note = app.seen_note.clone();
+        app.published_note = app.seen_note.clone();
+    }
     ui.horizontal(|ui| {
         let edit = egui::TextEdit::singleline(&mut app.note)
             .hint_text(t.note_hint)
+            .char_limit(512)
             .frame(Frame::NONE)
             .desired_width(ui.available_width());
-        ui.add_enabled(false, edit)
-            .on_disabled_hover_text(t.reason(crate::model::Reason::NotImplemented));
+        let usable = app.state.capabilities.presence.usable();
+        let r = ui.add_enabled(usable, edit);
+        // Screen readers name the field like its hint.
+        r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::TextInput, usable, t.note_hint));
+        if r.lost_focus() && app.note != app.published_note {
+            app.published_note = app.note.clone();
+            app.emit(UiIntent::SetNote(app.note.trim().to_string()));
+        }
         let _ = online;
     });
     ui.add_space(4.0);
@@ -106,16 +121,30 @@ pub fn status_menu(app: &mut CommsUi, ui: &mut Ui) {
     for p in CHOOSABLE {
         let selected = app.state.me.presence == p;
         if ui
-            .add_enabled(usable, egui::Button::selectable(selected, t.presence(p)))
+            .add_enabled(
+                usable,
+                egui::Button::selectable(
+                    selected,
+                    if p == Presence::Away {
+                        t.appear_away
+                    } else {
+                        t.presence(p)
+                    },
+                ),
+            )
             .clicked()
         {
             app.emit(UiIntent::SetPresence(p));
         }
     }
-    // Back to the state the client works out itself: not built (the session publishes the
-    // chosen state only).
-    ui.add_enabled(false, egui::Button::new(t.reset_status))
-        .on_disabled_hover_text(t.reason(crate::model::Reason::NotImplemented));
+    // Back to the state the server works out from activity and calendar.
+    if ui
+        .add_enabled(usable, egui::Button::new(t.reset_status))
+        .clicked()
+    {
+        app.emit(UiIntent::ResetStatus);
+        ui.close();
+    }
     ui.separator();
     if ui.button(t.sign_out).clicked() {
         app.emit(UiIntent::SignOut);
@@ -524,7 +553,11 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             let away = |p: Presence| {
                 matches!(
                     p,
-                    Presence::Away | Presence::BeRightBack | Presence::Offline | Presence::Unknown
+                    Presence::Away
+                        | Presence::BeRightBack
+                        | Presence::OffWork
+                        | Presence::Offline
+                        | Presence::Unknown
                 )
             };
             let mut absent = Vec::new();
@@ -560,7 +593,10 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     )
                 }),
                 (t.status_away, &|p| {
-                    matches!(p, Presence::Away | Presence::BeRightBack)
+                    matches!(
+                        p,
+                        Presence::Away | Presence::BeRightBack | Presence::OffWork
+                    )
                 }),
                 (t.status_offline, &|p| {
                     matches!(p, Presence::Offline | Presence::Unknown)

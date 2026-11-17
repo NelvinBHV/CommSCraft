@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: editing the contact list, the New view, relationships)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: personal note, be right back, off work, reset status)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -85,6 +85,11 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   NTLM step comes from the session worker over a channel. The photo is decoded there in pure Rust
   (JPEG with zune-jpeg, PNG; at most 1024 pixels a side) into a 96 × 96 thumbnail. *Options →
   personal → show pictures of contacts* switches them off. `tested-in-lab`.
+- **Own presence:** the status menu offers available, busy, do not disturb, be right back
+  (12500), off work (away with the activity `off-work`) and appear away, and *Reset status*
+  (the manual state removed, the server works it out again); the personal note is published when
+  its field is left (`note` category, containers 200/300/400) and a note set elsewhere comes into
+  the field. Contacts show *be right back* and *off work* too. `tested-in-lab`.
 - **Editing the contact list:** add a person (the add button, the contact menu, search results,
   the *New* view), move a contact into another group, remove it; add, rename and delete groups
   (only empty ones). A list kept in Exchange is read and changed there (EWS UCS operations,

@@ -90,6 +90,8 @@ fn conflict_slot(p: &Purpose) -> Option<usize> {
         Purpose::SetDelegate { .. } => Some(3),
         Purpose::PublishBlock => Some(4),
         Purpose::PublishCalendar(_) => Some(5),
+        Purpose::PublishNote(_) => Some(6),
+        Purpose::ResetStatus => Some(1),
         _ => None,
     }
 }
@@ -140,6 +142,11 @@ pub enum ConferenceAction {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
     SetStatus(pres::UserStatus),
+    /// Back to the state the server works out from machine and calendar (removes the manual
+    /// state).
+    ResetStatus,
+    /// Publishes the personal note; `None` or an empty text removes it.
+    SetNote(Option<String>),
     /// Function 16: publish the calendar and out-of-office state read from Exchange; only what
     /// changed since the last publication is sent (MS-PRES §3.8.5.3).
     PublishCalendar(Box<pres::calendar::Calendar>),
@@ -673,6 +680,9 @@ enum Purpose {
     Provisioning,
     PublishStatus(pres::UserStatus),
     PublishCalendar(Box<pres::calendar::Calendar>),
+    /// The personal note; `true`: a text was published (not a removal).
+    PublishNote(bool),
+    ResetStatus,
     PublishRouting(Box<pres::Forwarding>),
     SetDelegate {
         uri: String,
@@ -749,7 +759,11 @@ pub struct Engine<R: Random> {
     delegates: Option<pres::Delegates>,
     /// 409 retries per kind of operation since its last success (issues #67, #70: bounded and
     /// kept apart – endpoint, status, routing, delegates).
-    conflict_retries: [u8; 6],
+    conflict_retries: [u8; 7],
+    /// Versions of the personal note in [`pres::NOTE_CONTAINERS`] (PR-05).
+    note_versions: [u32; 3],
+    /// The note last asked for (published again after a version conflict).
+    last_note: Option<String>,
     /// Function 16: what the server has of the calendar publications, and their versions.
     calendar: pres::calendar::Calendar,
     calendar_versions: [u32; pres::calendar::SLOTS],
@@ -879,7 +893,9 @@ impl<R: Random> Engine<R> {
             status_versions: [0, 0],
             routing_versions: [0; 5],
             delegates: None,
-            conflict_retries: [0; 6],
+            conflict_retries: [0; 7],
+            note_versions: [0; 3],
+            last_note: None,
             calendar: pres::calendar::Calendar::default(),
             calendar_versions: [0; pres::calendar::SLOTS],
             screen_calls: std::collections::BTreeSet::new(),
@@ -1326,6 +1342,32 @@ impl<R: Random> Engine<R> {
         m.push_header("Content-Type", "application/msrtc-category-publish+xml");
         m.body = body.into_bytes();
         self.send_request(m, Purpose::PublishStatus(status), now, out);
+    }
+
+    fn reset_status(&mut self, now: u64, out: &mut Vec<Output>) {
+        let endpoint = self.reg.instance().to_string();
+        let Ok(body) = pres::clear_state_body(&self.cfg.aor, self.status_versions, Some(&endpoint))
+        else {
+            return;
+        };
+        let aor = self.cfg.aor.clone();
+        let mut m = self.request("SERVICE", &aor, &aor);
+        m.push_header("Content-Type", "application/msrtc-category-publish+xml");
+        m.body = body.into_bytes();
+        self.send_request(m, Purpose::ResetStatus, now, out);
+    }
+
+    fn publish_note(&mut self, note: Option<&str>, now: u64, out: &mut Vec<Output>) {
+        let Ok(body) = pres::publish_note_body(&self.cfg.aor, note, self.note_versions) else {
+            return;
+        };
+        let present = note.is_some_and(|n| !pres::printable(n).trim().is_empty());
+        self.last_note = note.map(str::to_string);
+        let aor = self.cfg.aor.clone();
+        let mut m = self.request("SERVICE", &aor, &aor);
+        m.push_header("Content-Type", "application/msrtc-category-publish+xml");
+        m.body = body.into_bytes();
+        self.send_request(m, Purpose::PublishNote(present), now, out);
     }
 
     // ----- subscriptions -------------------------------------------------------------------
@@ -1933,6 +1975,8 @@ impl<R: Random> Engine<R> {
         }
         match cmd {
             Command::SetStatus(s) => self.publish_status(s, now, &mut out),
+            Command::ResetStatus => self.reset_status(now, &mut out),
+            Command::SetNote(n) => self.publish_note(n.as_deref(), now, &mut out),
             Command::PublishCalendar(c) => self.publish_calendar(*c, now, &mut out),
             Command::SetForwarding(f) => self.publish_routing(f, now, &mut out),
             Command::StartConversation { to } => self.start_conversation(&to, now, &mut out),
@@ -2392,6 +2436,11 @@ impl<R: Random> Engine<R> {
                         Purpose::PublishRouting(f) => self.publish_routing(*f, now, out),
                         Purpose::SetDelegate { uri, add } => self.set_delegate(&uri, add, now, out),
                         Purpose::PublishBlock => self.publish_block(now, out),
+                        Purpose::ResetStatus => self.reset_status(now, out),
+                        Purpose::PublishNote(_) => {
+                            let note = self.last_note.clone();
+                            self.publish_note(note.as_deref(), now, out)
+                        }
                         _ => {}
                     }
                     return;
@@ -2509,7 +2558,8 @@ impl<R: Random> Engine<R> {
         let conflicts = pres::parse_fault(body).ok()?;
         let target = match p.purpose {
             Purpose::PublishEndpoint => &mut self.endpoint_versions,
-            Purpose::PublishStatus(_) => &mut self.status_versions[..],
+            Purpose::PublishStatus(_) | Purpose::ResetStatus => &mut self.status_versions[..],
+            Purpose::PublishNote(_) => &mut self.note_versions[..],
             Purpose::PublishRouting(_) => &mut self.routing_versions[..],
             Purpose::PublishCalendar(ref c) => {
                 // The fault's index counts the publications of this request (slots in order).
@@ -2647,6 +2697,20 @@ impl<R: Random> Engine<R> {
                 self.status_versions = self.status_versions.map(|v| v + 1);
                 out.push(Output::Event(Event::OwnStatus(s)));
             }
+            // A removed publication starts again at version 0 (as for the calendar slots).
+            // The aggregate then follows this endpoint's machine state, published as active
+            // (3500; §3.8.5.1.2.2, inference while no calendar state is busier).
+            Purpose::ResetStatus => {
+                self.status_versions = [0; 2];
+                out.push(Output::Event(Event::OwnStatus(pres::UserStatus::Online)));
+            }
+            Purpose::PublishNote(present) => {
+                self.note_versions = if present {
+                    self.note_versions.map(|v| v + 1)
+                } else {
+                    [0; 3]
+                };
+            }
             Purpose::ContactEdit => self.on_contact_edit_answered(resp, now, out),
             Purpose::SetMembers
             | Purpose::ManifestMembers
@@ -2782,7 +2846,12 @@ impl<R: Random> Engine<R> {
                     self.schedule_retry(i, now);
                 }
             }
-            Purpose::PublishStatus(_) => out.push(Output::Event(Event::OwnStatusFailed(code))),
+            Purpose::PublishStatus(_) | Purpose::ResetStatus => {
+                out.push(Output::Event(Event::OwnStatusFailed(code)))
+            }
+            Purpose::PublishNote(_) => out.push(Output::Event(Event::Notice(format!(
+                "note not published ({code})"
+            )))),
             Purpose::PublishCalendar(_) => out.push(Output::Event(Event::Notice(format!(
                 "calendar state not published ({code})"
             )))),

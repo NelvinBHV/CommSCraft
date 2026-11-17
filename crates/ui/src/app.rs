@@ -15,6 +15,10 @@ pub enum UiIntent {
     SignIn(SignIn),
     SignOut,
     SetPresence(Presence),
+    /// Back to the automatic state (the manual one removed).
+    ResetStatus,
+    /// Publish the personal note (empty: remove it).
+    SetNote(String),
     /// Open a conversation with one peer under this local key.
     StartConversation {
         key: ConvKey,
@@ -346,6 +350,10 @@ pub struct CommsUi {
     pub(crate) contacts_view: ContactsView,
     pub(crate) conv_filter: ConvFilter,
     pub(crate) note: String,
+    /// The note as last published (or received).
+    pub(crate) published_note: String,
+    /// The own note as the server last showed it (taken into the field when it changes).
+    pub(crate) seen_note: String,
     /// The newest warning the user closed (its time).
     pub(crate) dismissed_alert: u64,
     pub(crate) collapsed: BTreeSet<String>,
@@ -402,6 +410,8 @@ impl CommsUi {
             contacts_view: ContactsView::Groups,
             conv_filter: ConvFilter::All,
             note: String::new(),
+            published_note: String::new(),
+            seen_note: String::new(),
             dismissed_alert: 0,
             collapsed: BTreeSet::new(),
             group_dialog: None,

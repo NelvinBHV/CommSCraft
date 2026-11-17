@@ -312,6 +312,8 @@ impl DesktopApp {
         let session_of = |k| state.conversation(k).and_then(|c| c.session);
         let cmd = match intent {
             UiIntent::SetPresence(p) => Some(ToWorker::SetPresence(p)),
+            UiIntent::ResetStatus => Some(ToWorker::ResetStatus),
+            UiIntent::SetNote(n) => Some(ToWorker::SetNote(n)),
             UiIntent::StartConversation { key, peer } => {
                 Some(ToWorker::StartConversation { key, peer })
             }
