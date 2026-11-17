@@ -193,9 +193,12 @@ fn the_main_window_has_the_four_tabs_and_marks_the_demo() {
     assert!(h.query_by_label("Telefon").is_none());
     assert!(h.query_by_label("Telefone").is_none());
     assert!(h.query_by_label_contains("DEMO").is_some());
-    assert!(h
-        .query_by_label_contains("Anna Weber, Beschäftigt")
-        .is_some());
+    // (Anna is in a group and in the demo distribution list.)
+    assert!(
+        h.query_all_by_label_contains("Anna Weber, Beschäftigt")
+            .count()
+            > 0
+    );
     // No alarm or situation views (out of scope).
     assert!(h.query_by_label_contains("Alarm").is_none());
     // No conversation window opens by itself.
@@ -597,4 +600,24 @@ fn a_password_in_the_keyring_lets_the_field_stay_empty() {
     f.type_text("x");
     h.run();
     assert!(button(&h, "Sign in").accesskit_node().is_disabled());
+}
+
+#[test]
+fn a_distribution_group_lists_its_members_when_open() {
+    let mut h = harness(demo_quiet(), (420.0, 760.0));
+    h.run();
+    h.run();
+    // The group is open: its members were asked for once and are shown.
+    assert!(h.state().intents.iter().any(
+        |i| matches!(i, UiIntent::ExpandGroup { email } if email.starts_with("projekt-nord@"))
+    ));
+    assert!(h.query_by_label_contains("PROJEKTTEAM NORD (3)").is_some());
+    assert_eq!(
+        h.state()
+            .intents
+            .iter()
+            .filter(|i| matches!(i, UiIntent::ExpandGroup { .. }))
+            .count(),
+        1
+    );
 }

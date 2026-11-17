@@ -314,7 +314,7 @@ pub fn exchange_photo(
 /// PhotoSize); the photo policy of endpointConfiguration decides whether photos are shown and
 /// how large they may be (RG-52). With `AllPhotos` the Exchange photo comes first. Directory
 /// photos are kept named by their hash, so a known state is not fetched again. `settings`
-/// keeps the Exchange settings between calls (Autodiscover runs once).
+/// keeps the Exchange settings between calls: Autodiscover runs once, also when it fails.
 #[allow(clippy::too_many_arguments)]
 pub fn fetch(
     tls: &TlsClient,
@@ -323,7 +323,7 @@ pub fn fetch(
     services: Option<&ServerConfiguration>,
     uri: &str,
     user_agent: &str,
-    settings: &mut Option<commscraft_ews::UserSettings>,
+    settings: &mut Option<Option<commscraft_ews::UserSettings>>,
     ntlm: &mut HttpNtlm<'_>,
     log: &mut dyn FnMut(&str),
 ) -> Result<PathBuf, String> {
@@ -349,10 +349,11 @@ pub fn fetch(
             .mail
             .clone()
             .unwrap_or_else(|| uri.trim_start_matches("sip:").to_string());
+        // Autodiscover once: `Some(None)` – tried, no Exchange settings for this mailbox.
         if settings.is_none() {
-            *settings = ews_settings(tls, trust, aor, user_agent, ntlm, log).ok();
+            *settings = Some(ews_settings(tls, trust, aor, user_agent, ntlm, log).ok());
         }
-        if let Some(s) = settings.as_ref() {
+        if let Some(Some(s)) = settings.as_ref() {
             match exchange_photo(tls, trust, aor, s, &email, limit, user_agent, ntlm, log) {
                 Ok(Some(path)) => return Ok(path),
                 Ok(None) => log(&format!("  Exchange has no photo of {email}")),

@@ -1037,6 +1037,56 @@ pub fn parse_batch(msg: &Message) -> Result<(Vec<ResourceState>, Vec<ContactPres
 pub struct Group {
     pub id: u32,
     pub name: String,
+    /// `externalURI`: "auxiliary resources for the group", e.g. an LDAP URI with its members
+    /// ([MS-SIP] §2.2.4.1, p. 18); kept printable and bounded (256 characters).
+    pub external: String,
+}
+
+/// What a group's `externalURI` says about it. [MS-SIP] §2.2.4.1 (p. 18) leaves its content
+/// open ("auxiliary resources for the group"); the Skype for Business server writes a
+/// `groupExtension` element there (interop, `tested-in-lab`): `groupType="dg"` with the list's
+/// mail address for a distribution group the user added, `groupType="pinnedGroup"` for the
+/// favourites. The value is parsed with the bounded XML reader; anything else is a plain group.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GroupExtension {
+    Plain,
+    Distribution { email: String },
+    Pinned,
+}
+
+/// The kind of a contact list group from its `externalURI`.
+pub fn group_extension(external: &str) -> GroupExtension {
+    let t = external.trim();
+    if !t.starts_with('<') {
+        return GroupExtension::Plain;
+    }
+    let Ok(e) = commscraft_xml::parse(t, &Limits::default()) else {
+        return GroupExtension::Plain;
+    };
+    if e.name != "groupExtension" {
+        return GroupExtension::Plain;
+    }
+    match e.attr("groupType") {
+        Some("dg") => {
+            let email = e
+                .children_named("email")
+                .next()
+                .map(|m| m.text().trim().to_string())
+                .unwrap_or_default();
+            let ok = email.len() <= 256
+                && email
+                    .split_once('@')
+                    .is_some_and(|(l, d)| !l.is_empty() && !d.is_empty())
+                && !email.chars().any(|c| c.is_whitespace() || c.is_control());
+            if ok {
+                GroupExtension::Distribution { email }
+            } else {
+                GroupExtension::Plain
+            }
+        }
+        Some("pinnedGroup") => GroupExtension::Pinned,
+        _ => GroupExtension::Plain,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1079,6 +1129,10 @@ pub fn parse_contact_list(xml: &str) -> Result<ContactList, Error> {
             l.groups.push(Group {
                 id,
                 name: printable(g.attr("name").unwrap_or("").trim()),
+                external: printable(g.attr("externalURI").unwrap_or("").trim())
+                    .chars()
+                    .take(256)
+                    .collect(),
             });
         }
     }

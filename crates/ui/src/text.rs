@@ -85,6 +85,11 @@ texts! {
     filter_unread: "Ungelesen", "Unread";
     filter_groups: "Gruppen", "Groups";
     filter_rooms: "Räume", "Rooms";
+    distribution_group: "Verteilerliste", "Distribution list";
+    dg_loading: "Mitglieder werden aus dem Adressbuch geholt …", "Getting the members from the address book …";
+    dg_failed: "Mitglieder nicht verfügbar", "Members not available";
+    dg_empty: "Keine Mitglieder.", "No members.";
+    dg_partial: "Der Server zeigt nur einen Teil der Mitglieder.", "The server shows only part of the members.";
     calendar_title: "Kalender", "Calendar";
     calendar_empty: "Keine Termine in den nächsten Tagen.", "No appointments in the next days.";
     tomorrow: "Morgen", "Tomorrow";

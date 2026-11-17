@@ -495,7 +495,7 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             if app.prefs.favorites_group {
                 let favs: Vec<Contact> = all
                     .iter()
-                    .filter(|c| app.prefs.favorites.contains(&c.uri))
+                    .filter(|c| app.prefs.favorites.contains(&c.uri) || c.pinned)
                     .cloned()
                     .collect();
                 out.push((t.favorites.to_string(), favs));
@@ -562,7 +562,7 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         .id_salt("contacts")
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            if all.is_empty() {
+            if all.is_empty() && app.state.distribution.is_empty() {
                 ui.label(RichText::new(t.no_contacts).color(pal.muted));
             }
             for (name, members) in groups {
@@ -605,6 +605,9 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     }
                 }
                 ui.add_space(4.0);
+            }
+            if app.contacts_view == ContactsView::Groups {
+                dist_groups(app, ui, pal);
             }
         });
 }
@@ -664,6 +667,108 @@ fn contact_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, c: &Contact) {
         app.chat_with(&c.uri);
     }
     resp.context_menu(|ui| contact_menu(app, ui, &c.uri));
+}
+
+/// The distribution groups of the contact list; a group's members are asked for from the
+/// address book the first time it is open.
+fn dist_groups(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    for g in app.state.distribution.clone() {
+        let key = format!("dg:{}", g.email);
+        let open = !app.collapsed.contains(&key);
+        let count = g
+            .members
+            .as_ref()
+            .map_or(String::new(), |m| format!(" ({})", m.len()));
+        let clicked = ui
+            .horizontal(|ui| {
+                let (rect, _) = ui.allocate_exact_size(Vec2::splat(12.0), Sense::hover());
+                icons::draw(
+                    ui.painter(),
+                    rect,
+                    if open {
+                        Icon::ChevronDown
+                    } else {
+                        Icon::ChevronRight
+                    },
+                    pal.muted,
+                );
+                let r = ui
+                    .add(
+                        egui::Button::new(
+                            RichText::new(format!("{}{count}", g.name.to_uppercase()))
+                                .size(theme::text::SMALL)
+                                .color(pal.muted),
+                        )
+                        .frame(false),
+                    )
+                    .on_hover_text(format!("{} · {}", t.distribution_group, g.email));
+                let (rect, _) = ui.allocate_exact_size(Vec2::splat(14.0), Sense::hover());
+                icons::draw(ui.painter(), rect, Icon::People, pal.muted);
+                r.clicked()
+            })
+            .inner;
+        if clicked {
+            if open {
+                app.collapsed.insert(key.clone());
+            } else {
+                app.collapsed.remove(&key);
+            }
+        }
+        if open {
+            if g.members.is_none()
+                && g.error.is_none()
+                && app.expanded_groups.insert(g.email.clone())
+            {
+                app.emit(UiIntent::ExpandGroup {
+                    email: g.email.clone(),
+                });
+            }
+            match (&g.members, &g.error) {
+                (_, Some(e)) => {
+                    ui.label(
+                        RichText::new(format!("{} ({e})", t.dg_failed))
+                            .size(theme::text::SMALL)
+                            .color(pal.error),
+                    );
+                }
+                (None, None) => {
+                    ui.label(
+                        RichText::new(t.dg_loading)
+                            .size(theme::text::SMALL)
+                            .color(pal.muted),
+                    );
+                }
+                (Some(m), None) => {
+                    if m.is_empty() {
+                        ui.label(
+                            RichText::new(t.dg_empty)
+                                .size(theme::text::SMALL)
+                                .color(pal.muted),
+                        );
+                    }
+                    for c in m {
+                        // A member known in the contact list shows its presence there.
+                        let c = app
+                            .state
+                            .contacts
+                            .get(&c.uri)
+                            .cloned()
+                            .unwrap_or_else(|| c.clone());
+                        contact_row(app, ui, pal, &c);
+                    }
+                    if g.partial {
+                        ui.label(
+                            RichText::new(t.dg_partial)
+                                .size(theme::text::SMALL)
+                                .color(pal.muted),
+                        );
+                    }
+                }
+            }
+        }
+        ui.add_space(4.0);
+    }
 }
 
 /// What can be done with a contact (also from search results).

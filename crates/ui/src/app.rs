@@ -89,6 +89,10 @@ pub enum UiIntent {
     PrefsChanged,
     /// The answer to a trust question (true: trust the domain and remember it).
     AnswerTrust(bool),
+    /// List the members of a distribution group (address book).
+    ExpandGroup {
+        email: String,
+    },
     /// Remove the password kept in the keyring for the last sign-in address.
     ForgetPassword,
     /// Tones in a call (DTMF).
@@ -310,6 +314,8 @@ pub struct CommsUi {
     /// The newest warning the user closed (its time).
     pub(crate) dismissed_alert: u64,
     pub(crate) collapsed: BTreeSet<String>,
+    /// Distribution groups whose members were asked for.
+    pub(crate) expanded_groups: BTreeSet<String>,
     pub(crate) windows: Vec<Win>,
     pub(crate) focus_window: Option<Win>,
     pub(crate) options_page: usize,
@@ -361,6 +367,7 @@ impl CommsUi {
             note: String::new(),
             dismissed_alert: 0,
             collapsed: BTreeSet::new(),
+            expanded_groups: BTreeSet::new(),
             windows: Vec::new(),
             focus_window: None,
             options_page: 0,

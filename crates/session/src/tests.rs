@@ -4707,6 +4707,7 @@ fn contact_list_moves_to_exchange() {
         groups: vec![pres::Group {
             id: 1,
             name: "Team".into(),
+            external: String::new(),
         }],
         contacts: vec![pres::Contact {
             uri: "sip:bob@contoso.com".into(),
@@ -5595,4 +5596,34 @@ fn a_room_message_without_rooms_is_reported_as_not_sent() {
     assert!(events(&out)
         .iter()
         .any(|ev| matches!(ev, Event::RoomNotSent { status: 0, .. })));
+}
+
+#[test]
+fn watched_addresses_join_the_presence_subscriptions() {
+    let (mut e, _server, _out) = signed_in();
+    let out = e.command(
+        Command::WatchPresence {
+            uris: vec![
+                "sip:bob@contoso.com".into(),
+                "not a uri".into(),
+                "sip:bob@contoso.com".into(),
+            ],
+        },
+        NOW,
+    );
+    let subs: Vec<_> = sends(&out)
+        .into_iter()
+        .filter(|m| m.method() == Some("SUBSCRIBE"))
+        .collect();
+    assert_eq!(subs.len(), 1);
+    let body = String::from_utf8_lossy(&subs[0].body);
+    assert_eq!(body.matches("sip:bob@contoso.com").count(), 1, "{body}");
+    // The same address again: nothing new.
+    let again = e.command(
+        Command::WatchPresence {
+            uris: vec!["sip:bob@contoso.com".into()],
+        },
+        NOW,
+    );
+    assert!(sends(&again).is_empty());
 }

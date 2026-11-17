@@ -118,6 +118,10 @@ pub enum ToWorker {
         id: u32,
         digits: String,
     },
+    /// The members of a distribution group (address book).
+    ExpandGroup {
+        email: String,
+    },
     /// Persistent chat: connect, list our rooms, join them.
     LoadRooms,
     SendToRoom {
@@ -298,19 +302,58 @@ fn user_status(p: Presence) -> Option<pres::UserStatus> {
 
 /// The contact list as interface contacts (group name from the first group).
 pub fn contacts_of(l: &pres::ContactList) -> Vec<Contact> {
-    let groups: BTreeMap<u32, &str> = l.groups.iter().map(|g| (g.id, g.name.as_str())).collect();
+    let pinned: BTreeSet<u32> = l
+        .groups
+        .iter()
+        .filter(|g| pres::group_extension(&g.external) == pres::GroupExtension::Pinned)
+        .map(|g| g.id)
+        .collect();
+    let groups: BTreeMap<u32, &str> = l
+        .groups
+        .iter()
+        .filter(|g| pres::group_extension(&g.external) == pres::GroupExtension::Plain)
+        .map(|g| (g.id, g.name.as_str()))
+        .collect();
     l.contacts
         .iter()
         .map(|c| {
             let mut k = Contact::new(&c.uri, &c.name, Source::ContactList);
+            k.pinned = c.groups.iter().any(|g| pinned.contains(g));
             k.group = c
                 .groups
-                .first()
-                .and_then(|g| groups.get(g))
+                .iter()
+                .find_map(|g| groups.get(g))
                 .filter(|n| **n != "~")
                 .map(|n| n.to_string())
                 .unwrap_or_default();
             k
+        })
+        .collect()
+}
+
+/// The distribution groups of the contact list: name and mail address (interop, see
+/// `presence::group_extension`).
+pub fn distribution_groups_of(l: &pres::ContactList) -> Vec<(String, String)> {
+    l.groups
+        .iter()
+        .filter_map(|g| match pres::group_extension(&g.external) {
+            pres::GroupExtension::Distribution { email } => Some((g.name.clone(), email)),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Members of a distribution group as interface contacts (those with a SIP address).
+pub fn members_of(x: &commscraft_dlx::Expansion) -> Vec<Contact> {
+    x.users
+        .iter()
+        .filter_map(|m| {
+            let uri = m.sip_uri.as_deref()?;
+            Some(Contact::new(
+                uri,
+                m.display_name.as_deref().unwrap_or(""),
+                Source::Directory,
+            ))
         })
         .collect()
 }
@@ -597,8 +640,8 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
     };
     let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
     // Without a user name the sign-in address is the account, as the Windows client does it:
-    // the user principal name `name@domain` with an empty NTLM domain (inference: Active
-    // Directory takes the UPN as NTLM user name; to be confirmed in the lab).
+    // the user principal name `name@domain` with an empty NTLM domain (interop: Active
+    // Directory takes the UPN as NTLM user name, `tested-in-lab`).
     let user = match form.user.trim() {
         "" => aor.trim_start_matches("sip:").to_string(),
         u => u.to_string(),
@@ -784,6 +827,37 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
                     })
                 }
                 crate::photos::Done::Calendar(Err(e)) => trace_line(&format!("calendar: {e}")),
+                crate::photos::Done::Expanded(email, found) => {
+                    use commscraft_dlx::ExpandStatus as X;
+                    let (members, partial) = match found {
+                        Ok(x) => match x.status {
+                            X::Success => (Ok(members_of(&x)), false),
+                            X::MemberCountLimitExceeded => (Ok(members_of(&x)), true),
+                            X::NotAuthorized => (Err("not authorized".to_string()), false),
+                            X::NotFound => (Err("no such list".to_string()), false),
+                            X::SimultaneousRequestLimitExceeded => {
+                                (Err("the server is busy".to_string()), false)
+                            }
+                            X::Invalid => {
+                                (Err("the server could not expand it".to_string()), false)
+                            }
+                        },
+                        Err(e) => (Err(e), false),
+                    };
+                    // Like the contacts: their presence and photos.
+                    if let Ok(list) = &members {
+                        let uris: Vec<String> = list.iter().map(|c| c.uri.clone()).collect();
+                        for u in &uris {
+                            s.want_photo(u);
+                        }
+                        outputs.extend(s.engine.command(C::WatchPresence { uris }, now()));
+                    }
+                    out.event(AppEvent::DistributionMembers {
+                        email,
+                        members,
+                        partial,
+                    });
+                }
             }
         }
         // The appointments: once provisioning is known, then every 15 minutes.
@@ -1486,6 +1560,12 @@ impl Session {
                 }
                 Vec::new()
             }
+            ToWorker::ExpandGroup { email } => {
+                if let Some(p) = &self.photos {
+                    p.expand(&email, self.services.as_deref());
+                }
+                Vec::new()
+            }
             ToWorker::LoadRooms => {
                 self.room_history.clear();
                 self.engine.command(C::ChatRooms, t)
@@ -1825,6 +1905,7 @@ impl Session {
             E::RoomNotSent { room, status } => out.event(AppEvent::RoomNotSent { room, status }),
             E::ContactList(l) => {
                 let list = contacts_of(&l);
+                out.event(AppEvent::DistributionGroups(distribution_groups_of(&l)));
                 self.contact_uris = list.iter().map(|c| c.uri.clone()).take(2000).collect();
                 out.event(AppEvent::Contacts(list));
                 self.want_photos();
@@ -2213,10 +2294,12 @@ mod tests {
                 pres::Group {
                     id: 1,
                     name: "~".into(),
+                    external: String::new(),
                 },
                 pres::Group {
                     id: 2,
                     name: "Team".into(),
+                    external: String::new(),
                 },
             ],
             contacts: vec![
@@ -2249,6 +2332,38 @@ mod tests {
             "sip:a@beispiel.invalid;gruu;opaque=app:conf:chat:id:X"
         ));
         assert!(!is_conference_uri("sip:a@beispiel.invalid"));
+    }
+
+    #[test]
+    fn favourites_and_distribution_groups_of_the_contact_list() {
+        let g = |id, name: &str, ext: &str| pres::Group {
+            id,
+            name: name.into(),
+            external: ext.into(),
+        };
+        let l = pres::ContactList {
+            groups: vec![
+                g(1, "~", ""),
+                g(2, "Pinned Contacts", "<groupExtension groupType=\"pinnedGroup\"><email/></groupExtension>"),
+                g(3, "Lab Team", "<groupExtension groupType=\"dg\"><email>team@beispiel.invalid</email></groupExtension>"),
+                g(4, "Team", ""),
+            ],
+            contacts: vec![pres::Contact {
+                uri: "sip:bob@beispiel.invalid".into(),
+                name: "Bob".into(),
+                groups: vec![2, 4],
+                subscribed: true,
+                extension: false,
+            }],
+            ..pres::ContactList::default()
+        };
+        let c = contacts_of(&l);
+        assert!(c[0].pinned);
+        assert_eq!(c[0].group, "Team");
+        assert_eq!(
+            distribution_groups_of(&l),
+            vec![("Lab Team".to_string(), "team@beispiel.invalid".to_string())]
+        );
     }
 
     #[test]

@@ -320,6 +320,16 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
         },
     ];
     let _ = group;
+    // A distribution group in the contact list; its members come when it is opened.
+    state.apply(AppEvent::DistributionGroups(vec![(
+        if de {
+            "Projektteam Nord"
+        } else {
+            "Project team North"
+        }
+        .into(),
+        format!("projekt-nord@{DOMAIN}"),
+    )]));
     // A persistent chat room (illustrative, marked like every demo conversation).
     let room = format!("ma-chan://{DOMAIN}/0d3f6a1c-demo");
     state.apply(AppEvent::Room {
@@ -467,6 +477,17 @@ pub fn handle(state: &mut AppState, intent: &UiIntent, now: u64, lang: Lang) {
             "Demo: Die Stimme wird nicht gesendet",
             "Demo: the vote is not sent",
         ),
+        UiIntent::ExpandGroup { email } => {
+            let members = ["anna.weber", "tim.lange", "max.richter"]
+                .iter()
+                .filter_map(|l| state.contacts.get(&uri(l)).cloned())
+                .collect();
+            state.apply(AppEvent::DistributionMembers {
+                email: email.clone(),
+                members: Ok(members),
+                partial: false,
+            });
+        }
         UiIntent::LoadRooms => notice(
             state,
             "Demo: Die Räume sind Beispieldaten – es gibt keinen Chat-Server",
