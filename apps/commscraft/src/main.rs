@@ -367,6 +367,9 @@ impl DesktopApp {
             }
             UiIntent::JoinMeeting { focus } => Some(ToWorker::JoinConference { focus }),
             UiIntent::JoinMeetingLink { link } => Some(ToWorker::JoinMeetingLink(link)),
+            UiIntent::JoinMeetingAudio { key } => {
+                session_of(key).map(|session| ToWorker::JoinMeetingAudio { session })
+            }
             UiIntent::ScheduleMeeting {
                 subject,
                 minutes,

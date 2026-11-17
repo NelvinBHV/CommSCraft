@@ -737,3 +737,41 @@ fn a_meeting_is_planned_joined_and_cancelled_from_the_meetings_tab() {
         |i| matches!(i, UiIntent::CancelMeeting { conference_id } if conference_id == "DEMO1")
     ));
 }
+
+#[test]
+fn the_meeting_audio_is_joined_from_a_group_conversation() {
+    use commscraft_ui::model::ConvState;
+    let mut ui = demo_quiet();
+    ui.state.capabilities.audio_call = Gate::Available;
+    let c = ui
+        .state
+        .conversations
+        .iter_mut()
+        .find(|c| c.title == "Projekt Nord")
+        .unwrap();
+    c.state = ConvState::Open;
+    c.session = Some(7);
+    let key = c.key;
+    let mut h = harness(ui, BIG);
+    h.run();
+    open_conversation(&mut h, "Projekt Nord");
+    h.get_by_label("Audio der Besprechung beitreten").click();
+    h.run();
+    assert!(h
+        .state()
+        .intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::JoinMeetingAudio { key: k } if *k == key)));
+    // The call that comes back belongs to the meeting and is named like it.
+    h.state_mut().ui.state.apply(AppEvent::CallStarted {
+        id: 3,
+        peer: String::new(),
+        incoming: false,
+        at: NOW,
+    });
+    h.state_mut()
+        .ui
+        .state
+        .apply(AppEvent::ConferenceCall { id: 3, session: 7 });
+    assert_eq!(h.state().ui.state.calls[0].conference, Some(key));
+}

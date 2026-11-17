@@ -428,6 +428,7 @@ texts! {
     meetings_hint: "Eine Besprechung links wählen oder mit „Jetzt besprechen“ eine Gruppe öffnen.", "Pick a meeting on the left or open a group with “Meet now”.";
     meet_now: "Jetzt besprechen", "Meet now";
     untitled_conferences: "Konferenzen ohne Betreff (aus Gruppenunterhaltungen) werden nicht aufgeführt.", "conferences without a subject (from group conversations) are not listed.";
+    join_meeting_audio: "Audio der Besprechung beitreten", "Join the meeting audio";
     meet_now_tip: "Öffnet eine Gruppenunterhaltung, in die Personen eingeladen werden können", "Opens a group conversation people can be invited to";
     meeting_content_title: "Inhalte in Besprechungen", "Meeting content";
     meeting_content_body: "Whiteboards, Folien und Umfragen einer Besprechung stehen in deren Gruppenunterhaltung unter Details → Besprechungsinhalte. Video und Bildschirmfreigaben innerhalb von Besprechungen bietet zurzeit nur das Kommandozeilenwerkzeug.", "Whiteboards, slides and polls of a meeting are in its group conversation under details → meeting content. Video and shared screens inside meetings are offered only by the command-line tool for now.";

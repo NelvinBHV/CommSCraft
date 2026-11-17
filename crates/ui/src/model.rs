@@ -685,6 +685,11 @@ pub enum AppEvent {
         state: VideoState,
     },
     Meetings(Vec<Meeting>),
+    /// This call is the audio of the meeting of a group conversation (session ID).
+    ConferenceCall {
+        id: u32,
+        session: u32,
+    },
     /// One meeting's details (subject, expiry, link) into its entry of the list.
     MeetingDetails(Meeting),
     MeetingCancelled(String),
@@ -1423,6 +1428,12 @@ impl AppState {
                 }
             }
             AppEvent::MeetingCancelled(id) => self.meetings.retain(|m| m.conference_id != id),
+            AppEvent::ConferenceCall { id, session } => {
+                let key = self.by_session(session).map(|c| c.key);
+                if let Some(c) = self.calls.iter_mut().find(|c| c.id == id) {
+                    c.conference = key;
+                }
+            }
             AppEvent::Invitation(i) => {
                 // The same conference again (the inviting client may send it twice): once.
                 let focus = label(&i.focus);

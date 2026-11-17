@@ -122,6 +122,10 @@ pub enum ToWorker {
     ResetStatus,
     /// Join a meeting by its https link.
     JoinMeetingLink(String),
+    /// Join the audio of a meeting (group conversation by session ID).
+    JoinMeetingAudio {
+        session: u32,
+    },
     ScheduleMeeting {
         subject: String,
         minutes: u64,
@@ -468,6 +472,8 @@ struct Session {
     media: BTreeMap<u32, calls::MediaHandle>,
     media_of_call: BTreeMap<u32, u32>,
     pending_out: BTreeMap<u32, String>,
+    /// Audio streams being prepared for a meeting's audio: media ID → conversation.
+    pending_conf: BTreeMap<u32, u32>,
     pending_in: BTreeMap<u32, u32>,
     outgoing: BTreeSet<u32>,
     next_media: u32,
@@ -926,6 +932,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         media: BTreeMap::new(),
         media_of_call: BTreeMap::new(),
         pending_out: BTreeMap::new(),
+        pending_conf: BTreeMap::new(),
         pending_in: BTreeMap::new(),
         outgoing: BTreeSet::new(),
         next_media: 1,
@@ -1712,6 +1719,11 @@ impl Session {
                 },
                 t,
             ),
+            ToWorker::JoinMeetingAudio { session } => {
+                let id = self.spawn_media(None, None);
+                self.pending_conf.insert(id, session);
+                Vec::new()
+            }
             ToWorker::CallUser { peer } => {
                 let id = self.spawn_media(Some(&peer), None);
                 self.pending_out.insert(id, peer);
@@ -2031,6 +2043,30 @@ impl Session {
                         at: t,
                     });
                     self.engine.command(C::Call { to, local, policy }, t)
+                } else if let Some(conversation) = self.pending_conf.remove(&id) {
+                    // The meeting audio: an ordinary call to the A/V MCU (CA-02).
+                    let call = self.engine.next_call_id();
+                    self.media_of_call.insert(call, id);
+                    self.outgoing.insert(call);
+                    out.event(AppEvent::CallStarted {
+                        id: call,
+                        peer: String::new(),
+                        incoming: false,
+                        at: t,
+                    });
+                    out.event(AppEvent::ConferenceCall {
+                        id: call,
+                        session: conversation,
+                    });
+                    self.engine.command(
+                        C::JoinConferenceAudio {
+                            conversation,
+                            local,
+                            policy,
+                            language: None,
+                        },
+                        t,
+                    )
                 } else if let Some(call) = self.pending_in.remove(&id) {
                     self.media_of_call.insert(call, id);
                     self.engine.command(
@@ -2065,6 +2101,7 @@ impl Session {
                     None => {
                         self.pending_out.remove(&id);
                         self.pending_in.remove(&id);
+                        self.pending_conf.remove(&id);
                         self.v.ready_audio.remove(&id);
                         if let Some(h) = self
                             .v
@@ -2507,6 +2544,12 @@ impl Session {
             }
             E::MeetingCancelled { conference_id } => {
                 out.event(AppEvent::MeetingCancelled(conference_id))
+            }
+            E::ConferenceAudio { conversation, call } => {
+                trace_line(&format!(
+                    "meeting audio: conversation {conversation} call {call} media {}",
+                    self.media_of_call.contains_key(&call)
+                ));
             }
             E::IncomingCall { call, from } => {
                 if self.sounds {
