@@ -366,22 +366,9 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
 /// Starts the demo in an interface: data, the group conversation and one contact selected.
 pub fn start(ui: &mut crate::app::CommsUi, now: u64) {
     let lang = ui.t.lang();
-    let view = ui.view();
     ui.demo = true;
     populate(&mut ui.state, now, lang);
-    if let Some(uri) = ui
-        .state
-        .contacts
-        .keys()
-        .find(|u| u.contains("sarah"))
-        .cloned()
-    {
-        ui.select_contact(&uri);
-    }
-    if let Some(k) = first_conversation(&ui.state) {
-        ui.select_conversation(k);
-    }
-    ui.set_view(view);
+    // No window opens by itself: the main window shows the demo data.
 }
 
 /// The key of the demo group conversation (the first one).

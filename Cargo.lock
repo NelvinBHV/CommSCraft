@@ -541,6 +541,7 @@ dependencies = [
  "commscraft-provisioning",
  "commscraft-psom",
  "commscraft-register",
+ "commscraft-rtp",
  "commscraft-sdp",
  "commscraft-session",
  "commscraft-sip-msg",

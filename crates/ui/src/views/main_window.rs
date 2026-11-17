@@ -1,0 +1,934 @@
+//! The main window: a narrow window with the user's presence on top, four tabs (contacts,
+//! conversations, phone, meetings), the options menu and a footer. Conversations open in windows
+//! of their own ([`crate::views::conv_window`]).
+
+use crate::app::{CommsUi, ContactsView, ConvFilter, MainTab, UiIntent};
+use crate::model::{CallDirection, Connection, Contact, ConvKey, NoticeKind, Presence};
+use crate::theme::{self, Palette};
+use crate::views::icons::{self, Icon};
+use crate::widgets;
+use egui::{Align, CornerRadius, Frame, Layout, Margin, RichText, Sense, Stroke, Ui, Vec2};
+
+/// The presences a user can choose (the session publishes them).
+pub const CHOOSABLE: [Presence; 4] = [
+    Presence::Available,
+    Presence::Busy,
+    Presence::DoNotDisturb,
+    Presence::Away,
+];
+
+pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    footer(app, ui, pal);
+    egui::Panel::top("main-head")
+        .frame(
+            Frame::new()
+                .fill(pal.surface_subtle)
+                .inner_margin(Margin::same(10)),
+        )
+        .show(ui, |ui| {
+            header(app, ui, pal);
+            ui.add_space(6.0);
+            tabs(app, ui, pal);
+        });
+    alert(app, ui, pal);
+    egui::CentralPanel::default()
+        .frame(
+            Frame::new()
+                .fill(pal.surface)
+                .inner_margin(Margin::symmetric(8, 6)),
+        )
+        .show(ui, |ui| match app.tab {
+            MainTab::Contacts => contacts(app, ui, pal),
+            MainTab::Conversations => conversations(app, ui, pal),
+            MainTab::Phone => phone(app, ui, pal),
+            MainTab::Meetings => crate::views::meetings::list(app, ui, pal),
+            MainTab::Rooms => rooms(app, ui, pal),
+        });
+}
+
+fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    let online = app.state.connection.is_online() || app.demo;
+    // The personal note: shown, but publishing it is not built yet.
+    ui.horizontal(|ui| {
+        let edit = egui::TextEdit::singleline(&mut app.note)
+            .hint_text(t.note_hint)
+            .frame(Frame::NONE)
+            .desired_width(ui.available_width());
+        ui.add_enabled(false, edit)
+            .on_disabled_hover_text(t.reason(crate::model::Reason::NotImplemented));
+        let _ = online;
+    });
+    ui.add_space(4.0);
+    ui.horizontal(|ui| {
+        let name = if app.state.me.name.is_empty() {
+            app.state.me.uri.trim_start_matches("sip:").to_string()
+        } else {
+            app.state.me.name.clone()
+        };
+        let presence = app.state.me.presence;
+        widgets::avatar(ui, &name, 52.0, online.then_some(presence), pal);
+        ui.vertical(|ui| {
+            ui.label(
+                RichText::new(&name)
+                    .size(theme::text::NAME + 2.0)
+                    .family(theme::bold())
+                    .color(pal.ink),
+            );
+            let r = icons::menu_text(
+                ui,
+                RichText::new(t.presence(presence)).color(pal.ink),
+                pal.muted,
+            );
+            let r = r.on_hover_text(t.change_status);
+            egui::Popup::menu(&r).show(|ui| status_menu(app, ui));
+            ui.label(
+                RichText::new(t.connection_short(&app.state.connection, app.demo))
+                    .size(theme::text::SMALL)
+                    .color(pal.muted),
+            );
+        });
+    });
+}
+
+/// The status menu: the presences, reset, sign out and quit.
+pub fn status_menu(app: &mut CommsUi, ui: &mut Ui) {
+    let t = app.t;
+    ui.set_min_width(200.0);
+    let usable = app.state.capabilities.presence.usable();
+    for p in CHOOSABLE {
+        let selected = app.state.me.presence == p;
+        if ui
+            .add_enabled(usable, egui::Button::selectable(selected, t.presence(p)))
+            .clicked()
+        {
+            app.emit(UiIntent::SetPresence(p));
+        }
+    }
+    // Back to the state the client works out itself: not built (the session publishes the
+    // chosen state only).
+    ui.add_enabled(false, egui::Button::new(t.reset_status))
+        .on_disabled_hover_text(t.reason(crate::model::Reason::NotImplemented));
+    ui.separator();
+    if ui.button(t.sign_out).clicked() {
+        app.emit(UiIntent::SignOut);
+    }
+    if ui.button(t.quit).clicked() {
+        app.emit(UiIntent::Quit);
+    }
+}
+
+fn tabs(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    let missed = app
+        .state
+        .call_history
+        .iter()
+        .filter(|r| r.direction == CallDirection::Missed)
+        .count()
+        + app.state.unread_total();
+    ui.horizontal(|ui| {
+        for (tab, icon, label, badge) in [
+            (MainTab::Contacts, Icon::Person, t.tab_contacts, 0),
+            (
+                MainTab::Conversations,
+                Icon::Clock,
+                t.tab_conversations,
+                missed,
+            ),
+            (MainTab::Phone, Icon::Keypad, t.tab_phone, 0),
+            (
+                MainTab::Meetings,
+                Icon::Calendar,
+                t.tab_meetings,
+                app.state.invitations.len(),
+            ),
+        ] {
+            let r = icons::button(
+                ui,
+                icon,
+                label,
+                44.0,
+                app.tab == tab,
+                true,
+                pal.muted,
+                pal.primary,
+            )
+            .on_hover_text(label);
+            if badge > 0 {
+                let c = r.rect.right_top() + Vec2::new(-8.0, 8.0);
+                ui.painter().circle_filled(c, 8.0, pal.error);
+                ui.painter().text(
+                    c,
+                    egui::Align2::CENTER_CENTER,
+                    badge.min(99).to_string(),
+                    egui::FontId::proportional(9.5),
+                    pal.on_primary,
+                );
+            }
+            if r.clicked() {
+                app.tab = tab;
+            }
+        }
+        // Chat rooms: a tab of their own where the server offers persistent chat.
+        let rooms = app.state.capabilities.persistent_chat.clone();
+        if rooms.usable() {
+            let r = icons::button(
+                ui,
+                Icon::Chat,
+                t.filter_rooms,
+                44.0,
+                app.tab == MainTab::Rooms,
+                true,
+                pal.muted,
+                pal.primary,
+            )
+            .on_hover_text(t.filter_rooms);
+            if r.clicked() {
+                app.tab = MainTab::Rooms;
+            }
+        } else if app.tab == MainTab::Rooms {
+            app.tab = MainTab::Contacts;
+        }
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            let menu = icons::button(
+                ui,
+                Icon::ChevronDown,
+                t.main_menu,
+                22.0,
+                false,
+                true,
+                pal.muted,
+                pal.primary,
+            )
+            .on_hover_text(t.main_menu);
+            egui::Popup::menu(&menu).show(|ui| main_menu(app, ui));
+            let gear = icons::button(
+                ui,
+                Icon::Gear,
+                t.options,
+                34.0,
+                false,
+                true,
+                pal.muted,
+                pal.primary,
+            )
+            .on_hover_text(t.options);
+            if gear.clicked() {
+                app.open_options(0);
+            }
+        });
+    });
+}
+
+/// The main menu: file, meeting, tools, help.
+pub fn main_menu(app: &mut CommsUi, ui: &mut Ui) {
+    let t = app.t;
+    ui.set_min_width(200.0);
+    ui.menu_button(t.menu_file, |ui| {
+        if ui.button(t.sign_out).clicked() {
+            app.emit(UiIntent::SignOut);
+        }
+        ui.menu_button(t.my_status, |ui| status_menu(app, ui));
+        if ui.button(t.view_history).clicked() {
+            app.tab = MainTab::Conversations;
+            ui.close();
+        }
+        ui.separator();
+        if ui.button(t.close_window).clicked() {
+            app.emit(UiIntent::Minimize);
+        }
+        if ui.button(t.quit).clicked() {
+            app.emit(UiIntent::Quit);
+        }
+    });
+    let meet = app.state.capabilities.group_chat.clone();
+    if ui
+        .add_enabled(meet.usable(), egui::Button::new(t.meet_now))
+        .clicked()
+    {
+        app.emit(UiIntent::StartGroup { invite: Vec::new() });
+        ui.close();
+    }
+    ui.menu_button(t.menu_tools, |ui| {
+        let mut top = app.prefs.always_on_top;
+        if ui.checkbox(&mut top, t.always_on_top).changed() {
+            app.prefs.always_on_top = top;
+            app.emit(UiIntent::PrefsChanged);
+        }
+        ui.separator();
+        if ui.button(t.audio_device_settings).clicked() {
+            app.open_options(crate::views::options::AUDIO);
+            ui.close();
+        }
+        if ui.button(t.video_device_settings).clicked() {
+            app.open_options(crate::views::options::VIDEO);
+            ui.close();
+        }
+        if ui.button(t.options).clicked() {
+            app.open_options(0);
+            ui.close();
+        }
+    });
+    ui.menu_button(t.menu_help, |ui| {
+        if ui.button(t.about).clicked() {
+            app.open_window(crate::app::Win::About);
+            ui.close();
+        }
+    });
+}
+
+/// The newest warning or error, until the user closes it.
+fn alert(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let Some(n) = app
+        .state
+        .notices
+        .iter()
+        .rev()
+        .find(|n| n.kind != NoticeKind::Info)
+        .filter(|n| n.at > app.dismissed_alert)
+        .cloned()
+    else {
+        return;
+    };
+    egui::Panel::top("main-alert")
+        .frame(
+            Frame::new()
+                .fill(pal.warning.gamma_multiply(0.22))
+                .inner_margin(Margin::symmetric(10, 6)),
+        )
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                let w = ui.available_width() - 28.0;
+                ui.allocate_ui(Vec2::new(w, 0.0), |ui| {
+                    ui.label(
+                        RichText::new(&n.text)
+                            .size(theme::text::SMALL)
+                            .color(pal.ink),
+                    );
+                });
+                if ui
+                    .small_button("×")
+                    .on_hover_text(app.t.close_alert)
+                    .clicked()
+                {
+                    app.dismissed_alert = n.at;
+                }
+            });
+        });
+}
+
+fn footer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    egui::Panel::bottom("main-foot")
+        .exact_size(30.0)
+        .frame(
+            Frame::new()
+                .fill(pal.surface_subtle)
+                .inner_margin(Margin::symmetric(10, 4))
+                .stroke(Stroke::new(1.0, pal.border)),
+        )
+        .show(ui, |ui| {
+            ui.horizontal_centered(|ui| {
+                let r = icons::button(
+                    ui,
+                    Icon::Speaker,
+                    t.audio_device_settings,
+                    22.0,
+                    false,
+                    true,
+                    pal.muted,
+                    pal.primary,
+                )
+                .on_hover_text(t.audio_device_settings);
+                if r.clicked() {
+                    app.open_options(crate::views::options::AUDIO);
+                }
+                // The state of the connection, in words, where it is not simply connected.
+                let state = if app.demo {
+                    Some((pal.warning, t.status_demo.to_string()))
+                } else {
+                    match &app.state.connection {
+                        Connection::Degraded(why) => {
+                            Some((pal.warning, format!("{} – {why}", t.status_degraded)))
+                        }
+                        Connection::Disconnected(why) => {
+                            Some((pal.error, format!("{} – {why}", t.status_disconnected)))
+                        }
+                        _ => None,
+                    }
+                };
+                if let Some((c, text)) = state {
+                    let (r, _) = ui.allocate_exact_size(Vec2::splat(10.0), Sense::hover());
+                    ui.painter().circle_filled(r.center(), 4.0, c);
+                    widgets::ellipsis(
+                        ui,
+                        RichText::new(text).size(theme::text::SMALL).color(pal.ink),
+                    );
+                }
+                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    if matches!(app.state.connection, Connection::Disconnected(_))
+                        && !app.demo
+                        && ui.small_button(t.sign_in_again).clicked()
+                    {
+                        app.emit(UiIntent::SignOut);
+                    }
+                    if let Some(n) = app.state.notices.back() {
+                        widgets::ellipsis(
+                            ui,
+                            RichText::new(&n.text)
+                                .size(theme::text::SMALL)
+                                .color(pal.muted),
+                        );
+                    }
+                });
+            });
+        });
+}
+
+fn search_field(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, hint: &str) {
+    Frame::new()
+        .stroke(Stroke::new(1.0, pal.border))
+        .corner_radius(CornerRadius::same(4))
+        .inner_margin(Margin::symmetric(8, 4))
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                let edit = egui::TextEdit::singleline(&mut app.search)
+                    .hint_text(hint)
+                    .frame(Frame::NONE)
+                    .char_limit(128)
+                    .desired_width(ui.available_width() - 24.0);
+                let r = ui.add(edit);
+                if app.focus_search {
+                    r.request_focus();
+                    app.focus_search = false;
+                }
+                r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::TextInput, true, "search"));
+                let (rect, _) = ui.allocate_exact_size(Vec2::splat(16.0), Sense::hover());
+                icons::draw(ui.painter(), rect, Icon::Search, pal.muted);
+            });
+        });
+}
+
+fn sub_tabs<T: Copy + PartialEq>(ui: &mut Ui, pal: &Palette, current: &mut T, items: &[(T, &str)]) {
+    ui.horizontal(|ui| {
+        for (v, label) in items {
+            let selected = *current == *v;
+            let text = RichText::new(label.to_uppercase())
+                .size(theme::text::SMALL)
+                .color(if selected { pal.ink } else { pal.muted });
+            let text = if selected {
+                text.family(theme::bold())
+            } else {
+                text
+            };
+            let r = ui.add(egui::Button::selectable(selected, text));
+            if r.clicked() {
+                *current = *v;
+            }
+        }
+    });
+}
+
+fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    ui.horizontal(|ui| {
+        ui.allocate_ui(Vec2::new(ui.available_width() - 40.0, 30.0), |ui| {
+            search_field(app, ui, pal, t.find_someone);
+        });
+        let add = icons::button(
+            ui,
+            Icon::AddPerson,
+            t.add_contact,
+            30.0,
+            false,
+            false,
+            pal.muted,
+            pal.primary,
+        );
+        add.on_hover_text(t.add_contact_unavailable);
+    });
+    if !app.search.trim().is_empty() {
+        egui::ScrollArea::vertical()
+            .id_salt("search")
+            .auto_shrink([false, false])
+            .show(ui, |ui| crate::views::search::results(app, ui, pal));
+        return;
+    }
+    let mut view = app.contacts_view;
+    sub_tabs(
+        ui,
+        pal,
+        &mut view,
+        &[
+            (ContactsView::Groups, t.contacts_groups),
+            (ContactsView::Status, t.contacts_status),
+            (ContactsView::Relationships, t.contacts_relationships),
+            (ContactsView::New, t.contacts_new),
+        ],
+    );
+    app.contacts_view = view;
+    ui.add_space(4.0);
+    let mut all: Vec<Contact> = app.state.contacts.values().cloned().collect();
+    if app.prefs.sort_by_availability {
+        all.sort_by(|a, b| {
+            a.presence
+                .cmp(&b.presence)
+                .then(a.display_name().cmp(b.display_name()))
+        });
+    } else {
+        all.sort_by(|a, b| {
+            a.display_name()
+                .to_lowercase()
+                .cmp(&b.display_name().to_lowercase())
+        });
+    }
+    let groups: Vec<(String, Vec<Contact>)> = match app.contacts_view {
+        ContactsView::Groups => {
+            let mut out: Vec<(String, Vec<Contact>)> = Vec::new();
+            if app.prefs.favorites_group {
+                let favs: Vec<Contact> = all
+                    .iter()
+                    .filter(|c| app.prefs.favorites.contains(&c.uri))
+                    .cloned()
+                    .collect();
+                out.push((t.favorites.to_string(), favs));
+            }
+            let mut by_group: std::collections::BTreeMap<String, Vec<Contact>> = Default::default();
+            let away = |p: Presence| {
+                matches!(
+                    p,
+                    Presence::Away | Presence::BeRightBack | Presence::Offline | Presence::Unknown
+                )
+            };
+            let mut absent = Vec::new();
+            for c in &all {
+                if app.prefs.away_group && away(c.presence) {
+                    absent.push(c.clone());
+                    continue;
+                }
+                let g = if c.group.is_empty() {
+                    t.other_contacts.to_string()
+                } else {
+                    c.group.clone()
+                };
+                by_group.entry(g).or_default().push(c.clone());
+            }
+            out.extend(by_group);
+            if app.prefs.away_group {
+                out.push((t.status_away_offline.to_string(), absent));
+            }
+            out
+        }
+        ContactsView::Status => {
+            let mut out: Vec<(String, Vec<Contact>)> = Vec::new();
+            for (label, f) in [
+                (
+                    t.status_online,
+                    &(|p: Presence| matches!(p, Presence::Available)) as &dyn Fn(Presence) -> bool,
+                ),
+                (t.status_busy, &|p| {
+                    matches!(
+                        p,
+                        Presence::Busy | Presence::InACall | Presence::DoNotDisturb
+                    )
+                }),
+                (t.status_away, &|p| {
+                    matches!(p, Presence::Away | Presence::BeRightBack)
+                }),
+                (t.status_offline, &|p| {
+                    matches!(p, Presence::Offline | Presence::Unknown)
+                }),
+            ] {
+                out.push((
+                    label.to_string(),
+                    all.iter().filter(|c| f(c.presence)).cloned().collect(),
+                ));
+            }
+            out
+        }
+        ContactsView::Relationships | ContactsView::New => {
+            ui.label(RichText::new(t.contacts_view_unavailable).color(pal.muted));
+            return;
+        }
+    };
+    egui::ScrollArea::vertical()
+        .id_salt("contacts")
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            if all.is_empty() {
+                ui.label(RichText::new(t.no_contacts).color(pal.muted));
+            }
+            for (name, members) in groups {
+                let open = !app.collapsed.contains(&name);
+                let head = format!("{} ({})", name.to_uppercase(), members.len());
+                let clicked = ui
+                    .horizontal(|ui| {
+                        let (rect, _) = ui.allocate_exact_size(Vec2::splat(12.0), Sense::hover());
+                        icons::draw(
+                            ui.painter(),
+                            rect,
+                            if open {
+                                Icon::ChevronDown
+                            } else {
+                                Icon::ChevronRight
+                            },
+                            pal.muted,
+                        );
+                        ui.add(
+                            egui::Button::new(
+                                RichText::new(head)
+                                    .size(theme::text::SMALL)
+                                    .color(pal.muted),
+                            )
+                            .frame(false),
+                        )
+                        .clicked()
+                    })
+                    .inner;
+                if clicked {
+                    if open {
+                        app.collapsed.insert(name.clone());
+                    } else {
+                        app.collapsed.remove(&name);
+                    }
+                }
+                if open {
+                    for c in members {
+                        contact_row(app, ui, pal, &c);
+                    }
+                }
+                ui.add_space(4.0);
+            }
+        });
+}
+
+/// The row of a contact known by address (from the contact list or a search).
+pub fn contact_row_of(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, uri: &str) {
+    let c = app.state.contacts.get(uri).cloned().or_else(|| {
+        app.state
+            .search_results
+            .iter()
+            .find(|c| c.uri == uri)
+            .cloned()
+    });
+    if let Some(c) = c {
+        contact_row(app, ui, pal, &c);
+    }
+}
+
+fn contact_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, c: &Contact) {
+    let t = app.t;
+    let two_lines = !app.prefs.compact_contacts;
+    let h = if two_lines { 48.0 } else { 28.0 };
+    let (rect, resp) = ui.allocate_exact_size(Vec2::new(ui.available_width(), h), Sense::click());
+    if resp.hovered() {
+        ui.painter().rect_filled(rect, 4.0, pal.surface_subtle);
+    }
+    let mut child = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(rect.shrink2(Vec2::new(4.0, 2.0)))
+            .layout(Layout::left_to_right(Align::Center)),
+    );
+    widgets::avatar(
+        &mut child,
+        c.display_name(),
+        if two_lines { 36.0 } else { 20.0 },
+        Some(c.presence),
+        pal,
+    );
+    child.vertical(|ui| {
+        widgets::ellipsis(ui, RichText::new(c.display_name()).color(pal.ink));
+        if two_lines {
+            let sub = if c.note.is_empty() {
+                t.presence(c.presence).to_string()
+            } else {
+                format!("{} – {}", t.presence(c.presence), c.note)
+            };
+            widgets::ellipsis(
+                ui,
+                RichText::new(sub).size(theme::text::SMALL).color(pal.muted),
+            );
+        }
+    });
+    let info = format!("{}, {}", c.display_name(), t.presence(c.presence));
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &info));
+    if resp.double_clicked() {
+        app.chat_with(&c.uri);
+    }
+    resp.context_menu(|ui| contact_menu(app, ui, &c.uri));
+}
+
+/// What can be done with a contact (also from search results).
+pub fn contact_menu(app: &mut CommsUi, ui: &mut Ui, uri: &str) {
+    let t = app.t;
+    let caps = app.state.capabilities.clone();
+    if ui
+        .add_enabled(caps.chat.usable(), egui::Button::new(t.send_im))
+        .clicked()
+    {
+        app.chat_with(uri);
+        ui.close();
+    }
+    let idle = app.state.active_call().is_none();
+    if ui
+        .add_enabled(caps.audio_call.usable() && idle, egui::Button::new(t.call))
+        .clicked()
+    {
+        app.call(uri, false);
+        ui.close();
+    }
+    if ui
+        .add_enabled(
+            caps.video_call.usable() && idle,
+            egui::Button::new(t.video_call),
+        )
+        .clicked()
+    {
+        app.call(uri, true);
+        ui.close();
+    }
+    ui.separator();
+    let fav = app.prefs.favorites.contains(uri);
+    if ui
+        .button(if fav { t.unfavorite } else { t.favorite })
+        .clicked()
+    {
+        app.toggle_favorite(uri.to_string());
+        ui.close();
+    }
+    if ui.button(t.contact_card).clicked() {
+        app.open_card(uri);
+        ui.close();
+    }
+}
+
+fn conversations(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    search_field(app, ui, pal, t.find_someone);
+    let mut f = app.conv_filter;
+    sub_tabs(
+        ui,
+        pal,
+        &mut f,
+        &[
+            (ConvFilter::All, t.filter_all),
+            (ConvFilter::Missed, t.filter_missed),
+            (ConvFilter::Calls, t.filter_calls),
+        ],
+    );
+    app.conv_filter = f;
+    let needle = app.search.trim().to_lowercase();
+    egui::ScrollArea::vertical()
+        .id_salt("conversations")
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            let mut any = false;
+            if app.conv_filter != ConvFilter::Calls {
+                let mut keys: Vec<(u64, ConvKey)> = app
+                    .state
+                    .conversations
+                    .iter()
+                    .filter(|c| app.conv_filter == ConvFilter::All || c.unread > 0)
+                    .filter(|c| needle.is_empty() || c.title.to_lowercase().contains(&needle))
+                    .map(|c| (c.last_activity, c.key))
+                    .collect();
+                keys.sort_by(|a, b| b.cmp(a));
+                for (_, k) in keys {
+                    any = true;
+                    conversation_row(app, ui, pal, k);
+                }
+            }
+            if app.conv_filter != ConvFilter::All || app.state.conversations.is_empty() {
+                for r in app.state.call_history.clone() {
+                    if app.conv_filter == ConvFilter::Missed && r.direction != CallDirection::Missed
+                    {
+                        continue;
+                    }
+                    any = true;
+                    let name = app.state.name_of(&r.peer);
+                    let sub = format!(
+                        "{} · {}",
+                        t.call_direction(r.direction),
+                        crate::format::clock(r.at, app.utc_offset)
+                    );
+                    let resp = ui.add(
+                        egui::Button::new(RichText::new(format!("{name}\n{sub}")).color(
+                            if r.direction == CallDirection::Missed {
+                                pal.error
+                            } else {
+                                pal.ink
+                            },
+                        ))
+                        .frame(false),
+                    );
+                    resp.context_menu(|ui| contact_menu(app, ui, &r.peer));
+                }
+            }
+            if !any {
+                ui.label(RichText::new(t.no_conversations_yet).color(pal.muted));
+            }
+        });
+}
+
+fn conversation_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
+    let Some(c) = app.state.conversation(key).cloned() else {
+        return;
+    };
+    let (rect, resp) =
+        ui.allocate_exact_size(Vec2::new(ui.available_width(), 46.0), Sense::click());
+    if resp.hovered() {
+        ui.painter().rect_filled(rect, 4.0, pal.surface_subtle);
+    }
+    let mut child = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(rect.shrink2(Vec2::new(4.0, 2.0)))
+            .layout(Layout::left_to_right(Align::Center)),
+    );
+    let presence = c
+        .peer
+        .as_ref()
+        .and_then(|p| app.state.contacts.get(p))
+        .map(|k| k.presence);
+    widgets::avatar(&mut child, &c.title, 34.0, presence, pal);
+    child.vertical(|ui| {
+        let title = if c.unread > 0 {
+            RichText::new(&c.title).family(theme::bold()).color(pal.ink)
+        } else {
+            RichText::new(&c.title).color(pal.ink)
+        };
+        widgets::ellipsis(ui, title);
+        let last = c
+            .last_text()
+            .map(|m| m.text.replace('\n', " "))
+            .unwrap_or_default();
+        widgets::ellipsis(
+            ui,
+            RichText::new(last)
+                .size(theme::text::SMALL)
+                .color(pal.muted),
+        );
+    });
+    let info = format!("{}, {}", c.title, app.t.unread_count(c.unread));
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &info));
+    if resp.clicked() || resp.double_clicked() {
+        app.select_conversation(key);
+    }
+}
+
+fn rooms(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    if ui
+        .button(t.load_rooms)
+        .on_hover_text(t.load_rooms_tip)
+        .clicked()
+    {
+        app.emit(UiIntent::LoadRooms);
+    }
+    ui.add_space(6.0);
+    let mut keys: Vec<(String, ConvKey)> = app
+        .state
+        .conversations
+        .iter()
+        .filter(|c| c.is_room())
+        .map(|c| (c.title.to_lowercase(), c.key))
+        .collect();
+    keys.sort();
+    egui::ScrollArea::vertical()
+        .id_salt("rooms")
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            if keys.is_empty() {
+                ui.label(RichText::new(t.no_rooms).color(pal.muted));
+            }
+            for (_, k) in keys {
+                conversation_row(app, ui, pal, k);
+            }
+        });
+}
+
+fn phone(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    ui.label(RichText::new(t.phone_address).color(pal.muted));
+    let r = ui.add(
+        egui::TextEdit::singleline(&mut app.dial)
+            .hint_text("sip:name@domain")
+            .char_limit(256)
+            .desired_width(f32::INFINITY),
+    );
+    r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::TextInput, true, "dial"));
+    ui.add_space(6.0);
+    // The keypad: digits go into the field (and as tones into a running call).
+    egui::Grid::new("keypad")
+        .spacing([8.0, 8.0])
+        .show(ui, |ui| {
+            for row in [
+                ["1", "2", "3"],
+                ["4", "5", "6"],
+                ["7", "8", "9"],
+                ["*", "0", "#"],
+            ] {
+                for k in row {
+                    if ui
+                        .add_sized([72.0, 40.0], egui::Button::new(RichText::new(k).size(18.0)))
+                        .clicked()
+                    {
+                        match app.state.active_call().map(|c| c.id) {
+                            Some(id) => app.emit(UiIntent::Dtmf {
+                                id,
+                                digits: k.to_string(),
+                            }),
+                            None => app.dial.push_str(k),
+                        }
+                    }
+                }
+                ui.end_row();
+            }
+        });
+    ui.add_space(8.0);
+    let address = crate::views::chats::normalise_address(&app.dial);
+    ui.horizontal(|ui| {
+        let caps = app.state.capabilities.clone();
+        let idle = app.state.active_call().is_none();
+        if ui
+            .add_enabled(
+                address.is_some() && idle && caps.audio_call.usable(),
+                egui::Button::new(t.call),
+            )
+            .clicked()
+        {
+            if let Some(a) = address.clone() {
+                app.call(&a, false);
+            }
+        }
+        if ui
+            .add_enabled(
+                address.is_some() && idle && caps.video_call.usable(),
+                egui::Button::new(t.video_call),
+            )
+            .clicked()
+        {
+            if let Some(a) = address {
+                app.call(&a, true);
+            }
+        }
+    });
+    ui.add_space(6.0);
+    ui.label(
+        RichText::new(t.phone_numbers_unavailable)
+            .size(theme::text::SMALL)
+            .color(pal.muted),
+    );
+    ui.add_space(10.0);
+    widgets::rule(ui, pal);
+    ui.label(
+        RichText::new(t.voicemail)
+            .family(theme::bold())
+            .color(pal.ink),
+    );
+    ui.label(
+        RichText::new(t.voicemail_unavailable)
+            .size(theme::text::SMALL)
+            .color(pal.muted),
+    );
+}

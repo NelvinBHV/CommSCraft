@@ -91,7 +91,7 @@ pub fn results(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 });
             }
             for uri in contacts {
-                crate::views::contacts::row(app, ui, pal, &uri);
+                crate::views::main_window::contact_row_of(app, ui, pal, &uri);
             }
             ui.add_space(8.0);
             ui.horizontal_wrapped(|ui| {
@@ -139,7 +139,7 @@ pub fn results(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                         });
                     }
                     for uri in directory {
-                        crate::views::contacts::row(app, ui, pal, &uri);
+                        crate::views::main_window::contact_row_of(app, ui, pal, &uri);
                     }
                 }
             }

@@ -2,7 +2,7 @@
 
 use crate::model::{AppState, Connection, ConvKey, Presence, View};
 use crate::text::{Lang, Texts};
-use crate::theme::{self, size, Palette};
+use crate::theme::{self, Palette};
 use crate::views;
 use egui::{Context, Key, KeyboardShortcut, Modifiers, Ui};
 use std::collections::{BTreeMap, BTreeSet};
@@ -89,6 +89,17 @@ pub enum UiIntent {
     PrefsChanged,
     /// The answer to a trust question (true: trust the domain and remember it).
     AnswerTrust(bool),
+    /// Tones in a call (DTMF).
+    Dtmf {
+        id: u32,
+        digits: String,
+    },
+    /// Close the application (signs out first).
+    Quit,
+    /// Minimize the main window.
+    Minimize,
+    /// Bring the main window forward.
+    FocusMain,
     /// The content of the meeting of this group conversation (function 44).
     JoinContent {
         key: ConvKey,
@@ -140,31 +151,6 @@ impl std::fmt::Debug for SignIn {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum ChatFilter {
-    #[default]
-    All,
-    Unread,
-    Groups,
-    /// Persistent chat rooms.
-    Rooms,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum ContactFilter {
-    #[default]
-    All,
-    Online,
-    Favorites,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum CallFilter {
-    #[default]
-    All,
-    Missed,
-}
-
 /// Local preferences: favourites (addresses or group titles), contrast and scale. No chat
 /// content is ever part of them.
 #[derive(Debug, Clone, PartialEq)]
@@ -173,6 +159,25 @@ pub struct Prefs {
     pub high_contrast: bool,
     pub scale: f32,
     pub context_open: bool,
+    pub lang: Lang,
+    pub always_on_top: bool,
+    /// Contacts in one line (name only) instead of two (name and status).
+    pub compact_contacts: bool,
+    pub sort_by_availability: bool,
+    /// Away, offline and unknown contacts in a group of their own.
+    pub away_group: bool,
+    pub favorites_group: bool,
+    /// A notification for new messages in conversations that are not open.
+    pub message_alerts: bool,
+    /// No notifications for messages while the own status is Do Not Disturb.
+    pub quiet_when_dnd: bool,
+    pub chat_text_size: f32,
+    pub sounds: bool,
+    pub quiet_sounds_busy: bool,
+    /// The camera device; empty: the default.
+    pub camera: String,
+    /// Show the participant list when joining a meeting.
+    pub meeting_participants: bool,
 }
 
 impl Default for Prefs {
@@ -182,8 +187,62 @@ impl Default for Prefs {
             high_contrast: false,
             scale: 1.0,
             context_open: true,
+            lang: Lang::De,
+            always_on_top: false,
+            compact_contacts: false,
+            sort_by_availability: false,
+            away_group: false,
+            favorites_group: true,
+            message_alerts: true,
+            quiet_when_dnd: true,
+            chat_text_size: 14.0,
+            sounds: true,
+            quiet_sounds_busy: false,
+            camera: String::new(),
+            meeting_participants: false,
         }
     }
+}
+
+/// The tabs of the main window.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum MainTab {
+    #[default]
+    Contacts,
+    Conversations,
+    Phone,
+    Meetings,
+    /// Persistent chat rooms (only when the server offers them).
+    Rooms,
+}
+
+/// How the contacts tab groups.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ContactsView {
+    #[default]
+    Groups,
+    Status,
+    Relationships,
+    New,
+}
+
+/// The filter of the conversations tab.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ConvFilter {
+    #[default]
+    All,
+    Missed,
+    Calls,
+}
+
+/// The windows besides the main window.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Win {
+    Conv(ConvKey),
+    Call(u32),
+    Options,
+    About,
+    Card,
 }
 
 /// What the address dialog is for.
@@ -219,9 +278,6 @@ pub struct CommsUi {
     pub(crate) selected_conv: Option<ConvKey>,
     pub(crate) selected_contact: Option<String>,
     pub(crate) selected_meeting: Option<usize>,
-    pub(crate) chat_filter: ChatFilter,
-    pub(crate) contact_filter: ContactFilter,
-    pub(crate) call_filter: CallFilter,
     pub(crate) search: String,
     pub(crate) focus_search: bool,
     pub(crate) drafts: BTreeMap<ConvKey, String>,
@@ -237,6 +293,24 @@ pub struct CommsUi {
     /// The next group conversation that appears is selected (the user just started or joined
     /// one).
     pub(crate) select_next_group: bool,
+    pub(crate) tab: MainTab,
+    pub(crate) contacts_view: ContactsView,
+    pub(crate) conv_filter: ConvFilter,
+    pub(crate) note: String,
+    /// The newest warning the user closed (its time).
+    pub(crate) dismissed_alert: u64,
+    pub(crate) collapsed: BTreeSet<String>,
+    pub(crate) dial: String,
+    pub(crate) windows: Vec<Win>,
+    pub(crate) focus_window: Option<Win>,
+    pub(crate) options_page: usize,
+    pub(crate) prefs_draft: Option<Prefs>,
+    pub(crate) card: Option<String>,
+    pub(crate) participants_open: BTreeSet<ConvKey>,
+    /// Message notifications the user ignored: conversation and its message count then.
+    pub(crate) toasts_seen: BTreeSet<(ConvKey, usize)>,
+    /// Calls whose window was opened once (closing it does not open it again).
+    pub(crate) call_windows_opened: BTreeSet<u32>,
 }
 
 impl CommsUi {
@@ -249,13 +323,10 @@ impl CommsUi {
             now: 0,
             demo: false,
             logo: None,
-            view: View::Chats,
+            view: View::Contacts,
             selected_conv: None,
             selected_contact: None,
             selected_meeting: None,
-            chat_filter: ChatFilter::All,
-            contact_filter: ContactFilter::All,
-            call_filter: CallFilter::All,
             search: String::new(),
             focus_search: false,
             drafts: BTreeMap::new(),
@@ -268,6 +339,21 @@ impl CommsUi {
             intents: Vec::new(),
             window_width: 1440.0,
             select_next_group: false,
+            tab: MainTab::Contacts,
+            contacts_view: ContactsView::Groups,
+            conv_filter: ConvFilter::All,
+            note: String::new(),
+            dismissed_alert: 0,
+            collapsed: BTreeSet::new(),
+            dial: String::new(),
+            windows: Vec::new(),
+            focus_window: None,
+            options_page: 0,
+            prefs_draft: None,
+            card: None,
+            participants_open: BTreeSet::new(),
+            toasts_seen: BTreeSet::new(),
+            call_windows_opened: BTreeSet::new(),
         }
     }
 
@@ -288,14 +374,26 @@ impl CommsUi {
         self.view
     }
 
+    /// Selects what the main window shows (the views of the command line map to its tabs).
     pub fn set_view(&mut self, v: View) {
         self.view = v;
+        self.tab = match v {
+            View::Chats => MainTab::Conversations,
+            View::Contacts => MainTab::Contacts,
+            View::Calls => MainTab::Phone,
+            View::Meetings => MainTab::Meetings,
+            View::Settings => {
+                self.open_options(0);
+                self.tab
+            }
+        };
     }
 
     pub fn selected_conversation(&self) -> Option<ConvKey> {
         self.selected_conv
     }
 
+    /// Opens (or brings forward) the window of a conversation.
     pub fn select_conversation(&mut self, key: ConvKey) {
         self.view = View::Chats;
         self.selected_conv = Some(key);
@@ -303,6 +401,67 @@ impl CommsUi {
         if let Some(c) = self.state.conversation_mut(key) {
             c.unread = 0;
         }
+        let open_participants = self.prefs.meeting_participants
+            && self.state.conversation(key).is_some_and(|c| c.is_group());
+        if open_participants {
+            self.participants_open.insert(key);
+        }
+        self.open_window(Win::Conv(key));
+    }
+
+    /// The viewport of a window of its own (screenshots).
+    pub fn viewport_of(&self, w: Win) -> egui::ViewportId {
+        views::conv_window::viewport_of(w)
+    }
+
+    /// The open windows besides the main window.
+    pub fn windows(&self) -> &[Win] {
+        &self.windows
+    }
+
+    pub fn open_window(&mut self, w: Win) {
+        if !self.windows.contains(&w) {
+            self.windows.push(w);
+        }
+        self.focus_window = Some(w);
+    }
+
+    pub fn close_window(&mut self, w: Win) {
+        self.windows.retain(|x| *x != w);
+        if w == Win::Options {
+            self.prefs_draft = None;
+        }
+        if let Win::Conv(k) = w {
+            if self.selected_conv == Some(k) {
+                self.selected_conv = None;
+            }
+        }
+    }
+
+    pub fn open_options(&mut self, page: usize) {
+        self.options_page = page.min(13);
+        self.open_window(Win::Options);
+    }
+
+    pub fn open_card(&mut self, uri: &str) {
+        self.card = Some(uri.to_string());
+        self.open_window(Win::Card);
+    }
+
+    /// Brings the main window forward (dialogs that live there, like the address dialog).
+    pub fn focus_main(&mut self) {
+        self.focus_window = None;
+        self.intents.push(UiIntent::FocusMain);
+    }
+
+    /// A call (with video when asked); its window opens when the session reports it.
+    pub fn call(&mut self, peer: &str, video: bool) {
+        let peer = peer.to_string();
+        self.emit(if video {
+            UiIntent::VideoCall { peer }
+        } else {
+            UiIntent::CallUser { peer }
+        });
     }
 
     pub fn select_contact(&mut self, uri: &str) {
@@ -430,37 +589,41 @@ impl CommsUi {
         theme::apply(ctx, &pal);
         ctx.set_zoom_factor(self.prefs.scale.clamp(1.0, 2.0));
         self.window_width = ctx.content_rect().width();
-        // What is on screen is read: the open conversation has no unread messages.
-        if self.view == View::Chats {
-            if let Some(c) = self
-                .selected_conv
-                .and_then(|k| self.state.conversation_mut(k))
-            {
-                c.unread = 0;
-            }
-        }
         self.shortcuts(ctx);
-        views::shell::statusbar(self, ui, &pal);
-        views::shell::topbar(self, ui, &pal);
         let signed_out = matches!(
             self.state.connection,
             Connection::SignedOut | Connection::Connecting | Connection::Failed(_)
         ) && !self.demo;
         views::signin::trust_dialog(self, ctx, &pal);
         if signed_out {
+            self.windows.clear();
+            views::shell::statusbar(self, ui, &pal);
             views::signin::show(self, ui, &pal);
         } else {
-            views::shell::rail(self, ui, &pal);
-            views::shell::list_panel(self, ui, &pal);
-            let show_context = self.prefs.context_open
-                && self.window_width >= size::CONTEXT_MIN_WINDOW
-                && self.view != View::Settings;
-            if show_context {
-                views::shell::context_panel(self, ui, &pal);
-            }
-            views::shell::main_panel(self, ui, &pal);
+            self.follow_calls();
+            views::main_window::show(self, ui, &pal);
             views::chats::new_chat_dialog(self, ctx, &pal);
+            views::conv_window::show_all(self, ctx, &pal);
         }
         std::mem::take(&mut self.intents)
+    }
+
+    /// Every call that is not ringing in gets its window once; ended calls lose it.
+    fn follow_calls(&mut self) {
+        let ids: Vec<u32> = self
+            .state
+            .calls
+            .iter()
+            .filter(|c| c.state != crate::model::CallState::Incoming)
+            .map(|c| c.id)
+            .collect();
+        for id in ids {
+            if self.call_windows_opened.insert(id) {
+                self.open_window(Win::Call(id));
+            }
+        }
+        let live: BTreeSet<u32> = self.state.calls.iter().map(|c| c.id).collect();
+        self.windows
+            .retain(|w| !matches!(w, Win::Call(id) if !live.contains(id)));
     }
 }

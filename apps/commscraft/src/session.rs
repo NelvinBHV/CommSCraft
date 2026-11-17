@@ -107,6 +107,17 @@ pub enum ToWorker {
         content: i64,
         choice: i64,
     },
+    /// Local settings the worker follows: the camera (empty: the default), sounds.
+    Settings {
+        camera: String,
+        sounds: bool,
+        quiet_busy: bool,
+    },
+    /// Tones in a call (DTMF, RFC 4733).
+    Dtmf {
+        id: u32,
+        digits: String,
+    },
     /// Persistent chat: connect, list our rooms, join them.
     LoadRooms,
     SendToRoom {
@@ -347,6 +358,9 @@ struct Session {
     /// Rooms whose history was asked for (once per room and sign-in).
     room_history: BTreeSet<String>,
     v: Videos,
+    /// Ringing and alert sounds (the options); fewer while busy.
+    sounds: bool,
+    quiet_busy: bool,
     content_tx: mpsc::Sender<meeting_content::FromContent>,
     /// Meeting content connections by conversation, with the users they named.
     content: BTreeMap<u32, (meeting_content::ContentHandle, BTreeMap<i64, String>)>,
@@ -625,6 +639,8 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         certificate_tried: false,
         room_history: BTreeSet::new(),
         v: Videos::new(video_tx, rdp_tx),
+        sounds: true,
+        quiet_busy: false,
         content_tx,
         content: BTreeMap::new(),
         tls,
@@ -1029,6 +1045,11 @@ impl Session {
         }
     }
 
+    /// Alert sounds: on, unless switched off or kept to a minimum while busy.
+    fn alert_sounds(&self) -> bool {
+        self.sounds && !(self.quiet_busy && self.profile.presence == Presence::Busy)
+    }
+
     fn stop_content(&mut self, conversation: u32) {
         if let Some((h, _)) = self.content.remove(&conversation) {
             let _ = h.tx.send(meeting_content::ToContent::Stop);
@@ -1316,6 +1337,32 @@ impl Session {
                 if let Some((h, _)) = self.content.get(&session) {
                     let _ =
                         h.tx.send(meeting_content::ToContent::Vote { content, choice });
+                }
+                Vec::new()
+            }
+            ToWorker::Settings {
+                camera,
+                sounds,
+                quiet_busy,
+            } => {
+                self.v.camera = if camera.is_empty() {
+                    std::env::var("COMMSCRAFT_CAMERA").unwrap_or_else(|_| "/dev/video0".into())
+                } else {
+                    camera
+                };
+                self.sounds = sounds;
+                self.quiet_busy = quiet_busy;
+                if !sounds {
+                    self.cues.stop_all();
+                }
+                Vec::new()
+            }
+            ToWorker::Dtmf { id, digits } => {
+                for d in digits
+                    .chars()
+                    .filter(|c| commscraft_rtp::dtmf_event(*c).is_some())
+                {
+                    self.to_media(id, calls::ToMedia::Dtmf(d));
                 }
                 Vec::new()
             }
@@ -1694,7 +1741,9 @@ impl Session {
                 sender,
                 text,
             } => {
-                self.cues.notify(now_ms());
+                if self.alert_sounds() {
+                    self.cues.notify(now_ms());
+                }
                 out.event(AppEvent::Text {
                     session: conversation,
                     sender,
@@ -1798,7 +1847,9 @@ impl Session {
                 });
             }
             E::ConferenceInvitation { from, invitation } => {
-                self.cues.notify(now_ms());
+                if self.alert_sounds() {
+                    self.cues.notify(now_ms());
+                }
                 out.notice(
                     NoticeKind::Info,
                     format!(
@@ -1825,7 +1876,9 @@ impl Session {
                 }
             }
             E::IncomingCall { call, from } => {
-                self.cues.start_ring(call);
+                if self.sounds {
+                    self.cues.start_ring(call);
+                }
                 out.event(AppEvent::CallStarted {
                     id: call,
                     peer: from,
@@ -1935,7 +1988,9 @@ impl Session {
                 more.extend(self.engine.command(C::DeclineTransfer { call }, t));
             }
             E::IncomingScreenShare { call, from, rdp } => {
-                self.cues.start_ring(call);
+                if self.sounds {
+                    self.cues.start_ring(call);
+                }
                 self.v.screen_offers.insert(call, rdp);
                 out.event(AppEvent::CallStarted {
                     id: call,
