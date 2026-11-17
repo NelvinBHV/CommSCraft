@@ -26,7 +26,7 @@ const ICON: &[u8] = include_bytes!("../../../assets/branding/CommSCraft-icon-128
 const USAGE: &str =
     "usage: commscraft [--demo] [--lang de|en] [--view chats|contacts|calls|meetings|settings]
                   [--size WIDTHxHEIGHT] [--screenshot FILE.png] [--screenshot-after SECONDS]
-                  [--ca-file PEM] [--commands FILE]
+                  [--ca-file PEM] [--commands FILE] [--embed-windows]
                   [--sign-in sip:ADDRESS --user USER [--domain DOMAIN] [--server HOST:PORT] [--kerberos] [--tls-dsk]]
   --ca-file    adds an enterprise CA to the system trust store (never replaces the checks)
   --sign-in    signs in at start; the password is the first line of standard input
@@ -34,6 +34,8 @@ const USAGE: &str =
 
 struct Args {
     demo: bool,
+    /// Windows of their own drawn inside the main window (screenshots of everything).
+    embed_windows: bool,
     lang: Option<Lang>,
     view: View,
     size: (f32, f32),
@@ -47,6 +49,7 @@ struct Args {
 fn parse_args() -> Result<Args, String> {
     let mut a = Args {
         demo: false,
+        embed_windows: false,
         lang: None,
         view: View::Contacts,
         size: (420.0, 760.0),
@@ -62,6 +65,7 @@ fn parse_args() -> Result<Args, String> {
     while let Some(arg) = it.next() {
         match arg.as_str() {
             "--demo" => a.demo = true,
+            "--embed-windows" => a.embed_windows = true,
             "--lang" => {
                 a.lang = Some(match it.next().as_deref() {
                     Some("de") => Lang::De,
@@ -575,6 +579,9 @@ fn main() {
         options,
         Box::new(move |cc| {
             cc.egui_ctx.set_fonts(fonts);
+            if args.embed_windows {
+                cc.egui_ctx.set_embed_viewports(true);
+            }
             let mut ui = CommsUi::new(lang, offset);
             ui.set_view(args.view);
             // Screenshots use the defaults, not the user's preferences.

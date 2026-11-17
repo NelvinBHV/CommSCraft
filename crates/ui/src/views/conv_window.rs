@@ -486,7 +486,8 @@ fn controls(
             if ui
                 .add_enabled(
                     connected && caps.hold.usable(),
-                    egui::Button::selectable(call.held, if call.held { t.resume } else { t.hold }),
+                    egui::Button::new(if call.held { t.resume } else { t.hold })
+                        .selected(call.held),
                 )
                 .clicked()
             {
