@@ -6,6 +6,7 @@
 //! quits (used for the documentation screenshots). `--commands FILE` follows a file of test
 //! commands (`script.rs`) that trigger the same actions as the interface.
 
+mod desktop;
 mod fonts;
 mod idle;
 mod photos;
@@ -336,6 +337,7 @@ impl DesktopApp {
                     sounds: p.sounds,
                     quiet_busy: p.quiet_sounds_busy,
                     save_history: p.save_history,
+                    audio_device: p.audio_device.clone(),
                 });
             }
             return;
@@ -472,6 +474,12 @@ impl DesktopApp {
                 if let Err(e) = prefs::save(&self.ui.prefs) {
                     eprintln!("preferences not saved: {e}");
                 }
+                if self.ui.prefs.autostart != desktop::autostart_enabled() {
+                    if let Err(e) = desktop::set_autostart(self.ui.prefs.autostart) {
+                        eprintln!("autostart not changed: {e}");
+                        self.ui.prefs.autostart = desktop::autostart_enabled();
+                    }
+                }
                 self.lang = self.ui.prefs.lang;
                 let p = &self.ui.prefs;
                 Some(ToWorker::Settings {
@@ -479,6 +487,7 @@ impl DesktopApp {
                     sounds: p.sounds,
                     quiet_busy: p.quiet_sounds_busy,
                     save_history: p.save_history,
+                    audio_device: p.audio_device.clone(),
                 })
             }
             UiIntent::Dtmf { id, digits } => Some(ToWorker::Dtmf { id, digits }),
@@ -545,6 +554,7 @@ impl DesktopApp {
         self.ui = CommsUi::new(self.lang, self.ui.utc_offset);
         self.ui.logo = logo;
         self.ui.prefs = kept;
+        self.ui.audio_devices = desktop::sound_devices();
         self.ui.set_view(view);
         self.worker = None;
     }
@@ -752,6 +762,7 @@ fn main() {
                 cc.egui_ctx.set_embed_viewports(true);
             }
             let mut ui = CommsUi::new(lang, offset);
+            ui.audio_devices = desktop::sound_devices();
             ui.set_view(args.view);
             // Screenshots use the defaults, not the user's preferences.
             if args.screenshot.is_none() && !args.demo {

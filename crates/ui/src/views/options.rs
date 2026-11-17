@@ -85,10 +85,11 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 let page = app.options_page;
                 let me = app.state.me.uri.clone();
                 let caps = app.state.capabilities.clone();
+                let devices = app.audio_devices.clone();
                 let Some(mut p) = app.prefs_draft.take() else {
                     return;
                 };
-                page_ui(t, ui, pal, page, &mut p, &me, &caps);
+                page_ui(t, ui, pal, page, &mut p, &me, &caps, &devices);
                 app.prefs_draft = Some(p);
                 if page == 1 {
                     group(ui, pal, t.opt_keyring, |ui| {
@@ -143,6 +144,7 @@ fn page_ui(
     p: &mut Prefs,
     me: &str,
     caps: &crate::model::Capabilities,
+    devices: &[(String, String)],
 ) {
     let ni = Reason::NotImplemented;
     match page {
@@ -176,7 +178,7 @@ fn page_ui(
                     t.sign_in_address,
                     me.trim_start_matches("sip:")
                 ));
-                missing(ui, t, t.opt_autostart, ni);
+                ui.checkbox(&mut p.autostart, t.opt_autostart);
             });
             group(ui, pal, t.opt_exchange, |ui| {
                 note(ui, pal, t.opt_exchange_body)
@@ -260,7 +262,24 @@ fn page_ui(
         }),
         8 => group(ui, pal, t.opt_audio, |ui| {
             note(ui, pal, t.audio_devices_body);
-            missing(ui, t, t.opt_audio_choose, ni);
+            // The device for calls: the system's default (PipeWire) or one ALSA names.
+            let current = if p.audio_device.is_empty() {
+                t.audio_default.to_string()
+            } else {
+                devices
+                    .iter()
+                    .find(|(n, _)| *n == p.audio_device)
+                    .map_or(p.audio_device.clone(), |(_, l)| l.clone())
+            };
+            egui::ComboBox::from_label(t.opt_audio_device)
+                .selected_text(current)
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut p.audio_device, String::new(), t.audio_default);
+                    for (name, label) in devices {
+                        ui.selectable_value(&mut p.audio_device, name.clone(), label);
+                    }
+                });
+            missing(ui, t, t.opt_audio_levels, ni);
         }),
         9 => group(ui, pal, t.opt_video, |ui| {
             ui.label(t.opt_camera);

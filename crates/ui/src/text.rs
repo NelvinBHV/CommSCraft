@@ -194,7 +194,9 @@ texts! {
     opt_alerts_strangers: "Personen außerhalb der Kontaktliste", "People outside the contact list";
     opt_app_window: "Anwendungsfenster", "Application window";
     opt_audio: "Audiogerät", "Audio device";
-    opt_audio_choose: "Gerät, Pegel und Testanruf wählen", "Choose device, levels and test call";
+    opt_audio_device: "Gerät für Anrufe", "Device for calls";
+    audio_default: "Systemvorgabe (PipeWire/ALSA „default“)", "System default (PipeWire/ALSA “default”)";
+    opt_audio_levels: "Pegel und Testanruf", "Levels and test call";
     opt_autostart: "Beim Anmelden am Computer starten", "Start when I log on to the computer";
     opt_away_group: "Abwesende, Offline- und unbekannte Kontakte gesondert gruppieren", "Group away, offline and unknown contacts separately";
     opt_block_strangers: "Einladungen von Unbekannten blockieren", "Block invitations from unknown people";

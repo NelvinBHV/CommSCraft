@@ -27,6 +27,17 @@ fn valid_favorite(v: &str) -> bool {
             || v.starts_with("room:ma-chan://"))
 }
 
+/// A sound device name as the audio adapter accepts it (empty: none chosen).
+fn valid_device(name: &str) -> bool {
+    !name.is_empty()
+        && commscraft_audio_alsa::Config {
+            device: name.to_string(),
+            ..Default::default()
+        }
+        .validate()
+        .is_ok()
+}
+
 /// Longest idle limit in minutes (design).
 pub const MAX_IDLE_MINUTES: u32 = 360;
 
@@ -58,6 +69,8 @@ pub fn parse(text: &str) -> Prefs {
             "quiet_sounds_busy" => p.quiet_sounds_busy = v == "true",
             "meeting_participants" => p.meeting_participants = v == "true",
             "save_history" => p.save_history = v != "false",
+            // A device name as the audio adapter accepts it.
+            "audio_device" if valid_device(v) => p.audio_device = v.to_string(),
             // A device file only: printable, absolute, bounded.
             "camera"
                 if v.starts_with("/dev/") && v.len() <= 200 && !v.chars().any(char::is_control) =>
@@ -126,6 +139,9 @@ pub fn format(p: &Prefs) -> String {
     }
     out.push_str(&format!("chat_text_size={}\n", p.chat_text_size));
     out.push_str(&format!("inactive_minutes={}\n", p.inactive_minutes));
+    if valid_device(&p.audio_device) {
+        out.push_str(&format!("audio_device={}\n", p.audio_device));
+    }
     out.push_str(&format!("away_minutes={}\n", p.away_minutes));
     if commscraft_ui::normalise_address(&p.last_address).as_deref() == Some(p.last_address.as_str())
     {
@@ -167,9 +183,12 @@ pub fn load() -> Prefs {
     if !ok {
         return Prefs::default();
     }
-    std::fs::read_to_string(&path)
+    let mut p = std::fs::read_to_string(&path)
         .map(|t| parse(&t))
-        .unwrap_or_default()
+        .unwrap_or_default();
+    // Whether the autostart entry is there is the truth, not a copy in this file.
+    p.autostart = crate::desktop::autostart_enabled();
+    p
 }
 
 pub fn save(p: &Prefs) -> Result<(), String> {
@@ -201,7 +220,8 @@ mod tests {
 
     #[test]
     fn idle_limits_are_bounded() {
-        let p = parse("inactive_minutes=99999\naway_minutes=-3\n");
+        let p = parse("inactive_minutes=99999\naway_minutes=-3\naudio_device=hw;reboot\n");
+        assert!(p.audio_device.is_empty());
         assert_eq!(p.inactive_minutes, MAX_IDLE_MINUTES);
         assert_eq!(p.away_minutes, 5);
     }
@@ -220,6 +240,7 @@ mod tests {
             inactive_minutes: 0,
             away_minutes: 30,
             save_history: false,
+            audio_device: "plughw:1,0".into(),
             ..Default::default()
         };
         p.favorites

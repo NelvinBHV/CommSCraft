@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: attended transfer, call rating)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: autostart, sound device for calls)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -89,6 +89,10 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   A/V MCU through the signed-in session); the call window carries the meeting's name and offers
   no hold or transfer; the camera button joins with audio and video (the A/V MCU's video in its
   own window). `tested-in-lab` (connected; a picture from another participant not checked yet).
+- **Desktop integration:** *Options › Personal* starts CommSCraft with the desktop session (an
+  XDG autostart entry, written only on request); *Options › Audio* chooses the sound device for
+  calls – the system's default (PipeWire) or a device ALSA lists (`/proc/asound/pcm`).
+  `tested-offline`.
 - **Calls:** *Transfer* offers a person (unattended) or, with a second connected call, its party
   (attended: the consultation call is replaced); after a connected call a bar asks for a rating
   of one to five stars when the server names a quality service (sent as the rating report).

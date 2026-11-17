@@ -275,6 +275,10 @@ pub struct Prefs {
     pub meeting_participants: bool,
     /// The last sign-in address (no secret; offered in the sign-in form).
     pub last_address: String,
+    /// The ALSA sound device for calls (empty: the system's default).
+    pub audio_device: String,
+    /// Start with the desktop session (an XDG autostart entry).
+    pub autostart: bool,
     /// Keep IM conversations in the Conversation History folder in Exchange.
     pub save_history: bool,
     /// Inactive after this many idle minutes (0: never).
@@ -306,6 +310,8 @@ impl Default for Prefs {
             meeting_participants: false,
             last_address: String::new(),
             save_history: true,
+            audio_device: String::new(),
+            autostart: false,
             inactive_minutes: 5,
             away_minutes: 5,
         }
@@ -427,6 +433,8 @@ pub struct CommsUi {
     pub(crate) group_dialog: Option<(Option<String>, String)>,
     /// The meeting link typed in the meetings tab.
     pub(crate) meeting_link: String,
+    /// The sound devices the desktop offers: (ALSA name, label).
+    pub audio_devices: Vec<(String, String)>,
     /// The star under the pointer in the call rating (0: none).
     pub(crate) rating_hover: u8,
     /// The schedule dialog: the meeting changed (its ID) or a new one, subject, minutes, access.
@@ -488,6 +496,7 @@ impl CommsUi {
             collapsed: BTreeSet::new(),
             group_dialog: None,
             meeting_link: String::new(),
+            audio_devices: Vec::new(),
             rating_hover: 0,
             meeting_dialog: None,
             expanded_groups: BTreeSet::new(),
