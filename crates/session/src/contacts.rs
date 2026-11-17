@@ -31,6 +31,11 @@ impl<R: Random> Engine<R> {
     }
 
     /// Whether the contact list is kept in Exchange (read and changed there by the client).
+    /// The server named a quality service (qosUri): calls can be rated (QE-03).
+    pub fn quality_service(&self) -> bool {
+        self.qos_uri.is_some()
+    }
+
     pub fn contacts_in_exchange(&self) -> bool {
         self.contacts_in_exchange
     }

@@ -666,19 +666,46 @@ fn controls(
                     hold: !call.held,
                 });
             }
-            if person
-                && ui
-                    .add_enabled(
-                        connected && caps.transfer.usable(),
-                        egui::Button::new(t.transfer),
-                    )
-                    .clicked()
-            {
-                app.new_chat = Some(NewChat {
-                    text: String::new(),
-                    purpose: AddressFor::Transfer(call.id),
+            if person {
+                // To a person (unattended), or to the party of another call (attended: the
+                // consultation call is replaced).
+                let others: Vec<(u32, String)> = app
+                    .state
+                    .calls
+                    .iter()
+                    .filter(|o| {
+                        o.id != call.id
+                            && o.conference.is_none()
+                            && matches!(o.state, CallState::Connected { .. })
+                    })
+                    .map(|o| (o.id, app.state.name_of(&o.peer)))
+                    .collect();
+                let b = ui.add_enabled(
+                    connected && caps.transfer.usable(),
+                    egui::Button::new(t.transfer),
+                );
+                egui::Popup::menu(&b).show(|ui| {
+                    if ui.button(t.transfer_to_person).clicked() {
+                        app.new_chat = Some(NewChat {
+                            text: String::new(),
+                            purpose: AddressFor::Transfer(call.id),
+                        });
+                        app.focus_main();
+                        ui.close();
+                    }
+                    for (target, name) in &others {
+                        if ui
+                            .button(format!("{} {name}", t.transfer_to_call))
+                            .clicked()
+                        {
+                            app.emit(UiIntent::TransferToCall {
+                                id: call.id,
+                                target: *target,
+                            });
+                            ui.close();
+                        }
+                    }
                 });
-                app.focus_main();
             }
             let pad = ui.add_enabled(connected, egui::Button::new(t.dial_pad));
             egui::Popup::menu(&pad).show(|ui| {

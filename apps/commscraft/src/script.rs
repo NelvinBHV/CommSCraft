@@ -191,6 +191,15 @@ pub fn run(app: &mut DesktopApp, line: &str) {
         }),
         "meetings" => app.handle(UiIntent::RefreshMeetings),
         // `meetingaudio`: join the audio of the selected meeting
+        // `rate STARS`: rate the call offered for rating
+        "rate" => {
+            if let (Some((id, _)), Ok(stars)) =
+                (app.ui.state.rate_call.clone(), arg.trim().parse::<u8>())
+            {
+                app.ui.state.rate_call = None;
+                app.handle(UiIntent::RateCall { id, stars })
+            }
+        }
         // `end`: end the selected conversation
         "end" => {
             if let Some(key) = app.ui.selected_conversation() {

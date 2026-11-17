@@ -102,6 +102,16 @@ pub enum UiIntent {
     JoinMeetingLink {
         link: String,
     },
+    /// Rate an ended call (1–5 stars).
+    RateCall {
+        id: u32,
+        stars: u8,
+    },
+    /// Transfer a call to the party of another call (attended transfer).
+    TransferToCall {
+        id: u32,
+        target: u32,
+    },
     /// Join the audio of the meeting of this group conversation.
     JoinMeetingAudio {
         key: ConvKey,
@@ -417,6 +427,8 @@ pub struct CommsUi {
     pub(crate) group_dialog: Option<(Option<String>, String)>,
     /// The meeting link typed in the meetings tab.
     pub(crate) meeting_link: String,
+    /// The star under the pointer in the call rating (0: none).
+    pub(crate) rating_hover: u8,
     /// The schedule dialog: the meeting changed (its ID) or a new one, subject, minutes, access.
     pub(crate) meeting_dialog: Option<MeetingDialog>,
     /// Distribution groups whose members were asked for.
@@ -476,6 +488,7 @@ impl CommsUi {
             collapsed: BTreeSet::new(),
             group_dialog: None,
             meeting_link: String::new(),
+            rating_hover: 0,
             meeting_dialog: None,
             expanded_groups: BTreeSet::new(),
             windows: Vec::new(),

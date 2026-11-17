@@ -21,6 +21,7 @@ pub const CHOOSABLE: [Presence; 6] = [
 
 pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     footer(app, ui, pal);
+    rating(app, ui, pal);
     egui::Panel::top("main-head")
         .frame(
             Frame::new()
@@ -44,6 +45,52 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             MainTab::Conversations => conversations(app, ui, pal),
             MainTab::Meetings => crate::views::meetings::list(app, ui, pal),
             MainTab::Rooms => rooms(app, ui, pal),
+        });
+}
+
+/// After a call: how was its quality? (sent to the server's quality service).
+fn rating(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    let Some((id, peer)) = app.state.rate_call.clone() else {
+        return;
+    };
+    egui::Panel::bottom("call-rating")
+        .frame(
+            Frame::new()
+                .fill(pal.primary_soft)
+                .inner_margin(egui::Margin::symmetric(10, 8)),
+        )
+        .show(ui, |ui| {
+            let name = app.state.name_of(&peer);
+            ui.label(RichText::new(format!("{} {name}?", t.rate_call_question)).color(pal.ink));
+            ui.horizontal(|ui| {
+                // Five stars; the one under the pointer and those before it light up.
+                let hovered = app.rating_hover;
+                app.rating_hover = 0;
+                for stars in 1u8..=5 {
+                    let lit = stars <= hovered;
+                    let r = icons::button(
+                        ui,
+                        Icon::Star,
+                        &format!("{stars} {}", t.stars),
+                        28.0,
+                        lit,
+                        true,
+                        if lit { pal.primary } else { pal.muted },
+                        pal.primary,
+                    );
+                    if r.hovered() {
+                        app.rating_hover = stars;
+                    }
+                    if r.clicked() {
+                        app.emit(UiIntent::RateCall { id, stars });
+                        app.state.rate_call = None;
+                    }
+                }
+                if ui.button(t.not_now).clicked() {
+                    app.state.rate_call = None;
+                }
+            });
         });
 }
 
