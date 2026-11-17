@@ -1974,6 +1974,11 @@ impl<R: Random> Engine<R> {
     /// A user command.
     pub fn command(&mut self, cmd: Command, now: u64) -> Vec<Output> {
         let mut out = Vec::new();
+        // The activity is kept before the sign-in: the first endpoint publication carries it.
+        if let (false, Command::SetMachineActivity(a)) = (self.registered, &cmd) {
+            self.machine = *a;
+            return out;
+        }
         if !self.registered {
             out.push(Output::Event(Event::Notice("not signed in".into())));
             return out;

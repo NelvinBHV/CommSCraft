@@ -437,3 +437,29 @@ fn groups_subscribers_and_known_names() {
     )]));
     assert_eq!(s.known_name("sip:bob@beispiel.invalid"), "Bob");
 }
+
+#[test]
+fn meeting_details_fill_the_entry_and_a_cancelled_meeting_goes() {
+    use commscraft_ui::model::Meeting;
+    let mut s = online();
+    let m = |id: &str, subject: &str| Meeting {
+        subject: subject.into(),
+        focus: format!("sip:a@b.c;gruu;opaque=app:conf:focus:id:{id}"),
+        conference_id: id.into(),
+        expires: None,
+        demo: false,
+        join_url: None,
+    };
+    s.apply(AppEvent::Meetings(vec![m("A1", ""), m("B2", "")]));
+    s.apply(AppEvent::MeetingDetails(Meeting {
+        expires: Some(99),
+        join_url: Some("javascript:alert(1)".into()),
+        ..m("A1", "Planung")
+    }));
+    assert_eq!(s.meetings[0].subject, "Planung");
+    assert_eq!(s.meetings[0].expires, Some(99));
+    // Only an https link is kept.
+    assert_eq!(s.meetings[0].join_url, None);
+    s.apply(AppEvent::MeetingCancelled("B2".into()));
+    assert_eq!(s.meetings.len(), 1);
+}

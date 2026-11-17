@@ -702,3 +702,38 @@ fn a_presenter_admits_from_the_lobby_and_promotes() {
     assert!(h.state().intents.iter().any(|i| matches!(i,
         UiIntent::ConferenceCommand { command: ConfCommand::Role { user, presenter: true }, .. } if user == "sip:tim@b.de")));
 }
+
+#[test]
+fn a_meeting_is_planned_joined_and_cancelled_from_the_meetings_tab() {
+    use commscraft_ui::model::MeetingAccess;
+    let mut h = harness(demo_quiet(), BIG);
+    h.run();
+    button(&h, "Besprechungen").click();
+    h.run();
+    h.get_by_label("Neue Besprechung …").click();
+    h.run();
+    h.get_by_role_and_label(egui::accesskit::Role::TextInput, "Betreff")
+        .click();
+    h.run();
+    h.get_by_role_and_label(egui::accesskit::Role::TextInput, "Betreff")
+        .type_text("Planung Q1");
+    h.run();
+    h.get_by_label("Nur eingeladene Personen").click();
+    h.run();
+    h.get_by_label("OK").click();
+    h.run();
+    assert!(h.state().intents.iter().any(|i| matches!(i,
+        UiIntent::ScheduleMeeting { subject, minutes: 60, access: MeetingAccess::Invited, join: false } if subject == "Planung Q1")));
+    // A planned meeting of the demo: join and cancel.
+    h.get_by_role_and_label(
+        egui::accesskit::Role::Button,
+        "Wochenabstimmung Projekt Nord",
+    )
+    .click();
+    h.run();
+    h.get_by_label("Absagen").click();
+    h.run();
+    assert!(h.state().intents.iter().any(
+        |i| matches!(i, UiIntent::CancelMeeting { conference_id } if conference_id == "DEMO1")
+    ));
+}

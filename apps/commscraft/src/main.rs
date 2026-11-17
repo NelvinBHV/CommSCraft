@@ -367,6 +367,31 @@ impl DesktopApp {
             }
             UiIntent::JoinMeeting { focus } => Some(ToWorker::JoinConference { focus }),
             UiIntent::JoinMeetingLink { link } => Some(ToWorker::JoinMeetingLink(link)),
+            UiIntent::ScheduleMeeting {
+                subject,
+                minutes,
+                access,
+                join,
+            } => Some(ToWorker::ScheduleMeeting {
+                subject,
+                minutes,
+                access,
+                join,
+            }),
+            UiIntent::ChangeMeeting {
+                conference_id,
+                subject,
+                minutes,
+                access,
+            } => Some(ToWorker::ChangeMeeting {
+                conference_id,
+                subject,
+                minutes,
+                access,
+            }),
+            UiIntent::CancelMeeting { conference_id } => {
+                Some(ToWorker::CancelMeeting { conference_id })
+            }
             UiIntent::ConferenceCommand { key, command } => {
                 session_of(key).map(|session| ToWorker::ConferenceCommand { session, command })
             }

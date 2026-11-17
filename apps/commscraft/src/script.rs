@@ -176,6 +176,20 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 app.handle(UiIntent::ConferenceCommand { key, command })
             }
         }
+        // `schedule MINUTES SUBJECT` · `cancelmeeting CONFERENCE-ID` · `meetings`
+        "schedule" => {
+            let (m, subject) = arg.split_once(' ').unwrap_or((arg, "Test"));
+            app.handle(UiIntent::ScheduleMeeting {
+                subject: subject.to_string(),
+                minutes: m.parse().unwrap_or(60),
+                access: commscraft_ui::model::MeetingAccess::Organisation,
+                join: false,
+            })
+        }
+        "cancelmeeting" => app.handle(UiIntent::CancelMeeting {
+            conference_id: arg.trim().to_string(),
+        }),
+        "meetings" => app.handle(UiIntent::RefreshMeetings),
         // `joinlink https://…`
         "joinlink" => app.handle(UiIntent::JoinMeetingLink {
             link: arg.trim().to_string(),

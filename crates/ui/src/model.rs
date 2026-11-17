@@ -508,6 +508,20 @@ pub struct Meeting {
     pub conference_id: String,
     pub expires: Option<u64>,
     pub demo: bool,
+    /// The https join link, when the server names it.
+    pub join_url: Option<String>,
+}
+
+/// Who may join a meeting without waiting in the lobby.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum MeetingAccess {
+    /// Only the people invited.
+    Invited,
+    /// Everyone from the organisation (and federated users).
+    #[default]
+    Organisation,
+    /// Also anonymous people with the link.
+    Anyone,
 }
 
 /// A server outside the user's SIP domain, named over verified HTTPS by `named_by`.
@@ -671,6 +685,9 @@ pub enum AppEvent {
         state: VideoState,
     },
     Meetings(Vec<Meeting>),
+    /// One meeting's details (subject, expiry, link) into its entry of the list.
+    MeetingDetails(Meeting),
+    MeetingCancelled(String),
     Invitation(Invitation),
     /// Discovery named a server outside the SIP domain: may the password go there?
     TrustQuestion(TrustQuestion),
@@ -1379,10 +1396,33 @@ impl AppState {
                         subject: label(&m.subject),
                         focus: label(&m.focus),
                         conference_id: label(&m.conference_id),
+                        join_url: m
+                            .join_url
+                            .filter(|u| u.starts_with("https://") && u.len() <= 2048)
+                            .map(|u| label(&u)),
                         ..m
                     })
                     .collect();
             }
+            AppEvent::MeetingDetails(m) => {
+                if let Some(e) = self
+                    .meetings
+                    .iter_mut()
+                    .find(|e| e.conference_id == m.conference_id)
+                {
+                    if !m.subject.trim().is_empty() {
+                        e.subject = label(&m.subject);
+                    }
+                    e.expires = m.expires.or(e.expires);
+                    if let Some(u) = m
+                        .join_url
+                        .filter(|u| u.starts_with("https://") && u.len() <= 2048)
+                    {
+                        e.join_url = Some(label(&u));
+                    }
+                }
+            }
+            AppEvent::MeetingCancelled(id) => self.meetings.retain(|m| m.conference_id != id),
             AppEvent::Invitation(i) => {
                 // The same conference again (the inviting client may send it twice): once.
                 let focus = label(&i.focus);

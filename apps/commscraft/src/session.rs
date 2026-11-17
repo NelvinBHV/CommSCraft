@@ -122,6 +122,21 @@ pub enum ToWorker {
     ResetStatus,
     /// Join a meeting by its https link.
     JoinMeetingLink(String),
+    ScheduleMeeting {
+        subject: String,
+        minutes: u64,
+        access: commscraft_ui::model::MeetingAccess,
+        join: bool,
+    },
+    ChangeMeeting {
+        conference_id: String,
+        subject: String,
+        minutes: u64,
+        access: commscraft_ui::model::MeetingAccess,
+    },
+    CancelMeeting {
+        conference_id: String,
+    },
     /// A presenter's command in a meeting.
     ConferenceCommand {
         session: u32,
@@ -392,7 +407,46 @@ fn meeting_of(m: &commscraft_conf::schedule::Meeting) -> Option<Meeting> {
             .as_deref()
             .and_then(commscraft_xml::parse_xs_datetime),
         demo: false,
+        join_url: m.join_url.clone(),
     })
+}
+
+/// Meetings whose details are asked for after a listing (design; the listing itself names at
+/// most `MAX_MEETINGS`).
+const MEETING_DETAILS: usize = commscraft_conf::schedule::MAX_MEETINGS;
+
+/// A meeting's details for the list (the focus may be missing in a getConference answer).
+fn meeting_of_details(m: &commscraft_conf::schedule::Meeting) -> Option<Meeting> {
+    Some(Meeting {
+        subject: m.subject.clone().unwrap_or_default(),
+        focus: m.focus.clone().unwrap_or_default(),
+        conference_id: m.conference_id.clone(),
+        expires: m
+            .expiry
+            .as_deref()
+            .and_then(commscraft_xml::parse_xs_datetime),
+        demo: false,
+        join_url: m.join_url.clone(),
+    })
+}
+
+/// The admission policy for the interface's choice ([MS-CONFPRO] admission-policy, PV-09).
+fn admission_of(a: commscraft_ui::model::MeetingAccess) -> commscraft_conf::schedule::Admission {
+    use commscraft_conf::schedule::Admission as A;
+    use commscraft_ui::model::MeetingAccess as M;
+    match a {
+        M::Invited => A::ClosedAuthenticated,
+        M::Organisation => A::OpenAuthenticated,
+        M::Anyone => A::Anonymous,
+    }
+}
+
+/// People of the organisation become presenters on joining (as the ad-hoc conferences do).
+fn meeting_extras() -> commscraft_conf::schedule::Extras {
+    commscraft_conf::schedule::Extras {
+        autopromote: Some(commscraft_conf::AUTOPROMOTE_COMPANY),
+        ..Default::default()
+    }
 }
 
 /// Is this the IM MCU of a conference (a group conversation) rather than a person?
@@ -447,6 +501,8 @@ struct Session {
     ucs_ids: commscraft_client::exchange::UcsIds,
     /// Contact lists from Exchange handed to the engine and not yet seen back as its event.
     exchange_lists: u32,
+    /// Join the meeting being scheduled once the server confirms it (meet now).
+    join_scheduled: bool,
     tls: TlsClient,
     trust: setup::Trust,
 }
@@ -893,6 +949,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         contact_list: None,
         ucs_ids: Default::default(),
         exchange_lists: 0,
+        join_scheduled: false,
         tls,
         trust,
     };
@@ -1520,6 +1577,45 @@ impl Session {
         let t = now();
         match c {
             ToWorker::ResetStatus => self.engine.command(C::ResetStatus, t),
+            ToWorker::ScheduleMeeting {
+                subject,
+                minutes,
+                access,
+                join,
+            } => {
+                self.join_scheduled = join;
+                self.engine.command(
+                    C::ScheduleMeeting {
+                        subject,
+                        minutes,
+                        admission: admission_of(access),
+                        extras: meeting_extras(),
+                    },
+                    t,
+                )
+            }
+            ToWorker::ChangeMeeting {
+                conference_id,
+                subject,
+                minutes,
+                access,
+            } => self.engine.command(
+                C::ChangeMeeting {
+                    conference_id,
+                    subject,
+                    minutes,
+                    admission: admission_of(access),
+                    extras: meeting_extras(),
+                },
+                t,
+            ),
+            ToWorker::CancelMeeting { conference_id } => self.engine.command(
+                C::CancelMeeting {
+                    conference_id,
+                    static_meeting: false,
+                },
+                t,
+            ),
             ToWorker::JoinMeetingLink(link) => {
                 match &self.photos {
                     Some(p) => p.meeting_link(&link),
@@ -2365,13 +2461,52 @@ impl Session {
                 NoticeKind::Info,
                 "waiting in the lobby until a presenter admits you",
             ),
-            E::Meetings(list) => out.event(AppEvent::Meetings(
-                list.iter().filter_map(meeting_of).collect(),
-            )),
-            E::MeetingScheduled(m) | E::MeetingDetails(m) => {
-                if let Some(m) = meeting_of(&m) {
-                    out.notice(NoticeKind::Info, format!("meeting {}", m.conference_id));
+            E::Meetings(list) => {
+                trace_line(&format!("meetings: {}", list.len()));
+                // The list names IDs only; the details bring subject, expiry and link.
+                for m in list.iter().take(MEETING_DETAILS) {
+                    more.extend(self.engine.command(
+                        C::ShowMeeting {
+                            conference_id: m.conference_id.clone(),
+                        },
+                        now(),
+                    ));
                 }
+                out.event(AppEvent::Meetings(
+                    list.iter().filter_map(meeting_of).collect(),
+                ))
+            }
+            // A new or changed meeting: join it if asked (meet now); the list is read again.
+            E::MeetingScheduled(m) => {
+                if let (true, Some(focus)) = (std::mem::take(&mut self.join_scheduled), &m.focus) {
+                    more.extend(self.engine.command(
+                        C::JoinConference {
+                            focus: focus.clone(),
+                        },
+                        now(),
+                    ));
+                }
+                more.extend(self.engine.command(
+                    C::ListMeetings {
+                        static_meetings: false,
+                    },
+                    now(),
+                ));
+            }
+            E::MeetingDetails(m) => {
+                trace_line(&format!(
+                    "meeting details: {} subject {} expiry {} link {}",
+                    m.conference_id,
+                    m.subject.is_some(),
+                    m.expiry.is_some(),
+                    m.join_url.is_some()
+                ));
+                if let Some(m) = meeting_of_details(&m) {
+                    out.event(AppEvent::MeetingDetails(m));
+                }
+            }
+            E::MeetingCancelled { conference_id } => {
+                out.event(AppEvent::MeetingCancelled(conference_id))
             }
             E::IncomingCall { call, from } => {
                 if self.sounds {

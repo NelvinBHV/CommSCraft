@@ -82,6 +82,22 @@ pub enum UiIntent {
     JoinMeeting {
         focus: String,
     },
+    /// Schedule a meeting (lifetime in minutes); `join`: join it at once (meet now).
+    ScheduleMeeting {
+        subject: String,
+        minutes: u64,
+        access: crate::model::MeetingAccess,
+        join: bool,
+    },
+    ChangeMeeting {
+        conference_id: String,
+        subject: String,
+        minutes: u64,
+        access: crate::model::MeetingAccess,
+    },
+    CancelMeeting {
+        conference_id: String,
+    },
     /// Join a meeting by its https link (the join manager names the focus).
     JoinMeetingLink {
         link: String,
@@ -271,6 +287,16 @@ impl Default for Prefs {
     }
 }
 
+/// The values of the schedule dialog.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MeetingDialog {
+    /// `Some(conference ID)`: changing that meeting.
+    pub change: Option<String>,
+    pub subject: String,
+    pub minutes: u64,
+    pub access: crate::model::MeetingAccess,
+}
+
 /// The tabs of the main window.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum MainTab {
@@ -376,6 +402,8 @@ pub struct CommsUi {
     pub(crate) group_dialog: Option<(Option<String>, String)>,
     /// The meeting link typed in the meetings tab.
     pub(crate) meeting_link: String,
+    /// The schedule dialog: the meeting changed (its ID) or a new one, subject, minutes, access.
+    pub(crate) meeting_dialog: Option<MeetingDialog>,
     /// Distribution groups whose members were asked for.
     pub(crate) expanded_groups: BTreeSet<String>,
     pub(crate) windows: Vec<Win>,
@@ -433,6 +461,7 @@ impl CommsUi {
             collapsed: BTreeSet::new(),
             group_dialog: None,
             meeting_link: String::new(),
+            meeting_dialog: None,
             expanded_groups: BTreeSet::new(),
             windows: Vec::new(),
             focus_window: None,
@@ -734,6 +763,7 @@ impl CommsUi {
             views::main_window::show(self, ui, &pal);
             views::chats::new_chat_dialog(self, ctx, &pal);
             views::main_window::group_dialog(self, ctx);
+            views::meetings::meeting_dialog(self, ctx);
             views::conv_window::show_all(self, ctx, &pal);
         }
         std::mem::take(&mut self.intents)
