@@ -11,7 +11,7 @@ application, a ranked work list, and nothing copied from Microsoft products.
 > **Stage: M1 (sign-in), M4, M5 (video), M6 (viewing shared screens) and M7 (Exchange and extras) closed, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search, audio and video calls, meetings and telephony (transfer, forwarding, park, delegates,
 > emergency calls) exist as building blocks that pass offline tests and whose main flows also ran in the owner's private lab (49 crates,
-> 684 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
+> 685 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
 > for the owner's runs on authorized servers. The desktop client `commscraft` (egui) signs in and offers chat (1:1 and group), presence, audio and video calls and viewing shared screens through the same session engine, also `tested-in-lab`; persistent chat rooms tested offline; meeting content with polls and voting. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 

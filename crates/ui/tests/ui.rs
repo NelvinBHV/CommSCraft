@@ -784,3 +784,40 @@ fn the_meeting_audio_is_joined_from_a_group_conversation() {
         .apply(AppEvent::ConferenceCall { id: 3, session: 7 });
     assert_eq!(h.state().ui.state.calls[0].conference, Some(key));
 }
+
+#[test]
+fn a_shared_screen_in_a_meeting_is_offered_for_viewing() {
+    use commscraft_ui::model::ConvState;
+    let mut ui = demo_quiet();
+    let c = ui
+        .state
+        .conversations
+        .iter_mut()
+        .find(|c| c.title == "Projekt Nord")
+        .unwrap();
+    c.state = ConvState::Open;
+    c.session = Some(9);
+    let key = c.key;
+    ui.state.apply(AppEvent::ConferenceSharing {
+        session: 9,
+        sharer: Some("Anna Weber".into()),
+    });
+    let mut h = harness(ui, BIG);
+    h.run();
+    open_conversation(&mut h, "Projekt Nord");
+    assert!(h.query_by_label_contains("Anna Weber gibt frei").is_some());
+    h.get_by_label("Anzeigen").click();
+    h.run();
+    assert!(h
+        .state()
+        .intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::ViewMeetingScreen { key: k } if *k == key)));
+    // Sharing ends: the offer goes.
+    h.state_mut().ui.state.apply(AppEvent::ConferenceSharing {
+        session: 9,
+        sharer: None,
+    });
+    h.run();
+    assert!(h.query_by_label_contains("gibt frei").is_none());
+}

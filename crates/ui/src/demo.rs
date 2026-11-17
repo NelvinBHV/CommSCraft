@@ -128,6 +128,7 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
                     muted: None,
                 })
                 .collect(),
+            sharer: None,
             messages: msgs.into(),
             unread,
             typing: false,

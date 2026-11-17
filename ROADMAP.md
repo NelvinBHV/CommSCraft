@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: join a meeting with video)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: view what is shared in a meeting)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **684 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **685 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-18 | Viewing what is shared in a meeting from the desktop client (`tested-offline`): the roster names the sharer and the screen source; *View* opens a receive-only video call to the application sharing MCU or, for a shared window, an RDP viewer (as the command-line client's `/viewconf`). |
 | 2026-11-18 | Joining a meeting with video in the desktop client (`JoinConferenceVideo`, the A/V MCU's video in the isolated video window): audio and video connect in the lab; a picture from another participant is not checked yet. |
 | 2026-11-17 | Meeting audio in the desktop client (`tested-in-lab`): the meeting conversation's phone button joins the conference audio (`JoinConferenceAudio` to the A/V MCU); the call belongs to the meeting (`Call.conference`), is named like it and has no hold or transfer. |
 | 2026-11-17 | Planned meetings in the desktop client (`tested-in-lab`): plan (subject, lifetime, admission), join, copy the link, change and cancel from the meetings tab; the list asks for each meeting's details and lists only meetings with a subject. The machine state chosen before the sign-in is kept for the first endpoint publication (instead of a "not signed in" notice). |
