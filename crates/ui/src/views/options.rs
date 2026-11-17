@@ -65,11 +65,15 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         .exact_size(190.0)
         .frame(Frame::new().fill(pal.surface).inner_margin(Margin::same(8)))
         .show(ui, |ui| {
-            for (i, a) in areas(t).iter().enumerate() {
-                if ui.selectable_label(app.options_page == i, *a).clicked() {
-                    app.options_page = i;
-                }
-            }
+            egui::ScrollArea::vertical()
+                .id_salt("opt-area-list")
+                .show(ui, |ui| {
+                    for (i, a) in areas(t).iter().enumerate() {
+                        if ui.selectable_label(app.options_page == i, *a).clicked() {
+                            app.options_page = i;
+                        }
+                    }
+                });
         });
     egui::CentralPanel::default()
         .frame(

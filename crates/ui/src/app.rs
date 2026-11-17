@@ -572,7 +572,7 @@ impl CommsUi {
         ];
         for (k, v) in digits {
             if ctx.input_mut(|i| i.consume_shortcut(&ctrl(k))) {
-                self.view = v;
+                self.set_view(v);
             }
         }
         if ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape)) {

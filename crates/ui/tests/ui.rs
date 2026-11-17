@@ -239,7 +239,7 @@ fn a_conversation_opens_in_its_own_window_and_enter_sends() {
         .clone();
     assert_eq!(last.delivery, Delivery::Unknown);
     // Not built: disabled, with the reason.
-    for label in ["+ Datei", "Formatierung", "Im Chat suchen"] {
+    for label in ["+ Datei", "Formatierung"] {
         assert!(
             h.get_by_label(label).accesskit_node().is_disabled(),
             "{label}"

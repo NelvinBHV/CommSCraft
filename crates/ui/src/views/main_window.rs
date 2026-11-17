@@ -294,7 +294,7 @@ fn alert(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     egui::Panel::top("main-alert")
         .frame(
             Frame::new()
-                .fill(pal.warning.gamma_multiply(0.22))
+                .fill(pal.surface.lerp_to_gamma(pal.warning, 0.2))
                 .inner_margin(Margin::symmetric(10, 6)),
         )
         .show(ui, |ui| {

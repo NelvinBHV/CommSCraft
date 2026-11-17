@@ -1,6 +1,6 @@
 # Attribution and provenance of assets
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-16 · **Change:** minor (desktop interface screenshots)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop interface screenshots of the window structure)
 
 Every non-code asset of CommSCraft – images, icons, sounds, fonts – has a row here, added in the
 same commit as the asset (rule in `AGENTS.md` / `CLAUDE.md`). No asset is taken from Microsoft
@@ -22,14 +22,13 @@ UI Selection Stinger) were superseded by the owner's own sound pack and are not 
 | `assets/branding/CommSCraft-icon-256.png` | `88b9a312d820fa41cced0dc8fcc09cff6333dfe939afdaee447a81cd3d03e6eb` | Exported by `assets/branding/export_icons.py` | `assets/branding/BRAND-POLICY.md` |
 | `assets/branding/CommSCraft-icon-512.png` | `9ac3413cdf5c3a44f7e7682b5ad10cddb141165f799cff2dc156c0369adbbe05` | Exported by `assets/branding/export_icons.py` | `assets/branding/BRAND-POLICY.md` |
 | `assets/branding/CommSCraft-icon-1024.png` | `b03eada0beb6b2e790a9641155b7ab7b436ae0fd0f9bed4eb5df5cf37dd2ed87` | Exported by `assets/branding/export_icons.py` | `assets/branding/BRAND-POLICY.md` |
-| `docs/ui/screenshots/calls.png` | `e50a94521b5836b09d5009a9f1d237ab3d2050de2b043d595dc957f3a9ce06a4` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; shows the unchanged brand icon | `MIT OR Apache-2.0`; the brand icon in it: `assets/branding/BRAND-POLICY.md` |
-| `docs/ui/screenshots/chats-1280-en.png` | `e2d3ec02afca1117fc47594f18dbf6f2adf150bf83c5f02a202baa8160246969` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; shows the unchanged brand icon | `MIT OR Apache-2.0`; the brand icon in it: `assets/branding/BRAND-POLICY.md` |
-| `docs/ui/screenshots/chats.png` | `f053b8a26f38cdaf775354add5a59c724822c63a679744208c6a8c6dabc05ba6` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; shows the unchanged brand icon | `MIT OR Apache-2.0`; the brand icon in it: `assets/branding/BRAND-POLICY.md` |
-| `docs/ui/screenshots/contacts.png` | `7f97a31fffca51dc3aa2084e5a57293f9a8374817b4a3ba8c04b0fd930bfc0e7` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; shows the unchanged brand icon | `MIT OR Apache-2.0`; the brand icon in it: `assets/branding/BRAND-POLICY.md` |
-| `docs/ui/screenshots/meetings.png` | `974dfb6e1f03497b86a9af06a5fea9bad9370ca8f0358ab997005529e5dbf242` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; shows the unchanged brand icon | `MIT OR Apache-2.0`; the brand icon in it: `assets/branding/BRAND-POLICY.md` |
-| `docs/ui/screenshots/settings.png` | `01fa248d3e293d32f87fa3201b3e4bf8a6e70b68fb07bc26c9b31999c313d82a` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; shows the unchanged brand icon | `MIT OR Apache-2.0`; the brand icon in it: `assets/branding/BRAND-POLICY.md` |
-| `docs/ui/screenshots/search.png` | `bf7c8ade9d20da92f44a8ec18b7c7366e4c2c61397aab6ee0a02a4c734baea45` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; shows the unchanged brand icon | `MIT OR Apache-2.0`; the brand icon in it: `assets/branding/BRAND-POLICY.md` |
-| `docs/ui/screenshots/signin.png` | `7b2a1f049284ad431fafaf8b2776395b5d66e49d2a30d46191db47d031196ccb` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; shows the unchanged brand icon | `MIT OR Apache-2.0`; the brand icon in it: `assets/branding/BRAND-POLICY.md` |
+| `docs/ui/screenshots/main-contacts.png` | `39cd399a874946f4ae8cb7d09e70c788cb31db661769fc4563825aab79dd8410` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; own drawn line icons only | `MIT OR Apache-2.0` |
+| `docs/ui/screenshots/main-conversations.png` | `5160dc7791d35f9bbc4a8a9efb36b5b93718a2cbdb9daf1cb68ee6bad62208d8` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; own drawn line icons only | `MIT OR Apache-2.0` |
+| `docs/ui/screenshots/main-meetings.png` | `729d24d86f91b1b16033772096947a54159c5edda899c41cd0d0377b7d5de459` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; own drawn line icons only | `MIT OR Apache-2.0` |
+| `docs/ui/screenshots/main-phone.png` | `9cd0ba15132d9b7eef2c73406f3a98424d4d6edb849a54db5c8f6f2f8ac86b97` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; own drawn line icons only | `MIT OR Apache-2.0` |
+| `docs/ui/screenshots/options.png` | `7b8987814ec238ef784aad083dc7b70d8ab0cadf66574552cb8b12278cbbf09b` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; own drawn line icons only | `MIT OR Apache-2.0` |
+| `docs/ui/screenshots/signin.png` | `adb15899f5c790493503c22de76bccbbb8b4362b085cf949d19b21e06f357da1` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; shows the unchanged brand icon | `MIT OR Apache-2.0`; the brand icon in it: `assets/branding/BRAND-POLICY.md` |
+| `docs/ui/screenshots/windows.png` | `9fd5a237bc094a67fc7fef93b2f2c714f91449ccaab8580ec47d273977c93e0b` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; own drawn line icons only | `MIT OR Apache-2.0` |
 
 ## Sounds
 
