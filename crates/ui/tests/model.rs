@@ -324,3 +324,29 @@ fn a_room_needs_a_room_uri() {
     }
     assert!(s.conversations.is_empty());
 }
+
+#[test]
+fn only_an_incoming_call_offers_video_and_a_video_failure_is_cleaned() {
+    let mut s = online();
+    for (id, incoming) in [(1, true), (2, false)] {
+        s.apply(AppEvent::CallStarted {
+            id,
+            peer: "sip:tim@beispiel.invalid".into(),
+            incoming,
+            at: 1,
+        });
+        s.apply(AppEvent::CallOffersVideo { id });
+    }
+    assert!(s.calls[0].offers_video);
+    assert!(!s.calls[1].offers_video);
+    s.apply(AppEvent::CallKind {
+        id: 2,
+        kind: CallKind::Video,
+    });
+    s.apply(AppEvent::CallVideo {
+        id: 2,
+        state: VideoState::Failed("no camera\u{202E}x".into()),
+    });
+    assert_eq!(s.calls[1].kind, CallKind::Video);
+    assert_eq!(s.calls[1].video, VideoState::Failed("no camerax".into()));
+}

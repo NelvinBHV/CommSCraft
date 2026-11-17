@@ -187,6 +187,8 @@ texts! {
     call_incoming: "Eingehender Anruf", "Incoming call";
     call_on_hold: "Gehalten", "On hold";
     call_connected: "Audio verbunden", "Audio connected";
+    call_connected_video: "Audio und Video verbunden", "Audio and video connected";
+    call_connected_screen: "Freigabe verbunden", "Sharing connected";
     call_ended: "Beendet", "Ended";
     no_active_call: "Kein laufender Anruf", "No call in progress";
     no_active_call_hint: "Anrufe beginnen über Kontakte oder den Chat-Kopf.", "Start calls from contacts or the chat header.";
@@ -204,6 +206,7 @@ texts! {
     video: "Video", "Video";
     transfer: "Übertragen", "Transfer";
     hang_up: "Anruf beenden", "End call";
+    stop_viewing: "Ansehen beenden", "Stop viewing";
     call_hint_title: "Hinweis zum Anrufstatus", "About the call status";
     call_hint: "„Verbunden“ erscheint erst, wenn die Sitzung die Antwort der Gegenstelle gemeldet hat; Wählen und Klingeln werden getrennt angezeigt.", "“Connected” appears only once the session reported the peer's answer; dialling and ringing are shown separately.";
     call_hint_demo: "Anrufstatus, Timer, Halten und Stummschalten sind hier Demo-Daten; es wird nichts gewählt.", "Call state, timer, hold and mute are demo data here; nothing is dialled.";
@@ -211,6 +214,15 @@ texts! {
     call_kind: "Gesprächsart", "Call type";
     call_kind_audio: "Audio · 1:1", "Audio · 1:1";
     call_kind_conference: "Audio · Konferenz", "Audio · conference";
+    call_kind_video: "Audio und Video · 1:1", "Audio and video · 1:1";
+    call_kind_screen: "Bildschirmfreigabe ansehen", "Viewing a shared screen";
+    answer_video: "Mit Video annehmen", "Answer with video";
+    video_call: "Videoanruf", "Video call";
+    screen_offered: "teilt einen Bildschirm", "shares a screen";
+    view_screen: "Ansehen", "View";
+    video_starting: "Video wird verbunden …", "Connecting video …";
+    video_window: "Das Bild erscheint in einem eigenen, abgeschotteten Fenster.", "The picture appears in a separate, sandboxed window.";
+    video_failed: "Video beendet", "Video ended";
     participants: "Teilnehmer", "Participants";
     connection_state: "Verbindungsstatus", "Connection state";
     audio_devices: "Audiogeräte", "Audio devices";

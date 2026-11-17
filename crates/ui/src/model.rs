@@ -172,7 +172,7 @@ impl Capabilities {
             audio_call: Gate::Preview,
             hold: Gate::Preview,
             transfer: Gate::Unavailable(Reason::DemoOnly),
-            video_call: Gate::Unavailable(Reason::CliOnly),
+            video_call: Gate::Preview,
             meetings: Gate::Preview,
             persistent_chat: Gate::Preview,
             ..Self::never()
@@ -405,11 +405,39 @@ pub enum CallState {
     },
 }
 
+/// What a call carries.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum CallKind {
+    #[default]
+    Audio,
+    /// Audio and video (function 28).
+    Video,
+    /// Someone shares a screen or window with us (function 43, receive only).
+    Screen,
+}
+
+/// The received picture of a call: shown in the sandboxed video window, never in this process.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum VideoState {
+    #[default]
+    None,
+    /// Negotiating or connecting the video stream.
+    Starting,
+    /// The video window shows the picture.
+    Window,
+    /// The video ended or could not start (the reason); the call goes on.
+    Failed(String),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Call {
     pub id: u32,
     pub peer: String,
     pub incoming: bool,
+    pub kind: CallKind,
+    /// An incoming call offers video (it can be answered with video).
+    pub offers_video: bool,
+    pub video: VideoState,
     pub state: CallState,
     pub muted: bool,
     pub held: bool,
@@ -588,6 +616,19 @@ pub enum AppEvent {
         id: u32,
         status: u16,
         at: u64,
+    },
+    /// What the call carries (set after `CallStarted`).
+    CallKind {
+        id: u32,
+        kind: CallKind,
+    },
+    /// The incoming call offers video.
+    CallOffersVideo {
+        id: u32,
+    },
+    CallVideo {
+        id: u32,
+        state: VideoState,
     },
     Meetings(Vec<Meeting>),
     Invitation(Invitation),
@@ -1076,12 +1117,33 @@ impl AppState {
                     } else {
                         CallState::Dialing
                     },
+                    kind: CallKind::Audio,
+                    offers_video: false,
+                    video: VideoState::None,
                     muted: false,
                     held: false,
                     started: at,
                     conference: None,
                     demo: false,
                 });
+            }
+            AppEvent::CallKind { id, kind } => {
+                if let Some(c) = self.calls.iter_mut().find(|c| c.id == id) {
+                    c.kind = kind;
+                }
+            }
+            AppEvent::CallOffersVideo { id } => {
+                if let Some(c) = self.calls.iter_mut().find(|c| c.id == id) {
+                    c.offers_video = c.incoming;
+                }
+            }
+            AppEvent::CallVideo { id, state } => {
+                if let Some(c) = self.calls.iter_mut().find(|c| c.id == id) {
+                    c.video = match state {
+                        VideoState::Failed(why) => VideoState::Failed(label(&why)),
+                        s => s,
+                    };
+                }
             }
             AppEvent::CallRinging { id } => {
                 if let Some(c) = self.calls.iter_mut().find(|c| c.id == id) {

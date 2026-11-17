@@ -321,6 +321,23 @@ pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                             app.view = View::Calls;
                         }
                     }
+                    if let Some(r) =
+                        widgets::gated(ui, t.video_call, &caps.video_call, t, pal, |ui, l, en| {
+                            ui.add_enabled(
+                                en && app.state.active_call().is_none(),
+                                egui::Button::new(RichText::new(l).color(pal.primary))
+                                    .fill(pal.surface)
+                                    .min_size(Vec2::new(150.0, 42.0)),
+                            )
+                        })
+                    {
+                        if r.clicked() {
+                            app.emit(UiIntent::VideoCall {
+                                peer: c.uri.clone(),
+                            });
+                            app.view = View::Calls;
+                        }
+                    }
                 });
                 ui.add_space(20.0);
                 ui.allocate_ui(Vec2::new(ui.available_width().min(640.0), 10.0), |ui| {

@@ -404,3 +404,71 @@ fn a_room_is_listed_apart_and_its_messages_go_to_the_room() {
         .any(|i| matches!(i, UiIntent::Typing { .. })));
     assert!(h.query_by_label_contains("Zustellung unbekannt").is_some());
 }
+
+fn online_with_video() -> CommsUi {
+    use commscraft_ui::model::{Capabilities, Gate};
+    let mut ui = CommsUi::new(Lang::De, 0);
+    ui.state.apply(AppEvent::Connection(Connection::Connected));
+    let mut caps = Capabilities::demo();
+    caps.audio_call = Gate::Available;
+    caps.video_call = Gate::Available;
+    ui.state.apply(AppEvent::Capabilities(caps));
+    ui.set_view(View::Calls);
+    ui
+}
+
+#[test]
+fn a_call_with_video_can_be_answered_with_video() {
+    use commscraft_ui::model::VideoState;
+    let mut ui = online_with_video();
+    ui.state.apply(AppEvent::CallStarted {
+        id: 3,
+        peer: "sip:tim@beispiel.invalid".into(),
+        incoming: true,
+        at: NOW,
+    });
+    ui.state.apply(AppEvent::CallOffersVideo { id: 3 });
+    let mut h = harness(ui, (1440.0, 900.0));
+    h.run();
+    button(&h, "Mit Video annehmen").click();
+    h.run();
+    assert!(h.state().intents.contains(&UiIntent::AnswerVideo { id: 3 }));
+    h.state_mut()
+        .ui
+        .state
+        .apply(AppEvent::CallConnected { id: 3, at: NOW });
+    h.state_mut().ui.state.apply(AppEvent::CallVideo {
+        id: 3,
+        state: VideoState::Window,
+    });
+    h.run();
+    assert!(h
+        .query_by_label_contains("eigenen, abgeschotteten Fenster")
+        .is_some());
+}
+
+#[test]
+fn a_shared_screen_is_offered_for_viewing() {
+    use commscraft_ui::model::CallKind;
+    let mut ui = online_with_video();
+    ui.state.apply(AppEvent::CallStarted {
+        id: 4,
+        peer: "sip:tim@beispiel.invalid".into(),
+        incoming: true,
+        at: NOW,
+    });
+    ui.state.apply(AppEvent::CallKind {
+        id: 4,
+        kind: CallKind::Screen,
+    });
+    let mut h = harness(ui, (1440.0, 900.0));
+    h.run();
+    assert!(h
+        .query_by_label_contains("teilt einen Bildschirm")
+        .is_some());
+    // Not "answer": viewing is all there is.
+    assert!(h.query_by_label("Annehmen").is_none());
+    button(&h, "Ansehen").click();
+    h.run();
+    assert!(h.state().intents.contains(&UiIntent::ViewScreen { id: 4 }));
+}

@@ -27,6 +27,19 @@ commscraft-sdp = { path = "../sdp" }
 commscraft-tones = { path = "../tones" }
 commscraft-turn-bwm = { path = "../turn-bwm" }
 commscraft-url = { path = "../url" }
+commscraft-conf = { path = "../conf" }
+commscraft-h264uc = { path = "../h264uc" }
+commscraft-psom = { path = "../psom" }
+commscraft-rdp-view = { path = "../rdp-view" }
+commscraft-rtp = { path = "../rtp" }
+commscraft-session = { path = "../session" }
+commscraft-video-ffmpeg = { path = "../video-ffmpeg" }
+commscraft-video-wayland = { path = "../video-wayland" }
+# The kernel's sandbox (Landlock) for the video window process.
+landlock = "=0.4.7"
+# Its system call filter (seccomp-BPF, pure Rust, no libseccomp) and the system call numbers.
+seccompiler = "=0.5.0"
+libc = "0.2"
 zeroize.workspace = true
 
 [lints]

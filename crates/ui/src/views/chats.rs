@@ -68,6 +68,11 @@ pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         ) {
             app.chat_filter = ChatFilter::Groups;
         }
+    });
+    // Rooms in a row of their own: four filters do not fit into the panel's width.
+    ui.add_space(4.0);
+    ui.horizontal(|ui| {
+        ui.add_space(8.0);
         let rooms = app.state.capabilities.persistent_chat.clone();
         if let Some(r) = widgets::gated(ui, t.filter_rooms, &rooms, t, pal, |ui, l, en| {
             let selected = app.chat_filter == ChatFilter::Rooms;
@@ -450,7 +455,25 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                             })
                         {
                             if r.clicked() {
-                                app.emit(UiIntent::CallUser { peer: p });
+                                app.emit(UiIntent::CallUser { peer: p.clone() });
+                                app.view = crate::model::View::Calls;
+                            }
+                        }
+                        if let Some(r) = widgets::gated(
+                            ui,
+                            t.video_call,
+                            &caps.video_call,
+                            t,
+                            pal,
+                            |ui, l, en| {
+                                ui.add_enabled(
+                                    en && app.state.active_call().is_none(),
+                                    egui::Button::new(l),
+                                )
+                            },
+                        ) {
+                            if r.clicked() {
+                                app.emit(UiIntent::VideoCall { peer: p });
                                 app.view = crate::model::View::Calls;
                             }
                         }

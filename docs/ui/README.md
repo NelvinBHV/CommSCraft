@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: persistent chat rooms)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: video calls and viewing shared screens)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -53,8 +53,19 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   interface – never to phone numbers – so the engine's emergency call path is not reached from
   here. The call tile *Transfer* sends a blind transfer (REFER) to an address picked in the address
   dialog; the result is reported, and the call ends only when the transfer succeeded. A
-  transfer request of the other side is declined and a screen share offer refused, with a notice
-  (the command-line tool offers both).
+  transfer request of the other side is declined, with a notice (the command-line tool offers it).
+- **Video calls and shared screens:** *Video call* (contact and chat header) sends audio and
+  video at once; an incoming call that offers video can be answered *with video*. Someone sharing
+  a screen or a window with us appears as *shares a screen* with *View* and *Decline*; viewing is
+  receive-only (video-based screen sharing, or RDP for a shared window). The received picture is
+  shown in the sandboxed video window process of `commscraft-client::video_window` (the
+  desktop binary starts it as `commscraft video-window …`; Landlock and a system call filter, as
+  in the CLI), never in the interface process; the window scales the picture to its size, can be
+  maximized (square in its bar or a double click) and resized at its bottom right corner. The
+  camera (`COMMSCRAFT_CAMERA`, else `/dev/video0`) is opened only once a video stream is
+  negotiated. A viewed share shows *sharing connected* once its stream is negotiated (it has no
+  audio answer). `tested-in-lab`: video call out (the peer sees our camera), viewing a shared
+  desktop (video) and a shared window (RDP), the window's maximize.
 - **Address book search:** MS-DLX through the shared `commscraft-client::directory` with the
   registrar's NTLM; asked once the search text has rested for 600 ms; results are shown with
   their source and are not kept as contacts.
@@ -66,12 +77,12 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   sends it back (*delivered*); a refused or unsent one is *not delivered*. Messages that come
   again with the history are shown once (by the server's message number). `tested-offline`:
   Skype for Business Server 2019 has no persistent chat.
-- **Not in the desktop client yet** (gated with a reason): video, viewing shared screens,
-  meeting content.
+- **Not in the desktop client yet** (gated with a reason): meeting content, video and screen
+  viewing in meetings.
 
 `--sign-in sip:ADDRESS --user USER [--domain D] [--server H:P]` signs in at start with the
 password from standard input; `--commands FILE` follows a file of test commands (`view`, `chat`,
-`select`, `search`, `send`, `group`, `accept`, `call`, `transfer`, `answer`, `hangup`, `hold`, `resume`, `mute`,
+`select`, `search`, `send`, `group`, `accept`, `call`, `videocall`, `transfer`, `answer`, `answervideo`, `viewscreen`, `hangup`, `hold`, `resume`, `mute`,
 `unmute`, `status`, `shot`, `quit`) that trigger exactly the actions of the interface – for the
 owner's lab runs and screenshots. `COMMSCRAFT_VERBOSE=1` prints one line per SIP message (method
 or status and CSeq, never headers).
@@ -86,7 +97,8 @@ in Settings → "Functions and their state").
 |---|---|---|
 | 1:1 chat, group chat, presence, address book search, audio call, hold, transfer (blind), meetings | available when signed in; preview in the demo (transfer: not shown in the demo) | through the session adapter |
 | persistent chat rooms | available when signed in and provisioning names a chat pool, else unavailable (disabled by the server); preview in the demo | through the session adapter |
-| video call, viewing shared screens, meeting content | unavailable | the command-line tool offers them; not in this interface yet |
+| video call (1:1), viewing a screen shared 1:1 | available when signed in; preview in the demo | through the session adapter and the video window process |
+| meeting content, video and screen viewing in meetings | unavailable | the command-line tool offers them; not in this interface yet |
 | file transfer, formatted text, history search, read receipts | unavailable | not implemented (no public specification for file transfer; `text/plain` only; no archive or index; delivery is not reading) |
 
 Delivery is shown as what it is: *sending*, *delivered* (the server or peer accepted the MESSAGE),
@@ -148,8 +160,8 @@ reference designs (1440 × 900), with screenshots of the real build (above).
 | Security | no secrets in logs (the trace prints method or status and CSeq only), the password leaves the form once and is cleared, no TLS bypass, no end-to-end claim (the privacy text says TLS and SRTP are not end-to-end encryption), no chat content on disk |
 | Accessibility | labels on all interactive elements (the tests use them); contrast tested; the Linux screen reader bridge is still missing (AccessKit's adapter on zbus 5 is listed as unmaintained) |
 
-Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): the screen reader bridge, and video, viewing shared screens and meeting content
-in the interface. Added after the QA: persistent chat rooms (tested offline), blind transfer and TLS-DSK sign-in (both
+Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): the screen reader bridge, and meeting content and video in meetings in the
+interface. Added after the QA: video calls and viewing screens shared 1:1 (`tested-in-lab`), persistent chat rooms (tested offline), blind transfer and TLS-DSK sign-in (both
 `tested-in-lab`), Kerberos as an option of the sign-in (`tested-in-lab` only its fallback to NTLM:
 the test host has no Kerberos configuration) and the trust dialog for a foreign server domain
 (tested offline: the lab's servers are in its domain).

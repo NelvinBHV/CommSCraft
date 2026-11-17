@@ -12,7 +12,12 @@
 //!
 //! The title bar: the compositor draws one where it offers server-side decorations
 //! (`xdg-decoration`); otherwise, as on GNOME, the window draws a plain bar above the picture as a
-//! subsurface: dragging it moves the window, the cross at its right end closes it.
+//! subsurface: dragging it moves the window, a double click or the square next to the cross
+//! maximizes it (and back), the cross at its right end closes it.
+//!
+//! Size: the compositor scales the picture to the window (`wp_viewporter`, no copy), keeping its
+//! aspect ratio; the window can be resized by dragging its bottom right corner, maximized, or
+//! resized by the compositor's own means.
 
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
@@ -31,6 +36,7 @@ use wayland_protocols::wp::linux_dmabuf::zv1::client::zwp_linux_buffer_params_v1
 use wayland_protocols::wp::linux_dmabuf::zv1::client::zwp_linux_dmabuf_v1::{
     self, ZwpLinuxDmabufV1,
 };
+use wayland_protocols::wp::viewporter::client::{wp_viewport, wp_viewporter};
 use wayland_protocols::xdg::decoration::zv1::client::{
     zxdg_decoration_manager_v1::ZxdgDecorationManagerV1,
     zxdg_toplevel_decoration_v1::{self, ZxdgToplevelDecorationV1},
@@ -48,6 +54,33 @@ pub const BAR: u32 = 28;
 const BAR_KEY: u64 = u64::MAX;
 /// Left mouse button (input-event-codes.h).
 const BTN_LEFT: u32 = 0x110;
+/// The corner of the picture that resizes the window when dragged (pixels).
+pub const GRIP: u32 = 24;
+/// Two presses on the bar within this time are a double click (milliseconds).
+const DOUBLE_CLICK_MS: u32 = 400;
+/// The smallest picture shown (design: the bar's buttons still fit).
+const MIN_SIDE: u32 = 120;
+
+/// The size a picture is shown in: as large as fits into the window's content area (`area`,
+/// the bar not counted), keeping the aspect ratio; the picture's own size while the compositor
+/// leaves the size to us (`None` or a zero side).
+pub fn fit(picture: (u32, u32), area: Option<(u32, u32)>) -> (u32, u32) {
+    let (pw, ph) = (picture.0.max(1), picture.1.max(1));
+    let Some((aw, ah)) = area.filter(|(w, h)| *w > 0 && *h > 0) else {
+        return (pw, ph);
+    };
+    let (aw, ah) = (aw.max(MIN_SIDE), ah.max(MIN_SIDE));
+    // Width-bound or height-bound, in 64 bits (no overflow).
+    let by_width = (aw, (u64::from(aw) * u64::from(ph) / u64::from(pw)) as u32);
+    if by_width.1 <= ah {
+        (by_width.0, by_width.1.max(1))
+    } else {
+        (
+            ((u64::from(ah) * u64::from(pw) / u64::from(ph)) as u32).max(1),
+            ah,
+        )
+    }
+}
 
 /// The bar's pixels, ARGB8888 in little-endian byte order: the CommSCraft ink colour with a cream
 /// cross in the close area.
@@ -63,7 +96,16 @@ pub fn draw_bar(width: u32) -> Vec<u8> {
                     && (9..BAR - 9).contains(&y)
                     && (cx.abs_diff(y) <= 1 || (BAR - 1 - cx).abs_diff(y) <= 1)
             });
-            pixels.extend_from_slice(if cross { &cream } else { &ink });
+            // The maximize square left of it: an outline, 2 pixels wide, with a margin of 9.
+            let square = width >= 2 * BAR
+                && x.checked_sub(close_from.saturating_sub(BAR))
+                    .filter(|_| x < close_from)
+                    .is_some_and(|sx| {
+                        let inside = (9..BAR - 9).contains(&sx) && (9..BAR - 9).contains(&y);
+                        let edge = !(11..BAR - 11).contains(&sx) || !(11..BAR - 11).contains(&y);
+                        inside && edge
+                    });
+            pixels.extend_from_slice(if cross || square { &cream } else { &ink });
         }
     }
     pixels
@@ -120,6 +162,21 @@ struct State {
     bar_width: u32,
     /// A press on the bar: the window is to be moved (serial of the press).
     move_request: Option<u32>,
+    /// The picture's surface, and the pointer on it.
+    picture: Option<wayland_client::backend::ObjectId>,
+    on_picture: bool,
+    pointer_y: f64,
+    /// The size the picture is shown in.
+    shown: (u32, u32),
+    /// A press on the corner: the window is to be resized (serial of the press).
+    resize_request: Option<u32>,
+    /// Maximize (true) or restore (false), asked from the bar.
+    maximize_request: Option<bool>,
+    maximized: bool,
+    /// The window size the compositor asked for (0: ours to choose).
+    asked: (i32, i32),
+    /// The time of the last press on the bar (for the double click).
+    last_bar_press: Option<u32>,
 }
 
 /// Our own title bar.
@@ -143,6 +200,10 @@ pub struct Window {
     seat: Option<wl_seat::WlSeat>,
     bar: Option<Bar>,
     _decoration: Option<ZxdgToplevelDecorationV1>,
+    viewport: Option<wp_viewport::WpViewport>,
+    /// The size of the last picture, and the window size its layout was made for.
+    picture_size: (u32, u32),
+    laid_out_for: (i32, i32),
     /// Buffers by key, for the size they were made for.
     buffers: HashMap<u64, wl_buffer::WlBuffer>,
     size: (u32, u32),
@@ -212,6 +273,10 @@ impl Window {
         let seat: Option<wl_seat::WlSeat> = globals.bind(&qh, 1..=5, ()).ok();
         let shm: Option<wl_shm::WlShm> = globals.bind(&qh, 1..=1, ()).ok();
         let bar = Bar::new(&globals, &compositor, &surface, &qh);
+        let viewport = globals
+            .bind::<wp_viewporter::WpViewporter, _, _>(&qh, 1..=1, ())
+            .ok()
+            .map(|v| v.get_viewport(&surface, &qh, ()));
         surface.commit();
         let mut state = State {
             formats: HashSet::new(),
@@ -227,6 +292,15 @@ impl Window {
             bar: bar.as_ref().map(|b| b.surface.id()),
             bar_width: 0,
             move_request: None,
+            picture: Some(surface.id()),
+            on_picture: false,
+            pointer_y: 0.0,
+            shown: (0, 0),
+            resize_request: None,
+            maximize_request: None,
+            maximized: false,
+            asked: (0, 0),
+            last_bar_press: None,
         };
         // The formats, then the first configure, which must come before the first picture.
         for _ in 0..4 {
@@ -249,6 +323,9 @@ impl Window {
             seat,
             bar,
             _decoration: decoration,
+            viewport,
+            picture_size: (0, 0),
+            laid_out_for: (0, 0),
             buffers: HashMap::new(),
             size: (0, 0),
             shm,
@@ -293,13 +370,7 @@ impl Window {
         self.next_pixels_key = self.next_pixels_key.wrapping_add(1).max(PIXELS_KEY_BASE);
         let pool = shm.create_pool(file.as_fd(), size, &qh, ());
         let buffer = pool.create_buffer(0, w, h, s, wl_shm::Format::Xrgb8888, &qh, key);
-        if let Some(bar) = self.bar.as_mut().filter(|_| !self.state.server_side) {
-            if bar.width != width && bar.draw(width, &qh).is_ok() {
-                self.state.bar_width = width;
-                self.xdg_surface
-                    .set_window_geometry(0, -(BAR as i32), w, h + BAR as i32);
-            }
-        }
+        self.layout((width, height), &qh);
         self.surface.attach(Some(&buffer), 0, 0);
         self.surface.damage_buffer(0, 0, w, h);
         self.surface.commit();
@@ -313,6 +384,42 @@ impl Window {
         );
         self.pump()?;
         Ok(true)
+    }
+
+    /// The size the picture is shown in, our own bar above it unless the compositor draws one,
+    /// and the window geometry around both.
+    fn layout(&mut self, picture: (u32, u32), qh: &QueueHandle<State>) {
+        self.picture_size = picture;
+        self.laid_out_for = self.state.asked;
+        let own_bar = self.bar.is_some() && !self.state.server_side;
+        let (aw, ah) = self.state.asked;
+        let area = (self.viewport.is_some() && aw > 0 && ah > 0).then(|| {
+            let bar = if own_bar { BAR } else { 0 };
+            (aw as u32, (ah as u32).saturating_sub(bar))
+        });
+        let shown = fit(picture, area);
+        if let Some(v) = &self.viewport {
+            let (w, h) = (shown.0.min(i32::MAX as u32), shown.1.min(i32::MAX as u32));
+            v.set_destination(w as i32, h as i32);
+        }
+        let (w, h) = (shown.0 as i32, shown.1 as i32);
+        if let Some(bar) = self.bar.as_mut().filter(|_| own_bar) {
+            if bar.width != shown.0 && bar.draw(shown.0, qh).is_ok() {
+                self.state.bar_width = shown.0;
+            }
+            if self.state.shown != shown {
+                self.xdg_surface
+                    .set_window_geometry(0, -(BAR as i32), w, h + BAR as i32);
+            }
+        } else if self.state.shown != shown {
+            self.xdg_surface.set_window_geometry(0, 0, w, h);
+        }
+        self.state.shown = shown;
+    }
+
+    /// Handles the user's input and the compositor's requests while no picture comes.
+    pub fn idle(&mut self) -> Result<(), Error> {
+        self.pump()
     }
 
     /// Handles what the compositor sent, without waiting.
@@ -330,6 +437,23 @@ impl Window {
             .map_err(connection_error)?;
         if let (Some(serial), Some(seat)) = (self.state.move_request.take(), self.seat.as_ref()) {
             self.toplevel._move(seat, serial);
+            let _ = self.conn.flush();
+        }
+        if let (Some(serial), Some(seat)) = (self.state.resize_request.take(), self.seat.as_ref()) {
+            self.toplevel
+                .resize(seat, serial, xdg_toplevel::ResizeEdge::BottomRight);
+            let _ = self.conn.flush();
+        }
+        match self.state.maximize_request.take() {
+            Some(true) => self.toplevel.set_maximized(),
+            Some(false) => self.toplevel.unset_maximized(),
+            None => {}
+        }
+        // A new window size: the shown picture follows at once (a still screen sends none).
+        if self.state.asked != self.laid_out_for && self.picture_size != (0, 0) {
+            let qh = self.queue.handle();
+            self.layout(self.picture_size, &qh);
+            self.surface.commit();
             let _ = self.conn.flush();
         }
         if let Some(e) = self.conn.protocol_error() {
@@ -394,14 +518,7 @@ impl Window {
             params.destroy();
             self.buffers.insert(frame.key, buffer);
         }
-        // Our own bar above the picture unless the compositor draws one.
-        if let Some(bar) = self.bar.as_mut().filter(|_| !self.state.server_side) {
-            if bar.width != frame.width && bar.draw(frame.width, &qh).is_ok() {
-                self.state.bar_width = frame.width;
-                self.xdg_surface
-                    .set_window_geometry(0, -(BAR as i32), width, height + BAR as i32);
-            }
-        }
+        self.layout((frame.width, frame.height), &qh);
         let Some(buffer) = self.buffers.get(&frame.key) else {
             return Ok(false);
         };
@@ -503,22 +620,62 @@ impl Dispatch<wl_pointer::WlPointer, ()> for State {
     ) {
         match event {
             wl_pointer::Event::Enter {
-                surface, surface_x, ..
+                surface,
+                surface_x,
+                surface_y,
+                ..
             } => {
                 state.on_bar = state.bar.as_ref() == Some(&surface.id());
+                state.on_picture = state.picture.as_ref() == Some(&surface.id());
                 state.pointer_x = surface_x;
+                state.pointer_y = surface_y;
             }
-            wl_pointer::Event::Leave { .. } => state.on_bar = false,
-            wl_pointer::Event::Motion { surface_x, .. } => state.pointer_x = surface_x,
+            wl_pointer::Event::Leave { .. } => {
+                state.on_bar = false;
+                state.on_picture = false;
+            }
+            wl_pointer::Event::Motion {
+                surface_x,
+                surface_y,
+                ..
+            } => {
+                state.pointer_x = surface_x;
+                state.pointer_y = surface_y;
+            }
+            wl_pointer::Event::Button {
+                serial,
+                time,
+                button: BTN_LEFT,
+                state: WEnum::Value(wl_pointer::ButtonState::Pressed),
+                ..
+            } if state.on_bar => {
+                let close_from = f64::from(state.bar_width.saturating_sub(BAR));
+                let double = state
+                    .last_bar_press
+                    .is_some_and(|t| time.wrapping_sub(t) <= DOUBLE_CLICK_MS);
+                state.last_bar_press = Some(time);
+                if state.pointer_x >= close_from {
+                    state.closed = true;
+                } else if state.pointer_x >= close_from - f64::from(BAR) || double {
+                    state.last_bar_press = None;
+                    state.maximize_request = Some(!state.maximized);
+                } else {
+                    state.move_request = Some(serial);
+                }
+            }
             wl_pointer::Event::Button {
                 serial,
                 button: BTN_LEFT,
                 state: WEnum::Value(wl_pointer::ButtonState::Pressed),
                 ..
-            } if state.on_bar => {
-                if state.pointer_x >= f64::from(state.bar_width.saturating_sub(BAR)) {
-                    state.closed = true;
+            } if state.on_picture => {
+                let (w, h) = state.shown;
+                if state.pointer_x >= f64::from(w.saturating_sub(GRIP))
+                    && state.pointer_y >= f64::from(h.saturating_sub(GRIP))
+                {
+                    state.resize_request = Some(serial);
                 } else {
+                    // Dragging the picture moves the window too.
                     state.move_request = Some(serial);
                 }
             }
@@ -594,8 +751,22 @@ impl Dispatch<xdg_toplevel::XdgToplevel, ()> for State {
         _: &Connection,
         _: &QueueHandle<Self>,
     ) {
-        if let xdg_toplevel::Event::Close = event {
-            state.closed = true;
+        match event {
+            xdg_toplevel::Event::Close => state.closed = true,
+            xdg_toplevel::Event::Configure {
+                width,
+                height,
+                states,
+            } => {
+                state.asked = (width.max(0), height.max(0));
+                // The states are 32-bit values in native byte order (xdg-shell).
+                state.maximized = states
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .any(|c| u32::from_ne_bytes(*c) == xdg_toplevel::State::Maximized as u32);
+            }
+            _ => {}
         }
     }
 }
@@ -658,6 +829,8 @@ delegate_noop!(State: ignore wl_shm_pool::WlShmPool);
 delegate_noop!(State: ignore wl_subcompositor::WlSubcompositor);
 delegate_noop!(State: ignore wl_subsurface::WlSubsurface);
 delegate_noop!(State: ignore ZxdgDecorationManagerV1);
+delegate_noop!(State: ignore wp_viewporter::WpViewporter);
+delegate_noop!(State: ignore wp_viewport::WpViewport);
 
 #[cfg(test)]
 mod tests {
@@ -682,5 +855,31 @@ mod tests {
             draw_bar(10).len() == 10 * BAR as usize * 4,
             "narrower than the close area"
         );
+        // The maximize square: its outline cream, its middle ink.
+        assert_eq!(
+            at(100 - 2 * BAR + 9, 14),
+            [0xde, 0xf4, 0xff, 0xff],
+            "square edge"
+        );
+        assert_eq!(
+            at(100 - 2 * BAR + 14, 14),
+            [0x2a, 0x24, 0x10, 0xff],
+            "square middle"
+        );
+    }
+
+    /// The picture fills the window as far as its aspect ratio allows.
+    #[test]
+    fn pictures_fit_the_window() {
+        assert_eq!(fit((850, 532), None), (850, 532));
+        assert_eq!(fit((850, 532), Some((0, 0))), (850, 532));
+        assert_eq!(fit((850, 532), Some((1700, 2000))), (1700, 1064));
+        assert_eq!(fit((850, 532), Some((3000, 1064))), (1700, 1064));
+        assert_eq!(fit((1920, 1080), Some((960, 1000))), (960, 540));
+        // Never below the smallest size, never zero, no overflow.
+        assert_eq!(fit((850, 532), Some((10, 10))), (120, 75));
+        assert_eq!(fit((0, 0), Some((100, 100))), (120, 120));
+        let big = fit((8192, 8192), Some((u32::MAX / 2, u32::MAX / 2)));
+        assert_eq!(big.0, big.1);
     }
 }

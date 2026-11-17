@@ -275,6 +275,9 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
         muted: false,
         held: false,
         started: now.saturating_sub(240),
+        kind: crate::model::CallKind::Audio,
+        offers_video: false,
+        video: crate::model::VideoState::None,
         conference: None,
         demo: true,
     });
@@ -448,6 +451,13 @@ pub fn handle(state: &mut AppState, intent: &UiIntent, now: u64, lang: Lang) {
             status: 0,
             at: now,
         }),
+        UiIntent::VideoCall { .. } | UiIntent::AnswerVideo { .. } | UiIntent::ViewScreen { .. } => {
+            notice(
+                state,
+                "Demo: Es wird kein Video übertragen",
+                "Demo: no video is transmitted",
+            )
+        }
         UiIntent::CallUser { .. } => notice(
             state,
             "Demo: Es wird kein Anruf aufgebaut",

@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: persistent chat rooms)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: video calls and viewing shared screens)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -24,7 +24,7 @@ details are not published.
 | M6 | done (tested-offline, tested-in-lab) | viewing a shared screen 1:1 and in meetings (video-based screen sharing, H.264 UC), a window shared over RDP 1:1 and in meetings through the application sharing MCU, also in ad-hoc conferences created by `commscraft-cli` (authenticated users are presenters and may share); building blocks: MPPC test vectors | owner verification; sharing one's own screen comes later (not in M6) |
 | M7 | done (tested-offline, tested-in-lab) | calendar and out-of-office state from Exchange (function 16), conversation history in Exchange (function 49), voicemail list and listening (function 38), response group agent with web tickets (function 47); meeting content through the web conferencing MCU – whiteboard, polls with voting, slides (function 44, `tested-in-lab`, drawing waits for the GUI), persistent chat rooms (function 20, tested-offline: Skype for Business Server 2019 has none) | owner verification; drawing and creating meeting content with the GUI (SILK deferred until legal clearance; UCWA not planned) |
 
-| GUI | phases 1–4 done (tested-offline, tested-in-lab) | the desktop client `commscraft` with the interface crate `ui` (egui): shell, chats, contacts, calls, meetings, settings with capability gates; the session adapter (sign-in, contacts, presence, chat 1:1 and group, persistent chat rooms, audio calls, meetings); local preferences, the address book search; QA report ([`ui/README.md`](ui/README.md)) | the screen reader bridge, video, screen viewing and meeting content in the interface |
+| GUI | phases 1–4 done (tested-offline, tested-in-lab) | the desktop client `commscraft` with the interface crate `ui` (egui): shell, chats, contacts, calls, meetings, settings with capability gates; the session adapter (sign-in, contacts, presence, chat 1:1 and group, persistent chat rooms, audio and video calls, viewing shared screens, meetings); local preferences, the address book search; QA report ([`ui/README.md`](ui/README.md)) | the screen reader bridge, meeting content and video in meetings in the interface |
 
 Next steps in order: all milestones from M1 to M7 are closed apart from the owner's verification; the graphical interface (egui) has its four phases done; the functions still missing in it are listed in gaps row 9; the optional M3 points (some need captures) stay open.
 
