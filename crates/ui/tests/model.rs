@@ -363,3 +363,24 @@ fn the_same_invitation_is_listed_once() {
     }
     assert_eq!(s.invitations.len(), 1);
 }
+
+#[test]
+fn photos_are_taken_only_in_their_bounds() {
+    let mut s = online();
+    let uri = "sip:carol@beispiel.invalid";
+    s.apply(AppEvent::ContactPhoto {
+        uri: uri.into(),
+        side: 96,
+        rgba: vec![0; 96 * 96 * 4],
+    });
+    assert_eq!(s.photos.get(uri).map(|p| p.side), Some(96));
+    // Wrong length, too small, too large: ignored.
+    for (side, len) in [(96, 10), (8, 8 * 8 * 4), (512, 4)] {
+        s.apply(AppEvent::ContactPhoto {
+            uri: "sip:x@beispiel.invalid".into(),
+            side,
+            rgba: vec![0; len],
+        });
+    }
+    assert_eq!(s.photos.len(), 1);
+}

@@ -13,6 +13,8 @@ commscraft-avedgea = { path = "../avedgea" }
 commscraft-call-media = { path = "../call-media" }
 commscraft-discovery = { path = "../discovery" }
 commscraft-dlx = { path = "../dlx" }
+commscraft-ews = { path = "../ews" }
+commscraft-presence = { path = "../presence" }
 commscraft-ntlm = { path = "../ntlm" }
 commscraft-sipae = { path = "../sipae" }
 commscraft-ocauthws = { path = "../ocauthws" }

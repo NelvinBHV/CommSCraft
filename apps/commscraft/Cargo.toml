@@ -39,6 +39,8 @@ zeroize.workspace = true
 eframe = { version = "=0.37.0", default-features = false, features = ["clipboard", "glow", "wayland", "x11"] }
 # Decoding the unchanged brand icon (PNG) for the window and the top bar.
 png = "0.18"
+# JPEG contact photos (pure Rust; already in the lock through IronRDP).
+zune-jpeg = "0.5.15"
 
 [lints]
 workspace = true

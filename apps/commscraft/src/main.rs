@@ -7,6 +7,7 @@
 //! commands (`script.rs`) that trigger the same actions as the interface.
 
 mod fonts;
+mod photos;
 mod prefs;
 mod script;
 mod session;

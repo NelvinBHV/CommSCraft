@@ -66,7 +66,15 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             app.state.me.name.clone()
         };
         let presence = app.state.me.presence;
-        widgets::avatar(ui, &name, 52.0, online.then_some(presence), pal);
+        let me = app.state.me.uri.clone();
+        app.avatar(
+            ui,
+            Some(me.as_str()),
+            &name,
+            52.0,
+            online.then_some(presence),
+            pal,
+        );
         ui.vertical(|ui| {
             ui.label(
                 RichText::new(&name)
@@ -628,8 +636,9 @@ fn contact_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, c: &Contact) {
             .max_rect(rect.shrink2(Vec2::new(4.0, 2.0)))
             .layout(Layout::left_to_right(Align::Center)),
     );
-    widgets::avatar(
+    app.avatar(
         &mut child,
+        Some(c.uri.as_str()),
         c.display_name(),
         if two_lines { 36.0 } else { 20.0 },
         Some(c.presence),
@@ -788,7 +797,7 @@ fn conversation_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey)
         .as_ref()
         .and_then(|p| app.state.contacts.get(p))
         .map(|k| k.presence);
-    widgets::avatar(&mut child, &c.title, 34.0, presence, pal);
+    app.avatar(&mut child, c.peer.as_deref(), &c.title, 34.0, presence, pal);
     child.vertical(|ui| {
         let title = if c.unread > 0 {
             RichText::new(&c.title).family(theme::bold()).color(pal.ink)

@@ -174,7 +174,7 @@ fn page_ui(
                 missing(ui, t, t.opt_share_location, ni)
             });
             group(ui, pal, t.opt_pictures, |ui| {
-                missing(ui, t, t.opt_show_pictures, ni)
+                ui.checkbox(&mut p.show_pictures, t.opt_show_pictures);
             });
         }
         2 => {

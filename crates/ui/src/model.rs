@@ -660,6 +660,12 @@ pub enum AppEvent {
         room: String,
         status: u16,
     },
+    /// A contact's photo (side × side RGBA).
+    ContactPhoto {
+        uri: String,
+        side: usize,
+        rgba: Vec<u8>,
+    },
     /// Connecting to the content of the meeting of this conversation.
     ContentConnecting {
         session: u32,
@@ -674,6 +680,22 @@ pub enum AppEvent {
     },
     Notice(NoticeKind, String, u64),
 }
+
+/// A contact's photo as a square RGBA thumbnail.
+#[derive(Clone, PartialEq, Eq)]
+pub struct Photo {
+    pub side: usize,
+    pub rgba: std::sync::Arc<Vec<u8>>,
+}
+
+impl std::fmt::Debug for Photo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Photo({0}x{0})", self.side)
+    }
+}
+
+/// Photos kept at most.
+pub const MAX_PHOTOS: usize = 2000;
 
 /// Everything the interface shows.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -691,6 +713,8 @@ pub struct AppState {
     pub notices: VecDeque<Notice>,
     /// A trust question waiting for the user's answer.
     pub trust_question: Option<TrustQuestion>,
+    /// Contact photos by address.
+    pub photos: BTreeMap<String, Photo>,
     next_key: u64,
 }
 
@@ -709,6 +733,7 @@ impl Default for AppState {
             invitations: Vec::new(),
             notices: VecDeque::new(),
             trust_question: None,
+            photos: BTreeMap::new(),
             next_key: 1,
         }
     }
@@ -1317,6 +1342,18 @@ impl AppState {
                             Delivery::Unknown
                         },
                     });
+                }
+            }
+            AppEvent::ContactPhoto { uri, side, rgba } => {
+                let ok = (16..=256).contains(&side) && rgba.len() == side * side * 4;
+                if ok && (self.photos.len() < MAX_PHOTOS || self.photos.contains_key(&uri)) {
+                    self.photos.insert(
+                        label(&uri),
+                        Photo {
+                            side,
+                            rgba: std::sync::Arc::new(rgba),
+                        },
+                    );
                 }
             }
             AppEvent::ContentConnecting { session } => {

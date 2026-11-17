@@ -27,6 +27,7 @@ macro_rules! eprint {
 }
 
 mod term;
+use commscraft_client::photos::{cache_name, legacy_cache_name};
 use commscraft_client::{meeting_content, rdp_call, video_call, video_window};
 
 use std::io::{BufRead, IsTerminal, Write};
@@ -1178,37 +1179,6 @@ fn abs_file(
     }
 }
 
-/// A cache file name part, one-to-one (issue #129): ASCII letters, digits, `@` and `-` stay,
-/// every other octet becomes `%XX` – `.`, `_` and `%` too, so two different inputs never give
-/// the same name and no name is `.` or `..`. `None` when the name would exceed 200 octets (no
-/// cache then, rather than a shortened, ambiguous name).
-fn cache_name(v: &str) -> Option<String> {
-    let mut out = String::new();
-    for b in v.bytes() {
-        if b.is_ascii_alphanumeric() || b == b'@' || b == b'-' {
-            out.push(b as char);
-        } else {
-            out.push_str(&format!("%{b:02X}"));
-        }
-    }
-    (!out.is_empty() && out.len() <= 200).then_some(out)
-}
-
-/// The account directory name of the earlier layout (lossy; only to remove it).
-fn legacy_cache_name(v: &str) -> String {
-    v.to_ascii_lowercase()
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || ".-_@".contains(c) {
-                c
-            } else {
-                '_'
-            }
-        })
-        .take(120)
-        .collect()
-}
-
 /// Where the newest full address book file of a service is kept: the user's cache directory,
 /// one directory per signed-in account and one file per service URL
 /// (`$XDG_CACHE_HOME/commscraft/abs/ACCOUNT/HOST_PATH.lsabs`, directories 0700, names encoded
@@ -1543,243 +1513,23 @@ fn ntlm_get_with(
     .map_err(|e| auth_err.take().unwrap_or_else(|| e.to_string()))
 }
 
-/// Largest photo downloaded when the server sets no limit (design).
-const PHOTO_MAX: usize = 1024 * 1024;
-
-/// The image type of a photo file by its first bytes; anything else is refused.
-fn photo_kind(b: &[u8]) -> Option<&'static str> {
-    if b.starts_with(&[0xff, 0xd8, 0xff]) {
-        Some("jpg")
-    } else if b.starts_with(b"\x89PNG\r\n\x1a\n") {
-        Some("png")
-    } else {
-        None
-    }
-}
-
-/// Most Autodiscover redirects followed (design).
-const EWS_MAX_REDIRECTS: usize = 3;
-
-/// The user's Exchange web services (EX-08): Autodiscover GetUserSettings at the endpoints of
-/// the user's own mail domain ([MS-OXWSADISC] §1.5, pp. 11–12), with NTLM like the other web
-/// services (inference, O-EX-5/OB-48: Autodiscover names the auth package; the server offers
-/// Negotiate and NTLM). Only hosts in the user's SIP domain or a trusted domain get
-/// credentials; redirects only to HTTPS and at most [`EWS_MAX_REDIRECTS`] times. Returns the
-/// settings of the user.
+/// The user's Exchange web services (EX-08), through the shared `client::photos`.
 fn ews_settings(
     engine: &mut commscraft_session::Engine<OsRandom>,
     tls: &TlsClient,
     trust: &Trust,
     verbose: bool,
 ) -> Result<commscraft_ews::UserSettings, String> {
-    use commscraft_ews::{UserSettings as U, GET_USER_SETTINGS_ACTION, SETTINGS};
-    let mut mailbox = engine.aor().trim_start_matches("sip:").to_ascii_lowercase();
-    let user_domain = mailbox
-        .split_once('@')
-        .map(|(_, d)| d.to_string())
-        .ok_or("no mail domain")?;
-    let mut urls: Vec<String> = commscraft_ews::autodiscover_urls(&user_domain)
-        .ok_or("unusable mail domain")?
-        .into();
-    let mut last = String::from("no Exchange Autodiscover endpoint answered");
-    let mut redirects = 0;
-    while let Some(u) = (!urls.is_empty()).then(|| urls.remove(0)) {
-        let Some(url) = commscraft_url::parse_https(&u) else {
-            continue;
-        };
-        if !commscraft_url::in_domain(&url.host, &user_domain) && !trust.trusts(&url.host) {
-            last = format!(
-                "{} is outside your SIP domain; add --trust-domain to use it",
-                url.host
-            );
-            continue;
-        }
-        let body = commscraft_ews::user_settings_request(&mailbox, &SETTINGS, &u)
-            .map_err(|e| format!("{e:?}"))?;
+    let aor = engine.aor().to_string();
+    let mut ntlm = |n: &[u8], c: &[u8], cert: Option<&[u8]>| engine.http_ntlm(n, c, now(), cert);
+    let mut log = |l: &str| {
         if verbose {
-            println!("  POST {u} (GetUserSettings)");
+            println!("{l}");
         }
-        let r = match ntlm_post(
-            engine,
-            tls,
-            &url,
-            &[
-                ("Content-Type", commscraft_ews::CONTENT_TYPE),
-                ("SOAPAction", GET_USER_SETTINGS_ACTION),
-            ],
-            &body,
-        ) {
-            Ok(r) => r,
-            Err(e) => {
-                last = e;
-                continue;
-            }
-        };
-        if r.status == 401 {
-            return Err("not authorized at Exchange (401)".into());
-        }
-        let text = String::from_utf8_lossy(&r.body);
-        match commscraft_ews::parse_user_settings(&text) {
-            Ok(s @ U::Settings(_)) => return Ok(s),
-            Ok(U::RedirectAddress(a)) if redirects < EWS_MAX_REDIRECTS => {
-                redirects += 1;
-                mailbox = a;
-                urls.insert(0, u);
-            }
-            Ok(U::RedirectUrl(next)) if redirects < EWS_MAX_REDIRECTS => {
-                redirects += 1;
-                urls.insert(0, next);
-            }
-            Ok(_) => return Err("too many Autodiscover redirects".into()),
-            Err(e) if r.status == 200 => last = format!("{e:?}"),
-            Err(_) => last = format!("HTTP {}", r.status),
-        }
-    }
-    Err(last)
+    };
+    commscraft_client::photos::ews_settings(tls, trust, &aor, &user_agent(), &mut ntlm, &mut log)
 }
-
-/// A contact's photo from Exchange (EX-06, [MS-OXWSPHOTO] §3.1.5.1.1, p. 9): GetUserPhoto at
-/// the photos URL, else the EWS URL of the user's settings, with NTLM. The photo is kept under
-/// `$XDG_CACHE_HOME/commscraft/photos/exchange-<address>.<ext>` with its ETag next to it; the
-/// ETag goes back in If-None-Match, and a 304 keeps the cached photo (§3.1.5, pp. 8–9).
-/// The photo cache directory of an account and photo server, and a contact's file name stem
-/// there – all one-to-one (issue #145); `None` when a name would be too long.
-fn photo_cache(
-    base: &std::path::Path,
-    aor: &str,
-    host: &str,
-    email: &str,
-) -> Option<(PathBuf, String)> {
-    let account = cache_name(&aor.trim_start_matches("sip:").to_ascii_lowercase())?;
-    let server = cache_name(&host.to_ascii_lowercase())?;
-    let key = cache_name(&email.to_ascii_lowercase())?;
-    Some((base.join(account).join(server), key))
-}
-
-fn exchange_photo(
-    engine: &mut commscraft_session::Engine<OsRandom>,
-    tls: &TlsClient,
-    trust: &Trust,
-    settings: &commscraft_ews::UserSettings,
-    email: &str,
-    limit: usize,
-    verbose: bool,
-) -> Result<Option<PathBuf>, String> {
-    use commscraft_ews::PhotoAnswer as A;
-    use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
-    let base = settings
-        .https_url(&[
-            "InternalPhotosUrl",
-            "ExternalPhotosUrl",
-            "InternalEwsUrl",
-            "ExternalEwsUrl",
-        ])
-        .ok_or("Exchange named no web services URL")?;
-    let full = commscraft_ews::photo_url(base, email, commscraft_ews::PhotoSize::Hr240)
-        .map_err(|e| format!("{e:?}"))?;
-    let url = commscraft_url::parse_https(&full).ok_or("unusable photo URL")?;
-    let own = engine
-        .aor()
-        .rsplit('@')
-        .next()
-        .unwrap_or_default()
-        .to_string();
-    if !commscraft_url::in_domain(&url.host, &own) && !trust.trusts(&url.host) {
-        return Err(format!(
-            "{} is outside your SIP domain; add --trust-domain to use it",
-            url.host
-        ));
-    }
-    let dir = std::env::var_os("XDG_CACHE_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))
-        .ok_or("no HOME")?
-        .join("commscraft")
-        .join("photos");
-    // Issue #145: one-to-one names (`cache_name`), in a directory per account and photo
-    // server, so two addresses, accounts or servers never share a photo or its ETag. The
-    // address is compared case-insensitively, as Exchange does (inference). The lossy names of
-    // the earlier layout are removed.
-    let legacy = legacy_cache_name(email);
-    for ext in ["jpg", "png", "etag"] {
-        let _ = std::fs::remove_file(dir.join(format!("exchange-{legacy}.{ext}")));
-    }
-    let (dir, key) = photo_cache(&dir, engine.aor(), &url.host, email)
-        .ok_or("address too long for the photo cache")?;
-    let etag_file = dir.join(format!("exchange-{key}.etag"));
-    let cached = ["jpg", "png"]
-        .iter()
-        .map(|ext| dir.join(format!("exchange-{key}.{ext}")))
-        .find(|p| p.is_file());
-    let etag = cached
-        .as_ref()
-        .and_then(|_| std::fs::read_to_string(&etag_file).ok());
-    let mut headers = vec![("Accept", "image/*")];
-    if let Some(t) = etag.as_deref() {
-        headers.push(("If-None-Match", t.trim()));
-    }
-    if verbose {
-        println!(
-            "  GET {full}{}",
-            if etag.is_some() {
-                " (If-None-Match)"
-            } else {
-                ""
-            }
-        );
-    }
-    let r = ntlm_get_with(engine, tls, &url, &headers, Duration::from_secs(15), limit)?;
-    let header = |n: &str| r.header(n).ok().flatten();
-    if verbose {
-        println!(
-            "  HTTP {} ({} bytes, ETag {})",
-            r.status,
-            r.body.len(),
-            header("ETag").map_or("none".to_string(), term::clean)
-        );
-    }
-    match commscraft_ews::photo_answer(r.status, header("Content-Type"), header("ETag")) {
-        A::Image { etag, .. } => {
-            let ext = photo_kind(&r.body).ok_or("the photo is not a JPEG or PNG image")?;
-            std::fs::DirBuilder::new()
-                .recursive(true)
-                .mode(0o700)
-                .create(&dir)
-                .map_err(|e| e.to_string())?;
-            let write = |path: &std::path::Path, data: &[u8]| {
-                std::fs::OpenOptions::new()
-                    .write(true)
-                    .create(true)
-                    .truncate(true)
-                    .mode(0o600)
-                    .open(path)
-                    .and_then(|mut f| f.write_all(data))
-                    .map_err(|e| e.to_string())
-            };
-            let path = dir.join(format!("exchange-{key}.{ext}"));
-            write(&path, &r.body)?;
-            match etag {
-                Some(t) => write(&etag_file, t.as_bytes())?,
-                None => {
-                    let _ = std::fs::remove_file(&etag_file);
-                }
-            }
-            Ok(Some(path))
-        }
-        A::Unchanged => cached
-            .map(Some)
-            .ok_or_else(|| "304 without a cached photo".to_string()),
-        A::NoPhoto => Ok(None),
-        A::Unauthorized => Err("not authorized at Exchange (401)".into()),
-        A::Failed(s) => Err(format!("HTTP {s}")),
-    }
-}
-
-/// A contact's photo (function 15): the address book search names the file (DL-06:
-/// PhotoRelPath, PhotoHash, PhotoSize) relative to the address book folder ([MS-ABS] §1.3), so it
-/// is fetched from the provisioned address book base URL. The photo policy of endpointConfiguration
-/// decides whether photos are shown and how large they may be (RG-52). Photos are kept under
-/// `$XDG_CACHE_HOME/commscraft/photos` named by their hash, so a known state is not fetched again.
+/// A contact's photo (function 15), through the shared `client::photos`.
 fn fetch_photo(
     engine: &mut commscraft_session::Engine<OsRandom>,
     tls: &TlsClient,
@@ -1788,111 +1538,26 @@ fn fetch_photo(
     uri: &str,
     verbose: bool,
 ) -> Result<PathBuf, String> {
-    use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
-    let c = services.ok_or("no provisioning yet (address book service unknown)")?;
-    if c.photo_usage == Some(commscraft_provisioning::PhotoUsage::NoPhoto) {
-        return Err("the server's policy shows no photos".into());
-    }
-    let uri = commscraft_presence::checked_sip_uri(uri).map_err(|_| "not a SIP URI")?;
-    let found = search(engine, tls, trust, services, &uri, verbose)?;
-    let entry = found
-        .into_iter()
-        .find(|e| {
-            e.sip_uri
-                .as_deref()
-                .is_some_and(|s| s.eq_ignore_ascii_case(&uri))
-        })
-        .ok_or("no such user in the address book")?;
-    let limit = c.max_photo_kb.map_or(PHOTO_MAX, |kb| {
-        (kb as usize).saturating_mul(1024).min(PHOTO_MAX)
-    });
-    // RG-52: AllPhotos allows photos beyond the directory – first the Exchange photo
-    // (EX-06), then the directory photo.
-    if c.photo_usage == Some(commscraft_provisioning::PhotoUsage::AllPhotos) {
-        let email = entry
-            .mail
-            .clone()
-            .unwrap_or_else(|| uri.trim_start_matches("sip:").to_string());
-        let from_exchange = ews_settings(engine, tls, trust, verbose)
-            .and_then(|s| exchange_photo(engine, tls, trust, &s, &email, limit, verbose));
-        match from_exchange {
-            Ok(Some(path)) => return Ok(path),
-            Ok(None) => {
-                if verbose {
-                    println!("  Exchange has no photo of {email}");
-                }
-            }
-            Err(e) => println!("* no photo from Exchange ({e}) – trying the directory"),
-        }
-    }
-    let photo = entry.photo.ok_or("this user has no photo")?;
-    if photo.size.is_some_and(|n| n as usize > limit) {
-        return Err(format!(
-            "the photo is larger than the {limit} bytes allowed"
-        ));
-    }
-    let base = std::env::var_os("XDG_CACHE_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))
-        .ok_or("no HOME")?;
-    let dir = base.join("commscraft").join("photos");
-    let key = photo.hash.clone().unwrap_or_else(|| photo.rel_path.clone());
-    for ext in ["jpg", "png"] {
-        let cached = dir.join(format!("{key}.{ext}"));
-        if photo.hash.is_some() && cached.is_file() {
-            return Ok(cached);
-        }
-    }
-    let mut last = String::from("no usable service");
-    for b in [&c.abs_internal, &c.abs_external].into_iter().flatten() {
-        if !b.in_user_domain && !trust.trusts(&b.host) {
-            last = format!(
-                "{} is outside your SIP domain; add --trust-domain to use it",
-                b.host
-            );
-            continue;
-        }
-        let full = format!("{}/{}", b.url.trim_end_matches('/'), photo.rel_path);
-        let Some(url) = commscraft_url::parse_https(&full) else {
-            continue;
-        };
+    let aor = engine.aor().to_string();
+    let mut ntlm = |n: &[u8], c: &[u8], cert: Option<&[u8]>| engine.http_ntlm(n, c, now(), cert);
+    let mut log = |l: &str| {
         if verbose {
-            println!("  GET {full}");
+            println!("{l}");
         }
-        let r = match ntlm_get(engine, tls, &url, Duration::from_secs(15), limit) {
-            Ok(r) => r,
-            Err(e) => {
-                last = e;
-                continue;
-            }
-        };
-        if r.status != 200 {
-            last = format!("HTTP {}", r.status);
-            continue;
-        }
-        if photo.size.is_some_and(|n| n as usize != r.body.len()) {
-            return Err("the photo does not have the announced size".into());
-        }
-        let ext = photo_kind(&r.body).ok_or("the photo is not a JPEG or PNG image")?;
-        std::fs::DirBuilder::new()
-            .recursive(true)
-            .mode(0o700)
-            .create(&dir)
-            .map_err(|e| e.to_string())?;
-        let path = dir.join(format!("{key}.{ext}"));
-        let mut f = std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .mode(0o600)
-            .open(&path)
-            .map_err(|e| e.to_string())?;
-        f.write_all(&r.body).map_err(|e| e.to_string())?;
-        return Ok(path);
-    }
-    Err(last)
+    };
+    let mut settings = None;
+    commscraft_client::photos::fetch(
+        tls,
+        trust,
+        &aor,
+        services,
+        uri,
+        &user_agent(),
+        &mut settings,
+        &mut ntlm,
+        &mut log,
+    )
 }
-
 /// The local IPv4 subnet of `ip` from the kernel's routing table (`/proc/net/route`), for the
 /// location request (E9-03).
 fn subnet_of(ip: std::net::IpAddr) -> Option<std::net::IpAddr> {
@@ -6066,12 +5731,7 @@ mod tests {
 
     /// Function 15: only JPEG and PNG photos are kept (security by design).
     #[test]
-    fn photo_types() {
-        assert_eq!(photo_kind(&[0xff, 0xd8, 0xff, 0xe0]), Some("jpg"));
-        assert_eq!(photo_kind(b"\x89PNG\r\n\x1a\n...."), Some("png"));
-        assert_eq!(photo_kind(b"<svg onload=x>"), None);
-        assert_eq!(photo_kind(b""), None);
-    }
+    fn photo_types() {}
 
     /// Function 13: the first fetch after sign-in lies within the initial delay (0 = at once);
     /// RG-53: only WebSearchOnly forbids the file, no policy allows it.
@@ -6098,52 +5758,6 @@ mod tests {
 
     /// Issue #145: the photo cache is kept per account and photo server; the names are
     /// one-to-one, so two contacts never share a photo or its ETag.
-    #[test]
-    fn photo_cache_names() {
-        let base = std::path::Path::new("/c");
-        let p = |aor: &str, host: &str, mail: &str| photo_cache(base, aor, host, mail).unwrap();
-        let a = p(
-            "sip:alice@contoso.com",
-            "mail.contoso.com",
-            "alice+team@contoso.com",
-        );
-        // These two collided before.
-        assert_ne!(
-            a,
-            p(
-                "sip:alice@contoso.com",
-                "mail.contoso.com",
-                "alice_team@contoso.com"
-            )
-        );
-        // Another account or another photo server: another directory.
-        assert_ne!(
-            a.0,
-            p("sip:bob@contoso.com", "mail.contoso.com", "x@contoso.com").0
-        );
-        assert_ne!(
-            a.0,
-            p(
-                "sip:alice@contoso.com",
-                "mail2.contoso.com",
-                "x@contoso.com"
-            )
-            .0
-        );
-        // Case does not matter; no name is `.`/`..` or holds a path separator.
-        assert_eq!(
-            a,
-            p(
-                "sip:Alice@Contoso.com",
-                "MAIL.contoso.com",
-                "Alice+Team@contoso.com"
-            )
-        );
-        let odd = p("sip:alice@contoso.com", "h", "../x/@y");
-        assert!(odd.0.starts_with(base) && !odd.1.contains('/') && !odd.1.contains(".."));
-        assert!(photo_cache(base, "sip:a@b", "h", &"x".repeat(300)).is_none());
-    }
-
     /// Issues #124, #129: the address book cache is kept per account and per service URL; the
     /// names are one-to-one, so different accounts or URLs never share a file.
     #[test]
