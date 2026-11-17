@@ -404,7 +404,16 @@ pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                             }
                             ui.add_space(18.0);
                             if call.state != CallState::Incoming
-                                && widgets::danger(ui, t.hang_up, pal).clicked()
+                                && widgets::danger(
+                                    ui,
+                                    if call.kind == CallKind::Screen {
+                                        t.stop_viewing
+                                    } else {
+                                        t.hang_up
+                                    },
+                                    pal,
+                                )
+                                .clicked()
                             {
                                 app.emit(UiIntent::HangUp { id: call.id });
                             }

@@ -1869,8 +1869,11 @@ mod tests {
         assert!(c.chat.usable() && c.audio_call.usable() && c.meetings.usable());
         assert!(!c.file_transfer.usable());
         assert!(!c.read_receipts.usable());
-        assert!(!c.video_call.usable());
+        assert!(c.video_call.usable());
         assert!(c.transfer.usable() && c.directory_search.usable());
+        // Chat rooms only with a persistent chat pool from provisioning.
+        assert!(!c.persistent_chat.usable());
+        assert!(online_capabilities(true).persistent_chat.usable());
     }
 
     #[test]

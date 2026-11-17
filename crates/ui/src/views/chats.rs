@@ -68,6 +68,11 @@ pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         ) {
             app.chat_filter = ChatFilter::Groups;
         }
+    });
+    // Rooms in a row of their own: four filters do not fit into the panel's width.
+    ui.add_space(4.0);
+    ui.horizontal(|ui| {
+        ui.add_space(8.0);
         let rooms = app.state.capabilities.persistent_chat.clone();
         if let Some(r) = widgets::gated(ui, t.filter_rooms, &rooms, t, pal, |ui, l, en| {
             let selected = app.chat_filter == ChatFilter::Rooms;
