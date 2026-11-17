@@ -1046,12 +1046,17 @@ pub struct Group {
 /// open ("auxiliary resources for the group"); the Skype for Business server writes a
 /// `groupExtension` element there (interop, `tested-in-lab`): `groupType="dg"` with the list's
 /// mail address for a distribution group the user added, `groupType="pinnedGroup"` for the
-/// favourites. The value is parsed with the bounded XML reader; anything else is a plain group.
+/// favourites. The value is parsed with the bounded XML reader; a `groupExtension` of another
+/// type is another special group, anything else a plain group.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GroupExtension {
     Plain,
-    Distribution { email: String },
+    Distribution {
+        email: String,
+    },
     Pinned,
+    /// A `groupExtension` of another type: a special group, not one of its own to show.
+    Other,
 }
 
 /// The kind of a contact list group from its `externalURI`.
@@ -1085,7 +1090,8 @@ pub fn group_extension(external: &str) -> GroupExtension {
             }
         }
         Some("pinnedGroup") => GroupExtension::Pinned,
-        _ => GroupExtension::Plain,
+        Some(_) => GroupExtension::Other,
+        None => GroupExtension::Plain,
     }
 }
 

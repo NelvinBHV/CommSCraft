@@ -442,17 +442,37 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         ui.allocate_ui(Vec2::new(ui.available_width() - 40.0, 30.0), |ui| {
             search_field(app, ui, pal, t.find_someone);
         });
+        let can_edit = app.state.capabilities.presence.usable();
         let add = icons::button(
             ui,
             Icon::AddPerson,
             t.add_contact,
             30.0,
             false,
-            false,
+            can_edit,
             pal.muted,
             pal.primary,
-        );
-        add.on_hover_text(t.add_contact_unavailable);
+        )
+        .on_hover_text(t.add_contact);
+        egui::Popup::menu(&add).show(|ui| {
+            if ui
+                .add_enabled(can_edit, egui::Button::new(t.add_contact_dots))
+                .clicked()
+            {
+                app.new_chat = Some(crate::app::NewChat {
+                    text: String::new(),
+                    purpose: crate::app::AddressFor::AddContact,
+                });
+                ui.close();
+            }
+            if ui
+                .add_enabled(can_edit, egui::Button::new(t.new_group_dots))
+                .clicked()
+            {
+                app.group_dialog = Some((None, String::new()));
+                ui.close();
+            }
+        });
     });
     if !app.search.trim().is_empty() {
         egui::ScrollArea::vertical()
@@ -553,8 +573,12 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             }
             out
         }
-        ContactsView::Relationships | ContactsView::New => {
-            ui.label(RichText::new(t.contacts_view_unavailable).color(pal.muted));
+        ContactsView::New => {
+            subscribers(app, ui, pal);
+            return;
+        }
+        ContactsView::Relationships => {
+            ui.label(RichText::new(t.relationships_unavailable).color(pal.muted));
             return;
         }
     };
@@ -568,7 +592,7 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             for (name, members) in groups {
                 let open = !app.collapsed.contains(&name);
                 let head = format!("{} ({})", name.to_uppercase(), members.len());
-                let clicked = ui
+                let header = ui
                     .horizontal(|ui| {
                         let (rect, _) = ui.allocate_exact_size(Vec2::splat(12.0), Sense::hover());
                         icons::draw(
@@ -589,15 +613,17 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                             )
                             .frame(false),
                         )
-                        .clicked()
                     })
                     .inner;
-                if clicked {
+                if header.clicked() {
                     if open {
                         app.collapsed.insert(name.clone());
                     } else {
                         app.collapsed.remove(&name);
                     }
+                }
+                if app.state.groups.contains(&name) {
+                    group_menu(app, &header, &name, members.is_empty());
                 }
                 if open {
                     for c in members {
@@ -771,6 +797,116 @@ fn dist_groups(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     }
 }
 
+/// Renaming and deleting a group of the contact list (only an empty one can be deleted).
+fn group_menu(app: &mut CommsUi, header: &egui::Response, name: &str, empty: bool) {
+    let t = app.t;
+    header.context_menu(|ui| {
+        if ui.button(t.rename_group).clicked() {
+            app.group_dialog = Some((Some(name.to_string()), name.to_string()));
+            ui.close();
+        }
+        if ui
+            .add_enabled(empty, egui::Button::new(t.delete_group))
+            .on_disabled_hover_text(t.delete_group_not_empty)
+            .clicked()
+        {
+            app.emit(UiIntent::DeleteGroup {
+                name: name.to_string(),
+            });
+            ui.close();
+        }
+    });
+}
+
+/// People who added the user: add them, or let them be.
+fn subscribers(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    let list = app.state.subscribers.clone();
+    if list.is_empty() {
+        ui.label(RichText::new(t.no_new_subscribers).color(pal.muted));
+    }
+    for s in list {
+        ui.horizontal(|ui| {
+            let name = if s.name.is_empty() {
+                app.state.name_of(&s.uri)
+            } else {
+                s.name.clone()
+            };
+            app.avatar(ui, Some(s.uri.as_str()), &name, 30.0, None, pal);
+            ui.vertical(|ui| {
+                ui.label(RichText::new(&name).color(pal.ink));
+                ui.label(
+                    RichText::new(t.added_you)
+                        .size(theme::text::SMALL)
+                        .color(pal.muted),
+                );
+                ui.horizontal(|ui| {
+                    if ui.button(t.add_to_contacts).clicked() {
+                        app.emit(UiIntent::AddContact {
+                            uri: s.uri.clone(),
+                            name: s.name.clone(),
+                            group: None,
+                        });
+                        app.emit(UiIntent::AcknowledgeSubscriber { uri: s.uri.clone() });
+                        app.state.subscribers.retain(|x| x.uri != s.uri);
+                    }
+                    if ui.button(t.ignore).clicked() {
+                        app.emit(UiIntent::AcknowledgeSubscriber { uri: s.uri.clone() });
+                        app.state.subscribers.retain(|x| x.uri != s.uri);
+                    }
+                });
+            });
+        });
+        ui.add_space(6.0);
+    }
+}
+
+/// The name of a new group, or the new name of a group.
+pub fn group_dialog(app: &mut CommsUi, ctx: &egui::Context) {
+    let t = app.t;
+    let Some((old, mut text)) = app.group_dialog.take() else {
+        return;
+    };
+    let mut keep = true;
+    egui::Modal::new(egui::Id::unique("group-dialog")).show(ctx, |ui| {
+        ui.label(
+            RichText::new(if old.is_some() {
+                t.rename_group
+            } else {
+                t.new_group
+            })
+            .family(theme::bold()),
+        );
+        let r = ui.add(
+            egui::TextEdit::singleline(&mut text)
+                .char_limit(64)
+                .desired_width(260.0),
+        );
+        r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::TextInput, true, "group name"));
+        r.request_focus();
+        ui.horizontal(|ui| {
+            let ok = !text.trim().is_empty() && !text.chars().any(char::is_control);
+            if ui.add_enabled(ok, egui::Button::new(t.ok)).clicked() {
+                let name = text.trim().to_string();
+                match &old {
+                    Some(o) => app.emit(UiIntent::RenameGroup {
+                        name: o.clone(),
+                        to: name,
+                    }),
+                    None => app.emit(UiIntent::AddGroup { name }),
+                }
+                keep = false;
+            }
+            if ui.button(t.cancel).clicked() {
+                keep = false;
+            }
+        });
+    });
+    if keep {
+        app.group_dialog = Some((old, text));
+    }
+}
+
 /// What can be done with a contact (also from search results).
 pub fn contact_menu(app: &mut CommsUi, ui: &mut Ui, uri: &str) {
     let t = app.t;
@@ -800,6 +936,75 @@ pub fn contact_menu(app: &mut CommsUi, ui: &mut Ui, uri: &str) {
         app.call(uri, true);
         ui.close();
     }
+    ui.separator();
+    let can_edit = app.state.capabilities.presence.usable();
+    let groups = app.state.groups.clone();
+    if app.state.contacts.contains_key(uri) {
+        ui.add_enabled_ui(can_edit, |ui| {
+            ui.menu_button(t.move_to_group, |ui| {
+                for g in &groups {
+                    if ui.button(g).clicked() {
+                        app.emit(UiIntent::MoveContact {
+                            uri: uri.to_string(),
+                            group: g.clone(),
+                        });
+                        ui.close();
+                    }
+                }
+            });
+            if ui.button(t.remove_contact).clicked() {
+                app.emit(UiIntent::RemoveContact {
+                    uri: uri.to_string(),
+                });
+                ui.close();
+            }
+        });
+    } else {
+        ui.add_enabled_ui(can_edit, |ui| {
+            ui.menu_button(t.add_to_contacts, |ui| {
+                let name = app.state.known_name(uri);
+                if ui.button(t.other_contacts).clicked() {
+                    app.emit(UiIntent::AddContact {
+                        uri: uri.to_string(),
+                        name: name.clone(),
+                        group: None,
+                    });
+                    ui.close();
+                }
+                for g in &groups {
+                    if ui.button(g).clicked() {
+                        app.emit(UiIntent::AddContact {
+                            uri: uri.to_string(),
+                            name: name.clone(),
+                            group: Some(g.clone()),
+                        });
+                        ui.close();
+                    }
+                }
+            });
+        });
+    }
+    ui.add_enabled_ui(can_edit, |ui| {
+        ui.menu_button(t.relationship, |ui| {
+            use crate::model::Relation as R;
+            for (r, label) in [
+                (Some(R::Family), t.rel_family),
+                (Some(R::Workgroup), t.rel_workgroup),
+                (Some(R::Colleagues), t.rel_colleagues),
+                (Some(R::External), t.rel_external),
+                (Some(R::Blocked), t.rel_blocked),
+                (None, t.rel_auto),
+            ] {
+                if ui.button(label).clicked() {
+                    app.emit(UiIntent::SetRelation {
+                        uri: uri.to_string(),
+                        relation: r,
+                    });
+                    ui.close();
+                }
+            }
+        });
+    });
     ui.separator();
     let fav = app.prefs.favorites.contains(uri);
     if ui

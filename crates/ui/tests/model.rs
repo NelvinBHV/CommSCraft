@@ -414,3 +414,26 @@ fn distribution_group_members_keep_their_presence() {
     )]));
     assert!(s.distribution[0].members.is_some());
 }
+
+#[test]
+fn groups_subscribers_and_known_names() {
+    let mut s = online();
+    s.apply(AppEvent::Groups(vec!["Team".into(), "Freunde\u{7}".into()]));
+    assert_eq!(s.groups[0], "Team");
+    assert!(!s.groups[1].contains('\u{7}'));
+    let sub = commscraft_ui::model::Subscriber {
+        uri: "sip:jana@beispiel.invalid".into(),
+        name: "Jana".into(),
+    };
+    s.apply(AppEvent::NewSubscriber(sub.clone()));
+    s.apply(AppEvent::NewSubscriber(sub));
+    assert_eq!(s.subscribers.len(), 1);
+    // Only a real name counts, never the bare address.
+    assert_eq!(s.known_name("sip:jana@beispiel.invalid"), "");
+    s.apply(AppEvent::Contacts(vec![Contact::new(
+        "sip:bob@beispiel.invalid",
+        "Bob",
+        Source::ContactList,
+    )]));
+    assert_eq!(s.known_name("sip:bob@beispiel.invalid"), "Bob");
+}

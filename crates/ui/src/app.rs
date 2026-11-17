@@ -89,6 +89,39 @@ pub enum UiIntent {
     PrefsChanged,
     /// The answer to a trust question (true: trust the domain and remember it).
     AnswerTrust(bool),
+    /// Add a person to the contact list (into this group, else the default group).
+    AddContact {
+        uri: String,
+        name: String,
+        group: Option<String>,
+    },
+    RemoveContact {
+        uri: String,
+    },
+    /// Put a contact into this group (instead of its present groups).
+    MoveContact {
+        uri: String,
+        group: String,
+    },
+    AddGroup {
+        name: String,
+    },
+    RenameGroup {
+        name: String,
+        to: String,
+    },
+    DeleteGroup {
+        name: String,
+    },
+    /// Change a person's privacy relationship (`None`: back to the server's default).
+    SetRelation {
+        uri: String,
+        relation: Option<crate::model::Relation>,
+    },
+    /// Done with a new subscriber (seen; added or not).
+    AcknowledgeSubscriber {
+        uri: String,
+    },
     /// List the members of a distribution group (address book).
     ExpandGroup {
         email: String,
@@ -268,6 +301,8 @@ pub enum AddressFor {
     Invite(ConvKey),
     /// Transfer this call (blind transfer).
     Transfer(u32),
+    /// Add a person to the contact list.
+    AddContact,
 }
 
 /// The address dialog: a new conversation or group, an invitation, a transfer target.
@@ -314,6 +349,8 @@ pub struct CommsUi {
     /// The newest warning the user closed (its time).
     pub(crate) dismissed_alert: u64,
     pub(crate) collapsed: BTreeSet<String>,
+    /// The name dialog: a new group, or renaming one (its old name).
+    pub(crate) group_dialog: Option<(Option<String>, String)>,
     /// Distribution groups whose members were asked for.
     pub(crate) expanded_groups: BTreeSet<String>,
     pub(crate) windows: Vec<Win>,
@@ -367,6 +404,7 @@ impl CommsUi {
             note: String::new(),
             dismissed_alert: 0,
             collapsed: BTreeSet::new(),
+            group_dialog: None,
             expanded_groups: BTreeSet::new(),
             windows: Vec::new(),
             focus_window: None,
@@ -667,6 +705,7 @@ impl CommsUi {
             self.follow_calls();
             views::main_window::show(self, ui, &pal);
             views::chats::new_chat_dialog(self, ctx, &pal);
+            views::main_window::group_dialog(self, ctx);
             views::conv_window::show_all(self, ctx, &pal);
         }
         std::mem::take(&mut self.intents)

@@ -445,6 +445,7 @@ pub fn new_chat_dialog(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
                 AddressFor::NewChat => t.new_chat_title,
                 AddressFor::Invite(_) => t.invite_title,
                 AddressFor::Transfer(_) => t.transfer_title,
+                AddressFor::AddContact => t.add_contact,
             })
             .size(theme::text::PANEL_TITLE)
             .family(crate::theme::bold())
@@ -495,6 +496,7 @@ pub fn new_chat_dialog(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
                     AddressFor::NewChat => t.start_chat,
                     AddressFor::Invite(_) => t.invite,
                     AddressFor::Transfer(_) => t.transfer,
+                    AddressFor::AddContact => t.add,
                 };
                 if (widgets::primary(ui, label, ok, pal).clicked() || (enter && ok)) && ok {
                     if let Some(a) = address.clone() {
@@ -506,6 +508,14 @@ pub fn new_chat_dialog(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
                                 app.emit(UiIntent::Transfer { id, peer: a })
                             }
                             AddressFor::NewChat => app.chat_with(&a),
+                            AddressFor::AddContact => {
+                                let name = app.state.known_name(&a);
+                                app.emit(UiIntent::AddContact {
+                                    uri: a,
+                                    name,
+                                    group: None,
+                                })
+                            }
                         }
                     }
                     keep = false;

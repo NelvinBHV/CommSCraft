@@ -665,6 +665,10 @@ pub enum AppEvent {
     },
     /// The distribution groups of the contact list: name and mail address.
     DistributionGroups(Vec<(String, String)>),
+    /// The plain groups of the contact list.
+    Groups(Vec<String>),
+    /// Someone added the user to their contact list.
+    NewSubscriber(Subscriber),
     /// The members of a distribution group, or why there are none.
     DistributionMembers {
         email: String,
@@ -745,6 +749,23 @@ pub struct DistGroup {
     pub partial: bool,
 }
 
+/// A privacy relationship (who sees how much of the user's presence; blocked: nothing).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Relation {
+    External,
+    Colleagues,
+    Workgroup,
+    Family,
+    Blocked,
+}
+
+/// Someone who added the user to their contact list.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Subscriber {
+    pub uri: String,
+    pub name: String,
+}
+
 /// Members of a distribution group kept at most.
 pub const MAX_DG_MEMBERS: usize = 1000;
 
@@ -771,6 +792,10 @@ pub struct AppState {
     pub photos: BTreeMap<String, Photo>,
     /// The distribution groups of the contact list.
     pub distribution: Vec<DistGroup>,
+    /// The plain groups of the contact list (names; the default group is not among them).
+    pub groups: Vec<String>,
+    /// People who added the user and were not acknowledged yet.
+    pub subscribers: Vec<Subscriber>,
     /// The user's appointments from Exchange (`None`: not loaded or switched off by the server).
     pub appointments: Option<Vec<Appointment>>,
     /// The user's automatic reply while it is on.
@@ -795,6 +820,8 @@ impl Default for AppState {
             trust_question: None,
             photos: BTreeMap::new(),
             distribution: Vec::new(),
+            groups: Vec::new(),
+            subscribers: Vec::new(),
             appointments: None,
             out_of_office: None,
             next_key: 1,
@@ -840,6 +867,25 @@ impl AppState {
             Some(c) => c.display_name().to_string(),
             None => uri.strip_prefix("sip:").unwrap_or(uri).to_string(),
         }
+    }
+
+    /// A person's name as known from the contacts, search results or distribution groups;
+    /// empty if only the address is known (a new contact then takes the server's name).
+    pub fn known_name(&self, uri: &str) -> String {
+        let bare = uri.strip_prefix("sip:").unwrap_or(uri);
+        self.contacts
+            .get(uri)
+            .into_iter()
+            .chain(self.search_results.iter().filter(|c| c.uri == uri))
+            .chain(
+                self.distribution
+                    .iter()
+                    .flat_map(|g| g.members.iter().flatten())
+                    .filter(|c| c.uri == uri),
+            )
+            .map(|c| c.name.trim().to_string())
+            .find(|n| !n.is_empty() && n != bare)
+            .unwrap_or_default()
     }
 
     /// The open conversation with one peer, if any.
@@ -1435,6 +1481,18 @@ impl AppState {
                         }
                     })
                     .collect();
+            }
+            AppEvent::Groups(list) => {
+                self.groups = list.iter().take(200).map(|g| label(g)).collect();
+            }
+            AppEvent::NewSubscriber(s) => {
+                let uri = label(&s.uri);
+                if self.subscribers.len() < 200 && !self.subscribers.iter().any(|x| x.uri == uri) {
+                    self.subscribers.push(Subscriber {
+                        uri,
+                        name: label(&s.name),
+                    });
+                }
             }
             AppEvent::DistributionMembers {
                 email,

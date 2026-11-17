@@ -4882,14 +4882,6 @@ use commscraft_presence::{ContactEdit, ContactList};
 const MAX_VIDEO_CANDIDATES: usize = 64;
 
 /// `/contact add|remove|move …`: a change of the list; an entry's other values stay as they are.
-/// The Exchange identifiers behind the numbers the contact list from Exchange shows
-/// (function 11): group number → group, contact address → contact.
-#[derive(Debug, Default)]
-struct UcsIds {
-    groups: Vec<(u32, commscraft_ews::ucs::ItemId)>,
-    contacts: Vec<(String, commscraft_ews::ucs::ItemId)>,
-}
-
 /// An operation on the contact list in Exchange (EX-04) at the user's EWS URL, with NTLM.
 fn ucs_call(
     engine: &mut commscraft_session::Engine<OsRandom>,
@@ -4910,6 +4902,20 @@ fn ucs_call(
         &body,
         verbose,
     )
+}
+
+/// The contact list from Exchange (shared `client::exchange::contact_list`).
+fn exchange_contact_list(
+    engine: &mut commscraft_session::Engine<OsRandom>,
+    tls: &TlsClient,
+    trust: &Trust,
+    settings: &commscraft_ews::UserSettings,
+    verbose: bool,
+) -> Result<(ContactList, UcsIds), String> {
+    use commscraft_ews::ucs::{parse_im_item_list, UcsOp};
+    let text = ucs_call(engine, tls, trust, settings, &UcsOp::GetList, verbose)?;
+    let l = parse_im_item_list(&text).map_err(|e| format!("{e:?}"))?;
+    Ok(commscraft_client::exchange::contact_list_of(&l))
 }
 
 /// Function 16: the calendar state to publish – free/busy blocks, the ongoing meeting and the
@@ -5355,117 +5361,7 @@ fn ews_call(
     )
 }
 
-/// The contact list from Exchange (GetImItemList, EX-04/EX-05) in the form the session keeps:
-/// groups numbered in order, contacts with a SIP address as IM address in the groups whose
-/// members they are (MemberCorrelationKey, [MS-OXWSCOS] §2.2.4.2, through the contact items
-/// behind the persona – K-EX-2).
-fn exchange_contact_list(
-    engine: &mut commscraft_session::Engine<OsRandom>,
-    tls: &TlsClient,
-    trust: &Trust,
-    settings: &commscraft_ews::UserSettings,
-    verbose: bool,
-) -> Result<(ContactList, UcsIds), String> {
-    use commscraft_ews::ucs::{parse_im_item_list, UcsOp};
-    let text = ucs_call(engine, tls, trust, settings, &UcsOp::GetList, verbose)?;
-    let l = parse_im_item_list(&text).map_err(|e| format!("{e:?}"))?;
-    let mut list = ContactList::default();
-    let mut ids = UcsIds::default();
-    for (n, g) in (1u32..).zip(&l.groups) {
-        list.groups.push(commscraft_presence::Group {
-            id: n,
-            name: g.name.clone(),
-            external: String::new(),
-        });
-        if let Some(id) = &g.id {
-            ids.groups.push((n, id.clone()));
-        }
-    }
-    for p in &l.personas {
-        let uri = p
-            .im_address
-            .as_deref()
-            .and_then(|a| commscraft_presence::checked_sip_uri(a).ok());
-        let Some(uri) = uri else {
-            list.skipped.push(p.name.clone());
-            continue;
-        };
-        let groups = (1u32..)
-            .zip(&l.groups)
-            .filter(|(_, g)| p.in_group(g))
-            .map(|(n, _)| n)
-            .collect();
-        list.contacts.push(commscraft_presence::Contact {
-            uri: uri.clone(),
-            name: p.name.clone(),
-            groups,
-            subscribed: true,
-            extension: false,
-        });
-        ids.contacts.push((uri, p.contact_id().clone()));
-    }
-    Ok((list, ids))
-}
-
-/// The Exchange operations for a change of the list (EX-04): add a contact (into its first
-/// group), move it (into the new groups, out of the old ones), remove it; add, rename and
-/// remove a group.
-fn ucs_ops(
-    edit: &ContactEdit,
-    list: &ContactList,
-    ids: &UcsIds,
-) -> Result<Vec<commscraft_ews::ucs::UcsOp>, String> {
-    use commscraft_ews::ucs::UcsOp;
-    let group = |n: u32| {
-        ids.groups
-            .iter()
-            .find(|(g, _)| *g == n)
-            .map(|(_, id)| id.clone())
-            .ok_or_else(|| format!("no group {n}"))
-    };
-    let contact = |uri: &str| {
-        ids.contacts
-            .iter()
-            .find(|(u, _)| u == uri)
-            .map(|(_, id)| id.clone())
-    };
-    Ok(match edit {
-        ContactEdit::Set {
-            uri, name, groups, ..
-        } => match (contact(uri), list.contacts.iter().find(|c| c.uri == *uri)) {
-            (Some(id), Some(old)) => {
-                let mut ops = Vec::new();
-                for g in groups.iter().filter(|g| !old.groups.contains(g)) {
-                    ops.push(UcsOp::AddContactToGroup {
-                        contact: id.clone(),
-                        group: group(*g)?,
-                    });
-                }
-                for g in old.groups.iter().filter(|g| !groups.contains(g)) {
-                    ops.push(UcsOp::RemoveContactFromGroup {
-                        contact: id.clone(),
-                        group: group(*g)?,
-                    });
-                }
-                ops
-            }
-            _ => vec![UcsOp::AddNewContact {
-                im_address: uri.clone(),
-                name: (!name.is_empty()).then(|| name.clone()),
-                group: groups.first().map(|g| group(*g)).transpose()?,
-            }],
-        },
-        ContactEdit::Delete { uri } => vec![UcsOp::RemoveContact {
-            contact: contact(uri).ok_or("not in the contact list")?,
-        }],
-        ContactEdit::AddGroup { name } => vec![UcsOp::AddGroup { name: name.clone() }],
-        ContactEdit::RenameGroup { id, name } => vec![UcsOp::RenameGroup {
-            group: group(*id)?,
-            name: name.clone(),
-        }],
-        ContactEdit::DeleteGroup { id } => vec![UcsOp::RemoveGroup { group: group(*id)? }],
-    })
-}
+use commscraft_client::exchange::{ucs_ops, UcsIds};
 
 fn contact_command(arg: &str, list: Option<&ContactList>) -> Option<ContactEdit> {
     let (action, rest) = arg.trim().split_once(' ')?;

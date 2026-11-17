@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: distribution groups in the contact list)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: editing the contact list, the New view, relationships)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -85,6 +85,13 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   NTLM step comes from the session worker over a channel. The photo is decoded there in pure Rust
   (JPEG with zune-jpeg, PNG; at most 1024 pixels a side) into a 96 × 96 thumbnail. *Options →
   personal → show pictures of contacts* switches them off. `tested-in-lab`.
+- **Editing the contact list:** add a person (the add button, the contact menu, search results,
+  the *New* view), move a contact into another group, remove it; add, rename and delete groups
+  (only empty ones). A list kept in Exchange is read and changed there (EWS UCS operations,
+  shared `client::exchange`, in the background thread; Exchange's group kinds map to the default
+  group, favourites and hidden groups); otherwise through the session's contact list changes.
+  *New* lists people who added the user (acknowledged when added or ignored); the contact menu
+  sets the privacy relationship, blocking included. `tested-in-lab`.
 - **Distribution groups and favourites of the contact list:** a group the user added from the
   address book is shown as a distribution list (its `externalURI` names the list's mail address,
   `presence::group_extension`); opened, its members come from the address book (MS-DLX

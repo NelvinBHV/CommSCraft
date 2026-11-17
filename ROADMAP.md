@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: distribution groups in the contact list)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: editing the contact list, the New view, relationships)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **667 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **672 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-17 | The desktop client edits the contact list (`tested-in-lab`): add (also from search results and the new *New* view of people who added the user), move, remove, groups; a list kept in Exchange is read and changed there – the Exchange contact list code moved from the command-line client into the shared `client::exchange`; Exchange's group kinds map to the default group, favourites and hidden groups. The contact menu sets the privacy relationship, blocking included. |
 | 2026-11-17 | Distribution groups in the desktop client's contact list (`tested-in-lab`): the server's group extension in `externalURI` is read (`presence::group_extension`), a distribution group opens with its members from the address book, their presence (new session command `WatchPresence`) and photos; the server's favourites fill *Favourites*. Exchange Autodiscover for photos and appointments runs once per sign-in. Found in the lab: sign-in with the address only works (UPN). |
 | 2026-11-17 | Desktop client: the password in the system keyring on request (`oo7` on zbus 6 – Secret Service or portal; stored only after a successful sign-in, removable in the options; the last address is offered; `tested-in-lab`: stored, then a sign-in with the field empty). |
 | 2026-11-17 | Appointments from Exchange in the desktop client (`tested-in-lab`): four days of the user's calendar and the automatic reply in the meetings tab, refreshed every 15 minutes, through the shared `client::exchange` (also used by the CLI's EWS calls). |

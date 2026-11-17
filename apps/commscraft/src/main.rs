@@ -18,7 +18,7 @@ use commscraft_ui::demo;
 use commscraft_ui::model::{AppEvent, Connection, NoticeKind, View};
 use commscraft_ui::text::Lang;
 use eframe::egui;
-use session::ToWorker;
+use session::{ContactChange, ToWorker};
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -398,6 +398,33 @@ impl DesktopApp {
             }
             UiIntent::Dtmf { id, digits } => Some(ToWorker::Dtmf { id, digits }),
             UiIntent::ExpandGroup { email } => Some(ToWorker::ExpandGroup { email }),
+            UiIntent::AddContact { uri, name, group } => {
+                Some(ToWorker::Contacts(ContactChange::Add { uri, name, group }))
+            }
+            UiIntent::RemoveContact { uri } => {
+                Some(ToWorker::Contacts(ContactChange::Remove { uri }))
+            }
+            UiIntent::MoveContact { uri, group } => {
+                Some(ToWorker::Contacts(ContactChange::Move { uri, group }))
+            }
+            UiIntent::AddGroup { name } => {
+                Some(ToWorker::Contacts(ContactChange::AddGroup { name }))
+            }
+            UiIntent::RenameGroup { name, to } => {
+                Some(ToWorker::Contacts(ContactChange::RenameGroup { name, to }))
+            }
+            UiIntent::DeleteGroup { name } => {
+                Some(ToWorker::Contacts(ContactChange::DeleteGroup { name }))
+            }
+            UiIntent::SetRelation { uri, relation } => {
+                Some(ToWorker::Contacts(ContactChange::Relation {
+                    uri,
+                    relation,
+                }))
+            }
+            UiIntent::AcknowledgeSubscriber { uri } => {
+                Some(ToWorker::Contacts(ContactChange::Acknowledge { uri }))
+            }
             UiIntent::ForgetPassword => {
                 if let Some(account) = self.ui.stored_password_for.take() {
                     if let Err(e) = vault::forget(&account) {
