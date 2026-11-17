@@ -111,6 +111,12 @@ pub fn show_all(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
             if focus {
                 ui.ctx().send_viewport_cmd(egui::ViewportCommand::Focus);
             }
+            if app.screenshot.as_ref().is_some_and(|(x, _)| *x == w) {
+                if let Some((_, cb)) = app.screenshot.take() {
+                    ui.ctx()
+                        .send_viewport_cmd(egui::ViewportCommand::Screenshot(cb));
+                }
+            }
             match w {
                 Win::Conv(k) => conversation(app, ui, pal, k),
                 Win::Call(id) => call(app, ui, pal, id),

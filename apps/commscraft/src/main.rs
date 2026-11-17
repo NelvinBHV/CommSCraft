@@ -18,7 +18,7 @@ use commscraft_ui::text::Lang;
 use eframe::egui;
 use session::ToWorker;
 use std::path::PathBuf;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// The unchanged brand icon (assets/branding, see BRAND-POLICY.md).
 const ICON: &[u8] = include_bytes!("../../../assets/branding/CommSCraft-icon-128.png");
@@ -213,7 +213,10 @@ pub(crate) struct DesktopApp {
     pub(crate) ui: CommsUi,
     lang: Lang,
     /// Screenshots to take, each with "close the window afterwards".
-    pub(crate) shots: std::collections::VecDeque<(PathBuf, bool, egui::ViewportId)>,
+    /// Screenshots to take: file, close afterwards, the window (`None`: the main window).
+    pub(crate) shots: std::collections::VecDeque<(PathBuf, bool, Option<commscraft_ui::app::Win>)>,
+    /// When the pending screenshot was asked for (given up after a while).
+    pub(crate) shot_since: Option<Instant>,
     commands: Option<std::sync::mpsc::Receiver<String>>,
     pub(crate) close_at: Option<std::time::Instant>,
     frames: u32,
@@ -465,14 +468,28 @@ impl eframe::App for DesktopApp {
             let (tx, rx) = std::sync::mpsc::channel();
             self.shot_rx = Some(rx);
             let repaint = ctx.clone();
-            let target = self.shots.front().map_or(egui::ViewportId::ROOT, |s| s.2);
-            ctx.send_viewport_cmd_to(
-                target,
-                egui::ViewportCommand::Screenshot(egui::ScreenshotCallback::new(move |image| {
-                    let _ = tx.send(image);
-                    repaint.request_repaint();
-                })),
-            );
+            let cb = egui::ScreenshotCallback::new(move |image| {
+                let _ = tx.send(image);
+                repaint.request_repaint();
+            });
+            self.shot_since = Some(Instant::now());
+            match self.shots.front().and_then(|s| s.2) {
+                // A window of its own takes it in its own frame.
+                Some(w) => self.ui.screenshot = Some((w, cb)),
+                None => ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(cb)),
+            }
+        }
+        if self
+            .shot_since
+            .is_some_and(|t| t.elapsed() > Duration::from_secs(8))
+            && self.shot_rx.is_some()
+        {
+            self.shot_rx = None;
+            self.shot_since = None;
+            self.ui.screenshot = None;
+            if let Some((path, _, _)) = self.shots.pop_front() {
+                eprintln!("screenshot: no picture for {}", path.display());
+            }
         }
         let shot = self.shot_rx.as_ref().and_then(|rx| rx.try_recv().ok());
         if let Some(image) = shot {
@@ -570,13 +587,14 @@ fn main() {
                 lang,
                 shots: args
                     .screenshot
-                    .map(|p| (p, true, egui::ViewportId::ROOT))
+                    .map(|p| (p, true, None))
                     .into_iter()
                     .collect(),
                 commands: args.commands.map(script::follow),
                 close_at: None,
                 frames: 0,
                 shot_rx: None,
+                shot_since: None,
                 worker: None,
                 worker_done: false,
                 ctx: Some(cc.egui_ctx.clone()),

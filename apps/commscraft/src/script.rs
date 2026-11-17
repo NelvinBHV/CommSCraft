@@ -14,7 +14,6 @@ use crate::{now, DesktopApp};
 use commscraft_ui::app::UiIntent;
 use commscraft_ui::app::Win;
 use commscraft_ui::model::{AppEvent, CallState, Presence, View};
-use eframe::egui;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver};
@@ -195,22 +194,14 @@ pub fn run(app: &mut DesktopApp, line: &str) {
         "shot" => {
             let mut w = arg.split_whitespace();
             let file = w.next().unwrap_or("shot.png");
-            let target = match w.next() {
-                Some(kind) => app
-                    .ui
-                    .windows()
-                    .iter()
-                    .find(|x| {
-                        matches!(
-                            (kind, x),
-                            ("conv", Win::Conv(_))
-                                | ("call", Win::Call(_))
-                                | ("options", Win::Options)
-                        )
-                    })
-                    .map_or(egui::ViewportId::ROOT, |x| app.ui.viewport_of(*x)),
-                None => egui::ViewportId::ROOT,
-            };
+            let target = w.next().and_then(|kind| {
+                app.ui.windows().iter().copied().find(|x| {
+                    matches!(
+                        (kind, x),
+                        ("conv", Win::Conv(_)) | ("call", Win::Call(_)) | ("options", Win::Options)
+                    )
+                })
+            });
             app.shots.push_back((PathBuf::from(file), false, target))
         }
         "quit" => {

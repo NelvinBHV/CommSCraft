@@ -311,6 +311,9 @@ pub struct CommsUi {
     pub(crate) toasts_seen: BTreeSet<(ConvKey, usize)>,
     /// Calls whose window was opened once (closing it does not open it again).
     pub(crate) call_windows_opened: BTreeSet<u32>,
+    /// A screenshot of a window of its own, taken in that window's own frame (tests and
+    /// documentation).
+    pub screenshot: Option<(Win, egui::ScreenshotCallback)>,
 }
 
 impl CommsUi {
@@ -354,6 +357,7 @@ impl CommsUi {
             participants_open: BTreeSet::new(),
             toasts_seen: BTreeSet::new(),
             call_windows_opened: BTreeSet::new(),
+            screenshot: None,
         }
     }
 
