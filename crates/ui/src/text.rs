@@ -187,6 +187,8 @@ texts! {
     call_incoming: "Eingehender Anruf", "Incoming call";
     call_on_hold: "Gehalten", "On hold";
     call_connected: "Audio verbunden", "Audio connected";
+    call_connected_video: "Audio und Video verbunden", "Audio and video connected";
+    call_connected_screen: "Freigabe verbunden", "Sharing connected";
     call_ended: "Beendet", "Ended";
     no_active_call: "Kein laufender Anruf", "No call in progress";
     no_active_call_hint: "Anrufe beginnen über Kontakte oder den Chat-Kopf.", "Start calls from contacts or the chat header.";

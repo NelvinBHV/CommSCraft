@@ -358,6 +358,9 @@ struct Videos {
     rdp: BTreeMap<u32, rdp_call::RdpHandle>,
     pending_rdp: BTreeMap<u32, u32>,
     rdp_call_of: BTreeMap<u32, u32>,
+    /// Screen shares we view whose stream is not negotiated yet: they have no audio answer, so
+    /// the negotiated stream is what connects them.
+    viewing: BTreeSet<u32>,
 }
 
 impl Videos {
@@ -379,6 +382,7 @@ impl Videos {
             rdp: BTreeMap::new(),
             pending_rdp: BTreeMap::new(),
             rdp_call_of: BTreeMap::new(),
+            viewing: BTreeSet::new(),
         }
     }
 }
@@ -760,6 +764,7 @@ impl Session {
             let _ = h.tx.send(rdp_call::ToRdp::Stop);
         }
         self.v.screen_offers.remove(&call);
+        self.v.viewing.remove(&call);
     }
 
     /// A video call goes out (or is answered) once its audio and its video stream are ready.
@@ -1109,6 +1114,7 @@ impl Session {
                     }
                     None => return Vec::new(),
                 }
+                self.v.viewing.insert(call);
                 out.event(AppEvent::CallVideo {
                     id: call,
                     state: VideoState::Starting,
@@ -1654,6 +1660,9 @@ impl Session {
                     },
                 );
                 if self.v.of_call.contains_key(&call) {
+                    if self.v.viewing.remove(&call) {
+                        out.event(AppEvent::CallConnected { id: call, at: t });
+                    }
                     out.event(AppEvent::CallVideo {
                         id: call,
                         state: VideoState::Window,
@@ -1673,6 +1682,9 @@ impl Session {
             } => {
                 if let Some(h) = self.v.rdp.get(&call) {
                     let _ = h.tx.send(rdp_call::ToRdp::Start { rdp, controlling });
+                    if self.v.viewing.remove(&call) {
+                        out.event(AppEvent::CallConnected { id: call, at: t });
+                    }
                 }
             }
             E::CallRinging { call } => out.event(AppEvent::CallRinging { id: call }),

@@ -60,7 +60,7 @@ pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 });
                 for c in active {
                     let name = app.state.name_of(&c.peer);
-                    let state = state_text(app, c.state, c.held);
+                    let state = state_text(app, c.state, c.held, c.kind);
                     list_row(
                         ui,
                         pal,
@@ -178,8 +178,13 @@ fn list_row(
 }
 
 /// The call state in words; "connected" only after the session reported the answer.
-pub fn state_text(app: &CommsUi, s: CallState, held: bool) -> String {
+pub fn state_text(app: &CommsUi, s: CallState, held: bool, kind: CallKind) -> String {
     let t = app.t;
+    let connected = match kind {
+        CallKind::Audio => t.call_connected,
+        CallKind::Video => t.call_connected_video,
+        CallKind::Screen => t.call_connected_screen,
+    };
     match s {
         CallState::Dialing => t.call_dialing.to_string(),
         CallState::Ringing => t.call_ringing.to_string(),
@@ -191,7 +196,7 @@ pub fn state_text(app: &CommsUi, s: CallState, held: bool) -> String {
         ),
         CallState::Connected { since } => format!(
             "{} · {}",
-            t.call_connected,
+            connected,
             format::duration(app.now.saturating_sub(since))
         ),
         CallState::Ended { status: 0 } => t.call_ended.to_string(),
@@ -251,7 +256,7 @@ pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                             {
                                 t.screen_offered.to_string()
                             } else {
-                                state_text(app, call.state, call.held)
+                                state_text(app, call.state, call.held, call.kind)
                             };
                             ui.label(RichText::new(state).size(theme::text::NAME).color(colour));
                             let video = match &call.video {
@@ -332,7 +337,8 @@ pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                                         app.emit(UiIntent::HangUp { id: call.id });
                                     }
                                 });
-                            } else {
+                            } else if call.kind != CallKind::Screen {
+                                // Viewing a shared screen has no audio to mute, hold or transfer.
                                 ui.horizontal(|ui| {
                                     let total = 4.0 * 100.0 + 3.0 * 24.0;
                                     ui.add_space(((ui.available_width() - total) / 2.0).max(0.0));
@@ -455,7 +461,7 @@ pub fn context(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 ui,
                 pal,
                 t.connection_state,
-                &state_text(app, c.state, c.held),
+                &state_text(app, c.state, c.held, c.kind),
             );
         }
         None => {
