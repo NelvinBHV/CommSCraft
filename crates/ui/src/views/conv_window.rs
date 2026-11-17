@@ -272,13 +272,8 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                                 p.name.clone()
                             };
                             ui.horizontal(|ui| {
-                                widgets::avatar(
-                                    ui,
-                                    &name,
-                                    22.0,
-                                    app.state.contacts.get(&p.uri).map(|k| k.presence),
-                                    pal,
-                                );
+                                let presence = app.state.contacts.get(&p.uri).map(|k| k.presence);
+                                app.avatar(ui, Some(p.uri.as_str()), &name, 22.0, presence, pal);
                                 widgets::ellipsis(ui, RichText::new(name).color(pal.ink));
                                 if p.presenter {
                                     ui.label(
@@ -385,7 +380,7 @@ fn call(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, id: u32) {
         .show(ui, |ui| {
             ui.vertical_centered(|ui| {
                 ui.add_space(10.0);
-                widgets::avatar(ui, &name, 96.0, None, pal);
+                app.avatar(ui, Some(call.peer.as_str()), &name, 96.0, None, pal);
                 ui.label(
                     RichText::new(&name)
                         .size(theme::text::HEADING)
@@ -681,7 +676,14 @@ fn card(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 .as_ref()
                 .map_or_else(|| app.state.name_of(&uri), |c| c.display_name().to_string());
             ui.horizontal(|ui| {
-                widgets::avatar(ui, &name, 56.0, c.as_ref().map(|c| c.presence), pal);
+                app.avatar(
+                    ui,
+                    Some(uri.as_str()),
+                    &name,
+                    56.0,
+                    c.as_ref().map(|c| c.presence),
+                    pal,
+                );
                 ui.vertical(|ui| {
                     ui.label(
                         RichText::new(&name)

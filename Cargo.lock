@@ -554,6 +554,7 @@ dependencies = [
  "eframe",
  "png",
  "zeroize",
+ "zune-jpeg",
 ]
 
 [[package]]
@@ -647,11 +648,13 @@ dependencies = [
  "commscraft-conf",
  "commscraft-discovery",
  "commscraft-dlx",
+ "commscraft-ews",
  "commscraft-h264uc",
  "commscraft-media",
  "commscraft-net",
  "commscraft-ntlm",
  "commscraft-ocauthws",
+ "commscraft-presence",
  "commscraft-provisioning",
  "commscraft-psom",
  "commscraft-qoe",

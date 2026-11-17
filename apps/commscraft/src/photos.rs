@@ -1,0 +1,211 @@
+//! Contact photos for the desktop client (function 15): a thread of its own fetches them with
+//! the shared `client::photos` (address book, Exchange where the policy allows), so the
+//! session's SIP never waits for HTTP. The NTLM step needs the signed-in registrar, which the
+//! session worker owns: the thread asks the worker for it over a channel.
+//!
+//! Security by design: the queue of addresses is bounded; downloads are bounded by the photo
+//! policy; the picture is decoded here, in pure Rust (zune-jpeg, png), only up to
+//! [`MAX_SIDE`] pixels a side, and handed on as a small thumbnail.
+
+use commscraft_client::setup::Trust;
+use commscraft_net::TlsClient;
+use commscraft_provisioning::ServerConfiguration;
+use std::sync::mpsc::{self, Receiver, Sender, SyncSender};
+
+/// Largest photo side decoded (design: Exchange's largest size is 648).
+pub const MAX_SIDE: usize = 1024;
+/// The side of the thumbnail handed to the interface.
+pub const THUMB: usize = 96;
+/// Addresses waiting at most.
+const QUEUE: usize = 1024;
+
+/// The NTLM step asked of the worker: NEGOTIATE, CHALLENGE, the server's certificate.
+pub struct NtlmAsk {
+    pub negotiate: Vec<u8>,
+    pub challenge: Vec<u8>,
+    pub cert: Option<Vec<u8>>,
+    pub reply: Sender<Result<Vec<u8>, String>>,
+}
+
+/// A thumbnail: side × side RGBA.
+pub struct Thumb {
+    pub uri: String,
+    pub side: usize,
+    pub rgba: Vec<u8>,
+}
+
+pub struct Photos {
+    tx: SyncSender<(String, Option<Box<ServerConfiguration>>)>,
+}
+
+impl Photos {
+    /// Starts the thread; thumbnails come out of `done`, NTLM steps out of `ntlm`.
+    pub fn start(
+        tls: TlsClient,
+        trust: Trust,
+        aor: String,
+        ntlm: Sender<NtlmAsk>,
+        done: Sender<Thumb>,
+    ) -> Self {
+        let (tx, rx) = mpsc::sync_channel(QUEUE);
+        std::thread::spawn(move || run(&tls, &trust, &aor, &rx, &ntlm, &done));
+        Photos { tx }
+    }
+
+    /// Asks for a contact's photo; a full queue drops the request.
+    pub fn want(&self, uri: &str, services: Option<&ServerConfiguration>) {
+        let _ = self
+            .tx
+            .try_send((uri.to_string(), services.map(|s| Box::new(s.clone()))));
+    }
+}
+
+fn run(
+    tls: &TlsClient,
+    trust: &Trust,
+    aor: &str,
+    rx: &Receiver<(String, Option<Box<ServerConfiguration>>)>,
+    ntlm_tx: &Sender<NtlmAsk>,
+    done: &Sender<Thumb>,
+) {
+    let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
+    let mut settings = None;
+    let mut seen = std::collections::BTreeSet::new();
+    while let Ok((uri, services)) = rx.recv() {
+        if !seen.insert(uri.to_ascii_lowercase()) {
+            continue;
+        }
+        let mut ntlm = |n: &[u8], c: &[u8], cert: Option<&[u8]>| {
+            let (reply, answer) = mpsc::channel();
+            ntlm_tx
+                .send(NtlmAsk {
+                    negotiate: n.to_vec(),
+                    challenge: c.to_vec(),
+                    cert: cert.map(<[u8]>::to_vec),
+                    reply,
+                })
+                .map_err(|_| "signed out".to_string())?;
+            answer.recv().map_err(|_| "signed out".to_string())?
+        };
+        let mut log = |l: &str| {
+            if std::env::var_os("COMMSCRAFT_VERBOSE").is_some() {
+                eprintln!("photo: {l}");
+            }
+        };
+        let got = commscraft_client::photos::fetch(
+            tls,
+            trust,
+            aor,
+            services.as_deref(),
+            &uri,
+            &ua,
+            &mut settings,
+            &mut ntlm,
+            &mut log,
+        );
+        let Ok(path) = got else {
+            continue;
+        };
+        let Some(rgba) = std::fs::read(&path).ok().and_then(|b| thumbnail(&b)) else {
+            continue;
+        };
+        if done
+            .send(Thumb {
+                uri,
+                side: THUMB,
+                rgba,
+            })
+            .is_err()
+        {
+            return;
+        }
+    }
+}
+
+/// Decodes a JPEG or PNG photo and makes a square thumbnail (centre crop, nearest pixel).
+pub fn thumbnail(bytes: &[u8]) -> Option<Vec<u8>> {
+    let (w, h, rgba) = decode(bytes)?;
+    let side = w.min(h);
+    let (x0, y0) = ((w - side) / 2, (h - side) / 2);
+    let mut out = Vec::with_capacity(THUMB * THUMB * 4);
+    for ty in 0..THUMB {
+        for tx in 0..THUMB {
+            let sx = x0 + tx * side / THUMB;
+            let sy = y0 + ty * side / THUMB;
+            let i = (sy * w + sx) * 4;
+            out.extend_from_slice(rgba.get(i..i + 4)?);
+        }
+    }
+    Some(out)
+}
+
+fn decode(bytes: &[u8]) -> Option<(usize, usize, Vec<u8>)> {
+    match commscraft_client::photos::photo_kind(bytes)? {
+        "jpg" => {
+            use zune_jpeg::zune_core::{
+                bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions,
+            };
+            let options = DecoderOptions::default()
+                .jpeg_set_out_colorspace(ColorSpace::RGBA)
+                .set_max_width(MAX_SIDE)
+                .set_max_height(MAX_SIDE);
+            let mut d = zune_jpeg::JpegDecoder::new_with_options(ZCursor::new(bytes), options);
+            let px = d.decode().ok()?;
+            let (w, h) = d.dimensions()?;
+            (w > 0 && h > 0 && px.len() == w * h * 4).then_some((w, h, px))
+        }
+        _ => {
+            let mut dec = png::Decoder::new(std::io::Cursor::new(bytes));
+            dec.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
+            let mut reader = dec.read_info().ok()?;
+            let (w, h) = (reader.info().width as usize, reader.info().height as usize);
+            if w == 0 || h == 0 || w > MAX_SIDE || h > MAX_SIDE {
+                return None;
+            }
+            let mut buf = vec![0; reader.output_buffer_size()?];
+            let info = reader.next_frame(&mut buf).ok()?;
+            let data = buf.get(..info.buffer_size())?;
+            let rgba: Vec<u8> = match info.color_type {
+                png::ColorType::Rgba => data.to_vec(),
+                png::ColorType::Rgb => data
+                    .chunks_exact(3)
+                    .flat_map(|c| [c[0], c[1], c[2], 255])
+                    .collect(),
+                png::ColorType::GrayscaleAlpha => data
+                    .chunks_exact(2)
+                    .flat_map(|c| [c[0], c[0], c[0], c[1]])
+                    .collect(),
+                png::ColorType::Grayscale => data.iter().flat_map(|&g| [g, g, g, 255]).collect(),
+                png::ColorType::Indexed => return None,
+            };
+            (rgba.len() == w * h * 4).then_some((w, h, rgba))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hostile_or_odd_files_give_no_thumbnail() {
+        assert!(thumbnail(b"").is_none());
+        assert!(thumbnail(b"<svg/>").is_none());
+        assert!(thumbnail(&[0xff, 0xd8, 0xff, 0xe0, 0, 0]).is_none());
+        assert!(thumbnail(b"\x89PNG\r\n\x1a\n").is_none());
+    }
+
+    #[test]
+    fn a_png_becomes_a_square_thumbnail() {
+        let mut png_bytes = Vec::new();
+        {
+            let mut e = png::Encoder::new(&mut png_bytes, 4, 2);
+            e.set_color(png::ColorType::Rgb);
+            let mut w = e.write_header().unwrap();
+            w.write_image_data(&[255u8; 4 * 2 * 3]).unwrap();
+        }
+        let t = thumbnail(&png_bytes).unwrap();
+        assert_eq!(t.len(), THUMB * THUMB * 4);
+        assert_eq!(&t[..4], &[255, 255, 255, 255]);
+    }
+}

@@ -57,6 +57,7 @@ pub fn load_or_create_epid(rng: &mut OsRandom) -> Result<String, String> {
 
 /// Server domains the user trusts for this SIP domain (like `TrustModelData` of the Windows client,
 /// Microsoft KB 2531068): given ones and those in `~/.config/commscraft/trusted-domains`.
+#[derive(Clone)]
 pub struct Trust {
     domains: Vec<String>,
     file: Option<PathBuf>,

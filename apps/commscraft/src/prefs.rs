@@ -41,6 +41,7 @@ pub fn parse(text: &str) -> Prefs {
             "high_contrast" => p.high_contrast = v == "true",
             "lang" => p.lang = commscraft_ui::text::Lang::from_locale(v),
             "always_on_top" => p.always_on_top = v == "true",
+            "show_pictures" => p.show_pictures = v != "false",
             "compact_contacts" => p.compact_contacts = v == "true",
             "sort_by_availability" => p.sort_by_availability = v == "true",
             "away_group" => p.away_group = v == "true",
@@ -92,6 +93,7 @@ pub fn format(p: &Prefs) -> String {
     ));
     for (k, v) in [
         ("always_on_top", p.always_on_top),
+        ("show_pictures", p.show_pictures),
         ("compact_contacts", p.compact_contacts),
         ("sort_by_availability", p.sort_by_availability),
         ("away_group", p.away_group),

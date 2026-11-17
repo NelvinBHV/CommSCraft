@@ -161,6 +161,8 @@ pub struct Prefs {
     pub context_open: bool,
     pub lang: Lang,
     pub always_on_top: bool,
+    /// Contact photos instead of initials.
+    pub show_pictures: bool,
     /// Contacts in one line (name only) instead of two (name and status).
     pub compact_contacts: bool,
     pub sort_by_availability: bool,
@@ -189,6 +191,7 @@ impl Default for Prefs {
             context_open: true,
             lang: Lang::De,
             always_on_top: false,
+            show_pictures: true,
             compact_contacts: false,
             sort_by_availability: false,
             away_group: false,
@@ -312,6 +315,8 @@ pub struct CommsUi {
     /// A screenshot of a window of its own, taken in that window's own frame (tests and
     /// documentation).
     pub screenshot: Option<(Win, egui::ScreenshotCallback)>,
+    /// Textures of the contact photos, made when first shown.
+    pub(crate) textures: std::cell::RefCell<BTreeMap<String, egui::TextureHandle>>,
 }
 
 impl CommsUi {
@@ -355,6 +360,7 @@ impl CommsUi {
             toasts_seen: BTreeSet::new(),
             call_windows_opened: BTreeSet::new(),
             screenshot: None,
+            textures: std::cell::RefCell::new(BTreeMap::new()),
         }
     }
 
@@ -412,6 +418,36 @@ impl CommsUi {
             self.participants_open.insert(key);
         }
         self.open_window(Win::Conv(key));
+    }
+
+    /// A person's picture: the photo when there is one (and pictures are shown), else initials.
+    pub(crate) fn avatar(
+        &self,
+        ui: &mut Ui,
+        uri: Option<&str>,
+        name: &str,
+        diameter: f32,
+        presence: Option<Presence>,
+        pal: &Palette,
+    ) {
+        let photo = uri
+            .filter(|_| self.prefs.show_pictures)
+            .and_then(|u| self.state.photos.get(u).map(|p| (u.to_string(), p.clone())));
+        if let Some((u, p)) = photo {
+            let tex = self
+                .textures
+                .borrow_mut()
+                .entry(u.clone())
+                .or_insert_with(|| {
+                    let img = egui::ColorImage::from_rgba_unmultiplied([p.side, p.side], &p.rgba);
+                    ui.ctx()
+                        .load_texture(format!("photo:{u}"), img, egui::TextureOptions::LINEAR)
+                })
+                .clone();
+            crate::widgets::avatar_photo(ui, &tex, diameter, presence, pal);
+        } else {
+            crate::widgets::avatar(ui, name, diameter, presence, pal);
+        }
     }
 
     /// The viewport of a window of its own (screenshots).

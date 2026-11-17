@@ -366,6 +366,12 @@ struct Session {
     content_tx: mpsc::Sender<meeting_content::FromContent>,
     /// Meeting content connections by conversation, with the users they named.
     content: BTreeMap<u32, (meeting_content::ContentHandle, BTreeMap<i64, String>)>,
+    /// The thread that fetches contact photos (started once signed in).
+    photos: Option<crate::photos::Photos>,
+    photo_ntlm: mpsc::Sender<crate::photos::NtlmAsk>,
+    photo_done: mpsc::Sender<crate::photos::Thumb>,
+    /// The contact list's addresses (their photos are asked for once provisioning is known).
+    contact_uris: Vec<String>,
     tls: TlsClient,
     trust: setup::Trust,
 }
@@ -631,6 +637,8 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
     let (video_tx, video_rx) = mpsc::channel();
     let (rdp_tx, rdp_rx) = mpsc::channel();
     let (content_tx, content_rx) = mpsc::channel();
+    let (ntlm_tx, ntlm_rx) = mpsc::channel::<crate::photos::NtlmAsk>();
+    let (thumb_tx, thumb_rx) = mpsc::channel::<crate::photos::Thumb>();
     let (cues, cue_notices) = cues::Cues::from_env();
     for n in cue_notices {
         out.notice(NoticeKind::Info, n);
@@ -663,6 +671,10 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         quiet_busy: false,
         content_tx,
         content: BTreeMap::new(),
+        photos: None,
+        photo_ntlm: ntlm_tx,
+        photo_done: thumb_tx,
+        contact_uris: Vec::new(),
         tls,
         trust,
     };
@@ -713,6 +725,20 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         }
         while let Ok(c) = content_rx.try_recv() {
             s.content_event(c, out);
+        }
+        // The photo thread's NTLM steps, with the signed-in registrar.
+        while let Ok(a) = ntlm_rx.try_recv() {
+            let r = s
+                .engine
+                .http_ntlm(&a.negotiate, &a.challenge, now(), a.cert.as_deref());
+            let _ = a.reply.send(r);
+        }
+        while let Ok(t) = thumb_rx.try_recv() {
+            out.event(AppEvent::ContactPhoto {
+                uri: t.uri,
+                side: t.side,
+                rgba: t.rgba,
+            });
         }
         match s.conn.recv() {
             Ok(Some(m)) => {
@@ -1062,6 +1088,25 @@ impl Session {
         }
         for (_, (h, _)) in std::mem::take(&mut self.content) {
             let _ = h.tx.send(meeting_content::ToContent::Stop);
+        }
+    }
+
+    /// Asks the photo thread for the photos of the user and the contacts, once provisioning
+    /// (the photo policy, the address book service) is known; the thread fetches each once.
+    fn want_photos(&self) {
+        let (Some(p), Some(services)) = (&self.photos, self.services.as_deref()) else {
+            return;
+        };
+        p.want(self.engine.aor(), Some(services));
+        for u in &self.contact_uris {
+            p.want(u, Some(services));
+        }
+    }
+
+    /// One person's photo (a search hit, a conversation partner).
+    fn want_photo(&self, uri: &str) {
+        if let (Some(p), Some(services)) = (&self.photos, self.services.as_deref()) {
+            p.want(uri, Some(services));
         }
     }
 
@@ -1493,7 +1538,13 @@ impl Session {
             &mut ntlm,
             &mut log,
         ) {
-            Ok(found) => out.event(AppEvent::SearchResults(directory_contacts(&found))),
+            Ok(found) => {
+                let list = directory_contacts(&found);
+                for c in list.iter().take(20) {
+                    self.want_photo(&c.uri);
+                }
+                out.event(AppEvent::SearchResults(list));
+            }
             Err(e) => {
                 out.event(AppEvent::SearchResults(Vec::new()));
                 out.notice(NoticeKind::Warning, format!("address book search: {e}"));
@@ -1639,6 +1690,14 @@ impl Session {
                         organisation,
                     };
                     out.event(AppEvent::SignedIn(self.profile.clone()));
+                    self.photos = Some(crate::photos::Photos::start(
+                        self.tls.clone(),
+                        self.trust.clone(),
+                        self.engine.aor().to_string(),
+                        self.photo_ntlm.clone(),
+                        self.photo_done.clone(),
+                    ));
+                    self.want_photos();
                     out.event(AppEvent::Capabilities(online_capabilities(
                         self.engine.has_persistent_chat(),
                     )));
@@ -1700,6 +1759,7 @@ impl Session {
             }
             E::Provisioned(c) => {
                 self.services = Some(c);
+                self.want_photos();
                 if self.signed_in {
                     out.event(AppEvent::Capabilities(online_capabilities(
                         self.engine.has_persistent_chat(),
@@ -1708,7 +1768,12 @@ impl Session {
             }
             E::ChatRooms(x) => more.extend(self.rooms_event(x, out)),
             E::RoomNotSent { room, status } => out.event(AppEvent::RoomNotSent { room, status }),
-            E::ContactList(l) => out.event(AppEvent::Contacts(contacts_of(&l))),
+            E::ContactList(l) => {
+                let list = contacts_of(&l);
+                self.contact_uris = list.iter().map(|c| c.uri.clone()).take(2000).collect();
+                out.event(AppEvent::Contacts(list));
+                self.want_photos();
+            }
             E::ContactsInExchange => out.notice(
                 NoticeKind::Info,
                 "the contact list is kept in Exchange; the desktop client does not read it yet",
@@ -1746,6 +1811,7 @@ impl Session {
                         title: self.group_title(conversation),
                     });
                 } else {
+                    self.want_photo(&peer);
                     out.event(AppEvent::ConversationStarted {
                         session: conversation,
                         peer,

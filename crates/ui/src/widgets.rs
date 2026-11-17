@@ -83,6 +83,30 @@ pub fn avatar(ui: &mut Ui, name: &str, diameter: f32, presence: Option<Presence>
     }
 }
 
+/// A contact's photo in a circle, with the presence dot like [`avatar`].
+pub fn avatar_photo(
+    ui: &mut Ui,
+    texture: &egui::TextureHandle,
+    diameter: f32,
+    presence: Option<Presence>,
+    pal: &Palette,
+) {
+    let (rect, _) = ui.allocate_exact_size(Vec2::splat(diameter), Sense::hover());
+    egui::Image::new(texture)
+        .corner_radius(diameter / 2.0)
+        .paint_at(ui, rect);
+    if let Some(pr) = presence.filter(|p| *p != Presence::Unknown) {
+        let r = (diameter * 0.12).max(4.0);
+        let c = rect.right_bottom() - Vec2::splat(r + 1.0);
+        ui.painter().circle(
+            c,
+            r,
+            presence_colour(pr, pal),
+            Stroke::new(2.0, pal.surface),
+        );
+    }
+}
+
 /// A presence word with its colour dot (never the colour alone).
 pub fn presence_badge(ui: &mut Ui, p: Presence, t: &Texts, pal: &Palette) -> Response {
     let fill = match p {

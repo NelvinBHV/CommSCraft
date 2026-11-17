@@ -75,13 +75,8 @@ fn window_header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
         )
         .show(ui, |ui| {
             ui.horizontal(|ui| {
-                widgets::avatar(
-                    ui,
-                    group_avatar(app, peer.is_none(), &title),
-                    40.0,
-                    presence,
-                    pal,
-                );
+                let shown = group_avatar(app, peer.is_none(), &title).to_string();
+                app.avatar(ui, peer.as_deref(), &shown, 40.0, presence, pal);
                 ui.vertical(|ui| {
                     widgets::ellipsis(
                         ui,
@@ -257,7 +252,7 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
     let name = app.state.name_of(&sender);
     ui.horizontal_top(|ui| {
         if first {
-            widgets::avatar(ui, &name, 30.0, None, pal);
+            app.avatar(ui, Some(sender.as_str()), &name, 30.0, None, pal);
         } else {
             ui.add_space(30.0);
         }
