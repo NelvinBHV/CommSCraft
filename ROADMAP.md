@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: meeting content)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: window structure of the Windows client)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **654 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **624 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-17 | Desktop client in the operating structure of the Windows client with an own look: a narrow main window (presence, note line, tabs for contacts, conversations, phone, meetings and rooms, options and main menu), conversations and calls in windows of their own (egui viewports), notifications for calls, invitations and messages, an options window with 14 areas wired to the local preferences, the contact card; own line icons; `--embed-windows` for screenshots (`tested-in-lab`: sign-in, a conversation window, a call window). |
 | 2026-11-17 | Desktop client: meeting content in a meeting's details – presenter, whiteboards, slides, notes, files and polls with voting (`tested-in-lab`: a poll created on the Windows client, the vote counted there); invitations show in the rail and the status bar and are listed once. |
 | 2026-11-17 | Desktop client: video calls (out, and answering with video) and viewing screens shared 1:1 – video-based and over RDP – in the sandboxed video window process, now in the shared `client` crate with the RDP viewer and meeting content (`tested-in-lab`: video call out, a shared desktop and a shared window viewed); the video window scales the picture to its size, can be maximized and resized (owner's feedback in the lab). |
 | 2026-11-17 | Desktop client: persistent chat rooms (tested offline) – the *Rooms* filter of the chat list, offered only when provisioning names a chat pool; rooms are listed, joined and their history fetched once; our message is *delivered* only when the chat server sends it back, a refused one (new session event `RoomNotSent`) is *not delivered*. |

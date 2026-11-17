@@ -1,10 +1,9 @@
 //! Screen 1: conversations – the list, the conversation with its composer, group details.
 
-use crate::app::{AddressFor, ChatFilter, CommsUi, NewChat, UiIntent};
+use crate::app::{AddressFor, CommsUi, NewChat, UiIntent};
 use crate::format;
-use crate::model::{ConvKey, ConvState, Conversation, Delivery, Gate, Message, MAX_TEXT};
+use crate::model::{ConvKey, ConvState, Delivery, Gate, Message, MAX_TEXT};
 use crate::theme::{self, Palette};
-use crate::views::shell::{context_block, context_title};
 use crate::widgets;
 use egui::{
     Align, CornerRadius, Frame, Key, KeyboardShortcut, Layout, Margin, RichText, Sense, Stroke, Ui,
@@ -13,200 +12,6 @@ use egui::{
 
 /// Seconds after the last key press until "typing" ends (the session repeats it itself).
 const TYPING_IDLE: u64 = 5;
-
-fn conv_matches(app: &CommsUi, c: &Conversation) -> bool {
-    match app.chat_filter {
-        ChatFilter::All => true,
-        ChatFilter::Unread => c.unread > 0,
-        ChatFilter::Groups => c.is_group(),
-        ChatFilter::Rooms => c.is_room(),
-    }
-}
-
-pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
-    let t = app.t;
-    ui.horizontal(|ui| {
-        ui.add_space(8.0);
-        ui.label(
-            RichText::new(t.messages_title)
-                .size(theme::text::PANEL_TITLE + 2.0)
-                .family(crate::theme::bold())
-                .color(pal.ink),
-        );
-        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-            let gate = app.state.capabilities.chat.clone();
-            let r = widgets::gated(ui, "+", &gate, t, pal, |ui, l, en| {
-                ui.add_enabled(
-                    en,
-                    egui::Button::new(RichText::new(l).color(pal.primary))
-                        .min_size(Vec2::splat(34.0)),
-                )
-            });
-            if let Some(r) = r {
-                if r.on_hover_text(t.new_chat_tip).clicked() {
-                    app.new_chat = Some(NewChat::default());
-                }
-            }
-        });
-    });
-    ui.add_space(8.0);
-    let unread = app.state.unread_total();
-    ui.horizontal(|ui| {
-        ui.add_space(8.0);
-        if widgets::chip(ui, t.filter_all, app.chat_filter == ChatFilter::All, pal) {
-            app.chat_filter = ChatFilter::All;
-        }
-        let label = format!("{} {unread}", t.filter_unread);
-        if widgets::chip(ui, &label, app.chat_filter == ChatFilter::Unread, pal) {
-            app.chat_filter = ChatFilter::Unread;
-        }
-        if widgets::chip(
-            ui,
-            t.filter_groups,
-            app.chat_filter == ChatFilter::Groups,
-            pal,
-        ) {
-            app.chat_filter = ChatFilter::Groups;
-        }
-    });
-    // Rooms in a row of their own: four filters do not fit into the panel's width.
-    ui.add_space(4.0);
-    ui.horizontal(|ui| {
-        ui.add_space(8.0);
-        let rooms = app.state.capabilities.persistent_chat.clone();
-        if let Some(r) = widgets::gated(ui, t.filter_rooms, &rooms, t, pal, |ui, l, en| {
-            let selected = app.chat_filter == ChatFilter::Rooms;
-            ui.add_enabled_ui(en, |ui| widgets::chip_response(ui, l, selected, pal))
-                .inner
-        }) {
-            if r.clicked() {
-                app.chat_filter = ChatFilter::Rooms;
-            }
-        }
-    });
-    if app.chat_filter == ChatFilter::Rooms && app.state.capabilities.persistent_chat.usable() {
-        ui.add_space(6.0);
-        ui.horizontal(|ui| {
-            ui.add_space(8.0);
-            if ui
-                .button(t.load_rooms)
-                .on_hover_text(t.load_rooms_tip)
-                .clicked()
-            {
-                app.emit(UiIntent::LoadRooms);
-            }
-        });
-    }
-    ui.add_space(6.0);
-    let mut order: Vec<(bool, u64, ConvKey)> = app
-        .state
-        .conversations
-        .iter()
-        .filter(|c| conv_matches(app, c))
-        .map(|c| {
-            let fav = app
-                .favorite_id(c.key)
-                .is_some_and(|id| app.prefs.favorites.contains(&id));
-            (fav, c.last_activity, c.key)
-        })
-        .collect();
-    order.sort_by(|a, b| b.1.cmp(&a.1).then(b.2.cmp(&a.2)));
-    egui::ScrollArea::vertical()
-        .id_salt("chat-list")
-        .auto_shrink([false, false])
-        .show(ui, |ui| {
-            if order.is_empty() {
-                ui.add_space(20.0);
-                ui.label(
-                    RichText::new(if app.chat_filter == ChatFilter::Rooms {
-                        t.no_rooms
-                    } else if app.state.conversations.is_empty() {
-                        t.no_conversations
-                    } else {
-                        t.no_conversations_filter
-                    })
-                    .color(pal.muted),
-                );
-                return;
-            }
-            let favs: Vec<ConvKey> = order.iter().filter(|o| o.0).map(|o| o.2).collect();
-            let rest: Vec<ConvKey> = order.iter().filter(|o| !o.0).map(|o| o.2).collect();
-            if !favs.is_empty() {
-                ui.horizontal(|ui| {
-                    ui.add_space(8.0);
-                    widgets::section(ui, t.favorites, pal);
-                });
-                for k in favs {
-                    row(app, ui, pal, k);
-                }
-                ui.add_space(10.0);
-            }
-            if !rest.is_empty() {
-                ui.horizontal(|ui| {
-                    ui.add_space(8.0);
-                    widgets::section(ui, t.recent_conversations, pal);
-                });
-                for k in rest {
-                    row(app, ui, pal, k);
-                }
-            }
-        });
-}
-
-fn preview(app: &CommsUi, c: &Conversation) -> String {
-    if c.typing {
-        return app.t.typing_short.to_string();
-    }
-    match &c.state {
-        ConvState::Failed(code) => return format!("{} ({code})", app.t.conversation_failed),
-        ConvState::Opening if c.messages.is_empty() => return app.t.opening.to_string(),
-        _ => {}
-    }
-    match c.last_text() {
-        None => String::new(),
-        Some(m) => {
-            let who = match &m.sender {
-                None => app.t.you.to_string(),
-                Some(s) if c.is_group() => app
-                    .state
-                    .name_of(s)
-                    .split(' ')
-                    .next()
-                    .unwrap_or("")
-                    .to_string(),
-                Some(_) => String::new(),
-            };
-            let line: String = m
-                .text
-                .lines()
-                .next()
-                .unwrap_or("")
-                .chars()
-                .take(80)
-                .collect();
-            if who.is_empty() {
-                line
-            } else {
-                format!("{who}: {line}")
-            }
-        }
-    }
-}
-
-fn when(app: &CommsUi, at: u64) -> String {
-    if at == 0 {
-        return String::new();
-    }
-    let today = format::day(app.now, app.utc_offset);
-    let d = format::day(at, app.utc_offset);
-    if d == today {
-        format::clock(at, app.utc_offset)
-    } else if d + 1 == today {
-        app.t.yesterday.to_string()
-    } else {
-        format::date(at, app.utc_offset)
-    }
-}
 
 /// The name an avatar shows: a group titled after its members (addresses, a list) shows the
 /// group mark instead of one member's initials.
@@ -218,160 +23,16 @@ fn group_avatar<'a>(app: &CommsUi, group: bool, title: &'a str) -> &'a str {
     }
 }
 
-fn row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
-    let Some(c) = app.state.conversation(key) else {
-        return;
-    };
-    let selected = app.selected_conv == Some(key);
-    let presence = c
-        .peer
-        .as_ref()
-        .and_then(|p| app.state.contacts.get(p))
-        .map(|k| k.presence);
-    let title = c.title.clone();
-    let line = preview(app, c);
-    let time = when(app, c.last_activity);
-    let unread = c.unread;
-    let is_group = c.peer.is_none();
-    let is_room = c.is_room();
-    let ended = matches!(c.state, ConvState::Ended | ConvState::Failed(_));
-    let w = ui.available_width();
-    let (rect, resp) = ui.allocate_exact_size(Vec2::new(w, 72.0), Sense::click());
-    let p = ui.painter();
-    if selected {
-        p.rect_filled(rect, CornerRadius::same(10), pal.primary_soft);
-    } else if resp.hovered() {
-        p.rect_filled(rect, CornerRadius::same(10), pal.surface_subtle);
-    }
-    if resp.has_focus() {
-        p.rect_stroke(
-            rect,
-            CornerRadius::same(10),
-            Stroke::new(2.0, pal.primary),
-            egui::StrokeKind::Inside,
-        );
-    }
-    let mut child = ui.new_child(
-        egui::UiBuilder::new()
-            .max_rect(rect.shrink2(Vec2::new(10.0, 12.0)))
-            .layout(Layout::left_to_right(Align::Center)),
-    );
-    let avatar_name = group_avatar(app, is_group, &title);
-    widgets::avatar(&mut child, avatar_name, 44.0, presence, pal);
-    child.add_space(4.0);
-    child.vertical(|ui| {
-        ui.horizontal(|ui| {
-            ui.set_width(ui.available_width());
-            let tw = ui.available_width() - 58.0;
-            ui.allocate_ui(Vec2::new(tw, 18.0), |ui| {
-                widgets::ellipsis(
-                    ui,
-                    RichText::new(&title)
-                        .size(theme::text::NAME)
-                        .family(crate::theme::bold())
-                        .color(pal.ink),
-                );
-            });
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                ui.label(
-                    RichText::new(time)
-                        .size(theme::text::SMALL)
-                        .color(pal.muted),
-                );
-            });
-        });
-        ui.horizontal(|ui| {
-            ui.set_width(ui.available_width());
-            let tw = ui.available_width() - 30.0;
-            ui.allocate_ui(Vec2::new(tw, 16.0), |ui| {
-                let colour = if ended { pal.quiet } else { pal.muted };
-                widgets::ellipsis(
-                    ui,
-                    RichText::new(line).size(theme::text::SMALL).color(colour),
-                );
-            });
-            if unread > 0 {
-                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    let (r, _) = ui.allocate_exact_size(Vec2::splat(20.0), Sense::hover());
-                    ui.painter().circle_filled(r.center(), 10.0, pal.primary);
-                    ui.painter().text(
-                        r.center(),
-                        egui::Align2::CENTER_CENTER,
-                        unread.min(99).to_string(),
-                        egui::FontId::proportional(10.5),
-                        pal.on_primary,
-                    );
-                });
-            }
-        });
-    });
-    let info = format!("{title}, {}", app.t.unread_count(unread));
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, true, selected, &info));
-    if resp.clicked() {
-        app.select_conversation(key);
-    }
-    // Arrow keys move through the list while a row has the focus.
-    if resp.has_focus() {
-        let down = ui.input(|i| i.key_pressed(Key::ArrowDown));
-        let up = ui.input(|i| i.key_pressed(Key::ArrowUp));
-        if down || up {
-            ui.memory_mut(|m| {
-                if down {
-                    m.move_focus(egui::FocusDirection::Down)
-                } else {
-                    m.move_focus(egui::FocusDirection::Up)
-                }
-            });
-        }
-    }
-    resp.context_menu(|ui| {
-        if let Some(id) = app.favorite_id(key) {
-            let fav = app.prefs.favorites.contains(&id);
-            if ui
-                .button(if fav {
-                    app.t.unfavorite
-                } else {
-                    app.t.favorite
-                })
-                .clicked()
-            {
-                app.toggle_favorite(id);
-                ui.close();
-            }
-        }
-        if !ended && !is_room && ui.button(app.t.end_conversation).clicked() {
-            app.emit(UiIntent::EndConversation { key });
-            ui.close();
-        }
-    });
-}
-
-pub fn main(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
-    let Some(key) = app
-        .selected_conv
-        .filter(|k| app.state.conversation(*k).is_some())
-    else {
-        empty(app, ui, pal);
-        return;
-    };
-    header(app, ui, pal, key);
+/// A conversation in its own window: head, composer, history.
+pub fn conversation_body(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
+    window_header(app, ui, pal, key);
     composer(app, ui, pal, key);
     history(app, ui, pal, key);
 }
 
-fn empty(app: &CommsUi, ui: &mut Ui, pal: &Palette) {
-    ui.vertical_centered(|ui| {
-        ui.add_space(ui.available_height() / 3.0);
-        ui.label(
-            RichText::new(app.t.select_conversation)
-                .size(theme::text::PANEL_TITLE)
-                .color(pal.ink),
-        );
-        ui.label(RichText::new(app.t.select_conversation_hint).color(pal.muted));
-    });
-}
-
-fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
+/// The head of a conversation window: picture, title, status or members (actions are in the bar
+/// at the bottom).
+fn window_header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     let t = app.t;
     let Some(c) = app.state.conversation(key) else {
         return;
@@ -379,28 +40,21 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     let title = c.title.clone();
     let peer = c.peer.clone();
     let subtitle = if let Some(r) = &c.room {
-        let n = c.participants.len();
-        let mut s = if c.state == ConvState::Opening {
-            format!("{} · {}", t.chat_room, t.room_joining)
+        if r.topic.is_empty() {
+            t.chat_room.to_string()
         } else {
-            format!("{} · {}", t.chat_room, t.members_count(n))
-        };
-        if !r.topic.is_empty() {
-            s.push_str(" · ");
-            s.push_str(&r.topic);
+            format!("{} · {}", t.chat_room, r.topic)
         }
-        s
     } else if c.is_group() {
-        let n = c.participants.len();
-        format!("{} · {}", t.group_chat, t.members_count(n))
+        format!(
+            "{} · {}",
+            t.group_chat,
+            t.members_count(c.participants.len())
+        )
     } else {
-        let p = peer.as_deref().and_then(|p| app.state.contacts.get(p));
-        match p {
-            Some(k) => format!(
-                "{} · {}",
-                t.presence(k.presence),
-                k.uri.trim_start_matches("sip:")
-            ),
+        match peer.as_deref().and_then(|p| app.state.contacts.get(p)) {
+            Some(k) if !k.note.is_empty() => format!("{} – {}", t.presence(k.presence), k.note),
+            Some(k) => t.presence(k.presence).to_string(),
             None => peer
                 .clone()
                 .unwrap_or_default()
@@ -412,79 +66,36 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
         .as_ref()
         .and_then(|p| app.state.contacts.get(p))
         .map(|k| k.presence);
-    let avatar_name = group_avatar(app, peer.is_none(), &title).to_string();
-    egui::Panel::top(("chat-head", key.0))
-        .exact_size(74.0)
+    egui::Panel::top(("conv-head", key.0))
         .frame(
             Frame::new()
                 .fill(pal.surface)
-                .inner_margin(Margin::symmetric(24, 12))
+                .inner_margin(Margin::symmetric(16, 10))
                 .stroke(Stroke::new(1.0, pal.border)),
         )
         .show(ui, |ui| {
-            ui.horizontal_centered(|ui| {
-                widgets::avatar(ui, &avatar_name, 44.0, presence, pal);
-                ui.add_space(6.0);
+            ui.horizontal(|ui| {
+                widgets::avatar(
+                    ui,
+                    group_avatar(app, peer.is_none(), &title),
+                    40.0,
+                    presence,
+                    pal,
+                );
                 ui.vertical(|ui| {
-                    ui.add_space(2.0);
-                    ui.label(
+                    widgets::ellipsis(
+                        ui,
                         RichText::new(&title)
                             .size(theme::text::PANEL_TITLE - 1.0)
                             .family(crate::theme::bold())
                             .color(pal.ink),
                     );
-                    ui.label(
+                    widgets::ellipsis(
+                        ui,
                         RichText::new(subtitle)
                             .size(theme::text::SMALL + 0.5)
                             .color(pal.muted),
                     );
-                });
-                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    let caps = app.state.capabilities.clone();
-                    let history = caps.history_search.clone();
-                    widgets::gated(ui, t.search_in_chat, &history, t, pal, |ui, l, en| {
-                        ui.add_enabled(en, egui::Button::new(l))
-                    });
-                    if let Some(p) = peer.clone() {
-                        if let Some(r) =
-                            widgets::gated(ui, t.call, &caps.audio_call, t, pal, |ui, l, en| {
-                                ui.add_enabled(
-                                    en && app.state.active_call().is_none(),
-                                    egui::Button::new(l),
-                                )
-                            })
-                        {
-                            if r.clicked() {
-                                app.emit(UiIntent::CallUser { peer: p.clone() });
-                                app.view = crate::model::View::Calls;
-                            }
-                        }
-                        if let Some(r) = widgets::gated(
-                            ui,
-                            t.video_call,
-                            &caps.video_call,
-                            t,
-                            pal,
-                            |ui, l, en| {
-                                ui.add_enabled(
-                                    en && app.state.active_call().is_none(),
-                                    egui::Button::new(l),
-                                )
-                            },
-                        ) {
-                            if r.clicked() {
-                                app.emit(UiIntent::VideoCall { peer: p });
-                                app.view = crate::model::View::Calls;
-                            }
-                        }
-                    }
-                    if let Some(id) = app.favorite_id(key) {
-                        let fav = app.prefs.favorites.contains(&id);
-                        let label = if fav { t.unfavorite } else { t.favorite };
-                        if ui.button(label).clicked() {
-                            app.toggle_favorite(id);
-                        }
-                    }
                 });
             });
         });
@@ -821,131 +432,6 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                     });
                 });
         });
-}
-
-pub fn context(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
-    let t = app.t;
-    let Some(c) = app
-        .selected_conv
-        .and_then(|k| app.state.conversation(k))
-        .cloned()
-    else {
-        context_title(app, ui, pal, t.details);
-        ui.label(RichText::new(t.select_conversation_hint).color(pal.muted));
-        return;
-    };
-    // Groups and rooms both have a member list.
-    let many = c.peer.is_none();
-    if c.is_room() {
-        context_title(app, ui, pal, t.chat_room);
-    } else if c.is_group() {
-        context_title(app, ui, pal, t.group_info);
-    } else {
-        context_title(app, ui, pal, t.contact_info);
-    }
-    ui.vertical_centered(|ui| {
-        let presence = c
-            .peer
-            .as_ref()
-            .and_then(|p| app.state.contacts.get(p))
-            .map(|k| k.presence);
-        widgets::avatar(ui, &c.title, 56.0, presence, pal);
-        ui.label(
-            RichText::new(&c.title)
-                .size(theme::text::NAME + 2.0)
-                .family(crate::theme::bold())
-                .color(pal.ink),
-        );
-        let sub = if many {
-            t.members_count(c.participants.len())
-        } else {
-            c.peer
-                .clone()
-                .unwrap_or_default()
-                .trim_start_matches("sip:")
-                .to_string()
-        };
-        ui.label(RichText::new(sub).size(theme::text::SMALL).color(pal.muted));
-    });
-    ui.add_space(14.0);
-    if many {
-        widgets::rule(ui, pal);
-        ui.add_space(10.0);
-        ui.label(
-            RichText::new(t.members_roles)
-                .family(crate::theme::bold())
-                .color(pal.ink),
-        );
-        if c.participants.is_empty() {
-            ui.label(RichText::new(t.no_roster).color(pal.muted));
-        }
-        for p in c.participants.iter().take(50) {
-            ui.horizontal(|ui| {
-                let name = if p.name.is_empty() {
-                    app.state.name_of(&p.uri)
-                } else {
-                    p.name.clone()
-                };
-                widgets::avatar(
-                    ui,
-                    &name,
-                    24.0,
-                    app.state.contacts.get(&p.uri).map(|k| k.presence),
-                    pal,
-                );
-                widgets::ellipsis(ui, RichText::new(name).color(pal.ink));
-                if p.presenter {
-                    ui.label(
-                        RichText::new(t.presenter)
-                            .size(theme::text::SMALL)
-                            .color(pal.muted),
-                    );
-                }
-            });
-        }
-        if c.participants.len() > 50 {
-            ui.label(RichText::new(t.more_members(c.participants.len() - 50)).color(pal.muted));
-        }
-        ui.add_space(14.0);
-        if c.is_group() && c.state == ConvState::Open {
-            crate::views::content::block(app, ui, pal, c.key);
-        }
-    } else if let Some(k) = c.peer.as_ref().and_then(|p| app.state.contacts.get(p)) {
-        let mut parts = Vec::new();
-        for v in [&k.title, &k.department, &k.company] {
-            if !v.is_empty() {
-                parts.push(v.as_str());
-            }
-        }
-        if !parts.is_empty() {
-            context_block(ui, pal, t.function, &parts.join(" · "));
-        }
-        context_block(
-            ui,
-            pal,
-            t.availability,
-            &format!(
-                "{}{}",
-                t.presence(k.presence),
-                if k.note.is_empty() {
-                    String::new()
-                } else {
-                    format!(" – {}", k.note)
-                }
-            ),
-        );
-    }
-    context_block(
-        ui,
-        pal,
-        t.files,
-        t.reason(match &app.state.capabilities.file_transfer {
-            Gate::Unavailable(r) => *r,
-            _ => crate::model::Reason::NotImplemented,
-        }),
-    );
-    context_block(ui, pal, t.history_title, t.history_body);
-    context_block(ui, pal, t.delivery_title, t.delivery_body);
 }
 
 /// The dialog for a new conversation (one address) or a group (several), also used to invite

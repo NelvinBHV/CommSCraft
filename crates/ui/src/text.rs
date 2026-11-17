@@ -85,6 +85,135 @@ texts! {
     filter_unread: "Ungelesen", "Unread";
     filter_groups: "Gruppen", "Groups";
     filter_rooms: "Räume", "Rooms";
+    about: "Über CommSCraft", "About CommSCraft";
+    about_body: "Freier Linux-Client für Skype for Business Server, aus offenen Spezifikationen gebaut. Lizenz und Quellen: siehe Projektseite.", "Free Linux client for Skype for Business Server, built from open specifications. Licence and sources: see the project page.";
+    add_contact: "Kontakt hinzufügen", "Add contact";
+    add_contact_unavailable: "Kontakt hinzufügen – in dieser Oberfläche noch nicht", "Add contact – not in this interface yet";
+    always_on_top: "Immer im Vordergrund", "Always on top";
+    audio_device_settings: "Audiogerät einstellen", "Audio device settings";
+    audio_device_short: "Audio", "Audio";
+    change_status: "Status ändern", "Change status";
+    close_alert: "Hinweis schließen", "Close notice";
+    close_window: "Fenster schließen", "Close window";
+    company: "Firma", "Company";
+    contact_card: "Visitenkarte", "Contact card";
+    contacts_groups: "Gruppen", "Groups";
+    contacts_new: "Neu", "New";
+    contacts_relationships: "Beziehungen", "Relationships";
+    contacts_status: "Status", "Status";
+    contacts_view_unavailable: "Diese Ansicht gibt es in dieser Oberfläche noch nicht.", "This view is not in this interface yet.";
+    department: "Abteilung", "Department";
+    dial_pad: "Tastenfeld", "Keypad";
+    filter_calls: "Anrufe", "Calls";
+    find_someone: "Person suchen", "Find a person";
+    ignore: "Ignorieren", "Ignore";
+    incoming_call: "ruft an", "is calling";
+    incoming_video_call: "ruft mit Video an", "is calling with video";
+    invites_to_meeting: "lädt Sie zu einer Besprechung ein", "invites you to a meeting";
+    main_menu: "Menü", "Menu";
+    menu_file: "Datei", "File";
+    menu_help: "Hilfe", "Help";
+    menu_tools: "Extras", "Tools";
+    more_options: "Weitere Optionen", "More options";
+    no_conversations_yet: "Hier erscheinen Ihre letzten Unterhaltungen.", "Your recent conversations appear here.";
+    note_hint: "Was gibt es Neues?", "What's new?";
+    note_label: "Persönliche Notiz", "Personal note";
+    notifications: "Benachrichtigungen", "Notifications";
+    ok: "OK", "OK";
+    open: "Öffnen", "Open";
+    options: "Optionen", "Options";
+    options_title: "Optionen", "Options";
+    opt_account: "Konto", "Account";
+    opt_alerts: "Benachrichtigungen", "Alerts";
+    opt_alerts_dnd: "Bei „Nicht stören“", "When Do Not Disturb";
+    opt_alerts_general: "Allgemein", "General";
+    opt_alerts_strangers: "Personen außerhalb der Kontaktliste", "People outside the contact list";
+    opt_app_window: "Anwendungsfenster", "Application window";
+    opt_audio: "Audiogerät", "Audio device";
+    opt_audio_choose: "Gerät, Pegel und Testanruf wählen", "Choose device, levels and test call";
+    opt_autostart: "Beim Anmelden am Computer starten", "Start when I log on to the computer";
+    opt_away_group: "Abwesende, Offline- und unbekannte Kontakte gesondert gruppieren", "Group away, offline and unknown contacts separately";
+    opt_block_strangers: "Einladungen von Unbekannten blockieren", "Block invitations from unknown people";
+    opt_by_availability: "Nach Verfügbarkeit", "By availability";
+    opt_by_name: "Nach Name", "By name";
+    opt_camera: "Kamera (Gerätedatei)", "Camera (device file)";
+    opt_camera_body: "Die Kamera wird erst geöffnet, wenn ein Videostrom ausgehandelt ist. Gilt ab dem nächsten Videoanruf.", "The camera is opened only once a video stream is negotiated. Applies from the next video call.";
+    opt_contacts: "Kontaktliste", "Contact list";
+    opt_contacts_display: "Kontakte anzeigen mit", "Show contacts with";
+    opt_contacts_order: "Reihenfolge", "Order";
+    opt_contacts_show: "Gruppen", "Groups";
+    opt_conversation_window: "Gesprächsfenster", "Conversation windows";
+    opt_dnd_sharing: "„Nicht stören“ während einer Freigabe", "Do Not Disturb while sharing";
+    opt_emoticons: "Emoticons anzeigen", "Show emoticons";
+    opt_exchange: "Exchange", "Exchange";
+    opt_exchange_body: "Kalenderstatus, Abwesenheitsnotiz, Unterhaltungsverlauf und Voicemail aus Exchange bietet zurzeit das Kommandozeilenwerkzeug.", "Calendar state, out-of-office note, conversation history and voicemail from Exchange are offered by the command-line tool for now.";
+    opt_favorites_group: "Gruppe „Favoriten“ zeigen", "Show the Favourites group";
+    opt_files: "Dateispeicherung", "File saving";
+    opt_general: "Allgemein", "General";
+    opt_idle: "Nach Inaktivität „Inaktiv“ bzw. „Abwesend“ zeigen", "Show Inactive or Away after idle time";
+    opt_im: "Chat", "IM";
+    opt_language: "Sprache", "Language";
+    opt_location: "Standort", "Location";
+    opt_logging: "Protokollierung", "Logging";
+    opt_logging_body: "Ein SIP-Kurzprotokoll (nur Methode/Status und CSeq) gibt es mit der Umgebungsvariablen COMMSCRAFT_VERBOSE=1.", "A short SIP trace (method/status and CSeq only) is available with COMMSCRAFT_VERBOSE=1.";
+    opt_meeting_audio: "Besprechungsaudio automatisch beitreten", "Join meeting audio automatically";
+    opt_meeting_participants: "Beim Beitritt die Teilnehmerliste zeigen", "Show the participant list when joining";
+    opt_meetings: "Besprechungen", "Meetings";
+    opt_message_alerts: "Hinweis bei neuen Nachrichten in nicht geöffneten Unterhaltungen", "Notify about new messages in conversations that are not open";
+    opt_one_line: "Nur Name (einzeilig)", "Name only (one line)";
+    opt_personal: "Persönlich", "Personal";
+    opt_phone_numbers: "Meine Rufnummern", "My phone numbers";
+    opt_phones: "Telefone", "Phones";
+    opt_picture: "Mein Bild", "My picture";
+    opt_pictures: "Bilder", "Pictures";
+    opt_play_sounds: "Töne abspielen (Klingeln, Hinweistöne)", "Play sounds (ringing, alerts)";
+    opt_publish_numbers: "Rufnummern in der Visitenkarte veröffentlichen", "Publish numbers in my contact card";
+    opt_quiet_busy: "Bei „Beschäftigt“ nur das Nötigste", "Keep sounds to a minimum when Busy";
+    opt_quiet_dnd: "Keine Hinweise bei neuen Nachrichten", "No notifications for new messages";
+    opt_record: "Aufzeichnen", "Record";
+    opt_recording: "Aufzeichnung", "Recording";
+    opt_reopen_conversations: "Unterhaltungen beim Anmelden wieder öffnen", "Reopen conversations when signing in";
+    opt_save_files: "Empfangene Dateien speichern unter", "Save received files to";
+    opt_share_location: "Standort für andere Programme freigeben", "Share my location with other programs";
+    opt_show_my_picture: "Mein Bild zeigen", "Show my picture";
+    opt_show_pictures: "Bilder von Kontakten zeigen", "Show pictures of contacts";
+    opt_sounds: "Töne", "Sounds";
+    opt_sounds_body: "Klingeln, Hinweistöne und Wartemusik können zusätzlich mit COMMSCRAFT_RING, COMMSCRAFT_NOTIFY und COMMSCRAFT_HOLD_MUSIC durch eigene Dateien ersetzt werden.", "Ringing, alert sounds and music on hold can also be replaced by own files with COMMSCRAFT_RING, COMMSCRAFT_NOTIFY and COMMSCRAFT_HOLD_MUSIC.";
+    opt_spelling: "Rechtschreibung beim Tippen prüfen", "Check spelling as I type";
+    opt_status: "Status", "Status";
+    opt_status_body: "Der Status wird nur so veröffentlicht, wie Sie ihn wählen.", "The status is published only as you choose it.";
+    opt_tabs: "Unterhaltungen als Reiter in einem Fenster", "Conversations as tabs in one window";
+    opt_text_size: "Schriftgröße im Chat", "Chat text size";
+    opt_tty: "Texttelefon (TTY)", "Text telephone (TTY)";
+    opt_tty_mode: "TTY-Modus", "TTY mode";
+    opt_two_lines: "Name und Status (zweizeilig)", "Name and status (two lines)";
+    opt_video: "Videogerät", "Video device";
+    phone_address: "Adresse wählen (SIP)", "Dial an address (SIP)";
+    phone_label: "Telefon", "Phone";
+    phone_numbers_unavailable: "Rufnummern wählen ist in dieser Oberfläche noch nicht freigegeben (Notrufbehandlung offen).", "Dialling phone numbers is not enabled in this interface yet (emergency call handling open).";
+    poll_new: "Umfrage erstellen", "Create a poll";
+    present: "Präsentieren", "Present";
+    present_slides: "Folien präsentieren", "Present slides";
+    quit: "Beenden", "Quit";
+    reset_status: "Status automatisch", "Automatic status";
+    send_im: "Chatnachricht senden", "Send a message";
+    share_desktop: "Bildschirm freigeben", "Share my screen";
+    share_window: "Fenster freigeben", "Share a window";
+    status_away: "Abwesend", "Away";
+    status_away_offline: "Abwesend und offline", "Away and offline";
+    status_busy: "Beschäftigt", "Busy";
+    status_offline: "Offline oder unbekannt", "Offline or unknown";
+    status_online: "Verfügbar", "Available";
+    tab_contacts: "Kontakte", "Contacts";
+    tab_conversations: "Unterhaltungen", "Conversations";
+    tab_meetings: "Besprechungen", "Meetings";
+    tab_phone: "Telefon", "Phone";
+    version: "Version", "Version";
+    video_device_settings: "Videogerät einstellen", "Video device settings";
+    view_history: "Unterhaltungen anzeigen", "Show conversations";
+    voicemail: "Voicemail", "Voicemail";
+    voicemail_unavailable: "Voicemail abhören bietet zurzeit das Kommandozeilenwerkzeug.", "Listening to voicemail is offered by the command-line tool for now.";
+    whiteboard_new: "Whiteboard öffnen", "Open a whiteboard";
     load_rooms: "Chatrooms laden", "Load chat rooms";
     load_rooms_tip: "Verbindet mit dem Persistent-Chat-Server, listet die eigenen Räume und tritt ihnen bei", "Connects to the persistent chat server, lists your rooms and joins them";
     no_rooms: "Noch keine Chatrooms geladen.", "No chat rooms loaded yet.";
@@ -489,6 +618,18 @@ impl Texts {
                     "Signed out"
                 }
             }
+        }
+    }
+
+    pub fn call_direction(&self, d: crate::model::CallDirection) -> &'static str {
+        use crate::model::CallDirection as D;
+        match (self.lang(), d) {
+            (Lang::De, D::Incoming) => "Eingehend",
+            (Lang::De, D::Outgoing) => "Ausgehend",
+            (Lang::De, D::Missed) => "Verpasst",
+            (_, D::Incoming) => "Incoming",
+            (_, D::Outgoing) => "Outgoing",
+            (_, D::Missed) => "Missed",
         }
     }
 

@@ -1,5 +1,6 @@
 //! Local preferences of the desktop client in `~/.config/commscraft/desktop.conf` (mode 0600):
-//! favourites (SIP addresses and group titles), high contrast, scale, the side panel.
+//! favourites (SIP addresses, group titles, chat rooms) and the options of the options window
+//! (language, display, contact list, notifications, sounds, camera device, meetings).
 //!
 //! No chat content, no presence, no password is ever written here. The file is read bounded;
 //! unknown or malformed lines are skipped.
@@ -21,7 +22,9 @@ fn path() -> Option<PathBuf> {
 fn valid_favorite(v: &str) -> bool {
     let printable = !v.is_empty() && v.len() <= 300 && v.chars().all(|c| !c.is_control());
     printable
-        && (commscraft_ui::normalise_address(v).as_deref() == Some(v) || v.starts_with("group:"))
+        && (commscraft_ui::normalise_address(v).as_deref() == Some(v)
+            || v.starts_with("group:")
+            || v.starts_with("room:ma-chan://"))
 }
 
 pub fn parse(text: &str) -> Prefs {
@@ -36,6 +39,30 @@ pub fn parse(text: &str) -> Prefs {
                 p.favorites.insert(v.to_string());
             }
             "high_contrast" => p.high_contrast = v == "true",
+            "lang" => p.lang = commscraft_ui::text::Lang::from_locale(v),
+            "always_on_top" => p.always_on_top = v == "true",
+            "compact_contacts" => p.compact_contacts = v == "true",
+            "sort_by_availability" => p.sort_by_availability = v == "true",
+            "away_group" => p.away_group = v == "true",
+            "favorites_group" => p.favorites_group = v != "false",
+            "message_alerts" => p.message_alerts = v != "false",
+            "quiet_when_dnd" => p.quiet_when_dnd = v != "false",
+            "sounds" => p.sounds = v != "false",
+            "quiet_sounds_busy" => p.quiet_sounds_busy = v == "true",
+            "meeting_participants" => p.meeting_participants = v == "true",
+            // A device file only: printable, absolute, bounded.
+            "camera"
+                if v.starts_with("/dev/") && v.len() <= 200 && !v.chars().any(char::is_control) =>
+            {
+                p.camera = v.to_string()
+            }
+            "chat_text_size" => {
+                if let Ok(s) = v.parse::<f32>() {
+                    if (12.0..=20.0).contains(&s) {
+                        p.chat_text_size = s;
+                    }
+                }
+            }
             "context_open" => p.context_open = v != "false",
             "scale" => {
                 if let Ok(s) = v.parse::<f32>() {
@@ -55,6 +82,32 @@ pub fn format(p: &Prefs) -> String {
     out.push_str(&format!("high_contrast={}\n", p.high_contrast));
     out.push_str(&format!("context_open={}\n", p.context_open));
     out.push_str(&format!("scale={}\n", p.scale));
+    out.push_str(&format!(
+        "lang={}\n",
+        if p.lang == commscraft_ui::text::Lang::En {
+            "en"
+        } else {
+            "de"
+        }
+    ));
+    for (k, v) in [
+        ("always_on_top", p.always_on_top),
+        ("compact_contacts", p.compact_contacts),
+        ("sort_by_availability", p.sort_by_availability),
+        ("away_group", p.away_group),
+        ("favorites_group", p.favorites_group),
+        ("message_alerts", p.message_alerts),
+        ("quiet_when_dnd", p.quiet_when_dnd),
+        ("sounds", p.sounds),
+        ("quiet_sounds_busy", p.quiet_sounds_busy),
+        ("meeting_participants", p.meeting_participants),
+    ] {
+        out.push_str(&format!("{k}={v}\n"));
+    }
+    out.push_str(&format!("chat_text_size={}\n", p.chat_text_size));
+    if p.camera.starts_with("/dev/") {
+        out.push_str(&format!("camera={}\n", p.camera));
+    }
     for f in p
         .favorites
         .iter()
@@ -64,6 +117,20 @@ pub fn format(p: &Prefs) -> String {
         out.push_str(&format!("favorite={f}\n"));
     }
     out
+}
+
+/// The language chosen in the options, if the file names one.
+pub fn saved_lang() -> Option<commscraft_ui::text::Lang> {
+    let path = path()?;
+    let ok = std::fs::metadata(&path).is_ok_and(|m| m.is_file() && m.len() <= MAX_FILE);
+    let text = if ok {
+        std::fs::read_to_string(&path).ok()?
+    } else {
+        return None;
+    };
+    text.lines()
+        .find_map(|l| l.strip_prefix("lang="))
+        .map(|v| commscraft_ui::text::Lang::from_locale(v.trim()))
 }
 
 pub fn load() -> Prefs {
@@ -111,8 +178,15 @@ mod tests {
         let mut p = Prefs {
             high_contrast: true,
             scale: 1.25,
+            lang: commscraft_ui::text::Lang::En,
+            compact_contacts: true,
+            sounds: false,
+            camera: "/dev/video2".into(),
+            chat_text_size: 16.0,
             ..Default::default()
         };
+        p.favorites
+            .insert("room:ma-chan://beispiel.invalid/ab-12".into());
         p.favorites.insert("sip:anna@beispiel.invalid".into());
         p.favorites.insert("group:Projekt Nord".into());
         let back = parse(&format(&p));

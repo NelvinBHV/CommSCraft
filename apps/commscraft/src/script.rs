@@ -8,10 +8,11 @@
 //! `call sip:ADDRESS` · `videocall sip:ADDRESS` · `transfer sip:ADDRESS` · `answer` · `answervideo` ·
 //! `viewscreen` · `hangup` · `hold` · `resume` · `mute` · `unmute` ·
 //! `content` · `vote CONTENT CHOICE` ·
-//! `status available|busy|dnd|away` · `shot FILE.png` · `quit` (signs out and closes).
+//! `status available|busy|dnd|away` · `shot FILE.png [conv|call|options]` · `quit` (signs out and closes).
 
 use crate::{now, DesktopApp};
 use commscraft_ui::app::UiIntent;
+use commscraft_ui::app::Win;
 use commscraft_ui::model::{AppEvent, CallState, Presence, View};
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use std::path::PathBuf;
@@ -189,7 +190,20 @@ pub fn run(app: &mut DesktopApp, line: &str) {
             };
             app.handle(UiIntent::SetPresence(p));
         }
-        "shot" => app.shots.push_back((PathBuf::from(arg), false)),
+        // `shot FILE [conv|call|options]`: the main window, or the first window of that kind.
+        "shot" => {
+            let mut w = arg.split_whitespace();
+            let file = w.next().unwrap_or("shot.png");
+            let target = w.next().and_then(|kind| {
+                app.ui.windows().iter().copied().find(|x| {
+                    matches!(
+                        (kind, x),
+                        ("conv", Win::Conv(_)) | ("call", Win::Call(_)) | ("options", Win::Options)
+                    )
+                })
+            });
+            app.shots.push_back((PathBuf::from(file), false, target))
+        }
         "quit" => {
             app.handle(UiIntent::SignOut);
             app.close_at = Some(std::time::Instant::now());

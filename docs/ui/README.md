@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: meeting content)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** major (desktop client: the window structure of the Windows client with an own look)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -21,11 +21,12 @@ apps/commscraft        window (eframe, OpenGL, Wayland/X11), system fonts, brand
 | 1 | Shell and the three screens with demo data: chats (list, conversation, composer, group details), contacts and presence, calls (active call, controls, history), meetings, settings with the capability overview; keyboard, focus, scaling, high contrast, German and English | done (tested-offline) |
 | 2 | The session adapter: sign-in, contacts and presence, 1:1 and group chat, delivery, typing, audio calls, meetings, invitations | done (tested-offline; `tested-in-lab`: sign-in, contacts and presence, 1:1 and group chat both ways, outgoing calls with ringing, connected, hold, resume, hang-up; incoming calls answered and hung up) |
 | 3 | UX additions on existing data: favourites and display preferences kept locally, filters, the address book search on the server (settled text only), keyboard navigation | done (tested-offline; the address book search `tested-in-lab`) |
-| 4 | QA against the specification and the reference images | done (see QA below) |
+| 4 | QA against the specification and the reference images | done (see QA below; it checked the earlier three-pane layout) |
+| 5 | The window structure of the Windows client with an own look (main window with tabs, windows of their own for conversations and calls, notifications, menus, options) | done (tested-offline; `tested-in-lab`: sign-in, a conversation window with a delivered message, a call window for a call to the Windows client) |
 
 `commscraft --demo` shows the interface with made-up people at `beispiel.invalid` and never opens a
 network connection; every demo conversation, call and meeting carries a visible demo mark, and the
-status bar says "DEMO · not connected to a real server". Without `--demo` the sign-in screen
+footer says "DEMO · not connected to a real server". Without `--demo` the sign-in screen
 appears and the client signs in through the session engine.
 
 ## The session adapter (phase 2)
@@ -117,21 +118,50 @@ Delivery is shown as what it is: *sending*, *delivered* (the server or peer acce
 "read" state. A call shows *connected* only after the session reported the answer; dialling and
 ringing are separate states.
 
-## Layout and theme
+## Window structure
 
-Top bar 66 px, rail 92 px, list panel 300 px, flexible main area, context panel 290 px (can be hidden,
-closes by itself below 1100 px window width), status bar 28 px. Colours are tokens in
-`crates/ui/src/theme.rs` (blue and slate: primary `#3267CC`, hover `#2456B6`, selection `#E8F0FF`,
-outgoing `#E5EEFF`, ink `#24344F`, …). Status colours are semantic only and always come with a word.
+The interface takes the operating structure of the Windows desktop client of Skype for Business –
+a narrow main window, conversations and calls in windows of their own, menus and an options
+window with the same areas – with its own look: own line icons drawn in code, the blue and slate
+colours, own wording. No Microsoft image, icon, sound or font is used, and the appearance is not
+copied (clean-room rule).
 
-Deviations from the reference images, on purpose:
+- **Main window** (420 × 760 by default, at least 340 × 480): the personal note line (shown;
+  publishing it is not built), picture, name, the status menu (available, busy, do not disturb,
+  away; sign out, quit), then the tabs *Contacts*, *Conversations*, *Phone*, *Meetings* and – where
+  the server offers persistent chat – *Rooms*; on the right the options button and the main menu
+  (*File*, *Meet now*, *Tools*, *Help*). A yellow bar shows the newest warning until it is closed;
+  the footer has the audio device button and the state of the connection in words.
+- **Contacts:** search (contacts, conversations, the address book on the server), views by
+  *groups* (favourites, the groups of the contact list) and *status*; *relationships* and *new* are
+  not built. A contact opens with a double click; its menu offers a message, a call, a video call,
+  the favourite mark and the contact card.
+- **Conversations:** all, missed (unread), calls (the call history).
+- **Phone:** a keypad for tones in a running call and calls to SIP addresses; dialling phone
+  numbers stays disabled in this interface (the emergency call handling for it is open);
+  voicemail is offered by the command-line tool.
+- **Conversation window:** head (picture, title, status or members), history, composer, and the
+  bar at the bottom: participants, video call, call, *Present* (sharing one's own screen or window,
+  slides, whiteboard and polls are not built and say so; the meeting content can be shown), and
+  *More options* (invite, favourite, end).
+- **Call window:** state in words, the video state, mute, hold, transfer, keypad, hang up; a
+  viewed screen share has only *stop viewing*.
+- **Notifications:** incoming calls (answer, with video, decline; *view* for a shared screen),
+  meeting invitations (join, decline) and new messages in conversations that are not open (open,
+  ignore), in one small window that stays on top.
+- **Options:** 14 areas (general, personal, contact list, status, my picture, phones, alerts, IM,
+  sounds, audio device, video device, file saving, recording, meetings). What works changes the
+  local preferences (language, always on top, high contrast, scale, contact list display and
+  order, away group, favourites group, message alerts, quiet while do not disturb, chat text
+  size, sounds, the camera device, the participant list when joining); what is not built is
+  disabled with the reason. OK keeps the changes, Cancel drops them.
 
-- Secondary text is `#586A80` instead of `#64748B`: the latter reaches only 4.2:1 on the selection
-  and message colours, the rule asks for 4.5:1 for normal text (tested in `theme.rs`). Success as
-  text is `#177A59`; `#1E8E69` stays for dots.
-- The rail shows two-letter monograms instead of drawn icons (no third-party icon sets).
-- egui does not embolden fonts: bold text uses the system's bold face found through fontconfig.
-- The brand icon in the top bar is the unchanged `assets/branding/CommSCraft-icon-128.png`.
+`--embed-windows` draws the windows of their own inside the main window (screenshots of
+everything, and systems without separate windows).
+
+Colours are tokens in `crates/ui/src/theme.rs` (primary `#3267CC`, ink `#24344F`, …); secondary
+text `#586A80` and success text `#177A59` reach 4.5:1 (tested). Status colours always come with a
+word.
 
 ## Fonts, accessibility, keyboard
 
@@ -142,19 +172,20 @@ Deviations from the reference images, on purpose:
   (AccessKit over AT-SPI) is not built in yet: its adapter still uses zbus 5, whose `zvariant` and
   `zbus_names` crates RustSec lists as unmaintained (RUSTSEC-2026-0370 … 0372), and CI denies such
   warnings.
-- Shortcuts: Ctrl+K search, Ctrl+N new conversation, Ctrl+1 … 4 views, Enter sends, Shift+Enter new
+- Shortcuts: Ctrl+K search, Ctrl+N new conversation, Ctrl+1 … 4 tabs, Enter sends, Shift+Enter new
   line, Esc closes a dialog or the search, Tab and arrow keys move the focus. Drafts are kept per
   conversation; each conversation keeps its scroll position and only follows new messages while it
   is at the bottom.
 
-## Local preferences (phase 3)
+## Local preferences
 
 `~/.config/commscraft/desktop.conf` (mode 0600, written atomically) keeps favourites (SIP
-addresses and group titles), high contrast, scale and whether the side panel is shown. No chat
-content, presence or password is ever written there; the file is read bounded (64 KiB, 500
-favourites) and malformed lines are skipped. The demo and screenshot runs never read or write it.
+addresses, group titles, chat rooms) and the settings of the options window (language, display,
+contact list, alerts, sounds, the camera device file, meetings). No chat content, presence or
+password is ever written there; the file is read bounded (64 KiB, 500 favourites) and malformed
+lines are skipped. The demo and screenshot runs never read or write it.
 
-## QA (phase 4)
+## QA (phase 4, of the earlier three-pane layout)
 
 Checked against the owner's UI specification and acceptance checklist and against the three
 reference designs (1440 × 900), with screenshots of the real build (above).
@@ -190,20 +221,16 @@ the test host has no Kerberos configuration) and the trust dialog for a foreign 
 
 ## Screenshots of the build
 
-Made with `commscraft --demo --lang de --view VIEW --screenshot FILE` at 1440 × 900 (the program
-saves its own first settled frame):
+Made with `commscraft --demo --lang de --view VIEW --screenshot FILE` (the program saves its own
+first settled frame); the windows of their own with `--embed-windows --size 1400x860`:
 
-| Chats | Contacts | Calls |
-|---|---|---|
-| ![Chats](screenshots/chats.png) | ![Contacts](screenshots/contacts.png) | ![Calls](screenshots/calls.png) |
-
-| Meetings | Settings | Sign-in | 1280 × 800, English |
+| Contacts | Conversations | Phone | Meetings |
 |---|---|---|---|
-| ![Meetings](screenshots/meetings.png) | ![Settings](screenshots/settings.png) | ![Sign-in](screenshots/signin.png) | ![1280](screenshots/chats-1280-en.png) |
+| ![Contacts](screenshots/main-contacts.png) | ![Conversations](screenshots/main-conversations.png) | ![Phone](screenshots/main-phone.png) | ![Meetings](screenshots/main-meetings.png) |
 
-| Search (sources named, message texts not searched) |
-|---|
-| ![Search](screenshots/search.png) |
+| Conversation window and notifications | Options | Sign-in |
+|---|---|---|
+| ![Windows](screenshots/windows.png) | ![Options](screenshots/options.png) | ![Sign-in](screenshots/signin.png) |
 
 ## Checks
 

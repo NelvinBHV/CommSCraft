@@ -18,7 +18,7 @@ use commscraft_ui::text::Lang;
 use eframe::egui;
 use session::ToWorker;
 use std::path::PathBuf;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// The unchanged brand icon (assets/branding, see BRAND-POLICY.md).
 const ICON: &[u8] = include_bytes!("../../../assets/branding/CommSCraft-icon-128.png");
@@ -26,7 +26,7 @@ const ICON: &[u8] = include_bytes!("../../../assets/branding/CommSCraft-icon-128
 const USAGE: &str =
     "usage: commscraft [--demo] [--lang de|en] [--view chats|contacts|calls|meetings|settings]
                   [--size WIDTHxHEIGHT] [--screenshot FILE.png] [--screenshot-after SECONDS]
-                  [--ca-file PEM] [--commands FILE]
+                  [--ca-file PEM] [--commands FILE] [--embed-windows]
                   [--sign-in sip:ADDRESS --user USER [--domain DOMAIN] [--server HOST:PORT] [--kerberos] [--tls-dsk]]
   --ca-file    adds an enterprise CA to the system trust store (never replaces the checks)
   --sign-in    signs in at start; the password is the first line of standard input
@@ -34,6 +34,8 @@ const USAGE: &str =
 
 struct Args {
     demo: bool,
+    /// Windows of their own drawn inside the main window (screenshots of everything).
+    embed_windows: bool,
     lang: Option<Lang>,
     view: View,
     size: (f32, f32),
@@ -47,9 +49,10 @@ struct Args {
 fn parse_args() -> Result<Args, String> {
     let mut a = Args {
         demo: false,
+        embed_windows: false,
         lang: None,
-        view: View::Chats,
-        size: (1440.0, 900.0),
+        view: View::Contacts,
+        size: (420.0, 760.0),
         screenshot: None,
         screenshot_after: 0,
         ca_file: None,
@@ -62,6 +65,7 @@ fn parse_args() -> Result<Args, String> {
     while let Some(arg) = it.next() {
         match arg.as_str() {
             "--demo" => a.demo = true,
+            "--embed-windows" => a.embed_windows = true,
             "--lang" => {
                 a.lang = Some(match it.next().as_deref() {
                     Some("de") => Lang::De,
@@ -213,7 +217,10 @@ pub(crate) struct DesktopApp {
     pub(crate) ui: CommsUi,
     lang: Lang,
     /// Screenshots to take, each with "close the window afterwards".
-    pub(crate) shots: std::collections::VecDeque<(PathBuf, bool)>,
+    /// Screenshots to take: file, close afterwards, the window (`None`: the main window).
+    pub(crate) shots: std::collections::VecDeque<(PathBuf, bool, Option<commscraft_ui::app::Win>)>,
+    /// When the pending screenshot was asked for (given up after a while).
+    pub(crate) shot_since: Option<Instant>,
     commands: Option<std::sync::mpsc::Receiver<String>>,
     pub(crate) close_at: Option<std::time::Instant>,
     frames: u32,
@@ -232,6 +239,21 @@ impl DesktopApp {
     }
 
     pub(crate) fn handle(&mut self, intent: UiIntent) {
+        // What concerns the main window itself.
+        let root = |c: egui::ViewportCommand| {
+            if let Some(ctx) = &self.ctx {
+                ctx.send_viewport_cmd_to(egui::ViewportId::ROOT, c);
+            }
+        };
+        match intent {
+            UiIntent::Minimize => return root(egui::ViewportCommand::Minimized(true)),
+            UiIntent::FocusMain => return root(egui::ViewportCommand::Focus),
+            UiIntent::Quit => {
+                // Closing the window signs out (the worker sees the window go).
+                return root(egui::ViewportCommand::Close);
+            }
+            _ => {}
+        }
         if self.ui.demo {
             match intent {
                 UiIntent::SignOut => self.reset(),
@@ -343,8 +365,16 @@ impl DesktopApp {
                 if let Err(e) = prefs::save(&self.ui.prefs) {
                     eprintln!("preferences not saved: {e}");
                 }
-                None
+                self.lang = self.ui.prefs.lang;
+                let p = &self.ui.prefs;
+                Some(ToWorker::Settings {
+                    camera: p.camera.trim().to_string(),
+                    sounds: p.sounds,
+                    quiet_busy: p.quiet_sounds_busy,
+                })
             }
+            UiIntent::Dtmf { id, digits } => Some(ToWorker::Dtmf { id, digits }),
+            UiIntent::Quit | UiIntent::Minimize | UiIntent::FocusMain => None,
             UiIntent::StartDemo | UiIntent::SignIn(_) => None,
         };
         if let Some(c) = cmd {
@@ -442,17 +472,33 @@ impl eframe::App for DesktopApp {
             let (tx, rx) = std::sync::mpsc::channel();
             self.shot_rx = Some(rx);
             let repaint = ctx.clone();
-            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
-                egui::ScreenshotCallback::new(move |image| {
-                    let _ = tx.send(image);
-                    repaint.request_repaint();
-                }),
-            ));
+            let cb = egui::ScreenshotCallback::new(move |image| {
+                let _ = tx.send(image);
+                repaint.request_repaint();
+            });
+            self.shot_since = Some(Instant::now());
+            match self.shots.front().and_then(|s| s.2) {
+                // A window of its own takes it in its own frame.
+                Some(w) => self.ui.screenshot = Some((w, cb)),
+                None => ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(cb)),
+            }
+        }
+        if self
+            .shot_since
+            .is_some_and(|t| t.elapsed() > Duration::from_secs(8))
+            && self.shot_rx.is_some()
+        {
+            self.shot_rx = None;
+            self.shot_since = None;
+            self.ui.screenshot = None;
+            if let Some((path, _, _)) = self.shots.pop_front() {
+                eprintln!("screenshot: no picture for {}", path.display());
+            }
         }
         let shot = self.shot_rx.as_ref().and_then(|rx| rx.try_recv().ok());
         if let Some(image) = shot {
             self.shot_rx = None;
-            if let Some((path, close)) = self.shots.pop_front() {
+            if let Some((path, close, _)) = self.shots.pop_front() {
                 match save_png(&path, &image) {
                     Ok(()) => println!("saved {}", path.display()),
                     Err(e) => eprintln!("screenshot: {e}"),
@@ -482,7 +528,15 @@ fn main() {
             std::process::exit(2);
         }
     };
-    let lang = args.lang.unwrap_or_else(system_lang);
+    // The command line, then the language chosen in the options, then the system's.
+    let lang = args
+        .lang
+        .or_else(|| {
+            (args.screenshot.is_none() && !args.demo)
+                .then(prefs::saved_lang)
+                .flatten()
+        })
+        .unwrap_or_else(system_lang);
     let ca = match &args.ca_file {
         Some(p) => match std::fs::read(p) {
             Ok(b) => Some(b),
@@ -505,7 +559,7 @@ fn main() {
         .with_title("CommSCraft")
         .with_app_id("commscraft")
         .with_inner_size([args.size.0, args.size.1])
-        .with_min_inner_size([960.0, 640.0]);
+        .with_min_inner_size([340.0, 480.0]);
     if let Some((w, h, rgba)) = decode_png(ICON) {
         viewport = viewport.with_icon(egui::IconData {
             rgba,
@@ -525,20 +579,29 @@ fn main() {
         options,
         Box::new(move |cc| {
             cc.egui_ctx.set_fonts(fonts);
+            if args.embed_windows {
+                cc.egui_ctx.set_embed_viewports(true);
+            }
             let mut ui = CommsUi::new(lang, offset);
             ui.set_view(args.view);
             // Screenshots use the defaults, not the user's preferences.
             if args.screenshot.is_none() && !args.demo {
                 ui.prefs = prefs::load();
             }
+            ui.prefs.lang = lang;
             let mut app = DesktopApp {
                 ui,
                 lang,
-                shots: args.screenshot.map(|p| (p, true)).into_iter().collect(),
+                shots: args
+                    .screenshot
+                    .map(|p| (p, true, None))
+                    .into_iter()
+                    .collect(),
                 commands: args.commands.map(script::follow),
                 close_at: None,
                 frames: 0,
                 shot_rx: None,
+                shot_since: None,
                 worker: None,
                 worker_done: false,
                 ctx: Some(cc.egui_ctx.clone()),
