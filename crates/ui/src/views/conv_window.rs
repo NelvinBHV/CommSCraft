@@ -3,7 +3,9 @@
 //! messages, the contact card and the about box.
 
 use crate::app::{AddressFor, CommsUi, NewChat, UiIntent, Win};
-use crate::model::{Call, CallKind, CallState, ConvKey, ConvState, Gate, VideoState};
+use crate::model::{
+    Call, CallKind, CallState, ConfCommand, ConvKey, ConvState, Gate, Participant, VideoState,
+};
 use crate::theme::{self, Palette};
 use crate::views::icons::{self, Icon};
 use crate::widgets;
@@ -265,19 +267,83 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                                     .color(pal.ink),
                             );
                         }
-                        for p in c.participants.iter().take(100) {
+                        let me = app.state.me.uri.clone();
+                        // Presenters manage the meeting (the focus checks it again).
+                        let presenter = c.participants.iter().any(|p| p.uri == me && p.presenter);
+                        let waiting: Vec<_> = c
+                            .participants
+                            .iter()
+                            .filter(|p| p.waiting)
+                            .cloned()
+                            .collect();
+                        if presenter && !waiting.is_empty() {
+                            ui.label(
+                                RichText::new(format!("{} ({})", t.lobby, waiting.len()))
+                                    .size(theme::text::SMALL)
+                                    .color(pal.muted),
+                            );
+                            for p in waiting.iter().take(100) {
+                                let name = if p.name.is_empty() {
+                                    app.state.name_of(&p.uri)
+                                } else {
+                                    p.name.clone()
+                                };
+                                ui.horizontal(|ui| {
+                                    widgets::ellipsis(ui, RichText::new(&name).color(pal.ink));
+                                    if ui.small_button(t.admit).clicked() {
+                                        app.emit(UiIntent::ConferenceCommand {
+                                            key,
+                                            command: ConfCommand::Admit(vec![p.uri.clone()]),
+                                        });
+                                    }
+                                    if ui.small_button(t.deny).clicked() {
+                                        app.emit(UiIntent::ConferenceCommand {
+                                            key,
+                                            command: ConfCommand::Deny(p.uri.clone()),
+                                        });
+                                    }
+                                });
+                            }
+                            if waiting.len() > 1 && ui.small_button(t.admit_all).clicked() {
+                                app.emit(UiIntent::ConferenceCommand {
+                                    key,
+                                    command: ConfCommand::Admit(Vec::new()),
+                                });
+                            }
+                            ui.separator();
+                        }
+                        for p in c.participants.iter().filter(|p| !p.waiting).take(100) {
                             let name = if p.name.is_empty() {
                                 app.state.name_of(&p.uri)
                             } else {
                                 p.name.clone()
                             };
+                            let manage = presenter && p.uri != me;
                             ui.horizontal(|ui| {
                                 let presence = app.state.contacts.get(&p.uri).map(|k| k.presence);
                                 app.avatar(ui, Some(p.uri.as_str()), &name, 22.0, presence, pal);
-                                widgets::ellipsis(ui, RichText::new(name).color(pal.ink));
+                                let r = ui.add(
+                                    egui::Label::new(RichText::new(&name).color(pal.ink))
+                                        .truncate()
+                                        .sense(if manage {
+                                            egui::Sense::click()
+                                        } else {
+                                            egui::Sense::hover()
+                                        }),
+                                );
+                                if manage {
+                                    r.context_menu(|ui| participant_menu(app, ui, key, p));
+                                }
                                 if p.presenter {
                                     ui.label(
                                         RichText::new(t.presenter)
+                                            .size(theme::text::SMALL)
+                                            .color(pal.muted),
+                                    );
+                                }
+                                if p.muted == Some(true) {
+                                    ui.label(
+                                        RichText::new(t.muted_mark)
                                             .size(theme::text::SMALL)
                                             .color(pal.muted),
                                     );
@@ -322,6 +388,58 @@ fn present_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
     }
 }
 
+/// A presenter's commands for one participant.
+fn participant_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey, p: &Participant) {
+    let t = app.t;
+    let mut cmd = |ui: &mut Ui, label: &str, command: ConfCommand| {
+        if ui.button(label).clicked() {
+            app.emit(UiIntent::ConferenceCommand { key, command });
+            ui.close();
+        }
+    };
+    let user = p.uri.clone();
+    if p.presenter {
+        cmd(
+            ui,
+            t.make_attendee,
+            ConfCommand::Role {
+                user: user.clone(),
+                presenter: false,
+            },
+        );
+    } else {
+        cmd(
+            ui,
+            t.make_presenter,
+            ConfCommand::Role {
+                user: user.clone(),
+                presenter: true,
+            },
+        );
+    }
+    match p.muted {
+        Some(true) => cmd(
+            ui,
+            t.unmute_user,
+            ConfCommand::MuteUser {
+                user: user.clone(),
+                mute: false,
+            },
+        ),
+        Some(false) => cmd(
+            ui,
+            t.mute_user,
+            ConfCommand::MuteUser {
+                user: user.clone(),
+                mute: true,
+            },
+        ),
+        None => {}
+    }
+    ui.separator();
+    cmd(ui, t.remove_from_meeting, ConfCommand::Remove(user));
+}
+
 fn more_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
     let t = app.t;
     let Some(c) = app.state.conversation(key).cloned() else {
@@ -351,6 +469,25 @@ fn more_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
         {
             app.toggle_favorite(id);
             ui.close();
+        }
+    }
+    // A presenter's meeting commands.
+    let me = app.state.me.uri.clone();
+    if c.is_group()
+        && c.state == ConvState::Open
+        && c.participants.iter().any(|p| p.uri == me && p.presenter)
+    {
+        ui.separator();
+        for (label, command) in [
+            (t.mute_audience, ConfCommand::MuteAudience(true)),
+            (t.unmute_audience, ConfCommand::MuteAudience(false)),
+            (t.lock_meeting, ConfCommand::Lock(true)),
+            (t.unlock_meeting, ConfCommand::Lock(false)),
+        ] {
+            if ui.button(label).clicked() {
+                app.emit(UiIntent::ConferenceCommand { key, command });
+                ui.close();
+            }
         }
     }
     ui.separator();

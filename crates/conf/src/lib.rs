@@ -395,7 +395,10 @@ pub fn set_lobby_access(
     )
 }
 
-/// modifyUserRoles ([MS-CONFBAS] §2.2.3.7 with its example): exactly one role.
+/// modifyUserRoles ([MS-CONFBAS] §2.2.3.7 with its example): exactly one role. `user-roles`
+/// and its `entry` are in the conference-info namespace (RFC 4575 §5.6.2 `user-roles-type`;
+/// interop, `tested-in-lab`: the focus answers 400 to entries in the C3P namespace; secondary
+/// confirmation SIPE `sipe-conf.c`, read only).
 pub fn modify_user_roles(
     request_id: u32,
     from: &str,
@@ -410,7 +413,7 @@ pub fn modify_user_roles(
         from,
         focus,
         &format!(
-            "<modifyUserRoles><userKeys confEntity=\"{}\" userEntity=\"{}\"/><user-roles><entry>{}</entry></user-roles></modifyUserRoles>",
+            "<modifyUserRoles><userKeys confEntity=\"{}\" userEntity=\"{}\"/><user-roles xmlns=\"{NS_CI}\"><entry>{}</entry></user-roles></modifyUserRoles>",
             escape(&focus_c),
             escape(&user),
             role.as_str()

@@ -35,6 +35,28 @@ pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             }
         }
     });
+    // Join by a meeting link (https, from an invitation mail or calendar entry).
+    ui.horizontal(|ui| {
+        ui.add_space(8.0);
+        let usable = app.state.capabilities.meetings.usable();
+        let r = ui.add_enabled(
+            usable,
+            egui::TextEdit::singleline(&mut app.meeting_link)
+                .hint_text(t.meeting_link_hint)
+                .char_limit(2048)
+                .desired_width(ui.available_width() - 90.0),
+        );
+        r.widget_info(|| {
+            egui::WidgetInfo::labeled(egui::Role::TextInput, usable, t.meeting_link_hint)
+        });
+        let link = app.meeting_link.trim().to_string();
+        let ok = usable && link.starts_with("https://");
+        let enter = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+        if (ui.add_enabled(ok, egui::Button::new(t.join)).clicked() || (enter && ok)) && ok {
+            app.emit(UiIntent::JoinMeetingLink { link });
+            app.meeting_link.clear();
+        }
+    });
     ui.add_space(10.0);
     egui::ScrollArea::vertical()
         .id_salt("meeting-list")

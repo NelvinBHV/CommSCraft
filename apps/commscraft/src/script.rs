@@ -146,6 +146,40 @@ pub fn run(app: &mut DesktopApp, line: &str) {
         "delgroup" => app.handle(UiIntent::DeleteGroup {
             name: arg.to_string(),
         }),
+        // `conf promote|demote|remove|mute|unmute sip:ADDRESS`, `conf admit [sip:ADDRESS]`,
+        // `conf deny sip:ADDRESS`, `conf lock|unlock|muteall|unmuteall` – in the selected meeting
+        "conf" => {
+            use commscraft_ui::model::ConfCommand as K;
+            let (what, user) = arg.split_once(' ').unwrap_or((arg, ""));
+            let user = user.trim().to_string();
+            let command = match what {
+                "promote" | "demote" => Some(K::Role {
+                    user,
+                    presenter: what == "promote",
+                }),
+                "remove" => Some(K::Remove(user)),
+                "mute" | "unmute" => Some(K::MuteUser {
+                    user,
+                    mute: what == "mute",
+                }),
+                "admit" => Some(K::Admit(if user.is_empty() {
+                    Vec::new()
+                } else {
+                    vec![user]
+                })),
+                "deny" => Some(K::Deny(user)),
+                "lock" | "unlock" => Some(K::Lock(what == "lock")),
+                "muteall" | "unmuteall" => Some(K::MuteAudience(what == "muteall")),
+                _ => None,
+            };
+            if let (Some(key), Some(command)) = (app.ui.selected_conversation(), command) {
+                app.handle(UiIntent::ConferenceCommand { key, command })
+            }
+        }
+        // `joinlink https://…`
+        "joinlink" => app.handle(UiIntent::JoinMeetingLink {
+            link: arg.trim().to_string(),
+        }),
         "accept" => app.handle(UiIntent::AcceptInvitation {
             index: arg.parse().unwrap_or(0),
         }),

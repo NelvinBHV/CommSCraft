@@ -41,6 +41,8 @@ enum Job {
     Expand(String, Option<Box<ServerConfiguration>>),
     /// The contact list kept in Exchange: read it, or change it and read it again.
     Contacts(Option<Box<ContactChange>>),
+    /// The focus of a meeting link (join manager).
+    MeetingLink(String),
 }
 
 /// A change of the contact list in Exchange with the list and identifiers it applies to.
@@ -53,6 +55,8 @@ pub type ContactChange = (
 /// What the thread found.
 pub enum Done {
     Thumb(Thumb),
+    /// The focus URI of a meeting link.
+    MeetingFocus(Result<String, String>),
     /// The contact list from Exchange (after a change, if one was asked for).
     Contacts(
         Result<
@@ -115,6 +119,11 @@ impl Photos {
         let _ = self.tx.try_send(Job::Contacts(change.map(Box::new)));
     }
 
+    /// Asks the join manager for the focus of a meeting link.
+    pub fn meeting_link(&self, link: &str) {
+        let _ = self.tx.try_send(Job::MeetingLink(link.to_string()));
+    }
+
     /// Asks for the user's appointments and automatic reply.
     pub fn calendar(&self, policy: &commscraft_provisioning::CalendarPolicy) {
         let _ = self.tx.try_send(Job::Calendar(policy.clone()));
@@ -163,6 +172,14 @@ fn run(
                     &mut log,
                 );
                 if done.send(Done::Expanded(email, found)).is_err() {
+                    return;
+                }
+                continue;
+            }
+            Job::MeetingLink(link) => {
+                log(&format!("  GET meeting link ({} bytes)", link.len()));
+                let found = commscraft_client::setup::meeting_focus(tls, &link, &ua);
+                if done.send(Done::MeetingFocus(found)).is_err() {
                     return;
                 }
                 continue;
