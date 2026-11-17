@@ -85,6 +85,17 @@ texts! {
     filter_unread: "Ungelesen", "Unread";
     filter_groups: "Gruppen", "Groups";
     filter_rooms: "Räume", "Rooms";
+    calendar_title: "Kalender", "Calendar";
+    calendar_empty: "Keine Termine in den nächsten Tagen.", "No appointments in the next days.";
+    tomorrow: "Morgen", "Tomorrow";
+    private_appointment: "Privater Termin", "Private appointment";
+    busy_free: "Frei", "Free";
+    busy_tentative: "Mit Vorbehalt", "Tentative";
+    busy_busy: "Gebucht", "Busy";
+    busy_oof: "Abwesend", "Out of office";
+    now_running: "Läuft gerade", "In progress";
+    oof_on: "Automatische Antworten sind an", "Automatic replies are on";
+    oof_no_text: "Ohne Antworttext.", "Without a reply text.";
     about: "Über CommSCraft", "About CommSCraft";
     about_body: "Freier Linux-Client für Skype for Business Server, aus offenen Spezifikationen gebaut. Lizenz und Quellen: siehe Projektseite.", "Free Linux client for Skype for Business Server, built from open specifications. Licence and sources: see the project page.";
     add_contact: "Kontakt hinzufügen", "Add contact";

@@ -1,6 +1,6 @@
-//! Contact photos for the desktop client (function 15): a thread of its own fetches them with
-//! the shared `client::photos` (address book, Exchange where the policy allows), so the
-//! session's SIP never waits for HTTP. The NTLM step needs the signed-in registrar, which the
+//! Contact photos (function 15) and the user's appointments (function 16) for the desktop
+//! client: a thread of its own fetches them with the shared `client::photos` and
+//! `client::exchange`, so the session's SIP never waits for HTTP. The NTLM step needs the signed-in registrar, which the
 //! session worker owns: the thread asks the worker for it over a channel.
 //!
 //! Security by design: the queue of addresses is bounded; downloads are bounded by the photo
@@ -34,8 +34,28 @@ pub struct Thumb {
     pub rgba: Vec<u8>,
 }
 
+/// A job of the thread.
+enum Job {
+    Photo(String, Option<Box<ServerConfiguration>>),
+    Calendar(commscraft_provisioning::CalendarPolicy),
+}
+
+/// What the thread found.
+pub enum Done {
+    Thumb(Thumb),
+    Calendar(
+        Result<
+            (
+                Option<Vec<commscraft_ews::calendar::CalendarEvent>>,
+                Option<commscraft_ews::calendar::Oof>,
+            ),
+            String,
+        >,
+    ),
+}
+
 pub struct Photos {
-    tx: SyncSender<(String, Option<Box<ServerConfiguration>>)>,
+    tx: SyncSender<Job>,
 }
 
 impl Photos {
@@ -45,7 +65,7 @@ impl Photos {
         trust: Trust,
         aor: String,
         ntlm: Sender<NtlmAsk>,
-        done: Sender<Thumb>,
+        done: Sender<Done>,
     ) -> Self {
         let (tx, rx) = mpsc::sync_channel(QUEUE);
         std::thread::spawn(move || run(&tls, &trust, &aor, &rx, &ntlm, &done));
@@ -54,9 +74,15 @@ impl Photos {
 
     /// Asks for a contact's photo; a full queue drops the request.
     pub fn want(&self, uri: &str, services: Option<&ServerConfiguration>) {
-        let _ = self
-            .tx
-            .try_send((uri.to_string(), services.map(|s| Box::new(s.clone()))));
+        let _ = self.tx.try_send(Job::Photo(
+            uri.to_string(),
+            services.map(|s| Box::new(s.clone())),
+        ));
+    }
+
+    /// Asks for the user's appointments and automatic reply.
+    pub fn calendar(&self, policy: &commscraft_provisioning::CalendarPolicy) {
+        let _ = self.tx.try_send(Job::Calendar(policy.clone()));
     }
 }
 
@@ -64,17 +90,14 @@ fn run(
     tls: &TlsClient,
     trust: &Trust,
     aor: &str,
-    rx: &Receiver<(String, Option<Box<ServerConfiguration>>)>,
+    rx: &Receiver<Job>,
     ntlm_tx: &Sender<NtlmAsk>,
-    done: &Sender<Thumb>,
+    done: &Sender<Done>,
 ) {
     let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
     let mut settings = None;
     let mut seen = std::collections::BTreeSet::new();
-    while let Ok((uri, services)) = rx.recv() {
-        if !seen.insert(uri.to_ascii_lowercase()) {
-            continue;
-        }
+    while let Ok(job) = rx.recv() {
         let mut ntlm = |n: &[u8], c: &[u8], cert: Option<&[u8]>| {
             let (reply, answer) = mpsc::channel();
             ntlm_tx
@@ -92,6 +115,38 @@ fn run(
                 eprintln!("photo: {l}");
             }
         };
+        let (uri, services) = match job {
+            Job::Photo(uri, services) => (uri, services),
+            Job::Calendar(policy) => {
+                if settings.is_none() {
+                    settings = commscraft_client::photos::ews_settings(
+                        tls, trust, aor, &ua, &mut ntlm, &mut log,
+                    )
+                    .ok();
+                }
+                let found = match settings.as_ref() {
+                    Some(s) => commscraft_client::exchange::appointments(
+                        tls,
+                        trust,
+                        aor,
+                        s,
+                        &policy,
+                        now_secs(),
+                        &ua,
+                        &mut ntlm,
+                        &mut log,
+                    ),
+                    None => Err("no Exchange web services".into()),
+                };
+                if done.send(Done::Calendar(found)).is_err() {
+                    return;
+                }
+                continue;
+            }
+        };
+        if !seen.insert(uri.to_ascii_lowercase()) {
+            continue;
+        }
         let got = commscraft_client::photos::fetch(
             tls,
             trust,
@@ -110,16 +165,22 @@ fn run(
             continue;
         };
         if done
-            .send(Thumb {
+            .send(Done::Thumb(Thumb {
                 uri,
                 side: THUMB,
                 rgba,
-            })
+            }))
             .is_err()
         {
             return;
         }
     }
+}
+
+fn now_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs())
 }
 
 /// Decodes a JPEG or PNG photo and makes a square thumbnail (centre crop, nearest pixel).

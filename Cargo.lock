@@ -534,6 +534,7 @@ dependencies = [
  "commscraft-client",
  "commscraft-conf",
  "commscraft-dlx",
+ "commscraft-ews",
  "commscraft-gssapi",
  "commscraft-net",
  "commscraft-ocer",

@@ -9,6 +9,7 @@
 pub mod calls;
 pub mod cues;
 pub mod directory;
+pub mod exchange;
 pub mod meeting_content;
 pub mod photos;
 pub mod rdp_call;
