@@ -202,19 +202,24 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                 }
                 ui.add_space(12.0);
                 let peer = c.peer.clone();
-                let video_gate = if peer.is_some() && idle {
+                // A person: a call; a meeting (group conversation): join its audio or video.
+                let meeting = peer.is_none() && c.is_group() && c.state == ConvState::Open;
+                let video_gate = if (peer.is_some() || meeting) && idle {
                     caps.video_call.clone()
                 } else {
                     Gate::Unavailable(crate::model::Reason::NotImplemented)
                 };
-                if bar_button(ui, t, pal, Icon::Camera, t.video_call, &video_gate, false).clicked()
-                {
-                    if let Some(p) = &peer {
-                        app.call(p, true);
+                let vlabel = if meeting {
+                    t.join_meeting_video
+                } else {
+                    t.video_call
+                };
+                if bar_button(ui, t, pal, Icon::Camera, vlabel, &video_gate, false).clicked() {
+                    match &peer {
+                        Some(p) => app.call(p, true),
+                        None => app.emit(UiIntent::JoinMeetingVideo { key }),
                     }
                 }
-                // A person: a call; a meeting (group conversation): join its audio.
-                let meeting = peer.is_none() && c.is_group() && c.state == ConvState::Open;
                 let call_gate = if (peer.is_some() || meeting) && idle {
                     caps.audio_call.clone()
                 } else {

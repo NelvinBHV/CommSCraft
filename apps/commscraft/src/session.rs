@@ -126,6 +126,10 @@ pub enum ToWorker {
     JoinMeetingAudio {
         session: u32,
     },
+    /// Join a meeting with audio and video.
+    JoinMeetingVideo {
+        session: u32,
+    },
     ScheduleMeeting {
         subject: String,
         minutes: u64,
@@ -1271,6 +1275,41 @@ impl Session {
                     },
                     t,
                 ));
+            } else if let Some(conversation) = self.pending_conf.remove(&aid) {
+                // The meeting with video (function 28): audio and video to the A/V MCU; its
+                // video comes back as the call's video.
+                let call = self.engine.next_call_id();
+                self.media_of_call.insert(call, aid);
+                self.v.of_call.insert(call, vid);
+                self.outgoing.insert(call);
+                out.event(AppEvent::CallStarted {
+                    id: call,
+                    peer: String::new(),
+                    incoming: false,
+                    at: t,
+                });
+                out.event(AppEvent::ConferenceCall {
+                    id: call,
+                    session: conversation,
+                });
+                out.event(AppEvent::CallKind {
+                    id: call,
+                    kind: CallKind::Video,
+                });
+                out.event(AppEvent::CallVideo {
+                    id: call,
+                    state: VideoState::Starting,
+                });
+                o.extend(self.engine.command(
+                    C::JoinConferenceVideo {
+                        conversation,
+                        local,
+                        video,
+                        policy,
+                        language: None,
+                    },
+                    t,
+                ));
             } else if let Some(call) = self.pending_in.remove(&aid) {
                 self.media_of_call.insert(call, aid);
                 self.v.of_call.insert(call, vid);
@@ -1719,6 +1758,13 @@ impl Session {
                 },
                 t,
             ),
+            ToWorker::JoinMeetingVideo { session } => {
+                let (aid, bwm) = self.spawn_media_with_video(None, None);
+                self.pending_conf.insert(aid, session);
+                let vid = self.spawn_video(bwm, true);
+                self.v.for_audio.insert(aid, vid);
+                Vec::new()
+            }
             ToWorker::JoinMeetingAudio { session } => {
                 let id = self.spawn_media(None, None);
                 self.pending_conf.insert(id, session);

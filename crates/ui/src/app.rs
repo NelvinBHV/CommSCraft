@@ -106,6 +106,10 @@ pub enum UiIntent {
     JoinMeetingAudio {
         key: ConvKey,
     },
+    /// Join the meeting with audio and video.
+    JoinMeetingVideo {
+        key: ConvKey,
+    },
     /// A presenter's command in the meeting of this conversation.
     ConferenceCommand {
         key: ConvKey,
