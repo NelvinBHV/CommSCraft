@@ -90,6 +90,17 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 };
                 page_ui(t, ui, pal, page, &mut p, &me, &caps);
                 app.prefs_draft = Some(p);
+                if page == 1 {
+                    group(ui, pal, t.opt_keyring, |ui| {
+                        if app.stored_password_for.is_some() {
+                            if ui.button(t.opt_forget_password).clicked() {
+                                app.emit(UiIntent::ForgetPassword);
+                            }
+                        } else {
+                            note(ui, pal, t.opt_no_password_stored);
+                        }
+                    });
+                }
             });
         });
 }

@@ -459,7 +459,13 @@ texts! {
     signing_in: "Anmeldung läuft …", "Signing in …";
     start_demo: "Demo ansehen", "View demo";
     start_demo_tip: "Oberfläche mit erfundenen Daten, ohne Server", "The interface with made-up data, without a server";
-    sign_in_note: "Das Kennwort wird nicht gespeichert. Zertifikate werden immer geprüft.", "The password is not stored. Certificates are always checked.";
+    sign_in_remember: "Kennwort im Schlüsselbund merken", "Remember the password in the keyring";
+    sign_in_remember_tip: "Legt das Kennwort nach erfolgreicher Anmeldung im Schlüsselbund des Systems ab (Secret Service). Löschen: Optionen → Persönlich.", "Keeps the password in the system's keyring (Secret Service) after a successful sign-in. Remove it: Options → Personal.";
+    sign_in_password_stored: "Kennwort im Schlüsselbund gespeichert – das Feld darf leer bleiben.", "Password kept in the keyring – the field may stay empty.";
+    opt_keyring: "Schlüsselbund", "Keyring";
+    opt_forget_password: "Gespeichertes Kennwort löschen", "Remove the stored password";
+    opt_no_password_stored: "Kein Kennwort im Schlüsselbund gespeichert.", "No password kept in the keyring.";
+    sign_in_note: "Das Kennwort wird nur gespeichert, wenn Sie es merken lassen – im Schlüsselbund des Systems. Zertifikate werden immer geprüft.", "The password is stored only when you ask for it – in the system's keyring. Certificates are always checked.";
 }
 
 impl Texts {

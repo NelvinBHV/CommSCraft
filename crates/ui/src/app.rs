@@ -89,6 +89,8 @@ pub enum UiIntent {
     PrefsChanged,
     /// The answer to a trust question (true: trust the domain and remember it).
     AnswerTrust(bool),
+    /// Remove the password kept in the keyring for the last sign-in address.
+    ForgetPassword,
     /// Tones in a call (DTMF).
     Dtmf {
         id: u32,
@@ -135,6 +137,8 @@ pub struct SignIn {
     pub kerberos: bool,
     /// Sign in with TLS-DSK (a user certificate, got once with the password).
     pub tls_dsk: bool,
+    /// Keep the password in the system's keyring after a successful sign-in.
+    pub remember: bool,
 }
 
 impl std::fmt::Debug for SignIn {
@@ -147,6 +151,7 @@ impl std::fmt::Debug for SignIn {
             .field("server", &self.server)
             .field("kerberos", &self.kerberos)
             .field("tls_dsk", &self.tls_dsk)
+            .field("remember", &self.remember)
             .finish()
     }
 }
@@ -180,6 +185,8 @@ pub struct Prefs {
     pub camera: String,
     /// Show the participant list when joining a meeting.
     pub meeting_participants: bool,
+    /// The last sign-in address (no secret; offered in the sign-in form).
+    pub last_address: String,
 }
 
 impl Default for Prefs {
@@ -203,6 +210,7 @@ impl Default for Prefs {
             quiet_sounds_busy: false,
             camera: String::new(),
             meeting_participants: false,
+            last_address: String::new(),
         }
     }
 }
@@ -315,6 +323,8 @@ pub struct CommsUi {
     /// A screenshot of a window of its own, taken in that window's own frame (tests and
     /// documentation).
     pub screenshot: Option<(Win, egui::ScreenshotCallback)>,
+    /// The keyring holds a password for this sign-in address (set by the application).
+    pub stored_password_for: Option<String>,
     /// Textures of the contact photos, made when first shown.
     pub(crate) textures: std::cell::RefCell<BTreeMap<String, egui::TextureHandle>>,
 }
@@ -360,6 +370,7 @@ impl CommsUi {
             toasts_seen: BTreeSet::new(),
             call_windows_opened: BTreeSet::new(),
             screenshot: None,
+            stored_password_for: None,
             textures: std::cell::RefCell::new(BTreeMap::new()),
         }
     }
@@ -448,6 +459,11 @@ impl CommsUi {
         } else {
             crate::widgets::avatar(ui, name, diameter, presence, pal);
         }
+    }
+
+    /// Puts an address into the sign-in form (the last one used).
+    pub fn set_sign_in_address(&mut self, address: &str) {
+        self.sign_in.address = address.chars().take(256).collect();
     }
 
     /// The viewport of a window of its own (screenshots).

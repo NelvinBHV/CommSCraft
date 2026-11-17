@@ -579,3 +579,22 @@ fn appointments_and_automatic_replies_show_in_the_meetings_tab() {
         .is_some());
     assert!(h.query_by_label_contains("Bis Montag im Urlaub").is_some());
 }
+
+#[test]
+fn a_password_in_the_keyring_lets_the_field_stay_empty() {
+    let mut ui = CommsUi::new(Lang::En, 0);
+    ui.set_sign_in_address("mara@beispiel.invalid");
+    ui.stored_password_for = Some("sip:mara@beispiel.invalid".into());
+    let mut h = harness(ui, (420.0, 760.0));
+    h.run();
+    assert!(h
+        .query_by_label_contains("Password kept in the keyring")
+        .is_some());
+    assert!(!button(&h, "Sign in").accesskit_node().is_disabled());
+    // Another address: the stored password does not apply.
+    let f = field(&h, "Sign-in address");
+    f.focus();
+    f.type_text("x");
+    h.run();
+    assert!(button(&h, "Sign in").accesskit_node().is_disabled());
+}

@@ -42,6 +42,10 @@ eframe = { version = "=0.37.0", default-features = false, features = ["clipboard
 png = "0.18"
 # JPEG contact photos (pure Rust; already in the lock through IronRDP).
 zune-jpeg = "0.5.15"
+# The Linux keyring (Secret Service, or the portal in a sandbox) on zbus 6; no tokio: the
+# async-std runtime of zbus, block_on from futures-lite; cryptography in Rust.
+oo7 = { version = "=0.7.1", default-features = false, features = ["async-std", "native_crypto"] }
+futures-lite = "2"
 
 [lints]
 workspace = true
