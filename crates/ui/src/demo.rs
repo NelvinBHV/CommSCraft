@@ -309,6 +309,7 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
             conference_id: "DEMO1".into(),
             expires: Some(now + 14 * 86_400),
             demo: true,
+            join_url: Some(format!("https://meet.{DOMAIN}/mara.klein/DEMO1")),
         },
         Meeting {
             subject: if de {
@@ -320,6 +321,7 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
             conference_id: "DEMO2".into(),
             expires: Some(now + 30 * 86_400),
             demo: true,
+            join_url: None,
         },
     ];
     let _ = group;

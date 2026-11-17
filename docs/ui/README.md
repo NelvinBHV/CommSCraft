@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: meeting lobby and presenter commands, join by link)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: plan, change and cancel meetings)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -85,6 +85,10 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   NTLM step comes from the session worker over a channel. The photo is decoded there in pure Rust
   (JPEG with zune-jpeg, PNG; at most 1024 pixels a side) into a 96 × 96 thumbnail. *Options →
   personal → show pictures of contacts* switches them off. `tested-in-lab`.
+- **Planned meetings:** the meetings tab plans a meeting (subject, how long it stays usable, who
+  does not wait in the lobby), and for a chosen meeting offers join, copy its link, change and
+  cancel; the list reads each meeting's details (subject, expiry, link) and counts conferences
+  without a subject (from group conversations) instead of listing them. `tested-in-lab`.
 - **Meeting control:** a presenter sees the lobby in the participant list (admit, deny, admit
   all) and has a menu per participant (make presenter or attendee, mute or unmute, remove) and
   meeting commands in *More* (mute or unmute the audience, lock or unlock); the meetings tab

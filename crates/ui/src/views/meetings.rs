@@ -1,7 +1,9 @@
 //! Meetings: own scheduled meetings, invitations, joining by link or focus.
 
+use crate::app::MeetingDialog;
 use crate::app::{CommsUi, UiIntent};
 use crate::format;
+use crate::model::MeetingAccess;
 use crate::theme::{self, Palette};
 use crate::widgets;
 use egui::{Align, CornerRadius, Layout, RichText, Sense, Ui, Vec2};
@@ -34,28 +36,45 @@ pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 app.emit(UiIntent::RefreshMeetings);
             }
         }
+        // Plan a meeting (meet now is in the main window's menu).
+        if let Some(r) = widgets::gated(ui, t.new_meeting_dots, &gate, t, pal, |ui, l, en| {
+            ui.add_enabled(en, egui::Button::new(l))
+        }) {
+            if r.clicked() {
+                app.meeting_dialog = Some(MeetingDialog {
+                    change: None,
+                    subject: String::new(),
+                    minutes: 60,
+                    access: MeetingAccess::Organisation,
+                });
+            }
+        }
     });
     // Join by a meeting link (https, from an invitation mail or calendar entry).
     ui.horizontal(|ui| {
         ui.add_space(8.0);
         let usable = app.state.capabilities.meetings.usable();
-        let r = ui.add_enabled(
-            usable,
-            egui::TextEdit::singleline(&mut app.meeting_link)
-                .hint_text(t.meeting_link_hint)
-                .char_limit(2048)
-                .desired_width(ui.available_width() - 90.0),
-        );
-        r.widget_info(|| {
-            egui::WidgetInfo::labeled(egui::Role::TextInput, usable, t.meeting_link_hint)
-        });
         let link = app.meeting_link.trim().to_string();
         let ok = usable && link.starts_with("https://");
-        let enter = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-        if (ui.add_enabled(ok, egui::Button::new(t.join)).clicked() || (enter && ok)) && ok {
-            app.emit(UiIntent::JoinMeetingLink { link });
-            app.meeting_link.clear();
-        }
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            ui.add_space(8.0);
+            let join = ui.add_enabled(ok, egui::Button::new(t.join)).clicked();
+            let r = ui.add_enabled(
+                usable,
+                egui::TextEdit::singleline(&mut app.meeting_link)
+                    .hint_text(t.meeting_link_hint)
+                    .char_limit(2048)
+                    .desired_width(ui.available_width()),
+            );
+            r.widget_info(|| {
+                egui::WidgetInfo::labeled(egui::Role::TextInput, usable, t.meeting_link_hint)
+            });
+            let enter = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+            if ok && (join || enter) {
+                app.emit(UiIntent::JoinMeetingLink { link });
+                app.meeting_link.clear();
+            }
+        });
     });
     ui.add_space(10.0);
     egui::ScrollArea::vertical()
@@ -103,14 +122,36 @@ pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 ui.add_space(8.0);
                 widgets::section(ui, t.my_meetings, pal);
             });
-            if app.state.meetings.is_empty() {
+            // Planned meetings have a subject; ad-hoc conferences (from group conversations)
+            // have none and are only counted.
+            let meetings = app.state.meetings.clone();
+            let untitled = meetings
+                .iter()
+                .filter(|m| m.subject.trim().is_empty())
+                .count();
+            if meetings.len() == untitled {
                 ui.horizontal(|ui| {
                     ui.add_space(8.0);
                     ui.label(RichText::new(t.no_meetings).color(pal.muted));
                 });
             }
-            let meetings = app.state.meetings.clone();
+            if untitled > 0 {
+                ui.horizontal(|ui| {
+                    ui.add_space(8.0);
+                    ui.add(
+                        egui::Label::new(
+                            RichText::new(format!("{untitled} {}", t.untitled_conferences))
+                                .size(theme::text::SMALL)
+                                .color(pal.muted),
+                        )
+                        .wrap(),
+                    );
+                });
+            }
             for (i, m) in meetings.iter().enumerate() {
+                if m.subject.trim().is_empty() {
+                    continue;
+                }
                 let selected = app.selected_meeting == Some(i);
                 let w = ui.available_width();
                 let (rect, resp) = ui.allocate_exact_size(Vec2::new(w, 64.0), Sense::click());
@@ -155,8 +196,123 @@ pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 if resp.clicked() {
                     app.selected_meeting = Some(i);
                 }
+                if selected {
+                    meeting_actions(app, ui, m);
+                }
             }
         });
+}
+
+/// What can be done with the chosen meeting: join, copy its link, change, cancel.
+fn meeting_actions(app: &mut CommsUi, ui: &mut Ui, m: &crate::model::Meeting) {
+    let t = app.t;
+    let usable = app.state.capabilities.meetings.usable();
+    ui.horizontal(|ui| {
+        ui.add_space(58.0);
+        if ui.add_enabled(usable, egui::Button::new(t.join)).clicked() {
+            app.emit(UiIntent::JoinMeeting {
+                focus: m.focus.clone(),
+            });
+        }
+        if let Some(url) = &m.join_url {
+            if ui.button(t.copy_link).on_hover_text(url).clicked() {
+                ui.ctx().copy_text(url.clone());
+            }
+        }
+        if ui
+            .add_enabled(usable, egui::Button::new(t.change_dots))
+            .clicked()
+        {
+            app.meeting_dialog = Some(MeetingDialog {
+                change: Some(m.conference_id.clone()),
+                subject: m.subject.clone(),
+                minutes: 60,
+                access: MeetingAccess::Organisation,
+            });
+        }
+        if ui
+            .add_enabled(usable, egui::Button::new(t.cancel_meeting))
+            .clicked()
+        {
+            app.emit(UiIntent::CancelMeeting {
+                conference_id: m.conference_id.clone(),
+            });
+            app.selected_meeting = None;
+        }
+    });
+    ui.add_space(6.0);
+}
+
+/// Scheduling or changing a meeting: subject, how long it stays usable, who may join.
+pub fn meeting_dialog(app: &mut CommsUi, ctx: &egui::Context) {
+    let t = app.t;
+    let Some(mut d) = app.meeting_dialog.take() else {
+        return;
+    };
+    let mut keep = true;
+    egui::Modal::new(egui::Id::unique("meeting-dialog")).show(ctx, |ui| {
+        ui.set_width(340.0);
+        ui.label(
+            RichText::new(if d.change.is_some() {
+                t.change_meeting
+            } else {
+                t.new_meeting
+            })
+            .family(crate::theme::bold()),
+        );
+        ui.add_space(6.0);
+        ui.label(t.meeting_subject);
+        let r = ui.add(
+            egui::TextEdit::singleline(&mut d.subject)
+                .char_limit(256)
+                .desired_width(320.0),
+        );
+        r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::TextInput, true, t.meeting_subject));
+        ui.horizontal(|ui| {
+            ui.label(t.meeting_lifetime);
+            ui.add(
+                egui::DragValue::new(&mut d.minutes)
+                    .range(15..=525_600)
+                    .suffix(" min"),
+            );
+        });
+        ui.label(t.meeting_access);
+        for (a, label) in [
+            (MeetingAccess::Invited, t.access_invited),
+            (MeetingAccess::Organisation, t.access_organisation),
+            (MeetingAccess::Anyone, t.access_anyone),
+        ] {
+            ui.radio_value(&mut d.access, a, label);
+        }
+        ui.add_space(6.0);
+        ui.horizontal(|ui| {
+            let ok = !d.subject.trim().is_empty() && !d.subject.chars().any(char::is_control);
+            if ui.add_enabled(ok, egui::Button::new(t.ok)).clicked() {
+                let subject = d.subject.trim().to_string();
+                match &d.change {
+                    Some(id) => app.emit(UiIntent::ChangeMeeting {
+                        conference_id: id.clone(),
+                        subject,
+                        minutes: d.minutes,
+                        access: d.access,
+                    }),
+                    None => app.emit(UiIntent::ScheduleMeeting {
+                        subject,
+                        minutes: d.minutes,
+                        access: d.access,
+                        join: false,
+                    }),
+                }
+                keep = false;
+            }
+            if ui.button(t.cancel).clicked() {
+                keep = false;
+            }
+        });
+    });
+    if keep {
+        app.meeting_dialog = Some(d);
+    }
 }
 
 /// The user's appointments from Exchange, by day, and the automatic reply when it is on.

@@ -88,6 +88,18 @@ texts! {
     add: "Hinzufügen", "Add";
     appear_away: "Als abwesend anzeigen", "Appear away";
     meeting_link_hint: "Besprechungslink (https://…)", "Meeting link (https://…)";
+    new_meeting_dots: "Neue Besprechung …", "New meeting …";
+    new_meeting: "Neue Besprechung", "New meeting";
+    change_meeting: "Besprechung ändern", "Change meeting";
+    change_dots: "Ändern …", "Change …";
+    cancel_meeting: "Absagen", "Cancel meeting";
+    copy_link: "Link kopieren", "Copy link";
+    meeting_subject: "Betreff", "Subject";
+    meeting_lifetime: "Nutzbar für", "Usable for";
+    meeting_access: "Wer muss nicht im Wartebereich warten?", "Who doesn't have to wait in the lobby?";
+    access_invited: "Nur eingeladene Personen", "Only people I invite";
+    access_organisation: "Personen aus meiner Organisation", "People from my organisation";
+    access_anyone: "Jeder, auch anonyme Personen mit dem Link", "Anyone, also anonymous people with the link";
     lobby: "Im Wartebereich", "In the lobby";
     admit: "Zulassen", "Admit";
     deny: "Ablehnen", "Deny";
@@ -415,6 +427,7 @@ texts! {
     meetings_title: "Besprechungen", "Meetings";
     meetings_hint: "Eine Besprechung links wählen oder mit „Jetzt besprechen“ eine Gruppe öffnen.", "Pick a meeting on the left or open a group with “Meet now”.";
     meet_now: "Jetzt besprechen", "Meet now";
+    untitled_conferences: "Konferenzen ohne Betreff (aus Gruppenunterhaltungen) werden nicht aufgeführt.", "conferences without a subject (from group conversations) are not listed.";
     meet_now_tip: "Öffnet eine Gruppenunterhaltung, in die Personen eingeladen werden können", "Opens a group conversation people can be invited to";
     meeting_content_title: "Inhalte in Besprechungen", "Meeting content";
     meeting_content_body: "Whiteboards, Folien und Umfragen einer Besprechung stehen in deren Gruppenunterhaltung unter Details → Besprechungsinhalte. Video und Bildschirmfreigaben innerhalb von Besprechungen bietet zurzeit nur das Kommandozeilenwerkzeug.", "Whiteboards, slides and polls of a meeting are in its group conversation under details → meeting content. Video and shared screens inside meetings are offered only by the command-line tool for now.";

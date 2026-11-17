@@ -5718,3 +5718,30 @@ fn machine_activity_republishes_the_machine_state_on_change_only() {
     let body = String::from_utf8_lossy(&sends(&out).pop().unwrap().body).to_string();
     assert!(body.contains("<availability>15500</availability>"));
 }
+
+#[test]
+fn machine_activity_before_the_sign_in_is_kept_quietly() {
+    let mut server = Server::new();
+    let mut e = Engine::new(config(), registrar());
+    let mut out = e.start(NOW);
+    assert!(e
+        .command(
+            Command::SetMachineActivity(pres::MachineActivity::Away),
+            NOW
+        )
+        .is_empty());
+    // The endpoint publication after the sign-in carries the activity.
+    let mut bodies = String::new();
+    for _ in 0..3 {
+        let req = sends(&out).pop().unwrap();
+        out = e.on_message(&server.handle(&req), NOW);
+        for m in sends(&out) {
+            bodies.push_str(&String::from_utf8_lossy(&m.body));
+        }
+    }
+    assert!(e.is_registered());
+    assert!(
+        bodies.contains("machineState\"><availability>15500</availability>"),
+        "{bodies}"
+    );
+}
