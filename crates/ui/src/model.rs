@@ -59,7 +59,7 @@ fn room_uri_ok(uri: &str) -> Option<()> {
     ok.then_some(())
 }
 
-fn label(text: &str) -> String {
+pub(crate) fn label(text: &str) -> String {
     clean(text, MAX_LABEL, false)
 }
 
@@ -139,6 +139,8 @@ pub struct Capabilities {
     pub file_transfer: Gate,
     pub rich_text: Gate,
     pub persistent_chat: Gate,
+    /// The content of a meeting (whiteboards, slides, polls; function 44).
+    pub meeting_content: Gate,
     pub history_search: Gate,
     pub read_receipts: Gate,
 }
@@ -157,7 +159,8 @@ impl Capabilities {
             transfer: off.clone(),
             video_call: off.clone(),
             meetings: off.clone(),
-            persistent_chat: off,
+            persistent_chat: off.clone(),
+            meeting_content: off,
             ..Self::never()
         }
     }
@@ -175,6 +178,7 @@ impl Capabilities {
             video_call: Gate::Preview,
             meetings: Gate::Preview,
             persistent_chat: Gate::Preview,
+            meeting_content: Gate::Preview,
             ..Self::never()
         }
     }
@@ -196,6 +200,7 @@ impl Capabilities {
             file_transfer: none.clone(),
             rich_text: none.clone(),
             persistent_chat: none.clone(),
+            meeting_content: none.clone(),
             history_search: none.clone(),
             read_receipts: none,
         }
@@ -339,6 +344,8 @@ pub struct Conversation {
     pub demo: bool,
     /// A persistent chat room instead of a conversation of the session.
     pub room: Option<RoomInfo>,
+    /// The content of the meeting this conversation belongs to, once asked for.
+    pub content: Option<crate::content::MeetingContent>,
 }
 
 /// A persistent chat room (function 20): a room of the chat server, not an ad-hoc group.
@@ -653,6 +660,18 @@ pub enum AppEvent {
         room: String,
         status: u16,
     },
+    /// Connecting to the content of the meeting of this conversation.
+    ContentConnecting {
+        session: u32,
+    },
+    Content {
+        session: u32,
+        change: crate::content::ContentChange,
+    },
+    ContentEnded {
+        session: u32,
+        reason: String,
+    },
     Notice(NoticeKind, String, u64),
 }
 
@@ -800,6 +819,7 @@ impl AppState {
             last_activity: 0,
             demo: false,
             room: None,
+            content: None,
         });
         key
     }
@@ -1294,6 +1314,21 @@ impl AppState {
                             Delivery::Unknown
                         },
                     });
+                }
+            }
+            AppEvent::ContentConnecting { session } => {
+                if let Some(c) = self.by_session(session) {
+                    c.content = Some(crate::content::MeetingContent::default());
+                }
+            }
+            AppEvent::Content { session, change } => {
+                if let Some(m) = self.by_session(session).and_then(|c| c.content.as_mut()) {
+                    m.apply(change);
+                }
+            }
+            AppEvent::ContentEnded { session, reason } => {
+                if let Some(m) = self.by_session(session).and_then(|c| c.content.as_mut()) {
+                    m.state = crate::content::ContentState::Ended(label(&reason));
                 }
             }
             AppEvent::RoomNotSent { room, status } => {

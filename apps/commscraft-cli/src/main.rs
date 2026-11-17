@@ -3271,6 +3271,8 @@ fn interactive(
                 meeting_content::FromContent::Line(conversation, line) => {
                     println!("* [{conversation}] {line}")
                 }
+                // The terminal shows the lines.
+                meeting_content::FromContent::Event(..) => {}
                 meeting_content::FromContent::Ended(conversation, reason) => {
                     content_handles.remove(&conversation);
                     println!("* [{conversation}] meeting content ended: {reason}");

@@ -41,6 +41,18 @@ pub fn date(at: u64, offset: i64) -> String {
     format!("{d:02}.{m:02}.{y}")
 }
 
+/// "512 B", "12 KB", "3.4 MB".
+pub fn bytes(n: i64) -> String {
+    let n = n.max(0) as f64;
+    if n < 1024.0 {
+        format!("{n} B")
+    } else if n < 1024.0 * 1024.0 {
+        format!("{:.0} KB", n / 1024.0)
+    } else {
+        format!("{:.1} MB", n / (1024.0 * 1024.0))
+    }
+}
+
 /// "03:48" or "1:02:05".
 pub fn duration(seconds: u64) -> String {
     let (h, m, s) = (seconds / 3600, (seconds / 60) % 60, seconds % 60);

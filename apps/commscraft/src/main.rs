@@ -289,6 +289,21 @@ impl DesktopApp {
                 session_of(key).map(|session| ToWorker::InviteToGroup { session, peer })
             }
             UiIntent::JoinMeeting { focus } => Some(ToWorker::JoinConference { focus }),
+            UiIntent::JoinContent { key } => {
+                session_of(key).map(|session| ToWorker::JoinContent { session })
+            }
+            UiIntent::LeaveContent { key } => {
+                session_of(key).map(|session| ToWorker::LeaveContent { session })
+            }
+            UiIntent::Vote {
+                key,
+                content,
+                choice,
+            } => session_of(key).map(|session| ToWorker::Vote {
+                session,
+                content,
+                choice,
+            }),
             UiIntent::AcceptInvitation { index } => {
                 if index < state.invitations.len() {
                     let inv = state.invitations.remove(index);

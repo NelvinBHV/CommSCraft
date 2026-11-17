@@ -21,6 +21,7 @@ commscraft-presence = { path = "../../crates/presence" }
 commscraft-provisioning = { path = "../../crates/provisioning" }
 commscraft-register = { path = "../../crates/register" }
 commscraft-sdp = { path = "../../crates/sdp" }
+commscraft-psom = { path = "../../crates/psom" }
 commscraft-call-media = { path = "../../crates/call-media" }
 commscraft-session = { path = "../../crates/session" }
 commscraft-sip-msg = { path = "../../crates/sip-msg" }

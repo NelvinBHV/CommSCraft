@@ -5,6 +5,7 @@
 //! [`app::UiIntent`]s into session commands.
 
 pub mod app;
+pub mod content;
 pub mod demo;
 pub mod format;
 pub mod model;
