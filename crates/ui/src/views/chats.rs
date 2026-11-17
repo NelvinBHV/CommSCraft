@@ -25,12 +25,14 @@ fn group_avatar<'a>(app: &CommsUi, group: bool, title: &'a str) -> &'a str {
 
 /// A conversation in its own window: head, composer, history.
 pub fn conversation_body(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
-    header(app, ui, pal, key);
+    window_header(app, ui, pal, key);
     composer(app, ui, pal, key);
     history(app, ui, pal, key);
 }
 
-fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
+/// The head of a conversation window: picture, title, status or members (actions are in the bar
+/// at the bottom).
+fn window_header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     let t = app.t;
     let Some(c) = app.state.conversation(key) else {
         return;
@@ -38,28 +40,21 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     let title = c.title.clone();
     let peer = c.peer.clone();
     let subtitle = if let Some(r) = &c.room {
-        let n = c.participants.len();
-        let mut s = if c.state == ConvState::Opening {
-            format!("{} · {}", t.chat_room, t.room_joining)
+        if r.topic.is_empty() {
+            t.chat_room.to_string()
         } else {
-            format!("{} · {}", t.chat_room, t.members_count(n))
-        };
-        if !r.topic.is_empty() {
-            s.push_str(" · ");
-            s.push_str(&r.topic);
+            format!("{} · {}", t.chat_room, r.topic)
         }
-        s
     } else if c.is_group() {
-        let n = c.participants.len();
-        format!("{} · {}", t.group_chat, t.members_count(n))
+        format!(
+            "{} · {}",
+            t.group_chat,
+            t.members_count(c.participants.len())
+        )
     } else {
-        let p = peer.as_deref().and_then(|p| app.state.contacts.get(p));
-        match p {
-            Some(k) => format!(
-                "{} · {}",
-                t.presence(k.presence),
-                k.uri.trim_start_matches("sip:")
-            ),
+        match peer.as_deref().and_then(|p| app.state.contacts.get(p)) {
+            Some(k) if !k.note.is_empty() => format!("{} – {}", t.presence(k.presence), k.note),
+            Some(k) => t.presence(k.presence).to_string(),
             None => peer
                 .clone()
                 .unwrap_or_default()
@@ -71,79 +66,36 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
         .as_ref()
         .and_then(|p| app.state.contacts.get(p))
         .map(|k| k.presence);
-    let avatar_name = group_avatar(app, peer.is_none(), &title).to_string();
-    egui::Panel::top(("chat-head", key.0))
-        .exact_size(74.0)
+    egui::Panel::top(("conv-head", key.0))
         .frame(
             Frame::new()
                 .fill(pal.surface)
-                .inner_margin(Margin::symmetric(24, 12))
+                .inner_margin(Margin::symmetric(16, 10))
                 .stroke(Stroke::new(1.0, pal.border)),
         )
         .show(ui, |ui| {
-            ui.horizontal_centered(|ui| {
-                widgets::avatar(ui, &avatar_name, 44.0, presence, pal);
-                ui.add_space(6.0);
+            ui.horizontal(|ui| {
+                widgets::avatar(
+                    ui,
+                    group_avatar(app, peer.is_none(), &title),
+                    40.0,
+                    presence,
+                    pal,
+                );
                 ui.vertical(|ui| {
-                    ui.add_space(2.0);
-                    ui.label(
+                    widgets::ellipsis(
+                        ui,
                         RichText::new(&title)
                             .size(theme::text::PANEL_TITLE - 1.0)
                             .family(crate::theme::bold())
                             .color(pal.ink),
                     );
-                    ui.label(
+                    widgets::ellipsis(
+                        ui,
                         RichText::new(subtitle)
                             .size(theme::text::SMALL + 0.5)
                             .color(pal.muted),
                     );
-                });
-                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    let caps = app.state.capabilities.clone();
-                    let history = caps.history_search.clone();
-                    widgets::gated(ui, t.search_in_chat, &history, t, pal, |ui, l, en| {
-                        ui.add_enabled(en, egui::Button::new(l))
-                    });
-                    if let Some(p) = peer.clone() {
-                        if let Some(r) =
-                            widgets::gated(ui, t.call, &caps.audio_call, t, pal, |ui, l, en| {
-                                ui.add_enabled(
-                                    en && app.state.active_call().is_none(),
-                                    egui::Button::new(l),
-                                )
-                            })
-                        {
-                            if r.clicked() {
-                                app.emit(UiIntent::CallUser { peer: p.clone() });
-                                app.view = crate::model::View::Calls;
-                            }
-                        }
-                        if let Some(r) = widgets::gated(
-                            ui,
-                            t.video_call,
-                            &caps.video_call,
-                            t,
-                            pal,
-                            |ui, l, en| {
-                                ui.add_enabled(
-                                    en && app.state.active_call().is_none(),
-                                    egui::Button::new(l),
-                                )
-                            },
-                        ) {
-                            if r.clicked() {
-                                app.emit(UiIntent::VideoCall { peer: p });
-                                app.view = crate::model::View::Calls;
-                            }
-                        }
-                    }
-                    if let Some(id) = app.favorite_id(key) {
-                        let fav = app.prefs.favorites.contains(&id);
-                        let label = if fav { t.unfavorite } else { t.favorite };
-                        if ui.button(label).clicked() {
-                            app.toggle_favorite(id);
-                        }
-                    }
                 });
             });
         });

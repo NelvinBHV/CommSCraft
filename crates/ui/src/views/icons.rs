@@ -93,14 +93,19 @@ pub fn draw(p: &Painter, rect: Rect, icon: Icon, colour: Color32) {
             ));
         }
         Icon::Phone => {
+            // A handset: the curved grip with the ear and mouth pieces at its ends.
             arc(
                 p,
-                at(0.15, -0.15),
-                r * 0.75,
-                100.0,
-                260.0,
+                at(0.35, 0.0),
+                r * 0.7,
+                120.0,
+                240.0,
                 Stroke::new(3.0, colour),
             );
+            for a in [120.0f32, 240.0] {
+                let e = at(0.35, 0.0) + Vec2::angled(a.to_radians()) * r * 0.7;
+                p.circle_filled(e, r * 0.2, colour);
+            }
         }
         Icon::Screen => {
             let body = Rect::from_min_max(at(-0.85, -0.6), at(0.85, 0.45));

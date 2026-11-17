@@ -471,10 +471,8 @@ fn controls(
             if ui
                 .add_enabled(
                     connected,
-                    egui::Button::selectable(
-                        call.muted,
-                        if call.muted { t.unmute } else { t.mute },
-                    ),
+                    egui::Button::new(if call.muted { t.unmute } else { t.mute })
+                        .selected(call.muted),
                 )
                 .clicked()
             {
