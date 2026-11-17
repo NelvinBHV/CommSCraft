@@ -641,3 +641,22 @@ fn the_new_view_adds_a_subscriber_to_the_contacts() {
         .any(|i| matches!(i, UiIntent::AcknowledgeSubscriber { uri } if uri.starts_with("sip:jana.koch@"))));
     assert!(h.state().ui.state.subscribers.is_empty());
 }
+
+#[test]
+fn the_note_is_published_when_the_field_is_left() {
+    let mut h = harness(demo_quiet(), (420.0, 760.0));
+    h.run();
+    let field = h.get_by_role_and_label(egui::accesskit::Role::TextInput, "Was gibt es Neues?");
+    field.click();
+    h.run();
+    h.get_by_role_and_label(egui::accesskit::Role::TextInput, "Was gibt es Neues?")
+        .type_text("Heute im Büro");
+    h.run();
+    h.key_press(egui::Key::Enter);
+    h.run();
+    assert!(h
+        .state()
+        .intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::SetNote(n) if n == "Heute im Büro")));
+}

@@ -216,6 +216,8 @@ pub enum Presence {
     DoNotDisturb,
     BeRightBack,
     Away,
+    /// Away with the activity "off work".
+    OffWork,
     Offline,
     #[default]
     Unknown,
@@ -521,6 +523,8 @@ pub struct Profile {
     pub name: String,
     pub presence: Presence,
     pub organisation: String,
+    /// The own personal note as the server shows it.
+    pub note: String,
 }
 
 /// Typed changes from an adapter. Session IDs are the engine's conversation and call IDs.
@@ -1041,6 +1045,7 @@ impl AppState {
                     name: label(&p.name),
                     presence: p.presence,
                     organisation: label(&p.organisation),
+                    note: clean(&p.note, 1024, false),
                 }
             }
             AppEvent::OwnPresence(p) => self.me.presence = p,
@@ -1097,8 +1102,11 @@ impl AppState {
                         }
                     }
                 }
-                if let (true, Some(p)) = (uri == self.me.uri, presence) {
-                    self.me.presence = p;
+                if uri == self.me.uri {
+                    if let Some(p) = presence {
+                        self.me.presence = p;
+                    }
+                    self.me.note = clean(&note, 1024, false);
                 }
             }
             AppEvent::SearchResults(r) => {

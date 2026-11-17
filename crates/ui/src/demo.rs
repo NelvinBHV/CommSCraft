@@ -37,6 +37,7 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
         name: "Mara Klein".into(),
         presence: Presence::Available,
         organisation: "Organisation Nord".into(),
+        note: String::new(),
     }));
     let people = vec![
         person(

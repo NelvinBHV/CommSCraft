@@ -965,3 +965,22 @@ fn another_group_extension_is_a_special_group() {
         GroupExtension::Other
     );
 }
+
+#[test]
+fn be_right_back_off_work_and_the_note_bodies() {
+    assert_eq!(UserStatus::BeRightBack.availability(), 12500);
+    assert_eq!(UserStatus::parse("off-work"), Some(UserStatus::OffWork));
+    let b =
+        publish_state_body("sip:bob@contoso.com", UserStatus::BeRightBack, [0, 0], None).unwrap();
+    assert!(b.contains("<availability>12500</availability></state>"));
+    // The note: control characters and markup made harmless, bounded.
+    let long = format!("<b>\u{1b}[31m{}", "x".repeat(2000));
+    let b = publish_note_body("sip:bob@contoso.com", Some(&long), [0, 0, 0]).unwrap();
+    assert!(b.contains("&lt;b&gt;") && !b.contains('\u{1b}'));
+    assert_eq!(b.matches("<publication ").count(), 3);
+    assert!(b.matches('x').count() <= 3 * MAX_PERSONAL_NOTE);
+    assert!(publish_note_body("sip:x\"/>", Some("a"), [0; 3]).is_err());
+    let c = clear_state_body("sip:bob@contoso.com", [4, 5], Some("ab-12")).unwrap();
+    assert!(c.contains("container=\"3\" version=\"5\" expireType=\"endpoint\" endpointId=\"ab-12\" expires=\"0\"/>"));
+    assert!(clear_state_body("sip:bob@contoso.com", [0, 0], Some("x\"")).is_err());
+}

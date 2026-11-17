@@ -86,6 +86,7 @@ texts! {
     filter_groups: "Gruppen", "Groups";
     filter_rooms: "Räume", "Rooms";
     add: "Hinzufügen", "Add";
+    appear_away: "Als abwesend anzeigen", "Appear away";
     add_contact_dots: "Kontakt hinzufügen …", "Add a contact …";
     new_group_dots: "Neue Gruppe …", "New group …";
     new_group: "Neue Gruppe", "New group";
@@ -541,6 +542,13 @@ impl Texts {
                     "Abwesend"
                 } else {
                     "Away"
+                }
+            }
+            Presence::OffWork => {
+                if de {
+                    "Außer Haus"
+                } else {
+                    "Off work"
                 }
             }
             Presence::Offline => "Offline",
