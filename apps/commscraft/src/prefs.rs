@@ -84,6 +84,14 @@ pub fn parse(text: &str) -> Prefs {
             "meeting_participants" => p.meeting_participants = v == "true",
             "save_history" => p.save_history = v != "false",
             "tabbed_conversations" => p.tabbed_conversations = v != "false",
+            "reopen_conversations" => p.reopen_conversations = v != "false",
+            "reopen"
+                if commscraft_ui::normalise_address(v).as_deref() == Some(v)
+                    && p.reopen.len() < commscraft_ui::app::MAX_REOPEN
+                    && !p.reopen.iter().any(|r| r == v) =>
+            {
+                p.reopen.push(v.to_string());
+            }
             "always_close_all_tabs" => p.always_close_all_tabs = v == "true",
             // A device name as the audio adapter accepts it.
             "audio_device" if valid_device(v) => p.audio_device = v.to_string(),
@@ -153,6 +161,7 @@ pub fn format(p: &Prefs) -> String {
         ("meeting_participants", p.meeting_participants),
         ("save_history", p.save_history),
         ("tabbed_conversations", p.tabbed_conversations),
+        ("reopen_conversations", p.reopen_conversations),
         ("always_close_all_tabs", p.always_close_all_tabs),
     ] {
         out.push_str(&format!("{k}={v}\n"));
@@ -188,6 +197,14 @@ pub fn format(p: &Prefs) -> String {
         && !p.call_me_number.is_empty()
     {
         out.push_str(&format!("call_me_number={}\n", p.call_me_number));
+    }
+    for r in p
+        .reopen
+        .iter()
+        .filter(|r| commscraft_ui::normalise_address(r).as_deref() == Some(r.as_str()))
+        .take(commscraft_ui::app::MAX_REOPEN)
+    {
+        out.push_str(&format!("reopen={r}\n"));
     }
     for a in p
         .status_alerts
@@ -287,6 +304,10 @@ mod tests {
             .insert("room:ma-chan://beispiel.invalid/ab-12".into());
         p.favorites.insert("sip:anna@beispiel.invalid".into());
         p.status_alerts.insert("sip:anna@beispiel.invalid".into());
+        p.reopen_conversations = true;
+        p.reopen = vec!["sip:anna@beispiel.invalid".into()];
+        p.meeting_audio_ask = false;
+        p.call_me_number = "+49 40 123456".into();
         p.favorites.insert("group:Projekt Nord".into());
         let back = parse(&format(&p));
         assert_eq!(back, p);

@@ -150,7 +150,7 @@ fn page_ui(
     match page {
         0 => {
             group(ui, pal, t.opt_conversation_window, |ui| {
-                missing(ui, t, t.opt_reopen_conversations, ni);
+                ui.checkbox(&mut p.reopen_conversations, t.opt_reopen_conversations);
             });
             group(ui, pal, t.opt_language, |ui| {
                 ui.radio_value(&mut p.lang, Lang::De, "Deutsch");
