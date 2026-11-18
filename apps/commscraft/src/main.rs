@@ -338,6 +338,7 @@ impl DesktopApp {
                     quiet_busy: p.quiet_sounds_busy,
                     save_history: p.save_history,
                     audio_device: p.audio_device.clone(),
+                    mic_device: p.mic_device.clone(),
                 });
             }
             return;
@@ -490,6 +491,7 @@ impl DesktopApp {
                     quiet_busy: p.quiet_sounds_busy,
                     save_history: p.save_history,
                     audio_device: p.audio_device.clone(),
+                    mic_device: p.mic_device.clone(),
                 })
             }
             UiIntent::Dtmf { id, digits } => Some(ToWorker::Dtmf { id, digits }),

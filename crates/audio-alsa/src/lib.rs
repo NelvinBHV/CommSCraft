@@ -48,6 +48,8 @@ fn dev(e: alsa::Error) -> Error {
 pub struct Config {
     /// ALSA device name; `default` follows the system (PipeWire on current desktops).
     pub device: String,
+    /// The microphone's device when it is another one (empty: `device`).
+    pub capture_device: String,
     /// 8000 (G.711), 16000 (G.722) or 44100 (the alert sounds' master rate).
     pub rate: u32,
     /// Frame duration in milliseconds (RTP packet time, [MS-RTP] §2.2.1: 20 ms usual).
@@ -58,6 +60,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             device: "default".into(),
+            capture_device: String::new(),
             rate: 16000,
             frame_ms: 20,
         }
@@ -66,12 +69,12 @@ impl Default for Config {
 
 impl Config {
     pub fn validate(&self) -> Result<(), Error> {
-        let name_ok = !self.device.is_empty()
-            && self.device.len() <= 128
-            && self
-                .device
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || ":,._-=".contains(c));
+        let name = |d: &str| {
+            d.len() <= 128
+                && d.chars()
+                    .all(|c| c.is_ascii_alphanumeric() || ":,._-=".contains(c))
+        };
+        let name_ok = !self.device.is_empty() && name(&self.device) && name(&self.capture_device);
         if !name_ok {
             return Err(Error::BadConfig("device name"));
         }
@@ -92,7 +95,11 @@ impl Config {
 
 fn open(cfg: &Config, dir: Direction) -> Result<PCM, Error> {
     cfg.validate()?;
-    let pcm = PCM::new(&cfg.device, dir, false).map_err(dev)?;
+    let device = match dir {
+        Direction::Capture if !cfg.capture_device.is_empty() => &cfg.capture_device,
+        _ => &cfg.device,
+    };
+    let pcm = PCM::new(device, dir, false).map_err(dev)?;
     {
         let hw = HwParams::any(&pcm).map_err(dev)?;
         hw.set_channels(1).map_err(dev)?;
@@ -233,6 +240,10 @@ mod tests {
             },
             Config {
                 device: String::new(),
+                ..Config::default()
+            },
+            Config {
+                capture_device: "hw:1 x".into(),
                 ..Config::default()
             },
             Config {

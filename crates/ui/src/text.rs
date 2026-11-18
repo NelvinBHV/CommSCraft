@@ -195,6 +195,8 @@ texts! {
     opt_app_window: "Anwendungsfenster", "Application window";
     opt_audio: "Audiogerät", "Audio device";
     opt_audio_device: "Gerät für Anrufe", "Device for calls";
+    opt_speaker: "Lautsprecher", "Speaker";
+    opt_microphone: "Mikrofon", "Microphone";
     audio_default: "Systemvorgabe (PipeWire/ALSA „default“)", "System default (PipeWire/ALSA “default”)";
     opt_audio_levels: "Pegel und Testanruf", "Levels and test call";
     opt_autostart: "Beim Anmelden am Computer starten", "Start when I log on to the computer";
