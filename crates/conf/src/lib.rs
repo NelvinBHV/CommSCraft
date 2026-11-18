@@ -1255,6 +1255,8 @@ pub struct Invitation {
     pub subject: Option<String>,
     /// The invitation offers IM (`<im available="true">`).
     pub im: bool,
+    /// The conference has audio (`<audio available="true">`, [MS-SIPRE] §3.9.5.1, p. 58).
+    pub audio: bool,
 }
 
 /// Reads an invitation document (CI-30, K-CI-3): the content type and the `audio` element with
@@ -1292,6 +1294,9 @@ pub fn parse_invitation(xml: &str) -> Result<Invitation, Error> {
         im: root
             .child("im")
             .is_some_and(|i| i.attr("available") == Some("true")),
+        audio: root
+            .child("audio")
+            .is_some_and(|a| a.attr("available") == Some("true")),
     })
 }
 

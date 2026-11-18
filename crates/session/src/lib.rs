@@ -156,6 +156,8 @@ pub enum Command {
     SetForwarding(pres::Forwarding),
     StartConversation {
         to: String,
+        /// The first message: carried in the INVITE and sent as MESSAGE once the session is up.
+        first: Option<String>,
     },
     SendText {
         conversation: ConversationId,
@@ -1725,7 +1727,13 @@ impl<R: Random> Engine<R> {
 
     // ----- conversations -------------------------------------------------------------------
 
-    fn start_conversation(&mut self, to: &str, now: u64, out: &mut Vec<Output>) {
+    fn start_conversation(
+        &mut self,
+        to: &str,
+        first: Option<String>,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
         let Ok(peer) = pres::checked_sip_uri(to) else {
             out.push(Output::Event(Event::Notice(
                 "not a usable SIP address".into(),
@@ -1741,13 +1749,16 @@ impl<R: Random> Engine<R> {
         let id = self.next_conv;
         self.next_conv = self.next_conv.wrapping_add(1).max(1);
         let mut m = self.request("INVITE", &peer, &peer);
+        if let Some(text) = &first {
+            im::first_message_header(&mut m, text);
+        }
         im::invite_body(&mut m, self.cfg.local_ip, false);
         self.convs.insert(
             id,
             Conversation {
                 peer,
                 dialog: None,
-                queue: Vec::new(),
+                queue: first.into_iter().collect(),
                 group: None,
                 timer: None,
             },
@@ -1995,7 +2006,9 @@ impl<R: Random> Engine<R> {
             }
             Command::PublishCalendar(c) => self.publish_calendar(*c, now, &mut out),
             Command::SetForwarding(f) => self.publish_routing(f, now, &mut out),
-            Command::StartConversation { to } => self.start_conversation(&to, now, &mut out),
+            Command::StartConversation { to, first } => {
+                self.start_conversation(&to, first, now, &mut out)
+            }
             Command::SendText { conversation, text } => {
                 self.send_text(conversation, text, now, &mut out)
             }

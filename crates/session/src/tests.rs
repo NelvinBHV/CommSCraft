@@ -314,6 +314,7 @@ fn outgoing_conversation_with_queued_text() {
     let out = e.command(
         Command::StartConversation {
             to: "bob@contoso.com".into(),
+            first: None,
         },
         NOW,
     );
@@ -366,6 +367,7 @@ fn failures_and_refusals() {
     let out = e.command(
         Command::StartConversation {
             to: "sip:bob@contoso.com".into(),
+            first: None,
         },
         NOW,
     );
@@ -383,6 +385,7 @@ fn failures_and_refusals() {
     let out = e.command(
         Command::StartConversation {
             to: "sip:carol@contoso.com".into(),
+            first: None,
         },
         NOW,
     );
@@ -413,7 +416,8 @@ fn failures_and_refusals() {
     assert!(matches!(
         events(&e.command(
             Command::StartConversation {
-                to: "javascript:x".into()
+                to: "javascript:x".into(),
+                first: None,
             },
             NOW
         ))
@@ -4578,7 +4582,13 @@ fn container_manifest_already_satisfied() {
 fn diagnostics_and_error_reports() {
     let (mut e, mut server, _) = signed_in();
     let start = |e: &mut Engine<Counter>, to: &str| {
-        let out = e.command(Command::StartConversation { to: to.into() }, NOW);
+        let out = e.command(
+            Command::StartConversation {
+                to: to.into(),
+                first: None,
+            },
+            NOW,
+        );
         sends(&out).pop().unwrap()
     };
     let invite = start(&mut e, "sip:bob@contoso.com");
@@ -5744,4 +5754,36 @@ fn machine_activity_before_the_sign_in_is_kept_quietly() {
         bodies.contains("machineState\"><availability>15500</availability>"),
         "{bodies}"
     );
+}
+
+#[test]
+fn the_first_message_rides_in_the_invite_and_follows_as_message() {
+    let (mut e, _server, _) = signed_in();
+    let out = e.command(
+        Command::StartConversation {
+            to: "sip:bob@contoso.com".into(),
+            first: Some("Hallo Bob".into()),
+        },
+        NOW,
+    );
+    let inv = sends(&out).pop().unwrap();
+    // "Hallo Bob" in base64.
+    assert_eq!(
+        inv.header_values("Ms-Text-Format").next(),
+        Some("text/plain; charset=UTF-8; ms-body=SGFsbG8gQm9i")
+    );
+    // A conversation without a first message has no such header.
+    let out = e.command(
+        Command::StartConversation {
+            to: "sip:carol@contoso.com".into(),
+            first: None,
+        },
+        NOW,
+    );
+    assert!(sends(&out)
+        .pop()
+        .unwrap()
+        .header_values("Ms-Text-Format")
+        .next()
+        .is_none());
 }

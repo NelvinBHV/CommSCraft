@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: the meeting video asks for a sender's source)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (chats start and arrive as in the Windows client)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-18 | Chats behave as in the Windows client (`tested-in-lab`, compared with the Windows client in the lab): the first message rides in the INVITE (`Ms-Text-Format … ms-body`, interop – no Open Specification names it) and follows as MESSAGE; the desktop client sets a 1:1 conversation up only with its first message; chat invitations without audio are joined at once; invitations announce audio only while the conference audio is in use (before, every group chat looked like a conference call to the invitee). |
 | 2026-11-18 | Fix found in the lab: the desktop client's meeting video now asks the A/V MCU for a sending participant's source (CA-13, as the command-line client does) and follows the next sender on a stall; before, no picture arrived. Freeze requests are followed in meetings. With a camera on the laptop the picture now arrives (`tested-in-lab`). |
 | 2026-11-18 | Reading the Exchange Conversation History folder in the desktop client (`tested-in-lab`): `ews::history::list_request`/`parse_list` (FindItem, [MS-OXWSSRCH] §3.1.4.2) and `body_request`/`parse_body` (GetItem, [MS-OXWSCORE] 20250819 §3.1.4.4, pp. 65–69; text body, [MS-OXWSCDATA] §2.2.4.42, §2.2.5.1); the conversations tab lists the entries and shows one read-only. |
 | 2026-11-18 | Desktop integration (`tested-offline`): start with the desktop session (XDG autostart entry, the program path quoted per the Desktop Entry Specification) and the choice of the sound device for calls (the default or an ALSA device from `/proc/asound/pcm`). |

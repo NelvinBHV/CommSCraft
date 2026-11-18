@@ -563,7 +563,10 @@ impl<R: Random> Engine<R> {
             }
             return;
         };
-        let audio = !g.chat_only && g.roster.av_uri.is_some();
+        // Audio is announced only when the conference's audio is in use (we are in it): a chat
+        // with an A/V MCU in reserve is shown by the invitee as a chat, as the Windows client
+        // does it (interop, `tested-in-lab`: an invitation with `audio` is shown as a call).
+        let audio = !g.chat_only && g.roster.av_uri.is_some() && g.av_call.is_some();
         self.send_invitation(&focus, &invitee, audio, now, out);
     }
 

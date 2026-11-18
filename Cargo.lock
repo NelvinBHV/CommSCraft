@@ -888,6 +888,7 @@ name = "commscraft-im"
 version = "0.0.1"
 dependencies = [
  "commscraft-sip-msg",
+ "commscraft-sipae",
  "commscraft-xml",
 ]
 

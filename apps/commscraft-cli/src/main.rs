@@ -3322,7 +3322,10 @@ fn interactive(
                         None
                     }
                 },
-                "/chat" => Some(C::StartConversation { to: arg }),
+                "/chat" => Some(C::StartConversation {
+                    to: arg,
+                    first: None,
+                }),
                 "/rgs" => {
                     // Function 47: response group agent (MS-RGSWS).
                     let mut w = arg.split_whitespace();
