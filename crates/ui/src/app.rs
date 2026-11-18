@@ -283,6 +283,8 @@ pub struct Prefs {
     pub last_address: String,
     /// The ALSA sound device for calls (empty: the system's default).
     pub audio_device: String,
+    /// The microphone when it is another device (empty: the same as `audio_device`).
+    pub mic_device: String,
     /// Start with the desktop session (an XDG autostart entry).
     pub autostart: bool,
     /// The open conversations as tabs of one window.
@@ -323,6 +325,7 @@ impl Default for Prefs {
             tabbed_conversations: true,
             always_close_all_tabs: false,
             audio_device: String::new(),
+            mic_device: String::new(),
             autostart: false,
             inactive_minutes: 5,
             away_minutes: 5,

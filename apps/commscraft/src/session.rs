@@ -116,6 +116,8 @@ pub enum ToWorker {
         save_history: bool,
         /// The ALSA device for calls (empty: the default).
         audio_device: String,
+        /// The microphone when it is another device (empty: the same).
+        mic_device: String,
     },
     /// Tones in a call (DTMF, RFC 4733).
     Dtmf {
@@ -540,6 +542,8 @@ struct Session {
     save_history: bool,
     /// The ALSA device for calls (empty: the default).
     audio_device: String,
+    /// The microphone's ALSA device when it is another one (empty: the same).
+    mic_device: String,
     /// IM conversations as they go, for the Conversation History folder (function 49).
     transcripts: BTreeMap<u32, commscraft_ews::history::Conversation>,
     /// The Exchange item IDs of the listed history entries.
@@ -1031,6 +1035,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         sounds: true,
         save_history: true,
         audio_device: String::new(),
+        mic_device: String::new(),
         transcripts: BTreeMap::new(),
         history_ids: BTreeMap::new(),
         unstarted: BTreeMap::new(),
@@ -1671,10 +1676,15 @@ impl Session {
     /// default.
     fn audio_config(&self) -> commscraft_audio_alsa::Config {
         let chosen = commscraft_audio_alsa::Config {
-            device: self.audio_device.clone(),
+            device: if self.audio_device.is_empty() {
+                "default".into()
+            } else {
+                self.audio_device.clone()
+            },
+            capture_device: self.mic_device.clone(),
             ..Default::default()
         };
-        if !self.audio_device.is_empty() && chosen.validate().is_ok() {
+        if chosen.validate().is_ok() {
             chosen
         } else {
             commscraft_audio_alsa::Config::default()
@@ -2230,9 +2240,11 @@ impl Session {
                 quiet_busy,
                 save_history,
                 audio_device,
+                mic_device,
             } => {
                 self.save_history = save_history;
                 self.audio_device = audio_device;
+                self.mic_device = mic_device;
                 self.v.camera = if camera.is_empty() {
                     std::env::var("COMMSCRAFT_CAMERA").unwrap_or_else(|_| "/dev/video0".into())
                 } else {

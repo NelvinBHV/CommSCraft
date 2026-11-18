@@ -73,6 +73,7 @@ pub fn parse(text: &str) -> Prefs {
             "always_close_all_tabs" => p.always_close_all_tabs = v == "true",
             // A device name as the audio adapter accepts it.
             "audio_device" if valid_device(v) => p.audio_device = v.to_string(),
+            "mic_device" if valid_device(v) => p.mic_device = v.to_string(),
             // A device file only: printable, absolute, bounded.
             "camera"
                 if v.starts_with("/dev/") && v.len() <= 200 && !v.chars().any(char::is_control) =>
@@ -145,6 +146,9 @@ pub fn format(p: &Prefs) -> String {
     out.push_str(&format!("inactive_minutes={}\n", p.inactive_minutes));
     if valid_device(&p.audio_device) {
         out.push_str(&format!("audio_device={}\n", p.audio_device));
+    }
+    if valid_device(&p.mic_device) {
+        out.push_str(&format!("mic_device={}\n", p.mic_device));
     }
     out.push_str(&format!("away_minutes={}\n", p.away_minutes));
     if commscraft_ui::normalise_address(&p.last_address).as_deref() == Some(p.last_address.as_str())
@@ -245,6 +249,7 @@ mod tests {
             away_minutes: 30,
             save_history: false,
             audio_device: "plughw:1,0".into(),
+            mic_device: "plughw:0,0".into(),
             ..Default::default()
         };
         p.favorites

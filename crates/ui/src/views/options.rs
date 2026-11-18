@@ -263,23 +263,44 @@ fn page_ui(
         }),
         8 => group(ui, pal, t.opt_audio, |ui| {
             note(ui, pal, t.audio_devices_body);
-            // The device for calls: the system's default (PipeWire) or one ALSA names.
-            let current = if p.audio_device.is_empty() {
-                t.audio_default.to_string()
-            } else {
-                devices
-                    .iter()
-                    .find(|(n, _)| *n == p.audio_device)
-                    .map_or(p.audio_device.clone(), |(_, l)| l.clone())
-            };
-            egui::ComboBox::from_label(t.opt_audio_device)
-                .selected_text(current)
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut p.audio_device, String::new(), t.audio_default);
-                    for (name, label) in devices {
-                        ui.selectable_value(&mut p.audio_device, name.clone(), label);
-                    }
+            // Speaker and microphone, each the system's default (PipeWire) or a device ALSA
+            // names, as on the Windows client's audio device page.
+            let pick = |ui: &mut Ui, label: &str, value: &mut String, kind: &str, id: &str| {
+                let current = if value.is_empty() {
+                    t.audio_default.to_string()
+                } else {
+                    devices
+                        .iter()
+                        .find(|(n, _)| n == value)
+                        .map_or(value.clone(), |(_, l)| l.clone())
+                };
+                ui.horizontal(|ui| {
+                    ui.label(label);
+                    egui::ComboBox::from_id_salt(id)
+                        .selected_text(current)
+                        .width(320.0)
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(value, String::new(), t.audio_default);
+                            for (name, l) in devices.iter().filter(|(_, l)| l.contains(kind)) {
+                                ui.selectable_value(value, name.clone(), l);
+                            }
+                        });
                 });
+            };
+            pick(
+                ui,
+                t.opt_speaker,
+                &mut p.audio_device,
+                "playback",
+                "speaker",
+            );
+            pick(
+                ui,
+                t.opt_microphone,
+                &mut p.mic_device,
+                "capture",
+                "microphone",
+            );
             missing(ui, t, t.opt_audio_levels, ni);
         }),
         9 => group(ui, pal, t.opt_video, |ui| {

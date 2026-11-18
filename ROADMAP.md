@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (conversations as tabs of one window)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (speaker and microphone chosen separately)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-18 | Speaker and microphone chosen separately, as on the Windows client's audio device page (`audio-alsa::Config::capture_device`); in the lab a laptop whose PipeWire had no usable default source (its only port, the headset jack, unplugged) now sends its built-in microphone (`tested-in-lab`). |
 | 2026-11-18 | Tabbed conversations as in the Windows client (`tested-offline`): one window with a tab list, the close question and the options *Enable tabbed conversations* and *Always close all tabs*. |
 | 2026-11-18 | Calls on the stage of the conversation window (`tested-in-lab`, compared with the Windows client): the received video is embedded – the sandboxed decoder process runs in a new mode `embed`/`embed-raw` and hands RGBA pictures back over its pipe (bounded size and rate, checked by the client); the call controls are the Windows client's round buttons with a call controls menu. |
 | 2026-11-18 | Chats behave as in the Windows client (`tested-in-lab`, compared with the Windows client in the lab): the first message rides in the INVITE (`Ms-Text-Format … ms-body`, interop – no Open Specification names it) and follows as MESSAGE; the desktop client sets a 1:1 conversation up only with its first message; chat invitations without audio are joined at once; invitations announce audio only while the conference audio is in use (before, every group chat looked like a conference call to the invitee). |

@@ -573,6 +573,7 @@ mod tests {
             device: "default".into(),
             rate,
             frame_ms,
+            ..alsa::Config::default()
         };
         // G.722 and G.711 at 20 ms ([MS-RTP] §2.2.1).
         assert_eq!(silence_frame(&cfg(16000, 20)).len(), 320);
