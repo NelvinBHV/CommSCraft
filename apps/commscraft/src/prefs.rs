@@ -63,6 +63,14 @@ pub fn parse(text: &str) -> Prefs {
             "sort_by_availability" => p.sort_by_availability = v == "true",
             "away_group" => p.away_group = v == "true",
             "favorites_group" => p.favorites_group = v != "false",
+            "meeting_audio_ask" => p.meeting_audio_ask = v != "false",
+            "call_me_number"
+                if v.len() <= 32
+                    && v.chars()
+                        .all(|c| c.is_ascii_digit() || " +-()/".contains(c)) =>
+            {
+                p.call_me_number = v.to_string();
+            }
             "status_alert"
                 if commscraft_ui::normalise_address(v).as_deref() == Some(v)
                     && p.status_alerts.len() < MAX_FAVORITES =>
@@ -137,6 +145,7 @@ pub fn format(p: &Prefs) -> String {
         ("sort_by_availability", p.sort_by_availability),
         ("away_group", p.away_group),
         ("favorites_group", p.favorites_group),
+        ("meeting_audio_ask", p.meeting_audio_ask),
         ("message_alerts", p.message_alerts),
         ("quiet_when_dnd", p.quiet_when_dnd),
         ("sounds", p.sounds),
@@ -171,6 +180,14 @@ pub fn format(p: &Prefs) -> String {
         .take(MAX_FAVORITES)
     {
         out.push_str(&format!("favorite={f}\n"));
+    }
+    if p.call_me_number.len() <= 32
+        && p.call_me_number
+            .chars()
+            .all(|c| c.is_ascii_digit() || " +-()/".contains(c))
+        && !p.call_me_number.is_empty()
+    {
+        out.push_str(&format!("call_me_number={}\n", p.call_me_number));
     }
     for a in p
         .status_alerts

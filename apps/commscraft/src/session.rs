@@ -1951,6 +1951,7 @@ impl Session {
                         pstn_lobby_bypass: phone_bypass,
                     }),
                     K::Announcements(on) => A::Announcements(on),
+                    K::DialOut(number) => A::DialOut { number },
                 };
                 self.engine.command(
                     C::ConferenceControl {

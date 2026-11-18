@@ -390,6 +390,8 @@ pub enum ConfCommand {
     },
     /// Announce people entering and leaving (the meeting's audio).
     Announcements(bool),
+    /// The meeting's audio calls this phone number ("call me at").
+    DialOut(String),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

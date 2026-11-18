@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (contact menu, meeting entry info, self view)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (join meeting audio question)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -106,6 +106,10 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   *Copy* (name and address), *Find previous conversations* (the Exchange history filtered by the
   contact), *Tag for status change alerts* (a notice when a tagged contact becomes available,
   kept in the preferences) and the privacy relationships with a description each. `tested-offline`.
+- **Join meeting audio:** joining a meeting (or its audio) asks how, as the Windows client does:
+  the computer's audio, *Call me at* a phone number (the meeting's audio calls it, dial-out) or no
+  audio, with *Don't ask again*; the number is kept in the preferences. `tested-offline` (the
+  dial-out command itself is tested in the session).
 - **Self view:** during a video call our own camera picture is shown small in the lower right
   corner of the stage, as in the Windows client (about five pictures a second, at most 320×180,
   taken from the pictures the encoder gets anyway). `tested-in-lab`.

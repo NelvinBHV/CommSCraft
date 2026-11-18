@@ -484,6 +484,7 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                 if bar_button(ui, t, pal, Icon::Phone, label, &call_gate, false).clicked() {
                     match &peer {
                         Some(p) => app.call(p, false),
+                        None if app.prefs.meeting_audio_ask => app.meeting_audio = Some(key),
                         None => app.emit(UiIntent::JoinMeetingAudio { key }),
                     }
                 }
@@ -821,6 +822,63 @@ pub fn entry_info_dialog(app: &mut CommsUi, ctx: &egui::Context) {
     });
     if !open {
         app.entry_info = None;
+    }
+}
+
+/// How to join a meeting's audio, as the Windows client's *Join Meeting Audio*: the computer's
+/// audio, the meeting calls a phone number, or no audio; *Don't ask again*.
+pub fn meeting_audio_dialog(app: &mut CommsUi, ctx: &egui::Context) {
+    let t = app.t;
+    let Some(key) = app.meeting_audio else {
+        return;
+    };
+    let id = egui::Id::unique("meeting-audio-choice");
+    let mut choice: u8 = ctx.data(|d| d.get_temp(id)).unwrap_or(0);
+    let mut done = None;
+    egui::Modal::new(egui::Id::unique("meeting-audio")).show(ctx, |ui| {
+        ui.set_width(380.0);
+        ui.label(RichText::new(t.join_meeting_audio_title).size(theme::text::HEADING));
+        ui.add_space(6.0);
+        ui.radio_value(&mut choice, 0, t.audio_computer);
+        ui.horizontal(|ui| {
+            ui.radio_value(&mut choice, 1, t.audio_call_me);
+            ui.add_enabled(
+                choice == 1,
+                egui::TextEdit::singleline(&mut app.prefs.call_me_number)
+                    .desired_width(160.0)
+                    .char_limit(32)
+                    .hint_text("+49 …"),
+            );
+        });
+        ui.radio_value(&mut choice, 2, t.audio_none);
+        ui.add_space(4.0);
+        let mut never = !app.prefs.meeting_audio_ask;
+        if ui.checkbox(&mut never, t.dont_ask_again).changed() {
+            app.prefs.meeting_audio_ask = !never;
+        }
+        ui.add_space(8.0);
+        ui.horizontal(|ui| {
+            let ok = choice != 1 || !app.prefs.call_me_number.trim().is_empty();
+            if ui.add_enabled(ok, egui::Button::new(t.ok)).clicked() {
+                done = Some(choice);
+            }
+            if ui.button(t.cancel).clicked() {
+                done = Some(2);
+            }
+        });
+    });
+    ctx.data_mut(|d| d.insert_temp(id, choice));
+    if let Some(c) = done {
+        match c {
+            0 => app.emit(UiIntent::JoinMeetingAudio { key }),
+            1 => app.emit(UiIntent::ConferenceCommand {
+                key,
+                command: ConfCommand::DialOut(app.prefs.call_me_number.trim().to_string()),
+            }),
+            _ => {}
+        }
+        app.emit(UiIntent::PrefsChanged);
+        app.meeting_audio = None;
     }
 }
 

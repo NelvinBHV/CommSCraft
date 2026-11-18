@@ -454,6 +454,11 @@ texts! {
     meeting_link_label: "Besprechungslink", "Meeting link";
     organizer: "Organisator", "Organizer";
     copy_all_info: "Alle Infos kopieren", "Copy all info";
+    join_meeting_audio_title: "Besprechungsaudio", "Join meeting audio";
+    audio_computer: "Computer-Audio verwenden (Audio und Video)", "Use the computer's audio (audio and video)";
+    audio_call_me: "Mich anrufen unter:", "Call me at:";
+    audio_none: "Nicht mit Audio teilnehmen", "Don't join audio";
+    dont_ask_again: "Nicht mehr fragen", "Don't ask again";
     presenters: "Referenten", "Presenters";
     attendees: "Teilnehmer", "Attendees";
     sharing_mark: "gibt frei", "sharing";
