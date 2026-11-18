@@ -208,7 +208,7 @@ texts! {
     opt_speaker: "Lautsprecher", "Speaker";
     opt_microphone: "Mikrofon", "Microphone";
     audio_default: "Systemvorgabe (PipeWire/ALSA „default“)", "System default (PipeWire/ALSA “default”)";
-    opt_audio_levels: "Pegel und Testanruf", "Levels and test call";
+    opt_audio_levels: "Geräte testen", "Test the devices";
     opt_autostart: "Beim Anmelden am Computer starten", "Start when I log on to the computer";
     opt_away_group: "Abwesende, Offline- und unbekannte Kontakte gesondert gruppieren", "Group away, offline and unknown contacts separately";
     opt_block_strangers: "Einladungen von Unbekannten blockieren", "Block invitations from unknown people";
@@ -459,6 +459,10 @@ texts! {
     audio_call_me: "Mich anrufen unter:", "Call me at:";
     audio_none: "Nicht mit Audio teilnehmen", "Don't join audio";
     dont_ask_again: "Nicht mehr fragen", "Don't ask again";
+    test_speaker: "Lautsprecher testen", "Test the speaker";
+    test_microphone: "Mikrofon testen", "Test the microphone";
+    mic_level: "Pegel", "Level";
+    audio_test_body: "Der Lautsprecher spielt einen kurzen Ton; das Mikrofon zeigt fünf Sekunden lang seinen Pegel. Es wird nichts aufgezeichnet oder gesendet.", "The speaker plays a short tone; the microphone shows its level for five seconds. Nothing is recorded or sent.";
     presenters: "Referenten", "Presenters";
     attendees: "Teilnehmer", "Attendees";
     sharing_mark: "gibt frei", "sharing";

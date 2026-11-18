@@ -767,6 +767,8 @@ pub enum AppEvent {
         session: u32,
         focus: String,
     },
+    /// The microphone's level during its test, 0–100; `None`: the test is over.
+    MicLevel(Option<u8>),
     /// The options of the meeting of a group conversation.
     MeetingSettings {
         session: u32,
@@ -958,6 +960,8 @@ pub struct AppState {
     /// The ended call offered for rating: call ID and peer.
     pub rate_call: Option<(u32, String)>,
     /// The Conversation History folder, once asked for.
+    /// The microphone's level while it is tested (0–100).
+    pub mic_level: Option<u8>,
     pub history: Option<Result<Vec<HistoryEntry>, String>>,
     /// The history entry being read: its ID and, once there, its text.
     pub history_open: Option<(String, Option<Result<String, String>>)>,
@@ -985,6 +989,7 @@ impl Default for AppState {
             groups: Vec::new(),
             subscribers: Vec::new(),
             quality_rating: false,
+            mic_level: None,
             history: None,
             video: BTreeMap::new(),
             history_open: None,
@@ -1598,6 +1603,7 @@ impl AppState {
             }
             AppEvent::MeetingCancelled(id) => self.meetings.retain(|m| m.conference_id != id),
             AppEvent::QualityRating(on) => self.quality_rating = on,
+            AppEvent::MicLevel(l) => self.mic_level = l.map(|l| l.min(100)),
             AppEvent::ConferenceFocus { session, focus } => {
                 if let Some(c) = self.by_session(session) {
                     c.focus = Some(label(&focus));

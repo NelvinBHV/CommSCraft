@@ -7,6 +7,7 @@
 //! a path that cannot be quoted safely is refused. The device list is bounded and only
 //! numbers from it become device names.
 
+use commscraft_ui::model::{AppEvent, NoticeKind};
 use std::path::PathBuf;
 
 /// Most sound devices listed (design).
@@ -104,6 +105,119 @@ fn parse_pcm(text: &str) -> Vec<(String, String)> {
         .collect()
 }
 
+/// The test tone: 440 Hz for 0.8 s at 16 kHz, a quarter of full scale, with a short fade in and
+/// out so it does not click.
+fn test_tone() -> Vec<i16> {
+    const RATE: f32 = 16_000.0;
+    let n = (RATE * 0.8) as usize;
+    let fade = 800.0;
+    (0..n)
+        .map(|i| {
+            let x = i as f32;
+            let env = (x / fade).min((n as f32 - x) / fade).clamp(0.0, 1.0);
+            let s = (2.0 * std::f32::consts::PI * 440.0 * x / RATE).sin();
+            (s * env * 8192.0) as i16
+        })
+        .collect()
+}
+
+fn test_config(device: &str, mic: &str) -> commscraft_audio_alsa::Config {
+    let cfg = commscraft_audio_alsa::Config {
+        device: if device.is_empty() {
+            "default".into()
+        } else {
+            device.into()
+        },
+        capture_device: mic.into(),
+        ..Default::default()
+    };
+    if cfg.validate().is_ok() {
+        cfg
+    } else {
+        commscraft_audio_alsa::Config::default()
+    }
+}
+
+/// Plays the test tone on the speaker in a thread of its own; a failure comes back as a notice.
+pub fn test_speaker(device: String, tx: std::sync::mpsc::Sender<AppEvent>, repaint: Repaint) {
+    let _ = std::thread::Builder::new()
+        .name("speaker-test".into())
+        .spawn(move || {
+            let cfg = test_config(&device, "");
+            let played = commscraft_audio_alsa::Playback::open(&cfg).and_then(|mut p| {
+                let frame = p.frame_samples().max(1);
+                for chunk in test_tone().chunks(frame) {
+                    let mut f = chunk.to_vec();
+                    f.resize(frame, 0);
+                    p.write(&f)?;
+                }
+                Ok(())
+            });
+            if let Err(e) = played {
+                let _ = tx.send(AppEvent::Notice(
+                    NoticeKind::Warning,
+                    format!("speaker test: {e:?}"),
+                    unix_now(),
+                ));
+                repaint();
+            }
+        });
+}
+
+/// The level of a frame, 0–100: its peak in dB below full scale, −60 dBFS (and quieter) to 0.
+fn level(frame: &[i16]) -> u8 {
+    let peak = frame.iter().map(|s| s.unsigned_abs()).max().unwrap_or(0);
+    if peak == 0 {
+        return 0;
+    }
+    let db = 20.0 * (f32::from(peak) / 32_768.0).log10();
+    ((db + 60.0) / 60.0 * 100.0).clamp(0.0, 100.0) as u8
+}
+
+/// Listens to the microphone for five seconds and reports its level ten times a second; nothing
+/// is kept or sent.
+pub fn test_microphone(device: String, tx: std::sync::mpsc::Sender<AppEvent>, repaint: Repaint) {
+    let _ = std::thread::Builder::new()
+        .name("microphone-test".into())
+        .spawn(move || {
+            let cfg = test_config("default", &device);
+            let _ = tx.send(AppEvent::MicLevel(Some(0)));
+            let result = commscraft_audio_alsa::Capture::open(&cfg).and_then(|mut c| {
+                let mut frame = Vec::new();
+                let frames_per_report = (100 / cfg.frame_ms.max(1)).max(1) as usize;
+                let reports = 50;
+                for _ in 0..reports {
+                    let mut peak = 0u8;
+                    for _ in 0..frames_per_report {
+                        c.read_frame(&mut frame)?;
+                        peak = peak.max(level(&frame));
+                    }
+                    let _ = tx.send(AppEvent::MicLevel(Some(peak)));
+                    repaint();
+                }
+                Ok(())
+            });
+            if let Err(e) = result {
+                let _ = tx.send(AppEvent::Notice(
+                    NoticeKind::Warning,
+                    format!("microphone test: {e:?}"),
+                    unix_now(),
+                ));
+            }
+            let _ = tx.send(AppEvent::MicLevel(None));
+            repaint();
+        });
+}
+
+fn unix_now() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs())
+}
+
+/// Asks the window to draw again (from a test thread).
+pub type Repaint = std::sync::Arc<dyn Fn() + Send + Sync>;
+
 /// Opens the system's mail program for this address (`xdg-open mailto:`); only plain addresses
 /// pass, so nothing else reaches the command line.
 pub fn send_email(address: &str) {
@@ -183,6 +297,20 @@ mod tests {
         assert!(entry("/usr/bin/commscraft")
             .unwrap()
             .contains("Exec=\"/usr/bin/commscraft\""));
+    }
+
+    #[test]
+    fn the_test_tone_and_the_level_stay_in_bounds() {
+        let tone = test_tone();
+        assert_eq!(tone.len(), 12_800);
+        assert!(tone.iter().all(|s| s.unsigned_abs() <= 8192));
+        // Faded in and out: no click at the ends.
+        assert!(tone[0].unsigned_abs() < 100 && tone[tone.len() - 1].unsigned_abs() < 100);
+        assert_eq!(level(&[]), 0);
+        assert_eq!(level(&[i16::MIN]), 100);
+        // Half of full scale is −6 dBFS; −60 dBFS and quieter is 0.
+        assert_eq!(level(&[16_384, -100]), 89);
+        assert_eq!(level(&[30]), 0);
     }
 
     #[test]

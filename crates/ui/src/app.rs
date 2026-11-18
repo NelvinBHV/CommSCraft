@@ -197,6 +197,14 @@ pub enum UiIntent {
     Quit,
     /// Minimize the main window.
     Minimize,
+    /// Play a test tone on this speaker (empty: the system's default).
+    TestSpeaker {
+        device: String,
+    },
+    /// Listen to this microphone for a few seconds and show its level (empty: the default).
+    TestMicrophone {
+        device: String,
+    },
     /// Write an e-mail to this address in the system's mail program.
     SendEmail {
         address: String,

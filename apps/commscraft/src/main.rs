@@ -228,6 +228,11 @@ pub(crate) struct DesktopApp {
     pub(crate) close_at: Option<std::time::Instant>,
     frames: u32,
     shot_rx: Option<std::sync::mpsc::Receiver<std::sync::Arc<egui::ColorImage>>>,
+    /// Results of the audio device tests.
+    audio_test: (
+        std::sync::mpsc::Sender<AppEvent>,
+        std::sync::mpsc::Receiver<AppEvent>,
+    ),
     worker: Option<session::Worker>,
     worker_done: bool,
     /// The password to keep in the keyring once the sign-in succeeded (the user asked for it).
@@ -272,6 +277,16 @@ impl DesktopApp {
         demo::start(&mut self.ui, now());
     }
 
+    /// Asks the window to draw again, from another thread.
+    fn repaint(&self) -> desktop::Repaint {
+        let ctx = self.ctx.clone();
+        std::sync::Arc::new(move || {
+            if let Some(c) = &ctx {
+                c.request_repaint();
+            }
+        })
+    }
+
     pub(crate) fn handle(&mut self, intent: UiIntent) {
         // What concerns the main window itself.
         let root = |c: egui::ViewportCommand| {
@@ -284,6 +299,14 @@ impl DesktopApp {
             UiIntent::FocusMain => return root(egui::ViewportCommand::Focus),
             UiIntent::SendEmail { address } => {
                 desktop::send_email(&address);
+                return;
+            }
+            UiIntent::TestSpeaker { device } => {
+                desktop::test_speaker(device, self.audio_test.0.clone(), self.repaint());
+                return;
+            }
+            UiIntent::TestMicrophone { device } => {
+                desktop::test_microphone(device, self.audio_test.0.clone(), self.repaint());
                 return;
             }
             UiIntent::Quit => {
@@ -538,7 +561,9 @@ impl DesktopApp {
             UiIntent::Quit
             | UiIntent::Minimize
             | UiIntent::FocusMain
-            | UiIntent::SendEmail { .. } => None,
+            | UiIntent::SendEmail { .. }
+            | UiIntent::TestSpeaker { .. }
+            | UiIntent::TestMicrophone { .. } => None,
             UiIntent::StartDemo | UiIntent::SignIn(_) => None,
         };
         if let Some(c) = cmd {
@@ -616,6 +641,14 @@ impl DesktopApp {
 impl eframe::App for DesktopApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx().clone();
+        while let Ok(e) = self.audio_test.1.try_recv() {
+            if std::env::var_os("COMMSCRAFT_VERBOSE").is_some() {
+                if let AppEvent::MicLevel(l) = &e {
+                    eprintln!("microphone level {l:?}");
+                }
+            }
+            self.ui.apply(e);
+        }
         if self.ui.logo.is_none() {
             if let Some((w, h, rgba)) = decode_png(ICON) {
                 let img = egui::ColorImage::from_rgba_unmultiplied(
@@ -803,6 +836,7 @@ fn main() {
                 close_at: None,
                 frames: 0,
                 shot_rx: None,
+                audio_test: std::sync::mpsc::channel(),
                 shot_since: None,
                 worker: None,
                 worker_done: false,
