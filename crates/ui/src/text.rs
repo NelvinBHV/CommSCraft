@@ -459,6 +459,7 @@ texts! {
     audio_call_me: "Mich anrufen unter:", "Call me at:";
     audio_none: "Nicht mit Audio teilnehmen", "Don't join audio";
     dont_ask_again: "Nicht mehr fragen", "Don't ask again";
+    opt_reopen: "Meine Unterhaltungen bei der Anmeldung wieder öffnen", "Reopen my conversations when I sign in";
     presenters: "Referenten", "Presenters";
     attendees: "Teilnehmer", "Attendees";
     sharing_mark: "gibt frei", "sharing";

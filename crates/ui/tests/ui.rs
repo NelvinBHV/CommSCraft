@@ -1163,3 +1163,34 @@ fn joining_the_meeting_audio_asks_how() {
         UiIntent::ConferenceCommand { command: ConfCommand::DialOut(n), .. } if n == "+49 40 123456")), "{:?}", h.state().intents);
     assert!(h.query_by_label("Mich anrufen unter:").is_none());
 }
+
+#[test]
+fn the_conversations_of_last_time_are_reopened_after_signing_in() {
+    use commscraft_ui::model::{Presence, Profile};
+    let mut ui = online();
+    ui.prefs.reopen_conversations = true;
+    ui.prefs.reopen = vec!["sip:bob@beispiel.invalid".into()];
+    ui.state.apply(AppEvent::SignedIn(Profile {
+        uri: "sip:alice@beispiel.invalid".into(),
+        name: "Alice".into(),
+        presence: Presence::Available,
+        organisation: String::new(),
+        note: String::new(),
+    }));
+    let mut h = harness(ui, BIG);
+    h.run();
+    assert!(h.state().intents.iter().any(|i| matches!(i,
+        UiIntent::StartConversation { peer, .. } if peer == "sip:bob@beispiel.invalid")));
+    // Closing it leaves nothing to reopen next time.
+    let key = h
+        .state()
+        .ui
+        .state
+        .conversation_with("sip:bob@beispiel.invalid")
+        .unwrap();
+    h.state_mut()
+        .ui
+        .close_window(commscraft_ui::app::Win::Conv(key));
+    h.run();
+    assert!(h.state().ui.prefs.reopen.is_empty());
+}

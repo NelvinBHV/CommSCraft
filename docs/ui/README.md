@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (join meeting audio question)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (reopen conversations after signing in)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -106,6 +106,10 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   *Copy* (name and address), *Find previous conversations* (the Exchange history filtered by the
   contact), *Tag for status change alerts* (a notice when a tagged contact becomes available,
   kept in the preferences) and the privacy relationships with a description each. `tested-offline`.
+- **Reopen conversations:** the option *Reopen my conversations when I sign in* (off by default,
+  as in the Windows client's IM options) keeps the addresses of the open 1:1 conversations – no
+  content – in the preferences (at most 20) and opens them again after the next sign-in.
+  `tested-offline`.
 - **Join meeting audio:** joining a meeting (or its audio) asks how, as the Windows client does:
   the computer's audio, *Call me at* a phone number (the meeting's audio calls it, dial-out) or no
   audio, with *Don't ask again*; the number is kept in the preferences. `tested-offline` (the

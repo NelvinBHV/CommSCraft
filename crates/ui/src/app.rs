@@ -7,6 +7,9 @@ use crate::views;
 use egui::{Context, Key, KeyboardShortcut, Modifiers, Ui};
 use std::collections::{BTreeMap, BTreeSet};
 
+/// At most this many conversations are reopened after signing in.
+pub const MAX_REOPEN: usize = 20;
+
 /// What the user asks of the adapter. The interface changes its own state (selection, filters,
 /// drafts) itself; everything that needs the session goes out as an intent.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -259,6 +262,10 @@ impl std::fmt::Debug for SignIn {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Prefs {
     pub favorites: BTreeSet<String>,
+    /// Reopen the conversations that were open when signing in again (as the Windows client's
+    /// option); `reopen` holds their peers (addresses only, no content).
+    pub reopen_conversations: bool,
+    pub reopen: Vec<String>,
     /// Ask how to join a meeting's audio (the Join Meeting Audio dialog).
     pub meeting_audio_ask: bool,
     /// The number of "call me at" for a meeting's audio.
@@ -315,6 +322,8 @@ impl Default for Prefs {
             favorites: BTreeSet::new(),
             status_alerts: BTreeSet::new(),
             meeting_audio_ask: true,
+            reopen_conversations: false,
+            reopen: Vec::new(),
             call_me_number: String::new(),
             high_contrast: false,
             scale: 1.0,
@@ -473,6 +482,8 @@ pub struct CommsUi {
     pub(crate) meeting_audio: Option<ConvKey>,
     /// The next meeting that appears asks how to join its audio.
     ask_audio_next: bool,
+    /// The conversations to reopen were reopened (once per run).
+    reopened: bool,
     /// The sound devices the desktop offers: (ALSA name, label).
     pub audio_devices: Vec<(String, String)>,
     /// The star under the pointer in the call rating (0: none).
@@ -544,6 +555,7 @@ impl CommsUi {
             entry_info: None,
             meeting_audio: None,
             ask_audio_next: false,
+            reopened: false,
             audio_devices: Vec::new(),
             rating_hover: 0,
             meeting_dialog: None,
@@ -828,6 +840,39 @@ impl CommsUi {
         self.select_conversation(key);
     }
 
+    /// Signed in: reopen the conversations of last time, once; afterwards keep the list of the
+    /// open 1:1 conversations up to date (only while signed in, so signing out keeps it).
+    fn keep_reopen_list(&mut self) {
+        if self.demo || !self.state.connection.is_online() || self.state.me.uri.is_empty() {
+            return;
+        }
+        if !self.reopened {
+            self.reopened = true;
+            if self.prefs.reopen_conversations {
+                for peer in self.prefs.reopen.clone().iter().take(MAX_REOPEN) {
+                    self.chat_with(peer);
+                }
+            }
+            return;
+        }
+        let open: Vec<String> = if self.prefs.reopen_conversations {
+            self.windows
+                .iter()
+                .filter_map(|w| match w {
+                    Win::Conv(k) => self.state.conversation(*k).and_then(|c| c.peer.clone()),
+                    _ => None,
+                })
+                .take(MAX_REOPEN)
+                .collect()
+        } else {
+            Vec::new()
+        };
+        if open != self.prefs.reopen {
+            self.prefs.reopen = open;
+            self.emit(UiIntent::PrefsChanged);
+        }
+    }
+
     fn shortcuts(&mut self, ctx: &Context) {
         let ctrl = |k| KeyboardShortcut::new(Modifiers::COMMAND, k);
         if ctx.input_mut(|i| i.consume_shortcut(&ctrl(Key::K))) {
@@ -868,6 +913,7 @@ impl CommsUi {
         ctx.set_zoom_factor(self.prefs.scale.clamp(1.0, 2.0));
         self.window_width = ctx.content_rect().width();
         self.shortcuts(ctx);
+        self.keep_reopen_list();
         let signed_out = matches!(
             self.state.connection,
             Connection::SignedOut | Connection::Connecting | Connection::Failed(_)
