@@ -336,6 +336,12 @@ pub fn run(app: &mut DesktopApp, line: &str) {
         "idle" => app.idle_override = arg.trim().parse().ok(),
         // `note TEXT` (empty: remove the note)
         "note" => app.handle(UiIntent::SetNote(arg.trim().to_string())),
+        // `card ADDRESS`: the contact card of this person.
+        "card" => {
+            if let Some(uri) = commscraft_ui::normalise_address(arg.trim()) {
+                app.ui.open_card(&uri);
+            }
+        }
         // `testspeaker` / `testmic`: the device tests of Options › Audio with the kept devices.
         "testspeaker" => app.handle(UiIntent::TestSpeaker {
             device: app.ui.prefs.audio_device.clone(),
@@ -351,7 +357,10 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 app.ui.windows().iter().copied().find(|x| {
                     matches!(
                         (kind, x),
-                        ("conv", Win::Conv(_)) | ("call", Win::Call(_)) | ("options", Win::Options)
+                        ("conv", Win::Conv(_))
+                            | ("call", Win::Call(_))
+                            | ("options", Win::Options)
+                            | ("card", Win::Card)
                     )
                 })
             });

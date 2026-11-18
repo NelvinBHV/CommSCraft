@@ -68,6 +68,11 @@ pub fn show_all(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
     app.windows
         .retain(|w| !matches!(w, Win::Conv(k) if app.state.conversation(*k).is_none()));
     let tabbed = app.prefs.tabbed_conversations && !convs.is_empty();
+    // Where the main window is (known on desktops that tell; not under Wayland).
+    let main_rect = ctx.input(|i| i.viewport().outer_rect);
+    if !wins.contains(&Win::Card) {
+        app.card_dock = None;
+    }
     if tabbed {
         tabbed_window(app, ctx, pal, &convs);
     }
@@ -123,6 +128,20 @@ pub fn show_all(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
             builder.with_window_level(egui::WindowLevel::AlwaysOnTop)
         } else {
             builder
+        };
+        // The contact card docks to the right of the main window, as in the Windows client.
+        let builder = match (w, main_rect) {
+            (Win::Card, Some(r)) => {
+                let at = r.right_top() + egui::vec2(4.0, 0.0);
+                if app.card_dock.is_some_and(|p| p.distance(at) > 1.0) {
+                    ctx.send_viewport_cmd_to(id, egui::ViewportCommand::OuterPosition(at));
+                }
+                app.card_dock = Some(at);
+                builder
+                    .with_position(at)
+                    .with_inner_size([360.0, r.height().clamp(300.0, 900.0)])
+            }
+            _ => builder,
         };
         let focus = app.focus_window == Some(w);
         let pos = [440.0 + 24.0 * i as f32, 10.0 + 24.0 * i as f32];
@@ -1673,12 +1692,18 @@ fn about(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         });
 }
 
+/// The contact card as in the Windows client: picture, name and state, buttons for IM, call,
+/// video and e-mail, then the sections Contact, Organisation and Membership; *More* holds the
+/// rest of the contact menu. It sits beside the main window (where the desktop lets windows be
+/// placed).
 fn card(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     let t = app.t;
     let Some(uri) = app.card.clone() else {
         return;
     };
     let c = app.state.contacts.get(&uri).cloned();
+    let caps = app.state.capabilities.clone();
+    let idle = app.state.active_call().is_none();
     egui::CentralPanel::default()
         .frame(
             Frame::new()
@@ -1689,12 +1714,13 @@ fn card(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             let name = c
                 .as_ref()
                 .map_or_else(|| app.state.name_of(&uri), |c| c.display_name().to_string());
+            let address = uri.trim_start_matches("sip:").to_string();
             ui.horizontal(|ui| {
                 app.avatar(
                     ui,
                     Some(uri.as_str()),
                     &name,
-                    56.0,
+                    64.0,
                     c.as_ref().map(|c| c.presence),
                     pal,
                 );
@@ -1707,25 +1733,102 @@ fn card(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     );
                     if let Some(c) = &c {
                         ui.label(RichText::new(t.presence(c.presence)).color(pal.muted));
+                        if !c.note.is_empty() {
+                            ui.label(RichText::new(&c.note).italics().color(pal.muted));
+                        }
                     }
                 });
             });
             ui.add_space(8.0);
-            if let Some(c) = &c {
-                for (label, v) in [
-                    (t.function, &c.title),
-                    (t.department, &c.department),
-                    (t.company, &c.company),
-                    (t.phone_label, &c.phone),
-                    (t.note_label, &c.note),
-                ] {
-                    if !v.is_empty() {
-                        ui.label(RichText::new(format!("{label}: {v}")).color(pal.ink));
-                    }
+            ui.horizontal(|ui| {
+                if bar_button(ui, t, pal, Icon::Chat, t.send_im, &caps.chat, false).clicked() {
+                    app.chat_with(&uri);
                 }
-            }
-            ui.label(RichText::new(uri.trim_start_matches("sip:")).color(pal.muted));
-            ui.add_space(8.0);
-            ui.horizontal(|ui| crate::views::main_window::contact_menu(app, ui, &uri));
+                let call_gate = if idle {
+                    caps.audio_call.clone()
+                } else {
+                    Gate::Unavailable(crate::model::Reason::NotImplemented)
+                };
+                if bar_button(ui, t, pal, Icon::Phone, t.call, &call_gate, false).clicked() {
+                    app.call(&uri, false);
+                }
+                let video_gate = if idle {
+                    caps.video_call.clone()
+                } else {
+                    Gate::Unavailable(crate::model::Reason::NotImplemented)
+                };
+                if bar_button(ui, t, pal, Icon::Camera, t.video_call, &video_gate, false).clicked()
+                {
+                    app.call(&uri, true);
+                }
+                if ui.button(t.send_email).clicked() {
+                    app.emit(UiIntent::SendEmail {
+                        address: address.clone(),
+                    });
+                }
+                let more = bar_button(
+                    ui,
+                    t,
+                    pal,
+                    Icon::More,
+                    t.more_options,
+                    &Gate::Available,
+                    false,
+                );
+                egui::Popup::menu(&more)
+                    .show(|ui| crate::views::main_window::contact_menu(app, ui, &uri));
+            });
+            ui.separator();
+            let section = |ui: &mut Ui, title: &str, rows: &[(&str, &str)]| {
+                if rows.iter().all(|(_, v)| v.is_empty()) {
+                    return;
+                }
+                ui.add_space(4.0);
+                ui.label(
+                    RichText::new(title)
+                        .size(theme::text::SMALL)
+                        .family(theme::bold())
+                        .color(pal.muted),
+                );
+                for (label, v) in rows.iter().filter(|(_, v)| !v.is_empty()) {
+                    ui.horizontal(|ui| {
+                        ui.label(RichText::new(*label).color(pal.muted));
+                        ui.add(egui::Label::new(RichText::new(*v).color(pal.ink)).wrap());
+                    });
+                }
+            };
+            let (title, department, company, phone, group) =
+                c.as_ref().map_or_else(Default::default, |c| {
+                    (
+                        c.title.clone(),
+                        c.department.clone(),
+                        c.company.clone(),
+                        c.phone.clone(),
+                        c.group.clone(),
+                    )
+                });
+            let state = c
+                .as_ref()
+                .map(|c| t.presence(c.presence).to_string())
+                .unwrap_or_default();
+            section(
+                ui,
+                t.card_contact,
+                &[
+                    (t.card_state, &state),
+                    (t.card_im, &address),
+                    (t.phone_label, &phone),
+                ],
+            );
+            section(
+                ui,
+                t.card_organisation,
+                &[
+                    (t.function, &title),
+                    (t.department, &department),
+                    (t.company, &company),
+                ],
+            );
+            section(ui, t.card_membership, &[(t.card_group, &group)]);
         });
 }

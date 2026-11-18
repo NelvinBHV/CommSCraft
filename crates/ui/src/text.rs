@@ -464,6 +464,12 @@ texts! {
     mic_level: "Pegel", "Level";
     audio_test_body: "Der Lautsprecher spielt einen kurzen Ton; das Mikrofon zeigt fünf Sekunden lang seinen Pegel. Es wird nichts aufgezeichnet oder gesendet.", "The speaker plays a short tone; the microphone shows its level for five seconds. Nothing is recorded or sent.";
     emoticons: "Emoticons", "Emoticons";
+    card_contact: "KONTAKT", "CONTACT";
+    card_state: "Status", "Status";
+    card_im: "Chat", "IM";
+    card_organisation: "ORGANISATION", "ORGANIZATION";
+    card_membership: "MITGLIEDSCHAFT", "MEMBERSHIP";
+    card_group: "Gruppe", "Group";
     presenters: "Referenten", "Presenters";
     attendees: "Teilnehmer", "Attendees";
     sharing_mark: "gibt frei", "sharing";
