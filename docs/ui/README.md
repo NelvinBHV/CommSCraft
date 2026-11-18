@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (end meeting for everyone)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (viewing a meeting share tested in the lab)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -343,8 +343,8 @@ reference designs (1440 × 900), with screenshots of the real build (above).
 | Security | no secrets in logs (the trace prints method or status and CSeq only), the password leaves the form once and is cleared, no TLS bypass, no end-to-end claim (the privacy text says TLS and SRTP are not end-to-end encryption), no chat content on disk |
 | Accessibility | labels on all interactive elements (the tests use them); contrast tested; the Linux screen reader bridge is still missing (AccessKit's adapter on zbus 5 is listed as unmaintained) |
 
-Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): the screen reader bridge, video and screen viewing inside meetings, and drawing
-slides and whiteboard ink. Added after the QA: meeting content with polls and voting (`tested-in-lab`), video calls and viewing screens shared 1:1 (`tested-in-lab`), persistent chat rooms (tested offline), blind transfer and TLS-DSK sign-in (both
+Open after phase 4 (in [`gaps.md`](../gaps.md) row 9): the screen reader bridge and drawing
+slides and whiteboard ink (viewing video and screens inside meetings was added later; a screen a Windows participant shares in a meeting is shown on the stage, `tested-in-lab`). Added after the QA: meeting content with polls and voting (`tested-in-lab`), video calls and viewing screens shared 1:1 (`tested-in-lab`), persistent chat rooms (tested offline), blind transfer and TLS-DSK sign-in (both
 `tested-in-lab`), Kerberos as an option of the sign-in (`tested-in-lab` only its fallback to NTLM:
 the test host has no Kerberos configuration) and the trust dialog for a foreign server domain
 (tested offline: the lab's servers are in its domain).
