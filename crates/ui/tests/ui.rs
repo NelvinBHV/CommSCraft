@@ -783,6 +783,9 @@ fn the_meeting_audio_is_joined_from_a_group_conversation() {
         .any(|i| matches!(i, UiIntent::JoinMeetingVideo { key: k } if *k == key)));
     h.get_by_label("Audio der Besprechung beitreten").click();
     h.run();
+    // Asked first, as in the Windows client: the computer's audio is the preset choice.
+    h.get_by_label("OK").click();
+    h.run();
     assert!(h
         .state()
         .intents
@@ -1122,4 +1125,41 @@ fn the_meeting_entry_info_names_link_and_organizer() {
     h.get_by_label("Schließen").click();
     h.run();
     assert!(h.query_by_label("Organisator").is_none());
+}
+
+#[test]
+fn joining_the_meeting_audio_asks_how() {
+    use commscraft_ui::model::{ConfCommand, ConvState};
+    let mut ui = demo_quiet();
+    let c = ui
+        .state
+        .conversations
+        .iter_mut()
+        .find(|c| c.title == "Projekt Nord")
+        .unwrap();
+    c.state = ConvState::Open;
+    c.session = Some(7);
+    let mut h = harness(ui, BIG);
+    h.run();
+    open_conversation(&mut h, "Projekt Nord");
+    button(&h, "Audio der Besprechung beitreten").click();
+    h.run();
+    h.get_by_label("Mich anrufen unter:").click();
+    h.run();
+    // The number field of the dialog (the conversation's message field is there too).
+    h.query_all_by_role(egui::accesskit::Role::TextInput)
+        .find(|n| n.accesskit_node().placeholder() == Some("+49 …"))
+        .expect("number field")
+        .click();
+    h.run();
+    h.query_all_by_role(egui::accesskit::Role::TextInput)
+        .find(|n| n.accesskit_node().placeholder() == Some("+49 …"))
+        .expect("number field")
+        .type_text("+49 40 123456");
+    h.run();
+    h.get_by_label("OK").click();
+    h.run();
+    assert!(h.state().intents.iter().any(|i| matches!(i,
+        UiIntent::ConferenceCommand { command: ConfCommand::DialOut(n), .. } if n == "+49 40 123456")), "{:?}", h.state().intents);
+    assert!(h.query_by_label("Mich anrufen unter:").is_none());
 }

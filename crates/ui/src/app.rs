@@ -259,6 +259,10 @@ impl std::fmt::Debug for SignIn {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Prefs {
     pub favorites: BTreeSet<String>,
+    /// Ask how to join a meeting's audio (the Join Meeting Audio dialog).
+    pub meeting_audio_ask: bool,
+    /// The number of "call me at" for a meeting's audio.
+    pub call_me_number: String,
     /// Contacts tagged for status change alerts: a notice when they become available.
     pub status_alerts: BTreeSet<String>,
     pub high_contrast: bool,
@@ -310,6 +314,8 @@ impl Default for Prefs {
         Self {
             favorites: BTreeSet::new(),
             status_alerts: BTreeSet::new(),
+            meeting_audio_ask: true,
+            call_me_number: String::new(),
             high_contrast: false,
             scale: 1.0,
             context_open: true,
@@ -463,6 +469,10 @@ pub struct CommsUi {
     pub(crate) meeting_options: Option<(ConvKey, crate::model::MeetingView)>,
     /// The meeting entry info dialog of this conversation.
     pub(crate) entry_info: Option<ConvKey>,
+    /// The Join Meeting Audio dialog of this meeting conversation.
+    pub(crate) meeting_audio: Option<ConvKey>,
+    /// The next meeting that appears asks how to join its audio.
+    ask_audio_next: bool,
     /// The sound devices the desktop offers: (ALSA name, label).
     pub audio_devices: Vec<(String, String)>,
     /// The star under the pointer in the call rating (0: none).
@@ -532,6 +542,8 @@ impl CommsUi {
             close_tabs_question: false,
             meeting_options: None,
             entry_info: None,
+            meeting_audio: None,
+            ask_audio_next: false,
             audio_devices: Vec::new(),
             rating_hover: 0,
             meeting_dialog: None,
@@ -750,6 +762,9 @@ impl CommsUi {
         if new_group {
             self.select_next_group = false;
             if let Some(k) = session.and_then(|s| self.state.key_of_session(s)) {
+                if std::mem::take(&mut self.ask_audio_next) {
+                    self.meeting_audio = Some(k);
+                }
                 self.select_conversation(k);
             }
         }
@@ -762,6 +777,14 @@ impl CommsUi {
                 | UiIntent::JoinMeeting { .. }
                 | UiIntent::AcceptInvitation { .. }
         ) {
+            self.select_next_group = true;
+        }
+        // Joining a meeting asks how to join its audio, as the Windows client does.
+        if matches!(
+            i,
+            UiIntent::JoinMeeting { .. } | UiIntent::JoinMeetingLink { .. }
+        ) {
+            self.ask_audio_next = self.prefs.meeting_audio_ask;
             self.select_next_group = true;
         }
         self.intents.push(i);
@@ -863,6 +886,7 @@ impl CommsUi {
             views::main_window::history_reader(self, ctx);
             views::conv_window::meeting_options_dialog(self, ctx);
             views::conv_window::entry_info_dialog(self, ctx);
+            views::conv_window::meeting_audio_dialog(self, ctx);
             views::conv_window::show_all(self, ctx, &pal);
         }
         std::mem::take(&mut self.intents)
