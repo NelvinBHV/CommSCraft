@@ -150,7 +150,7 @@ fn page_ui(
     match page {
         0 => {
             group(ui, pal, t.opt_conversation_window, |ui| {
-                missing(ui, t, t.opt_reopen_conversations, ni);
+                ui.checkbox(&mut p.reopen_conversations, t.opt_reopen_conversations);
             });
             group(ui, pal, t.opt_language, |ui| {
                 ui.radio_value(&mut p.lang, Lang::De, "Deutsch");
@@ -250,7 +250,6 @@ fn page_ui(
             // The server's policy, when it sets one, decides; this is the user's choice.
             ui.checkbox(&mut p.save_history, t.opt_save_history);
             ui.checkbox(&mut p.tabbed_conversations, t.opt_tabbed);
-            ui.checkbox(&mut p.reopen_conversations, t.opt_reopen);
             missing(ui, t, t.opt_spelling, ni);
             missing(ui, t, t.opt_emoticons, ni);
             missing(ui, t, t.opt_tabs, ni);
