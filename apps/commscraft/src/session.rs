@@ -1509,6 +1509,18 @@ impl Session {
                 out.notice(NoticeKind::Info, format!("video: {n}"));
                 Vec::new()
             }
+            // Our own camera picture for the self view.
+            V::SelfFrame(id, width, height, rgba) => {
+                if let Some(call) = self.call_of_video(id) {
+                    out.event(AppEvent::VideoFrame {
+                        call: call | commscraft_ui::model::SELF_VIEW,
+                        width,
+                        height,
+                        rgba,
+                    });
+                }
+                Vec::new()
+            }
             // A received picture (embedded in the conversation window): video or shared window.
             V::Frame(id, width, height, rgba) => {
                 let call = self
@@ -2901,6 +2913,12 @@ impl Session {
                     session: conversation,
                     title: self.group_title(conversation),
                 });
+                if let Some(focus) = self.engine.conference_focus(conversation) {
+                    out.event(AppEvent::ConferenceFocus {
+                        session: conversation,
+                        focus,
+                    });
+                }
                 // CA-13: the others that send video are the candidates for the meeting video.
                 let me = self.engine.own_aor().to_ascii_lowercase();
                 let candidates: Vec<u32> = participants

@@ -63,6 +63,12 @@ pub fn parse(text: &str) -> Prefs {
             "sort_by_availability" => p.sort_by_availability = v == "true",
             "away_group" => p.away_group = v == "true",
             "favorites_group" => p.favorites_group = v != "false",
+            "status_alert"
+                if commscraft_ui::normalise_address(v).as_deref() == Some(v)
+                    && p.status_alerts.len() < MAX_FAVORITES =>
+            {
+                p.status_alerts.insert(v.to_string());
+            }
             "message_alerts" => p.message_alerts = v != "false",
             "quiet_when_dnd" => p.quiet_when_dnd = v != "false",
             "sounds" => p.sounds = v != "false",
@@ -166,6 +172,14 @@ pub fn format(p: &Prefs) -> String {
     {
         out.push_str(&format!("favorite={f}\n"));
     }
+    for a in p
+        .status_alerts
+        .iter()
+        .filter(|a| commscraft_ui::normalise_address(a).as_deref() == Some(a.as_str()))
+        .take(MAX_FAVORITES)
+    {
+        out.push_str(&format!("status_alert={a}\n"));
+    }
     out
 }
 
@@ -255,6 +269,7 @@ mod tests {
         p.favorites
             .insert("room:ma-chan://beispiel.invalid/ab-12".into());
         p.favorites.insert("sip:anna@beispiel.invalid".into());
+        p.status_alerts.insert("sip:anna@beispiel.invalid".into());
         p.favorites.insert("group:Projekt Nord".into());
         let back = parse(&format(&p));
         assert_eq!(back, p);

@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (call lines in the conversation)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (contact menu, meeting entry info, self view)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -101,6 +101,16 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   (attended: the consultation call is replaced); after a connected call a bar asks for a rating
   of one to five stars when the server names a quality service (sent as the rating report).
   `tested-in-lab` (rating), attended transfer `tested-offline` in the interface.
+- **Contact menu as in the Windows client:** besides IM, calls, groups and favourites: *Send an
+  e-mail message* (the system's mail program through `xdg-open mailto:`, plain addresses only),
+  *Copy* (name and address), *Find previous conversations* (the Exchange history filtered by the
+  contact), *Tag for status change alerts* (a notice when a tagged contact becomes available,
+  kept in the preferences) and the privacy relationships with a description each. `tested-offline`.
+- **Self view:** during a video call our own camera picture is shown small in the lower right
+  corner of the stage, as in the Windows client (about five pictures a second, at most 320×180,
+  taken from the pictures the encoder gets anyway). `tested-in-lab`.
+- **Meeting entry info:** the conversation's *More* menu shows the meeting link (or the
+  conference URI) and the organizer, with *Copy all info*. `tested-offline`.
 - **Call lines in the conversation:** as the Windows client does, a 1:1 call writes centred lines
   into its conversation – "Call connected." and "Call ended. N minutes" (rounded up) with the
   time; previews of the conversation list and the tabs skip them. `tested-offline`.

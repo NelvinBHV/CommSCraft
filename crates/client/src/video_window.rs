@@ -205,6 +205,15 @@ pub fn set_embedded(on: bool) {
     EMBEDDED.store(on, Ordering::Relaxed);
 }
 
+/// Whether received video (and the self view) go back to the client as pictures.
+pub fn embedded() -> bool {
+    EMBEDDED.load(Ordering::Relaxed)
+}
+
+/// The self view's size: a small picture in the corner of the stage.
+pub const SELF_VIEW_WIDTH: u32 = 320;
+pub const SELF_VIEW_HEIGHT: u32 = 180;
+
 /// An I420 picture as RGBA no larger than `max_w × max_h` (aspect kept, nearest sampling;
 /// BT.601 limited range). `None` for a picture whose data does not fit its size.
 pub fn rgba_of_i420(p: &vf::Picture, max_w: u32, max_h: u32) -> Option<(u32, u32, Vec<u8>)> {

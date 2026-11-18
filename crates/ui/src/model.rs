@@ -405,6 +405,8 @@ pub struct Conversation {
     pub sharer: Option<String>,
     /// The meeting's options, once its focus reported them.
     pub meeting: Option<MeetingView>,
+    /// The conference URI of the meeting's focus, once known.
+    pub focus: Option<String>,
     pub messages: VecDeque<Message>,
     pub unread: usize,
     pub typing: bool,
@@ -554,6 +556,9 @@ pub struct Meeting {
     /// The https join link, when the server names it.
     pub join_url: Option<String>,
 }
+
+/// Added to a call's ID for its self view (our own camera picture) in [`AppState::video`].
+pub const SELF_VIEW: u32 = 0x8000_0000;
 
 /// The latest received picture of a call (RGBA), shown in its conversation window.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -755,6 +760,11 @@ pub enum AppEvent {
     },
     /// Calls can be rated (the server has a quality service).
     QualityRating(bool),
+    /// The focus (conference URI) of a group conversation.
+    ConferenceFocus {
+        session: u32,
+        focus: String,
+    },
     /// The options of the meeting of a group conversation.
     MeetingSettings {
         session: u32,
@@ -1099,6 +1109,7 @@ impl AppState {
             participants: Vec::new(),
             sharer: None,
             meeting: None,
+            focus: None,
             messages: VecDeque::new(),
             unread: 0,
             typing: false,
@@ -1169,6 +1180,7 @@ impl AppState {
 
     fn end_call(&mut self, id: u32, status: u16, at: u64) {
         self.video.remove(&id);
+        self.video.remove(&(id | SELF_VIEW));
         if let Some(call) = self
             .calls
             .iter()
@@ -1584,6 +1596,11 @@ impl AppState {
             }
             AppEvent::MeetingCancelled(id) => self.meetings.retain(|m| m.conference_id != id),
             AppEvent::QualityRating(on) => self.quality_rating = on,
+            AppEvent::ConferenceFocus { session, focus } => {
+                if let Some(c) = self.by_session(session) {
+                    c.focus = Some(label(&focus));
+                }
+            }
             AppEvent::MeetingSettings { session, view } => {
                 if let Some(c) = self.by_session(session) {
                     c.meeting = Some(view);
@@ -1600,7 +1617,7 @@ impl AppState {
                     && width <= 2048
                     && height <= 2048
                     && rgba.len() == width as usize * height as usize * 4;
-                if fits && self.calls.iter().any(|c| c.id == call) {
+                if fits && self.calls.iter().any(|c| c.id == call & !SELF_VIEW) {
                     let seq = self.video.get(&call).map_or(1, |f| f.seq.wrapping_add(1));
                     self.video.insert(
                         call,

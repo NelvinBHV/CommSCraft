@@ -104,6 +104,32 @@ fn parse_pcm(text: &str) -> Vec<(String, String)> {
         .collect()
 }
 
+/// Opens the system's mail program for this address (`xdg-open mailto:`); only plain addresses
+/// pass, so nothing else reaches the command line.
+pub fn send_email(address: &str) {
+    if !valid_mail(address) {
+        return;
+    }
+    let _ = std::process::Command::new("xdg-open")
+        .arg(format!("mailto:{address}"))
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn();
+}
+
+fn valid_mail(a: &str) -> bool {
+    let Some((user, host)) = a.split_once('@') else {
+        return false;
+    };
+    a.len() <= 254
+        && !user.is_empty()
+        && host.contains('.')
+        && !a.starts_with('-')
+        && a.chars()
+            .all(|c| c.is_ascii_alphanumeric() || "@._+-".contains(c))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -157,5 +183,14 @@ mod tests {
         assert!(entry("/usr/bin/commscraft")
             .unwrap()
             .contains("Exec=\"/usr/bin/commscraft\""));
+    }
+
+    #[test]
+    fn only_plain_mail_addresses_reach_the_mail_program() {
+        assert!(valid_mail("bob@beispiel.invalid"));
+        assert!(!valid_mail("bob"));
+        assert!(!valid_mail("-x@beispiel.invalid"));
+        assert!(!valid_mail("a@b.c?subject=x"));
+        assert!(!valid_mail("a b@beispiel.invalid"));
     }
 }

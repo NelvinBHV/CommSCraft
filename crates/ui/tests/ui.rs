@@ -1060,3 +1060,66 @@ fn a_presenter_changes_the_meeting_options() {
         }
     )));
 }
+
+#[test]
+fn a_tagged_contact_becoming_available_raises_an_alert() {
+    use commscraft_ui::model::Presence;
+    let mut ui = demo_quiet();
+    let (uri, name) = ui
+        .state
+        .contacts
+        .values()
+        .find(|c| c.presence != Presence::Available)
+        .map(|c| (c.uri.clone(), c.name.clone()))
+        .unwrap();
+    ui.prefs.status_alerts.insert(uri.clone());
+    let before = ui.state.notices.len();
+    ui.apply(AppEvent::Presence {
+        uri: uri.clone(),
+        presence: Some(Presence::Available),
+        note: String::new(),
+        name: None,
+    });
+    assert_eq!(ui.state.notices.len(), before + 1);
+    assert!(ui.state.notices.back().unwrap().text.contains(&name));
+    // Already available: no second alert.
+    ui.apply(AppEvent::Presence {
+        uri,
+        presence: Some(Presence::Available),
+        note: String::new(),
+        name: None,
+    });
+    assert_eq!(ui.state.notices.len(), before + 1);
+}
+
+#[test]
+fn the_meeting_entry_info_names_link_and_organizer() {
+    use commscraft_ui::model::ConvState;
+    let mut ui = demo_quiet();
+    let c = ui
+        .state
+        .conversations
+        .iter_mut()
+        .find(|c| c.title == "Projekt Nord")
+        .unwrap();
+    c.state = ConvState::Open;
+    c.session = Some(6);
+    ui.state.apply(AppEvent::ConferenceFocus {
+        session: 6,
+        focus: "sip:anna@beispiel.invalid;gruu;opaque=app:conf:focus:id:AB12".into(),
+    });
+    let mut h = harness(ui, BIG);
+    h.run();
+    open_conversation(&mut h, "Projekt Nord");
+    h.get_by_label("Weitere Optionen").click();
+    h.run();
+    h.get_by_label("Besprechungsinfos").click();
+    h.run();
+    assert!(h.query_by_label("Organisator").is_some());
+    assert!(h
+        .query_by_label_contains("opaque=app:conf:focus:id:AB12")
+        .is_some());
+    h.get_by_label("Schließen").click();
+    h.run();
+    assert!(h.query_by_label("Organisator").is_none());
+}

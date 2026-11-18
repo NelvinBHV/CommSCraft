@@ -538,3 +538,32 @@ fn a_call_writes_its_connected_and_ended_lines_into_the_conversation() {
         vec!["connected".to_string(), "ended 120".to_string()]
     );
 }
+
+#[test]
+fn the_self_view_belongs_to_its_call_and_goes_with_it() {
+    use commscraft_ui::model::SELF_VIEW;
+    let mut s = online();
+    s.apply(AppEvent::CallStarted {
+        id: 4,
+        peer: "sip:bob@beispiel.invalid".into(),
+        incoming: false,
+        at: 100,
+    });
+    let frame = |call| AppEvent::VideoFrame {
+        call,
+        width: 2,
+        height: 1,
+        rgba: vec![0; 8],
+    };
+    s.apply(frame(4 | SELF_VIEW));
+    assert!(s.video.contains_key(&(4 | SELF_VIEW)));
+    // Not for a call that does not exist.
+    s.apply(frame(9 | SELF_VIEW));
+    assert!(!s.video.contains_key(&(9 | SELF_VIEW)));
+    s.apply(AppEvent::CallEnded {
+        id: 4,
+        status: 0,
+        at: 120,
+    });
+    assert!(!s.video.contains_key(&(4 | SELF_VIEW)));
+}

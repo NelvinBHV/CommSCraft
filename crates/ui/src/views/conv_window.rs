@@ -775,6 +775,55 @@ pub fn meeting_options_dialog(app: &mut CommsUi, ctx: &egui::Context) {
     }
 }
 
+/// The meeting's link and organizer, as the Windows client's *Meeting Entry Info*. The organizer
+/// is the address part of the focus URI (inference: the form of all [MS-CONFBAS] examples,
+/// `sip:organizer;gruu;opaque=app:conf:focus:id:…`).
+pub fn entry_info_dialog(app: &mut CommsUi, ctx: &egui::Context) {
+    let t = app.t;
+    let Some(key) = app.entry_info else {
+        return;
+    };
+    let Some(focus) = app.state.conversation(key).and_then(|c| c.focus.clone()) else {
+        app.entry_info = None;
+        return;
+    };
+    let organizer_uri = focus.split(';').next().unwrap_or("").to_string();
+    let organizer = app.state.name_of(&organizer_uri);
+    let link = app
+        .state
+        .meetings
+        .iter()
+        .find(|m| m.focus.eq_ignore_ascii_case(&focus))
+        .and_then(|m| m.join_url.clone());
+    let mut open = true;
+    egui::Modal::new(egui::Id::unique("entry-info")).show(ctx, |ui| {
+        ui.set_width(420.0);
+        ui.label(RichText::new(t.meeting_entry_info).size(theme::text::HEADING));
+        ui.add_space(6.0);
+        let shown_link = link.clone().unwrap_or_else(|| focus.clone());
+        ui.label(RichText::new(t.meeting_link_label).strong());
+        ui.add(egui::Label::new(&shown_link).wrap());
+        ui.add_space(4.0);
+        ui.label(RichText::new(t.organizer).strong());
+        ui.label(&organizer);
+        ui.add_space(8.0);
+        ui.horizontal(|ui| {
+            if ui.button(t.copy_all_info).clicked() {
+                ui.ctx().copy_text(format!(
+                    "{}: {shown_link}\n{}: {organizer}",
+                    t.meeting_link_label, t.organizer
+                ));
+            }
+            if ui.button(t.close).clicked() {
+                open = false;
+            }
+        });
+    });
+    if !open {
+        app.entry_info = None;
+    }
+}
+
 /// Present: what can be shown to the others (sharing our own screen is not built).
 fn present_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
     let t = app.t;
@@ -884,6 +933,10 @@ fn more_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
             app.toggle_favorite(id);
             ui.close();
         }
+    }
+    if c.is_group() && c.focus.is_some() && ui.button(t.meeting_entry_info).clicked() {
+        app.entry_info = Some(key);
+        ui.close();
     }
     // A presenter's meeting commands.
     let me = app.state.me.uri.clone();
@@ -1024,10 +1077,16 @@ fn stage(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, call: &Call, title: &str
     };
     let light = egui::Color32::from_gray(235);
     let state = crate::views::calls::state_text(app, call.state, call.held, call.kind);
+    // State on the right, the name in what is left (shortened in a narrow window).
     ui.horizontal(|ui| {
-        ui.label(RichText::new(&name).size(theme::text::HEADING).color(light));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             ui.label(RichText::new(&state).size(theme::text::SMALL).color(light));
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                ui.add(
+                    egui::Label::new(RichText::new(&name).size(theme::text::HEADING).color(light))
+                        .truncate(),
+                );
+            });
         });
     });
     let controls_h = 46.0;
@@ -1058,6 +1117,7 @@ fn stage(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, call: &Call, title: &str
             ui.ctx()
                 .request_repaint_after(std::time::Duration::from_millis(66));
         }
+
         None => {
             let mut child = ui.new_child(
                 egui::UiBuilder::new()
@@ -1075,6 +1135,28 @@ fn stage(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, call: &Call, title: &str
                 child.label(RichText::new(n).size(theme::text::SMALL).color(light));
             }
         }
+    }
+    // The self view: our own camera picture in the lower right corner, as in the Windows client.
+    if let Some(tex) = video_texture(app, ui, call.id | crate::model::SELF_VIEW) {
+        let size = tex.size_vec2();
+        let w = (rect.width() * 0.22).clamp(80.0, 240.0);
+        let shown_size = egui::vec2(w, w * size.y / size.x.max(1.0));
+        let shown = egui::Rect::from_min_size(
+            rect.right_bottom() - shown_size - egui::vec2(10.0, 10.0),
+            shown_size,
+        );
+        ui.painter().image(
+            tex.id(),
+            shown,
+            egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+            egui::Color32::WHITE,
+        );
+        ui.painter().rect_stroke(
+            shown,
+            0.0,
+            egui::Stroke::new(1.0, light),
+            egui::StrokeKind::Outside,
+        );
     }
     ui.horizontal_centered(|ui| stage_controls(app, ui, pal, call, connected, &caps));
 }
