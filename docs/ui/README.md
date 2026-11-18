@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (emoticons)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (contact card as in the Windows client)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -96,6 +96,10 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   microphone for calls separately, as the Windows client does – each the system's default
   (PipeWire) or a device ALSA lists (`/proc/asound/pcm`, playback or capture). A chosen
   microphone is opened also where PipeWire has no usable default source (`tested-in-lab`).
+- **Contact card:** as in the Windows client, beside the main window (where the desktop lets
+  windows be placed; under Wayland the compositor places it): picture, name, state and note,
+  buttons for IM, call, video and e-mail, *More* with the contact menu, and the sections Contact,
+  Organization and Membership. `tested-in-lab`.
 - **Emoticons:** the composer's *Emoticons* picker writes the common text codes (`:)`, `(y)`,
   `<3` …), which the Windows client shows as its own pictures (`tested-in-lab`); in our
   conversations a code that stands alone is shown as the emoji of the system's emoji font

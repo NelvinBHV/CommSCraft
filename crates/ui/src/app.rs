@@ -505,6 +505,8 @@ pub struct CommsUi {
     pub(crate) options_page: usize,
     pub(crate) prefs_draft: Option<Prefs>,
     pub(crate) card: Option<String>,
+    /// Where the docked contact card was put last (moved along with the main window).
+    pub(crate) card_dock: Option<egui::Pos2>,
     pub(crate) participants_open: BTreeSet<ConvKey>,
     /// Message notifications the user ignored: conversation and its message count then.
     pub(crate) toasts_seen: BTreeSet<(ConvKey, usize)>,
@@ -573,6 +575,7 @@ impl CommsUi {
             options_page: 0,
             prefs_draft: None,
             card: None,
+            card_dock: None,
             participants_open: BTreeSet::new(),
             toasts_seen: BTreeSet::new(),
             call_windows_opened: BTreeSet::new(),

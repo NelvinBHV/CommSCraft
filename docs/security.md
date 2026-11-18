@@ -1,6 +1,6 @@
 # Security by design
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (emoticons)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (contact card as in the Windows client)
 
 CommSCraft handles passwords, Kerberos tickets, NTLM session keys and SRTP keys. It talks to
 servers and peers it cannot trust. Security is part of every design decision, not a later review.

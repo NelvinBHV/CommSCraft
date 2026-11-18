@@ -1243,3 +1243,37 @@ fn the_emoticon_picker_writes_the_code() {
         .key;
     assert_eq!(h.state().ui.draft(key), Some(":) "));
 }
+
+#[test]
+fn the_contact_card_has_the_sections_of_the_windows_client() {
+    let mut ui = demo_quiet();
+    let uri = ui
+        .state
+        .contacts
+        .values()
+        .find(|c| c.name == "Max Richter")
+        .map(|c| c.uri.clone())
+        .unwrap();
+    if let Some(c) = ui.state.contacts.get_mut(&uri) {
+        c.title = "Einkauf".into();
+        c.group = "Team".into();
+    }
+    ui.open_card(&uri);
+    let mut h = harness(ui, BIG);
+    h.run();
+    h.run();
+    for label in [
+        "KONTAKT",
+        "ORGANISATION",
+        "MITGLIEDSCHAFT",
+        "Einkauf",
+        "Team",
+    ] {
+        assert!(h.query_by_label(label).is_some(), "{label}");
+    }
+    button(&h, "E-Mail senden").click();
+    h.run();
+    assert!(h.state().intents.iter().any(
+        |i| matches!(i, UiIntent::SendEmail { address } if address.starts_with("max.richter@"))
+    ));
+}
