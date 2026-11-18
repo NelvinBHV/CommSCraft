@@ -1,6 +1,6 @@
 # Where CommSCraft falls short of the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: read the conversation history from Exchange)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: the meeting video asks for a sender's source)
 
 The work list, ranked by how much each item blocks the alpha gate in
 [`roadmap.md`](roadmap.md#alpha-gate-core-workflows) (**A** = blocks alpha). Each entry says what is
