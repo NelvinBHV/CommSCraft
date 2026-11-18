@@ -477,6 +477,7 @@ texts! {
     add_outside_organisation: "Kontakt außerhalb meiner Organisation hinzufügen", "Add a contact not in my organization";
     add_by_address: "Per Adresse …", "By address …";
     display_options: "Anzeigeoptionen", "Display options";
+    copy_to_group: "Kontakt kopieren nach", "Copy contact to";
     presenters: "Referenten", "Presenters";
     attendees: "Teilnehmer", "Attendees";
     sharing_mark: "gibt frei", "sharing";

@@ -1344,3 +1344,21 @@ fn the_add_menu_has_the_entries_of_the_windows_client() {
     h.run();
     assert!(h.state().ui.windows().contains(&Win::Options));
 }
+
+#[test]
+fn a_contact_is_copied_to_another_group_and_shown_in_both() {
+    let mut ui = online();
+    ui.state
+        .apply(AppEvent::Groups(vec!["Team".into(), "Projekt".into()]));
+    let mut c = commscraft_ui::model::Contact::new(
+        "sip:bob@beispiel.invalid",
+        "Bob",
+        commscraft_ui::model::Source::ContactList,
+    );
+    c.group = "Team".into();
+    c.more_groups = vec!["Projekt".into()];
+    ui.state.apply(AppEvent::Contacts(vec![c]));
+    let mut h = harness(ui, BIG);
+    h.run();
+    assert_eq!(h.query_all_by_label("Bob").count(), 2);
+}

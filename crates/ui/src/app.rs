@@ -159,6 +159,11 @@ pub enum UiIntent {
         uri: String,
     },
     /// Put a contact into this group (instead of its present groups).
+    /// Put the contact into this group as well.
+    CopyContact {
+        uri: String,
+        group: String,
+    },
     MoveContact {
         uri: String,
         group: String,

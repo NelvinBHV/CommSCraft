@@ -245,6 +245,8 @@ pub struct Contact {
     pub presence: Presence,
     pub note: String,
     pub group: String,
+    /// Further groups of the contact list it is in as well ("copy contact to").
+    pub more_groups: Vec<String>,
     pub source: Source,
     /// In the server's favourites group.
     pub pinned: bool,
@@ -262,6 +264,7 @@ impl Contact {
             presence: Presence::Unknown,
             note: String::new(),
             group: String::new(),
+            more_groups: Vec::new(),
             source,
             pinned: false,
         }

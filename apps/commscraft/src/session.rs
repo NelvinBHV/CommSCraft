@@ -392,13 +392,21 @@ pub fn contacts_of(l: &pres::ContactList) -> Vec<Contact> {
         .map(|c| {
             let mut k = Contact::new(&c.uri, &c.name, Source::ContactList);
             k.pinned = c.groups.iter().any(|g| pinned.contains(g));
-            k.group = c
+            // "~" is the default group ("other contacts", shown without a name).
+            let names: Vec<String> = c
                 .groups
                 .iter()
-                .find_map(|g| groups.get(g))
-                .filter(|n| **n != "~")
-                .map(|n| n.to_string())
-                .unwrap_or_default();
+                .filter_map(|g| groups.get(g))
+                .map(|n| {
+                    if *n == "~" {
+                        String::new()
+                    } else {
+                        n.to_string()
+                    }
+                })
+                .collect();
+            k.group = names.first().cloned().unwrap_or_default();
+            k.more_groups = names.into_iter().skip(1).take(64).collect();
             k
         })
         .collect()
@@ -591,6 +599,12 @@ pub enum ContactChange {
         uri: String,
         group: String,
     },
+    /// Into a further group, keeping the others ([MS-SIP] §2.2.4.2: a contact's groups are a
+    /// list).
+    Copy {
+        uri: String,
+        group: String,
+    },
     AddGroup {
         name: String,
     },
@@ -660,6 +674,25 @@ pub fn contact_command(l: Option<&pres::ContactList>, c: ContactChange) -> Resul
                 })
                 .collect();
             groups.push(target);
+            C::EditContacts(pres::ContactEdit::Set {
+                uri,
+                name: c.name.clone(),
+                groups,
+                subscribed: c.subscribed,
+            })
+        }
+        ContactChange::Copy { uri, group } => {
+            let l = l.ok_or("the contact list is not loaded yet")?;
+            let c = l
+                .contacts
+                .iter()
+                .find(|c| c.uri == uri)
+                .ok_or("not in the contact list")?;
+            let target = plain(&group).ok_or("no such group")?;
+            let mut groups = c.groups.clone();
+            if !groups.contains(&target) {
+                groups.push(target);
+            }
             C::EditContacts(pres::ContactEdit::Set {
                 uri,
                 name: c.name.clone(),
@@ -3433,7 +3466,7 @@ mod tests {
                 pres::Contact {
                     uri: "sip:b@beispiel.invalid".into(),
                     name: String::new(),
-                    groups: vec![1],
+                    groups: vec![1, 2],
                     subscribed: true,
                     extension: false,
                 },
@@ -3442,7 +3475,10 @@ mod tests {
         };
         let c = contacts_of(&l);
         assert_eq!(c[0].group, "Team");
+        assert!(c[0].more_groups.is_empty());
+        // In the default group and copied to "Team".
         assert_eq!(c[1].group, "");
+        assert_eq!(c[1].more_groups, vec!["Team".to_string()]);
         assert_eq!(c[1].display_name(), "b@beispiel.invalid");
     }
 
@@ -3543,6 +3579,29 @@ mod tests {
         assert!(
             matches!(moved, Ok(C::EditContacts(pres::ContactEdit::Set { groups, name, .. })) if groups == vec![2, 3] && name == "Bob")
         );
+        // Copying keeps every group and adds the new one (once).
+        let before = l
+            .contacts
+            .iter()
+            .find(|c| c.uri == "sip:bob@beispiel.invalid")
+            .unwrap()
+            .groups
+            .clone();
+        let copy = |group: &str| {
+            contact_command(
+                Some(&l),
+                ContactChange::Copy {
+                    uri: "sip:bob@beispiel.invalid".into(),
+                    group: group.into(),
+                },
+            )
+        };
+        let mut expected = before.clone();
+        expected.push(3);
+        assert!(
+            matches!(copy("Team"), Ok(C::EditContacts(pres::ContactEdit::Set { groups, .. })) if groups == expected)
+        );
+        assert!(copy("Nicht da").is_err());
         assert!(contact_command(
             Some(&l),
             ContactChange::DeleteGroup {
