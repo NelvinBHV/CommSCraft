@@ -120,6 +120,8 @@ pub enum ConferenceAction {
     Remove {
         user: String,
     },
+    /// End the meeting for everyone (deleteConference to the focus, [MS-CONFBAS] §3.9).
+    End,
     /// Mute or unmute another participant's audio.
     MuteUser {
         user: String,

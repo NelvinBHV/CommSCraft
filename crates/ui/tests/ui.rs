@@ -1277,3 +1277,51 @@ fn the_contact_card_has_the_sections_of_the_windows_client() {
         |i| matches!(i, UiIntent::SendEmail { address } if address.starts_with("max.richter@"))
     ));
 }
+
+#[test]
+fn ending_the_meeting_asks_first() {
+    use commscraft_ui::model::{ConfCommand, ConvState, Participant};
+    let mut ui = demo_quiet();
+    let me = ui.state.me.uri.clone();
+    let c = ui
+        .state
+        .conversations
+        .iter_mut()
+        .find(|c| c.title == "Projekt Nord")
+        .unwrap();
+    c.state = ConvState::Open;
+    c.session = Some(8);
+    c.participants = vec![Participant {
+        uri: me,
+        name: String::new(),
+        presenter: true,
+        waiting: false,
+        muted: None,
+        in_chat: true,
+        video: false,
+        sharing: false,
+    }];
+    let mut h = harness(ui, BIG);
+    h.run();
+    open_conversation(&mut h, "Projekt Nord");
+    h.get_by_label("Weitere Optionen").click();
+    h.run();
+    h.get_by_label("Besprechung beenden …").click();
+    h.run();
+    assert!(!h.state().intents.iter().any(|i| matches!(
+        i,
+        UiIntent::ConferenceCommand {
+            command: ConfCommand::End,
+            ..
+        }
+    )));
+    h.get_by_label("OK").click();
+    h.run();
+    assert!(h.state().intents.iter().any(|i| matches!(
+        i,
+        UiIntent::ConferenceCommand {
+            command: ConfCommand::End,
+            ..
+        }
+    )));
+}

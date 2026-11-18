@@ -470,6 +470,9 @@ texts! {
     card_organisation: "ORGANISATION", "ORGANIZATION";
     card_membership: "MITGLIEDSCHAFT", "MEMBERSHIP";
     card_group: "Gruppe", "Group";
+    end_meeting: "Besprechung beenden", "End meeting";
+    end_meeting_dots: "Besprechung beenden …", "End meeting …";
+    end_meeting_question: "Damit endet die Besprechung für alle Teilnehmer. Fortfahren?", "This ends the meeting for all participants. Continue?";
     presenters: "Referenten", "Presenters";
     attendees: "Teilnehmer", "Attendees";
     sharing_mark: "gibt frei", "sharing";

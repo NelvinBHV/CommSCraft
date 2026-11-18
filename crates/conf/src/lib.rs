@@ -552,6 +552,22 @@ impl Settings {
     }
 }
 
+/// deleteConference to the focus ([MS-CONFBAS] v20250520 §2.2.3.13 with its example, p. 44;
+/// §3.9, p. 107): ends the conference, ejects all participants and deactivates its MCUs; it
+/// does not change the provisioning state (the meeting can be joined again later).
+pub fn end_conference(request_id: u32, from: &str, focus: &str) -> Result<String, Error> {
+    let focus_c = uri(focus)?;
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<deleteConference><conferenceKeys confEntity=\"{}\"/></deleteConference>",
+            escape(&focus_c)
+        ),
+    )
+}
+
 /// deleteUser ([MS-CONFBAS] §2.2.3.11 with its example): remove a participant.
 pub fn delete_user(request_id: u32, from: &str, focus: &str, user: &str) -> Result<String, Error> {
     let focus_c = uri(focus)?;

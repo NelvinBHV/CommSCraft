@@ -5787,3 +5787,24 @@ fn the_first_message_rides_in_the_invite_and_follows_as_message() {
         .next()
         .is_none());
 }
+
+/// Ending the meeting for everyone: deleteConference to the focus in its dialog ([MS-CONFBAS]
+/// §2.2.3.13, §3.9).
+#[test]
+fn ending_the_meeting_sends_delete_conference_to_the_focus() {
+    let (mut e, _, focus_invite, conversation) = joined_meeting(PRESENTER_ROSTER);
+    let out = e.command(
+        Command::ConferenceControl {
+            conversation,
+            action: ConferenceAction::End,
+        },
+        NOW,
+    );
+    let info = find(&out, "INFO");
+    assert_eq!(info.call_id().unwrap(), focus_invite.call_id().unwrap());
+    let b = String::from_utf8(info.body.clone()).unwrap();
+    assert!(
+        b.contains("<deleteConference><conferenceKeys confEntity="),
+        "{b}"
+    );
+}

@@ -1127,6 +1127,14 @@ impl<R: Random> Engine<R> {
                     out,
                 );
             }
+            ConferenceAction::End => {
+                self.send_c3p(
+                    id,
+                    |r, f, focus, _| conf::end_conference(r, f, focus),
+                    now,
+                    out,
+                );
+            }
             ConferenceAction::Remove { user } => {
                 self.send_c3p(
                     id,

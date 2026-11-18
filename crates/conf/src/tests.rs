@@ -443,6 +443,10 @@ fn presenter_commands() {
     assert!(b.contains(&format!("<modifyUserRoles><userKeys confEntity=\"{FOCUS}\" userEntity=\"sip:cathy@fabrikam.com\"/><user-roles xmlns=\"{NS_CI}\"><entry>presenter</entry></user-roles></modifyUserRoles>")));
     let b = modify_conference_lock(7, me, FOCUS, true).unwrap();
     assert!(b.contains(&format!("<modifyConferenceLock><conferenceKeys confEntity=\"{FOCUS}\"/><locked>true</locked></modifyConferenceLock>")));
+    let b = end_conference(10, me, FOCUS).unwrap();
+    assert!(b.contains(&format!(
+        "<deleteConference><conferenceKeys confEntity=\"{FOCUS}\"/></deleteConference>"
+    )));
     let b = delete_user(8, me, FOCUS, "sip:cathy@fabrikam.com").unwrap();
     assert!(b.contains(&format!("<deleteUser><userKeys confEntity=\"{FOCUS}\" userEntity=\"sip:cathy@fabrikam.com\"/></deleteUser>")));
     let b = mute_audience(9, me, FOCUS, AV, true).unwrap();

@@ -901,6 +901,37 @@ pub fn meeting_audio_dialog(app: &mut CommsUi, ctx: &egui::Context) {
     }
 }
 
+/// "This ends the meeting for everyone. Continue?", as the Windows client asks.
+pub fn end_meeting_dialog(app: &mut CommsUi, ctx: &egui::Context) {
+    let t = app.t;
+    let Some(key) = app.end_meeting else {
+        return;
+    };
+    let mut done = false;
+    egui::Modal::new(egui::Id::unique("end-meeting")).show(ctx, |ui| {
+        ui.set_width(340.0);
+        ui.label(RichText::new(t.end_meeting).size(theme::text::HEADING));
+        ui.add_space(6.0);
+        ui.label(t.end_meeting_question);
+        ui.add_space(8.0);
+        ui.horizontal(|ui| {
+            if ui.button(t.ok).clicked() {
+                app.emit(UiIntent::ConferenceCommand {
+                    key,
+                    command: ConfCommand::End,
+                });
+                done = true;
+            }
+            if ui.button(t.cancel).clicked() {
+                done = true;
+            }
+        });
+    });
+    if done {
+        app.end_meeting = None;
+    }
+}
+
 /// Present: what can be shown to the others (sharing our own screen is not built).
 fn present_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
     let t = app.t;
@@ -1025,6 +1056,10 @@ fn more_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
         if ui.button(t.meeting_options_dots).clicked() {
             let v = c.meeting.unwrap_or_default();
             app.meeting_options = Some((key, v));
+            ui.close();
+        }
+        if ui.button(t.end_meeting_dots).clicked() {
+            app.end_meeting = Some(key);
             ui.close();
         }
         for (label, command) in [

@@ -486,6 +486,8 @@ pub struct CommsUi {
     pub(crate) meeting_options: Option<(ConvKey, crate::model::MeetingView)>,
     /// The meeting entry info dialog of this conversation.
     pub(crate) entry_info: Option<ConvKey>,
+    /// The question before ending this meeting for everyone.
+    pub(crate) end_meeting: Option<ConvKey>,
     /// The Join Meeting Audio dialog of this meeting conversation.
     pub(crate) meeting_audio: Option<ConvKey>,
     /// The next meeting that appears asks how to join its audio.
@@ -563,6 +565,7 @@ impl CommsUi {
             close_tabs_question: false,
             meeting_options: None,
             entry_info: None,
+            end_meeting: None,
             meeting_audio: None,
             ask_audio_next: false,
             reopened: false,
@@ -948,6 +951,7 @@ impl CommsUi {
             views::main_window::history_reader(self, ctx);
             views::conv_window::meeting_options_dialog(self, ctx);
             views::conv_window::entry_info_dialog(self, ctx);
+            views::conv_window::end_meeting_dialog(self, ctx);
             views::conv_window::meeting_audio_dialog(self, ctx);
             views::conv_window::show_all(self, ctx, &pal);
         }
