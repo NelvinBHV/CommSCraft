@@ -282,6 +282,10 @@ impl DesktopApp {
         match intent {
             UiIntent::Minimize => return root(egui::ViewportCommand::Minimized(true)),
             UiIntent::FocusMain => return root(egui::ViewportCommand::Focus),
+            UiIntent::SendEmail { address } => {
+                desktop::send_email(&address);
+                return;
+            }
             UiIntent::Quit => {
                 // Closing the window signs out (the worker sees the window go).
                 return root(egui::ViewportCommand::Close);
@@ -531,7 +535,10 @@ impl DesktopApp {
                 }
                 None
             }
-            UiIntent::Quit | UiIntent::Minimize | UiIntent::FocusMain => None,
+            UiIntent::Quit
+            | UiIntent::Minimize
+            | UiIntent::FocusMain
+            | UiIntent::SendEmail { .. } => None,
             UiIntent::StartDemo | UiIntent::SignIn(_) => None,
         };
         if let Some(c) = cmd {

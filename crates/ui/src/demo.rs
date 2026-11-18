@@ -133,6 +133,7 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
                 .collect(),
             sharer: None,
             meeting: None,
+            focus: None,
             messages: msgs.into(),
             unread,
             typing: false,

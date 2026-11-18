@@ -130,6 +130,16 @@ texts! {
     rel_external: "Externe Kontakte", "External contacts";
     rel_blocked: "Blockiert", "Blocked";
     rel_auto: "Automatisch (Vorgabe des Servers)", "Automatic (server's default)";
+    rel_family_about: "Sieht alle Kontaktdaten außer Besprechungsdetails", "Sees all contact information except meeting details";
+    rel_workgroup_about: "Sieht alle Kontaktdaten außer privaten Rufnummern, auch Besprechungsdetails; erreicht mich auch bei „Nicht stören“", "Sees all contact information except private numbers, including meeting details; reaches me even when Do Not Disturb";
+    rel_colleagues_about: "Sieht Status, Notiz, Titel und geschäftliche Rufnummern", "Sees status, note, title and work numbers";
+    rel_external_about: "Sieht Namen, Titel, Firma, E-Mail und Status", "Sees name, title, company, e-mail and status";
+    rel_blocked_about: "Sieht nur Namen und E-Mail-Adresse und erreicht mich nicht", "Sees only name and e-mail address and can't reach me";
+    rel_auto_about: "Die Beziehung ergibt sich aus Kontaktliste und Organisation", "The relationship follows from the contact list and the organisation";
+    send_email: "E-Mail senden", "Send an e-mail message";
+    copy: "Kopieren", "Copy";
+    find_previous: "Frühere Unterhaltungen suchen", "Find previous conversations";
+    status_alert: "Für Statusänderungsbenachrichtigungen markieren", "Tag for status change alerts";
     relationships_unavailable: "Die Beziehungen bestehender Kontakte liest diese Oberfläche noch nicht; ändern lassen sie sich im Kontaktmenü.", "This interface does not read the relationships of existing contacts yet; change them in the contact menu.";
     no_new_subscribers: "Niemand Neues hat Sie hinzugefügt.", "Nobody new has added you.";
     added_you: "hat Sie zur Kontaktliste hinzugefügt", "added you to their contacts";
@@ -440,6 +450,10 @@ texts! {
     history_failed: "Verlauf nicht gelesen", "History not read";
     history_empty: "Der Ordner „Unterhaltungsverlauf“ ist leer.", "The Conversation History folder is empty.";
     call_connected_line: "Anruf verbunden.", "Call connected.";
+    meeting_entry_info: "Besprechungsinfos", "Meeting entry info";
+    meeting_link_label: "Besprechungslink", "Meeting link";
+    organizer: "Organisator", "Organizer";
+    copy_all_info: "Alle Infos kopieren", "Copy all info";
     presenters: "Referenten", "Presenters";
     attendees: "Teilnehmer", "Attendees";
     sharing_mark: "gibt frei", "sharing";
@@ -782,6 +796,14 @@ impl Texts {
             (Lang::De, m) => format!("Anruf beendet. {m} Minuten"),
             (Lang::En, 1) => "Call ended. 1 minute".into(),
             (Lang::En, m) => format!("Call ended. {m} minutes"),
+        }
+    }
+
+    /// The status change alert of a tagged contact.
+    pub fn now_available(&self, who: &str) -> String {
+        match self.lang {
+            Lang::De => format!("{who} ist jetzt verfügbar."),
+            Lang::En => format!("{who} is now available."),
         }
     }
 

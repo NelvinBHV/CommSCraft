@@ -194,6 +194,10 @@ pub enum UiIntent {
     Quit,
     /// Minimize the main window.
     Minimize,
+    /// Write an e-mail to this address in the system's mail program.
+    SendEmail {
+        address: String,
+    },
     /// Bring the main window forward.
     FocusMain,
     /// The content of the meeting of this group conversation (function 44).
@@ -255,6 +259,8 @@ impl std::fmt::Debug for SignIn {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Prefs {
     pub favorites: BTreeSet<String>,
+    /// Contacts tagged for status change alerts: a notice when they become available.
+    pub status_alerts: BTreeSet<String>,
     pub high_contrast: bool,
     pub scale: f32,
     pub context_open: bool,
@@ -303,6 +309,7 @@ impl Default for Prefs {
     fn default() -> Self {
         Self {
             favorites: BTreeSet::new(),
+            status_alerts: BTreeSet::new(),
             high_contrast: false,
             scale: 1.0,
             context_open: true,
@@ -454,6 +461,8 @@ pub struct CommsUi {
     pub(crate) close_tabs_question: bool,
     /// The meeting options dialog: the meeting and the options being edited.
     pub(crate) meeting_options: Option<(ConvKey, crate::model::MeetingView)>,
+    /// The meeting entry info dialog of this conversation.
+    pub(crate) entry_info: Option<ConvKey>,
     /// The sound devices the desktop offers: (ALSA name, label).
     pub audio_devices: Vec<(String, String)>,
     /// The star under the pointer in the call rating (0: none).
@@ -522,6 +531,7 @@ impl CommsUi {
             im_hidden: BTreeSet::new(),
             close_tabs_question: false,
             meeting_options: None,
+            entry_info: None,
             audio_devices: Vec::new(),
             rating_hover: 0,
             meeting_dialog: None,
@@ -714,7 +724,29 @@ impl CommsUi {
             crate::model::AppEvent::GroupStarted { session, .. } => Some(*session),
             _ => None,
         };
+        // Status change alert: a tagged contact who becomes available.
+        let alert = match &e {
+            crate::model::AppEvent::Presence {
+                uri,
+                presence: Some(crate::model::Presence::Available),
+                ..
+            } if self.prefs.status_alerts.contains(uri) => self
+                .state
+                .contacts
+                .get(uri)
+                .filter(|c| c.presence != crate::model::Presence::Available)
+                .map(|c| (c.uri.clone(), self.now)),
+            _ => None,
+        };
         self.state.apply(e);
+        if let Some((uri, at)) = alert {
+            let text = self.t.now_available(&self.state.name_of(&uri));
+            self.state.apply(crate::model::AppEvent::Notice(
+                crate::model::NoticeKind::Info,
+                text,
+                at,
+            ));
+        }
         if new_group {
             self.select_next_group = false;
             if let Some(k) = session.and_then(|s| self.state.key_of_session(s)) {
@@ -830,6 +862,7 @@ impl CommsUi {
             views::meetings::meeting_dialog(self, ctx);
             views::main_window::history_reader(self, ctx);
             views::conv_window::meeting_options_dialog(self, ctx);
+            views::conv_window::entry_info_dialog(self, ctx);
             views::conv_window::show_all(self, ctx, &pal);
         }
         std::mem::take(&mut self.intents)

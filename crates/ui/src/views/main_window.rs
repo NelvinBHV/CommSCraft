@@ -1068,18 +1068,58 @@ pub fn contact_menu(app: &mut CommsUi, ui: &mut Ui, uri: &str) {
             });
         });
     }
+    ui.separator();
+    // As in the Windows client: e-mail, copy, earlier conversations, status alerts.
+    let name = app.state.name_of(uri);
+    let address = uri.strip_prefix("sip:").unwrap_or(uri).to_string();
+    if ui.button(t.send_email).clicked() {
+        app.emit(UiIntent::SendEmail {
+            address: address.clone(),
+        });
+        ui.close();
+    }
+    if ui.button(t.copy).clicked() {
+        ui.ctx().copy_text(format!("{name} <{address}>"));
+        ui.close();
+    }
+    if ui.button(t.find_previous).clicked() {
+        app.search = name.clone();
+        app.tab = crate::app::MainTab::Conversations;
+        app.conv_filter = crate::app::ConvFilter::All;
+        if app.state.history.is_none() && app.state.connection.is_online() {
+            app.emit(UiIntent::LoadHistory);
+        }
+        ui.close();
+    }
+    let tagged = app.prefs.status_alerts.contains(uri);
+    if ui
+        .add(egui::Button::new(t.status_alert).selected(tagged))
+        .clicked()
+    {
+        if tagged {
+            app.prefs.status_alerts.remove(uri);
+        } else {
+            app.prefs.status_alerts.insert(uri.to_string());
+        }
+        app.emit(UiIntent::PrefsChanged);
+        ui.close();
+    }
     ui.add_enabled_ui(can_edit, |ui| {
         ui.menu_button(t.relationship, |ui| {
             use crate::model::Relation as R;
-            for (r, label) in [
-                (Some(R::Family), t.rel_family),
-                (Some(R::Workgroup), t.rel_workgroup),
-                (Some(R::Colleagues), t.rel_colleagues),
-                (Some(R::External), t.rel_external),
-                (Some(R::Blocked), t.rel_blocked),
-                (None, t.rel_auto),
+            for (r, label, about) in [
+                (Some(R::Family), t.rel_family, t.rel_family_about),
+                (Some(R::Workgroup), t.rel_workgroup, t.rel_workgroup_about),
+                (
+                    Some(R::Colleagues),
+                    t.rel_colleagues,
+                    t.rel_colleagues_about,
+                ),
+                (Some(R::External), t.rel_external, t.rel_external_about),
+                (Some(R::Blocked), t.rel_blocked, t.rel_blocked_about),
+                (None, t.rel_auto, t.rel_auto_about),
             ] {
-                if ui.button(label).clicked() {
+                if ui.button(label).on_hover_text(about).clicked() {
                     app.emit(UiIntent::SetRelation {
                         uri: uri.to_string(),
                         relation: r,

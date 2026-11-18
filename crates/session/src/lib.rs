@@ -949,6 +949,14 @@ impl<R: Random> Engine<R> {
         vec![Output::Send(self.reg.start(now))]
     }
 
+    /// The focus (conference URI) of a group conversation, once known.
+    pub fn conference_focus(&self, conversation: ConversationId) -> Option<String> {
+        self.convs
+            .get(&conversation)
+            .and_then(|c| c.group.as_ref())
+            .and_then(|g| g.focus.clone())
+    }
+
     pub fn is_registered(&self) -> bool {
         self.registered
     }

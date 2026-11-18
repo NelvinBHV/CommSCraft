@@ -55,6 +55,8 @@ pub enum FromVideo {
     PictureUpdate(u32),
     /// A received picture as RGBA (embedded mode): width, height, pixels.
     Frame(u32, u32, u32, Vec<u8>),
+    /// Our own camera picture, small, for the self view (embedded mode).
+    SelfFrame(u32, u32, u32, Vec<u8>),
     Failed(u32, String),
 }
 
@@ -860,6 +862,8 @@ fn spawn_camera(
         let mut hardware = enc.backend() == vf::Backend::Vaapi;
         let mut layers = vec![LayerEncoder::new(first, enc)];
         let mut camera_errors = 0u32;
+        // The self view: about five pictures a second, only when video is embedded.
+        let mut self_view_due = 0u64;
         while !stop.load(Ordering::Relaxed) {
             let wanted = wanted_now();
             layers.truncate(wanted.len());
@@ -925,6 +929,16 @@ fn spawn_camera(
                     continue;
                 }
             };
+            if crate::video_window::embedded() && now_ms() >= self_view_due {
+                self_view_due = now_ms() + 200;
+                if let Some((w, h, rgba)) = crate::video_window::rgba_of_i420(
+                    &picture,
+                    crate::video_window::SELF_VIEW_WIDTH,
+                    crate::video_window::SELF_VIEW_HEIGHT,
+                ) {
+                    let _ = events.send(FromVideo::SelfFrame(id, w, h, rgba));
+                }
+            }
             // A key frame asked for: on the next picture of every stream.
             if idr.swap(false, Ordering::Relaxed) {
                 for l in &mut layers {
