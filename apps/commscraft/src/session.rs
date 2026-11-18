@@ -1504,6 +1504,21 @@ impl Session {
                 out.notice(NoticeKind::Info, format!("video: {n}"));
                 Vec::new()
             }
+            // A received picture (embedded in the conversation window): video or shared window.
+            V::Frame(id, width, height, rgba) => {
+                let call = self
+                    .call_of_video(id)
+                    .or_else(|| self.v.rdp_call_of.get(&id).copied());
+                if let Some(call) = call {
+                    out.event(AppEvent::VideoFrame {
+                        call,
+                        width,
+                        height,
+                        rgba,
+                    });
+                }
+                Vec::new()
+            }
             // Only meetings switch sources.
             // No picture from the watched source: the next sender, if there is one.
             V::Stalled(vid) => {

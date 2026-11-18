@@ -463,3 +463,43 @@ fn meeting_details_fill_the_entry_and_a_cancelled_meeting_goes() {
     s.apply(AppEvent::MeetingCancelled("B2".into()));
     assert_eq!(s.meetings.len(), 1);
 }
+
+#[test]
+fn video_frames_are_checked_and_go_with_their_call() {
+    let mut s = online();
+    s.apply(AppEvent::CallStarted {
+        id: 4,
+        peer: "sip:bob@beispiel.invalid".into(),
+        incoming: false,
+        at: 1,
+    });
+    // A picture whose data does not fit its size is dropped.
+    s.apply(AppEvent::VideoFrame {
+        call: 4,
+        width: 2,
+        height: 2,
+        rgba: vec![0; 3],
+    });
+    assert!(s.video.is_empty());
+    s.apply(AppEvent::VideoFrame {
+        call: 4,
+        width: 2,
+        height: 2,
+        rgba: vec![0; 16],
+    });
+    assert_eq!(s.video[&4].seq, 1);
+    // No call, no picture; the end of the call drops it.
+    s.apply(AppEvent::VideoFrame {
+        call: 9,
+        width: 2,
+        height: 2,
+        rgba: vec![0; 16],
+    });
+    assert!(!s.video.contains_key(&9));
+    s.apply(AppEvent::CallEnded {
+        id: 4,
+        status: 0,
+        at: 2,
+    });
+    assert!(s.video.is_empty());
+}

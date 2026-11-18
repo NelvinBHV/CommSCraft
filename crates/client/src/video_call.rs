@@ -53,6 +53,8 @@ pub enum FromVideo {
     Stalled(u32),
     /// The peer takes no PLI: ask it for a full picture through SIP INFO (PL-50).
     PictureUpdate(u32),
+    /// A received picture as RGBA (embedded mode): width, height, pixels.
+    Frame(u32, u32, u32, Vec<u8>),
     Failed(u32, String),
 }
 

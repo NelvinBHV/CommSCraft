@@ -437,6 +437,8 @@ texts! {
     close: "Schließen", "Close";
     history_failed: "Verlauf nicht gelesen", "History not read";
     history_empty: "Der Ordner „Unterhaltungsverlauf“ ist leer.", "The Conversation History folder is empty.";
+    im_pane: "Chatbereich", "IM pane";
+    call_controls: "Anrufsteuerung", "Call controls";
     transfer_to_person: "An eine Person …", "To a person …";
     transfer_to_call: "Mit Rückfrage an", "Consulted, to";
     rate_call_question: "Wie war die Qualität des Anrufs mit", "How was the quality of the call with";
