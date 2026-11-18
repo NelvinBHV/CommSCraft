@@ -69,6 +69,8 @@ pub fn parse(text: &str) -> Prefs {
             "quiet_sounds_busy" => p.quiet_sounds_busy = v == "true",
             "meeting_participants" => p.meeting_participants = v == "true",
             "save_history" => p.save_history = v != "false",
+            "tabbed_conversations" => p.tabbed_conversations = v != "false",
+            "always_close_all_tabs" => p.always_close_all_tabs = v == "true",
             // A device name as the audio adapter accepts it.
             "audio_device" if valid_device(v) => p.audio_device = v.to_string(),
             // A device file only: printable, absolute, bounded.
@@ -134,6 +136,8 @@ pub fn format(p: &Prefs) -> String {
         ("quiet_sounds_busy", p.quiet_sounds_busy),
         ("meeting_participants", p.meeting_participants),
         ("save_history", p.save_history),
+        ("tabbed_conversations", p.tabbed_conversations),
+        ("always_close_all_tabs", p.always_close_all_tabs),
     ] {
         out.push_str(&format!("{k}={v}\n"));
     }

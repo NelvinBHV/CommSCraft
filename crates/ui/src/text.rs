@@ -437,6 +437,13 @@ texts! {
     close: "Schließen", "Close";
     history_failed: "Verlauf nicht gelesen", "History not read";
     history_empty: "Der Ordner „Unterhaltungsverlauf“ ist leer.", "The Conversation History folder is empty.";
+    unread_upper: "UNGELESEN", "UNREAD";
+    close_tab: "Reiter schließen", "Close tab";
+    close_tabs_question: "Möchten Sie alle Reiter oder den aktuellen Reiter schließen?", "Do you want to close all tabs or the current tab?";
+    close_all_tabs: "Alle Reiter schließen", "Close all tabs";
+    close_current_tab: "Aktuellen Reiter schließen", "Close current tab";
+    always_close_all_tabs: "Immer alle Reiter schließen", "Always close all tabs";
+    opt_tabbed: "Reiter-Unterhaltungen aktivieren", "Enable tabbed conversations";
     im_pane: "Chatbereich", "IM pane";
     call_controls: "Anrufsteuerung", "Call controls";
     transfer_to_person: "An eine Person …", "To a person …";

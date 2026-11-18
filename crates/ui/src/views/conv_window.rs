@@ -56,7 +56,24 @@ fn window(
 /// Shows every open window; a window the user closed is dropped.
 pub fn show_all(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
     let wins = app.windows.clone();
+    // As in the Windows client: the open conversations as tabs of one window (an option).
+    let convs: Vec<ConvKey> = wins
+        .iter()
+        .filter_map(|w| match w {
+            Win::Conv(k) if app.state.conversation(*k).is_some() => Some(*k),
+            _ => None,
+        })
+        .collect();
+    app.windows
+        .retain(|w| !matches!(w, Win::Conv(k) if app.state.conversation(*k).is_none()));
+    let tabbed = app.prefs.tabbed_conversations && !convs.is_empty();
+    if tabbed {
+        tabbed_window(app, ctx, pal, &convs);
+    }
     for (i, w) in wins.into_iter().enumerate() {
+        if tabbed && matches!(w, Win::Conv(_)) {
+            continue;
+        }
         let (id, title, size) = match w {
             Win::Conv(k) => {
                 let Some(c) = app.state.conversation(k) else {
@@ -135,6 +152,223 @@ pub fn show_all(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
         }
     }
     notifications(app, ctx, pal);
+}
+
+/// The conversations as tabs of one window: the list on the left (from two on), the chosen one
+/// on the right; closing the window with several tabs asks which to close.
+fn tabbed_window(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette, convs: &[ConvKey]) {
+    let t = app.t;
+    if let Some(Win::Conv(k)) = app.focus_window {
+        if convs.contains(&k) {
+            app.selected_conv = Some(k);
+        }
+    }
+    let Some(&last) = convs.last() else {
+        return;
+    };
+    let current = app
+        .selected_conv
+        .filter(|k| convs.contains(k))
+        .unwrap_or(last);
+    app.selected_conv = Some(current);
+    let title = app
+        .state
+        .conversation(current)
+        .map(|c| c.title.clone())
+        .unwrap_or_default();
+    let focus = matches!(app.focus_window, Some(Win::Conv(_)));
+    let size = [if convs.len() > 1 { 820.0 } else { 620.0 }, 560.0];
+    let builder = ViewportBuilder::default()
+        .with_title(format!("{title} – CommSCraft"))
+        .with_inner_size(size)
+        .with_min_inner_size([320.0, 220.0])
+        .with_app_id("commscraft");
+    let builder = if app.prefs.always_on_top {
+        builder.with_window_level(egui::WindowLevel::AlwaysOnTop)
+    } else {
+        builder
+    };
+    let several = convs.len() > 1;
+    let ask = several && !app.prefs.always_close_all_tabs;
+    let closed = window(
+        ctx,
+        ViewportId::from_hash_of("conversations"),
+        builder,
+        &title,
+        size,
+        [440.0, 10.0],
+        |ui| {
+            theme::apply(ui.ctx(), pal);
+            if focus {
+                ui.ctx().send_viewport_cmd(egui::ViewportCommand::Focus);
+            }
+            if app
+                .screenshot
+                .as_ref()
+                .is_some_and(|(x, _)| matches!(x, Win::Conv(_)))
+            {
+                if let Some((_, cb)) = app.screenshot.take() {
+                    ui.ctx()
+                        .send_viewport_cmd(egui::ViewportCommand::Screenshot(cb));
+                }
+            }
+            if ask && ui.ctx().input(|i| i.viewport().close_requested()) {
+                ui.ctx()
+                    .send_viewport_cmd(egui::ViewportCommand::CancelClose);
+                app.close_tabs_question = true;
+            }
+            if several {
+                egui::Panel::left("conv-tabs")
+                    .exact_size(210.0)
+                    .resizable(false)
+                    .frame(Frame::new().fill(pal.surface).inner_margin(Margin::same(4)))
+                    .show(ui, |ui| tab_list(app, ui, pal, convs, current));
+            }
+            conversation(app, ui, pal, current);
+            if app.close_tabs_question {
+                close_tabs_dialog(app, ui, current, convs);
+            }
+        },
+    );
+    if focus {
+        app.focus_window = None;
+    }
+    if closed {
+        if ask {
+            app.close_tabs_question = true;
+        } else {
+            for k in convs {
+                app.close_window(Win::Conv(*k));
+            }
+        }
+    }
+    let _ = t;
+}
+
+/// The tab list: picture, name, the last message, the unread count, a close button.
+fn tab_list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, convs: &[ConvKey], current: ConvKey) {
+    let t = app.t;
+    let unread_any = convs
+        .iter()
+        .any(|k| app.state.conversation(*k).is_some_and(|c| c.unread > 0));
+    egui::Panel::bottom("conv-tabs-foot")
+        .frame(Frame::new().fill(if unread_any {
+            pal.warning.gamma_multiply(0.35)
+        } else {
+            pal.surface
+        }))
+        .show(ui, |ui| {
+            if unread_any {
+                ui.label(
+                    RichText::new(t.unread_upper)
+                        .size(theme::text::SMALL)
+                        .color(pal.ink),
+                );
+            }
+        });
+    egui::ScrollArea::vertical().show(ui, |ui| {
+        for &k in convs {
+            let Some(c) = app.state.conversation(k).cloned() else {
+                continue;
+            };
+            let selected = k == current;
+            let (rect, resp) = ui
+                .allocate_exact_size(egui::vec2(ui.available_width(), 48.0), egui::Sense::click());
+            if selected {
+                ui.painter().rect_filled(rect, 0.0, pal.primary_soft);
+            } else if resp.hovered() {
+                ui.painter().rect_filled(rect, 0.0, pal.surface_subtle);
+            }
+            let mut child = ui.new_child(
+                egui::UiBuilder::new()
+                    .max_rect(rect.shrink2(egui::vec2(6.0, 6.0)))
+                    .layout(egui::Layout::left_to_right(egui::Align::Center)),
+            );
+            app.avatar(&mut child, c.peer.as_deref(), &c.title, 30.0, None, pal);
+            let preview = c
+                .messages
+                .back()
+                .map(|m| m.text.lines().next().unwrap_or("").to_string())
+                .unwrap_or_default();
+            child.vertical(|ui| {
+                ui.set_width((ui.available_width() - 30.0).max(40.0));
+                let name = RichText::new(&c.title).color(pal.ink);
+                widgets::ellipsis(
+                    ui,
+                    if c.unread > 0 {
+                        name.family(theme::bold())
+                    } else {
+                        name
+                    },
+                );
+                if !preview.is_empty() {
+                    widgets::ellipsis(
+                        ui,
+                        RichText::new(&preview)
+                            .size(theme::text::SMALL)
+                            .color(pal.muted),
+                    );
+                }
+            });
+            child.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if (selected || resp.hovered())
+                    && ui
+                        .add(egui::Button::new("×").frame(false))
+                        .on_hover_text(t.close_tab)
+                        .clicked()
+                {
+                    app.close_window(Win::Conv(k));
+                } else if c.unread > 0 {
+                    let (r, _) =
+                        ui.allocate_exact_size(egui::vec2(18.0, 18.0), egui::Sense::hover());
+                    ui.painter().circle_filled(r.center(), 9.0, pal.error);
+                    ui.painter().text(
+                        r.center(),
+                        egui::Align2::CENTER_CENTER,
+                        c.unread.min(99).to_string(),
+                        egui::FontId::proportional(11.0),
+                        egui::Color32::WHITE,
+                    );
+                }
+            });
+            let title = c.title.clone();
+            resp.widget_info(|| {
+                egui::WidgetInfo::selected(egui::Role::Tab, true, selected, &title)
+            });
+            if resp.clicked() {
+                app.selected_conv = Some(k);
+            }
+        }
+    });
+}
+
+/// "Close all tabs or the current one?", with "always close all tabs".
+fn close_tabs_dialog(app: &mut CommsUi, ui: &mut Ui, current: ConvKey, convs: &[ConvKey]) {
+    let t = app.t;
+    egui::Modal::new(egui::Id::unique("close-tabs")).show(ui.ctx(), |ui| {
+        ui.set_width(380.0);
+        ui.label(RichText::new(t.close_tabs_question).size(theme::text::HEADING));
+        ui.add_space(8.0);
+        ui.horizontal(|ui| {
+            if ui.button(t.close_all_tabs).clicked() {
+                for k in convs {
+                    app.close_window(Win::Conv(*k));
+                }
+                app.close_tabs_question = false;
+                app.emit(UiIntent::PrefsChanged);
+            }
+            if ui.button(t.close_current_tab).clicked() {
+                app.close_window(Win::Conv(current));
+                app.close_tabs_question = false;
+                app.emit(UiIntent::PrefsChanged);
+            }
+        });
+        ui.separator();
+        ui.checkbox(
+            &mut app.prefs.always_close_all_tabs,
+            t.always_close_all_tabs,
+        );
+    });
 }
 
 fn bar_button(

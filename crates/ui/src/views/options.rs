@@ -249,6 +249,7 @@ fn page_ui(
             });
             // The server's policy, when it sets one, decides; this is the user's choice.
             ui.checkbox(&mut p.save_history, t.opt_save_history);
+            ui.checkbox(&mut p.tabbed_conversations, t.opt_tabbed);
             missing(ui, t, t.opt_spelling, ni);
             missing(ui, t, t.opt_emoticons, ni);
             missing(ui, t, t.opt_tabs, ni);
