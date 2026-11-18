@@ -49,6 +49,8 @@ enum Job {
     HistoryList,
     /// One entry's text.
     HistoryBody(commscraft_ews::ucs::ItemId),
+    /// The offline address book: the cached file brought up to date (delta or full file).
+    AddressBook(Box<ServerConfiguration>),
 }
 
 /// A change of the contact list in Exchange with the list and identifiers it applies to.
@@ -66,6 +68,8 @@ pub enum Done {
     /// A conversation saved in the Conversation History folder, or why not.
     HistorySaved(Result<(), String>),
     HistoryList(Result<Vec<commscraft_ews::history::Entry>, String>),
+    /// The offline address book and how it was obtained, or why not.
+    AddressBook(Result<(Box<commscraft_abs::book::AddressBook>, String), String>),
     /// One entry's text, by its item ID.
     HistoryBody(String, Result<String, String>),
     /// The contact list from Exchange (after a change, if one was asked for).
@@ -131,6 +135,13 @@ impl Photos {
     }
 
     /// Asks for the entries of the Conversation History folder.
+    /// Brings the offline address book up to date.
+    pub fn address_book(&self, services: &ServerConfiguration) {
+        let _ = self
+            .tx
+            .try_send(Job::AddressBook(Box::new(services.clone())));
+    }
+
     pub fn history_list(&self) {
         let _ = self.tx.try_send(Job::HistoryList);
     }
@@ -198,6 +209,39 @@ fn run(
                     &mut log,
                 );
                 if done.send(Done::Expanded(email, found)).is_err() {
+                    return;
+                }
+                continue;
+            }
+            Job::AddressBook(services) => {
+                let today = commscraft_client::address_book::abs_today(now_secs());
+                let r = match today {
+                    None => Err("clock out of range".to_string()),
+                    Some(today) => {
+                        let mut get = |url: &commscraft_url::HttpsUrl| {
+                            commscraft_client::photos::ntlm_get(
+                                tls,
+                                url,
+                                &[("Accept", "application/octet-stream")],
+                                &ua,
+                                std::time::Duration::from_secs(60),
+                                commscraft_client::address_book::ADDRESS_BOOK_MAX,
+                                &mut ntlm,
+                            )
+                        };
+                        commscraft_client::address_book::fetch(
+                            &mut get,
+                            aor,
+                            trust,
+                            Some(&services),
+                            true,
+                            today,
+                            &mut log,
+                        )
+                        .map(|(b, how)| (Box::new(b), how))
+                    }
+                };
+                if done.send(Done::AddressBook(r)).is_err() {
                     return;
                 }
                 continue;

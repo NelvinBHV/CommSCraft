@@ -22,6 +22,7 @@ commscraft-sip-identity = { path = "../sip-identity" }
 commscraft-tlsdsk = { path = "../tlsdsk" }
 commscraft-media = { path = "../media" }
 commscraft-net = { path = "../net" }
+commscraft-abs = { path = "../abs" }
 commscraft-provisioning = { path = "../provisioning" }
 commscraft-register = { path = "../register" }
 commscraft-qoe = { path = "../qoe" }

@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (audio device test)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (offline address book in the desktop client)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -96,6 +96,10 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   microphone for calls separately, as the Windows client does – each the system's default
   (PipeWire) or a device ALSA lists (`/proc/asound/pcm`, playback or capture). A chosen
   microphone is opened also where PipeWire has no usable default source (`tested-in-lab`).
+- **Offline address book:** after provisioning the desktop client uses the cached address book
+  file at once and brings it up to date in the background (delta or newest full file, [MS-ABS],
+  the same code as the command-line client, now in `client::address_book`); the search asks it
+  first and the server's web search only when it finds nobody. `tested-in-lab`.
 - **Device test:** *Options › Audio › Test the devices* plays a short tone (440 Hz, 0.8 s) on the
   chosen speaker and shows the chosen microphone's level for five seconds (peak, −60 to 0 dBFS);
   nothing is recorded or sent. In the lab it showed that a laptop's capture device delivers only

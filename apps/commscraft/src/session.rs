@@ -517,6 +517,8 @@ struct Session {
     groups: BTreeSet<u32>,
     group_titles: BTreeMap<u32, String>,
     services: Option<Box<commscraft_provisioning::ServerConfiguration>>,
+    /// The offline address book ([MS-ABS]), searched before the web search.
+    address_book: Option<Box<commscraft_abs::book::AddressBook>>,
     media_tx: mpsc::Sender<calls::FromMedia>,
     media: BTreeMap<u32, calls::MediaHandle>,
     media_of_call: BTreeMap<u32, u32>,
@@ -850,6 +852,31 @@ pub fn directory_contacts(found: &[commscraft_dlx::Entry]) -> Vec<Contact> {
         .collect()
 }
 
+/// Offline address book hits as contacts (only those with a SIP address).
+pub fn address_book_contacts(found: &[commscraft_abs::book::Entry]) -> Vec<Contact> {
+    found
+        .iter()
+        .filter_map(|e| {
+            let sip = e.sip.as_deref()?;
+            let uri = if sip.starts_with("sip:") {
+                sip.to_string()
+            } else {
+                format!("sip:{sip}")
+            };
+            let mut c = Contact::new(
+                &uri,
+                e.display_name.as_deref().unwrap_or(""),
+                Source::AddressBook,
+            );
+            c.title = e.title.clone().unwrap_or_default();
+            c.company = e.company.clone().unwrap_or_default();
+            c.department = e.office.clone().unwrap_or_default();
+            c.phone = e.phones.first().cloned().unwrap_or_default();
+            Some(c)
+        })
+        .collect()
+}
+
 fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) -> Result<(), Ended> {
     let fail = |s: String| Ended::Failed(s);
     let aor = form.address.clone();
@@ -1016,6 +1043,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         groups: BTreeSet::new(),
         group_titles: BTreeMap::new(),
         services: None,
+        address_book: None,
         media_tx,
         media: BTreeMap::new(),
         media_of_call: BTreeMap::new(),
@@ -1133,6 +1161,16 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
                     })
                 }
                 crate::photos::Done::Calendar(Err(e)) => trace_line(&format!("calendar: {e}")),
+                crate::photos::Done::AddressBook(r) => match r {
+                    Ok((book, how)) => {
+                        trace_line(&format!(
+                            "address book: {} entries ({how})",
+                            book.contacts.len()
+                        ));
+                        s.address_book = Some(book);
+                    }
+                    Err(e) => trace_line(&format!("address book not loaded: {e}")),
+                },
                 crate::photos::Done::HistoryList(r) => {
                     if let Ok(l) = &r {
                         s.history_ids = l.iter().map(|e| (e.id.id.clone(), e.id.clone())).collect();
@@ -2413,6 +2451,21 @@ impl Session {
     /// The address book search runs here, bounded by the HTTP timeouts (15 s); incoming SIP
     /// waits in the socket meanwhile.
     fn search(&mut self, text: &str, out: &Out) {
+        // The offline address book first; the web search only when it finds nobody.
+        if let Some(book) = &self.address_book {
+            let list = address_book_contacts(&book.search(text, 25));
+            trace_line(&format!(
+                "search: {} hit(s) in the offline address book",
+                list.len()
+            ));
+            if !list.is_empty() {
+                for c in list.iter().take(20) {
+                    self.want_photo(&c.uri);
+                }
+                out.event(AppEvent::SearchResults(list));
+                return;
+            }
+        }
         let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
         let engine = &mut self.engine;
         let mut ntlm =
@@ -2685,6 +2738,22 @@ impl Session {
                 }
             }
             E::Provisioned(c) => {
+                // The offline address book: the cached copy at once, then brought up to date
+                // in the background (as the Windows client uses its local copy at once).
+                if self.address_book.is_none() {
+                    if let Some(today) = commscraft_client::address_book::abs_today(now()) {
+                        self.address_book = commscraft_client::address_book::cached(
+                            self.engine.aor(),
+                            &self.trust,
+                            &c,
+                            today,
+                        )
+                        .map(Box::new);
+                    }
+                    if let Some(p) = &self.photos {
+                        p.address_book(&c);
+                    }
+                }
                 self.services = Some(c);
                 self.want_photos();
                 if self.signed_in {
@@ -3548,5 +3617,31 @@ mod tests {
         assert_eq!(c.len(), 1);
         assert_eq!(c[0].source, Source::Directory);
         assert_eq!(c[0].title, "Einkauf");
+    }
+
+    #[test]
+    fn address_book_hits_become_contacts() {
+        let e = |sip: Option<&str>, name: &str| commscraft_abs::book::Entry {
+            display_name: Some(name.into()),
+            sip: sip.map(str::to_string),
+            mail: None,
+            title: Some("Einkauf".into()),
+            company: None,
+            office: Some("Raum 3".into()),
+            phones: vec!["+49 40 1".into()],
+        };
+        let c = address_book_contacts(&[
+            e(Some("x@beispiel.invalid"), "X"),
+            e(Some("sip:y@beispiel.invalid"), "Y"),
+            e(None, "Z"),
+        ]);
+        assert_eq!(c.len(), 2);
+        assert_eq!(c[0].uri, "sip:x@beispiel.invalid");
+        assert_eq!(c[1].uri, "sip:y@beispiel.invalid");
+        assert_eq!(c[0].source, Source::AddressBook);
+        assert_eq!(
+            (c[0].department.as_str(), c[0].phone.as_str()),
+            ("Raum 3", "+49 40 1")
+        );
     }
 }

@@ -6,6 +6,7 @@
 //! (`meeting_content`). These are adapters with threads, devices and sockets; the protocol state
 //! machines stay in their own crates.
 
+pub mod address_book;
 pub mod calls;
 pub mod cues;
 pub mod directory;
