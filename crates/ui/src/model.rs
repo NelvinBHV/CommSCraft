@@ -335,6 +335,29 @@ pub struct Participant {
     pub waiting: bool,
     /// The audio in the meeting: `Some(muted)`.
     pub muted: Option<bool>,
+    /// Takes part in the IM, sends video, shares (the roster's endpoints).
+    pub in_chat: bool,
+    pub video: bool,
+    pub sharing: bool,
+}
+
+/// Who becomes a presenter on joining a meeting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Presenters {
+    Nobody,
+    #[default]
+    Organisation,
+    Everyone,
+}
+
+/// A meeting's options as its focus reports them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct MeetingView {
+    pub locked: bool,
+    pub access: MeetingAccess,
+    pub presenters: Presenters,
+    pub phone_bypass: bool,
+    pub announcements: bool,
 }
 
 /// A presenter's command in a meeting.
@@ -355,6 +378,14 @@ pub enum ConfCommand {
     },
     MuteAudience(bool),
     Lock(bool),
+    /// Who skips the lobby, who becomes a presenter, whether phone callers skip the lobby.
+    Options {
+        access: MeetingAccess,
+        presenters: Presenters,
+        phone_bypass: bool,
+    },
+    /// Announce people entering and leaving (the meeting's audio).
+    Announcements(bool),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -368,6 +399,8 @@ pub struct Conversation {
     pub participants: Vec<Participant>,
     /// Who shares in this meeting right now.
     pub sharer: Option<String>,
+    /// The meeting's options, once its focus reported them.
+    pub meeting: Option<MeetingView>,
     pub messages: VecDeque<Message>,
     pub unread: usize,
     pub typing: bool,
@@ -714,6 +747,11 @@ pub enum AppEvent {
     },
     /// Calls can be rated (the server has a quality service).
     QualityRating(bool),
+    /// The options of the meeting of a group conversation.
+    MeetingSettings {
+        session: u32,
+        view: MeetingView,
+    },
     /// A received picture of a call (RGBA).
     VideoFrame {
         call: u32,
@@ -1052,6 +1090,7 @@ impl AppState {
             peer,
             participants: Vec::new(),
             sharer: None,
+            meeting: None,
             messages: VecDeque::new(),
             unread: 0,
             typing: false,
@@ -1308,6 +1347,9 @@ impl AppState {
                             presenter: p.presenter,
                             waiting: p.waiting,
                             muted: p.muted,
+                            in_chat: p.in_chat,
+                            video: p.video,
+                            sharing: p.sharing,
                         })
                         .collect();
                 }
@@ -1501,6 +1543,11 @@ impl AppState {
             }
             AppEvent::MeetingCancelled(id) => self.meetings.retain(|m| m.conference_id != id),
             AppEvent::QualityRating(on) => self.quality_rating = on,
+            AppEvent::MeetingSettings { session, view } => {
+                if let Some(c) = self.by_session(session) {
+                    c.meeting = Some(view);
+                }
+            }
             AppEvent::VideoFrame {
                 call,
                 width,
@@ -1613,6 +1660,9 @@ impl AppState {
                         presenter: false,
                         waiting: false,
                         muted: None,
+                        in_chat: true,
+                        video: false,
+                        sharing: false,
                     })
                     .collect();
                 if let Some(c) = self.conversation_mut(key) {

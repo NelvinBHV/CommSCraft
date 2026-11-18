@@ -686,6 +686,9 @@ fn a_presenter_admits_from_the_lobby_and_promotes() {
         presenter,
         waiting,
         muted,
+        in_chat: true,
+        video: false,
+        sharing: false,
     };
     let c = ui
         .state
@@ -994,4 +997,66 @@ fn conversations_are_tabs_of_one_window() {
         .unwrap()
         .key;
     assert_eq!(h.state().ui.selected_conversation(), Some(k));
+}
+
+#[test]
+fn a_presenter_changes_the_meeting_options() {
+    use commscraft_ui::model::{
+        ConfCommand, ConvState, MeetingAccess, MeetingView, Participant, Presenters,
+    };
+    let mut ui = demo_quiet();
+    let me = ui.state.me.uri.clone();
+    let c = ui
+        .state
+        .conversations
+        .iter_mut()
+        .find(|c| c.title == "Projekt Nord")
+        .unwrap();
+    c.state = ConvState::Open;
+    c.session = Some(5);
+    c.participants = vec![Participant {
+        uri: me,
+        name: String::new(),
+        presenter: true,
+        waiting: false,
+        muted: Some(false),
+        in_chat: true,
+        video: false,
+        sharing: false,
+    }];
+    ui.state.apply(AppEvent::MeetingSettings {
+        session: 5,
+        view: MeetingView {
+            access: MeetingAccess::Organisation,
+            presenters: Presenters::Organisation,
+            ..MeetingView::default()
+        },
+    });
+    let mut h = harness(ui, BIG);
+    h.run();
+    open_conversation(&mut h, "Projekt Nord");
+    h.get_by_label("Teilnehmer").click();
+    h.run();
+    // Grouped as in the Windows client.
+    assert!(h.query_by_label_contains("Referenten (1)").is_some());
+    h.get_by_label("Weitere Optionen").click();
+    h.run();
+    h.get_by_label("Besprechungsoptionen …").click();
+    h.run();
+    h.get_by_label("Nur eingeladene Personen").click();
+    h.get_by_label("Nur der Organisator").click();
+    h.run();
+    h.get_by_label("OK").click();
+    h.run();
+    assert!(h.state().intents.iter().any(|i| matches!(
+        i,
+        UiIntent::ConferenceCommand {
+            command: ConfCommand::Options {
+                access: MeetingAccess::Invited,
+                presenters: Presenters::Nobody,
+                phone_bypass: false
+            },
+            ..
+        }
+    )));
 }

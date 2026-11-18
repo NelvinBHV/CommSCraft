@@ -452,6 +452,8 @@ pub struct CommsUi {
     pub(crate) im_hidden: BTreeSet<ConvKey>,
     /// The tab window's close question is open.
     pub(crate) close_tabs_question: bool,
+    /// The meeting options dialog: the meeting and the options being edited.
+    pub(crate) meeting_options: Option<(ConvKey, crate::model::MeetingView)>,
     /// The sound devices the desktop offers: (ALSA name, label).
     pub audio_devices: Vec<(String, String)>,
     /// The star under the pointer in the call rating (0: none).
@@ -519,6 +521,7 @@ impl CommsUi {
             meeting_link: String::new(),
             im_hidden: BTreeSet::new(),
             close_tabs_question: false,
+            meeting_options: None,
             audio_devices: Vec::new(),
             rating_hover: 0,
             meeting_dialog: None,
@@ -826,6 +829,7 @@ impl CommsUi {
             views::main_window::group_dialog(self, ctx);
             views::meetings::meeting_dialog(self, ctx);
             views::main_window::history_reader(self, ctx);
+            views::conv_window::meeting_options_dialog(self, ctx);
             views::conv_window::show_all(self, ctx, &pal);
         }
         std::mem::take(&mut self.intents)
