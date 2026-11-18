@@ -1,6 +1,6 @@
 # Security by design
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (speaker and microphone chosen separately)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (meeting options and grouped participants)
 
 CommSCraft handles passwords, Kerberos tickets, NTLM session keys and SRTP keys. It talks to
 servers and peers it cannot trust. Security is part of every design decision, not a later review.

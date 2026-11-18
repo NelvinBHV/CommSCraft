@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (speaker and microphone chosen separately)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (meeting options and grouped participants)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -131,6 +131,12 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   does not wait in the lobby), and for a chosen meeting offers join, copy its link, change and
   cancel; the list reads each meeting's details (subject, expiry, link) and counts conferences
   without a subject (from group conversations) instead of listing them. `tested-in-lab`.
+- **Meeting options and participants as in the Windows client:** the participant list is grouped
+  into presenters and attendees, each with symbols for what they take part in (IM, audio – struck
+  through when muted –, video, sharing); a presenter's *Meeting options …* sets who skips the
+  lobby, whether phone callers skip it, entry and exit announcements and who becomes a presenter
+  (the focus's options, reported back as the meeting's settings). `tested-offline` (the commands
+  themselves were tested in the lab through the command-line client).
 - **Meeting control:** a presenter sees the lobby in the participant list (admit, deny, admit
   all) and has a menu per participant (make presenter or attendee, mute or unmute, remove) and
   meeting commands in *More* (mute or unmute the audience, lock or unlock); the meetings tab

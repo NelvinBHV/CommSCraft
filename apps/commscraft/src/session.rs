@@ -1920,6 +1920,25 @@ impl Session {
                     K::MuteUser { user, mute } => A::MuteUser { user, mute },
                     K::MuteAudience(m) => A::MuteAudience(m),
                     K::Lock(l) => A::Lock(l),
+                    K::Options {
+                        access,
+                        presenters,
+                        phone_bypass,
+                    } => A::Options(commscraft_conf::MeetingOptions {
+                        admission: admission_of(access),
+                        autopromote: match presenters {
+                            commscraft_ui::model::Presenters::Nobody => 0,
+                            commscraft_ui::model::Presenters::Organisation => {
+                                commscraft_conf::AUTOPROMOTE_COMPANY
+                            }
+                            commscraft_ui::model::Presenters::Everyone => {
+                                commscraft_conf::AUTOPROMOTE_EVERYONE
+                                    | commscraft_conf::AUTOPROMOTE_COMPANY
+                            }
+                        },
+                        pstn_lobby_bypass: phone_bypass,
+                    }),
+                    K::Announcements(on) => A::Announcements(on),
                 };
                 self.engine.command(
                     C::ConferenceControl {
@@ -2934,6 +2953,9 @@ impl Session {
                             presenter: p.roles.iter().any(|r| r == "presenter"),
                             waiting: p.waiting(),
                             muted: p.audio_muted(),
+                            in_chat: p.in_chat(),
+                            video: p.video_source().is_some(),
+                            sharing: p.endpoints.iter().any(|e| e.sharing == Some(true)),
                         })
                         .collect(),
                 });
@@ -2970,6 +2992,34 @@ impl Session {
                     focus: invitation.focus,
                     subject: invitation.subject.unwrap_or_default(),
                 }))
+            }
+            E::MeetingSettings {
+                conversation,
+                settings,
+            } => {
+                use commscraft_conf::schedule::Admission as Ad;
+                use commscraft_ui::model::{MeetingAccess as M, Presenters as P};
+                let autopromote = settings.autopromote.unwrap_or(0);
+                out.event(AppEvent::MeetingSettings {
+                    session: conversation,
+                    view: commscraft_ui::model::MeetingView {
+                        locked: settings.locked.unwrap_or(false),
+                        access: match settings.admission {
+                            Some(Ad::ClosedAuthenticated) => M::Invited,
+                            Some(Ad::Anonymous) => M::Anyone,
+                            _ => M::Organisation,
+                        },
+                        presenters: if autopromote & commscraft_conf::AUTOPROMOTE_EVERYONE != 0 {
+                            P::Everyone
+                        } else if autopromote & commscraft_conf::AUTOPROMOTE_COMPANY != 0 {
+                            P::Organisation
+                        } else {
+                            P::Nobody
+                        },
+                        phone_bypass: settings.pstn_lobby_bypass.unwrap_or(false),
+                        announcements: settings.announcements.unwrap_or(false),
+                    },
+                })
             }
             E::ConferenceLobby { waiting: true, .. } => out.notice(
                 NoticeKind::Info,

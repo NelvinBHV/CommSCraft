@@ -126,9 +126,13 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
                     presenter: *p == "anna.weber",
                     waiting: false,
                     muted: None,
+                    in_chat: true,
+                    video: false,
+                    sharing: false,
                 })
                 .collect(),
             sharer: None,
+            meeting: None,
             messages: msgs.into(),
             unread,
             typing: false,

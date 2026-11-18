@@ -4,7 +4,8 @@
 
 use crate::app::{AddressFor, CommsUi, NewChat, UiIntent, Win};
 use crate::model::{
-    Call, CallKind, CallState, ConfCommand, ConvKey, ConvState, Gate, Participant, VideoState,
+    Call, CallKind, CallState, ConfCommand, ConvKey, ConvState, Gate, MeetingAccess, Participant,
+    Presenters, VideoState,
 };
 use crate::theme::{self, Palette};
 use crate::views::icons::{self, Icon};
@@ -613,43 +614,34 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                             }
                             ui.separator();
                         }
-                        for p in c.participants.iter().filter(|p| !p.waiting).take(100) {
-                            let name = if p.name.is_empty() {
-                                app.state.name_of(&p.uri)
-                            } else {
-                                p.name.clone()
-                            };
-                            let manage = presenter && p.uri != me;
-                            ui.horizontal(|ui| {
-                                let presence = app.state.contacts.get(&p.uri).map(|k| k.presence);
-                                app.avatar(ui, Some(p.uri.as_str()), &name, 22.0, presence, pal);
-                                let r = ui.add(
-                                    egui::Label::new(RichText::new(&name).color(pal.ink))
-                                        .truncate()
-                                        .sense(if manage {
-                                            egui::Sense::click()
-                                        } else {
-                                            egui::Sense::hover()
-                                        }),
+                        // As in the Windows client: presenters and attendees, each with
+                        // what they take part in (IM, audio, video, sharing).
+                        let shown: Vec<Participant> = c
+                            .participants
+                            .iter()
+                            .filter(|p| !p.waiting)
+                            .take(100)
+                            .cloned()
+                            .collect();
+                        let groups = [(t.presenters, true), (t.attendees, false)];
+                        for (heading, role) in groups {
+                            let members: Vec<&Participant> = shown
+                                .iter()
+                                .filter(|p| p.presenter == role || !c.is_group() && role)
+                                .collect();
+                            if members.is_empty() {
+                                continue;
+                            }
+                            if c.is_group() {
+                                ui.label(
+                                    RichText::new(format!("{heading} ({})", members.len()))
+                                        .size(theme::text::SMALL)
+                                        .color(pal.muted),
                                 );
-                                if manage {
-                                    r.context_menu(|ui| participant_menu(app, ui, key, p));
-                                }
-                                if p.presenter {
-                                    ui.label(
-                                        RichText::new(t.presenter)
-                                            .size(theme::text::SMALL)
-                                            .color(pal.muted),
-                                    );
-                                }
-                                if p.muted == Some(true) {
-                                    ui.label(
-                                        RichText::new(t.muted_mark)
-                                            .size(theme::text::SMALL)
-                                            .color(pal.muted),
-                                    );
-                                }
-                            });
+                            }
+                            for p in members {
+                                participant_row(app, ui, pal, key, p, presenter && p.uri != me);
+                            }
                         }
                         ui.add_space(10.0);
                     }
@@ -660,6 +652,128 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
             });
     }
     crate::views::chats::conversation_body(app, ui, pal, key);
+}
+
+/// One participant: picture, name (a presenter's menu when we present) and the symbols of
+/// what they take part in.
+fn participant_row(
+    app: &mut CommsUi,
+    ui: &mut Ui,
+    pal: &Palette,
+    key: ConvKey,
+    p: &Participant,
+    manage: bool,
+) {
+    let t = app.t;
+    let name = if p.name.is_empty() {
+        app.state.name_of(&p.uri)
+    } else {
+        p.name.clone()
+    };
+    ui.horizontal(|ui| {
+        let presence = app.state.contacts.get(&p.uri).map(|k| k.presence);
+        app.avatar(ui, Some(p.uri.as_str()), &name, 22.0, presence, pal);
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            for (icon, on, label, struck) in [
+                (Icon::Screen, p.sharing, t.sharing_mark, false),
+                (Icon::Camera, p.video, t.video_mark, false),
+                (
+                    Icon::Mic,
+                    p.muted.is_some(),
+                    t.audio_mark,
+                    p.muted == Some(true),
+                ),
+                (Icon::Chat, p.in_chat, t.im_mark, false),
+            ] {
+                let (rect, resp) =
+                    ui.allocate_exact_size(egui::vec2(16.0, 16.0), egui::Sense::hover());
+                let colour = if on { pal.primary } else { pal.border };
+                icons::draw(ui.painter(), rect, icon, colour);
+                if struck {
+                    ui.painter().line_segment(
+                        [rect.left_top(), rect.right_bottom()],
+                        egui::Stroke::new(1.5, colour),
+                    );
+                }
+                resp.on_hover_text(label);
+            }
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                let r = ui.add(
+                    egui::Label::new(RichText::new(&name).color(pal.ink))
+                        .truncate()
+                        .sense(if manage {
+                            egui::Sense::click()
+                        } else {
+                            egui::Sense::hover()
+                        }),
+                );
+                if manage {
+                    r.context_menu(|ui| participant_menu(app, ui, key, p));
+                }
+            });
+        });
+    });
+}
+
+/// Who skips the lobby, who becomes a presenter, phone callers, announcements – as the Windows
+/// client's meeting options.
+pub fn meeting_options_dialog(app: &mut CommsUi, ctx: &egui::Context) {
+    let t = app.t;
+    let Some((key, mut v)) = app.meeting_options.take() else {
+        return;
+    };
+    let mut keep = true;
+    egui::Modal::new(egui::Id::unique("meeting-options")).show(ctx, |ui| {
+        ui.set_width(380.0);
+        ui.label(RichText::new(t.meeting_options).size(theme::text::HEADING));
+        ui.add_space(6.0);
+        ui.label(t.meeting_access);
+        for (a, label) in [
+            (MeetingAccess::Invited, t.access_invited),
+            (MeetingAccess::Organisation, t.access_organisation),
+            (MeetingAccess::Anyone, t.access_anyone),
+        ] {
+            ui.radio_value(&mut v.access, a, label);
+        }
+        ui.checkbox(&mut v.phone_bypass, t.phone_bypass);
+        ui.checkbox(&mut v.announcements, t.announce_entries);
+        ui.add_space(6.0);
+        ui.label(t.who_presents);
+        for (pr, label) in [
+            (Presenters::Nobody, t.presenters_organizer),
+            (Presenters::Organisation, t.access_organisation),
+            (Presenters::Everyone, t.presenters_everyone),
+        ] {
+            ui.radio_value(&mut v.presenters, pr, label);
+        }
+        ui.add_space(8.0);
+        ui.horizontal(|ui| {
+            if ui.button(t.ok).clicked() {
+                let old = app.state.conversation(key).and_then(|c| c.meeting);
+                app.emit(UiIntent::ConferenceCommand {
+                    key,
+                    command: ConfCommand::Options {
+                        access: v.access,
+                        presenters: v.presenters,
+                        phone_bypass: v.phone_bypass,
+                    },
+                });
+                if old.map(|o| o.announcements) != Some(v.announcements) {
+                    app.emit(UiIntent::ConferenceCommand {
+                        key,
+                        command: ConfCommand::Announcements(v.announcements),
+                    });
+                }
+                keep = false;
+            }
+            if ui.button(t.cancel).clicked() {
+                keep = false;
+            }
+        });
+    });
+    if keep {
+        app.meeting_options = Some((key, v));
+    }
 }
 
 /// Present: what can be shown to the others (sharing our own screen is not built).
@@ -779,6 +893,11 @@ fn more_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
         && c.participants.iter().any(|p| p.uri == me && p.presenter)
     {
         ui.separator();
+        if ui.button(t.meeting_options_dots).clicked() {
+            let v = c.meeting.unwrap_or_default();
+            app.meeting_options = Some((key, v));
+            ui.close();
+        }
         for (label, command) in [
             (t.mute_audience, ConfCommand::MuteAudience(true)),
             (t.unmute_audience, ConfCommand::MuteAudience(false)),
