@@ -107,8 +107,8 @@ pub fn run(app: &mut DesktopApp, line: &str) {
             invite: vec![arg.to_string()],
         }),
         // `addcontact sip:ADDRESS [GROUP]` · `removecontact sip:ADDRESS` ·
-        // `movecontact sip:ADDRESS GROUP` · `addgroup NAME` · `delgroup NAME`
-        "addcontact" | "movecontact" => {
+        // `movecontact|copycontact sip:ADDRESS GROUP` · `addgroup NAME` · `delgroup NAME`
+        "addcontact" | "movecontact" | "copycontact" => {
             let (uri, group) = match arg.split_once(' ') {
                 Some((u, g)) => (u.to_string(), Some(g.trim().to_string())),
                 None => (arg.to_string(), None),
@@ -117,7 +117,11 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 let name = app.ui.state.known_name(&uri);
                 app.handle(UiIntent::AddContact { uri, name, group })
             } else if let Some(group) = group {
-                app.handle(UiIntent::MoveContact { uri, group })
+                if cmd == "copycontact" {
+                    app.handle(UiIntent::CopyContact { uri, group })
+                } else {
+                    app.handle(UiIntent::MoveContact { uri, group })
+                }
             }
         }
         // `relation sip:ADDRESS blocked|colleagues|workgroup|family|external|auto`

@@ -532,6 +532,9 @@ impl DesktopApp {
             UiIntent::MoveContact { uri, group } => {
                 Some(ToWorker::Contacts(ContactChange::Move { uri, group }))
             }
+            UiIntent::CopyContact { uri, group } => {
+                Some(ToWorker::Contacts(ContactChange::Copy { uri, group }))
+            }
             UiIntent::AddGroup { name } => {
                 Some(ToWorker::Contacts(ContactChange::AddGroup { name }))
             }

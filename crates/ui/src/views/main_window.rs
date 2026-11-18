@@ -638,6 +638,14 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     c.group.clone()
                 };
                 by_group.entry(g).or_default().push(c.clone());
+                for more in c.more_groups.iter().filter(|m| **m != c.group) {
+                    let g = if more.is_empty() {
+                        t.other_contacts.to_string()
+                    } else {
+                        more.clone()
+                    };
+                    by_group.entry(g).or_default().push(c.clone());
+                }
             }
             out.extend(by_group);
             if app.prefs.away_group {
@@ -1043,6 +1051,26 @@ pub fn contact_menu(app: &mut CommsUi, ui: &mut Ui, uri: &str) {
     let groups = app.state.groups.clone();
     if app.state.contacts.contains_key(uri) {
         ui.add_enabled_ui(can_edit, |ui| {
+            let (current, more) = app
+                .state
+                .contacts
+                .get(uri)
+                .map(|c| (c.group.clone(), c.more_groups.clone()))
+                .unwrap_or_default();
+            ui.menu_button(t.copy_to_group, |ui| {
+                for g in groups
+                    .iter()
+                    .filter(|g| **g != current && !more.contains(g))
+                {
+                    if ui.button(g).clicked() {
+                        app.emit(UiIntent::CopyContact {
+                            uri: uri.to_string(),
+                            group: g.clone(),
+                        });
+                        ui.close();
+                    }
+                }
+            });
             ui.menu_button(t.move_to_group, |ui| {
                 for g in &groups {
                     if ui.button(g).clicked() {
