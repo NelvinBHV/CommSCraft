@@ -185,6 +185,144 @@ fn i420_of_bgrx(w: u32, h: u32, bgrx: &[u8], max_w: u32, max_h: u32) -> Option<v
 
 /// The raw mode of the helper: pictures as they come, shown in the Wayland window from shared
 /// memory, else in the software window as I420.
+/// Largest picture handed back to an embedding client (design: the conversation window's
+/// stage; a 640×360 RGBA picture is 0.9 MB).
+pub const EMBED_WIDTH: u32 = 640;
+pub const EMBED_HEIGHT: u32 = 360;
+/// Pictures handed back per second at most (design).
+const EMBED_FPS: u64 = 15;
+/// The header line of a picture handed back: `FRAME <width> <height> <bytes>`, then the RGBA
+/// bytes. Every other line is a notice.
+const FRAME_TAG: &str = "FRAME ";
+
+/// The client shows the received video itself (in the conversation window) instead of the
+/// helper's own window; set once by the desktop client.
+static EMBEDDED: AtomicBool = AtomicBool::new(false);
+
+/// Received video goes back to the client as pictures (the desktop client's conversation
+/// window) instead of into a window of its own.
+pub fn set_embedded(on: bool) {
+    EMBEDDED.store(on, Ordering::Relaxed);
+}
+
+/// An I420 picture as RGBA no larger than `max_w × max_h` (aspect kept, nearest sampling;
+/// BT.601 limited range). `None` for a picture whose data does not fit its size.
+pub fn rgba_of_i420(p: &vf::Picture, max_w: u32, max_h: u32) -> Option<(u32, u32, Vec<u8>)> {
+    let (w, h) = (p.width, p.height);
+    if w == 0 || h == 0 || p.data.len() < vf::Picture::i420_len(w, h) {
+        return None;
+    }
+    let (ow, oh) = fit(w, h, max_w, max_h);
+    if ow == 0 || oh == 0 {
+        return None;
+    }
+    let (wu, hu) = (w as usize, h as usize);
+    let (y_plane, rest) = p.data.split_at(wu * hu);
+    let (u_plane, v_plane) = rest.split_at((wu / 2) * (hu / 2));
+    let mut out = Vec::with_capacity(ow as usize * oh as usize * 4);
+    for oy in 0..oh {
+        let sy = (u64::from(oy) * u64::from(h) / u64::from(oh)) as usize;
+        for ox in 0..ow {
+            let sx = (u64::from(ox) * u64::from(w) / u64::from(ow)) as usize;
+            let c = (sy / 2) * (wu / 2) + (sx / 2).min(wu / 2 - 1);
+            let yv = i32::from(*y_plane.get(sy * wu + sx).unwrap_or(&16)) - 16;
+            let u = i32::from(*u_plane.get(c).unwrap_or(&128)) - 128;
+            let v = i32::from(*v_plane.get(c).unwrap_or(&128)) - 128;
+            let r = (298 * yv + 409 * v + 128) >> 8;
+            let g = (298 * yv - 100 * u - 208 * v + 128) >> 8;
+            let b = (298 * yv + 516 * u + 128) >> 8;
+            out.extend_from_slice(&[
+                r.clamp(0, 255) as u8,
+                g.clamp(0, 255) as u8,
+                b.clamp(0, 255) as u8,
+                0xff,
+            ]);
+        }
+    }
+    Some((ow, oh, out))
+}
+
+/// Writes one picture back to the client (embedded mode), at most [`EMBED_FPS`] a second.
+fn send_frame(last: &mut Option<std::time::Instant>, w: u32, h: u32, rgba: &[u8]) {
+    let now = std::time::Instant::now();
+    if last.is_some_and(|t| now.duration_since(t) < Duration::from_millis(1000 / EMBED_FPS)) {
+        return;
+    }
+    *last = Some(now);
+    let mut out = std::io::stdout().lock();
+    let _ = writeln!(out, "{FRAME_TAG}{w} {h} {}", rgba.len());
+    let _ = out.write_all(rgba);
+    let _ = out.flush();
+}
+
+/// Embedded mode: decode and hand the pictures back, no window.
+fn embed_main(raw: bool) -> i32 {
+    let mut last = None;
+    if raw {
+        let units = read_units(MAX_RAW_UNIT);
+        let mut size = (0, 0);
+        while let Ok(unit) = units.recv() {
+            let Some((width, height, pixels)) = raw_of(&unit) else {
+                continue;
+            };
+            if size != (width, height) {
+                println!("the shared window is {width}x{height}");
+                size = (width, height);
+            }
+            // BGRX to RGBA, made smaller for the stage (a shared window keeps more detail).
+            let (ow, oh) = fit(width, height, EMBED_WIDTH * 2, EMBED_HEIGHT * 2);
+            let mut out = Vec::with_capacity(ow as usize * oh as usize * 4);
+            for oy in 0..oh {
+                let sy = (u64::from(oy) * u64::from(height) / u64::from(oh.max(1))) as usize;
+                for ox in 0..ow {
+                    let sx = (u64::from(ox) * u64::from(width) / u64::from(ow.max(1))) as usize;
+                    let i = (sy * width as usize + sx) * 4;
+                    match pixels.get(i..i + 3) {
+                        Some([b, g, r]) => out.extend_from_slice(&[*r, *g, *b, 0xff]),
+                        _ => out.extend_from_slice(&[0, 0, 0, 0xff]),
+                    }
+                }
+            }
+            send_frame(&mut last, ow, oh, &out);
+        }
+        return 0;
+    }
+    let mut decoder = match vf::init().and_then(|()| vf::Decoder::with_hardware(false)) {
+        Ok(d) => d,
+        Err(e) => {
+            println!("no video decoder: {e:?}");
+            return 2;
+        }
+    };
+    let units = read_units(vf::MAX_ACCESS_UNIT);
+    let mut size = (0, 0);
+    while let Ok(unit) = units.recv() {
+        let Ok(pictures) = decoder.decode(&unit) else {
+            continue;
+        };
+        for p in pictures {
+            if size == (0, 0) {
+                println!(
+                    "receiving video {}x{}, decoded on the {}",
+                    p.width,
+                    p.height,
+                    match decoder.backend() {
+                        vf::Backend::Vaapi => "GPU, copied back",
+                        vf::Backend::Software => "CPU",
+                    }
+                );
+            } else if size != (p.width, p.height) {
+                println!("the video is now {}x{}", p.width, p.height);
+            }
+            size = (p.width, p.height);
+            if let Some((w, h, rgba)) = rgba_of_i420(&p, EMBED_WIDTH, EMBED_HEIGHT) {
+                send_frame(&mut last, w, h, &rgba);
+            }
+        }
+    }
+    0
+}
+
 fn raw_main(title: &str) -> i32 {
     let units = read_units(MAX_RAW_UNIT);
     let mut wayland: Option<Window> = None;
@@ -545,6 +683,9 @@ pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
     if mode.as_deref() == Some("raw") {
         return raw_main(&title);
     }
+    if let Some(m) = mode.as_deref().filter(|m| m.starts_with("embed")) {
+        return embed_main(m == "embed-raw");
+    }
     let mut surfaces = mode.as_deref() == Some("gpu") && Window::in_wayland_session();
     let mut decoder = match vf::init().and_then(|()| vf::Decoder::with_hardware(surfaces)) {
         Ok(d) => d,
@@ -693,6 +834,27 @@ fn forward_notices(child: &mut Child, events: &Sender<FromVideo>, id: u32) {
                 Ok(n) if n > 0 => {}
                 _ => return,
             }
+            // A picture handed back (embedded mode): its size is checked before it is read;
+            // anything that does not fit ends the reading (the helper is not trusted).
+            if let Some(head) = line.strip_prefix(FRAME_TAG.as_bytes()) {
+                let text = String::from_utf8_lossy(head);
+                let mut n = text.split_whitespace().map(|v| v.parse::<usize>().ok());
+                let (Some(Some(w)), Some(Some(h)), Some(Some(len))) =
+                    (n.next(), n.next(), n.next())
+                else {
+                    return;
+                };
+                let max = (EMBED_WIDTH as usize * 2) * (EMBED_HEIGHT as usize * 2) * 4;
+                if w == 0 || h == 0 || len != w * h * 4 || len > max {
+                    return;
+                }
+                let mut rgba = vec![0; len];
+                if reader.read_exact(&mut rgba).is_err() {
+                    return;
+                }
+                let _ = events.send(FromVideo::Frame(id, w as u32, h as u32, rgba));
+                continue;
+            }
             if left > 0 {
                 left -= 1;
                 let text = clean_notice(&String::from_utf8_lossy(&line));
@@ -757,10 +919,13 @@ fn spawn_mode(
         let mut input = Some(input);
         let mut restarts = 0;
         loop {
-            let mode = match (raw, gpu) {
-                (true, _) => "raw",
-                (false, true) => "gpu",
-                (false, false) => "cpu",
+            let embedded = EMBEDDED.load(Ordering::Relaxed);
+            let mode = match (embedded, raw, gpu) {
+                (true, true, _) => "embed-raw",
+                (true, false, _) => "embed",
+                (false, true, _) => "raw",
+                (false, false, true) => "gpu",
+                (false, false, false) => "cpu",
             };
             let mut child = match start(id, mode) {
                 Ok(c) => c,
@@ -819,6 +984,33 @@ fn spawn_mode(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn an_i420_picture_becomes_bounded_rgba() {
+        // 4×2 mid grey (Y 126, neutral chroma) → grey, alpha opaque; too little data → None.
+        let p = vf::Picture {
+            width: 4,
+            height: 2,
+            data: [vec![126u8; 8], vec![128u8; 2], vec![128u8; 2]].concat(),
+        };
+        let (w, h, rgba) = rgba_of_i420(&p, 640, 360).unwrap();
+        assert_eq!((w, h), (4, 2));
+        assert_eq!(rgba.len(), 4 * 2 * 4);
+        assert_eq!(&rgba[..4], &[128, 128, 128, 255]);
+        let big = vf::Picture {
+            width: 1280,
+            height: 720,
+            data: vec![16; vf::Picture::i420_len(1280, 720)],
+        };
+        let (w, h, _) = rgba_of_i420(&big, EMBED_WIDTH, EMBED_HEIGHT).unwrap();
+        assert!(w <= EMBED_WIDTH && h <= EMBED_HEIGHT);
+        let short = vf::Picture {
+            width: 4,
+            height: 2,
+            data: vec![0; 3],
+        };
+        assert!(rgba_of_i420(&short, 640, 360).is_none());
+    }
+
     use super::*;
 
     /// The system call filter, applied to one thread only: starting a program and IP sockets are

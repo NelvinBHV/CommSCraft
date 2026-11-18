@@ -260,7 +260,15 @@ fn ringing_is_not_connected_and_the_call_has_its_window() {
     let mut h = harness(ui, BIG);
     h.run();
     h.run();
-    assert!(h.state().ui.windows().contains(&Win::Call(7)));
+    // As in the Windows client: the call is on the stage of its conversation window.
+    let key = h
+        .state()
+        .ui
+        .state
+        .conversation_with("sip:tim@beispiel.invalid")
+        .expect("a conversation for the call");
+    assert!(h.state().ui.windows().contains(&Win::Conv(key)));
+    assert!(!h.state().ui.windows().contains(&Win::Call(7)));
     assert!(h.query_all_by_label_contains("Es klingelt").count() > 0);
     assert_eq!(h.query_all_by_label_contains("verbunden").count(), 0);
     h.state_mut()
@@ -276,7 +284,9 @@ fn ringing_is_not_connected_and_the_call_has_its_window() {
         at: NOW,
     });
     h.run();
-    assert!(!h.state().ui.windows().contains(&Win::Call(7)));
+    // Ended: the stage goes, the conversation stays.
+    assert!(h.state().ui.windows().contains(&Win::Conv(key)));
+    assert_eq!(h.query_all_by_label_contains("Audio verbunden").count(), 0);
 }
 
 #[test]
@@ -291,6 +301,8 @@ fn a_connected_call_can_be_transferred_from_its_window() {
     ui.state.apply(AppEvent::CallConnected { id: 3, at: NOW });
     let mut h = harness(ui, BIG);
     h.run();
+    h.run();
+    button(&h, "Anrufsteuerung").click();
     h.run();
     button(&h, "Übertragen").click();
     h.run();
@@ -878,6 +890,8 @@ fn a_call_is_transferred_to_the_party_of_another_call() {
     h.run();
     // Both call windows are open; the first one's transfer menu offers the other call.
     // (Embedded windows overlap in tests: the top one, drawn last, takes the click.)
+    h.get_all_by_label("Anrufsteuerung").last().unwrap().click();
+    h.run();
     h.get_all_by_label("Übertragen").last().unwrap().click();
     h.run();
     h.get_by_label_contains("Mit Rückfrage an").click();

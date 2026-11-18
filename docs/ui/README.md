@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (chats start and arrive as in the Windows client)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (calls and video on the stage of the conversation window)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -99,6 +99,13 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   (attended: the consultation call is replaced); after a connected call a bar asks for a rating
   of one to five stars when the server names a quality service (sent as the rating report).
   `tested-in-lab` (rating), attended transfer `tested-offline` in the interface.
+- **Calls on the stage of the conversation window:** as in the Windows client, a call is shown
+  above the IM of its conversation (a 1:1 call without one gets a conversation): the received
+  video embedded (the sandboxed decoder process hands back pictures of at most 640×360 at 15 per
+  second instead of opening a window of its own), name, state and duration, round buttons for
+  the IM area, the microphone, hang up and the call controls (hold, transfer, dial pad); with the
+  IM area hidden the stage fills the window. A shared window over RDP comes the same way.
+  `tested-in-lab`.
 - **Chats as in the Windows client:** a 1:1 conversation is set up with its first message, which
   the invitation carries (`Ms-Text-Format`, so the other side's notification shows the text); an
   invitation to a chat without audio is joined at once and its conversation appears unread; an

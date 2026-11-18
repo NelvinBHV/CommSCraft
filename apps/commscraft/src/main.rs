@@ -702,6 +702,9 @@ fn main() {
             std::env::args().skip(2),
         ));
     }
+    // Received video is shown in the conversation window, as in the Windows client (the decoder
+    // stays in its sandboxed process and hands the pictures back).
+    commscraft_client::video_window::set_embedded(true);
     let args = match parse_args() {
         Ok(a) => a,
         Err(e) => {

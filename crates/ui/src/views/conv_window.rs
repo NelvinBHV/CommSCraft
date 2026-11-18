@@ -171,6 +171,23 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     if let Some(m) = app.state.conversation_mut(key) {
         m.unread = 0;
     }
+    // A call with the IM area hidden: the stage fills the window (the compact call view).
+    if app.im_hidden.contains(&key) {
+        if let Some(call) = app
+            .state
+            .calls
+            .iter()
+            .find(|cl| {
+                cl.state != CallState::Incoming && app.state.conversation_of_call(cl) == Some(key)
+            })
+            .cloned()
+        {
+            egui::CentralPanel::default()
+                .frame(Frame::new().fill(STAGE).inner_margin(Margin::same(10)))
+                .show(ui, |ui| stage(app, ui, pal, &call, &c.title));
+            return;
+        }
+    }
     let caps = app.state.capabilities.clone();
     let idle = app.state.active_call().is_none();
     // The bar at the bottom, below the composer.
@@ -253,6 +270,23 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                 });
             });
         });
+    // A call of this conversation: the stage above the IM, as in the Windows client.
+    if let Some(call) = app
+        .state
+        .calls
+        .iter()
+        .find(|cl| {
+            cl.state != CallState::Incoming && app.state.conversation_of_call(cl) == Some(key)
+        })
+        .cloned()
+    {
+        let height = (ui.available_height() * 0.62).max(260.0);
+        egui::Panel::top(("conv-stage", key.0))
+            .resizable(true)
+            .default_size(height)
+            .frame(Frame::new().fill(STAGE).inner_margin(Margin::same(10)))
+            .show(ui, |ui| stage(app, ui, pal, &call, &c.title));
+    }
     // Someone shares in the meeting: say so and offer to view it.
     if let (Some(sharer), true) = (c.sharer.clone(), c.is_group() && c.state == ConvState::Open) {
         egui::Panel::top(("conv-sharing", key.0))
@@ -597,6 +631,286 @@ fn call(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, id: u32) {
         });
 }
 
+/// The dark stage of a call in its conversation window.
+const STAGE: egui::Color32 = egui::Color32::from_rgb(0x16, 0x18, 0x1c);
+
+/// The texture of a call's latest received picture.
+fn video_texture(app: &CommsUi, ui: &Ui, call: u32) -> Option<egui::TextureHandle> {
+    let f = app.state.video.get(&call)?;
+    let mut cache = app.video_textures.borrow_mut();
+    if let Some((seq, tex)) = cache.get_mut(&call) {
+        if *seq != f.seq {
+            tex.set(
+                egui::ColorImage::from_rgba_unmultiplied(
+                    [f.width as usize, f.height as usize],
+                    &f.rgba,
+                ),
+                egui::TextureOptions::LINEAR,
+            );
+            *seq = f.seq;
+        }
+        return Some(tex.clone());
+    }
+    let tex = ui.ctx().load_texture(
+        format!("video-{call}"),
+        egui::ColorImage::from_rgba_unmultiplied([f.width as usize, f.height as usize], &f.rgba),
+        egui::TextureOptions::LINEAR,
+    );
+    cache.insert(call, (f.seq, tex.clone()));
+    Some(tex)
+}
+
+/// The stage: the received video (or the peer's picture), name, state and the call controls.
+fn stage(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, call: &Call, title: &str) {
+    let t = app.t;
+    let caps = app.state.capabilities.clone();
+    let connected = matches!(call.state, CallState::Connected { .. });
+    let name = if call.conference.is_some() {
+        title.to_string()
+    } else {
+        app.state.name_of(&call.peer)
+    };
+    let light = egui::Color32::from_gray(235);
+    let state = crate::views::calls::state_text(app, call.state, call.held, call.kind);
+    ui.horizontal(|ui| {
+        ui.label(RichText::new(&name).size(theme::text::HEADING).color(light));
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.label(RichText::new(&state).size(theme::text::SMALL).color(light));
+        });
+    });
+    let controls_h = 46.0;
+    let area = egui::vec2(
+        ui.available_width(),
+        (ui.available_height() - controls_h).max(80.0),
+    );
+    let (rect, _) = ui.allocate_exact_size(area, egui::Sense::hover());
+    match video_texture(app, ui, call.id) {
+        Some(tex) => {
+            // The picture as large as fits, aspect kept, centred.
+            let size = tex.size_vec2();
+            let scale = (rect.width() / size.x).min(rect.height() / size.y);
+            let shown = egui::Rect::from_center_size(rect.center(), size * scale);
+            ui.painter().image(
+                tex.id(),
+                shown,
+                egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                egui::Color32::WHITE,
+            );
+            ui.painter().text(
+                shown.left_bottom() + egui::vec2(10.0, -10.0),
+                egui::Align2::LEFT_BOTTOM,
+                &name,
+                egui::FontId::proportional(15.0),
+                light,
+            );
+            ui.ctx()
+                .request_repaint_after(std::time::Duration::from_millis(66));
+        }
+        None => {
+            let mut child = ui.new_child(
+                egui::UiBuilder::new()
+                    .max_rect(rect)
+                    .layout(egui::Layout::top_down(egui::Align::Center)),
+            );
+            child.add_space((rect.height() / 2.0 - 70.0).max(0.0));
+            app.avatar(&mut child, Some(call.peer.as_str()), &name, 96.0, None, pal);
+            let note = match &call.video {
+                VideoState::Starting => Some(t.video_starting.to_string()),
+                VideoState::Failed(why) => Some(format!("{}: {why}", t.video_failed)),
+                _ => None,
+            };
+            if let Some(n) = note {
+                child.label(RichText::new(n).size(theme::text::SMALL).color(light));
+            }
+        }
+    }
+    ui.horizontal_centered(|ui| stage_controls(app, ui, pal, call, connected, &caps));
+}
+
+/// A round button of the stage: filled circle, white symbol; `None` colour: the theme's.
+fn round_button(
+    ui: &mut Ui,
+    icon: Icon,
+    label: &str,
+    fill: egui::Color32,
+    enabled: bool,
+    struck: bool,
+) -> egui::Response {
+    let size = egui::vec2(40.0, 40.0);
+    let (rect, resp) = ui.allocate_exact_size(
+        size,
+        if enabled {
+            egui::Sense::click()
+        } else {
+            egui::Sense::hover()
+        },
+    );
+    let fill = if !enabled {
+        fill.gamma_multiply(0.35)
+    } else if resp.hovered() {
+        fill.gamma_multiply(1.15)
+    } else {
+        fill
+    };
+    ui.painter().circle_filled(rect.center(), 20.0, fill);
+    icons::draw(ui.painter(), rect.shrink(11.0), icon, egui::Color32::WHITE);
+    if struck {
+        ui.painter().line_segment(
+            [
+                rect.left_top() + egui::vec2(11.0, 11.0),
+                rect.right_bottom() - egui::vec2(11.0, 11.0),
+            ],
+            egui::Stroke::new(2.0, egui::Color32::WHITE),
+        );
+    }
+    let label = label.to_string();
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, &label));
+    resp.on_hover_text(label)
+}
+
+/// The call controls menu of the stage: hold, transfer (a person, or another call's party),
+/// dial pad – submenus, as nested pop-ups would close each other.
+fn call_menu(
+    app: &mut CommsUi,
+    ui: &mut Ui,
+    call: &Call,
+    connected: bool,
+    caps: &crate::model::Capabilities,
+) {
+    let t = app.t;
+    let person = call.conference.is_none();
+    if person
+        && ui
+            .add_enabled(
+                connected && caps.hold.usable(),
+                egui::Button::new(if call.held { t.resume } else { t.hold }),
+            )
+            .clicked()
+    {
+        app.emit(UiIntent::Hold {
+            id: call.id,
+            hold: !call.held,
+        });
+        ui.close();
+    }
+    if person {
+        let others: Vec<(u32, String)> = app
+            .state
+            .calls
+            .iter()
+            .filter(|o| {
+                o.id != call.id
+                    && o.conference.is_none()
+                    && matches!(o.state, CallState::Connected { .. })
+            })
+            .map(|o| (o.id, app.state.name_of(&o.peer)))
+            .collect();
+        ui.add_enabled_ui(connected && caps.transfer.usable(), |ui| {
+            ui.menu_button(t.transfer, |ui| {
+                if ui.button(t.transfer_to_person).clicked() {
+                    app.new_chat = Some(NewChat {
+                        text: String::new(),
+                        purpose: AddressFor::Transfer(call.id),
+                    });
+                    app.focus_main();
+                    ui.close();
+                }
+                for (target, name) in &others {
+                    if ui
+                        .button(format!("{} {name}", t.transfer_to_call))
+                        .clicked()
+                    {
+                        app.emit(UiIntent::TransferToCall {
+                            id: call.id,
+                            target: *target,
+                        });
+                        ui.close();
+                    }
+                }
+            });
+        });
+    }
+    ui.add_enabled_ui(connected, |ui| {
+        ui.menu_button(t.dial_pad, |ui| {
+            egui::Grid::new(("dtmf-menu", call.id)).show(ui, |ui| {
+                for row in [
+                    ["1", "2", "3"],
+                    ["4", "5", "6"],
+                    ["7", "8", "9"],
+                    ["*", "0", "#"],
+                ] {
+                    for k in row {
+                        if ui.add_sized([40.0, 32.0], egui::Button::new(k)).clicked() {
+                            app.emit(UiIntent::Dtmf {
+                                id: call.id,
+                                digits: k.to_string(),
+                            });
+                        }
+                    }
+                    ui.end_row();
+                }
+            });
+        });
+    });
+}
+
+/// The stage's buttons as in the Windows client: IM, microphone, hang up (red), and the call
+/// controls (hold, transfer, dial pad).
+fn stage_controls(
+    app: &mut CommsUi,
+    ui: &mut Ui,
+    pal: &Palette,
+    call: &Call,
+    connected: bool,
+    caps: &crate::model::Capabilities,
+) {
+    let t = app.t;
+    let blue = pal.primary;
+    let red = egui::Color32::from_rgb(0xd9, 0x2b, 0x2b);
+    let grey = egui::Color32::from_gray(90);
+    ui.add_space(4.0);
+    if let Some(key) = app.state.conversation_of_call(call) {
+        let hidden = app.im_hidden.contains(&key);
+        if round_button(ui, Icon::Chat, t.im_pane, grey, true, hidden).clicked() {
+            if hidden {
+                app.im_hidden.remove(&key);
+            } else {
+                app.im_hidden.insert(key);
+            }
+        }
+    }
+    ui.add_space(12.0);
+    if call.kind != CallKind::Screen
+        && round_button(
+            ui,
+            Icon::Mic,
+            if call.muted { t.unmute } else { t.mute },
+            blue,
+            connected,
+            call.muted,
+        )
+        .clicked()
+    {
+        app.emit(UiIntent::Mute {
+            id: call.id,
+            muted: !call.muted,
+        });
+    }
+    let hang = if call.kind == CallKind::Screen {
+        t.stop_viewing
+    } else {
+        t.hang_up
+    };
+    if round_button(ui, Icon::HangUp, hang, red, true, false).clicked() {
+        app.emit(UiIntent::HangUp { id: call.id });
+    }
+    ui.add_space(12.0);
+    if call.kind != CallKind::Screen {
+        let b = round_button(ui, Icon::Phone, t.call_controls, grey, connected, false);
+        egui::Popup::menu(&b).show(|ui| call_menu(app, ui, call, connected, caps));
+    }
+}
+
 fn incoming_buttons(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, call: &Call) {
     let t = app.t;
     let caps = app.state.capabilities.clone();
@@ -730,14 +1044,17 @@ fn controls(
             });
         }
     });
-    ui.add_space(12.0);
-    let label = if call.kind == CallKind::Screen {
-        t.stop_viewing
-    } else {
-        t.hang_up
-    };
-    if widgets::danger(ui, label, pal).clicked() {
-        app.emit(UiIntent::HangUp { id: call.id });
+    // The call window has its own hang-up button; the stage's menu does not need one.
+    if app.state.conversation_of_call(call).is_none() {
+        ui.add_space(12.0);
+        let label = if call.kind == CallKind::Screen {
+            t.stop_viewing
+        } else {
+            t.hang_up
+        };
+        if widgets::danger(ui, label, pal).clicked() {
+            app.emit(UiIntent::HangUp { id: call.id });
+        }
     }
 }
 

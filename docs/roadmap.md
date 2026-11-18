@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (chats start and arrive as in the Windows client)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (calls and video on the stage of the conversation window)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).

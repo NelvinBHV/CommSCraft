@@ -3014,6 +3014,8 @@ fn interactive(
                     }
                 }
                 video_call::FromVideo::Notice(vid, n) => println!("* [video {vid}] {n}"),
+                // The command-line tool shows pictures in the helper's own window.
+                video_call::FromVideo::Frame(..) => {}
                 video_call::FromVideo::Stalled(vid) => {
                     // No picture from the watched source: the next candidate, if there is one.
                     let watched = conf_video

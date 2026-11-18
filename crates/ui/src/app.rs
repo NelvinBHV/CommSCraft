@@ -439,6 +439,8 @@ pub struct CommsUi {
     pub(crate) group_dialog: Option<(Option<String>, String)>,
     /// The meeting link typed in the meetings tab.
     pub(crate) meeting_link: String,
+    /// Conversations whose IM area is hidden below the stage.
+    pub(crate) im_hidden: BTreeSet<ConvKey>,
     /// The sound devices the desktop offers: (ALSA name, label).
     pub audio_devices: Vec<(String, String)>,
     /// The star under the pointer in the call rating (0: none).
@@ -464,6 +466,8 @@ pub struct CommsUi {
     pub stored_password_for: Option<String>,
     /// Textures of the contact photos, made when first shown.
     pub(crate) textures: std::cell::RefCell<BTreeMap<String, egui::TextureHandle>>,
+    /// The received video per call: picture count and texture.
+    pub(crate) video_textures: std::cell::RefCell<BTreeMap<u32, (u64, egui::TextureHandle)>>,
 }
 
 impl CommsUi {
@@ -502,6 +506,7 @@ impl CommsUi {
             collapsed: BTreeSet::new(),
             group_dialog: None,
             meeting_link: String::new(),
+            im_hidden: BTreeSet::new(),
             audio_devices: Vec::new(),
             rating_hover: 0,
             meeting_dialog: None,
@@ -517,6 +522,7 @@ impl CommsUi {
             screenshot: None,
             stored_password_for: None,
             textures: std::cell::RefCell::new(BTreeMap::new()),
+            video_textures: std::cell::RefCell::new(BTreeMap::new()),
         }
     }
 
@@ -822,11 +828,39 @@ impl CommsUi {
             .filter(|c| c.state != crate::model::CallState::Incoming)
             .map(|c| c.id)
             .collect();
+        // As in the Windows client: a call is shown in its conversation window (the stage above
+        // the IM); a 1:1 call without one gets a conversation (set up with its first message).
         for id in ids {
-            if self.call_windows_opened.insert(id) {
-                self.open_window(Win::Call(id));
+            if !self.call_windows_opened.insert(id) {
+                continue;
+            }
+            let Some(call) = self.state.calls.iter().find(|c| c.id == id).cloned() else {
+                continue;
+            };
+            let key = self.state.conversation_of_call(&call).or_else(|| {
+                (!call.peer.is_empty() && call.peer.starts_with("sip:")).then(|| {
+                    let key = self.state.new_key();
+                    self.state
+                        .apply(crate::model::AppEvent::ConversationOpening {
+                            key,
+                            peer: call.peer.clone(),
+                        });
+                    self.emit(UiIntent::StartConversation {
+                        key,
+                        peer: call.peer.clone(),
+                    });
+                    key
+                })
+            });
+            match key {
+                Some(k) => self.open_window(Win::Conv(k)),
+                None => self.open_window(Win::Call(id)),
             }
         }
+        let live_video: BTreeSet<u32> = self.state.video.keys().copied().collect();
+        self.video_textures
+            .borrow_mut()
+            .retain(|id, _| live_video.contains(id));
         let live: BTreeSet<u32> = self.state.calls.iter().map(|c| c.id).collect();
         self.windows
             .retain(|w| !matches!(w, Win::Call(id) if !live.contains(id)));

@@ -21,6 +21,10 @@ pub enum Icon {
     Speaker,
     /// A five-pointed star (call rating).
     Star,
+    /// A microphone (struck through when muted is drawn by the caller).
+    Mic,
+    /// A handset lying down: hang up.
+    HangUp,
 }
 
 /// Draws an icon into `rect` (square-ish) with a 1.6 px line.
@@ -69,6 +73,27 @@ pub fn draw(p: &Painter, rect: Rect, icon: Icon, colour: Color32) {
                 );
             }
             p.circle_stroke(c, r * 0.62, s);
+        }
+        Icon::Mic => {
+            let body = Rect::from_min_max(at(-0.28, -0.85), at(0.28, 0.2));
+            p.rect_stroke(body, r * 0.28, s, egui::StrokeKind::Middle);
+            arc(p, at(0.0, -0.05), r * 0.55, 20.0, 160.0, s);
+            p.line_segment([at(0.0, 0.5), at(0.0, 0.85)], s);
+            p.line_segment([at(-0.35, 0.85), at(0.35, 0.85)], s);
+        }
+        Icon::HangUp => {
+            // A handset on its back: the grip as a wide arc, the two pieces at its ends.
+            arc(
+                p,
+                at(0.0, 0.55),
+                r * 0.85,
+                225.0,
+                315.0,
+                Stroke::new(3.0, colour),
+            );
+            for x in [-0.62f32, 0.62] {
+                p.circle_filled(at(x, 0.0), r * 0.2, colour);
+            }
         }
         Icon::Star => {
             // Ten points, alternating outer and inner radius, starting at the top.

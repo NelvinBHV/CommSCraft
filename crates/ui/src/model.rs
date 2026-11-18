@@ -514,6 +514,16 @@ pub struct Meeting {
     pub join_url: Option<String>,
 }
 
+/// The latest received picture of a call (RGBA), shown in its conversation window.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VideoFrame {
+    pub width: u32,
+    pub height: u32,
+    pub rgba: std::sync::Arc<Vec<u8>>,
+    /// Counts the pictures (a new one replaces the texture).
+    pub seq: u64,
+}
+
 /// An entry of the Conversation History folder in Exchange.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HistoryEntry {
@@ -704,6 +714,13 @@ pub enum AppEvent {
     },
     /// Calls can be rated (the server has a quality service).
     QualityRating(bool),
+    /// A received picture of a call (RGBA).
+    VideoFrame {
+        call: u32,
+        width: u32,
+        height: u32,
+        rgba: Vec<u8>,
+    },
     /// The entries of the Conversation History folder, or why they are not there.
     History(Result<Vec<HistoryEntry>, String>),
     /// One history entry's text.
@@ -886,6 +903,8 @@ pub struct AppState {
     pub history: Option<Result<Vec<HistoryEntry>, String>>,
     /// The history entry being read: its ID and, once there, its text.
     pub history_open: Option<(String, Option<Result<String, String>>)>,
+    /// The latest received picture per call.
+    pub video: BTreeMap<u32, VideoFrame>,
 }
 
 impl Default for AppState {
@@ -909,6 +928,7 @@ impl Default for AppState {
             subscribers: Vec::new(),
             quality_rating: false,
             history: None,
+            video: BTreeMap::new(),
             history_open: None,
             rate_call: None,
             appointments: None,
@@ -1073,7 +1093,17 @@ impl AppState {
         }
     }
 
+    /// The conversation a call belongs to: its meeting, or the conversation with its peer.
+    pub fn conversation_of_call(&self, call: &Call) -> Option<ConvKey> {
+        call.conference.or_else(|| {
+            (!call.peer.is_empty())
+                .then(|| self.conversation_with(&call.peer))
+                .flatten()
+        })
+    }
+
     fn end_call(&mut self, id: u32, status: u16, at: u64) {
+        self.video.remove(&id);
         let Some(c) = self.calls.iter_mut().find(|c| c.id == id) else {
             return;
         };
@@ -1471,6 +1501,30 @@ impl AppState {
             }
             AppEvent::MeetingCancelled(id) => self.meetings.retain(|m| m.conference_id != id),
             AppEvent::QualityRating(on) => self.quality_rating = on,
+            AppEvent::VideoFrame {
+                call,
+                width,
+                height,
+                rgba,
+            } => {
+                let fits = width > 0
+                    && height > 0
+                    && width <= 2048
+                    && height <= 2048
+                    && rgba.len() == width as usize * height as usize * 4;
+                if fits && self.calls.iter().any(|c| c.id == call) {
+                    let seq = self.video.get(&call).map_or(1, |f| f.seq.wrapping_add(1));
+                    self.video.insert(
+                        call,
+                        VideoFrame {
+                            width,
+                            height,
+                            rgba: std::sync::Arc::new(rgba),
+                            seq,
+                        },
+                    );
+                }
+            }
             AppEvent::History(r) => {
                 self.history = Some(r.map(|l| {
                     l.into_iter()
