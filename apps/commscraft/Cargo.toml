@@ -29,6 +29,7 @@ commscraft-session = { path = "../../crates/session" }
 commscraft-sip-msg = { path = "../../crates/sip-msg" }
 commscraft-sipae = { path = "../../crates/sipae" }
 commscraft-tlsdsk = { path = "../../crates/tlsdsk" }
+commscraft-abs = { path = "../../crates/abs" }
 commscraft-url = { path = "../../crates/url" }
 commscraft-xml = { path = "../../crates/xml" }
 commscraft-xccos = { path = "../../crates/xccos" }

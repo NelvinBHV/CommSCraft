@@ -354,7 +354,7 @@ texts! {
     no_contacts_filter: "Kein Kontakt passt zum Filter.", "No contact matches the filter.";
     source_contact_list: "Kontaktliste", "Contact list";
     source_address_book: "Adressbuch", "Address book";
-    source_directory: "Adressbuchsuche (Server)", "Address book search (server)";
+    source_directory: "Adressbuch", "Address book";
     source_demo: "Demonstrationsdaten", "Demonstration data";
     select_contact: "Kein Kontakt ausgewählt", "No contact selected";
     select_contact_hint: "Links einen Kontakt wählen. Doppelklick startet einen Chat.", "Pick a contact on the left. A double click starts a chat.";

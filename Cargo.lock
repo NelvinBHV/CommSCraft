@@ -666,6 +666,7 @@ dependencies = [
 name = "commscraft"
 version = "0.0.1"
 dependencies = [
+ "commscraft-abs",
  "commscraft-audio-alsa",
  "commscraft-call-media",
  "commscraft-client",
@@ -783,6 +784,7 @@ dependencies = [
 name = "commscraft-client"
 version = "0.0.1"
 dependencies = [
+ "commscraft-abs",
  "commscraft-audio-alsa",
  "commscraft-avedgea",
  "commscraft-call-media",
