@@ -109,6 +109,28 @@ pub fn invite_body(m: &mut Message, ip: std::net::IpAddr, conference: bool) {
 }
 
 /// ACK for a 2xx to our INVITE: a new request in the dialog with the INVITE's CSeq number
+/// Longest first message carried in the INVITE (design; the full text follows as MESSAGE).
+pub const MAX_FIRST_MESSAGE: usize = 1024;
+
+/// The INVITE header that carries the first message of a 1:1 session, so the invited client can
+/// show it at once (`Ms-Text-Format: text/plain; charset=UTF-8; ms-body=<base64>`). Interop,
+/// `tested-in-lab`: the Windows client sends exactly this (plus HTML and RTF variants in
+/// `Ms-Im-Format`) and still sends the message as MESSAGE after the session is set up; no Open
+/// Specification describes the header (open point). The text is made printable and bounded.
+pub fn first_message_header(m: &mut Message, text: &str) {
+    let clean: String = printable(text).chars().take(MAX_FIRST_MESSAGE).collect();
+    if clean.trim().is_empty() {
+        return;
+    }
+    m.push_header(
+        "Ms-Text-Format",
+        &format!(
+            "text/plain; charset=UTF-8; ms-body={}",
+            commscraft_sipae::base64::encode(clean.as_bytes())
+        ),
+    );
+}
+
 /// (RFC 3261 §13.2.2.4). The caller adds Via and signs it.
 pub fn ack_for_2xx(dialog: &Dialog, invite_cseq: u32) -> Message {
     let mut d = dialog.clone();

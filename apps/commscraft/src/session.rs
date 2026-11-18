@@ -544,6 +544,8 @@ struct Session {
     transcripts: BTreeMap<u32, commscraft_ews::history::Conversation>,
     /// The Exchange item IDs of the listed history entries.
     history_ids: BTreeMap<String, commscraft_ews::ucs::ItemId>,
+    /// Conversations opened in the interface whose first message has not been written yet.
+    unstarted: BTreeMap<ConvKey, String>,
     quiet_busy: bool,
     content_tx: mpsc::Sender<meeting_content::FromContent>,
     /// Meeting content connections by conversation, with the users they named.
@@ -1031,6 +1033,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         audio_device: String::new(),
         transcripts: BTreeMap::new(),
         history_ids: BTreeMap::new(),
+        unstarted: BTreeMap::new(),
         quiet_busy: false,
         content_tx,
         content: BTreeMap::new(),
@@ -1910,11 +1913,43 @@ impl Session {
                 Some(st) => self.engine.command(C::SetStatus(st), t),
                 None => Vec::new(),
             },
+            // As the Windows client: the conversation is only set up with its first message, which
+            // the invitation carries (the other side sees it at once).
             ToWorker::StartConversation { key, peer } => {
+                self.unstarted.insert(key, peer);
+                Vec::new()
+            }
+            ToWorker::SendText { key, session, text }
+                if session.is_none()
+                    && !self.keys.contains_key(&key)
+                    && self.unstarted.contains_key(&key) =>
+            {
+                let Some(peer) = self.unstarted.remove(&key) else {
+                    return Vec::new();
+                };
                 let id = self.engine.next_conversation_id();
                 self.opened.insert(id, key);
                 self.keys.insert(key, id);
-                self.engine.command(C::StartConversation { to: peer }, t)
+                let me = if self.profile.name.is_empty() {
+                    self.profile.uri.trim_start_matches("sip:").to_string()
+                } else {
+                    self.profile.name.clone()
+                };
+                self.transcripts
+                    .entry(id)
+                    .or_default()
+                    .add_line(commscraft_ews::history::Line {
+                        time: t,
+                        sender: me,
+                        text: text.clone(),
+                    });
+                self.engine.command(
+                    C::StartConversation {
+                        to: peer,
+                        first: Some(text),
+                    },
+                    t,
+                )
             }
             ToWorker::SendText { key, session, text } => match self.session_of(key, session) {
                 Some(conversation) => {
@@ -2875,6 +2910,22 @@ impl Session {
                         })
                         .collect(),
                 });
+            }
+            // As the Windows client (interop, `tested-in-lab`): an invitation to a chat without
+            // audio is joined at once and its conversation appears; one with audio is asked.
+            E::ConferenceInvitation { from, invitation } if invitation.im && !invitation.audio => {
+                if self.alert_sounds() {
+                    self.cues.notify(now_ms());
+                }
+                trace_line(&format!("chat invitation from {from} joined"));
+                let id = self.engine.next_conversation_id();
+                self.groups.insert(id);
+                more.extend(self.engine.command(
+                    C::JoinConference {
+                        focus: invitation.focus,
+                    },
+                    now(),
+                ));
             }
             E::ConferenceInvitation { from, invitation } => {
                 if self.alert_sounds() {

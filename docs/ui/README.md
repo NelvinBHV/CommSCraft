@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: the meeting video asks for a sender's source)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (chats start and arrive as in the Windows client)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -99,6 +99,11 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   (attended: the consultation call is replaced); after a connected call a bar asks for a rating
   of one to five stars when the server names a quality service (sent as the rating report).
   `tested-in-lab` (rating), attended transfer `tested-offline` in the interface.
+- **Chats as in the Windows client:** a 1:1 conversation is set up with its first message, which
+  the invitation carries (`Ms-Text-Format`, so the other side's notification shows the text); an
+  invitation to a chat without audio is joined at once and its conversation appears unread; an
+  invitation with audio is still asked. Own invitations announce audio only while the
+  conference's audio is in use. `tested-in-lab`.
 - **Conversation history in Exchange:** a finished IM conversation is saved in the user's
   Conversation History folder (EWS CreateItem, in the background thread) – as the server's
   archiving policy says, else as chosen in *Options › IM* (on by default). The conversations
