@@ -680,6 +680,11 @@ impl CommsUi {
     }
 
     /// The open windows besides the main window.
+    /// The unsent text of a conversation.
+    pub fn draft(&self, key: ConvKey) -> Option<&str> {
+        self.drafts.get(&key).map(String::as_str)
+    }
+
     pub fn windows(&self) -> &[Win] {
         &self.windows
     }

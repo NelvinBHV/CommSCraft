@@ -7,6 +7,7 @@
 pub mod app;
 pub mod content;
 pub mod demo;
+pub mod emoticons;
 pub mod format;
 pub mod model;
 pub mod text;

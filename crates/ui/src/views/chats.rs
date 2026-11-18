@@ -238,6 +238,11 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
         return;
     }
     let own = m.sender.is_none();
+    // Emoticon codes as emoji where the system font has them.
+    let font = egui::FontId::proportional(theme::text::BODY);
+    let shown = crate::emoticons::show(&m.text, &mut |e| {
+        ui.ctx().fonts_mut(|f| f.has_glyphs(&font, e))
+    });
     let max_w = (ui.available_width() * 0.68).max(240.0);
     let time = format::clock(m.at, app.utc_offset);
     if own {
@@ -250,9 +255,7 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
                     ui.set_max_width(max_w);
                     ui.add(
                         egui::Label::new(
-                            RichText::new(&m.text)
-                                .size(theme::text::BODY)
-                                .color(pal.ink),
+                            RichText::new(&shown).size(theme::text::BODY).color(pal.ink),
                         )
                         .wrap(),
                     );
@@ -302,9 +305,7 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
                     ui.set_max_width(max_w);
                     ui.add(
                         egui::Label::new(
-                            RichText::new(&m.text)
-                                .size(theme::text::BODY)
-                                .color(pal.ink),
+                            RichText::new(&shown).size(theme::text::BODY).color(pal.ink),
                         )
                         .wrap(),
                     );
@@ -312,6 +313,44 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
         });
     });
     ui.add_space(4.0);
+}
+
+/// The emoticons, as the Windows client's picker: a click writes the code into the draft.
+fn emoticon_picker(app: &mut CommsUi, ui: &mut Ui, key: ConvKey, enabled: bool) {
+    let t = app.t;
+    let r = ui
+        .add_enabled(enabled, egui::Button::new(t.emoticons).frame(false))
+        .on_hover_text(t.emoticons);
+    let font = egui::FontId::proportional(18.0);
+    egui::Popup::menu(&r).show(|ui| {
+        egui::Grid::new(("emoticons", key.0)).show(ui, |ui| {
+            for (i, (code, emoji, de, en)) in crate::emoticons::EMOTICONS.iter().enumerate() {
+                let name = match app.prefs.lang {
+                    crate::text::Lang::De => de,
+                    crate::text::Lang::En => en,
+                };
+                let has = ui.ctx().fonts_mut(|f| f.has_glyphs(&font, emoji));
+                let face = if has { *emoji } else { *code };
+                let b = ui
+                    .add(egui::Button::new(RichText::new(face).font(font.clone())).frame(false))
+                    .on_hover_text(format!("{name}  {code}"));
+                b.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, *name));
+                if b.clicked() {
+                    let d = app.drafts.entry(key).or_default();
+                    if !d.is_empty() && !d.ends_with(' ') {
+                        d.push(' ');
+                    }
+                    d.push_str(code);
+                    d.push(' ');
+                    app.focus_composer = true;
+                    ui.close();
+                }
+                if i % 8 == 7 {
+                    ui.end_row();
+                }
+            }
+        });
+    });
 }
 
 fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
@@ -400,6 +439,7 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                         widgets::gated(ui, t.formatting, &rich_gate, t, pal, |ui, l, en| {
                             ui.add_enabled(en, egui::Button::new(l).frame(false))
                         });
+                        emoticon_picker(app, ui, key, can_send);
                         if text_len * 10 > MAX_TEXT * 9 {
                             ui.label(
                                 RichText::new(format!("{text_len}/{MAX_TEXT}"))
