@@ -439,6 +439,7 @@ texts! {
     close: "Schließen", "Close";
     history_failed: "Verlauf nicht gelesen", "History not read";
     history_empty: "Der Ordner „Unterhaltungsverlauf“ ist leer.", "The Conversation History folder is empty.";
+    call_connected_line: "Anruf verbunden.", "Call connected.";
     presenters: "Referenten", "Presenters";
     attendees: "Teilnehmer", "Attendees";
     sharing_mark: "gibt frei", "sharing";
@@ -771,6 +772,16 @@ impl Texts {
         match self.lang {
             Lang::De => format!("{n} ungelesen"),
             Lang::En => format!("{n} unread"),
+        }
+    }
+
+    /// "Call ended. N minutes", as the Windows client writes it into the conversation.
+    pub fn call_ended_line(&self, minutes: u64) -> String {
+        match (self.lang, minutes) {
+            (Lang::De, 1) => "Anruf beendet. 1 Minute".into(),
+            (Lang::De, m) => format!("Anruf beendet. {m} Minuten"),
+            (Lang::En, 1) => "Call ended. 1 minute".into(),
+            (Lang::En, m) => format!("Call ended. {m} minutes"),
         }
     }
 

@@ -287,8 +287,7 @@ fn tab_list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, convs: &[ConvKey], cu
             );
             app.avatar(&mut child, c.peer.as_deref(), &c.title, 30.0, None, pal);
             let preview = c
-                .messages
-                .back()
+                .last_text()
                 .map(|m| m.text.lines().next().unwrap_or("").to_string())
                 .unwrap_or_default();
             child.vertical(|ui| {

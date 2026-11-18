@@ -503,3 +503,38 @@ fn video_frames_are_checked_and_go_with_their_call() {
     });
     assert!(s.video.is_empty());
 }
+
+#[test]
+fn a_call_writes_its_connected_and_ended_lines_into_the_conversation() {
+    use commscraft_ui::model::SYSTEM_SENDER;
+    let mut s = online();
+    let key = s.new_key();
+    s.apply(AppEvent::ConversationOpening {
+        key,
+        peer: "sip:bob@beispiel.invalid".into(),
+    });
+    s.apply(AppEvent::CallStarted {
+        id: 3,
+        peer: "sip:bob@beispiel.invalid".into(),
+        incoming: false,
+        at: 100,
+    });
+    s.apply(AppEvent::CallConnected { id: 3, at: 110 });
+    s.apply(AppEvent::CallEnded {
+        id: 3,
+        status: 0,
+        at: 230,
+    });
+    let lines: Vec<String> = s
+        .conversation(key)
+        .unwrap()
+        .messages
+        .iter()
+        .filter(|m| m.sender.as_deref() == Some(SYSTEM_SENDER))
+        .map(|m| m.text.clone())
+        .collect();
+    assert_eq!(
+        lines,
+        vec!["connected".to_string(), "ended 120".to_string()]
+    );
+}
