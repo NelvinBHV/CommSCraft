@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: autostart, sound device for calls)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: read the conversation history from Exchange)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -99,8 +99,9 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   `tested-in-lab` (rating), attended transfer `tested-offline` in the interface.
 - **Conversation history in Exchange:** a finished IM conversation is saved in the user's
   Conversation History folder (EWS CreateItem, in the background thread) – as the server's
-  archiving policy says, else as chosen in *Options › IM* (on by default). Reading the folder
-  back is not built yet. `tested-in-lab`.
+  archiving policy says, else as chosen in *Options › IM* (on by default). The conversations
+  tab lists the folder's newest entries (FindItem) and shows one entry's text read-only (GetItem
+  with a text body). `tested-in-lab`.
 - **Shared screens in meetings:** when someone shares in a meeting, the conversation says so
   and offers *View*: a screen shared as video comes as receive-only video from the application
   sharing MCU (the sharer's source asked for), a shared window over RDP; both in the isolated

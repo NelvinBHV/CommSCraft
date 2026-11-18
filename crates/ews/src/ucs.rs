@@ -37,7 +37,7 @@ fn base64ish(v: &str) -> Option<String> {
 }
 
 impl ItemId {
-    fn from_element(e: &Element) -> Option<ItemId> {
+    pub(crate) fn from_element(e: &Element) -> Option<ItemId> {
         Some(ItemId {
             id: base64ish(e.attr("Id")?)?,
             change_key: e.attr("ChangeKey").and_then(base64ish),

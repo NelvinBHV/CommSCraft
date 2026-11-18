@@ -514,6 +514,15 @@ pub struct Meeting {
     pub join_url: Option<String>,
 }
 
+/// An entry of the Conversation History folder in Exchange.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HistoryEntry {
+    pub id: String,
+    pub subject: String,
+    pub at: Option<u64>,
+    pub with: String,
+}
+
 /// Who may join a meeting without waiting in the lobby.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum MeetingAccess {
@@ -695,6 +704,13 @@ pub enum AppEvent {
     },
     /// Calls can be rated (the server has a quality service).
     QualityRating(bool),
+    /// The entries of the Conversation History folder, or why they are not there.
+    History(Result<Vec<HistoryEntry>, String>),
+    /// One history entry's text.
+    HistoryText {
+        id: String,
+        text: Result<String, String>,
+    },
     ConferenceCall {
         id: u32,
         session: u32,
@@ -866,6 +882,10 @@ pub struct AppState {
     pub quality_rating: bool,
     /// The ended call offered for rating: call ID and peer.
     pub rate_call: Option<(u32, String)>,
+    /// The Conversation History folder, once asked for.
+    pub history: Option<Result<Vec<HistoryEntry>, String>>,
+    /// The history entry being read: its ID and, once there, its text.
+    pub history_open: Option<(String, Option<Result<String, String>>)>,
 }
 
 impl Default for AppState {
@@ -888,6 +908,8 @@ impl Default for AppState {
             groups: Vec::new(),
             subscribers: Vec::new(),
             quality_rating: false,
+            history: None,
+            history_open: None,
             rate_call: None,
             appointments: None,
             out_of_office: None,
@@ -1449,6 +1471,32 @@ impl AppState {
             }
             AppEvent::MeetingCancelled(id) => self.meetings.retain(|m| m.conference_id != id),
             AppEvent::QualityRating(on) => self.quality_rating = on,
+            AppEvent::History(r) => {
+                self.history = Some(r.map(|l| {
+                    l.into_iter()
+                        .take(200)
+                        .map(|e| HistoryEntry {
+                            id: label(&e.id),
+                            subject: label(&e.subject),
+                            with: label(&e.with),
+                            ..e
+                        })
+                        .collect()
+                }));
+            }
+            AppEvent::HistoryText { id, text } => {
+                if self.history_open.as_ref().is_some_and(|(o, _)| *o == id) {
+                    self.history_open = Some((
+                        id,
+                        Some(text.map(|t| {
+                            t.chars()
+                                .filter(|c| *c == '\n' || !c.is_control())
+                                .take(256 * 1024)
+                                .collect()
+                        })),
+                    ));
+                }
+            }
             AppEvent::ConferenceSharing { session, sharer } => {
                 if let Some(c) = self.by_session(session) {
                     c.sharer = sharer.map(|s| label(&s));

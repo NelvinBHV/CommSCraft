@@ -200,6 +200,20 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 app.handle(UiIntent::RateCall { id, stars })
             }
         }
+        // `history` · `openhistory N` (N-th entry, from 0)
+        "history" => app.handle(UiIntent::LoadHistory),
+        "openhistory" => {
+            let id = match &app.ui.state.history {
+                Some(Ok(l)) => l
+                    .get(arg.trim().parse::<usize>().unwrap_or(0))
+                    .map(|e| e.id.clone()),
+                _ => None,
+            };
+            if let Some(id) = id {
+                app.ui.state.history_open = Some((id.clone(), None));
+                app.handle(UiIntent::OpenHistory { id })
+            }
+        }
         // `end`: end the selected conversation
         "end" => {
             if let Some(key) = app.ui.selected_conversation() {

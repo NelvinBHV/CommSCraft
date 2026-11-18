@@ -431,6 +431,12 @@ texts! {
     meetings_hint: "Eine Besprechung links wählen oder mit „Jetzt besprechen“ eine Gruppe öffnen.", "Pick a meeting on the left or open a group with “Meet now”.";
     meet_now: "Jetzt besprechen", "Meet now";
     untitled_conferences: "Konferenzen ohne Betreff (aus Gruppenunterhaltungen) werden nicht aufgeführt.", "conferences without a subject (from group conversations) are not listed.";
+    history_exchange: "Unterhaltungsverlauf (Exchange)", "Conversation history (Exchange)";
+    load: "Laden", "Load";
+    loading: "Wird geladen …", "Loading …";
+    close: "Schließen", "Close";
+    history_failed: "Verlauf nicht gelesen", "History not read";
+    history_empty: "Der Ordner „Unterhaltungsverlauf“ ist leer.", "The Conversation History folder is empty.";
     transfer_to_person: "An eine Person …", "To a person …";
     transfer_to_call: "Mit Rückfrage an", "Consulted, to";
     rate_call_question: "Wie war die Qualität des Anrufs mit", "How was the quality of the call with";

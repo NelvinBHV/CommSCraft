@@ -346,6 +346,58 @@ pub fn save_conversation(
     history::parse_save_answer(&answer).map_err(|e| format!("{e:?}"))
 }
 
+/// Function 49: the newest entries of the Conversation History folder (FindItem).
+pub fn history_list(
+    tls: &TlsClient,
+    trust: &Trust,
+    aor: &str,
+    settings: &commscraft_ews::UserSettings,
+    user_agent: &str,
+    ntlm: &mut HttpNtlm<'_>,
+    log: &mut dyn FnMut(&str),
+) -> Result<Vec<commscraft_ews::history::Entry>, String> {
+    use commscraft_ews::history;
+    let answer = ews_call(
+        tls,
+        trust,
+        aor,
+        settings,
+        ("FindItem", history::FIND_ITEM_ACTION),
+        &history::list_request(),
+        user_agent,
+        ntlm,
+        log,
+    )?;
+    history::parse_list(&answer).map_err(|e| format!("{e:?}"))
+}
+
+/// Function 49: one entry's text (GetItem).
+#[allow(clippy::too_many_arguments)]
+pub fn history_body(
+    tls: &TlsClient,
+    trust: &Trust,
+    aor: &str,
+    settings: &commscraft_ews::UserSettings,
+    id: &commscraft_ews::ucs::ItemId,
+    user_agent: &str,
+    ntlm: &mut HttpNtlm<'_>,
+    log: &mut dyn FnMut(&str),
+) -> Result<String, String> {
+    use commscraft_ews::history;
+    let answer = ews_call(
+        tls,
+        trust,
+        aor,
+        settings,
+        ("GetItem", history::GET_ITEM_ACTION),
+        &history::body_request(id),
+        user_agent,
+        ntlm,
+        log,
+    )?;
+    history::parse_body(&answer).map_err(|e| format!("{e:?}"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

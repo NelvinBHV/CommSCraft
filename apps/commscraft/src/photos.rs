@@ -45,6 +45,10 @@ enum Job {
     MeetingLink(String),
     /// A finished conversation for the Conversation History folder.
     SaveHistory(Box<commscraft_ews::history::Conversation>),
+    /// The entries of the Conversation History folder.
+    HistoryList,
+    /// One entry's text.
+    HistoryBody(commscraft_ews::ucs::ItemId),
 }
 
 /// A change of the contact list in Exchange with the list and identifiers it applies to.
@@ -61,6 +65,9 @@ pub enum Done {
     MeetingFocus(Result<String, String>),
     /// A conversation saved in the Conversation History folder, or why not.
     HistorySaved(Result<(), String>),
+    HistoryList(Result<Vec<commscraft_ews::history::Entry>, String>),
+    /// One entry's text, by its item ID.
+    HistoryBody(String, Result<String, String>),
     /// The contact list from Exchange (after a change, if one was asked for).
     Contacts(
         Result<
@@ -123,6 +130,16 @@ impl Photos {
         let _ = self.tx.try_send(Job::Contacts(change.map(Box::new)));
     }
 
+    /// Asks for the entries of the Conversation History folder.
+    pub fn history_list(&self) {
+        let _ = self.tx.try_send(Job::HistoryList);
+    }
+
+    /// Asks for one entry's text.
+    pub fn history_body(&self, id: commscraft_ews::ucs::ItemId) {
+        let _ = self.tx.try_send(Job::HistoryBody(id));
+    }
+
     /// Saves a finished conversation in the Conversation History folder.
     pub fn save_history(&self, t: commscraft_ews::history::Conversation) {
         let _ = self.tx.try_send(Job::SaveHistory(Box::new(t)));
@@ -181,6 +198,42 @@ fn run(
                     &mut log,
                 );
                 if done.send(Done::Expanded(email, found)).is_err() {
+                    return;
+                }
+                continue;
+            }
+            Job::HistoryList | Job::HistoryBody(_) => {
+                if settings.is_none() {
+                    settings = Some(
+                        commscraft_client::photos::ews_settings(
+                            tls, trust, aor, &ua, &mut ntlm, &mut log,
+                        )
+                        .ok(),
+                    );
+                }
+                let Some(Some(s)) = settings.as_ref() else {
+                    let e: Result<(), String> = Err("Exchange is not reachable".into());
+                    let d = match job_kind_body(&job) {
+                        Some(id) => Done::HistoryBody(id, e.map(|_| String::new())),
+                        None => Done::HistoryList(e.map(|_| Vec::new())),
+                    };
+                    if done.send(d).is_err() {
+                        return;
+                    }
+                    continue;
+                };
+                let d = match job {
+                    Job::HistoryBody(id) => Done::HistoryBody(
+                        id.id.clone(),
+                        commscraft_client::exchange::history_body(
+                            tls, trust, aor, s, &id, &ua, &mut ntlm, &mut log,
+                        ),
+                    ),
+                    _ => Done::HistoryList(commscraft_client::exchange::history_list(
+                        tls, trust, aor, s, &ua, &mut ntlm, &mut log,
+                    )),
+                };
+                if done.send(d).is_err() {
                     return;
                 }
                 continue;
@@ -306,6 +359,14 @@ fn run(
         {
             return;
         }
+    }
+}
+
+/// The item ID of a history body job.
+fn job_kind_body(job: &Job) -> Option<String> {
+    match job {
+        Job::HistoryBody(id) => Some(id.id.clone()),
+        _ => None,
     }
 }
 

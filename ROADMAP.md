@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: autostart, sound device for calls)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: read the conversation history from Exchange)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **691 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **694 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-18 | Reading the Exchange Conversation History folder in the desktop client (`tested-in-lab`): `ews::history::list_request`/`parse_list` (FindItem, [MS-OXWSSRCH] §3.1.4.2) and `body_request`/`parse_body` (GetItem, [MS-OXWSCORE] 20250819 §3.1.4.4, pp. 65–69; text body, [MS-OXWSCDATA] §2.2.4.42, §2.2.5.1); the conversations tab lists the entries and shows one read-only. |
 | 2026-11-18 | Desktop integration (`tested-offline`): start with the desktop session (XDG autostart entry, the program path quoted per the Desktop Entry Specification) and the choice of the sound device for calls (the default or an ALSA device from `/proc/asound/pcm`). |
 | 2026-11-18 | Calls in the desktop client: attended transfer to the party of a second call from the *Transfer* menu, and a rating of one to five stars after a connected call when the server has a quality service (`RateCall`; accepted in the lab). |
 | 2026-11-18 | The desktop client saves finished IM conversations in the Exchange Conversation History folder (`tested-in-lab`): as the server's archiving policy says, else as the user chose (*Options › IM*); `client::exchange::save_conversation`, moved from the command-line client. |
