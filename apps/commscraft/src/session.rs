@@ -1990,6 +1990,7 @@ impl Session {
                     }),
                     K::Announcements(on) => A::Announcements(on),
                     K::DialOut(number) => A::DialOut { number },
+                    K::End => A::End,
                 };
                 self.engine.command(
                     C::ConferenceControl {

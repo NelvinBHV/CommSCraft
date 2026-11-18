@@ -170,6 +170,7 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 "deny" => Some(K::Deny(user)),
                 "lock" | "unlock" => Some(K::Lock(what == "lock")),
                 "muteall" | "unmuteall" => Some(K::MuteAudience(what == "muteall")),
+                "end" => Some(K::End),
                 _ => None,
             };
             if let (Some(key), Some(command)) = (app.ui.selected_conversation(), command) {
