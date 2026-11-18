@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (end meeting for everyone)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (viewing a meeting share tested in the lab)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-18 | Viewing a screen shared in a meeting `tested-in-lab` in the desktop client: a Windows participant shares the desktop, the picture (video-based screen sharing) is shown on the conversation window's stage with the sharer banner. |
 | 2026-11-18 | End meeting for everyone (`tested-in-lab`): deleteConference to the focus ([MS-CONFBAS] §3.9) after a confirmation, as in the Windows client. |
 | 2026-11-18 | Contact card as in the Windows client (`tested-in-lab`): docked beside the main window, action buttons, sections Contact, Organization, Membership. |
 | 2026-11-18 | Emoticons (`tested-in-lab`): picker writing the text codes the Windows client shows as pictures; codes shown as emoji from the system's emoji font. |
