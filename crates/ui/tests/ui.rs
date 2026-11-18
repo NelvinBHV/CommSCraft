@@ -944,3 +944,54 @@ fn the_conversation_history_from_exchange_is_listed_and_read() {
     h.run();
     assert!(h.state().ui.state.history_open.is_none());
 }
+
+#[test]
+fn conversations_are_tabs_of_one_window() {
+    let mut h = harness(demo_quiet(), BIG);
+    h.run();
+    open_conversation(&mut h, "Projekt Nord");
+    // (The second one directly: embedded windows cover the list in tests.)
+    let max = h
+        .state()
+        .ui
+        .state
+        .conversations
+        .iter()
+        .find(|c| c.title == "Max Richter")
+        .unwrap()
+        .key;
+    h.state_mut().ui.select_conversation(max);
+    h.run();
+    h.run();
+    // Two conversations: one window, the tab list names both.
+    let tabs: Vec<_> = h
+        .query_all_by_role(egui::accesskit::Role::Tab)
+        .map(|n| n.accesskit_node().label().unwrap_or_default().to_string())
+        .collect();
+    assert!(
+        tabs.iter().any(|t| t.contains("Projekt Nord")),
+        "{tabs:?} {:?}",
+        h.state().ui.windows()
+    );
+    assert!(tabs.iter().any(|t| t.contains("Max Richter")), "{tabs:?}");
+    // Another tab chosen: its conversation is shown.
+    h.query_all_by_role(egui::accesskit::Role::Tab)
+        .find(|n| {
+            n.accesskit_node()
+                .label()
+                .is_some_and(|l| l.contains("Projekt Nord"))
+        })
+        .unwrap()
+        .click();
+    h.run();
+    let k = h
+        .state()
+        .ui
+        .state
+        .conversations
+        .iter()
+        .find(|c| c.title == "Projekt Nord")
+        .unwrap()
+        .key;
+    assert_eq!(h.state().ui.selected_conversation(), Some(k));
+}

@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (calls and video on the stage of the conversation window)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (conversations as tabs of one window)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **697 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **698 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-18 | Tabbed conversations as in the Windows client (`tested-offline`): one window with a tab list, the close question and the options *Enable tabbed conversations* and *Always close all tabs*. |
 | 2026-11-18 | Calls on the stage of the conversation window (`tested-in-lab`, compared with the Windows client): the received video is embedded – the sandboxed decoder process runs in a new mode `embed`/`embed-raw` and hands RGBA pictures back over its pipe (bounded size and rate, checked by the client); the call controls are the Windows client's round buttons with a call controls menu. |
 | 2026-11-18 | Chats behave as in the Windows client (`tested-in-lab`, compared with the Windows client in the lab): the first message rides in the INVITE (`Ms-Text-Format … ms-body`, interop – no Open Specification names it) and follows as MESSAGE; the desktop client sets a 1:1 conversation up only with its first message; chat invitations without audio are joined at once; invitations announce audio only while the conference audio is in use (before, every group chat looked like a conference call to the invitee). |
 | 2026-11-18 | Fix found in the lab: the desktop client's meeting video now asks the A/V MCU for a sending participant's source (CA-13, as the command-line client does) and follows the next sender on a stall; before, no picture arrived. Freeze requests are followed in meetings. With a camera on the laptop the picture now arrives (`tested-in-lab`). |

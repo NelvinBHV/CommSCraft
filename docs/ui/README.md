@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (calls and video on the stage of the conversation window)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (conversations as tabs of one window)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -99,6 +99,11 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   (attended: the consultation call is replaced); after a connected call a bar asks for a rating
   of one to five stars when the server names a quality service (sent as the rating report).
   `tested-in-lab` (rating), attended transfer `tested-offline` in the interface.
+- **Tabbed conversations:** as in the Windows client, the open conversations are tabs of one
+  window (option *Enable tabbed conversations*, on by default): from two on, a list on the left
+  with picture, name, the last message, the unread count and a close button; closing the window
+  with several tabs asks "close all tabs or the current tab?" (with *always close all tabs*).
+  `tested-offline`.
 - **Calls on the stage of the conversation window:** as in the Windows client, a call is shown
   above the IM of its conversation (a 1:1 call without one gets a conversation): the received
   video embedded (the sandboxed decoder process hands back pictures of at most 640×360 at 15 per

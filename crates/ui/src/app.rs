@@ -285,6 +285,10 @@ pub struct Prefs {
     pub audio_device: String,
     /// Start with the desktop session (an XDG autostart entry).
     pub autostart: bool,
+    /// The open conversations as tabs of one window.
+    pub tabbed_conversations: bool,
+    /// Closing the tab window closes all tabs without asking.
+    pub always_close_all_tabs: bool,
     /// Keep IM conversations in the Conversation History folder in Exchange.
     pub save_history: bool,
     /// Inactive after this many idle minutes (0: never).
@@ -316,6 +320,8 @@ impl Default for Prefs {
             meeting_participants: false,
             last_address: String::new(),
             save_history: true,
+            tabbed_conversations: true,
+            always_close_all_tabs: false,
             audio_device: String::new(),
             autostart: false,
             inactive_minutes: 5,
@@ -441,6 +447,8 @@ pub struct CommsUi {
     pub(crate) meeting_link: String,
     /// Conversations whose IM area is hidden below the stage.
     pub(crate) im_hidden: BTreeSet<ConvKey>,
+    /// The tab window's close question is open.
+    pub(crate) close_tabs_question: bool,
     /// The sound devices the desktop offers: (ALSA name, label).
     pub audio_devices: Vec<(String, String)>,
     /// The star under the pointer in the call rating (0: none).
@@ -507,6 +515,7 @@ impl CommsUi {
             group_dialog: None,
             meeting_link: String::new(),
             im_hidden: BTreeSet::new(),
+            close_tabs_question: false,
             audio_devices: Vec::new(),
             rating_hover: 0,
             meeting_dialog: None,
