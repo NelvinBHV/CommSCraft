@@ -463,6 +463,7 @@ texts! {
     test_microphone: "Mikrofon testen", "Test the microphone";
     mic_level: "Pegel", "Level";
     audio_test_body: "Der Lautsprecher spielt einen kurzen Ton; das Mikrofon zeigt fünf Sekunden lang seinen Pegel. Es wird nichts aufgezeichnet oder gesendet.", "The speaker plays a short tone; the microphone shows its level for five seconds. Nothing is recorded or sent.";
+    emoticons: "Emoticons", "Emoticons";
     presenters: "Referenten", "Presenters";
     attendees: "Teilnehmer", "Attendees";
     sharing_mark: "gibt frei", "sharing";

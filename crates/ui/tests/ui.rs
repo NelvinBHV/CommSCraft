@@ -1222,3 +1222,24 @@ fn the_audio_devices_are_tested_from_the_options() {
     h.run();
     assert!(h.query_by_label("Pegel").is_none());
 }
+
+#[test]
+fn the_emoticon_picker_writes_the_code() {
+    let mut h = harness(demo_quiet(), BIG);
+    h.run();
+    open_conversation(&mut h, "Max Richter");
+    h.get_by_label("Emoticons").click();
+    h.run();
+    h.get_by_label("Lächeln").click();
+    h.run();
+    let key = h
+        .state()
+        .ui
+        .state
+        .conversations
+        .iter()
+        .find(|c| c.title == "Max Richter")
+        .unwrap()
+        .key;
+    assert_eq!(h.state().ui.draft(key), Some(":) "));
+}

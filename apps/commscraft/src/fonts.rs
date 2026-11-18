@@ -20,6 +20,8 @@ const MONO: &[&str] = &[
     "Liberation Mono",
     "monospace",
 ];
+/// Emoji for emoticons (outline faces only: egui draws no colour bitmaps).
+const EMOJI: &[&str] = &["Noto Emoji", "Symbola", "OpenMoji"];
 const FALLBACK: &[&str] = &[
     "/usr/share/fonts/dejavu/DejaVuSans.ttf",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -37,6 +39,29 @@ fn fc_match(pattern: &str, style: &str) -> Option<String> {
     let path = String::from_utf8(out.stdout).ok()?;
     let path = path.trim();
     (out.status.success() && !path.is_empty()).then(|| path.to_string())
+}
+
+/// The files of a family as fontconfig lists them (sorted: the plain face before the others).
+fn fc_list(family: &str) -> Vec<String> {
+    let Ok(out) = std::process::Command::new("fc-list")
+        .args(["--format=%{file}\n", family])
+        .output()
+    else {
+        return Vec::new();
+    };
+    let mut files: Vec<String> = String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(str::to_string)
+        .take(32)
+        .collect();
+    // "Regular" first, the variable font last.
+    files.sort_by_key(|f| {
+        let l = f.to_ascii_lowercase();
+        (!l.contains("regular"), l.contains("variable"), l)
+    });
+    files
 }
 
 fn read_font(path: &str) -> Option<Vec<u8>> {
@@ -90,8 +115,23 @@ pub fn system_fonts() -> Result<FontDefinitions, String> {
         mono_family.push("system-mono".to_string());
     }
     mono_family.push("system-sans".to_string());
-    defs.families
-        .insert(FontFamily::Proportional, vec!["system-sans".into()]);
+    let mut proportional = vec!["system-sans".to_string()];
+    // An emoji face as fallback, only if fontconfig really names one (no common-path guess).
+    let emoji = EMOJI
+        .iter()
+        .flat_map(|p| fc_list(p))
+        .filter(|p| {
+            let l = p.to_ascii_lowercase();
+            l.contains("emoji") || l.contains("symbola") || l.contains("openmoji")
+        })
+        .filter(|p| !p.to_ascii_lowercase().contains("color"))
+        .find_map(|p| read_font(&p));
+    if let Some(e) = emoji {
+        defs.font_data
+            .insert("system-emoji".into(), Arc::new(FontData::from_owned(e)));
+        proportional.push("system-emoji".into());
+    }
+    defs.families.insert(FontFamily::Proportional, proportional);
     defs.families.insert(FontFamily::Monospace, mono_family);
     Ok(defs)
 }
