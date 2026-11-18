@@ -218,6 +218,25 @@ fn day_separator(app: &CommsUi, ui: &mut Ui, pal: &Palette, at: u64) {
 }
 
 fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, first: bool) {
+    // A line of the client's own (a call connected or ended), centred as in the Windows client.
+    if m.sender.as_deref() == Some(crate::model::SYSTEM_SENDER) {
+        let t = app.t;
+        let text = match m.text.split_once(' ') {
+            Some(("ended", secs)) => {
+                let minutes = secs.parse::<u64>().unwrap_or(0).div_ceil(60);
+                t.call_ended_line(minutes)
+            }
+            _ => t.call_connected_line.to_string(),
+        };
+        ui.vertical_centered(|ui| {
+            ui.label(
+                RichText::new(format!("{text}  {}", format::clock(m.at, app.utc_offset)))
+                    .size(theme::text::SMALL)
+                    .color(pal.muted),
+            );
+        });
+        return;
+    }
     let own = m.sender.is_none();
     let max_w = (ui.available_width() * 0.68).max(240.0);
     let time = format::clock(m.at, app.utc_offset);

@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (meeting options and grouped participants)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (call lines in the conversation)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **699 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **700 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-18 | Call lines in the conversation as in the Windows client (`tested-offline`): "Call connected." and "Call ended. N minutes". |
 | 2026-11-18 | Meeting options and grouped participants as in the Windows client (`tested-offline`): presenters/attendees with IM, audio, video and sharing symbols; the *Meeting options* dialog (lobby, phone callers, announcements, presenters) over the existing conference commands; the desktop client now reads the meeting settings the focus reports. |
 | 2026-11-18 | Speaker and microphone chosen separately, as on the Windows client's audio device page (`audio-alsa::Config::capture_device`); in the lab a laptop whose PipeWire had no usable default source (its only port, the headset jack, unplugged) now sends its built-in microphone (`tested-in-lab`). |
 | 2026-11-18 | Tabbed conversations as in the Windows client (`tested-offline`): one window with a tab list, the close question and the options *Enable tabbed conversations* and *Always close all tabs*. |

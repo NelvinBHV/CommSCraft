@@ -314,6 +314,10 @@ pub struct Message {
     pub delivery: Delivery,
 }
 
+/// The sender of a line the client writes itself (a call connected or ended), as the Windows
+/// client shows them in the conversation; its text is `connected` or `ended <seconds>`.
+pub const SYSTEM_SENDER: &str = "\u{1}system";
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ConvKey(pub u64);
 
@@ -448,8 +452,12 @@ impl Conversation {
         self.room.is_some()
     }
 
+    /// The last message written by a person (not a line of the client's own).
     pub fn last_text(&self) -> Option<&Message> {
-        self.messages.back()
+        self.messages
+            .iter()
+            .rev()
+            .find(|m| m.sender.as_deref() != Some(SYSTEM_SENDER))
     }
 
     fn push(&mut self, m: Message) {
@@ -1141,8 +1149,36 @@ impl AppState {
         })
     }
 
+    /// A line of the client's own in the conversation of a call.
+    fn system_line(&mut self, call: &Call, text: String, at: u64) {
+        let Some(key) = self.conversation_of_call(call) else {
+            return;
+        };
+        if let Some(c) = self.conversation_mut(key) {
+            c.messages.push_back(Message {
+                sender: Some(SYSTEM_SENDER.into()),
+                text,
+                at,
+                delivery: Delivery::Unknown,
+            });
+            while c.messages.len() > MAX_MESSAGES {
+                c.messages.pop_front();
+            }
+        }
+    }
+
     fn end_call(&mut self, id: u32, status: u16, at: u64) {
         self.video.remove(&id);
+        if let Some(call) = self
+            .calls
+            .iter()
+            .find(|c| c.id == id && c.conference.is_none())
+            .cloned()
+        {
+            if let CallState::Connected { since } = call.state {
+                self.system_line(&call, format!("ended {}", at.saturating_sub(since)), at);
+            }
+        }
         let Some(c) = self.calls.iter_mut().find(|c| c.id == id) else {
             return;
         };
@@ -1490,10 +1526,15 @@ impl AppState {
                 }
             }
             AppEvent::CallConnected { id, at } => {
+                let mut newly = None;
                 if let Some(c) = self.calls.iter_mut().find(|c| c.id == id) {
                     if !matches!(c.state, CallState::Connected { .. }) {
                         c.state = CallState::Connected { since: at };
+                        newly = Some(c.clone());
                     }
+                }
+                if let Some(call) = newly.filter(|c| c.conference.is_none()) {
+                    self.system_line(&call, "connected".into(), at);
                 }
             }
             AppEvent::CallHeld { id, held } => {
