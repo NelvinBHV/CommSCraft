@@ -91,6 +91,9 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 };
                 page_ui(t, ui, pal, page, &mut p, &me, &caps, &devices);
                 app.prefs_draft = Some(p);
+                if page == 8 {
+                    audio_test(app, ui, pal);
+                }
                 if page == 1 {
                     group(ui, pal, t.opt_keyring, |ui| {
                         if app.stored_password_for.is_some() {
@@ -133,6 +136,41 @@ fn note(ui: &mut Ui, pal: &Palette, text: &str) {
             .size(theme::text::SMALL)
             .color(pal.muted),
     );
+}
+
+/// Test tone and microphone level for the chosen devices, before the settings are kept.
+fn audio_test(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    let (speaker, mic) = app
+        .prefs_draft
+        .as_ref()
+        .map(|p| (p.audio_device.clone(), p.mic_device.clone()))
+        .unwrap_or_default();
+    group(ui, pal, t.opt_audio_levels, |ui| {
+        ui.horizontal(|ui| {
+            if ui.button(t.test_speaker).clicked() {
+                app.emit(UiIntent::TestSpeaker { device: speaker });
+            }
+            let testing = app.state.mic_level.is_some();
+            if ui
+                .add_enabled(!testing, egui::Button::new(t.test_microphone))
+                .clicked()
+            {
+                app.emit(UiIntent::TestMicrophone { device: mic });
+            }
+        });
+        if let Some(level) = app.state.mic_level {
+            ui.horizontal(|ui| {
+                ui.label(t.mic_level);
+                ui.add(
+                    egui::ProgressBar::new(f32::from(level) / 100.0)
+                        .desired_width(220.0)
+                        .fill(pal.primary),
+                );
+            });
+        }
+        note(ui, pal, t.audio_test_body);
+    });
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -275,7 +313,7 @@ fn page_ui(
                         .map_or(value.clone(), |(_, l)| l.clone())
                 };
                 ui.horizontal(|ui| {
-                    ui.label(label);
+                    let name = ui.label(label);
                     egui::ComboBox::from_id_salt(id)
                         .selected_text(current)
                         .width(320.0)
@@ -284,7 +322,9 @@ fn page_ui(
                             for (name, l) in devices.iter().filter(|(_, l)| l.contains(kind)) {
                                 ui.selectable_value(value, name.clone(), l);
                             }
-                        });
+                        })
+                        .response
+                        .labelled_by(name.id);
                 });
             };
             pick(
@@ -301,7 +341,6 @@ fn page_ui(
                 "capture",
                 "microphone",
             );
-            missing(ui, t, t.opt_audio_levels, ni);
         }),
         9 => group(ui, pal, t.opt_video, |ui| {
             ui.label(t.opt_camera);

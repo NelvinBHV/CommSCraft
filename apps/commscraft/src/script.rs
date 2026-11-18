@@ -336,6 +336,13 @@ pub fn run(app: &mut DesktopApp, line: &str) {
         "idle" => app.idle_override = arg.trim().parse().ok(),
         // `note TEXT` (empty: remove the note)
         "note" => app.handle(UiIntent::SetNote(arg.trim().to_string())),
+        // `testspeaker` / `testmic`: the device tests of Options › Audio with the kept devices.
+        "testspeaker" => app.handle(UiIntent::TestSpeaker {
+            device: app.ui.prefs.audio_device.clone(),
+        }),
+        "testmic" => app.handle(UiIntent::TestMicrophone {
+            device: app.ui.prefs.mic_device.clone(),
+        }),
         // `shot FILE [conv|call|options]`: the main window, or the first window of that kind.
         "shot" => {
             let mut w = arg.split_whitespace();

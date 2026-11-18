@@ -1194,3 +1194,31 @@ fn the_conversations_of_last_time_are_reopened_after_signing_in() {
     h.run();
     assert!(h.state().ui.prefs.reopen.is_empty());
 }
+
+#[test]
+fn the_audio_devices_are_tested_from_the_options() {
+    let mut h = harness(demo_ui(Lang::De), BIG);
+    h.run();
+    button(&h, "Optionen").click();
+    h.run();
+    h.run();
+    h.get_by_label("Audiogerät").click();
+    h.run();
+    button(&h, "Lautsprecher testen").click();
+    button(&h, "Mikrofon testen").click();
+    h.run();
+    let intents = &h.state().intents;
+    assert!(intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::TestSpeaker { device } if device.is_empty())));
+    assert!(intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::TestMicrophone { device } if device.is_empty())));
+    // While it runs, the level is shown.
+    h.state_mut().ui.apply(AppEvent::MicLevel(Some(40)));
+    h.run();
+    assert!(h.query_by_label("Pegel").is_some());
+    h.state_mut().ui.apply(AppEvent::MicLevel(None));
+    h.run();
+    assert!(h.query_by_label("Pegel").is_none());
+}

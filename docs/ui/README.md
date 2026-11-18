@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (reopen conversations after signing in)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (audio device test)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -95,7 +95,11 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   XDG autostart entry, written only on request); *Options › Audio* chooses the speaker and the
   microphone for calls separately, as the Windows client does – each the system's default
   (PipeWire) or a device ALSA lists (`/proc/asound/pcm`, playback or capture). A chosen
-  microphone works also where PipeWire has no usable default source (`tested-in-lab`).
+  microphone is opened also where PipeWire has no usable default source (`tested-in-lab`).
+- **Device test:** *Options › Audio › Test the devices* plays a short tone (440 Hz, 0.8 s) on the
+  chosen speaker and shows the chosen microphone's level for five seconds (peak, −60 to 0 dBFS);
+  nothing is recorded or sent. In the lab it showed that a laptop's capture device delivers only
+  its noise floor (about −70 dBFS) even while the tone plays (`tested-in-lab`).
   `tested-offline`.
 - **Calls:** *Transfer* offers a person (unattended) or, with a second connected call, its party
   (attended: the consultation call is replaced); after a connected call a bar asks for a rating
