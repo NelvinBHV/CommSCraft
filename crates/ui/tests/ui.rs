@@ -888,3 +888,45 @@ fn a_call_is_transferred_to_the_party_of_another_call() {
             | UiIntent::TransferToCall { id: 2, target: 1 }
     )));
 }
+
+#[test]
+fn the_conversation_history_from_exchange_is_listed_and_read() {
+    use commscraft_ui::model::HistoryEntry;
+    let mut h = harness(online(), (420.0, 760.0));
+    h.run();
+    button(&h, "Unterhaltungen").click();
+    h.run();
+    h.get_by_label("Laden").click();
+    h.run();
+    assert!(h
+        .state()
+        .intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::LoadHistory)));
+    h.state_mut()
+        .ui
+        .state
+        .apply(AppEvent::History(Ok(vec![HistoryEntry {
+            id: "AAMkA1=".into(),
+            subject: "Hallo".into(),
+            at: Some(NOW),
+            with: "Erin Test".into(),
+        }])));
+    h.run();
+    h.get_by_label_contains("Erin Test").click();
+    h.run();
+    assert!(h
+        .state()
+        .intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::OpenHistory { id } if id == "AAMkA1=")));
+    h.state_mut().ui.state.apply(AppEvent::HistoryText {
+        id: "AAMkA1=".into(),
+        text: Ok("17:00 Alice: Hallo\n17:01 Erin: Hallo zurück".into()),
+    });
+    h.run();
+    assert!(h.query_by_label_contains("Hallo zurück").is_some());
+    h.get_by_label("Schließen").click();
+    h.run();
+    assert!(h.state().ui.state.history_open.is_none());
+}

@@ -721,3 +721,52 @@ fn open_transcript_is_bounded() {
     });
     assert_eq!(c.participants.len(), MAX_PARTICIPANTS);
 }
+
+mod history_reading {
+    use crate::history::{body_request, list_request, parse_body, parse_list, MAX_BODY};
+
+    const ENV: &str = r#"<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>"#;
+
+    #[test]
+    fn the_conversation_history_is_listed_newest_first() {
+        let req = list_request();
+        assert!(req.contains("<t:DistinguishedFolderId Id=\"conversationhistory\"/>"));
+        assert!(req.contains("FieldURI=\"item:DisplayTo\""));
+        let xml = format!(
+            r#"{ENV}<m:FindItemResponse xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages" xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types">
+<m:ResponseMessages><m:FindItemResponseMessage ResponseClass="Success"><m:ResponseCode>NoError</m:ResponseCode>
+<m:RootFolder TotalItemsInView="3"><t:Items>
+<t:Message><t:ItemId Id="AAMkA1=" ChangeKey="CQAA"/><t:Subject>Hallo&#x9;Erin</t:Subject><t:DateTimeCreated>2026-11-17T17:00:00Z</t:DateTimeCreated><t:DisplayTo>Erin Test</t:DisplayTo></t:Message>
+<t:Message><t:ItemId Id="bad id&lt;"/><t:Subject>dropped</t:Subject></t:Message>
+<t:Message><t:Subject>no id</t:Subject></t:Message>
+</t:Items></m:RootFolder></m:FindItemResponseMessage></m:ResponseMessages></m:FindItemResponse></s:Body></s:Envelope>"#
+        );
+        let l = parse_list(&xml).unwrap();
+        assert_eq!(l.len(), 1);
+        assert_eq!(l[0].subject, "Hallo Erin");
+        assert_eq!(l[0].display_to, "Erin Test");
+        assert_eq!(l[0].at, Some(1_794_934_800));
+        assert_eq!(l[0].id.change_key.as_deref(), Some("CQAA"));
+        let body = body_request(&l[0].id);
+        assert!(body.contains("<t:ItemId Id=\"AAMkA1=\" ChangeKey=\"CQAA\"/>"));
+        assert!(body.contains("<t:BodyType>Text</t:BodyType>"));
+    }
+
+    #[test]
+    fn an_entry_body_is_read_as_bounded_text() {
+        let xml = format!(
+            r#"{ENV}<m:GetItemResponse xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages" xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types">
+<m:ResponseMessages><m:GetItemResponseMessage ResponseClass="Success"><m:ResponseCode>NoError</m:ResponseCode>
+<m:Items><t:Message><t:ItemId Id="AAMkA1="/><t:Body BodyType="Text">17:00 Alice: Hallo&#xD;
+17:01 Erin: Hallo&#x9;zurück</t:Body></t:Message></m:Items>
+</m:GetItemResponseMessage></m:ResponseMessages></m:GetItemResponse></s:Body></s:Envelope>"#
+        );
+        let b = parse_body(&xml).unwrap();
+        assert_eq!(b, "17:00 Alice: Hallo\n17:01 Erin: Hallozurück");
+        let refused = format!(
+            r#"{ENV}<m:GetItemResponse xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages"><m:ResponseMessages><m:GetItemResponseMessage ResponseClass="Error"><m:ResponseCode>ErrorItemNotFound</m:ResponseCode></m:GetItemResponseMessage></m:ResponseMessages></m:GetItemResponse></s:Body></s:Envelope>"#
+        );
+        assert!(parse_body(&refused).is_err());
+        const { assert!(MAX_BODY >= 64 * 1024) };
+    }
+}

@@ -126,6 +126,12 @@ pub enum ToWorker {
     ResetStatus,
     /// Join a meeting by its https link.
     JoinMeetingLink(String),
+    /// Read the Conversation History folder.
+    LoadHistory,
+    /// Read one of its entries.
+    OpenHistory {
+        id: String,
+    },
     /// Rate an ended call.
     RateCall {
         id: u32,
@@ -536,6 +542,8 @@ struct Session {
     audio_device: String,
     /// IM conversations as they go, for the Conversation History folder (function 49).
     transcripts: BTreeMap<u32, commscraft_ews::history::Conversation>,
+    /// The Exchange item IDs of the listed history entries.
+    history_ids: BTreeMap<String, commscraft_ews::ucs::ItemId>,
     quiet_busy: bool,
     content_tx: mpsc::Sender<meeting_content::FromContent>,
     /// Meeting content connections by conversation, with the users they named.
@@ -1016,6 +1024,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         save_history: true,
         audio_device: String::new(),
         transcripts: BTreeMap::new(),
+        history_ids: BTreeMap::new(),
         quiet_busy: false,
         content_tx,
         content: BTreeMap::new(),
@@ -1110,6 +1119,24 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
                     })
                 }
                 crate::photos::Done::Calendar(Err(e)) => trace_line(&format!("calendar: {e}")),
+                crate::photos::Done::HistoryList(r) => {
+                    if let Ok(l) = &r {
+                        s.history_ids = l.iter().map(|e| (e.id.id.clone(), e.id.clone())).collect();
+                    }
+                    out.event(AppEvent::History(r.map(|l| {
+                        l.into_iter()
+                            .map(|e| commscraft_ui::model::HistoryEntry {
+                                id: e.id.id,
+                                subject: e.subject,
+                                at: e.at,
+                                with: e.display_to,
+                            })
+                            .collect()
+                    })));
+                }
+                crate::photos::Done::HistoryBody(id, text) => {
+                    out.event(AppEvent::HistoryText { id, text })
+                }
                 crate::photos::Done::HistorySaved(Ok(())) => {
                     trace_line("conversation saved in the Conversation History folder")
                 }
@@ -2024,6 +2051,23 @@ impl Session {
             }
             // Only asked during discovery; a late answer has nothing to decide.
             ToWorker::Trust(_) => Vec::new(),
+            ToWorker::LoadHistory => {
+                match &self.photos {
+                    Some(p) => p.history_list(),
+                    None => out.event(AppEvent::History(Err("not signed in".into()))),
+                }
+                Vec::new()
+            }
+            ToWorker::OpenHistory { id } => {
+                match (self.history_ids.get(&id), &self.photos) {
+                    (Some(item), Some(p)) => p.history_body(item.clone()),
+                    _ => out.event(AppEvent::HistoryText {
+                        id,
+                        text: Err("unknown entry".into()),
+                    }),
+                }
+                Vec::new()
+            }
             ToWorker::RateCall { id, stars } => self.engine.command(
                 C::RateCall {
                     call: id,

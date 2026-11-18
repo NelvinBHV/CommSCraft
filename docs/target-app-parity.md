@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: autostart, sound device for calls)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: read the conversation history from Exchange)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -74,7 +74,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 46 | Error diagnostics and display | MS-OCER | B | **lab**, tested-offline (`ms-diagnostics` and `ms-diagnostics-public` of failed requests and of the server's BYE/CANCEL read with bounds and shown with our explanation of the handled error identifiers, unknown ones by number; failed INVITEs that the server explains reported with `reportError` including progress reports, stopped as the server's answers ask: `ocer`, `session`, CLI) |
 | 47 | Response group agent | MS-RGSWS | B | **lab**, tested-offline (agent groups with sign-in state and waiting calls, signing in and out of formal groups, the response groups served; over a web ticket from the server's ticket service – metadata, IssueToken with NTLM, SAML assertion in the WS-Security header: `rgs`, `ocauthws::webticket`, `provisioning`; CLI `/rgs [in|out GROUP-ID]`) |
 | 48 | UCWA web services | MS-CVWREST, MS-ECREST, MS-OCSMP | B | not planned (meant for web and mobile apps; the desktop client does the same over SIP: meeting scheduling, events, calls) |
-| 49 | Conversation history in Exchange | MS-OXWSCDATA, MS-OXWSSRCH | T | **lab**, tested-offline (a finished IM conversation, 1:1 or group, is saved as a read message in the Conversation History folder – CreateItem into `conversationhistory`, participants as recipients, the first message as subject, the whole text as body; the server's EnableIMAutoArchiving decides, otherwise the user: `ews::history`; CLI `interactive`, `--no-history`); desktop client: finished IM conversations saved as policy or the user's option says, `tested-in-lab` |
+| 49 | Conversation history in Exchange | MS-OXWSCDATA, MS-OXWSSRCH | T | **lab**, tested-offline (a finished IM conversation, 1:1 or group, is saved as a read message in the Conversation History folder – CreateItem into `conversationhistory`, participants as recipients, the first message as subject, the whole text as body; the server's EnableIMAutoArchiving decides, otherwise the user: `ews::history`; CLI `interactive`, `--no-history`); desktop client: finished IM conversations saved as policy or the user's option says, the folder listed and an entry read (FindItem, GetItem), `tested-in-lab` |
 | 50 | Sign-out | MS-SIPREGE, MS-CONFBAS | B | **lab**, tested-offline (REGISTER with Expires 0, unsubscribe, ending conversations, group conversations and calls: `register`, `session`) |
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | deferred until the owner's legal clearance (calls use G.722 and G.711) |
 | 52 | File transfer 1:1 | none public | N | needs captures |

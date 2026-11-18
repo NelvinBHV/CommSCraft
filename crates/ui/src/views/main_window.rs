@@ -1169,7 +1169,93 @@ fn conversations(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             if !any {
                 ui.label(RichText::new(t.no_conversations_yet).color(pal.muted));
             }
+            if app.conv_filter == ConvFilter::All {
+                history_section(app, ui, pal, &needle);
+            }
         });
+}
+
+/// Earlier conversations from the Conversation History folder in Exchange.
+fn history_section(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, needle: &str) {
+    let t = app.t;
+    ui.add_space(10.0);
+    ui.horizontal(|ui| {
+        widgets::section(ui, t.history_exchange, pal);
+        let usable = app.state.connection.is_online();
+        if ui
+            .add_enabled(usable, egui::Button::new(t.load).small())
+            .clicked()
+        {
+            app.emit(UiIntent::LoadHistory);
+        }
+    });
+    match app.state.history.clone() {
+        None => {}
+        Some(Err(e)) => {
+            ui.label(RichText::new(format!("{}: {e}", t.history_failed)).color(pal.muted));
+        }
+        Some(Ok(list)) if list.is_empty() => {
+            ui.label(RichText::new(t.history_empty).color(pal.muted));
+        }
+        Some(Ok(list)) => {
+            for e in list.iter().filter(|e| {
+                needle.is_empty()
+                    || e.subject.to_lowercase().contains(needle)
+                    || e.with.to_lowercase().contains(needle)
+            }) {
+                let when =
+                    e.at.map(|a| crate::format::date(a, app.utc_offset))
+                        .unwrap_or_default();
+                let title = if e.with.is_empty() {
+                    &e.subject
+                } else {
+                    &e.with
+                };
+                let r = ui.add(
+                    egui::Button::new(RichText::new(format!("{title}  ·  {when}")).color(pal.ink))
+                        .frame(false),
+                );
+                if r.clicked() {
+                    app.state.history_open = Some((e.id.clone(), None));
+                    app.emit(UiIntent::OpenHistory { id: e.id.clone() });
+                }
+            }
+        }
+    }
+}
+
+/// The text of a history entry, read-only.
+pub fn history_reader(app: &mut CommsUi, ctx: &egui::Context) {
+    let t = app.t;
+    let Some((_, text)) = app.state.history_open.clone() else {
+        return;
+    };
+    let mut keep = true;
+    // As wide as fits the window (the main window can be narrow).
+    let width = (ctx.content_rect().width() - 60.0).clamp(200.0, 460.0);
+    egui::Modal::new(egui::Id::unique("history-reader")).show(ctx, |ui| {
+        ui.set_width(width);
+        ui.label(RichText::new(t.history_exchange).family(theme::bold()));
+        egui::ScrollArea::vertical()
+            .max_height(380.0)
+            .show(ui, |ui| match &text {
+                None => {
+                    ui.label(t.loading);
+                }
+                Some(Err(e)) => {
+                    ui.label(format!("{}: {e}", t.history_failed));
+                }
+                Some(Ok(body)) => {
+                    ui.add(egui::Label::new(body.as_str()).wrap().selectable(true));
+                }
+            });
+        if ui.button(t.close).clicked() {
+            keep = false;
+        }
+    });
+    if !keep {
+        app.state.history_open = None;
+    }
 }
 
 fn conversation_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {

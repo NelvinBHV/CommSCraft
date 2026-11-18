@@ -102,6 +102,12 @@ pub enum UiIntent {
     JoinMeetingLink {
         link: String,
     },
+    /// Read the Conversation History folder in Exchange.
+    LoadHistory,
+    /// Read one entry of it.
+    OpenHistory {
+        id: String,
+    },
     /// Rate an ended call (1–5 stars).
     RateCall {
         id: u32,
@@ -801,6 +807,7 @@ impl CommsUi {
             views::chats::new_chat_dialog(self, ctx, &pal);
             views::main_window::group_dialog(self, ctx);
             views::meetings::meeting_dialog(self, ctx);
+            views::main_window::history_reader(self, ctx);
             views::conv_window::show_all(self, ctx, &pal);
         }
         std::mem::take(&mut self.intents)
