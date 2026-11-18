@@ -1325,3 +1325,22 @@ fn ending_the_meeting_asks_first() {
         }
     )));
 }
+
+#[test]
+fn the_add_menu_has_the_entries_of_the_windows_client() {
+    let mut h = harness(online(), BIG);
+    h.run();
+    button(&h, "Kontakt hinzufügen").click();
+    h.run();
+    for label in [
+        "Kontakt aus meiner Organisation hinzufügen",
+        "Kontakt außerhalb meiner Organisation hinzufügen",
+        "Anzeigeoptionen",
+    ] {
+        assert!(h.query_by_label(label).is_some(), "{label}");
+    }
+    h.get_by_label("Anzeigeoptionen").click();
+    h.run();
+    h.run();
+    assert!(h.state().ui.windows().contains(&Win::Options));
+}

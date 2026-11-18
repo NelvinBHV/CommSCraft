@@ -530,22 +530,40 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             pal.primary,
         )
         .on_hover_text(t.add_contact);
+        // As the Windows client's add menu: someone in the organisation (found through the
+        // search, added from its result), someone outside it (by address), a new group, the
+        // display options of the contact list.
         egui::Popup::menu(&add).show(|ui| {
             if ui
-                .add_enabled(can_edit, egui::Button::new(t.add_contact_dots))
+                .add_enabled(can_edit, egui::Button::new(t.add_in_organisation))
                 .clicked()
             {
-                app.new_chat = Some(crate::app::NewChat {
-                    text: String::new(),
-                    purpose: crate::app::AddressFor::AddContact,
-                });
+                app.focus_search = true;
+                app.tab = crate::app::MainTab::Contacts;
                 ui.close();
             }
+            ui.add_enabled_ui(can_edit, |ui| {
+                ui.menu_button(t.add_outside_organisation, |ui| {
+                    if ui.button(t.add_by_address).clicked() {
+                        app.new_chat = Some(crate::app::NewChat {
+                            text: String::new(),
+                            purpose: crate::app::AddressFor::AddContact,
+                        });
+                        ui.close();
+                    }
+                });
+            });
             if ui
                 .add_enabled(can_edit, egui::Button::new(t.new_group_dots))
                 .clicked()
             {
                 app.group_dialog = Some((None, String::new()));
+                ui.close();
+            }
+            ui.separator();
+            if ui.button(t.display_options).clicked() {
+                app.options_page = 2;
+                app.open_window(crate::app::Win::Options);
                 ui.close();
             }
         });

@@ -473,6 +473,10 @@ texts! {
     end_meeting: "Besprechung beenden", "End meeting";
     end_meeting_dots: "Besprechung beenden …", "End meeting …";
     end_meeting_question: "Damit endet die Besprechung für alle Teilnehmer. Fortfahren?", "This ends the meeting for all participants. Continue?";
+    add_in_organisation: "Kontakt aus meiner Organisation hinzufügen", "Add a contact in my organization";
+    add_outside_organisation: "Kontakt außerhalb meiner Organisation hinzufügen", "Add a contact not in my organization";
+    add_by_address: "Per Adresse …", "By address …";
+    display_options: "Anzeigeoptionen", "Display options";
     presenters: "Referenten", "Presenters";
     attendees: "Teilnehmer", "Attendees";
     sharing_mark: "gibt frei", "sharing";
