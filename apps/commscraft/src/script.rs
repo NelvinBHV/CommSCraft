@@ -200,6 +200,12 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 app.handle(UiIntent::RateCall { id, stars })
             }
         }
+        // `notices`: the notices so far on standard output (test logs)
+        "notices" => {
+            for n in &app.ui.state.notices {
+                println!("notice: {}", n.text);
+            }
+        }
         // `history` · `openhistory N` (N-th entry, from 0)
         "history" => app.handle(UiIntent::LoadHistory),
         "openhistory" => {

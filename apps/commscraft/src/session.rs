@@ -720,6 +720,10 @@ struct Videos {
     /// conversation until its call is known.
     conf_rdp_pending: BTreeMap<u32, u32>,
     conf_rdp: BTreeMap<u32, (u32, rdp_call::RdpHandle)>,
+    /// The meeting video we watch, by conversation: our video ID and the source asked for
+    /// (CA-13), and the senders to choose from.
+    conf_video: BTreeMap<u32, (u32, Option<u32>)>,
+    video_candidates: BTreeMap<u32, Vec<u32>>,
 }
 
 impl Videos {
@@ -749,6 +753,8 @@ impl Videos {
             conf_viewing: BTreeMap::new(),
             conf_rdp_pending: BTreeMap::new(),
             conf_rdp: BTreeMap::new(),
+            conf_video: BTreeMap::new(),
+            video_candidates: BTreeMap::new(),
         }
     }
 }
@@ -1382,6 +1388,8 @@ impl Session {
                 let call = self.engine.next_call_id();
                 self.media_of_call.insert(call, aid);
                 self.v.of_call.insert(call, vid);
+                self.v.conf_video.insert(conversation, (vid, None));
+                self.watch_meeting_video(conversation);
                 self.outgoing.insert(call);
                 out.event(AppEvent::CallStarted {
                     id: call,
@@ -1494,7 +1502,30 @@ impl Session {
                 Vec::new()
             }
             // Only meetings switch sources.
-            V::Stalled(_) => Vec::new(),
+            // No picture from the watched source: the next sender, if there is one.
+            V::Stalled(vid) => {
+                let watched = self
+                    .v
+                    .conf_video
+                    .iter()
+                    .find(|(_, (v, _))| *v == vid)
+                    .map(|(c, (_, cur))| (*c, *cur));
+                if let Some((conversation, current)) = watched {
+                    let next = self.v.video_candidates.get(&conversation).and_then(|l| {
+                        let at = l.iter().position(|m| Some(*m) == current)?;
+                        l.get((at + 1) % l.len())
+                            .copied()
+                            .filter(|m| Some(*m) != current)
+                    });
+                    if let Some(msi) = next {
+                        self.v.conf_video.insert(conversation, (vid, Some(msi)));
+                        if let Some(h) = self.v.handles.get(&vid) {
+                            let _ = h.tx.send(video_call::ToVideo::Source(msi));
+                        }
+                    }
+                }
+                Vec::new()
+            }
             V::PictureUpdate(vid) => match self.call_of_video(vid) {
                 Some(call) => self.engine.command(C::RequestPictureUpdate { call }, t),
                 None => Vec::new(),
@@ -1629,6 +1660,29 @@ impl Session {
             chosen
         } else {
             commscraft_audio_alsa::Config::default()
+        }
+    }
+
+    /// Asks the A/V MCU for a sender's video in this meeting (CA-13): the one watched stays
+    /// while it sends, else the first candidate.
+    fn watch_meeting_video(&mut self, conversation: u32) {
+        let Some((vid, current)) = self.v.conf_video.get(&conversation).copied() else {
+            return;
+        };
+        let candidates = self
+            .v
+            .video_candidates
+            .get(&conversation)
+            .cloned()
+            .unwrap_or_default();
+        if current.is_some_and(|c| candidates.contains(&c)) {
+            return;
+        }
+        if let Some(&msi) = candidates.first() {
+            self.v.conf_video.insert(conversation, (vid, Some(msi)));
+            if let Some(h) = self.v.handles.get(&vid) {
+                let _ = h.tx.send(video_call::ToVideo::Source(msi));
+            }
         }
     }
 
@@ -2766,6 +2820,16 @@ impl Session {
                     session: conversation,
                     title: self.group_title(conversation),
                 });
+                // CA-13: the others that send video are the candidates for the meeting video.
+                let me = self.engine.own_aor().to_ascii_lowercase();
+                let candidates: Vec<u32> = participants
+                    .iter()
+                    .filter(|p| p.uri.to_ascii_lowercase() != me)
+                    .filter_map(|p| p.video_source())
+                    .take(64)
+                    .collect();
+                self.v.video_candidates.insert(conversation, candidates);
+                self.watch_meeting_video(conversation);
                 // Function 43: who shares, and whether as video (its source) or a window.
                 let sharer = participants
                     .iter()
@@ -2953,7 +3017,14 @@ impl Session {
             }
             // PL-50: a freeze comes only from an MCU – ignored in 1:1 calls.
             E::CallVideoControl { call, control } => {
-                if control != commscraft_session::media_control::VideoControl::Freeze {
+                // PL-50: a freeze comes only from an MCU – followed in meetings only.
+                let in_meeting = self
+                    .v
+                    .of_call
+                    .get(&call)
+                    .is_some_and(|v| self.v.conf_video.values().any(|(w, _)| w == v));
+                if in_meeting || control != commscraft_session::media_control::VideoControl::Freeze
+                {
                     self.to_video(call, video_call::ToVideo::Control(control));
                 }
             }
@@ -3000,6 +3071,9 @@ impl Session {
             E::CallUpdated { call, media } => self.to_media(call, calls::ToMedia::Update(media)),
             E::CallEnded { call, status } => {
                 out.event(AppEvent::QualityRating(self.engine.quality_service()));
+                if let Some(vid) = self.v.of_call.get(&call).copied() {
+                    self.v.conf_video.retain(|_, (v, _)| *v != vid);
+                }
                 self.cues.stop_ring(call);
                 self.stop_video(call);
                 if let Some(id) = self.media_of_call.remove(&call) {

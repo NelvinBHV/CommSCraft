@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: read the conversation history from Exchange)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-17 · **Change:** minor (desktop client: the meeting video asks for a sender's source)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -87,8 +87,10 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   personal → show pictures of contacts* switches them off. `tested-in-lab`.
 - **Meeting audio:** the phone button of a meeting conversation joins its audio (a call to the
   A/V MCU through the signed-in session); the call window carries the meeting's name and offers
-  no hold or transfer; the camera button joins with audio and video (the A/V MCU's video in its
-  own window). `tested-in-lab` (connected; a picture from another participant not checked yet).
+  no hold or transfer; the camera button joins with audio and video: the client asks the A/V MCU
+  for a sending participant's video (CA-13) and moves on to the next sender when no picture
+  comes; the picture is shown in its own window. `tested-in-lab` (picture from another
+  participant's camera received).
 - **Desktop integration:** *Options › Personal* starts CommSCraft with the desktop session (an
   XDG autostart entry, written only on request); *Options › Audio* chooses the sound device for
   calls – the system's default (PipeWire) or a device ALSA lists (`/proc/asound/pcm`).
