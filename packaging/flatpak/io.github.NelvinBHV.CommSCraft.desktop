@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=CommSCraft
+GenericName=Skype for Business client
+Comment=Open-source Linux client for on-premises Skype for Business Server
+Exec=commscraft
+Icon=io.github.NelvinBHV.CommSCraft
+Terminal=false
+Categories=Network;InstantMessaging;
+StartupNotify=true
