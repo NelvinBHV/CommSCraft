@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.NelvinBHV.CommSCraft</id>
+  <name>CommSCraft</name>
+  <summary>Linux client for on-premises Skype for Business Server</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT OR Apache-2.0</project_license>
+  <url type="homepage">https://github.com/NelvinBHV/CommSCraft</url>
+  <url type="bugtracker">https://github.com/NelvinBHV/CommSCraft/issues</url>
+  <description>
+    <p>CommSCraft is an independent, open-source Linux client for on-premises Skype for Business and Lync Server installations.</p>
+    <p>The desktop application is pre-alpha. Sign-in, presence, messages, audio and video calls, and meetings are under active development and require an authorized server.</p>
+  </description>
+  <launchable type="desktop-id">io.github.NelvinBHV.CommSCraft.desktop</launchable>
+  <content_rating type="oars-1.1"/>
+</component>
