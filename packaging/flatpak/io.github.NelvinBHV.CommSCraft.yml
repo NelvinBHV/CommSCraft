@@ -24,6 +24,20 @@ finish-args:
   # The Secret Service keyring via D-Bus, if available in the session.
   - --talk-name=org.freedesktop.secrets
 modules:
+  # Freedesktop 25.08 does not ship GSSAPI. Ship MIT Kerberos with the
+  # application so libgssapi-sys can compile and the shared library is present
+  # in the installed Flatpak too (similar to Flathub's Betterbird recipe).
+  - name: mit-krb5
+    buildsystem: autotools
+    subdir: src
+    config-opts:
+      - --disable-static
+      - --disable-rpath
+    sources:
+      - type: archive
+        url: https://kerberos.org/dist/krb5/1.22/krb5-1.22.tar.gz
+        sha256: 652be617b4647f3c5dcac21547d47c7097101aad4e306f1778fb48e17b220ba3
+
   - name: commscraft
     buildsystem: simple
     build-options:
