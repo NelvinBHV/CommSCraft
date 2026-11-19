@@ -1,0 +1,46 @@
+# CI preview only. No releases, signing, external deployment or repository writes.
+app-id: io.github.NelvinBHV.CommSCraft
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: commscraft
+finish-args:
+  # Login, discovery, SIP, TURN, meetings and other authorized network traffic.
+  - --share=network
+  # egui/winit: Wayland preferred; fallback X11 and GPU rendering.
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # Audio through the desktop sound server.
+  - --socket=pulseaudio
+  # Native V4L2 camera access (the app does not yet use a camera portal).
+  # This grants broad device access; revisit after a portal integration.
+  - --device=all
+  # The Secret Service keyring via D-Bus, if available in the session.
+  - --talk-name=org.freedesktop.secrets
+modules:
+  - name: commscraft
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_NET_OFFLINE: 'true'
+        CARGO_HOME: /run/build/commscraft/cargo-home
+    build-commands:
+      - mkdir -p .cargo
+      - cp cargo/config .cargo/config.toml
+      - cargo build --offline --locked --release --package commscraft
+      - install -Dm755 target/release/commscraft /app/bin/commscraft
+      - install -Dm644 packaging/flatpak/io.github.NelvinBHV.CommSCraft.desktop /app/share/applications/io.github.NelvinBHV.CommSCraft.desktop
+      - install -Dm644 packaging/flatpak/io.github.NelvinBHV.CommSCraft.metainfo.xml /app/share/metainfo/io.github.NelvinBHV.CommSCraft.metainfo.xml
+      - install -Dm644 assets/branding/CommSCraft-icon-128.png /app/share/icons/hicolor/128x128/apps/io.github.NelvinBHV.CommSCraft.png
+      - install -Dm644 assets/branding/CommSCraft-icon-256.png /app/share/icons/hicolor/256x256/apps/io.github.NelvinBHV.CommSCraft.png
+    sources:
+      # Local checkout allows PR builds to test the exact proposed commit.
+      - type: dir
+        path: ../..
+      # This file is generated in the workflow from Cargo.lock before the build.
+      - cargo-sources.json
