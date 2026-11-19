@@ -5,6 +5,8 @@ runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
+  # FFmpeg's Rust bindings use bindgen, which loads libclang during compilation.
+  - org.freedesktop.Sdk.Extension.llvm20
 command: commscraft
 finish-args:
   # Login, discovery, SIP, TURN, meetings and other authorized network traffic.
@@ -25,9 +27,10 @@ modules:
   - name: commscraft
     buildsystem: simple
     build-options:
-      append-path: /usr/lib/sdk/rust-stable/bin
+      append-path: /usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm20/bin
       env:
         CARGO_NET_OFFLINE: 'true'
+        LIBCLANG_PATH: /usr/lib/sdk/llvm20/lib
         CARGO_HOME: /run/build/commscraft/cargo-home
     build-commands:
       - mkdir -p .cargo
