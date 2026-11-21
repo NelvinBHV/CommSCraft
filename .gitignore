@@ -8,3 +8,4 @@
 *.pcapng
 *.etl
 packaging/flatpak/cargo-sources.json
+__pycache__/
