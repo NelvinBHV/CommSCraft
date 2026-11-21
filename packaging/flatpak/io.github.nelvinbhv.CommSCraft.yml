@@ -38,6 +38,9 @@ modules:
   # runtime has none.
   - name: krb5
     subdir: src
+    # krb5 1.21 predates C23, the default of the runtime's GCC.
+    build-options:
+      cflags: -std=gnu17
     config-opts:
       - --disable-static
       - --disable-rpath
