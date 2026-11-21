@@ -8,7 +8,7 @@
 //! kept-alive connection never starts the next response mid-stream), no cookies, no credentials. Redirects are not followed here; the
 //! discovery state machine decides about them.
 
-use std::io::{Read, Write};
+use std::io::Write;
 use std::time::Duration;
 
 use commscraft_url::HttpsUrl;
@@ -228,6 +228,15 @@ fn dechunk(all: &[u8], limit: usize) -> Result<Option<(Vec<u8>, usize)>, NetErro
     }
 }
 
+/// The whole of an HTTP exchange may take this many times the connection timeout (design,
+/// issue #210: an address book file of up to 64 MiB within 5 minutes at a 60 s timeout).
+pub const DEADLINE_FACTOR: u32 = 5;
+
+/// When an exchange started now with this connection timeout must be over.
+fn deadline(timeout: Duration) -> std::time::Instant {
+    std::time::Instant::now() + timeout.saturating_mul(DEADLINE_FACTOR)
+}
+
 /// GET `url` with the given `Accept` header over verified TLS.
 pub fn get(
     tls: &TlsClient,
@@ -236,8 +245,9 @@ pub fn get(
     user_agent: &str,
     timeout: Duration,
 ) -> Result<HttpResponse, NetError> {
+    let by = deadline(timeout);
     let conn = tls.connect(&url.host, url.port, timeout)?;
-    request(conn, url, accept, user_agent)
+    request(conn, url, accept, user_agent, by)
 }
 
 /// Like [`get`], but connects to `addr` (the certificate is still checked against `url.host`).
@@ -249,8 +259,9 @@ pub fn get_at(
     user_agent: &str,
     timeout: Duration,
 ) -> Result<HttpResponse, NetError> {
+    let by = deadline(timeout);
     let conn = tls.connect_addr(addr, &url.host, timeout)?;
-    request(conn, url, accept, user_agent)
+    request(conn, url, accept, user_agent, by)
 }
 
 fn request(
@@ -258,6 +269,7 @@ fn request(
     url: &HttpsUrl,
     accept: &str,
     user_agent: &str,
+    by: std::time::Instant,
 ) -> Result<HttpResponse, NetError> {
     let host = if url.port == 443 {
         url.host.clone()
@@ -279,7 +291,7 @@ fn request(
     let mut data = Vec::new();
     let mut buf = [0u8; 16 * 1024];
     loop {
-        match conn.tls.read(&mut buf) {
+        match conn.read_by(&mut buf, by) {
             Ok(0) => break,
             Ok(n) => {
                 data.extend_from_slice(buf.get(..n).unwrap_or_default());
@@ -300,7 +312,11 @@ fn request(
 /// error (we never pipeline, so the server has no reason to send any). Issue #130: the caller's
 /// `limit` holds on every layer, and the response is parsed only once its framing says it is
 /// complete ([`Progress`]), so the work grows linearly with its size.
-fn read_one(conn: &mut crate::SipConnection, limit: usize) -> Result<HttpResponse, NetError> {
+fn read_one(
+    conn: &mut crate::SipConnection,
+    limit: usize,
+    by: std::time::Instant,
+) -> Result<HttpResponse, NetError> {
     let mut data = Vec::new();
     let mut buf = [0u8; 16 * 1024];
     let mut progress = Progress::default();
@@ -310,7 +326,7 @@ fn read_one(conn: &mut crate::SipConnection, limit: usize) -> Result<HttpRespons
                 return Ok(r);
             }
         }
-        match conn.tls.read(&mut buf) {
+        match conn.read_by(&mut buf, by) {
             Ok(0) => return parse_response_within(&data, limit),
             Ok(n) => {
                 data.extend_from_slice(buf.get(..n).unwrap_or_default());
@@ -469,6 +485,7 @@ pub fn post_with_auth(
     timeout: Duration,
     authorize: &mut Authorize<'_>,
 ) -> Result<HttpResponse, NetError> {
+    let by = deadline(timeout);
     let conn = tls.connect(&url.host, url.port, timeout)?;
     with_auth_on(
         conn,
@@ -479,6 +496,7 @@ pub fn post_with_auth(
         user_agent,
         MAX_RESPONSE,
         authorize,
+        by,
     )
 }
 
@@ -492,6 +510,7 @@ pub fn post(
     user_agent: &str,
     timeout: Duration,
 ) -> Result<HttpResponse, NetError> {
+    let by = deadline(timeout);
     let mut conn = tls.connect(&url.host, url.port, timeout)?;
     let host = if url.port == 443 {
         url.host.clone()
@@ -516,7 +535,7 @@ pub fn post(
     conn.tls.write_all(req.as_bytes()).map_err(NetError::Io)?;
     conn.tls.write_all(body).map_err(NetError::Io)?;
     conn.tls.flush().map_err(NetError::Io)?;
-    read_one(&mut conn, MAX_RESPONSE)
+    read_one(&mut conn, MAX_RESPONSE, by)
 }
 
 /// GET with HTTP authentication on one kept-alive connection, like [`post_with_auth`], for a
@@ -531,6 +550,7 @@ pub fn get_with_auth(
     limit: usize,
     authorize: &mut Authorize<'_>,
 ) -> Result<HttpResponse, NetError> {
+    let by = deadline(timeout);
     let conn = tls.connect(&url.host, url.port, timeout)?;
     with_auth_on(
         conn,
@@ -541,6 +561,7 @@ pub fn get_with_auth(
         user_agent,
         limit,
         authorize,
+        by,
     )
 }
 
@@ -556,6 +577,7 @@ pub fn post_with_auth_at(
     timeout: Duration,
     authorize: &mut Authorize<'_>,
 ) -> Result<HttpResponse, NetError> {
+    let by = deadline(timeout);
     let conn = tls.connect_addr(addr, &url.host, timeout)?;
     with_auth_on(
         conn,
@@ -566,6 +588,7 @@ pub fn post_with_auth_at(
         user_agent,
         MAX_RESPONSE,
         authorize,
+        by,
     )
 }
 
@@ -579,6 +602,7 @@ fn with_auth_on(
     user_agent: &str,
     limit: usize,
     authorize: &mut Authorize<'_>,
+    by: std::time::Instant,
 ) -> Result<HttpResponse, NetError> {
     let host = if url.port == 443 {
         url.host.clone()
@@ -612,7 +636,7 @@ fn with_auth_on(
             conn.tls.write_all(b).map_err(NetError::Io)?;
         }
         conn.tls.flush().map_err(NetError::Io)?;
-        let r = read_one(&mut conn, limit)?;
+        let r = read_one(&mut conn, limit, by)?;
         if r.status != 401 {
             return Ok(r);
         }

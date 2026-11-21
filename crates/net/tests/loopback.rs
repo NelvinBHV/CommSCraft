@@ -383,3 +383,65 @@ fn post_with_connection_bound_authentication() {
         ]
     );
 }
+
+/// Issue #210: a server that trickles one octet just before each socket timeout cannot hold
+/// the reader beyond the exchange's deadline (DEADLINE_FACTOR × timeout).
+#[test]
+fn a_trickling_server_meets_the_deadline() {
+    let Some(dir) = make_certs("trickle") else {
+        eprintln!("openssl not available; skipping");
+        return;
+    };
+    let certs: Vec<CertificateDer<'static>> = CertificateDer::pem_file_iter(dir.join("leaf.pem"))
+        .unwrap()
+        .map(|c| c.unwrap())
+        .collect();
+    let key = PrivateKeyDer::from_pem_file(dir.join("leaf.key")).unwrap();
+    let config = rustls::ServerConfig::builder_with_provider(Arc::new(
+        rustls::crypto::ring::default_provider(),
+    ))
+    .with_safe_default_protocol_versions()
+    .unwrap()
+    .with_no_client_auth()
+    .with_single_cert(certs, key)
+    .unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    std::thread::spawn(move || {
+        let (tcp, _) = listener.accept().unwrap();
+        let conn = rustls::ServerConnection::new(Arc::new(config)).unwrap();
+        let mut tls = rustls::StreamOwned::new(conn, tcp);
+        let mut req = Vec::new();
+        let mut b = [0u8; 1];
+        while !req.ends_with(b"\r\n\r\n") {
+            if tls.read_exact(&mut b).is_err() {
+                return;
+            }
+            req.push(b[0]);
+        }
+        let _ = tls.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 100000\r\n\r\n");
+        let _ = tls.flush();
+        // One octet every 150 ms – faster than the client's 400 ms socket timeout.
+        for _ in 0..200 {
+            std::thread::sleep(Duration::from_millis(150));
+            if tls.write_all(b"x").and_then(|()| tls.flush()).is_err() {
+                return;
+            }
+        }
+    });
+    let client = TlsClient::with_roots(roots(&dir)).unwrap();
+    let url = commscraft_url::parse_https(&format!("https://{NAME}:{}/slow", addr.port())).unwrap();
+    let started = std::time::Instant::now();
+    let r = commscraft_net::http::get_at(
+        &client,
+        addr,
+        &url,
+        "*/*",
+        "CommSCraft/test",
+        Duration::from_millis(400),
+    );
+    let took = started.elapsed();
+    assert!(r.is_err(), "{r:?}");
+    // The deadline is 5 × 400 ms; the trickle alone would take 30 s.
+    assert!(took < Duration::from_secs(4), "took {took:?}");
+}

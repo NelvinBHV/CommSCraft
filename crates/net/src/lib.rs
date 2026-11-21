@@ -254,6 +254,26 @@ pub struct SipConnection {
 }
 
 impl SipConnection {
+    /// One read that ends by `deadline` at the latest (issue #210): the socket's read timeout is
+    /// lowered to what is left, and past the deadline the read fails with `TimedOut` – a peer
+    /// that trickles a few octets before each socket timeout cannot hold the reader longer.
+    pub(crate) fn read_by(
+        &mut self,
+        buf: &mut [u8],
+        deadline: std::time::Instant,
+    ) -> std::io::Result<usize> {
+        let left = deadline.saturating_duration_since(std::time::Instant::now());
+        if left.is_zero() {
+            return Err(std::io::Error::new(
+                ErrorKind::TimedOut,
+                "the response took longer than allowed",
+            ));
+        }
+        let per_read = self.tls.sock.read_timeout()?.unwrap_or(left).min(left);
+        self.tls.sock.set_read_timeout(Some(per_read))?;
+        self.tls.read(buf)
+    }
+
     /// The server's end-entity certificate (DER) as sent in the TLS handshake.
     pub fn server_certificate(&self) -> Option<Vec<u8>> {
         self.tls
