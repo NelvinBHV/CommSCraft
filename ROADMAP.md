@@ -52,7 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
-| 2026-11-21 | Typing indicator complete (`tested-in-lab`): the desktop client sends it while the user types and shows the peer's, both directions with the Windows client; feature parity 79 %. |
+| 2026-11-21 | Typing indicator complete (`tested-in-lab`): the desktop client sends it while the user types and shows the peer's, both directions with the Windows client; video in A/V conferences recognised as tested in the lab; feature parity 80 %. |
 | 2026-11-21 | Fonts and icons: craft-fonts (Inter, script and symbol faces) embedded at build time with `CRAFT_FONTS_DIR` (required for releases), Noto Emoji bundled for emoji, Lucide icons (a subset of the icon font, ISC) instead of the own line drawings (kept as fallback). |
 | 2026-11-21 | Appear offline (`tested-in-lab`), alphabetical sorting regardless of case and accents, presence of distribution group members regardless of letter case; presence subscriptions are no longer renewed when the contact list comes again unchanged, and failures the session handles itself (an ended subscription, 481 with a new subscription at once) are no longer shown as warnings (issues #223–#225). |
 | 2026-11-21 | Contact photos over UCWA as a second path (`tested-in-lab`): token with the Windows grant over NTLM, photo links from the contact list, expanded distribution groups and searches, the own photo; new crate `ucwa`; Autodiscover now hands on the Root's `OAuth` link. |
