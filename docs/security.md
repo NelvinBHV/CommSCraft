@@ -1,6 +1,6 @@
 # Security by design
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-18 · **Change:** minor (end meeting for everyone)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (no plaintext media on the server's word alone)
 
 CommSCraft handles passwords, Kerberos tickets, NTLM session keys and SRTP keys. It talks to
 servers and peers it cannot trust. Security is part of every design decision, not a later review.
@@ -98,7 +98,7 @@ This page lists the rules every crate follows and how each is enforced. The gene
   - **Credentials:** the certificate request goes with the NTLM HTTP authentication only to a provisioning service in the user's SIP domain or a trusted domain.
   - **Signing keys:** from the TLS exporter, wiped on drop.
 - **Web tickets (MS-OCAUTHWS):** a ticket is asked for only at the issuer the service's metadata name, and only when service and issuer are in the user's SIP domain or a trusted domain. The SAML assertion is copied byte for byte (never rebuilt) and only after it parsed on its own as a SAML assertion; it lives in memory for one use of the service and is never stored or logged; `Debug` of a ticket shows only the assertion's length (issue #146). The client entropy comes from the OS random source and is wiped after use.
-- **Media:** SRTP only (`AES_CM_128_HMAC_SHA1_80`, K-SR-1); no unencrypted RTP fallback.
+- **Media:** SRTP only (`AES_CM_128_HMAC_SHA1_80`, K-SR-1); no unencrypted RTP fallback. A server that provisions encryption as not supported (`DoNotSupport`) cannot switch it off: calls stay encrypted (and may fail) and the user is told; plain RTP only after the user's explicit `--allow-unencrypted-media` in the command-line client, the desktop client has no such switch (issue #212).
 - **Logging:** headers that carry secrets (`Authorization`, `Proxy-Authorization`, `gssapi-data`,
   web tickets, SDP `a=crypto`) are redacted before anything is logged.
 - **Dependency advisories (issue #147):** the CI job `advisories` checks every crate in
