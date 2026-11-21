@@ -84,6 +84,26 @@ pub struct Relay {
     pub password: zeroize::Zeroizing<Vec<u8>>,
 }
 
+/// The component a STUN binding request names in its PRIORITY attribute (0x0024): the low byte
+/// of the priority is 256 − component (ice-19 §4.1.2.1). Bounded walk over the attributes.
+fn stun_component(p: &[u8]) -> Option<u8> {
+    let mut i = 20usize;
+    for _ in 0..32 {
+        let head = p.get(i..i + 4)?;
+        let kind = u16::from_be_bytes([*head.first()?, *head.get(1)?]);
+        let len = usize::from(u16::from_be_bytes([*head.get(2)?, *head.get(3)?]));
+        if kind == 0x0024 && len == 4 {
+            let low = *p.get(i + 7)?;
+            return match 256 - u16::from(low) {
+                c @ 1..=2 => Some(c as u8),
+                _ => None,
+            };
+        }
+        i = i.checked_add(4 + len.div_ceil(4) * 4)?;
+    }
+    None
+}
+
 /// RFC 4571 framing: 16-bit length, then the packet.
 pub fn frame_4571(p: &[u8]) -> Vec<u8> {
     let mut v = Vec::with_capacity(p.len() + 2);
@@ -183,6 +203,12 @@ impl TcpConn {
 struct TcpHost {
     conns: Vec<TcpConn>,
     listener: Option<TcpListener>,
+    /// The port our active candidate names: 9 for application sharing (ice-tcp-07 §4.1), any
+    /// port outside 0–1023 for audio and video ([MS-ICE2] §3.1.4.8.1.3, MUST).
+    active_port: u16,
+    /// The artificial active server-reflexive candidate of the regular mode without a TCP TURN
+    /// server ([MS-ICE2] §3.1.4.8.1.3.2, SHOULD): active only, no listener.
+    artificial: bool,
 }
 
 /// Most TCP connections one active candidate opens (design: one per passive peer candidate).
@@ -315,6 +341,45 @@ impl CallMedia {
         Self::prepare_stream(local_ip, relay, turn::Stream::Audio, now)
     }
 
+    /// The TCP-only mode of [MS-ICE2] §3.1.4.8.1.3.1 for an audio stream: one active and one
+    /// passive TCP host candidate (MUST in this mode) and the TCP relay, no UDP. MS-SDPEXT
+    /// §3.1.5.22.2 says audio SHOULD NOT offer passive TCP host candidates; the mode is only
+    /// used on request, where UDP does not get through (K-IC-3 in the evidence). The m= line
+    /// stays RTP/SAVP (§3.1.5.9: no TCP transport in the first offer); its address is the passive
+    /// candidate (IC-07: the default candidate is TCP in this mode).
+    pub fn prepare_tcp_only(
+        local_ip: IpAddr,
+        relay: Option<&Relay>,
+        now: u64,
+    ) -> std::io::Result<(Self, InitialAllocates)> {
+        let (mut me, mut first) = Self::prepare_stream(local_ip, relay, turn::Stream::Audio, now)?;
+        let listener = TcpListener::bind(SocketAddr::new(local_ip, 0))?;
+        listener.set_nonblocking(true)?;
+        let port = listener.local_addr()?.port();
+        let host = Socket::TcpHost(Box::new(TcpHost {
+            conns: Vec::new(),
+            listener: Some(listener),
+            active_port: port,
+            artificial: false,
+        }));
+        // Keep only the TCP relay; its pending first allocate keeps its new index (1).
+        let tcp_relay: Vec<(usize, Socket)> = std::mem::take(&mut me.sockets)
+            .into_iter()
+            .enumerate()
+            .filter(|(_, s)| matches!(s, Socket::Tcp(_)))
+            .collect();
+        first.retain(|(i, _)| tcp_relay.iter().any(|(j, _)| j == i));
+        for (n, (old, _)) in tcp_relay.iter().enumerate() {
+            for f in first.iter_mut().filter(|(i, _)| i == old) {
+                f.0 = n + 1;
+            }
+        }
+        me.sockets = std::iter::once(host)
+            .chain(tcp_relay.into_iter().map(|(_, s)| s))
+            .collect();
+        Ok((me, first))
+    }
+
     /// As [`prepare`](Self::prepare) for the video stream of a call (its own sockets, ICE and
     /// relay allocations – every media line has its own candidates, SD-66 without multiplexing).
     pub fn prepare_video(
@@ -334,6 +399,8 @@ impl CallMedia {
         me.sockets = vec![Socket::TcpHost(Box::new(TcpHost {
             conns: Vec::new(),
             listener: Some(listener),
+            active_port: 9,
+            artificial: false,
         }))];
         Ok(me)
     }
@@ -385,6 +452,24 @@ impl CallMedia {
                         peers: HashMap::new(),
                     })));
                 }
+            }
+        }
+        // [MS-ICE2] §3.1.4.8.1.3.2: without a TCP TURN server, an artificial active TCP
+        // server-reflexive candidate on the address of a UDP host candidate (we gather no UDP
+        // server-reflexive ones), so a peer with passive TCP candidates can still be reached.
+        // Not for application sharing, which has its own TCP host candidates.
+        if stream == turn::Stream::Audio && !sockets.iter().any(|s| matches!(s, Socket::Tcp(_))) {
+            let port = match sockets.first() {
+                Some(Socket::Host(h)) => h.local_addr().map(|a| a.port()).unwrap_or(0),
+                _ => 0,
+            };
+            if port >= 1024 {
+                sockets.push(Socket::TcpHost(Box::new(TcpHost {
+                    conns: Vec::new(),
+                    listener: None,
+                    active_port: port,
+                    artificial: true,
+                })));
             }
         }
         let mut raw = [0u8; 30];
@@ -529,15 +614,36 @@ impl CallMedia {
                         }
                     }
                 }
+                Socket::TcpHost(h) if h.artificial => {
+                    // §3.1.4.8.1.3.2: active, server reflexive (type preference 100), RTP and RTCP
+                    // on one address.
+                    let a = SocketAddr::new(self.local_ip, h.active_port);
+                    for c in [1u8, 2] {
+                        let lp = commscraft_ice::tcp_local_preference(6, 5, 0);
+                        let p = commscraft_ice::candidate_priority(100, lp, c);
+                        out.push((
+                            i,
+                            local(
+                                "8",
+                                c,
+                                ice::Transport::TcpActive,
+                                ice::Kind::ServerReflexive,
+                                a,
+                                p,
+                            ),
+                        ));
+                    }
+                }
                 Socket::TcpHost(h) => {
                     // IE-04: TCP (6), active (5) and passive (2); host type; RTP and RTCP on one
-                    // address. The active candidate names port 9 (ice-tcp-07 §4.1).
+                    // address. The active candidate names `active_port` (9 for application
+                    // sharing, ice-tcp-07 §4.1).
                     let passive = h.listener.as_ref().and_then(|l| l.local_addr().ok());
                     let mut kinds = vec![(
                         "6",
                         ice::Transport::TcpActive,
                         5,
-                        SocketAddr::new(self.local_ip, 9),
+                        SocketAddr::new(self.local_ip, h.active_port),
                     )];
                     if let Some(a) = passive {
                         kinds.push(("7", ice::Transport::TcpPassive, 2, a));
@@ -578,7 +684,8 @@ impl CallMedia {
                 }
                 ice::Kind::Host => sdp::CandidateType::Host,
             },
-            related: None,
+            // A server-reflexive candidate names its base (ICE-19 §15.1); ours share the address.
+            related: (c.kind == ice::Kind::ServerReflexive).then(|| (c.base.ip(), c.base.port())),
         };
         let udp =
             |c: &ice::Local, comp: u8| c.transport == ice::Transport::Udp && c.component == comp;
@@ -669,8 +776,16 @@ impl CallMedia {
         if let Some((a, _)) = keep.get(1) {
             d.rtcp_port = a.port();
         }
+        let over_tcp = cands
+            .get(rtp_l)
+            .is_some_and(|(_, c)| c.transport != ice::Transport::Udp);
+        let rtcp_remote = rtcp.map(|(_, r)| r).or_else(|| over_tcp.then_some(rtp_r));
+        // The remote-candidates name the peer's end as ICE saw it – for a peer that opened the
+        // TCP connection to our passive candidate its connection's source port, as the Windows
+        // client names ours (`tested-in-lab`); over TCP both components share the connection,
+        // so RTCP names it too when no RTCP pair was nominated.
         d.remote_candidates = std::iter::once((1, rtp_r))
-            .chain(rtcp.map(|(_, r)| (2, r)))
+            .chain(rtcp_remote.map(|r| (2, r)))
             .collect();
         Some(d)
     }
@@ -1914,7 +2029,15 @@ impl CallMedia {
                 // On a TCP connection both components share the stream: try RTP's candidate
                 // first, then RTCP's for responses (they are matched by transaction ID).
                 let is_request = payload.get(..2) == Some(&[0x00, 0x01]);
-                let tries: Vec<usize> = [1u8, 2]
+                // A request names its component in PRIORITY (ice-19 §4.1.2.1: the low byte is
+                // 256 − component), so RTCP's checks reach RTCP's candidate (inference; needed
+                // when RTP and RTCP share a TCP connection, [MS-ICE2] §3.1.4.8.1.3).
+                let order: [u8; 2] = if is_request && stun_component(payload) == Some(2) {
+                    [2, 1]
+                } else {
+                    [1, 2]
+                };
+                let tries: Vec<usize> = order
                     .iter()
                     .filter_map(|&c| self.local_for(sock, peer, c))
                     .collect();

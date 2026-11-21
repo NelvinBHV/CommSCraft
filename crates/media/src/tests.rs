@@ -228,13 +228,15 @@ fn rtcp_profile() {
     let (blocks, ext) = report_of(&due[1]);
     assert_eq!(blocks[0].ssrc, a.sender.ssrc);
     assert_eq!((blocks[0].lsr, blocks[0].dlsr), (0x2345_6789, 32768));
-    // RT-27 healer metrics and RT-28 our estimate of A's stream (capacity, low confidence).
+    // RT-27 healer metrics, RT-28 our estimate of A's stream (capacity, low confidence) and
+    // RT-29 peer info, since B has no estimate from A yet.
     assert!(matches!(
         ext[..],
         [
             rtp::Extension::AudioHealer { ssrc, total: 6, .. },
             rtp::Extension::Bandwidth { ssrc: about, bps: AUDIO_CAPACITY_BPS, confidence: Some(2) },
-        ] if ssrc == a.sender.ssrc && about == a.sender.ssrc
+            rtp::Extension::PeerInfo { ssrc: own, inbound: AUDIO_CAPACITY_BPS, no_cache: true, .. },
+        ] if ssrc == a.sender.ssrc && about == a.sender.ssrc && own == b.sender.ssrc
     ));
     assert!(rtp::parse_rtcp(&due[1])
         .unwrap()
@@ -248,6 +250,20 @@ fn rtcp_profile() {
         a.on_rtcp(p, 1600);
     }
     assert_eq!(a.rate, Rate::Normal);
+    // A has its estimate from B: no more peer info from A.
+    let a_ext: Vec<rtp::Extension> = a
+        .rtcp_due(1_000_000, 0)
+        .iter()
+        .flat_map(|p| rtp::parse_rtcp(p).unwrap())
+        .flat_map(|i| match i {
+            rtp::Rtcp::SenderReport { extensions, .. }
+            | rtp::Rtcp::ReceiverReport { extensions, .. } => extensions,
+            _ => Vec::new(),
+        })
+        .collect();
+    assert!(!a_ext
+        .iter()
+        .any(|e| matches!(e, rtp::Extension::PeerInfo { .. })));
     // A peer that reports no estimate: A switches to the packet pair fast rate (250 ms × 40).
     let (mut a, _) = plain_pair();
     let only_block = rtp::Report {
