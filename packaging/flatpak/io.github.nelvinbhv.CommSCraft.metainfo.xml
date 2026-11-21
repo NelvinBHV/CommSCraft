@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.nelvinbhv.CommSCraft</id>
+  <name>CommSCraft</name>
+  <summary>Open-source client for on-premises Skype for Business Server</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT OR Apache-2.0</project_license>
+  <description>
+    <p>CommSCraft is a clean-room Linux client for on-premises Skype for Business Server, built
+    from published protocol specifications: sign-in, contacts and presence, chat, audio and video
+    calls, meetings and viewing shared screens.</p>
+    <p>Experimental software for development and testing on authorized systems.</p>
+  </description>
+  <launchable type="desktop-id">io.github.nelvinbhv.CommSCraft.desktop</launchable>
+  <url type="homepage">https://github.com/NelvinBHV/CommSCraft</url>
+  <url type="bugtracker">https://github.com/NelvinBHV/CommSCraft/issues</url>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.78.0-alpha" date="2026-11-21"/>
+  </releases>
+</component>
