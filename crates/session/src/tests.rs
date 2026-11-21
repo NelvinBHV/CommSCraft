@@ -1398,7 +1398,7 @@ fn outgoing_call_flow() {
     let offer = call::audio_sdp(&invite).expect("ICE-19 SDP as the last part");
     assert!(String::from_utf8(offer)
         .unwrap()
-        .contains("m=audio 40000 RTP/SAVP 9 0 8 101"));
+        .contains("m=audio 40000 RTP/SAVP 9 0 8 97 101"));
 
     let out = e.on_message(&answer(&mut server, &invite, 180, None, "", &[]), NOW);
     assert_eq!(events(&out), vec![Event::CallRinging { call: 1 }]);

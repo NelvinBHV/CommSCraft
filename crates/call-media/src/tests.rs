@@ -13,6 +13,7 @@ fn negotiated_from(other: &CallMedia) -> sdp::Negotiated {
         codec: sdp::Codec::G722,
         payload_type: 9,
         dtmf_payload_type: Some(101),
+        red_payload_type: None,
         remote_rtp: (d.address, d.rtp_port),
         remote_rtcp: (d.address, d.rtcp_port),
         remote_key: Some(other.key().clone()),

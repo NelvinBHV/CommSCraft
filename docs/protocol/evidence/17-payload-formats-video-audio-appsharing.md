@@ -32,6 +32,8 @@ Sources (all edition 20250520): [MS-H264PF] 33 pp.; [MS-RTVPF] 36 pp.; [MS-RTPRA
 |---|---|---|
 | PL-20 | RFC 2198, but at most **one** redundancy block + primary block per packet, distance ≤3, same codec as the primary block, dynamic symmetric PT ("RED"), not for DTMF | RTPRADEX §2.2, p. 8; §3.1–3.2, pp. 9–10 |
 
+Implemented: `rtp::Red` / `rtp::red_payload` (more than one redundant block refused), `sdp` (`RED/8000`, PT 97 offered, the offer's number answered), `media::Audio` (redundant blocks of distance 1–3 in the negotiated codec fill lost frames; we send distance 1). When to send redundancy is not specified – **inference**: from about 2 % loss in the peer's reports on, off after six reports without loss.
+
 ## DTMF (MS-DTMF)
 
 | ID | Requirement | Evidence |

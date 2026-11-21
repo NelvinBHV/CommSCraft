@@ -126,9 +126,12 @@ fn answers_the_specification_offer() {
     )
     .unwrap();
     assert!(
-        sdp.contains("m=audio 40000 RTP/SAVP 9 8 0 101\r\n"),
+        sdp.contains("m=audio 40000 RTP/SAVP 9 8 0 97 101\r\n"),
         "{sdp}"
     );
+    // Redundant audio answered with the offer's number, no fmtp (SD-23, [MS-RTPRADEX] §3.1).
+    assert!(sdp.contains("a=rtpmap:97 RED/8000\r\n") && !sdp.contains("a=fmtp:97"));
+    assert_eq!(n.red_payload_type, Some(97));
     assert!(
         sdp.contains("a=crypto:2 AES_CM_128_HMAC_SHA1_80 inline:"),
         "same tag as the offer"
@@ -147,7 +150,7 @@ fn answers_the_specification_offer() {
     assert_eq!(n.remote_key.as_ref().map(|k| k.tag), Some(2));
     // Our own answer parses again.
     let again = parse(sdp.as_bytes()).unwrap();
-    assert_eq!(again.media[0].formats, vec![9, 8, 0, 101]);
+    assert_eq!(again.media[0].formats, vec![9, 8, 0, 97, 101]);
 }
 
 #[test]
@@ -159,7 +162,8 @@ fn offer_and_answer_evaluation() {
             allow_plaintext: false,
         },
     );
-    assert!(o.contains("m=audio 40000 RTP/AVP 9 0 8 101\r\n"));
+    assert!(o.contains("m=audio 40000 RTP/AVP 9 0 8 97 101\r\n"));
+    assert!(o.contains("a=rtpmap:97 RED/8000\r\n"));
     assert!(o.contains("a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:"));
     assert!(offer(&l, Encryption::Required).contains("RTP/SAVP"));
     assert!(!offer(&l, Encryption::Off).contains("a=crypto"));
@@ -525,7 +529,7 @@ fn answer_names_every_line() {
     assert_eq!(
         lines,
         vec![
-            "m=audio 40000 RTP/SAVP 9 8 0 101",
+            "m=audio 40000 RTP/SAVP 9 8 0 97 101",
             "m=video 40002 RTP/SAVP 122 123",
             "m=applicationsharing 0 TCP/RTP/AVP 127"
         ]
@@ -540,7 +544,7 @@ fn answer_names_every_line() {
     assert_eq!(
         lines,
         vec![
-            "m=audio 40000 RTP/SAVP 9 8 0 101",
+            "m=audio 40000 RTP/SAVP 9 8 0 97 101",
             "m=video 0 RTP/SAVP 122 121 123",
             "m=applicationsharing 0 TCP/RTP/AVP 127"
         ]
@@ -914,4 +918,42 @@ a=x-applicationsharing-session-id:7\r\na=x-applicationsharing-role:sharer\r\na=x
     assert!(
         screen::rdp_answer_to_offer(viewer.as_bytes(), Some(&key), Encryption::Required).is_err()
     );
+}
+
+/// [MS-RTPRADEX] §3.1/SD-23: "RED" is case-sensitive, the binding symmetric, dynamic only.
+#[test]
+fn redundant_audio_negotiation() {
+    let offer_with = |red: &str| {
+        format!("v=0\r\no=- 0 0 IN IP4 198.51.100.7\r\ns=session\r\nc=IN IP4 198.51.100.7\r\nt=0 0\r\nm=audio 5000 RTP/AVP 0 {red}\r\na=rtpmap:0 PCMU/8000\r\n")
+    };
+    let take = |o: String| {
+        answer(
+            o.as_bytes(),
+            &local(),
+            Key::new(1, [3; 30]),
+            Encryption::Off,
+        )
+        .unwrap()
+        .1
+        .red_payload_type
+    };
+    assert_eq!(take(offer_with("98\r\na=rtpmap:98 RED/8000")), Some(98));
+    assert_eq!(take(offer_with("98\r\na=rtpmap:98 red/8000")), None);
+    assert_eq!(take(offer_with("20\r\na=rtpmap:20 RED/8000")), None);
+    // Listed in rtpmap but not among the formats.
+    assert_eq!(
+        take(offer_with("\r\na=rtpmap:98 RED/8000").replace(" 0 \r\n", " 0\r\n")),
+        None
+    );
+    // An answer to our offer: only our number counts.
+    let ans = |pt: u8| {
+        format!("v=0\r\no=- 0 0 IN IP4 198.51.100.7\r\ns=session\r\nc=IN IP4 198.51.100.7\r\nt=0 0\r\nm=audio 5000 RTP/AVP 0 {pt}\r\na=rtpmap:0 PCMU/8000\r\na=rtpmap:{pt} RED/8000\r\n")
+    };
+    let n = |a: String| {
+        answer_to_offer(a.as_bytes(), None, Encryption::Off)
+            .unwrap()
+            .red_payload_type
+    };
+    assert_eq!(n(ans(97)), Some(97));
+    assert_eq!(n(ans(99)), None);
 }

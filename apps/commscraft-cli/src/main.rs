@@ -1924,7 +1924,15 @@ fn interactive(
                         continues_early,
                     } => {
                         cues.stop_ring(call);
-                        println!("* call {call} connected ({:?})", media.codec);
+                        println!(
+                            "* call {call} connected ({:?}{})",
+                            media.codec,
+                            if media.red_payload_type.is_some() {
+                                " + redundancy"
+                            } else {
+                                ""
+                            }
+                        );
                         current_call = Some(call);
                         if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
                             let _ = h.tx.send(if continues_early {
@@ -1941,7 +1949,15 @@ fn interactive(
                     // MS-SDPEXT §3.1.5.12: play what the far end sends before it answers
                     // (announcements, ringback from a gateway); speech only after the answer.
                     E::CallEarlyMedia { call, media } => {
-                        println!("* call {call}: early media ({:?})", media.codec);
+                        println!(
+                            "* call {call}: early media ({:?}{})",
+                            media.codec,
+                            if media.red_payload_type.is_some() {
+                                " + redundancy"
+                            } else {
+                                ""
+                            }
+                        );
                         if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
                             let _ = h.tx.send(calls::ToMedia::Start {
                                 media,
@@ -2995,6 +3011,11 @@ fn interactive(
                     println!("* [media {id}] the other side left the media session")
                 }
                 calls::FromMedia::Quality(id, q) => {
+                    let st = &q.audio.stats;
+                    println!(
+                        "* [media {id}] {} packets sent ({} with redundancy), {} received, {} dropped, {} concealed, {} recovered from redundancy",
+                        st.sent, st.sent_redundant, st.received, st.dropped, st.concealed, st.recovered
+                    );
                     // QE-01: the report after every call with media.
                     if let Some(call) = ended_media.remove(&id) {
                         outputs.extend(engine.command(

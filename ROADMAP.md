@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (dial-in numbers)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (redundant audio)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-21 | Redundant audio ([MS-RTPRADEX], RFC 2198 with one redundant block): offered and answered as `RED/8000`, lost packets played from the redundant block, sent while the peer reports loss; the Windows client accepts and answers it (`tested-in-lab`), the recovery `tested-offline`. |
 | 2026-11-21 | Dial-in numbers in the meeting entry info (getConferencingCapabilities, [MS-CONFPRO] §2.2.2.8): numbers of the suggested region, conference ID, link to all numbers; the request `tested-in-lab`, the numbers `tested-offline`; feature parity 81 %. |
 | 2026-11-21 | Typing indicator complete (`tested-in-lab`): the desktop client sends it while the user types and shows the peer's, both directions with the Windows client; video in A/V conferences recognised as tested in the lab; feature parity 80 %. |
 | 2026-11-21 | Fonts and icons: craft-fonts (Inter, script and symbol faces) embedded at build time with `CRAFT_FONTS_DIR` (required for releases), Noto Emoji bundled for emoji, Lucide icons (a subset of the icon font, ISC) instead of the own line drawings (kept as fallback). |

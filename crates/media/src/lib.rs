@@ -24,6 +24,11 @@ use commscraft_sdp as sdp;
 use commscraft_srtp as srtp;
 
 /// One frame is 20 ms ([MS-RTP] §2.2.1: 20 ms usual; `a=ptime:20` in our SDP).
+/// Loss (fraction of 256, RFC 3550 §6.4.1) in a peer report from which we send redundant
+/// audio: about 2 % (inference).
+pub const RED_ON_LOSS: u8 = 5;
+/// Peer reports in a row without loss after which redundancy stops (inference).
+pub const RED_OFF_REPORTS: u32 = 6;
 pub const FRAME_MS: u32 = 20;
 /// Target jitter-buffer delay in frames (design: 60 ms) and its bound.
 pub const JITTER_FRAMES: u32 = 3;
@@ -95,6 +100,10 @@ pub struct Stats {
     pub concealed: u64,
     /// Frames handed to the speaker since playout started.
     pub played: u64,
+    /// Lost packets whose frame came from a redundant block of a later one ([MS-RTPRADEX]).
+    pub recovered: u64,
+    /// Packets sent with a redundant block.
+    pub sent_redundant: u64,
 }
 
 /// Running average and maximum of a metric.
@@ -147,6 +156,8 @@ pub struct CallQuality {
     /// Codec name as in the SDP (rtpmap) and its sample rate.
     pub codec: &'static str,
     pub sample_rate: u32,
+    /// The counters of the call (received, dropped, concealed, recovered from redundancy …).
+    pub stats: Stats,
 }
 
 /// RTP timestamp units per millisecond (8000 Hz clock for all our codecs, RFC 3551 §4.5.2).
@@ -178,6 +189,13 @@ pub struct Audio {
     codec: sdp::Codec,
     pt: u8,
     dtmf_pt: Option<u8>,
+    /// Redundant audio ([MS-RTPRADEX], PL-20): the negotiated payload type, whether we add the
+    /// previous frame to each packet, the previous frame with its timestamp, and the peer's
+    /// reports in a row without loss.
+    red_pt: Option<u8>,
+    red_sending: bool,
+    red_previous: Option<(u32, Vec<u8>)>,
+    red_clean_reports: u32,
     encoder: Encoder,
     decoder: Decoder,
     tx_srtp: Option<srtp::Context>,
@@ -275,6 +293,10 @@ impl Audio {
             codec: negotiated.codec,
             pt: negotiated.payload_type,
             dtmf_pt: negotiated.dtmf_payload_type,
+            red_pt: negotiated.red_payload_type,
+            red_sending: false,
+            red_previous: None,
+            red_clean_reports: 0,
             encoder,
             decoder,
             tx_srtp,
@@ -355,6 +377,7 @@ impl Audio {
                 sdp::Codec::Pcma => "PCMA",
             },
             sample_rate: self.sample_rate(),
+            stats: self.stats,
         }
     }
 
@@ -435,6 +458,8 @@ impl Audio {
                 .ok()?;
             self.sender.skip(ticks);
             self.stats.sent += 1;
+            // Telephone events are never carried redundantly (PL-20).
+            self.red_previous = None;
             return self.protect(p);
         }
         let mut payload = Vec::with_capacity(self.frame_samples());
@@ -449,9 +474,47 @@ impl Audio {
             Encoder::G722(e) => e.encode(input, &mut payload),
             Encoder::G711(l) => l.encode(input, &mut payload),
         }
-        let p = self.sender.packet(self.pt, false, &payload, ticks).ok()?;
+        let timestamp = self.sender.timestamp();
+        let previous = self.red_previous.replace((timestamp, payload.clone()));
+        // PL-20: one redundant block, the frame just before (distance 1 ≤ 3), the same codec.
+        let red = match (self.red_pt, self.red_sending, previous) {
+            (Some(rpt), true, Some((ts, data))) if timestamp.wrapping_sub(ts) == ticks => {
+                rtp::red_payload(self.pt, ticks, &data, &payload).map(|p| (rpt, p))
+            }
+            _ => None,
+        };
+        let p = match red {
+            Some((rpt, body)) => {
+                self.stats.sent_redundant += 1;
+                self.sender.packet(rpt, false, &body, ticks).ok()?
+            }
+            None => self.sender.packet(self.pt, false, &payload, ticks).ok()?,
+        };
         self.stats.sent += 1;
         self.protect(p)
+    }
+
+    /// Redundancy on or off from the peer's loss reports. [MS-RTPRADEX] leaves when to send it
+    /// to the sender (inference): from [`RED_ON_LOSS`] lost (of 256) on, off again after
+    /// [`RED_OFF_REPORTS`] reports in a row without loss.
+    fn on_loss_report(&mut self, fraction_lost: u8) {
+        if self.red_pt.is_none() {
+            return;
+        }
+        if fraction_lost >= RED_ON_LOSS {
+            self.red_sending = true;
+            self.red_clean_reports = 0;
+        } else if fraction_lost == 0 {
+            self.red_clean_reports = self.red_clean_reports.saturating_add(1);
+            if self.red_clean_reports >= RED_OFF_REPORTS {
+                self.red_sending = false;
+            }
+        }
+    }
+
+    /// Whether packets currently carry the previous frame redundantly.
+    pub fn sending_redundancy(&self) -> bool {
+        self.red_sending
     }
 
     /// A received RTP/SRTP packet. Returns a DTMF digit when an event ended.
@@ -511,11 +574,47 @@ impl Audio {
             }
             return None;
         }
-        if h.payload_type != self.pt {
+        let (primary, redundant) = if Some(h.payload_type) == self.red_pt {
+            let Ok(red) = rtp::Red::decode(parsed.payload) else {
+                self.stats.dropped += 1;
+                return None;
+            };
+            if red.primary_type != self.pt {
+                self.stats.dropped += 1;
+                return None;
+            }
+            // Same codec only (PL-20), distance 1–3 frames.
+            let ticks = self.frame_ticks();
+            let older: Vec<(u64, Vec<u8>)> = red
+                .redundant
+                .iter()
+                .filter(|b| b.payload_type == self.pt)
+                .filter_map(|b| {
+                    let off = u32::from(b.timestamp_offset);
+                    let d = off / ticks;
+                    (off % ticks == 0 && (1..=3).contains(&d))
+                        .then(|| (u64::from(d), b.data.to_vec()))
+                })
+                .collect();
+            (red.primary.to_vec(), older)
+        } else if h.payload_type == self.pt {
+            (parsed.payload.to_vec(), Vec::new())
+        } else {
             self.stats.dropped += 1;
             return None;
-        }
+        };
         let ext = self.extend(h.sequence);
+        // A frame lost earlier and still to be played comes from the redundant block.
+        for (distance, data) in redundant {
+            let Some(at) = ext.checked_sub(distance) else {
+                continue;
+            };
+            let playable = self.next_play.is_none_or(|n| at >= n);
+            if playable && !self.buffer.contains_key(&at) && self.buffer.len() < MAX_BUFFERED {
+                self.buffer.insert(at, data);
+                self.stats.recovered += 1;
+            }
+        }
         let window_ok = match self.next_play {
             Some(n) => ext >= n && ext < n + MAX_BUFFERED as u64,
             None => true,
@@ -524,7 +623,7 @@ impl Audio {
             self.stats.dropped += 1;
             return None;
         }
-        self.buffer.insert(ext, parsed.payload.to_vec());
+        self.buffer.insert(ext, primary);
         None
     }
 
@@ -798,9 +897,11 @@ impl Audio {
         now_ms: u64,
     ) {
         let ours = reports.iter().any(|r| r.ssrc == self.sender.ssrc);
-        for r in reports.iter().filter(|r| r.ssrc == self.sender.ssrc) {
+        let own = self.sender.ssrc;
+        for r in reports.iter().filter(|r| r.ssrc == own) {
             self.q_out_jitter.add(u64::from(r.jitter));
             self.q_out_loss.add(u64::from(r.fraction_lost));
+            self.on_loss_report(r.fraction_lost);
             // RFC 3550 §6.4.1: RTT = A − LSR − DLSR, here with our send time of that report.
             if r.lsr != 0 {
                 if let Some(&(_, at)) = self
