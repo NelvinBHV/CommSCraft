@@ -1,6 +1,59 @@
-//! CommSCraft's own line icons, drawn with the painter (no image files, no third-party art).
+//! The icons of the interface: Lucide (https://lucide.dev, ISC licence; a subset of the
+//! `lucide-static` icon font, `assets/icons/`, listed in ATTRIBUTION.md) when its font is
+//! installed ([`install`]), otherwise CommSCraft's own line drawings with the painter.
 
-use egui::{epaint::PathStroke, Color32, Painter, Pos2, Rect, Stroke, Vec2};
+use egui::{
+    epaint::PathStroke, Color32, FontData, FontDefinitions, FontFamily, Painter, Pos2, Rect,
+    Stroke, Vec2,
+};
+use std::sync::Arc;
+
+/// The font family name of the Lucide icons.
+pub const LUCIDE: &str = "lucide";
+/// The Lucide subset (lucide-static 1.70.0, glyphs listed in `assets/icons/README.md`).
+const LUCIDE_FONT: &[u8] = include_bytes!("../../../../assets/icons/lucide-subset.ttf");
+
+/// Adds the Lucide icon font to font definitions as its own family (not as a fallback of the
+/// text fonts: its glyphs lie in the private use area).
+pub fn install(defs: &mut FontDefinitions) {
+    defs.font_data
+        .insert(LUCIDE.into(), Arc::new(FontData::from_static(LUCIDE_FONT)));
+    defs.families
+        .insert(FontFamily::Name(LUCIDE.into()), vec![LUCIDE.into()]);
+}
+
+/// The Lucide glyph of an icon (codepoints of lucide-static 1.70.0 `font/codepoints.json`).
+fn lucide(icon: Icon) -> char {
+    let cp = match icon {
+        Icon::Person => 0xe19f,       // user
+        Icon::Clock => 0xe087,        // clock
+        Icon::Calendar => 0xe063,     // calendar
+        Icon::Gear => 0xe154,         // settings
+        Icon::Chat => 0xe117,         // message-square
+        Icon::Camera => 0xe1a5,       // video
+        Icon::Phone => 0xe133,        // phone
+        Icon::Screen => 0xe11d,       // monitor
+        Icon::People => 0xe1a4,       // users
+        Icon::More => 0xe0b6,         // ellipsis
+        Icon::Search => 0xe151,       // search
+        Icon::AddPerson => 0xe1a2,    // user-plus
+        Icon::ChevronDown => 0xe06d,  // chevron-down
+        Icon::ChevronRight => 0xe06f, // chevron-right
+        Icon::Speaker => 0xe1ab,      // volume-2
+        Icon::Star => 0xe176,         // star
+        Icon::Mic => 0xe118,          // mic
+        Icon::HangUp => 0xe138,       // phone-off
+    };
+    char::from_u32(cp).unwrap_or('?')
+}
+
+fn lucide_installed(p: &Painter) -> bool {
+    p.ctx().fonts(|f| {
+        f.definitions()
+            .families
+            .contains_key(&FontFamily::Name(LUCIDE.into()))
+    })
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Icon {
@@ -27,8 +80,25 @@ pub enum Icon {
     HangUp,
 }
 
-/// Draws an icon into `rect` (square-ish) with a 1.6 px line.
+/// Draws an icon into `rect` (square-ish): the Lucide glyph, or the own line drawing when the
+/// icon font is not installed.
 pub fn draw(p: &Painter, rect: Rect, icon: Icon, colour: Color32) {
+    if lucide_installed(p) {
+        let size = rect.width().min(rect.height()) * 0.9;
+        p.text(
+            rect.center(),
+            egui::Align2::CENTER_CENTER,
+            lucide(icon),
+            egui::FontId::new(size, FontFamily::Name(LUCIDE.into())),
+            colour,
+        );
+        return;
+    }
+    draw_lines(p, rect, icon, colour);
+}
+
+/// CommSCraft's own line drawing of an icon with a 1.6 px line.
+fn draw_lines(p: &Painter, rect: Rect, icon: Icon, colour: Color32) {
     let s = Stroke::new(1.6, colour);
     let c = rect.center();
     let r = rect.width().min(rect.height()) / 2.0;
