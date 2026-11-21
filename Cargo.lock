@@ -674,6 +674,7 @@ dependencies = [
  "commscraft-dlx",
  "commscraft-ews",
  "commscraft-gssapi",
+ "commscraft-im",
  "commscraft-net",
  "commscraft-ocer",
  "commscraft-presence",
