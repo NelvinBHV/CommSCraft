@@ -200,7 +200,9 @@ pub fn accepts_html(body: &[u8]) -> bool {
     })
 }
 
-/// A formatted message (`text/html`), in the form the Windows client sends (`html::to_html`).
+/// A formatted message (`text/html`), in the form the Windows client sends (`html::to_html`):
+/// `Content-Type: text/html` without parameters – with `; charset=UTF-8` the Windows client
+/// accepts the message (200) but does not show it (`tested-in-lab`).
 pub fn message_html(dialog: &mut Dialog, html: &str) -> Result<Message, Error> {
     if html.trim().is_empty() {
         return Err(Error::EmptyText);
@@ -209,7 +211,7 @@ pub fn message_html(dialog: &mut Dialog, html: &str) -> Result<Message, Error> {
         return Err(Error::TextTooLong);
     }
     let mut m = dialog.request("MESSAGE");
-    m.push_header("Content-Type", "text/html; charset=UTF-8");
+    m.push_header("Content-Type", "text/html");
     m.body = html.as_bytes().to_vec();
     Ok(m)
 }

@@ -280,7 +280,7 @@ pub fn to_html(text: &str, style: &Style) -> String {
     }
     let color = style.color.unwrap_or([0, 0, 0]);
     let mut s = format!(
-        "<SPAN style='color:#{:02X}{:02X}{:02X};'>{esc}</SPAN>",
+        "<SPAN style='font-size:10pt; font-family:Segoe UI; color:#{:02X}{:02X}{:02X};'>{esc}</SPAN>",
         color[0], color[1], color[2]
     );
     for (on, tag) in [

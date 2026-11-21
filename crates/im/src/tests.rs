@@ -228,7 +228,7 @@ fn html_body_of_the_windows_client() {
     let html = to_html("1 < 2 & \"x\"\nnext", &style);
     assert_eq!(
         html,
-        "<B><SPAN style='color:#0070C0;'>1 &lt; 2 &amp; &quot;x&quot;<BR>next</SPAN></B>"
+        "<B><SPAN style='font-size:10pt; font-family:Segoe UI; color:#0070C0;'>1 &lt; 2 &amp; &quot;x&quot;<BR>next</SPAN></B>"
     );
     let back = parse(&html).unwrap();
     assert_eq!(plain(&back), "1 < 2 & \"x\"\nnext");
