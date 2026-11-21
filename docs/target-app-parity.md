@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (calls over TCP, peer info)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (desktop notifications, SIP compression in the desktop client)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -28,7 +28,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 |---|---|---|---|---|
 | 1 | Server discovery | MS-OCDISCWS, MS-CONMGMT | B | **lab**, tested-offline (Autodiscover over HTTPS only with trust model, DNS SRV and fallback host names: `discovery`, `url`, `net`; used by `commscraft-cli`) |
 | 2 | TLS connection, keep-alive | MS-CONMGMT | B | **lab**, tested-offline (TLS 1.2/1.3 adapter with loopback test, stream framing, keep-alive negotiation and CRLF keep-alive: `net`, `sip-msg`, `register`) |
-| 3 | SIP compression (optional) | MS-SIPCOMP | B\* | **lab**, tested-offline (NEGOTIATE right after the TLS handshake with the 5 s timer, packet header, MPPC with the 8 KiB history per direction, the client compressing only after the server's first compressed packet: `sipcomp`, `net`; CLI `--compression`, `/sipcomp`) |
+| 3 | SIP compression (optional) | MS-SIPCOMP | B\* | **lab**, tested-offline (NEGOTIATE right after the TLS handshake with the 5 s timer, packet header, MPPC with the 8 KiB history per direction, the client compressing only after the server's first compressed packet: `sipcomp`, `net`; CLI `--compression`, `/sipcomp`; the desktop client as a sign-in option) |
 | 4 | Sign-in with NTLM | MS-SIPAE, MS-NLMP | B\* | **lab**, tested-offline (NTLMv2 incl. MIC, MS-SIPAE signing and verification up to version 4, offline sign-in against a test registrar: `ntlm`, `sipae`, `register`) |
 | 5 | Sign-in with Kerberos | MS-SIPAE, MS-KILE | B | **lab**, tested-offline (AP-REQ for `sip/<FE>` from the ticket cache or the password, signed REGISTER from version 4, GSS_GetMIC/VerifyMIC for every signed message, opaque from the first signed answer, renewal before the ticket ends, fallback to NTLM: `register`, `sipae`, adapter `gssapi`; CLI `--kerberos`) |
 | 6 | Sign-in with TLS-DSK and client certificate | MS-SIPAE, MS-OCAUTHWS | B\* | **lab**, tested-offline (user certificate from the certificate provisioning service – RSA key, PKCS#10 request, GetAndPublishCert with NTLM, stored 0600 –; the TLS handshake tunnelled in the sign-in, TLS 1.2 with SHA-256 suites, signing keys from the exporter, HMAC-SHA256 for every signed message; fallback to Kerberos or NTLM: `register`, `sipae`, `ocauthws`, adapter `tlsdsk`; CLI `--tls-dsk`) |

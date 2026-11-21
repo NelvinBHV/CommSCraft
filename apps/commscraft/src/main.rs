@@ -9,6 +9,7 @@
 mod desktop;
 mod fonts;
 mod idle;
+mod notify;
 mod photos;
 mod prefs;
 mod script;
@@ -31,7 +32,7 @@ const USAGE: &str =
     "usage: commscraft [--demo] [--lang de|en] [--view chats|contacts|calls|meetings|settings]
                   [--size WIDTHxHEIGHT] [--screenshot FILE.png] [--screenshot-after SECONDS]
                   [--ca-file PEM] [--commands FILE] [--embed-windows]
-                  [--sign-in sip:ADDRESS [--user USER] [--domain DOMAIN] [--server HOST:PORT] [--kerberos] [--tls-dsk] [--remember]]
+                  [--sign-in sip:ADDRESS [--user USER] [--domain DOMAIN] [--server HOST:PORT] [--kerberos] [--tls-dsk] [--compression] [--remember]]
   --ca-file    adds an enterprise CA to the system trust store (never replaces the checks)
   --sign-in    signs in at start; the password is the first line of standard input
   --commands   follows FILE for test commands (see the documentation in docs/ui/README.md)";
@@ -116,6 +117,7 @@ fn parse_args() -> Result<Args, String> {
             "--server" => form.server = it.next().ok_or(USAGE)?,
             "--kerberos" => form.kerberos = true,
             "--tls-dsk" => form.tls_dsk = true,
+            "--compression" => form.compression = true,
             "--remember" => form.remember = true,
             "-h" | "--help" => return Err(USAGE.into()),
             other => return Err(format!("unknown argument {other}\n{USAGE}")),
@@ -247,9 +249,32 @@ pub(crate) struct DesktopApp {
     machine: commscraft_presence::MachineActivity,
     /// A test script's idle time in place of the desktop's (`idle SECONDS`).
     pub(crate) idle_override: Option<u64>,
+    /// The desktop's notification service, asked for once (`None` inside: none there); not
+    /// used for demos and screenshots. The session worker shows the notifications.
+    notifier: Option<Option<std::sync::Arc<notify::Notifier>>>,
+    /// What the worker needs to know about the interface for them.
+    notes_ui: notify::UiState,
 }
 
 impl DesktopApp {
+    /// Desktop notifications (shown by the session worker): the interface tells it that it is
+    /// seen and whether message notifications are quiet; without a notification service the
+    /// interface keeps its own notification window.
+    fn notes_tick(&mut self) {
+        use std::sync::atomic::Ordering;
+        let available = self
+            .notifier
+            .get_or_insert_with(|| notify::Notifier::start().map(std::sync::Arc::new))
+            .is_some();
+        self.ui.system_notifications = available;
+        self.notes_ui
+            .last_frame_ms
+            .store(notify::now_ms(), Ordering::Relaxed);
+        self.notes_ui
+            .messages_quiet
+            .store(self.ui.quiet_for_messages(), Ordering::Relaxed);
+    }
+
     /// The status automation: idle time against the user's limits; a change goes to the
     /// session, which publishes the machine state again.
     fn idle_tick(&mut self) {
@@ -355,7 +380,16 @@ impl DesktopApp {
                     c.request_repaint();
                 }
             });
-            self.worker = Some(session::Worker::start(form, self.ca.clone(), repaint));
+            self.notes_tick();
+            let notes = self.notifier.clone().flatten().map(|n| {
+                notify::WorkerNotes::new(n, self.notes_ui.clone(), self.ui.prefs.lang.texts())
+            });
+            self.worker = Some(session::Worker::start(
+                form,
+                self.ca.clone(),
+                repaint,
+                notes,
+            ));
             // The worker starts with the defaults: the user's settings at once.
             let p = &self.ui.prefs;
             if let Some(w) = &self.worker {
@@ -681,6 +715,7 @@ impl eframe::App for DesktopApp {
             self.ctx = Some(ctx.clone());
         }
         self.pump_session();
+        self.notes_tick();
         self.idle_tick();
         if self.worker_done {
             self.worker_done = false;
@@ -839,6 +874,7 @@ fn main() {
                 }
             }
             ui.prefs.lang = lang;
+            let quiet_desktop = args.demo || args.screenshot.is_some();
             let mut app = DesktopApp {
                 ui,
                 lang,
@@ -863,6 +899,11 @@ fn main() {
                 idle: None,
                 machine: commscraft_presence::MachineActivity::Active,
                 idle_override: None,
+                notifier: quiet_desktop.then_some(None),
+                notes_ui: notify::UiState {
+                    last_frame_ms: std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0)),
+                    messages_quiet: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                },
             };
             if args.demo {
                 app.start_demo();
