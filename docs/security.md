@@ -1,6 +1,6 @@
 # Security by design
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-18 · **Change:** minor (end meeting for everyone)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (TLS-DSK key files replaced atomically)
 
 CommSCraft handles passwords, Kerberos tickets, NTLM session keys and SRTP keys. It talks to
 servers and peers it cannot trust. Security is part of every design decision, not a later review.
@@ -93,7 +93,7 @@ This page lists the rules every crate follows and how each is enforced. The gene
 - **TLS-DSK:**
   - **Adapter:** `commscraft-tlsdsk`, a rustls client over buffers. TLS 1.2 with SHA-256 suites only; the server certificate is checked like the SIP connection's.
   - **User key:** RSA 2048. The `rsa` crate (0.10, which has the fix for RUSTSEC-2023-0071) only generates it, from the operating system's random source; signing (certificate request, certificate_verify) runs in `ring`, so no private key operation runs in `rsa` at all.
-  - **Storage:** the key is kept wiped in memory and stored only as `key.pk8` (0600, directory 0700) next to the certificate.
+  - **Storage:** the key is kept wiped in memory and stored only as `key.pk8` (0600, directory 0700) next to the certificate. Each file is written to a new, exclusively created temporary file, synced and renamed over the old one: no existing file or symbolic link is written through, an interrupted write leaves the old pair; the directory must be a real directory owned by the user and is set to 0700; only private regular files (no link, nothing readable by others) are loaded (issue #211).
   - **Certificate checks:** an issued certificate must carry the requested key; a stored one is used only while valid and only with its key.
   - **Credentials:** the certificate request goes with the NTLM HTTP authentication only to a provisioning service in the user's SIP domain or a trusted domain.
   - **Signing keys:** from the TLS exporter, wiped on drop.
