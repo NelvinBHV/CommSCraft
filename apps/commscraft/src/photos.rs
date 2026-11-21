@@ -178,6 +178,10 @@ fn run(
     let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
     let mut settings = None;
     let mut seen = std::collections::BTreeSet::new();
+    // The UCWA path (function 15, second path): opened when first needed, again after its token
+    // ends; after a failure not tried again for a while.
+    let mut ucwa: Option<commscraft_client::ucwa::Session> = None;
+    let mut ucwa_retry_at: Option<std::time::Instant> = None;
     while let Ok(job) = rx.recv() {
         let mut ntlm = |n: &[u8], c: &[u8], cert: Option<&[u8]>| {
             let (reply, answer) = mpsc::channel();
@@ -199,6 +203,25 @@ fn run(
         let (uri, services) = match job {
             Job::Photo(uri, services) => (uri, services),
             Job::Expand(email, services) => {
+                // A distribution group's members have their own photo path in UCWA: the
+                // expanded group names each member's photo link (UW-09), so the photos asked
+                // for next need no search each.
+                if photos_allowed(services.as_deref()) {
+                    if let Some(s) = ucwa_session(
+                        &mut ucwa,
+                        &mut ucwa_retry_at,
+                        tls,
+                        trust,
+                        aor,
+                        &ua,
+                        &mut ntlm,
+                        &mut log,
+                    ) {
+                        if let Err(e) = s.expand_group(tls, &email, &ua, &mut log) {
+                            log(&format!("  UCWA group {email}: {e}"));
+                        }
+                    }
+                }
                 let found = commscraft_client::directory::expand(
                     tls,
                     trust,
@@ -376,21 +399,61 @@ fn run(
         if !seen.insert(uri.to_ascii_lowercase()) {
             continue;
         }
-        let got = commscraft_client::photos::fetch(
-            tls,
-            trust,
-            aor,
-            services.as_deref(),
-            &uri,
-            &ua,
-            &mut settings,
-            &mut ntlm,
-            &mut log,
-        );
-        let Ok(path) = got else {
-            continue;
+        // Diagnosis: `COMMSCRAFT_PHOTOS_UCWA_FIRST=1` skips the directory and Exchange paths.
+        let ucwa_first = std::env::var("COMMSCRAFT_PHOTOS_UCWA_FIRST").is_ok_and(|v| v == "1");
+        let got = if ucwa_first {
+            Err("directory and Exchange skipped (COMMSCRAFT_PHOTOS_UCWA_FIRST)".to_string())
+        } else {
+            commscraft_client::photos::fetch(
+                tls,
+                trust,
+                aor,
+                services.as_deref(),
+                &uri,
+                &ua,
+                &mut settings,
+                &mut ntlm,
+                &mut log,
+            )
         };
-        let Some(rgba) = std::fs::read(&path).ok().and_then(|b| thumbnail(&b)) else {
+        let bytes = match got {
+            Ok(path) => std::fs::read(&path).ok(),
+            Err(e) => {
+                log(&format!("  {e}"));
+                // Second path: the photo through the Skype for Business server (UCWA).
+                if !photos_allowed(services.as_deref()) {
+                    continue;
+                }
+                let limit = services.as_deref().and_then(|c| c.max_photo_kb).map_or(
+                    commscraft_client::photos::PHOTO_MAX,
+                    |kb| {
+                        (kb as usize)
+                            .saturating_mul(1024)
+                            .min(commscraft_client::photos::PHOTO_MAX)
+                    },
+                );
+                let Some(s) = ucwa_session(
+                    &mut ucwa,
+                    &mut ucwa_retry_at,
+                    tls,
+                    trust,
+                    aor,
+                    &ua,
+                    &mut ntlm,
+                    &mut log,
+                ) else {
+                    continue;
+                };
+                match s.photo(tls, &uri, limit, &ua, &mut log) {
+                    Ok(b) => b,
+                    Err(e) => {
+                        log(&format!("  UCWA: {e}"));
+                        None
+                    }
+                }
+            }
+        };
+        let Some(rgba) = bytes.as_deref().and_then(thumbnail) else {
             continue;
         };
         if done
@@ -405,6 +468,50 @@ fn run(
         }
     }
 }
+
+/// The server's photo policy allows photos (none known: allowed).
+fn photos_allowed(services: Option<&ServerConfiguration>) -> bool {
+    services.is_none_or(|c| c.photo_usage != Some(commscraft_provisioning::PhotoUsage::NoPhoto))
+}
+
+/// The UCWA session, opened if needed (or when its token is near its end); `None` after a failure
+/// until [`UCWA_RETRY`] has passed.
+#[allow(clippy::too_many_arguments)]
+fn ucwa_session<'a>(
+    slot: &'a mut Option<commscraft_client::ucwa::Session>,
+    retry_at: &mut Option<std::time::Instant>,
+    tls: &TlsClient,
+    trust: &Trust,
+    aor: &str,
+    ua: &str,
+    ntlm: &mut commscraft_client::directory::HttpNtlm<'_>,
+    log: &mut dyn FnMut(&str),
+) -> Option<&'a mut commscraft_client::ucwa::Session> {
+    if slot.as_ref().is_some_and(|s| s.expired()) {
+        *slot = None;
+    }
+    if slot.is_none() {
+        if retry_at.is_some_and(|t| std::time::Instant::now() < t) {
+            return None;
+        }
+        match commscraft_client::ucwa::Session::open(tls, trust, aor, ua, ntlm, log) {
+            Ok(s) => {
+                log(&format!("  UCWA: {s:?} opened"));
+                *slot = Some(s);
+                *retry_at = None;
+            }
+            Err(e) => {
+                log(&format!("  UCWA not usable: {e}"));
+                *retry_at = Some(std::time::Instant::now() + UCWA_RETRY);
+                return None;
+            }
+        }
+    }
+    slot.as_mut()
+}
+
+/// After UCWA failed, it is tried again only after this time (design).
+const UCWA_RETRY: std::time::Duration = std::time::Duration::from_secs(15 * 60);
 
 /// The item ID of a history body job.
 fn job_kind_body(job: &Job) -> Option<String> {

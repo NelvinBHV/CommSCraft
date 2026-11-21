@@ -16,5 +16,6 @@ pub mod photos;
 pub mod rdp_call;
 pub mod setup;
 pub mod tlsdsk;
+pub mod ucwa;
 pub mod video_call;
 pub mod video_window;

@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/ucwa",
     "crates/ntlm",
     "crates/ice",
     "crates/srtp",

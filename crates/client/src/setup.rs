@@ -142,32 +142,32 @@ pub struct Discovery<'a> {
     pub confirm: &'a mut dyn FnMut(&str, &str, &str, &mut Trust) -> bool,
 }
 
-/// The SIP access points in order: Autodiscover (HTTPS only), then DNS SRV (CON-11, TLS only).
-pub fn discover(
+/// The Autodiscover answer for `aor` (HTTPS only): SIP access points and web links, or `None`
+/// when neither lyncdiscoverinternal nor lyncdiscover answered usefully.
+pub fn autodiscover(
     tls: &TlsClient,
     aor: &str,
-    user_domain: &str,
-    trust: &mut Trust,
-    io: &mut Discovery<'_>,
-) -> Result<Vec<(String, u16)>, String> {
+    log: &mut dyn FnMut(&str),
+    verbose: bool,
+) -> Option<d::Outcome> {
     let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
     let timeout = Duration::from_secs(10);
     let mut ad = d::Autodiscover::new(&d::Config {
         aor: aor.to_string(),
         allow_plain_http: false,
     })
-    .map_err(|e| format!("discovery: {e:?}"))?;
+    .ok()?;
     let mut step = ad.start();
     let mut outcome = None;
     loop {
         match step {
             d::Step::Fetch(url) => {
-                (io.log)(&format!("autodiscover: GET {url}"));
+                log(&format!("autodiscover: GET {url}"));
                 let response = match commscraft_url::parse_https(&url) {
                     None => d::Response::Failed,
                     Some(u) => match commscraft_net::http::get(tls, &u, d::ACCEPT, &ua, timeout) {
                         Err(e) => {
-                            (io.log)(&format!("  {e}"));
+                            log(&format!("  {e}"));
                             d::Response::Failed
                         }
                         Ok(r) => {
@@ -185,11 +185,11 @@ pub fn discover(
                                     l
                                 }
                             });
-                            (io.log)(&format!("  HTTP {}", r.status));
+                            log(&format!("  HTTP {}", r.status));
                             match String::from_utf8(r.body.clone()) {
                                 Ok(body) => {
-                                    if io.verbose && r.status == 200 {
-                                        (io.log)(&body);
+                                    if verbose && r.status == 200 {
+                                        log(&body);
                                     }
                                     d::Response::Http {
                                         status: r.status,
@@ -206,32 +206,50 @@ pub fn discover(
                 step = ad.on_response(response);
             }
             d::Step::Done(o) => {
-                (io.log)(&format!(
+                log(&format!(
                     "autodiscover: access location {:?}",
                     o.access_location
                 ));
-                for t in &o.targets {
-                    let note = if t.in_user_domain {
-                        ""
-                    } else if trust.trusts(&t.host) {
-                        " (outside your domain, trusted)"
-                    } else {
-                        " (outside your domain)"
-                    };
-                    (io.log)(&format!("  SIP access point {}:{}{note}", t.host, t.port));
-                }
-                if o.targets.is_empty() {
-                    (io.log)(
-                        "  no SIP access point in the Autodiscover answer (interop test IT-16)",
-                    );
-                }
                 outcome = Some(o);
                 break;
             }
             d::Step::Failed(e) => {
-                (io.log)(&format!("autodiscover: {e:?}"));
+                log(&format!("autodiscover: {e:?}"));
                 break;
             }
+        }
+    }
+    outcome
+}
+
+/// The SIP access points in order: Autodiscover (HTTPS only), then DNS SRV (CON-11, TLS only).
+pub fn discover(
+    tls: &TlsClient,
+    aor: &str,
+    user_domain: &str,
+    trust: &mut Trust,
+    io: &mut Discovery<'_>,
+) -> Result<Vec<(String, u16)>, String> {
+    // An address Autodiscover cannot work with is an error, as before.
+    d::Autodiscover::new(&d::Config {
+        aor: aor.to_string(),
+        allow_plain_http: false,
+    })
+    .map_err(|e| format!("discovery: {e:?}"))?;
+    let outcome = autodiscover(tls, aor, io.log, io.verbose);
+    if let Some(o) = &outcome {
+        for t in &o.targets {
+            let note = if t.in_user_domain {
+                ""
+            } else if trust.trusts(&t.host) {
+                " (outside your domain, trusted)"
+            } else {
+                " (outside your domain)"
+            };
+            (io.log)(&format!("  SIP access point {}:{}{note}", t.host, t.port));
+        }
+        if o.targets.is_empty() {
+            (io.log)("  no SIP access point in the Autodiscover answer (interop test IT-16)");
         }
     }
     let servers = std::fs::read_to_string("/etc/resolv.conf")

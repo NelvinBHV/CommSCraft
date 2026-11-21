@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-21 · **Change:** minor (trusted domains per account)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-21 · **Change:** minor (contact photos over UCWA)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -96,6 +96,11 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   microphone for calls separately, as the Windows client does – each the system's default
   (PipeWire) or a device ALSA lists (`/proc/asound/pcm`, playback or capture). A chosen
   microphone is opened also where PipeWire has no usable default source (`tested-in-lab`).
+- **Contact photos over UCWA:** when the directory and Exchange give no photo, the desktop client
+  asks the Skype for Business server (UCWA), which fetches the photo itself – the contact list's
+  photo links, a distribution group's members' links when the group is opened, a search for anyone
+  else, the own photo. `tested-in-lab`. (`COMMSCRAFT_PHOTOS_UCWA_FIRST=1` skips the other paths,
+  for diagnosis.)
 - **Copy contact to:** the contact menu puts a contact into a further group, keeping the others
   ([MS-SIP] §2.2.4.2: a contact's groups are a list; for a list kept in Exchange the added group
   goes as a group change); the contact list shows it in each of its groups. `tested-in-lab`.

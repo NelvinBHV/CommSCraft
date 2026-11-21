@@ -126,8 +126,15 @@ fn example_flow_through_root_and_domain() {
         [("pool1.contoso.com", 5061), ("sip.contoso.com", 443)]
     );
     assert!(o.targets.iter().all(|t| t.in_user_domain));
-    assert_eq!(o.links.len(), 1, "the http:// link is dropped");
+    // The Domain's links first (the http:// one dropped), then the Root's (AD-06: OAuth).
     assert_eq!(o.links[0].url.host, "pool1external.contoso.com");
+    let tokens: Vec<&str> = o.links.iter().map(|l| l.token.as_str()).collect();
+    assert_eq!(tokens[1..], ["Domain", "User", "Self", "OAuth"]);
+    let oauth = o.links.iter().find(|l| l.token == "OAuth").unwrap();
+    assert!(oauth
+        .url
+        .path
+        .starts_with("/Autodiscover/AutodiscoverService.svc/root/oauth/user"));
 }
 
 #[test]
@@ -156,8 +163,10 @@ fn example_redirect_and_final_links() {
     };
     assert!(o.targets.is_empty());
     let tokens: Vec<&str> = o.links.iter().map(|l| l.token.as_str()).collect();
-    assert_eq!(tokens.len(), 6);
-    assert!(tokens.contains(&"Internal/AuthBroker"));
+    // The final resource's six links first, then Root links of other tokens.
+    assert!(tokens.len() >= 6);
+    assert!(tokens[..6].contains(&"Internal/AuthBroker"));
+    assert!(tokens.contains(&"OAuth"));
     assert!(o.links.iter().all(|l| l.in_user_domain));
 }
 
