@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (G.722.1/Siren not planned)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (SIP compression)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -28,7 +28,7 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 |---|---|---|---|---|
 | 1 | Server discovery | MS-OCDISCWS, MS-CONMGMT | B | **lab**, tested-offline (Autodiscover over HTTPS only with trust model, DNS SRV and fallback host names: `discovery`, `url`, `net`; used by `commscraft-cli`) |
 | 2 | TLS connection, keep-alive | MS-CONMGMT | B | **lab**, tested-offline (TLS 1.2/1.3 adapter with loopback test, stream framing, keep-alive negotiation and CRLF keep-alive: `net`, `sip-msg`, `register`) |
-| 3 | SIP compression (optional) | MS-SIPCOMP | B\* | – |
+| 3 | SIP compression (optional) | MS-SIPCOMP | B\* | **lab**, tested-offline (NEGOTIATE right after the TLS handshake with the 5 s timer, packet header, MPPC with the 8 KiB history per direction, the client compressing only after the server's first compressed packet: `sipcomp`, `net`; CLI `--compression`, `/sipcomp`) |
 | 4 | Sign-in with NTLM | MS-SIPAE, MS-NLMP | B\* | **lab**, tested-offline (NTLMv2 incl. MIC, MS-SIPAE signing and verification up to version 4, offline sign-in against a test registrar: `ntlm`, `sipae`, `register`) |
 | 5 | Sign-in with Kerberos | MS-SIPAE, MS-KILE | B | **lab**, tested-offline (AP-REQ for `sip/<FE>` from the ticket cache or the password, signed REGISTER from version 4, GSS_GetMIC/VerifyMIC for every signed message, opaque from the first signed answer, renewal before the ticket ends, fallback to NTLM: `register`, `sipae`, adapter `gssapi`; CLI `--kerberos`) |
 | 6 | Sign-in with TLS-DSK and client certificate | MS-SIPAE, MS-OCAUTHWS | B\* | **lab**, tested-offline (user certificate from the certificate provisioning service – RSA key, PKCS#10 request, GetAndPublishCert with NTLM, stored 0600 –; the TLS handshake tunnelled in the sign-in, TLS 1.2 with SHA-256 suites, signing keys from the exporter, HMAC-SHA256 for every signed message; fallback to Kerberos or NTLM: `register`, `sipae`, `ocauthws`, adapter `tlsdsk`; CLI `--tls-dsk`) |
@@ -79,6 +79,6 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | deferred until the owner's legal clearance (calls use G.722 and G.711) |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-11-21, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **33** tested-offline as a whole, **13** in parts, **1** not started, 5 not planned/needs captures/deferred. Feature parity with the Windows client (`scripts/parity.py`): **84 %** – version 0.84 ([`releases.md`](releases.md)). Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **41** of them also `tested-in-lab`
+**Totals (2026-11-21, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **34** tested-offline as a whole, **13** in parts, **0** not started, 5 not planned/needs captures/deferred. Feature parity with the Windows client (`scripts/parity.py`): **86 %** – version 0.86 ([`releases.md`](releases.md)). Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **42** of them also `tested-in-lab`
 
 The functions are reachable through the command-line tool `commscraft-cli`. The desktop client `commscraft` (egui) offers so far sign-in, contacts and presence, chat 1:1 and in groups, audio calls and meetings (`tested-in-lab` in their main flows); the other functions are gated there with a reason ([`ui/README.md`](ui/README.md)). The rows above count the code, not the interface.

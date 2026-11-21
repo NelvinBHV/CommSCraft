@@ -1,6 +1,6 @@
 # Where CommSCraft falls short of the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (G.722.1/Siren not planned)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (SIP compression)
 
 The work list, ranked by how much each item blocks the alpha gate in
 [`roadmap.md`](roadmap.md#alpha-gate-core-workflows) (**A** = blocks alpha). Each entry says what is
@@ -41,7 +41,7 @@ Windows-client behaviour that only a capture can show. These are the owner test 
 | Closed how | Points |
 |---|---|
 | Normative source found (fourth pass) | O-AW-1 (OB-39), O-TU-1 (OB-41), O-IC-1 (OB-42), O-NL-1 (OB-43), O-DL-1 + K-DL-1 (OB-44), O-RD-2 (OB-45), O-QE-1 (OB-47), O-EX-1/2/4/5 + L-15 (OB-48) |
-| Not needed by the client | O-CP-1, O-CP-3 (OB-40: compression is only negotiated by the client; CommSCraft does not) |
+| Closed by interop (`tested-in-lab`) | O-CP-1, O-CP-3, K-CP-1: header layout, bit order and offset coding settled; `commscraft-cli --compression` negotiates compression |
 | By design | O-EX-3 (OB-49), L-03 and L-07 (OB-51) |
 | Earlier passes | O-SIP-1, O-PR-1, O-AD-1, O-AD-2, O-CP-2, O-PV-3, O-BW-1, L-01 … L-10, L-12, L-14, L-17, L-18 |
 | Sources obtained during development | L-19 (ITU-T G.711/G.722 incl. digital test sequences, 2026-10-28) |
@@ -55,7 +55,7 @@ Windows-client behaviour that only a capture can show. These are the owner test 
 | IT-05 | L-16 persistent chat INVITE/INFO | Secondary values (OB-17) |
 | IT-06 | L-13 SfB transfer headers | RFC flow plus documented MS headers |
 | IT-07 … IT-11 | Conflicts K-RE-1, K-CA-1, K-CS-2, K-E9-1, K-CK-1 | Decision recorded in the conflict |
-| IT-12, IT-13 | O-CP-1 (optional), O-EX-3 (optional) | Compression off; own layout |
+| IT-13 | O-EX-3 (optional) | Own layout |
 | IT-14 | NTLM flags offered by current servers (OB-43) | Refuse weaker offers |
 | IT-15 | Client version policy and the CommSCraft User-Agent (RG-50) | Report the block to the user |
 | IT-16 | SIP access points in the unauthenticated Autodiscover Domain resource; HTTPS on lyncdiscover | DNS SRV |
