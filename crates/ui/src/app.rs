@@ -768,6 +768,12 @@ impl CommsUi {
 
     /// Applies an adapter event; a group the user just started or joined is selected.
     pub fn apply(&mut self, e: crate::model::AppEvent) {
+        if let crate::model::AppEvent::OpenSession { session } = e {
+            if let Some(k) = self.state.key_of_session(session) {
+                self.select_conversation(k);
+            }
+            return;
+        }
         let new_group = match &e {
             crate::model::AppEvent::GroupStarted { session, .. } => {
                 self.select_next_group && self.state.key_of_session(*session).is_none()

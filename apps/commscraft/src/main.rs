@@ -250,73 +250,29 @@ pub(crate) struct DesktopApp {
     /// A test script's idle time in place of the desktop's (`idle SECONDS`).
     pub(crate) idle_override: Option<u64>,
     /// The desktop's notification service, asked for once (`None` inside: none there); not
-    /// used for demos and screenshots.
-    notifier: Option<Option<notify::Notifier>>,
-    /// Our notifications on the desktop and their tags.
-    notes_shown: std::collections::BTreeMap<commscraft_ui::notes::NoteKey, u64>,
-    next_note: u64,
+    /// used for demos and screenshots. The session worker shows the notifications.
+    notifier: Option<Option<std::sync::Arc<notify::Notifier>>>,
+    /// What the worker needs to know about the interface for them.
+    notes_ui: notify::UiState,
 }
 
 impl DesktopApp {
-    /// Incoming calls, invitations and new messages as desktop notifications: new items are
-    /// shown, items no longer pending are taken back, actions chosen there are carried out.
+    /// Desktop notifications (shown by the session worker): the interface tells it that it is
+    /// seen and whether message notifications are quiet; without a notification service the
+    /// interface keeps its own notification window.
     fn notes_tick(&mut self) {
-        let notifier = self.notifier.get_or_insert_with(notify::Notifier::start);
-        let Some(n) = notifier.as_ref() else {
-            self.ui.system_notifications = false;
-            return;
-        };
-        self.ui.system_notifications = true;
-        let pending = self.ui.pending_notes();
-        let gone: Vec<commscraft_ui::notes::NoteKey> = self
-            .notes_shown
-            .keys()
-            .filter(|k| !pending.iter().any(|p| &p.key == *k))
-            .cloned()
-            .collect();
-        for k in gone {
-            if let Some(tag) = self.notes_shown.remove(&k) {
-                n.close(tag);
-            }
-        }
-        for p in pending {
-            if self.notes_shown.contains_key(&p.key) {
-                continue;
-            }
-            let tag = self.next_note;
-            self.next_note += 1;
-            n.show(notify::Show {
-                tag,
-                summary: p.summary,
-                body: p.body,
-                actions: p
-                    .actions
-                    .into_iter()
-                    .map(|(a, l)| (a.to_string(), l))
-                    .collect(),
-                urgent: p.urgent,
-            });
-            self.notes_shown.insert(p.key, tag);
-        }
-        let replies: Vec<notify::Reply> = n.replies.try_iter().take(16).collect();
-        for (tag, action) in replies {
-            let Some(key) = self
-                .notes_shown
-                .iter()
-                .find(|(_, t)| **t == tag)
-                .map(|(k, _)| k.clone())
-            else {
-                continue;
-            };
-            if action == "closed" {
-                self.ui.note_dismissed(&key);
-            } else {
-                self.ui.note_action(&key, &action);
-                if let Some(ctx) = &self.ctx {
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
-                }
-            }
-        }
+        use std::sync::atomic::Ordering;
+        let available = self
+            .notifier
+            .get_or_insert_with(|| notify::Notifier::start().map(std::sync::Arc::new))
+            .is_some();
+        self.ui.system_notifications = available;
+        self.notes_ui
+            .last_frame_ms
+            .store(notify::now_ms(), Ordering::Relaxed);
+        self.notes_ui
+            .messages_quiet
+            .store(self.ui.quiet_for_messages(), Ordering::Relaxed);
     }
 
     /// The status automation: idle time against the user's limits; a change goes to the
@@ -424,7 +380,16 @@ impl DesktopApp {
                     c.request_repaint();
                 }
             });
-            self.worker = Some(session::Worker::start(form, self.ca.clone(), repaint));
+            self.notes_tick();
+            let notes = self.notifier.clone().flatten().map(|n| {
+                notify::WorkerNotes::new(n, self.notes_ui.clone(), self.ui.prefs.lang.texts())
+            });
+            self.worker = Some(session::Worker::start(
+                form,
+                self.ca.clone(),
+                repaint,
+                notes,
+            ));
             // The worker starts with the defaults: the user's settings at once.
             let p = &self.ui.prefs;
             if let Some(w) = &self.worker {
@@ -923,8 +888,10 @@ fn main() {
                 machine: commscraft_presence::MachineActivity::Active,
                 idle_override: None,
                 notifier: quiet_desktop.then_some(None),
-                notes_shown: std::collections::BTreeMap::new(),
-                next_note: 1,
+                notes_ui: notify::UiState {
+                    last_frame_ms: std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0)),
+                    messages_quiet: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                },
             };
             if args.demo {
                 app.start_demo();

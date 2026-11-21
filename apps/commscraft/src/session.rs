@@ -212,11 +212,20 @@ pub struct Worker {
 
 impl Worker {
     /// Starts signing in. The password moves into the worker.
-    pub fn start(form: SignIn, ca: Option<Vec<u8>>, repaint: Box<dyn Fn() + Send>) -> Self {
+    pub fn start(
+        form: SignIn,
+        ca: Option<Vec<u8>>,
+        repaint: Box<dyn Fn() + Send>,
+        notes: Option<crate::notify::WorkerNotes>,
+    ) -> Self {
         let (tx, cmd_rx) = mpsc::sync_channel(COMMAND_QUEUE);
         let (ev_tx, rx) = mpsc::sync_channel(EVENT_QUEUE);
         std::thread::spawn(move || {
-            let out = Out { tx: ev_tx, repaint };
+            let out = Out {
+                tx: ev_tx,
+                repaint,
+                notes: notes.map(std::sync::Mutex::new),
+            };
             out.event(AppEvent::Connection(Connection::Connecting));
             match run(form, ca.as_deref(), &cmd_rx, &out) {
                 Ok(()) => out.event(AppEvent::Connection(Connection::SignedOut)),
@@ -244,10 +253,15 @@ impl Worker {
 struct Out {
     tx: SyncSender<AppEvent>,
     repaint: Box<dyn Fn() + Send>,
+    /// Desktop notifications: every event passes them (`notify`).
+    notes: Option<std::sync::Mutex<crate::notify::WorkerNotes>>,
 }
 
 impl Out {
     fn event(&self, e: AppEvent) {
+        if let Some(Ok(mut n)) = self.notes.as_ref().map(|n| n.lock()) {
+            n.observe(&e);
+        }
         let _ = self.tx.send(e);
         (self.repaint)();
     }
@@ -1170,6 +1184,28 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         }
         if let Some(text) = search {
             s.search(&text, out);
+        }
+        // Actions chosen in desktop notifications (also while the window gets no frames).
+        let chosen = match out.notes.as_ref().map(|n| n.lock()) {
+            Some(Ok(mut n)) => n.chosen(),
+            _ => Vec::new(),
+        };
+        for c in chosen {
+            use crate::notify::Chosen;
+            let cmd = match c {
+                Chosen::AnswerCall(id) => Some(ToWorker::AnswerCall { id }),
+                Chosen::AnswerVideo(id) => Some(ToWorker::AnswerVideo { id }),
+                Chosen::ViewScreen(id) => Some(ToWorker::ViewScreen { id }),
+                Chosen::HangUp(id) => Some(ToWorker::HangUp { id }),
+                Chosen::Join(focus) => Some(ToWorker::JoinConference { focus }),
+                Chosen::Open(session) => {
+                    out.event(AppEvent::OpenSession { session });
+                    None
+                }
+            };
+            if let Some(cmd) = cmd {
+                outputs.extend(s.command(cmd, out));
+            }
         }
         while let Ok(m) = media_rx.try_recv() {
             outputs.extend(s.media_event(m, out));
