@@ -614,11 +614,30 @@ impl Agent {
                 events.push(Event::Failed("nomination checks did not complete"));
                 return;
             }
-            // The controlled agent still answers USE-CANDIDATE with triggered checks.
-            if !self.controlling && now >= self.next_check && !self.triggered.is_empty() {
+            // The controlled agent still answers USE-CANDIDATE with triggered checks; the
+            // controlling one too, for a pair learned late (RTCP over a TCP connection the peer
+            // opened, [MS-ICE2] §3.1.4.8.1.3), which it then nominates as RTCP partner.
+            if now >= self.next_check && !self.triggered.is_empty() {
                 self.next_check = now + TA_MS;
                 let i = self.triggered.remove(0);
                 self.send_check(i, Purpose::Check, now, out);
+            }
+            if self.controlling {
+                if let Some((rtp, Some(rtcp))) = self.best() {
+                    let rtp_nominated = self.pairs.get(rtp).is_some_and(|p| p.nominated)
+                        || self
+                            .transactions
+                            .values()
+                            .any(|t| t.pair == rtp && t.purpose == Purpose::Nomination);
+                    let rtcp_pending = self.pairs.get(rtcp).is_some_and(|p| p.nominated)
+                        || self
+                            .transactions
+                            .values()
+                            .any(|t| t.pair == rtcp && t.purpose == Purpose::Nomination);
+                    if rtp_nominated && !rtcp_pending {
+                        self.send_check(rtcp, Purpose::Nomination, now, out);
+                    }
+                }
             }
             return;
         }
@@ -717,7 +736,15 @@ impl Agent {
         let Some(rtp) = nominated(1) else { return };
         let rtcp = nominated(2);
         let remote_has_rtcp = self.remotes.iter().any(|r| r.component == 2);
-        if remote_has_rtcp && rtcp.is_none() {
+        // Over TCP, RTP and RTCP share the connection ([MS-ICE2] §3.1.4.8.1.3: "MUST multiplex
+        // RTP and RTCP on the same port"); the Windows client checks only component 1 there
+        // (`tested-in-lab`), so the RTP pair carries RTCP too.
+        let over_tcp = self
+            .pairs
+            .get(rtp)
+            .and_then(|p| self.locals.get(p.local))
+            .is_some_and(|l| l.transport != Transport::Udp);
+        if remote_has_rtcp && rtcp.is_none() && !over_tcp {
             return;
         }
         let (Some(a), b) = (self.endpoints(rtp), rtcp.and_then(|r| self.endpoints(r))) else {
@@ -944,7 +971,14 @@ impl Agent {
         let ri = match known {
             Some(i) => i,
             None if self.remotes.len() < MAX_CANDIDATES && self.usable(from) => {
-                let f = format!("prflx{}", self.remotes.len());
+                // ice-19 §7.2.1.3: the same address gives the same foundation, so the RTP and
+                // RTCP candidates learned over one TCP connection pair up (`best`).
+                let f = self
+                    .remotes
+                    .iter()
+                    .find(|r| r.address == from && r.kind == Kind::PeerReflexive)
+                    .map(|r| r.foundation.clone())
+                    .unwrap_or_else(|| format!("prflx{}", self.remotes.len()));
                 // The peer's end of the connection has the opposite TCP role.
                 let transport = match self.locals.get(local).map(|l| l.transport) {
                     Some(Transport::TcpPassive) => Transport::TcpActive,

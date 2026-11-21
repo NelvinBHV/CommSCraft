@@ -784,6 +784,17 @@ impl Audio {
             }
             None => Vec::new(),
         };
+        // RT-29: peer info in every report until the peer's positive estimate for our stream
+        // arrived ([MS-RTP] §2.2.11.10, §3.2). The link bandwidths are our capacity for the
+        // stream (inference: the client knows no link speed; as the video stream does).
+        if !self.peer.estimated_bps.is_some_and(|b| b > 0) {
+            extensions.push(rtp::Extension::PeerInfo {
+                ssrc: self.sender.ssrc,
+                inbound: self.estimator.capacity(),
+                outbound: self.estimator.capacity(),
+                no_cache: true,
+            });
+        }
         // For the round trip: when this report's NTP middle bits went out.
         if let Some(slot) = self.sr_sent.get_mut(self.sr_next % 4) {
             *slot = ((ntp >> 16) as u32, now_ms);

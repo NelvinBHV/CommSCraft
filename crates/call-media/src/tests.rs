@@ -35,7 +35,20 @@ fn loopback_call_media() {
     assert!(fa.is_empty() && fb.is_empty(), "no relay, no TURN");
     assert!(a.gathered(t0));
     let desc = a.local_description();
-    assert_eq!(desc.ice.as_ref().unwrap().candidates.len(), 2);
+    // Two UDP host candidates, and without a TCP TURN server the artificial active TCP
+    // server-reflexive candidate for both components ([MS-ICE2] §3.1.4.8.1.3.2).
+    let cands = &desc.ice.as_ref().unwrap().candidates;
+    assert_eq!(cands.len(), 4);
+    let artificial: Vec<_> = cands
+        .iter()
+        .filter(|c| c.transport == sdp::Transport::TcpActive)
+        .collect();
+    assert_eq!(artificial.len(), 2);
+    assert!(artificial
+        .iter()
+        .all(|c| c.kind == sdp::CandidateType::ServerReflexive
+            && c.port >= 1024
+            && c.related.is_some()));
     assert_eq!(desc.ice.as_ref().unwrap().ufrag.len(), 8);
     let (na, nb) = (negotiated_from(&b), negotiated_from(&a));
     a.start(&na, true, "a@test", t0).unwrap();
@@ -912,5 +925,87 @@ fn final_offer_names_active_source_port() {
     assert!(
         seen_active,
         "one side reaches the other over its active candidate"
+    );
+}
+
+/// [MS-ICE2] §3.1.4.8.1.3.1: two halves in TCP-only mode over loopback – the active candidate
+/// connects to the passive one, ICE selects the TCP pair and audio arrives (RFC 4571 framing,
+/// RTP and RTCP on one connection).
+#[test]
+fn loopback_tcp_only() {
+    let ip: IpAddr = "127.0.0.1".parse().unwrap();
+    let t0 = now_ms();
+    let (mut a, _) = CallMedia::prepare_tcp_only(ip, None, t0).unwrap();
+    let (mut b, _) = CallMedia::prepare_tcp_only(ip, None, t0).unwrap();
+    let desc = a.local_description();
+    let cands = &desc.ice.as_ref().unwrap().candidates;
+    assert_eq!(cands.len(), 4, "active and passive host, two components");
+    assert!(cands
+        .iter()
+        .all(|c| c.transport != sdp::Transport::Udp && c.port >= 1024));
+    let passive = cands
+        .iter()
+        .find(|c| c.transport == sdp::Transport::TcpPassive)
+        .unwrap();
+    assert_eq!(
+        desc.rtp_port, passive.port,
+        "the default candidate is TCP in this mode"
+    );
+    let (na, nb) = (negotiated_from(&b), negotiated_from(&a));
+    a.start(&na, true, "a@test", t0).unwrap();
+    b.start(&nb, false, "b@test", t0).unwrap();
+    let mut selected = (false, false);
+    let deadline = t0 + 15_000;
+    while !(selected.0 && selected.1) && now_ms() < deadline {
+        let now = now_ms();
+        selected.0 |= a.poll(now).contains(&Event::Selected);
+        selected.1 |= b.poll(now).contains(&Event::Selected);
+        std::thread::sleep(std::time::Duration::from_millis(2));
+    }
+    assert_eq!(selected, (true, true), "ICE completed over TCP");
+    let frame: Vec<i16> = (0..320)
+        .map(|i| {
+            (8000.0 * (2.0 * std::f64::consts::PI * 1020.0 * f64::from(i) / 16000.0).sin()) as i16
+        })
+        .collect();
+    let mut energy = 0f64;
+    for _ in 0..60 {
+        let now = now_ms();
+        a.send_frame(&frame, now);
+        a.poll(now);
+        b.poll(now);
+        energy += b
+            .playout()
+            .iter()
+            .map(|&s| f64::from(s).powi(2))
+            .sum::<f64>();
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    assert!(energy > 1e9, "audio arrived over TCP: {energy}");
+}
+
+/// TCP-only (passive, controlling) against a peer that has only its artificial active TCP
+/// candidate as a TCP path ([MS-ICE2] §3.1.4.8.1.3.2) – the peer opens the connection.
+#[test]
+fn tcp_only_against_artificial_active_candidate() {
+    let ip: IpAddr = "127.0.0.1".parse().unwrap();
+    let t0 = now_ms();
+    let (mut a, _) = CallMedia::prepare_tcp_only(ip, None, t0).unwrap();
+    let (mut b, _) = CallMedia::prepare(ip, None, t0).unwrap();
+    let (na, nb) = (negotiated_from(&b), negotiated_from(&a));
+    a.start(&na, true, "a@test", t0).unwrap();
+    b.start(&nb, false, "b@test", t0).unwrap();
+    let mut selected = (false, false);
+    let deadline = t0 + 15_000;
+    while !(selected.0 && selected.1) && now_ms() < deadline {
+        let now = now_ms();
+        selected.0 |= a.poll(now).contains(&Event::Selected);
+        selected.1 |= b.poll(now).contains(&Event::Selected);
+        std::thread::sleep(std::time::Duration::from_millis(2));
+    }
+    assert_eq!(
+        selected,
+        (true, true),
+        "ICE completed over the peer's connection"
     );
 }

@@ -45,7 +45,7 @@ use commscraft_sipae::Policy;
 
 const USAGE: &str =
     "usage: commscraft-cli sign-in|presence|im|interactive --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
-[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--kerberos] [--tls-dsk] [--ntlm-legacy] [--compression] \
+[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--kerberos] [--tls-dsk] [--ntlm-legacy] [--compression] [--tcp-only] \
 [--set-status online|busy|dnd|away] [--max-contacts N] [--to sip:URI --text TEXT [--wait S]] --authorized
        commscraft-cli audio-check [--device ALSA_DEVICE] [--codec g722|pcma]   (local, no network)
 
@@ -108,6 +108,8 @@ im        signs in, opens a 1:1 conversation with --to, sends --text, shows answ
               ~/.local/share/commscraft/tlsdsk/ACCOUNT, key 0600), then a TLS handshake inside the
               SIP sign-in. Falls back to Kerberos (with --kerberos) or NTLM.
 --ntlm-legacy    diagnostic: NTLMv2 without the optional MIC/channel-binding additions, with LMv2.
+--tcp-only    calls over TCP only (MS-ICE2 TCP-only mode: TCP host and relay candidates, no UDP),
+              for networks that block UDP.
 --compression ask the server for SIP compression (MS-SIPCOMP) right after the TLS handshake; the
               connection stays uncompressed when the server declines. /sipcomp shows the counts.
 --verbose     also prints the non-secret NTLM facts (offered/chosen flags, domain names).
@@ -229,6 +231,7 @@ fn parse_args() -> Result<Args, String> {
             "--discover-only" => a.discover_only = true,
             "--ntlm-legacy" => a.ntlm_legacy = true,
             "--compression" => a.compression = true,
+            "--tcp-only" => calls::TCP_ONLY.store(true, std::sync::atomic::Ordering::Relaxed),
             "--kerberos" => a.kerberos = true,
             "--tls-dsk" => a.tls_dsk = true,
             "--set-status" => {

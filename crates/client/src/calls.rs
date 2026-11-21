@@ -95,6 +95,10 @@ pub fn relay_from(creds: &commscraft_avedgea::Credentials) -> Option<cm::Relay> 
 
 /// Starts the media thread of one call: gathers candidates, reports `Ready`, then runs the
 /// call until `Stop`.
+/// The TCP-only mode of [MS-ICE2] §3.1.4.8.1.3.1 for audio streams (on request, where UDP does
+/// not get through): set once by the application.
+pub static TCP_ONLY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 pub fn spawn(
     id: u32,
     local_ip: IpAddr,
@@ -118,7 +122,12 @@ fn run(
     events: Sender<FromMedia>,
 ) {
     let t0 = now_ms();
-    let (mut media, first) = match CallMedia::prepare(local_ip, relay.as_ref(), t0) {
+    let prepared = if TCP_ONLY.load(Ordering::Relaxed) {
+        CallMedia::prepare_tcp_only(local_ip, relay.as_ref(), t0)
+    } else {
+        CallMedia::prepare(local_ip, relay.as_ref(), t0)
+    };
+    let (mut media, first) = match prepared {
         Ok(x) => x,
         Err(e) => {
             let _ = events.send(FromMedia::Failed(id, format!("media sockets: {e}")));
@@ -177,8 +186,8 @@ fn run(
     // The final offer (IC-07) is a re-INVITE: only once the call is answered.
     let mut answered = !early;
     let mut selected_early = false;
-    // SD-51: the callee's checks may fail while the caller waits for the 200 before it checks
-    // (a forked call, SD-50); then ICE starts again with the answer instead of ending the call.
+    // Checks before the 200 may fail while the other side waits for the 200 before it checks
+    // (SD-50/SD-51); then ICE starts again with the answer instead of ending the call.
     let mut early_failed = false;
     let stop = Arc::new(AtomicBool::new(false));
     let (cap_tx, cap_rx) = mpsc::sync_channel::<Vec<i16>>(8);
@@ -289,7 +298,7 @@ fn run(
                 }
                 cm::Event::Selected => None,
                 cm::Event::Dtmf(d) => Some(FromMedia::Dtmf(id, d)),
-                cm::Event::Failed(_) if !answered && !controlling => {
+                cm::Event::Failed(_) if !answered => {
                     early_failed = true;
                     None
                 }
