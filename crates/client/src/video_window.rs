@@ -490,13 +490,39 @@ fn show_surface(window: &mut Window, surface: vf::DmaBuf) -> Result<(), WindowEr
     Ok(())
 }
 
-/// Read-only for the helper: programs, libraries, drivers, system configuration, and what the kernel
-/// tells about devices.
-const READ_ONLY: [&str; 6] = ["/usr", "/lib", "/lib64", "/etc", "/sys", "/proc"];
+/// Read-only for the helper: programs, libraries, drivers and system configuration.
+const READ_ONLY: [&str; 4] = ["/usr", "/lib", "/lib64", "/etc"];
+/// Of `/proc` only the helper itself and what the C library and decoders read about the system
+/// (issue #207: no other process's files): `/proc/self` is resolved to the helper's own
+/// directory when the rules are made, its threads lie beneath it.
+const PROC_READ: [&str; 4] = ["/proc/self", "/proc/sys", "/proc/cpuinfo", "/proc/meminfo"];
+/// What the kernel tells about devices: the GPU drivers of a window need it.
+const SYS_READ: [&str; 1] = ["/sys"];
 /// The GPU's render devices: open, read, write and control.
 const DEVICES: [&str; 1] = ["/dev/dri"];
 /// Single device files libraries read.
 const DEVICE_FILES: [&str; 3] = ["/dev/null", "/dev/zero", "/dev/urandom"];
+
+/// What the helper is started for, which decides how tightly it is confined (issue #207).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Profile {
+    /// Pictures go back over standard output, decoded on the CPU: no window, no GPU, no
+    /// socket, nothing of the session's runtime directory.
+    Embedded,
+    /// A window of its own: the GPU devices, `/sys`, Unix sockets to the Wayland or X server and
+    /// the X authority file – but not the rest of the runtime directory.
+    Window,
+}
+
+impl Profile {
+    /// The profile for the helper's mode argument.
+    pub fn of_mode(mode: Option<&str>) -> Profile {
+        match mode {
+            Some(m) if m.starts_with("embed") => Profile::Embedded,
+            _ => Profile::Window,
+        }
+    }
+}
 
 /// How far the sandbox could be applied.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -508,29 +534,57 @@ pub enum Sandbox {
     None,
 }
 
-/// Restricts this process for good (Landlock, no new privileges): reading only the system paths
-/// above and the window's runtime directory (Wayland socket, X authority file), the GPU devices in
-/// full, no other file access, no TCP. Unix sockets, which the window needs, are not restricted.
-/// A kernel without Landlock leaves the process as it is.
-pub fn sandbox() -> Result<Sandbox, landlock::RulesetError> {
+/// The files the helper may read in a profile (paths that do not exist are left out by the rules).
+fn readable_paths(profile: Profile) -> Vec<String> {
+    let mut readable: Vec<String> = READ_ONLY
+        .iter()
+        .chain(PROC_READ.iter())
+        .map(|p| p.to_string())
+        .collect();
+    if profile == Profile::Window {
+        readable.extend(SYS_READ.iter().map(|p| p.to_string()));
+        // Of the session: only the X authority file. The Wayland socket needs no file access
+        // (Landlock does not govern connecting to a Unix socket).
+        if let Ok(x) = std::env::var("XAUTHORITY") {
+            if !x.is_empty() {
+                readable.push(x);
+            }
+        }
+    }
+    readable
+}
+
+/// Restricts this process for good (Landlock, no new privileges): reading only the paths of
+/// [`readable_paths`], in the window profile the GPU devices in full, no other file access, no
+/// TCP, no signals to processes outside the sandbox; in the embedded profile also no abstract
+/// Unix sockets (its system call filter refuses every socket). A kernel without Landlock leaves
+/// the process as it is; scopes the kernel does not know make the sandbox partial.
+pub fn sandbox(profile: Profile) -> Result<Sandbox, landlock::RulesetError> {
     use landlock::{
         path_beneath_rules, Access, AccessFs, AccessNet, Ruleset, RulesetAttr, RulesetCreatedAttr,
-        RulesetStatus, ABI,
+        RulesetStatus, Scope, ABI,
     };
-    let abi = ABI::V5;
+    let abi = ABI::V6;
     let read = AccessFs::from_read(abi);
-    let mut readable: Vec<String> = READ_ONLY.iter().map(|p| p.to_string()).collect();
-    if let Ok(runtime) = std::env::var("XDG_RUNTIME_DIR") {
-        readable.push(runtime);
-    }
-    let status = Ruleset::default()
+    let readable = readable_paths(profile);
+    let scopes = match profile {
+        Profile::Embedded => Scope::from_all(abi),
+        // X clients reach the server through an abstract socket first.
+        Profile::Window => Scope::Signal.into(),
+    };
+    let ruleset = Ruleset::default()
         .handle_access(AccessFs::from_all(abi))?
         .handle_access(AccessNet::from_all(abi))?
+        .scope(scopes)?
         .create()?
         .add_rules(path_beneath_rules(&readable, read))?
-        .add_rules(path_beneath_rules(DEVICES, AccessFs::from_all(abi)))?
-        .add_rules(path_beneath_rules(DEVICE_FILES, read | AccessFs::WriteFile))?
-        .restrict_self()?;
+        .add_rules(path_beneath_rules(DEVICE_FILES, read | AccessFs::WriteFile))?;
+    let ruleset = if profile == Profile::Window {
+        ruleset.add_rules(path_beneath_rules(DEVICES, AccessFs::from_all(abi)))?
+    } else {
+        ruleset
+    };
+    let status = ruleset.restrict_self()?;
     Ok(match status.ruleset {
         RulesetStatus::FullyEnforced => Sandbox::Full,
         RulesetStatus::PartiallyEnforced => Sandbox::Partial,
@@ -598,7 +652,7 @@ const ALLOWED_SOCKET_FAMILY: libc::c_long = libc::AF_UNIX as libc::c_long;
 // `c_long` is `i64` on the 64-bit targets seccompiler knows; the conversion keeps other widths
 // compiling.
 #[allow(clippy::useless_conversion)]
-fn syscall_program() -> Result<seccompiler::BpfProgram, String> {
+fn syscall_program(profile: Profile) -> Result<seccompiler::BpfProgram, String> {
     use seccompiler::{
         SeccompAction, SeccompCmpArgLen, SeccompCmpOp, SeccompCondition, SeccompFilter,
         SeccompRule, TargetArch,
@@ -616,7 +670,16 @@ fn syscall_program() -> Result<seccompiler::BpfProgram, String> {
     )
     .and_then(|c| SeccompRule::new(vec![c]))
     .map_err(|e| e.to_string())?;
-    rules.insert(i64::from(libc::SYS_socket), vec![other_family]);
+    match profile {
+        // Embedded: no socket at all (an empty rule list matches every call).
+        Profile::Embedded => {
+            rules.insert(i64::from(libc::SYS_socket), Vec::new());
+            rules.insert(i64::from(libc::SYS_socketpair), Vec::new());
+        }
+        Profile::Window => {
+            rules.insert(i64::from(libc::SYS_socket), vec![other_family]);
+        }
+    }
     let filter = SeccompFilter::new(
         rules,
         SeccompAction::Allow,
@@ -630,8 +693,8 @@ fn syscall_program() -> Result<seccompiler::BpfProgram, String> {
 }
 
 /// Applies [`syscall_program`] to every thread of this process, for good.
-pub fn syscall_filter() -> Result<(), String> {
-    let program = syscall_program()?;
+pub fn syscall_filter(profile: Profile) -> Result<(), String> {
+    let program = syscall_program(profile)?;
     seccompiler::apply_filter_all_threads(&program).map_err(|e| e.to_string())
 }
 
@@ -673,11 +736,15 @@ fn confinement(
 
 /// The helper process. Messages for the user go to standard output, one per line.
 pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
+    // The arguments are only strings; the profile follows from the mode (issue #207).
+    let id = args.next().unwrap_or_default();
+    let mode = args.next();
+    let profile = Profile::of_mode(mode.as_deref());
     // Before any received video is read (issue #144: fail closed).
     let allow = std::env::var(UNCONFINED).is_ok_and(|v| v.trim() == "1");
     match confinement(
-        sandbox().map_err(|e| e.to_string()),
-        syscall_filter(),
+        sandbox(profile).map_err(|e| e.to_string()),
+        syscall_filter(profile),
         allow,
     ) {
         Ok(notes) => notes.iter().for_each(|n| println!("{n}")),
@@ -686,8 +753,6 @@ pub fn helper_main(mut args: impl Iterator<Item = String>) -> i32 {
             return EXIT_UNCONFINED;
         }
     }
-    let id = args.next().unwrap_or_default();
-    let mode = args.next();
     let title = format!("CommSCraft – call {}", clean_notice(&id));
     if mode.as_deref() == Some("raw") {
         return raw_main(&title);
@@ -1026,7 +1091,7 @@ mod tests {
     /// refused, Unix sockets still work; other threads are not affected.
     #[test]
     fn syscall_filter_refuses_what_the_window_never_needs() {
-        let program = syscall_program().unwrap();
+        let program = syscall_program(Profile::Window).unwrap();
         assert!(!program.is_empty());
         let filtered = std::thread::spawn(move || {
             seccompiler::apply_filter(&program).unwrap();
@@ -1041,6 +1106,26 @@ mod tests {
         assert_eq!(filtered, (true, true, true, true));
         // This thread has no filter.
         assert!(std::net::UdpSocket::bind("127.0.0.1:0").is_ok());
+    }
+
+    /// Issue #207: the embedded helper may open no socket at all, not even a Unix socket.
+    #[test]
+    fn embedded_helper_gets_no_socket() {
+        let program = syscall_program(Profile::Embedded).unwrap();
+        let filtered = std::thread::spawn(move || {
+            seccompiler::apply_filter(&program).unwrap();
+            let unix = std::os::unix::net::UnixDatagram::unbound();
+            let pair = std::os::unix::net::UnixStream::pair();
+            let udp = std::net::UdpSocket::bind("127.0.0.1:0");
+            (unix.is_err(), pair.is_err(), udp.is_err())
+        })
+        .join()
+        .unwrap();
+        assert_eq!(filtered, (true, true, true));
+        assert_eq!(Profile::of_mode(Some("embed")), Profile::Embedded);
+        assert_eq!(Profile::of_mode(Some("embed-raw")), Profile::Embedded);
+        assert_eq!(Profile::of_mode(Some("gpu")), Profile::Window);
+        assert_eq!(Profile::of_mode(None), Profile::Window);
     }
 
     /// Shared screens: RGBA becomes BGRX, kept when it fits, scaled down with the aspect kept;
@@ -1140,10 +1225,21 @@ mod tests {
         const CHILD: &str = "COMMSCRAFT_SANDBOX_TEST_FILE";
         if let Ok(path) = std::env::var(CHILD) {
             let listener = std::env::var("COMMSCRAFT_SANDBOX_TEST_PORT").unwrap();
-            if sandbox().unwrap() == Sandbox::None {
+            let runtime = std::env::var("COMMSCRAFT_SANDBOX_TEST_RUNTIME").unwrap();
+            if sandbox(Profile::Window).unwrap() == Sandbox::None {
                 println!("SANDBOX-UNAVAILABLE");
                 return;
             }
+            // Issue #207: nothing of the session's runtime directory, no other process.
+            assert!(std::fs::read(&runtime).is_err(), "the runtime directory");
+            assert!(
+                std::fs::read_to_string("/proc/1/status").is_err(),
+                "another process"
+            );
+            assert!(
+                std::fs::read_to_string("/proc/self/status").is_ok(),
+                "itself"
+            );
             assert!(
                 std::fs::read(&path).is_err(),
                 "a file outside the system paths"
@@ -1163,6 +1259,11 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let secret = dir.join("secret");
         std::fs::write(&secret, b"password").unwrap();
+        // A stand-in for a file in the runtime directory the helper would see.
+        let runtime = dir.join("runtime");
+        std::fs::create_dir_all(&runtime).unwrap();
+        let runtime_file = runtime.join("bus-token");
+        std::fs::write(&runtime_file, b"token").unwrap();
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let out = std::process::Command::new(std::env::current_exe().unwrap())
             .args([
@@ -1171,6 +1272,9 @@ mod tests {
                 "--nocapture",
             ])
             .env(CHILD, &secret)
+            .env("COMMSCRAFT_SANDBOX_TEST_RUNTIME", &runtime_file)
+            // The old rules made all of it readable; it must stay out of reach now.
+            .env("XDG_RUNTIME_DIR", &runtime)
             .env(
                 "COMMSCRAFT_SANDBOX_TEST_PORT",
                 listener.local_addr().unwrap().to_string(),
@@ -1192,6 +1296,92 @@ mod tests {
                 "not available here"
             }
         );
+    }
+
+    /// Issue #207: the embedded helper still decodes under its tighter confinement – the real
+    /// `helper_main` in a child process, fed an H.264 stream on standard input, answers with
+    /// pictures on standard output (or reports that the kernel has no sandbox).
+    #[test]
+    fn embedded_helper_decodes_under_its_confinement() {
+        const CHILD: &str = "COMMSCRAFT_EMBED_TEST_CHILD";
+        if std::env::var(CHILD).is_ok() {
+            std::process::exit(helper_main(
+                ["1".to_string(), "embed".to_string()].into_iter(),
+            ));
+        }
+        let Ok(mut enc) = vf::init().and_then(|()| {
+            vf::Encoder::new(vf::EncoderConfig {
+                width: 320,
+                height: 180,
+                fps: 15,
+                bitrate: 300_000,
+                idr_interval: 30,
+                hardware: false,
+            })
+        }) else {
+            eprintln!("no H.264 encoder here; skipping");
+            return;
+        };
+        let mut child = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "video_window::tests::embedded_helper_decodes_under_its_confinement",
+            ])
+            .env(CHILD, "1")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let mut stdin = child.stdin.take().unwrap();
+        for i in 0..20u8 {
+            let p = vf::Picture::filled(320, 180, 16 + i * 8, 128, 128);
+            for unit in enc.encode(&p, i == 0).unwrap() {
+                write_unit(&mut stdin, &unit).unwrap();
+            }
+            std::thread::sleep(Duration::from_millis(70));
+        }
+        drop(stdin);
+        let out = child.wait_with_output().unwrap();
+        // (The helper's notices go through println!, which the test harness captures.)
+        if out.status.code() == Some(EXIT_UNCONFINED) {
+            eprintln!("no Landlock here; the helper refused as it should");
+            return;
+        }
+        assert!(
+            out.stdout.windows(14).any(|w| w == b"FRAME 320 180 "),
+            "{:?} {}",
+            out.status,
+            String::from_utf8_lossy(&out.stdout)
+                .chars()
+                .take(300)
+                .collect::<String>()
+        );
+    }
+
+    /// Writes a short H.264 stream in the pipe format to `COMMSCRAFT_UNITS_OUT` (manual check of
+    /// the helper with a real window: `commscraft video-window 1 < file`).
+    #[test]
+    #[ignore]
+    fn write_units_for_a_manual_check() {
+        let path = std::env::var("COMMSCRAFT_UNITS_OUT").unwrap();
+        vf::init().unwrap();
+        let mut enc = vf::Encoder::new(vf::EncoderConfig {
+            width: 320,
+            height: 180,
+            fps: 15,
+            bitrate: 300_000,
+            idr_interval: 30,
+            hardware: false,
+        })
+        .unwrap();
+        let mut out = Vec::new();
+        for i in 0..60u8 {
+            let p = vf::Picture::filled(320, 180, 16 + (i % 30) * 6, 128, 128);
+            for unit in enc.encode(&p, i == 0).unwrap() {
+                write_unit(&mut out, &unit).unwrap();
+            }
+        }
+        std::fs::write(path, out).unwrap();
     }
 
     /// A message cannot fake a line of the client or fill the screen.
