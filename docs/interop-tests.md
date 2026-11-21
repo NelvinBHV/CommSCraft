@@ -1,6 +1,6 @@
 # Interop test cases for the owner
 
-> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-11-16 · **Change:** minor (desktop interface phase 2: session adapter)
+> **Last reviewed:** 2026-10-31 · **Last updated:** 2026-11-21 · **Change:** minor (trusted domains per account)
 
 After the fourth search ([`protocol/evidence/39-evidence-for-open-points.md`](protocol/evidence/39-evidence-for-open-points.md),
 OB-39 … OB-51) no open point needs more document research. What is left is the observable behaviour
@@ -85,7 +85,7 @@ Discovery order (OB-06): `https://lyncdiscoverinternal.<domain>`, then
 `_sipinternaltls._tcp` and `_sip._tls` via the name servers in `/etc/resolv.conf`, then
 `sipinternal`, `sip`, `sipexternal.<domain>:443`. Every step is printed. A target that Autodiscover names outside
 your SIP domain (hosted deployments) is used only after you trust its domain – interactively (the
-answer is remembered in `~/.config/commscraft/trusted-domains`) or with `--trust-domain DOMAIN`,
+answer is remembered for this account only, in `~/.config/commscraft/trusted-domains.d/ACCOUNT`) or with `--trust-domain DOMAIN`,
 like `TrustModelData` of the Windows client. DNS SRV targets outside the SIP domain are never used. If Autodiscover uses a
 certificate from an enterprise CA that is not in the system trust store, add `--ca-file`.
 

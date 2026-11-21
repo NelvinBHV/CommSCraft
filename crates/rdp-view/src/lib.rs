@@ -21,7 +21,7 @@
 //!
 //! Security by design: the input is hostile; PDUs are framed with IronRDP's length check and at
 //! most [`MAX_PDU`] bytes, the input buffer is bounded, every decode error ends the session, the
-//! screen size is bounded ([`MAX_SIDE`]).
+//! screen size is bounded ([`MAX_SIDE`], [`MAX_PIXELS`]) before its picture is allocated.
 
 use ironrdp_core::{decode, encode_vec, impl_as_any};
 use ironrdp_dvc::{DrdynvcClient, DvcClientProcessor, DvcMessage, DvcProcessor};
@@ -73,6 +73,19 @@ pub const MAX_PDU: usize = 64 * 1024;
 pub const MAX_BUFFER: usize = 4 * MAX_PDU;
 /// Largest screen side taken (design).
 pub const MAX_SIDE: u16 = 8192;
+/// Largest screen area taken (design, issue #209): two 4K screens side by side (7680 × 2160),
+/// about 63 MiB as RGBA – a sharer cannot make the viewer allocate the 256 MiB of 8192 × 8192.
+pub const MAX_PIXELS: u32 = 7680 * 2160;
+
+/// Whether a screen size the sharer announces is taken: both sides 1..=[`MAX_SIDE`] and the
+/// area at most [`MAX_PIXELS`].
+pub fn screen_size_ok(width: u16, height: u16) -> bool {
+    width > 0
+        && height > 0
+        && width <= MAX_SIDE
+        && height <= MAX_SIDE
+        && u32::from(width) * u32::from(height) <= MAX_PIXELS
+}
 
 /// Why the session ended.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -689,7 +702,7 @@ impl Viewer {
                 _ => None,
             })
             .unwrap_or((self.config.width, self.config.height));
-        if width == 0 || height == 0 || width > MAX_SIDE || height > MAX_SIDE {
+        if !screen_size_ok(width, height) {
             return Err(Error::Protocol(format!("screen size {width}x{height}")));
         }
         let confirm = ShareControlPdu::ClientConfirmActive(confirm_active(width, height));
