@@ -6,11 +6,11 @@
 # org.freedesktop.Platform.ffmpeg-full (installed from Flathub on demand) adds H.264.
 app-id: io.github.nelvinbhv.CommSCraft
 runtime: org.freedesktop.Platform
-runtime-version: '24.08'
+runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.rust-stable
-  - org.freedesktop.Sdk.Extension.llvm18
+  - org.freedesktop.Sdk.Extension.llvm20
 command: commscraft
 finish-args:
   - --share=network
@@ -27,7 +27,7 @@ finish-args:
 add-extensions:
   org.freedesktop.Platform.ffmpeg-full:
     directory: lib/ffmpeg
-    version: '24.08'
+    version: '25.08'
     add-ld-path: .
     no-autodownload: false
     autodelete: false
@@ -37,10 +37,10 @@ modules:
   - name: commscraft
     buildsystem: simple
     build-options:
-      append-path: /usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm18/bin
+      append-path: /usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm20/bin
       env:
         CARGO_HOME: /run/build/commscraft/cargo
-        LIBCLANG_PATH: /usr/lib/sdk/llvm18/lib
+        LIBCLANG_PATH: /usr/lib/sdk/llvm20/lib
       # The crates are fetched while building (a bundle for the release, not a Flathub build).
       build-args:
         - --share=network
