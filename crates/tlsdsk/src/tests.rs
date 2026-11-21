@@ -171,6 +171,60 @@ fn identity_checks_and_storage() {
     // A key that does not fit the certificate.
     let foreign = Request::generate("alice@contoso.test").unwrap();
     std::fs::write(dir.join("key.pk8"), &foreign.key_pkcs8[..]).unwrap();
+    std::fs::set_permissions(dir.join("key.pk8"), std::fs::Permissions::from_mode(0o600)).unwrap();
     assert!(Identity::load(&dir, 60).is_none());
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+/// Issue #211: storing replaces the files instead of writing through them – a symbolic link
+/// in place of a file is replaced, not followed; loose permissions of the directory are
+/// tightened; files readable by others or links are not loaded; no temporary file is left.
+#[test]
+fn storage_does_not_follow_links_and_stays_private() {
+    use std::os::unix::fs::PermissionsExt;
+    let other = Request::generate("alice@contoso.test").unwrap();
+    let p = pki(&other);
+    let identity = Identity::new(other, p.user.clone()).unwrap();
+    let dir = std::env::temp_dir().join(format!("commscraft-tlsdsk-links-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+    // A link where the key goes, pointing elsewhere: the target must stay untouched.
+    let victim = dir.with_extension("victim");
+    std::fs::write(&victim, b"keep").unwrap();
+    std::os::unix::fs::symlink(&victim, dir.join("key.pk8")).unwrap();
+    identity.store(&dir).unwrap();
+    assert_eq!(std::fs::read(&victim).unwrap(), b"keep");
+    let key = std::fs::symlink_metadata(dir.join("key.pk8")).unwrap();
+    assert!(key.is_file() && key.permissions().mode() & 0o777 == 0o600);
+    assert_eq!(
+        std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777,
+        0o700
+    );
+    let left: Vec<_> = std::fs::read_dir(&dir)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_name().to_string_lossy().ends_with(".tmp"))
+        .collect();
+    assert!(left.is_empty());
+    assert!(Identity::load(&dir, 60).is_some());
+    // Readable by others: not loaded.
+    std::fs::set_permissions(dir.join("key.pk8"), std::fs::Permissions::from_mode(0o644)).unwrap();
+    assert!(Identity::load(&dir, 60).is_none());
+    // A link to a private copy: not loaded either.
+    let copy = dir.with_extension("copy");
+    std::fs::copy(dir.join("key.pk8"), &copy).unwrap();
+    std::fs::set_permissions(&copy, std::fs::Permissions::from_mode(0o600)).unwrap();
+    std::fs::remove_file(dir.join("key.pk8")).unwrap();
+    std::os::unix::fs::symlink(&copy, dir.join("key.pk8")).unwrap();
+    assert!(Identity::load(&dir, 60).is_none());
+    // A directory that is a link is refused.
+    let link_dir = dir.with_extension("linkdir");
+    let _ = std::fs::remove_file(&link_dir);
+    std::os::unix::fs::symlink(&dir, &link_dir).unwrap();
+    assert!(matches!(identity.store(&link_dir), Err(Error::Storage(_))));
+    for p in [&victim, &copy, &link_dir] {
+        let _ = std::fs::remove_file(p);
+    }
     let _ = std::fs::remove_dir_all(&dir);
 }
