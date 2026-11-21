@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=CommSCraft
+GenericName=Unified communications client
+Comment=Open-source client for on-premises Skype for Business Server
+Exec=commscraft
+Icon=io.github.nelvinbhv.CommSCraft
+Terminal=false
+Categories=Network;InstantMessaging;Chat;Telephony;VideoConference;
+Keywords=chat;presence;call;meeting;sip;
+StartupWMClass=commscraft

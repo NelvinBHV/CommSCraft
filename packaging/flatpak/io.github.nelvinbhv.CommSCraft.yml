@@ -1,0 +1,87 @@
+# Flatpak build of the CommSCraft desktop client. Built by .github/workflows/flatpak.yml on free
+# GitHub-hosted runners; the bundle is attached to the GitHub release.
+#
+# Licensing: CommSCraft (MIT OR Apache-2.0), its Rust dependencies and MIT Kerberos (MIT-style
+# licence) are built into the bundle. FFmpeg is not bundled: the freedesktop runtime provides it, and the runtime extension
+# org.freedesktop.Platform.ffmpeg-full (installed from Flathub on demand) adds H.264.
+app-id: io.github.nelvinbhv.CommSCraft
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+  - org.freedesktop.Sdk.Extension.llvm20
+command: commscraft
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  # GPU (VA-API) and camera (V4L2).
+  - --device=all
+  # Keyring (Secret Service), idle time for the status automation.
+  - --talk-name=org.freedesktop.secrets
+  - --talk-name=org.gnome.Mutter.IdleMonitor
+  - --talk-name=org.freedesktop.ScreenSaver
+add-extensions:
+  org.freedesktop.Platform.ffmpeg-full:
+    directory: lib/ffmpeg
+    version: '25.08'
+    add-ld-path: .
+    no-autodownload: false
+    autodelete: false
+cleanup-commands:
+  - mkdir -p /app/lib/ffmpeg
+modules:
+  # MIT Kerberos (MIT-style licence, bundled): GSSAPI for the Kerberos sign-in; the freedesktop
+  # runtime has none.
+  - name: krb5
+    subdir: src
+    # krb5 1.21 predates C23, the default of the runtime's GCC.
+    build-options:
+      cflags: -std=gnu17
+    config-opts:
+      - --disable-static
+      - --disable-rpath
+      - --without-system-verto
+      - --without-keyutils
+    cleanup:
+      - /bin
+      - /sbin
+      - /share/man
+      - /share/examples
+      - /var
+    sources:
+      - type: archive
+        url: https://kerberos.org/dist/krb5/1.21/krb5-1.21.3.tar.gz
+        sha256: b7a4cd5ead67fb08b980b21abd150ff7217e85ea320c9ed0c6dadd304840ad35
+  - name: commscraft
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm20/bin
+      env:
+        CARGO_HOME: /run/build/commscraft/cargo
+        PKG_CONFIG_PATH: /app/lib/pkgconfig
+        # The craft-fonts faces are required in a release (build.rs).
+        CRAFT_FONTS_DIR: /run/build/commscraft/craft-fonts
+        CRAFT_FONTS_REQUIRED: '1'
+        LIBCLANG_PATH: /usr/lib/sdk/llvm20/lib
+      # The crates are fetched while building (a bundle for the release, not a Flathub build).
+      build-args:
+        - --share=network
+    build-commands:
+      - cargo build --release --locked -p commscraft
+      - install -Dm755 target/release/commscraft /app/bin/commscraft
+      - install -Dm644 packaging/flatpak/io.github.nelvinbhv.CommSCraft.desktop /app/share/applications/io.github.nelvinbhv.CommSCraft.desktop
+      - install -Dm644 packaging/flatpak/io.github.nelvinbhv.CommSCraft.metainfo.xml /app/share/metainfo/io.github.nelvinbhv.CommSCraft.metainfo.xml
+      - for s in 16 32 64 128 256 512; do install -Dm644 assets/branding/CommSCraft-icon-$s.png /app/share/icons/hicolor/${s}x${s}/apps/io.github.nelvinbhv.CommSCraft.png; done
+      - install -Dm644 LICENSE-MIT /app/share/licenses/io.github.nelvinbhv.CommSCraft/LICENSE-MIT
+      - install -Dm644 LICENSE-APACHE /app/share/licenses/io.github.nelvinbhv.CommSCraft/LICENSE-APACHE
+    sources:
+      - type: dir
+        path: ../..
+      - type: git
+        url: https://github.com/storytold/craft-fonts.git
+        commit: 26a79230872f9b2acd3dd68500677e294350ab94
+        dest: craft-fonts

@@ -83,7 +83,9 @@ sockets, the OS or the UI; transport and OS adapters are separate crates.
   connect to any other real server. Public statuses may say `tested-offline` and `tested-in-lab`;
   `tested-in-lab` only for what really ran there, and only the status, no details.
 - Work on branches and open pull requests; never push to `main` directly. Merge your own pull
-  requests into `main` regularly once CI is green; no releases.
+  requests into `main` regularly once CI is green. After changes land, publish a GitHub
+  release with the Flatpak bundle (`docs/releases.md`): the version follows the measured feature
+  parity with the Windows client (`scripts/parity.py`).
 
 ## Progress docs
 With every change that lands, bring the four status documents in line with the actual code (owner

@@ -1,6 +1,6 @@
 # CommSCraft parity with the Skype for Business client
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (contact photos over UCWA)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (totals and parity measured)
 
 The assessment of how close CommSCraft is to the Skype for Business desktop client for Windows.
 [`ROADMAP.md`](../ROADMAP.md) summarizes it; [`gaps.md`](gaps.md) itemizes the shortfalls.
@@ -79,6 +79,6 @@ Evidence status comes from the protocol analysis ([`protocol/function-matrix.md`
 | 51 | Audio codec SILK | MS-SDPEXT, draft-vos-silk-02 | T | deferred until the owner's legal clearance (calls use G.722 and G.711) |
 | 52 | File transfer 1:1 | none public | N | needs captures |
 
-**Totals (2026-11-08, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **27** tested-offline as a whole, **17** in parts, **2** not started, 6 not planned/needs captures. Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **40** of them also `tested-in-lab`
+**Totals (2026-11-21, measured from this table):** evidence B 24 · B\* 17 · T 9 · N 2 · implemented: **29** tested-offline as a whole, **17** in parts, **2** not started, 4 not planned/needs captures/deferred. Feature parity with the Windows client (`scripts/parity.py`): **78 %** – version 0.78 ([`releases.md`](releases.md)). Nothing is `verified-interoperable` in this document; interop runs belong to the owner ([`interop-tests.md`](interop-tests.md)). · **40** of them also `tested-in-lab`
 
 The functions are reachable through the command-line tool `commscraft-cli`. The desktop client `commscraft` (egui) offers so far sign-in, contacts and presence, chat 1:1 and in groups, audio calls and meetings (`tested-in-lab` in their main flows); the other functions are gated there with a reason ([`ui/README.md`](ui/README.md)). The rows above count the code, not the interface.
