@@ -11,6 +11,7 @@ publish.workspace = true
 commscraft-sip-msg = { path = "../sip-msg" }
 commscraft-url = { path = "../url" }
 commscraft-register = { path = "../register" }
+commscraft-sipcomp = { path = "../sipcomp" }
 rustls.workspace = true
 rustls-native-certs.workspace = true
 getrandom.workspace = true

@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (G.722.1/Siren not planned)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (SIP compression)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,11 +16,11 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **33** tested-offline as a whole, **13** in parts, **1** not started, 5 not planned/needs captures/deferred; **41** also `tested-in-lab`; parity **84 %** | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Implementation status of the 52 functions | **34** tested-offline as a whole, **13** in parts, **0** not started, 5 not planned/needs captures/deferred; **42** also `tested-in-lab`; parity **86 %** | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **50 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **734 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **50 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **752 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-21 | SIP compression ([MS-SIPCOMP], `tested-in-lab`): `commscraft-cli --compression` sends NEGOTIATE right after the TLS handshake and frames the connection in packets (header with the flags in the high nibble and the size most significant byte first, MPPC with the RFC 2118 offset coding, the history addressed as a ring); the client compresses once the server has. Parity 86 % (`scripts/parity.py`), version 0.86.0-alpha. |
 | 2026-11-21 | Audio codecs Siren and G.722.1 not planned: Polycom offers them only under personal, non-transferable licence terms with trademark display, which do not fit an openly redistributable client; calls keep G.722 and G.711. Parity 84 % (`scripts/parity.py`), version 0.84.0-alpha. |
 | 2026-11-21 | Redundant audio ([MS-RTPRADEX], RFC 2198 with one redundant block): offered and answered as `RED/8000`, lost packets played from the redundant block, sent while the peer reports loss; the Windows client accepts and answers it (`tested-in-lab`), the recovery `tested-offline`. |
 | 2026-11-21 | Dial-in numbers in the meeting entry info (getConferencingCapabilities, [MS-CONFPRO] §2.2.2.8): numbers of the suggested region, conference ID, link to all numbers; the request `tested-in-lab`, the numbers `tested-offline`; feature parity 81 %. |
