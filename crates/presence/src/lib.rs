@@ -97,6 +97,10 @@ pub enum UserStatus {
     BeRightBack,
     Away,
     OffWork,
+    /// Appear offline: a manual state in the offline class (≥ 18000, PR-30); the server's
+    /// aggregation takes the greatest availability of the newest manual state ([MS-PRES]
+    /// 20250520 §3.8.5.1.2.2, pp. 120–121), so the others see the user offline.
+    AppearOffline,
 }
 
 impl UserStatus {
@@ -107,6 +111,7 @@ impl UserStatus {
             Self::DoNotDisturb => 9500,
             Self::BeRightBack => 12500,
             Self::Away | Self::OffWork => 15500,
+            Self::AppearOffline => 18000,
         }
     }
 
@@ -123,6 +128,7 @@ impl UserStatus {
             "away" => Some(Self::Away),
             "brb" | "be-right-back" => Some(Self::BeRightBack),
             "off-work" | "offwork" => Some(Self::OffWork),
+            "offline" | "appear-offline" => Some(Self::AppearOffline),
             _ => None,
         }
     }

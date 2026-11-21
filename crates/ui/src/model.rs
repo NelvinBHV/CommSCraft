@@ -1291,10 +1291,12 @@ impl AppState {
                 note,
                 name,
             } => {
-                // Members of an opened distribution group show their presence too.
+                // Members of an opened distribution group show their presence too. SIP URIs
+                // compare without regard to case (the directory may spell them otherwise than
+                // the presence document).
                 for g in &mut self.distribution {
                     for m in g.members.iter_mut().flatten() {
-                        if m.uri == uri {
+                        if m.uri.eq_ignore_ascii_case(&uri) {
                             if let Some(p) = presence {
                                 m.presence = p;
                             }
@@ -1302,7 +1304,15 @@ impl AppState {
                         }
                     }
                 }
-                if let Some(c) = self.contacts.get_mut(&uri) {
+                let key = if self.contacts.contains_key(&uri) {
+                    Some(uri.clone())
+                } else {
+                    self.contacts
+                        .keys()
+                        .find(|k| k.eq_ignore_ascii_case(&uri))
+                        .cloned()
+                };
+                if let Some(c) = key.and_then(|k| self.contacts.get_mut(&k)) {
                     if let Some(p) = presence {
                         c.presence = p;
                     }
@@ -1321,7 +1331,7 @@ impl AppState {
                         }
                     }
                 }
-                if uri == self.me.uri {
+                if uri.eq_ignore_ascii_case(&self.me.uri) {
                     if let Some(p) = presence {
                         self.me.presence = p;
                     }

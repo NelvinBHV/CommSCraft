@@ -1568,12 +1568,67 @@ impl<R: Random> Engine<R> {
     }
 
     /// The contact list changed: one batch subscription per 100 contacts to the own AOR.
+    /// The addresses of the current presence subscriptions.
+    fn subscribed_presence_uris(&self) -> Vec<String> {
+        self.subs
+            .iter()
+            .filter_map(|s| match &s.kind {
+                SubKind::Presence { uris, .. } => Some(uris.iter().cloned()),
+                _ => None,
+            })
+            .flatten()
+            .collect()
+    }
+
+    /// Batch subscriptions for further addresses, next to the existing ones.
+    fn add_presence_subscriptions(&mut self, uris: Vec<String>, now: u64, out: &mut Vec<Output>) {
+        let aor = self.cfg.aor.clone();
+        for chunk in uris.chunks(pres::MAX_BATCH) {
+            if self.subs.len() >= MAX_SUBSCRIPTIONS {
+                break;
+            }
+            self.subs.push(Subscription {
+                kind: SubKind::Presence {
+                    target: aor.clone(),
+                    uris: chunk.to_vec(),
+                    single: false,
+                },
+                dialog: None,
+                refresh_at: None,
+                retry_at: None,
+            });
+            let i = self.subs.len() - 1;
+            self.subscribe(i, now, out);
+        }
+    }
+
     fn replace_presence_subscriptions(
         &mut self,
         uris: Vec<String>,
         now: u64,
         out: &mut Vec<Output>,
     ) {
+        // The same addresses as subscribed already (the contact list came again, e.g. from
+        // Exchange and from the server): nothing to change – a teardown would only bring late
+        // answers to ended dialogs (481).
+        {
+            let mut want: Vec<String> = uris.iter().map(|u| u.to_ascii_lowercase()).collect();
+            for w in &self.watched {
+                want.push(w.to_ascii_lowercase());
+            }
+            want.sort();
+            want.dedup();
+            let mut have: Vec<String> = self
+                .subscribed_presence_uris()
+                .iter()
+                .map(|u| u.to_ascii_lowercase())
+                .collect();
+            have.sort();
+            have.dedup();
+            if !have.is_empty() && want == have {
+                return;
+            }
+        }
         // Existing presence subscriptions are ended (RFC 3265 §3.3.4) and replaced. They come
         // after the contact list and the self subscription; transactions of removed or shifted
         // indices are dropped.
@@ -2219,24 +2274,22 @@ impl<R: Random> Engine<R> {
             Command::SetDelegate { uri, add } => self.set_delegate(&uri, add, now, &mut out),
             Command::EditContacts(edit) => self.edit_contacts(edit, now, &mut out),
             Command::WatchPresence { uris } => {
-                let mut added = false;
+                // New addresses get a batch subscription of their own; the existing
+                // subscriptions stay (no teardown, so no late answers to ended dialogs).
+                let subscribed = self.subscribed_presence_uris();
+                let mut new = Vec::new();
                 for u in uris {
                     let Ok(u) = pres::checked_sip_uri(&u) else {
                         continue;
                     };
-                    if self.watched.len() < MAX_WATCHED && !self.watched.contains(&u) {
-                        self.watched.push(u);
-                        added = true;
+                    let known = self.watched.iter().any(|w| w.eq_ignore_ascii_case(&u))
+                        || subscribed.iter().any(|w| w.eq_ignore_ascii_case(&u));
+                    if self.watched.len() < MAX_WATCHED && !known {
+                        self.watched.push(u.clone());
+                        new.push(u);
                     }
                 }
-                if added {
-                    let uris: Vec<String> = self
-                        .contact_list
-                        .as_ref()
-                        .map(|l| l.contacts.iter().map(|c| c.uri.clone()).collect())
-                        .unwrap_or_default();
-                    self.replace_presence_subscriptions(uris, now, &mut out);
-                }
+                self.add_presence_subscriptions(new, now, &mut out);
             }
             Command::AcknowledgeSubscriber { uri } => {
                 self.acknowledge_subscriber(&uri, now, &mut out)
@@ -2465,7 +2518,15 @@ impl<R: Random> Engine<R> {
                 self.report_errors = commscraft_ocer::keep_reporting(code, retry, diag.as_ref());
                 return;
             }
-            self.on_diagnostics(&p.request, resp, code, progress, now, out);
+            // Failures the session handles itself are not reported to the user: ending a
+            // subscription (`Ignore`) and a subscription the server no longer knows (481, it
+            // subscribes again at once).
+            let handled = p.purpose == Purpose::Ignore
+                || (code == 481
+                    && matches!(p.purpose, Purpose::Subscribe(_) | Purpose::Refresh(_)));
+            if !handled {
+                self.on_diagnostics(&p.request, resp, code, progress, now, out);
+            }
             if code == 409 {
                 if let Some(retry) = self.on_conflict(&p, resp) {
                     match retry {

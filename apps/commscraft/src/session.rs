@@ -369,7 +369,9 @@ fn user_status(p: Presence) -> Option<pres::UserStatus> {
         Presence::BeRightBack => pres::UserStatus::BeRightBack,
         Presence::OffWork => pres::UserStatus::OffWork,
         Presence::Away | Presence::Inactive => pres::UserStatus::Away,
-        Presence::Offline | Presence::Unknown => return None,
+        // Issue #225: appear offline.
+        Presence::Offline => pres::UserStatus::AppearOffline,
+        Presence::Unknown => return None,
     })
 }
 
@@ -3434,7 +3436,13 @@ mod tests {
         assert_eq!(presence_of(15500, None), Presence::Away);
         assert_eq!(presence_of(15500, Some("off-work")), Presence::OffWork);
         assert_eq!(presence_of(0, None), Presence::Unknown);
-        assert_eq!(user_status(Presence::Offline), None);
+        // Issue #225: offline is chosen as "appear offline"; unknown is not published.
+        assert_eq!(
+            user_status(Presence::Offline),
+            Some(pres::UserStatus::AppearOffline)
+        );
+        assert_eq!(user_status(Presence::Unknown), None);
+        assert_eq!(presence_of(18000, None), Presence::Offline);
         // Each choosable state round-trips through what is published.
         for p in [
             Presence::Available,
