@@ -1135,7 +1135,7 @@ version = "0.78.0-alpha"
 
 [[package]]
 name = "commscraft-ucwa"
-version = "0.1.0-alpha.1"
+version = "0.78.0-alpha"
 dependencies = [
  "commscraft-url",
  "commscraft-xml",
