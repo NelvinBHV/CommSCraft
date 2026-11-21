@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.nelvinbhv.CommSCraft</id>
+  <id>io.github.NelvinBHV.CommSCraft</id>
   <name>CommSCraft</name>
   <summary>Open-source client for on-premises Skype for Business Server</summary>
   <metadata_license>CC0-1.0</metadata_license>
@@ -11,7 +11,7 @@
     calls, meetings and viewing shared screens.</p>
     <p>Experimental software for development and testing on authorized systems.</p>
   </description>
-  <launchable type="desktop-id">io.github.nelvinbhv.CommSCraft.desktop</launchable>
+  <launchable type="desktop-id">io.github.NelvinBHV.CommSCraft.desktop</launchable>
   <url type="homepage">https://github.com/NelvinBHV/CommSCraft</url>
   <url type="bugtracker">https://github.com/NelvinBHV/CommSCraft/issues</url>
   <content_rating type="oars-1.1"/>
