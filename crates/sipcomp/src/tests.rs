@@ -233,3 +233,114 @@ fn oversized_packet() {
         Err(Error::HistoryOverflow)
     );
 }
+
+#[test]
+fn packet_header_layout() {
+    // flags in the high nibble, size most significant byte first (O-CP-1, tested-in-lab)
+    assert_eq!(header(PACKET_FLUSHED, 0x023b), [0x80, 0, 0, 0, 0x02, 0x3b]);
+    assert_eq!(
+        parse_header(&[0x60, 0, 0, 0, 0x03, 0x38]),
+        Ok((PACKET_COMPRESSED | PACKET_AT_FRONT, 0x0338))
+    );
+    assert_eq!(parse_header(&[0x81, 0, 0, 0, 0, 1]), Err(Error::BadHeader));
+}
+
+fn sip(n: usize) -> Vec<u8> {
+    let mut m = Vec::new();
+    while m.len() < n {
+        m.extend_from_slice(
+            format!("NOTIFY sip:alice@example.test SIP/2.0\r\nCSeq: {} NOTIFY\r\nFrom: <sip:bob@example.test>\r\n\r\n", m.len())
+                .as_bytes(),
+        );
+    }
+    m
+}
+
+#[test]
+fn framed_stream_round_trip_in_small_pieces() {
+    let mut out = Outbound::default();
+    let mut inb = Inbound::default();
+    let mut wire = Vec::new();
+    let mut sent = Vec::new();
+    // uncompressed first (before the peer compressed), then compressed, one message larger
+    // than the history buffer
+    for (len, compress) in [
+        (300, false),
+        (500, true),
+        (20_000, true),
+        (40, true),
+        (900, false),
+        (70, true),
+    ] {
+        let m = sip(len);
+        wire.extend(out.frame(&m, compress).unwrap());
+        sent.extend(m);
+    }
+    assert!(out.compressed >= 4);
+    assert!(wire.len() < sent.len());
+    let mut got = Vec::new();
+    for piece in wire.chunks(7) {
+        got.extend(inb.push(piece).unwrap());
+    }
+    assert_eq!(got, sent);
+    assert!(inb.peer_compressed);
+    assert_eq!(inb.packets, out.packets);
+    assert_eq!(inb.compressed, out.compressed);
+}
+
+#[test]
+fn inbound_refuses_hostile_packets() {
+    // flushed and compressed together
+    assert!(Inbound::default()
+        .push(&[0xa0, 0, 0, 0, 0, 3, 0, 0, 0])
+        .is_err());
+    // a copy reaching past the announced size
+    let mut c = Compressor::default();
+    let p = c.compress(b"abcabcabcabc").unwrap();
+    let mut wire = header(p.flags, 4).to_vec();
+    wire.extend(p.payload);
+    assert!(Inbound::default().push(&wire).is_err());
+    // a size past the history buffer
+    assert!(Inbound::default()
+        .push(&[0x60, 0, 0, 0, 0x20, 0x01, 0])
+        .is_err());
+    // the largest packet is held until complete; what follows must be a header again
+    let mut inb = Inbound::default();
+    assert_eq!(inb.push(&header(PACKET_FLUSHED, u16::MAX)), Ok(Vec::new()));
+    assert_eq!(inb.push(&vec![b'a'; 60_000]), Ok(Vec::new()));
+    assert!(inb.push(&vec![b'a'; 5_535]).is_ok_and(|v| v.len() == 65535));
+    assert_eq!(inb.push(b"abcdef"), Err(Error::BadHeader));
+}
+
+#[test]
+fn copies_reach_back_round_the_ring() {
+    // 8000 bytes of history, then a packet at the front that copies from the end of the buffer
+    let mut d = Decompressor::default();
+    let first: Vec<u8> = (0..8000u32).map(|i| b'a' + (i % 26) as u8).collect();
+    let mut c = Compressor::default();
+    let p = c.compress(&first).unwrap();
+    assert_eq!(d.decompress(p.flags, &p.payload).unwrap(), first);
+    // at position 0, offset 200 points at 7992 .. 7999, then 0 .. 7 is rewritten as it goes
+    let tokens = [
+        Token::Copy {
+            offset: 200,
+            length: 8,
+        },
+        Token::Literal(b'!'),
+    ];
+    let data = encode_tokens(&tokens).unwrap();
+    let out = d
+        .decompress_packet(PACKET_COMPRESSED | PACKET_AT_FRONT, &data, 9)
+        .unwrap()
+        .unwrap()
+        .0;
+    let mut want = first[7992..8000].to_vec();
+    want.push(b'!');
+    assert_eq!(out, want);
+    // a fresh history has nothing to reach back to
+    let mut fresh = Decompressor::default();
+    assert_eq!(
+        fresh.decompress_packet(PACKET_COMPRESSED | PACKET_AT_FRONT, &data, 9),
+        Err(Error::OffsetOutOfRange)
+    );
+}

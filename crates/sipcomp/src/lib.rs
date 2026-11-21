@@ -5,8 +5,12 @@
 //! 20250520 §3.2.5.1–3.2.5.2 (pp. 14–17); RFC 2118 §4; [MS-RDPBCGR] 20260309 §3.1.8.4.1
 //! (pp. 267–268).
 //!
-//! Not covered here: the 6-byte packet header. The byte order of its "Uncompressed size" field is
-//! not documented (O-CP-1), so the header layout stays open until an interop capture exists.
+//! The 6-byte packet header (CP-05): the flags in the high nibble of the first byte (the bit
+//! diagram of §2.2.4, p. 10), type 0 in the low nibble, three reserved bytes and the uncompressed
+//! size as a 16-bit number, most significant byte first. The text leaves the byte order open
+//! (O-CP-1); it was settled by an interop run (`tested-in-lab`), which also showed that a packet
+//! sent without compression carries PACKET_FLUSHED – as the expansion rule of §3.2.5.1.1 (p. 15)
+//! does – and that the server refuses compressed client packets before it sent one itself (CP-04).
 //!
 //! Inference: bits are packed most significant bit first, as the bit strings of RFC 2118 are
 //! written; the last byte is padded with zero bits. Every token is at least 8 bits long, so a
@@ -37,6 +41,8 @@ pub enum Error {
     HistoryOverflow,
     /// Offset or length outside the encodable range.
     NotEncodable,
+    /// A packet header with a type other than 0 (CP-05).
+    BadHeader,
 }
 
 /// A literal byte or a copy-tuple `<offset, length>` (RFC 2118 §4).
@@ -303,6 +309,8 @@ impl Compressor {
 pub struct Decompressor {
     history: Vec<u8>,
     offset: usize,
+    /// How much of the history holds data since the last flush: a copy may only read there.
+    filled: usize,
 }
 
 impl Default for Decompressor {
@@ -310,19 +318,58 @@ impl Default for Decompressor {
         Self {
             history: vec![0; HISTORY_SIZE],
             offset: 0,
+            filled: 0,
         }
     }
 }
 
 impl Decompressor {
-    pub fn decompress(&mut self, flags: u8, payload: &[u8]) -> Result<Vec<u8>, Error> {
-        let known = PACKET_FLUSHED | PACKET_AT_FRONT | PACKET_COMPRESSED;
-        if flags & !known != 0 || (flags & PACKET_FLUSHED != 0 && flags & PACKET_COMPRESSED != 0) {
-            return Err(Error::InconsistentFlags(flags));
+    fn flush(&mut self) {
+        self.history.fill(0);
+        self.offset = 0;
+        self.filled = 0;
+    }
+
+    fn put(&mut self, pos: usize, b: u8, end: usize) -> Result<usize, Error> {
+        if pos >= end {
+            return Err(Error::HistoryOverflow);
         }
+        *self.history.get_mut(pos).ok_or(Error::HistoryOverflow)? = b;
+        self.filled = self.filled.max(pos + 1);
+        Ok(pos + 1)
+    }
+
+    /// A copy-tuple. The history is addressed as a ring: after PACKET_AT_FRONT a copy at the
+    /// front may reach back into data left at the end of the buffer by earlier packets. Neither
+    /// MS-SIPCOMP nor RFC 2118 says so; the server's packets were only decodable this way
+    /// (interop, `tested-in-lab`). A copy never reads where no data was written since the last
+    /// flush.
+    fn copy(
+        &mut self,
+        mut pos: usize,
+        offset: u16,
+        length: u16,
+        end: usize,
+    ) -> Result<usize, Error> {
+        let offset = usize::from(offset);
+        if offset == 0 || offset >= HISTORY_SIZE {
+            return Err(Error::OffsetOutOfRange);
+        }
+        for _ in 0..length {
+            let from = (pos + HISTORY_SIZE - offset) % HISTORY_SIZE;
+            if from >= self.filled {
+                return Err(Error::OffsetOutOfRange);
+            }
+            let b = *self.history.get(from).ok_or(Error::OffsetOutOfRange)?;
+            pos = self.put(pos, b, end)?;
+        }
+        Ok(pos)
+    }
+
+    pub fn decompress(&mut self, flags: u8, payload: &[u8]) -> Result<Vec<u8>, Error> {
+        check_flags(flags)?;
         if flags & PACKET_FLUSHED != 0 {
-            self.history.fill(0);
-            self.offset = 0;
+            self.flush();
         }
         if flags & PACKET_AT_FRONT != 0 {
             self.offset = 0;
@@ -335,26 +382,201 @@ impl Decompressor {
         for token in decode_tokens(payload)? {
             match token {
                 Token::Literal(b) => {
-                    *self.history.get_mut(pos).ok_or(Error::HistoryOverflow)? = b;
-                    pos += 1;
+                    pos = self.put(pos, b, HISTORY_SIZE)?;
                 }
                 Token::Copy { offset, length } => {
-                    let from = pos
-                        .checked_sub(usize::from(offset))
-                        .ok_or(Error::OffsetOutOfRange)?;
-                    if offset == 0 {
-                        return Err(Error::OffsetOutOfRange);
-                    }
-                    for i in 0..usize::from(length) {
-                        let b = *self.history.get(from + i).ok_or(Error::OffsetOutOfRange)?;
-                        *self.history.get_mut(pos).ok_or(Error::HistoryOverflow)? = b;
-                        pos += 1;
-                    }
+                    pos = self.copy(pos, offset, length, HISTORY_SIZE)?;
                 }
             }
         }
         self.offset = pos;
         Ok(self.history.get(start..pos).unwrap_or(&[]).to_vec())
+    }
+}
+
+/// Length of the packet header (CP-05).
+pub const HEADER_LEN: usize = 6;
+
+/// Bound on undecoded input held by [`Inbound`]: one packet of at most 65535 uncompressed bytes
+/// plus its header; a compressed payload is never longer than its uncompressed data, since a
+/// sender that would expand sends the data uncompressed instead (§3.2.5.1.1, p. 15).
+const MAX_PENDING: usize = HEADER_LEN + u16::MAX as usize;
+
+/// The packet header: flags (low four bits of `flags`) and the uncompressed size.
+pub fn header(flags: u8, size: u16) -> [u8; HEADER_LEN] {
+    let [hi, lo] = size.to_be_bytes();
+    [(flags & 0x0f) << 4, 0, 0, 0, hi, lo]
+}
+
+/// Reads a packet header: `(flags, uncompressed size)`. Type 0 is the only type (CP-05).
+pub fn parse_header(h: &[u8; HEADER_LEN]) -> Result<(u8, u16), Error> {
+    let [b0, _, _, _, hi, lo] = *h;
+    if b0 & 0x0f != 0 {
+        return Err(Error::BadHeader);
+    }
+    Ok((b0 >> 4, u16::from_be_bytes([hi, lo])))
+}
+
+fn check_flags(flags: u8) -> Result<(), Error> {
+    let known = PACKET_FLUSHED | PACKET_AT_FRONT | PACKET_COMPRESSED;
+    if flags & !known != 0 || (flags & PACKET_FLUSHED != 0 && flags & PACKET_COMPRESSED != 0) {
+        return Err(Error::InconsistentFlags(flags));
+    }
+    Ok(())
+}
+
+impl Compressor {
+    /// Starts over: the next packet goes to the front of an empty history. Used after a packet
+    /// sent uncompressed with PACKET_FLUSHED, which clears the receiver's history (CP-08).
+    pub fn reset(&mut self) {
+        self.history.fill(0);
+        self.offset = 0;
+        self.started = false;
+    }
+}
+
+impl Decompressor {
+    /// Decodes one packet from the front of `data` (its payload, after the header) that expands
+    /// to `size` bytes. A compressed payload has no length field: it ends with the byte that
+    /// holds the last bit of the token that completes `size` bytes. `Ok(None)` while `data` does
+    /// not yet hold the whole packet; the state changes only once a packet is complete.
+    pub fn decompress_packet(
+        &mut self,
+        flags: u8,
+        data: &[u8],
+        size: usize,
+    ) -> Result<Option<(Vec<u8>, usize)>, Error> {
+        check_flags(flags)?;
+        if flags & PACKET_COMPRESSED == 0 {
+            let Some(plain) = data.get(..size) else {
+                return Ok(None);
+            };
+            if flags & PACKET_FLUSHED != 0 {
+                self.flush();
+            }
+            return Ok(Some((plain.to_vec(), size)));
+        }
+        let start = if flags & PACKET_AT_FRONT != 0 {
+            0
+        } else {
+            self.offset
+        };
+        let end = start.checked_add(size).ok_or(Error::HistoryOverflow)?;
+        if end > HISTORY_SIZE {
+            return Err(Error::HistoryOverflow);
+        }
+        // A packet not yet complete must leave no trace: a copy may read ahead of the write
+        // position (ring), so partly written data would change a later attempt.
+        let saved = (self.history.clone(), self.filled);
+        let mut r = BitReader { data, pos: 0 };
+        let mut pos = start;
+        while pos < end {
+            let token = match get_token(&mut r) {
+                Ok(t) => t,
+                Err(Error::Truncated) => {
+                    (self.history, self.filled) = saved;
+                    return Ok(None);
+                }
+                Err(e) => return Err(e),
+            };
+            match token {
+                Token::Literal(b) => {
+                    pos = self.put(pos, b, end)?;
+                }
+                Token::Copy { offset, length } => {
+                    pos = self.copy(pos, offset, length, end)?;
+                }
+            }
+        }
+        self.offset = end;
+        let used = r.pos.div_ceil(8);
+        Ok(Some((
+            self.history.get(start..end).unwrap_or(&[]).to_vec(),
+            used,
+        )))
+    }
+}
+
+/// The receiving direction of a compressed connection: packets in, SIP bytes out.
+#[derive(Default)]
+pub struct Inbound {
+    pending: Vec<u8>,
+    decompressor: Decompressor,
+    /// The peer has sent a compressed packet: from now on we may compress too (CP-04).
+    pub peer_compressed: bool,
+    /// Packets received, and how many of them were compressed (diagnostics).
+    pub packets: u64,
+    pub compressed: u64,
+}
+
+impl Inbound {
+    /// Takes bytes read from the connection and returns the SIP bytes of the packets they
+    /// complete. Any error means the connection must be closed (CP-08).
+    pub fn push(&mut self, data: &[u8]) -> Result<Vec<u8>, Error> {
+        self.pending.extend_from_slice(data);
+        let mut out = Vec::new();
+        let mut used = 0;
+        while let Some(h) = self.pending.get(used..used + HEADER_LEN) {
+            let mut head = [0u8; HEADER_LEN];
+            head.copy_from_slice(h);
+            let (flags, size) = parse_header(&head)?;
+            let body = self.pending.get(used + HEADER_LEN..).unwrap_or(&[]);
+            let Some((plain, n)) =
+                self.decompressor
+                    .decompress_packet(flags, body, usize::from(size))?
+            else {
+                break;
+            };
+            self.packets += 1;
+            if flags & PACKET_COMPRESSED != 0 {
+                self.compressed += 1;
+                self.peer_compressed = true;
+            }
+            out.extend_from_slice(&plain);
+            used += HEADER_LEN + n;
+        }
+        self.pending.drain(..used);
+        if self.pending.len() > MAX_PENDING {
+            return Err(Error::HistoryOverflow);
+        }
+        Ok(out)
+    }
+}
+
+/// The sending direction: SIP bytes in, packets out.
+#[derive(Default)]
+pub struct Outbound {
+    compressor: Compressor,
+    /// Packets sent, and how many of them were compressed (diagnostics).
+    pub packets: u64,
+    pub compressed: u64,
+}
+
+impl Outbound {
+    /// Frames `data` as packets of at most one history buffer each; compressed only when
+    /// `compress` is set (after the peer's first compressed packet, CP-04), else uncompressed
+    /// with PACKET_FLUSHED.
+    pub fn frame(&mut self, data: &[u8], compress: bool) -> Result<Vec<u8>, Error> {
+        let mut out = Vec::with_capacity(data.len() + HEADER_LEN);
+        for chunk in data.chunks(HISTORY_SIZE) {
+            let packet = if compress {
+                self.compressor.compress(chunk)?
+            } else {
+                self.compressor.reset();
+                Packet {
+                    flags: PACKET_FLUSHED,
+                    payload: chunk.to_vec(),
+                }
+            };
+            let size = u16::try_from(chunk.len()).map_err(|_| Error::HistoryOverflow)?;
+            out.extend_from_slice(&header(packet.flags, size));
+            out.extend_from_slice(&packet.payload);
+            self.packets += 1;
+            if packet.flags & PACKET_COMPRESSED != 0 {
+                self.compressed += 1;
+            }
+        }
+        Ok(out)
     }
 }
 
