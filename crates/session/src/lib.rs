@@ -213,6 +213,9 @@ pub enum Command {
     },
     /// The organizer's static meeting with the administrator's defaults (PV-16).
     ScheduleStaticMeeting,
+    /// Dial-in numbers and scheduling defaults of the conferencing service
+    /// (getConferencingCapabilities).
+    ConferencingCapabilities,
     /// The organizer's meetings (getConferences), or the static meeting (PV-16).
     ListMeetings {
         static_meetings: bool,
@@ -488,6 +491,8 @@ pub enum Event {
     MeetingScheduled(Box<conf::schedule::Meeting>),
     /// The organizer's meetings.
     Meetings(Vec<conf::schedule::Meeting>),
+    /// Dial-in numbers and scheduling defaults of the conferencing service.
+    ConferencingCapabilities(Box<conf::schedule::Capabilities>),
     /// One meeting's details (join URL, version, expiry).
     MeetingDetails(Box<conf::schedule::Meeting>),
     MeetingCancelled {
@@ -2138,6 +2143,7 @@ impl<R: Random> Engine<R> {
                 &mut out,
             ),
             Command::ScheduleStaticMeeting => self.schedule_static_meeting(now, &mut out),
+            Command::ConferencingCapabilities => self.conferencing_capabilities(now, &mut out),
             Command::ListMeetings { static_meetings } => {
                 self.list_meetings(static_meetings, now, &mut out)
             }

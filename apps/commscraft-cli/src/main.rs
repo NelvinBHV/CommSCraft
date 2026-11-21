@@ -66,7 +66,7 @@ interactive  signs in and stays signed in: contacts with live presence, own stat
           /park [N] (call park; retrieve with /call ORBIT)  /rate N 1-5 [text] (call rating)  /forward off|voicemail|TARGET|noanswer TARGET [SECONDS]  /simring TARGET|off  /voicemail [call] (list, listen)  /view [N] (view a shared screen)  /viewconf [N] (view the screen or window shared in a meeting)  /content [N|stop] (whiteboard, slides and polls of a meeting)  /vote CONTENT CHOICE (in a poll)  /rooms [leave] (persistent chat rooms)  /room join N | history N | N TEXT  /rgs [in|out GROUP-ID] (response group agent)  /answer [N]  /hangup [N]  /dtmf 123#  /mute  /unmute  /hold  /resume (audio calls)
           /group sip:A sip:B … (group conversation)  /invite sip:URI (into the current group)
           /join N | sip:…focus… | https://meeting-link (join a meeting; lobby is shown)
-          /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /meeting ID  /cancelmeeting ID [static]
+          /schedule MINUTES [OPTIONS] SUBJECT  /schedule static  /meetings [static]  /dialin  /meeting ID  /cancelmeeting ID [static]
           /changemeeting ID MINUTES [OPTIONS] SUBJECT – OPTIONS: open|closed|anonymous, promote none|company|everyone,
             phone bypass|lobby, locked, presenter sip:URI, attendee sip:URI
           /confvideo [LANGUAGE] (the meeting's audio and video)  /confaudio [LANGUAGE] (join the meeting's audio; announcements in LANGUAGE, default from $LANG)
@@ -2520,6 +2520,30 @@ fn interactive(
                             m.focus.as_deref().unwrap_or("(conference address unknown)")
                         );
                     }
+                    E::ConferencingCapabilities(c) => {
+                        if !c.pstn_enabled {
+                            println!("* no dial-in by phone");
+                        }
+                        for r in &c.regions {
+                            let mark = if c.default_region.as_deref() == Some(r.name.as_str()) {
+                                " (default)"
+                            } else {
+                                ""
+                            };
+                            println!("* dial-in {}{mark}:", r.name);
+                            for n in &r.numbers {
+                                println!(
+                                    "    {}{} [{}]",
+                                    n.number,
+                                    if n.toll_free { " (toll-free)" } else { "" },
+                                    n.languages.join(", ")
+                                );
+                            }
+                        }
+                        if let Some(u) = c.external_url.as_ref().or(c.internal_url.as_ref()) {
+                            println!("  all numbers: {u}");
+                        }
+                    }
                     E::Meetings(list) if list.is_empty() => println!("* no meetings"),
                     E::Meetings(list) => {
                         for m in list {
@@ -4112,6 +4136,7 @@ fn interactive(
                         }
                     }
                 }
+                "/dialin" => Some(C::ConferencingCapabilities),
                 "/meetings" => Some(C::ListMeetings {
                     static_meetings: arg.trim() == "static",
                 }),

@@ -479,6 +479,9 @@ texts! {
     add_by_address: "Per Adresse …", "By address …";
     display_options: "Anzeigeoptionen", "Display options";
     copy_to_group: "Kontakt kopieren nach", "Copy contact to";
+    dial_in: "Per Telefon teilnehmen", "Join by phone";
+    toll_free: "gebührenfrei", "toll-free";
+    more_dial_in_numbers: "Weitere Einwahlnummern", "Find a local number";
     presenters: "Referenten", "Presenters";
     attendees: "Teilnehmer", "Attendees";
     sharing_mark: "gibt frei", "sharing";

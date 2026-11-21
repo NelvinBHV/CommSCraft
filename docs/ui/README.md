@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-21 · **Change:** minor (Lucide icons, craft-fonts, Noto Emoji)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-21 · **Change:** minor (dial-in numbers)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -159,6 +159,9 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   taken from the pictures the encoder gets anyway). `tested-in-lab`.
 - **Meeting entry info:** the conversation's *More* menu shows the meeting link (or the
   conference URI) and the organizer, with *Copy all info*. `tested-offline`.
+  It also shows how to join by phone, as the Windows client does: the dial-in numbers of the
+  region the conferencing service suggests (toll-free marked), the conference ID and a link to
+  all numbers (getConferencingCapabilities, asked for once after sign-in).
 - **Call lines in the conversation:** as the Windows client does, a 1:1 call writes centred lines
   into its conversation – "Call connected." and "Call ended. N minutes" (rounded up) with the
   time; previews of the conversation list and the tabs skip them. `tested-offline`.

@@ -1123,6 +1123,8 @@ fn the_meeting_entry_info_names_link_and_organizer() {
     assert!(h
         .query_by_label_contains("opaque=app:conf:focus:id:AB12")
         .is_some());
+    // Without dial-in numbers no phone section.
+    assert!(h.query_by_label("Per Telefon teilnehmen").is_none());
     h.get_by_label("Schließen").click();
     h.run();
     assert!(h.query_by_label("Organisator").is_none());
@@ -1362,4 +1364,40 @@ fn a_contact_is_copied_to_another_group_and_shown_in_both() {
     let mut h = harness(ui, BIG);
     h.run();
     assert_eq!(h.query_all_by_label("Bob").count(), 2);
+}
+
+#[test]
+fn the_meeting_entry_info_names_the_dial_in_numbers() {
+    use commscraft_ui::model::{ConvState, DialIn};
+    let mut ui = demo_quiet();
+    let c = ui
+        .state
+        .conversations
+        .iter_mut()
+        .find(|c| c.title == "Projekt Nord")
+        .unwrap();
+    c.state = ConvState::Open;
+    c.session = Some(6);
+    ui.state.apply(AppEvent::ConferenceFocus {
+        session: 6,
+        focus: "sip:anna@beispiel.invalid;gruu;opaque=app:conf:focus:id:AB12CD34".into(),
+    });
+    ui.state.apply(AppEvent::DialIn(Some(DialIn {
+        region: "Hamburg".into(),
+        numbers: vec![("+49 40 1234".into(), true), ("+49 40 5678".into(), false)],
+        other_regions: vec!["Berlin".into()],
+        page: Some("https://dialin.beispiel.invalid/".into()),
+    })));
+    let mut h = harness(ui, BIG);
+    h.run();
+    open_conversation(&mut h, "Projekt Nord");
+    h.get_by_label("Weitere Optionen").click();
+    h.run();
+    h.get_by_label("Besprechungsinfos").click();
+    h.run();
+    assert!(h.query_by_label("Per Telefon teilnehmen").is_some());
+    assert!(h.query_by_label_contains("+49 40 1234").is_some());
+    assert!(h.query_by_label("+49 40 5678").is_some());
+    assert!(h.query_by_label("Konferenz-ID: AB12CD34").is_some());
+    assert!(h.query_by_label("Weitere Einwahlnummern").is_some());
 }

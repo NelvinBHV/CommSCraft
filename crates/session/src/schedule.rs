@@ -21,6 +21,8 @@ pub(crate) enum ScheduleOp {
     GetForChange(Box<MeetingSpec>),
     Change(Box<MeetingSpec>),
     Delete(String),
+    /// getConferencingCapabilities: dial-in numbers and scheduling defaults.
+    Capabilities,
 }
 
 /// What `ScheduleMeeting` and `ChangeMeeting` ask for.
@@ -120,6 +122,16 @@ impl<R: Random> Engine<R> {
         self.send_factory(&factory, body, ScheduleOp::List, now, out);
     }
 
+    /// `ConferencingCapabilities`: getConferencingCapabilities ([MS-CONFPRO] §2.2.2.8).
+    pub(crate) fn conferencing_capabilities(&mut self, now: u64, out: &mut Vec<Output>) {
+        let Some(factory) = self.factory(out) else {
+            return;
+        };
+        let request_id = self.next_c3p();
+        let body = sch::get_conferencing_capabilities(request_id, &self.cfg.aor, &factory);
+        self.send_factory(&factory, body, ScheduleOp::Capabilities, now, out);
+    }
+
     /// `ShowMeeting`: getConference.
     pub(crate) fn show_meeting(&mut self, conference_id: &str, now: u64, out: &mut Vec<Output>) {
         let Some(factory) = self.factory(out) else {
@@ -209,6 +221,20 @@ impl<R: Random> Engine<R> {
         now: u64,
         out: &mut Vec<Output>,
     ) {
+        if matches!(op, ScheduleOp::Capabilities) {
+            match std::str::from_utf8(body)
+                .ok()
+                .and_then(|b| sch::parse_capabilities(b).ok())
+            {
+                Some((r, c)) if r.code == conf::Code::Success => {
+                    out.push(Output::Event(Event::ConferencingCapabilities(Box::new(c))));
+                }
+                _ => out.push(Output::Event(Event::Notice(
+                    "the conferencing service did not report its capabilities".into(),
+                ))),
+            }
+            return;
+        }
         let parsed = std::str::from_utf8(body)
             .ok()
             .and_then(|b| sch::parse_meetings(b).ok());
@@ -252,6 +278,8 @@ impl<R: Random> Engine<R> {
                 out.push(Output::Event(Event::MeetingScheduled(Box::new(meeting))));
             }
             ScheduleOp::List => out.push(Output::Event(Event::Meetings(meetings))),
+            // Handled before the meetings are read.
+            ScheduleOp::Capabilities => {}
             ScheduleOp::Get => {
                 if let Some(m) = meetings.into_iter().next() {
                     out.push(Output::Event(Event::MeetingDetails(Box::new(m))));

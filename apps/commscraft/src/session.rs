@@ -529,6 +529,8 @@ struct Session {
     services: Option<Box<commscraft_provisioning::ServerConfiguration>>,
     /// The offline address book ([MS-ABS]), searched before the web search.
     address_book: Option<Box<commscraft_abs::book::AddressBook>>,
+    /// The conferencing capabilities were asked for in this session.
+    capabilities_asked: bool,
     media_tx: mpsc::Sender<calls::FromMedia>,
     media: BTreeMap<u32, calls::MediaHandle>,
     media_of_call: BTreeMap<u32, u32>,
@@ -1079,6 +1081,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         group_titles: BTreeMap::new(),
         services: None,
         address_book: None,
+        capabilities_asked: false,
         media_tx,
         media: BTreeMap::new(),
         media_of_call: BTreeMap::new(),
@@ -2801,6 +2804,11 @@ impl Session {
                 }
                 self.services = Some(c);
                 self.want_photos();
+                // Dial-in numbers and scheduling defaults, once (getConferencingCapabilities).
+                if !self.capabilities_asked {
+                    self.capabilities_asked = true;
+                    more.extend(self.engine.command(C::ConferencingCapabilities, now()));
+                }
                 if self.signed_in {
                     out.event(AppEvent::Capabilities(online_capabilities(
                         self.engine.has_persistent_chat(),
@@ -3192,6 +3200,39 @@ impl Session {
                     },
                     now(),
                 ));
+            }
+            E::ConferencingCapabilities(c) => {
+                // The dial-in numbers: the region the server suggests, else the first.
+                let dial = c.pstn_enabled.then(|| {
+                    let chosen = c
+                        .default_region
+                        .as_deref()
+                        .and_then(|d| c.regions.iter().find(|r| r.name == d))
+                        .or(c.regions.first());
+                    commscraft_ui::model::DialIn {
+                        region: chosen.map(|r| r.name.clone()).unwrap_or_default(),
+                        numbers: chosen
+                            .map(|r| {
+                                r.numbers
+                                    .iter()
+                                    .map(|n| (n.number.clone(), n.toll_free))
+                                    .collect()
+                            })
+                            .unwrap_or_default(),
+                        other_regions: c
+                            .regions
+                            .iter()
+                            .map(|r| r.name.clone())
+                            .filter(|n| Some(n) != chosen.map(|r| &r.name))
+                            .collect(),
+                        page: c.external_url.clone().or(c.internal_url.clone()),
+                    }
+                });
+                trace_line(&format!(
+                    "conferencing capabilities: dial-in {}",
+                    dial.as_ref().map_or(0, |d| d.numbers.len())
+                ));
+                out.event(AppEvent::DialIn(dial));
             }
             E::MeetingDetails(m) => {
                 trace_line(&format!(

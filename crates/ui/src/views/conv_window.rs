@@ -795,6 +795,10 @@ pub fn meeting_options_dialog(app: &mut CommsUi, ctx: &egui::Context) {
     }
 }
 
+fn theme_muted(ui: &Ui) -> egui::Color32 {
+    ui.visuals().weak_text_color()
+}
+
 /// The meeting's link and organizer, as the Windows client's *Meeting Entry Info*. The organizer
 /// is the address part of the focus URI (inference: the form of all [MS-CONFBAS] examples,
 /// `sip:organizer;gruu;opaque=app:conf:focus:id:…`).
@@ -809,12 +813,24 @@ pub fn entry_info_dialog(app: &mut CommsUi, ctx: &egui::Context) {
     };
     let organizer_uri = focus.split(';').next().unwrap_or("").to_string();
     let organizer = app.state.name_of(&organizer_uri);
-    let link = app
+    let meeting = app
         .state
         .meetings
         .iter()
         .find(|m| m.focus.eq_ignore_ascii_case(&focus))
-        .and_then(|m| m.join_url.clone());
+        .cloned();
+    let link = meeting.as_ref().and_then(|m| m.join_url.clone());
+    // The conference ID for callers by phone: the meeting's, else the focus URI's `id:` part
+    // (the form of the [MS-CONFBAS] examples, inference).
+    let conference_id = meeting
+        .map(|m| m.conference_id)
+        .filter(|id| !id.is_empty())
+        .or_else(|| {
+            focus
+                .rsplit_once("focus:id:")
+                .map(|(_, id)| id.chars().take(32).collect::<String>())
+        });
+    let dial_in = app.state.dial_in.clone();
     let mut open = true;
     egui::Modal::new(egui::Id::unique("entry-info")).show(ctx, |ui| {
         ui.set_width(420.0);
@@ -826,13 +842,52 @@ pub fn entry_info_dialog(app: &mut CommsUi, ctx: &egui::Context) {
         ui.add_space(4.0);
         ui.label(RichText::new(t.organizer).strong());
         ui.label(&organizer);
+        // As the Windows client: how to join by phone.
+        if let Some(d) = &dial_in {
+            ui.add_space(4.0);
+            ui.label(RichText::new(t.dial_in).strong());
+            if !d.region.is_empty() {
+                ui.label(RichText::new(&d.region).color(theme_muted(ui)));
+            }
+            for (number, toll_free) in &d.numbers {
+                if *toll_free {
+                    ui.label(format!("{number}  ({})", t.toll_free));
+                } else {
+                    ui.label(number);
+                }
+            }
+            if let Some(id) = &conference_id {
+                ui.label(format!("{}: {id}", t.conference_id));
+            }
+            if let Some(page) = &d.page {
+                ui.horizontal(|ui| {
+                    ui.label(t.more_dial_in_numbers);
+                    if ui.small_button(t.copy_link).clicked() {
+                        ui.ctx().copy_text(page.clone());
+                    }
+                });
+            }
+        }
         ui.add_space(8.0);
         ui.horizontal(|ui| {
             if ui.button(t.copy_all_info).clicked() {
-                ui.ctx().copy_text(format!(
+                let mut info = format!(
                     "{}: {shown_link}\n{}: {organizer}",
                     t.meeting_link_label, t.organizer
-                ));
+                );
+                if let Some(d) = &dial_in {
+                    info.push_str(&format!("\n{}:", t.dial_in));
+                    for (number, _) in &d.numbers {
+                        info.push_str(&format!("\n  {number}"));
+                    }
+                    if let Some(id) = &conference_id {
+                        info.push_str(&format!("\n{}: {id}", t.conference_id));
+                    }
+                    if let Some(page) = &d.page {
+                        info.push_str(&format!("\n{}: {page}", t.more_dial_in_numbers));
+                    }
+                }
+                ui.ctx().copy_text(info);
             }
             if ui.button(t.close).clicked() {
                 open = false;
