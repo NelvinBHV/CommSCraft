@@ -543,3 +543,52 @@ fn feedback_retransmission() {
     assert_eq!(times[4], 760);
     assert_eq!(&times[5..], &[3760, 6760, 9760, 12_760, 15_760]);
 }
+
+/// RFC 2198 §3 layout, one redundant block ([MS-RTPRADEX] §2.2): header bits checked by
+/// hand – F=1, PT 9, offset 160 = 0b00000010_100000, length 3; then F=0, PT 9.
+#[test]
+fn red_round_trip() {
+    let p = red_payload(9, 160, &[1, 2, 3], &[4, 5]).unwrap();
+    assert_eq!(p, [0x89, 0x02, 0x80, 0x03, 0x09, 1, 2, 3, 4, 5]);
+    let r = Red::decode(&p).unwrap();
+    assert_eq!(r.primary_type, 9);
+    assert_eq!(r.primary, &[4, 5]);
+    assert_eq!(
+        r.redundant,
+        [RedundantBlock {
+            payload_type: 9,
+            timestamp_offset: 160,
+            data: &[1, 2, 3]
+        }]
+    );
+    // Largest offset and length of the header fields.
+    let big = vec![7u8; MAX_RED_BLOCK];
+    let p = red_payload(0, MAX_RED_OFFSET, &big, &[]).unwrap();
+    let r = Red::decode(&p).unwrap();
+    assert_eq!(r.redundant[0].timestamp_offset as u32, MAX_RED_OFFSET);
+    assert_eq!(r.redundant[0].data.len(), MAX_RED_BLOCK);
+    assert!(r.primary.is_empty());
+    assert!(red_payload(9, MAX_RED_OFFSET + 1, &[1], &[]).is_none());
+    assert!(red_payload(9, 0, &[1], &[]).is_none());
+    // Only the primary header.
+    let r = Red::decode(&[0x00, 9, 9]).unwrap();
+    assert!(r.redundant.is_empty() && r.primary == [9, 9]);
+}
+
+#[test]
+fn red_refuses_hostile_payloads() {
+    // Two redundant blocks (MS-RTPRADEX: at most one).
+    assert!(Red::decode(&[0x89, 0, 0x80, 0, 0x89, 0, 0x80, 0, 9]).is_err());
+    // Block longer than the payload, truncated header, no primary header, empty.
+    assert!(Red::decode(&[0x89, 0x02, 0x80, 0x09, 0x09, 1]).is_err());
+    assert!(Red::decode(&[0x89, 0x02]).is_err());
+    assert!(Red::decode(&[0x89, 0x02, 0x80, 0x00]).is_err());
+    assert!(Red::decode(&[]).is_err());
+    // Every byte string is either read or refused, never a panic.
+    for a in 0..=255u8 {
+        for b in [0u8, 1, 0x80, 0xff] {
+            let _ = Red::decode(&[a, b, a, b, a]);
+            let _ = Red::decode(&[a, b]);
+        }
+    }
+}

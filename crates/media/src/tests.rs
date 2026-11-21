@@ -6,10 +6,15 @@ fn key(b: u8) -> sdp::Key {
 
 /// The two halves of a call: A sends with key 1, B with key 2.
 fn pair(codec: sdp::Codec, pt: u8) -> (Audio, Audio) {
+    pair_red(codec, pt, None)
+}
+
+fn pair_red(codec: sdp::Codec, pt: u8, red: Option<u8>) -> (Audio, Audio) {
     let n = |remote: u8| sdp::Negotiated {
         codec,
         payload_type: pt,
         dtmf_payload_type: Some(101),
+        red_payload_type: red,
         remote_rtp: ("192.0.2.1".parse().unwrap(), 5000),
         remote_rtcp: ("192.0.2.1".parse().unwrap(), 5001),
         remote_key: Some(key(remote)),
@@ -167,6 +172,7 @@ fn plain_pair() -> (Audio, Audio) {
         codec: sdp::Codec::Pcmu,
         payload_type: 0,
         dtmf_payload_type: None,
+        red_payload_type: None,
         remote_rtp: ("192.0.2.1".parse().unwrap(), 5000),
         remote_rtcp: ("192.0.2.1".parse().unwrap(), 5001),
         remote_key: None,
@@ -400,6 +406,7 @@ fn receives_ssrtp_from_an_mcu() {
         codec: sdp::Codec::Pcmu,
         payload_type: 0,
         dtmf_payload_type: None,
+        red_payload_type: None,
         remote_rtp: ("192.0.2.1".parse().unwrap(), 5000),
         remote_rtcp: ("192.0.2.1".parse().unwrap(), 5001),
         remote_key: Some(mcu.clone()),
@@ -489,5 +496,72 @@ fn playout_resumes_after_a_pause() {
     assert!(
         (0..5).map(|_| energy(&b.playout())).any(|e| e > 1e6),
         "audio again"
+    );
+}
+
+/// Redundant audio ([MS-RTPRADEX], PL-20): off until the peer reports loss; then each packet
+/// carries the previous frame, and a lost packet is played from the next one's redundant block
+/// instead of being concealed. Off again after clean reports.
+#[test]
+fn redundant_audio_recovers_a_lost_packet() {
+    let (mut a, mut b) = pair_red(sdp::Codec::G722, 9, Some(97));
+    let first = a.on_capture(&tone(320, 16000.0, 0)).unwrap();
+    assert_eq!(first.len(), 12 + 160 + 1 + 10, "no redundancy without loss");
+    a.on_loss_report(RED_ON_LOSS);
+    assert!(a.sending_redundancy());
+    let mut packets = vec![first];
+    for f in 1..20 {
+        packets.push(a.on_capture(&tone(320, 16000.0, f * 320)).unwrap());
+    }
+    assert_eq!(
+        packets[2].len(),
+        12 + 5 + 160 + 160 + 1 + 10,
+        "RED headers + two frames"
+    );
+    assert_eq!(a.stats.sent_redundant, 19);
+    packets.remove(10);
+    for (i, p) in packets.iter().enumerate() {
+        assert_eq!(b.on_rtp(p, i as u32 * 160), None);
+    }
+    let played: Vec<Vec<i16>> = (0..20).map(|_| b.playout()).collect();
+    assert_eq!(
+        b.stats.concealed, 0,
+        "the lost frame came from the redundancy"
+    );
+    assert_eq!(b.stats.recovered, 1);
+    assert!(energy(&played[10]) > 1e6);
+    for _ in 0..RED_OFF_REPORTS {
+        a.on_loss_report(0);
+    }
+    assert!(!a.sending_redundancy());
+    assert_eq!(
+        a.on_capture(&tone(320, 16000.0, 0)).unwrap().len(),
+        12 + 160 + 1 + 10
+    );
+}
+
+/// Without a negotiated RED type, or with a RED payload in another codec, nothing is taken.
+#[test]
+fn redundant_audio_only_when_negotiated() {
+    let (mut a, _) = pair_red(sdp::Codec::G722, 9, None);
+    a.on_loss_report(255);
+    assert!(!a.sending_redundancy());
+    // A RED packet whose primary is PCMU while G.722 was negotiated is dropped.
+    let (mut c, mut d) = pair_red(sdp::Codec::G722, 9, Some(97));
+    let body = rtp::red_payload(0, 160, &[0; 160], &[0; 160]).unwrap();
+    let p = c.sender.packet(97, false, &body, 160).unwrap();
+    let p = c.protect(p).unwrap();
+    let _ = d.on_rtp(&p, 0);
+    assert_eq!((d.stats.dropped, d.stats.received), (1, 1));
+    // A redundant block in another codec is ignored, the primary taken.
+    let body = rtp::red_payload(9, 160, &[0; 160], &[0; 160]).unwrap();
+    let mut body = body;
+    body[0] = 0x80; // redundant block type 0 (PCMU)
+    let p = c.sender.packet(97, false, &body, 160).unwrap();
+    let p = c.protect(p).unwrap();
+    let _ = d.on_rtp(&p, 160);
+    assert_eq!(
+        (d.stats.dropped, d.stats.recovered, d.buffer.len()),
+        (1, 0, 1)
     );
 }

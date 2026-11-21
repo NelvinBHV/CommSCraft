@@ -1055,5 +1055,102 @@ pub fn dtmf_packets(event: u8, total: u16, step: u16, volume: u8) -> Vec<(bool, 
 
 pub mod feedback;
 
+// ----- redundant audio (RFC 2198 §3 within [MS-RTPRADEX], PL-20) --------------------------------
+
+/// A redundant audio block: payload type, timestamp offset to the packet's timestamp and the
+/// encoded frame.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RedundantBlock<'a> {
+    pub payload_type: u8,
+    pub timestamp_offset: u16,
+    pub data: &'a [u8],
+}
+
+/// A RED payload: at most [`MAX_RED_BLOCKS`] redundant blocks (oldest first) and the primary.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Red<'a> {
+    pub redundant: Vec<RedundantBlock<'a>>,
+    pub primary_type: u8,
+    pub primary: &'a [u8],
+}
+
+/// [MS-RTPRADEX] 20250520 §2.2 (p. 8): one redundant block per packet; more are refused.
+pub const MAX_RED_BLOCKS: usize = 1;
+/// The 14-bit timestamp offset and 10-bit block length of RFC 2198 §3.
+pub const MAX_RED_OFFSET: u32 = (1 << 14) - 1;
+pub const MAX_RED_BLOCK: usize = (1 << 10) - 1;
+
+impl<'a> Red<'a> {
+    /// Reads a RED payload (RFC 2198 §3): 4-byte headers with F=1 (payload type, timestamp
+    /// offset, block length), a 1-byte header with F=0 for the primary, then the blocks in the
+    /// same order. Block lengths must fit the payload; more than one redundant block is refused
+    /// ([MS-RTPRADEX] §2.2, MUST NOT).
+    pub fn decode(payload: &'a [u8]) -> Result<Self, Error> {
+        let mut pos = 0;
+        let mut heads = Vec::new();
+        loop {
+            let b0 = *payload.get(pos).ok_or(Error::Malformed)?;
+            if b0 & 0x80 == 0 {
+                pos += 1;
+                break;
+            }
+            if heads.len() == MAX_RED_BLOCKS {
+                return Err(Error::Malformed);
+            }
+            let Some(&[_, b1, b2, b3]) = payload.get(pos..pos + 4) else {
+                return Err(Error::Malformed);
+            };
+            let offset = (u16::from(b1) << 6) | u16::from(b2 >> 2);
+            let len = (usize::from(b2 & 0x03) << 8) | usize::from(b3);
+            heads.push((b0 & 0x7f, offset, len));
+            pos += 4;
+        }
+        let primary_type = payload.get(pos - 1).ok_or(Error::Malformed)? & 0x7f;
+        let mut redundant = Vec::with_capacity(heads.len());
+        for (pt, offset, len) in heads {
+            let data = payload.get(pos..pos + len).ok_or(Error::Malformed)?;
+            redundant.push(RedundantBlock {
+                payload_type: pt,
+                timestamp_offset: offset,
+                data,
+            });
+            pos += len;
+        }
+        Ok(Red {
+            redundant,
+            primary_type,
+            primary: payload.get(pos..).ok_or(Error::Malformed)?,
+        })
+    }
+}
+
+/// Builds a RED payload with one redundant block (`offset` timestamp units older) and the
+/// primary; both in the same codec ([MS-RTPRADEX] §3.2, MUST). `None` if the offset or the
+/// block do not fit the header fields.
+pub fn red_payload(
+    payload_type: u8,
+    offset: u32,
+    redundant: &[u8],
+    primary: &[u8],
+) -> Option<Vec<u8>> {
+    if payload_type > 0x7f
+        || offset == 0
+        || offset > MAX_RED_OFFSET
+        || redundant.len() > MAX_RED_BLOCK
+    {
+        return None;
+    }
+    let len = redundant.len();
+    let mut out = Vec::with_capacity(5 + len + primary.len());
+    out.push(0x80 | payload_type);
+    out.push((offset >> 6) as u8);
+    out.push((((offset & 0x3f) as u8) << 2) | ((len >> 8) as u8 & 0x03));
+    out.push((len & 0xff) as u8);
+    out.push(payload_type);
+    out.extend_from_slice(redundant);
+    out.extend_from_slice(primary);
+    Some(out)
+}
+
 #[cfg(test)]
 mod tests;

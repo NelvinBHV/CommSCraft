@@ -26,6 +26,9 @@ const MAX_CANDIDATES: usize = 64;
 pub const SUITE: &str = "AES_CM_128_HMAC_SHA1_80";
 /// RTP payload type for telephone events in all examples (SD-25).
 pub const DTMF_PT: u8 = 101;
+/// Our dynamic payload type for redundant audio (`RED/8000`, SD-23; the number of the
+/// [MS-SDPEXT] examples).
+pub const RED_PT: u8 = 97;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
@@ -214,6 +217,17 @@ fn dtmf_pt(m: &Media) -> Option<u8> {
         let (p, name) = v.split_once(' ')?;
         let pt: u8 = p.trim().parse().ok()?;
         (name.trim().eq_ignore_ascii_case("telephone-event/8000") && m.formats.contains(&pt))
+            .then_some(pt)
+    })
+}
+
+/// The redundant audio payload type ([MS-RTPRADEX] 20250520 §3.1, p. 9; SD-23: the encoding
+/// name "RED" is case-sensitive, clock 8000).
+fn red_pt(m: &Media) -> Option<u8> {
+    m.attrs("rtpmap").find_map(|v| {
+        let (p, name) = v.split_once(' ')?;
+        let pt: u8 = p.trim().parse().ok()?;
+        (matches!(name.trim(), "RED/8000" | "RED/8000/1") && m.formats.contains(&pt) && pt >= 96)
             .then_some(pt)
     })
 }
@@ -564,15 +578,30 @@ fn transport_attributes(local: &Local, s: &mut String) {
     }
 }
 
-fn write(local: &Local, proto: &str, codecs: &[(Codec, u8)], dtmf: Option<u8>) -> String {
+fn write(
+    local: &Local,
+    proto: &str,
+    codecs: &[(Codec, u8)],
+    red: Option<u8>,
+    dtmf: Option<u8>,
+) -> String {
     let mut s = header(local);
-    s.push_str(&audio_section(local, proto, codecs, dtmf));
+    s.push_str(&audio_section(local, proto, codecs, red, dtmf));
     s
 }
 
 /// The `m=audio` section.
-fn audio_section(local: &Local, proto: &str, codecs: &[(Codec, u8)], dtmf: Option<u8>) -> String {
+fn audio_section(
+    local: &Local,
+    proto: &str,
+    codecs: &[(Codec, u8)],
+    red: Option<u8>,
+    dtmf: Option<u8>,
+) -> String {
     let mut fmts: Vec<String> = codecs.iter().map(|(_, pt)| pt.to_string()).collect();
+    if let Some(r) = red {
+        fmts.push(r.to_string());
+    }
     if let Some(d) = dtmf {
         fmts.push(d.to_string());
     }
@@ -598,6 +627,10 @@ fn audio_section(local: &Local, proto: &str, codecs: &[(Codec, u8)], dtmf: Optio
     for (c, pt) in codecs {
         s.push_str(&format!("a=rtpmap:{pt} {}\r\n", c.rtpmap()));
     }
+    if let Some(r) = red {
+        // SD-23: no fmtp in the offer.
+        s.push_str(&format!("a=rtpmap:{r} RED/8000\r\n"));
+    }
     if let Some(d) = dtmf {
         s.push_str(&format!(
             "a=rtpmap:{d} telephone-event/8000\r\na=fmtp:{d} 0-16\r\n"
@@ -618,7 +651,7 @@ pub fn offer(local: &Local, policy: Encryption) -> String {
         l.key = None;
     }
     let codecs: Vec<(Codec, u8)> = OUR_CODECS.iter().map(|c| (*c, c.payload_type())).collect();
-    let s = write(&l, proto, &codecs, Some(DTMF_PT));
+    let s = write(&l, proto, &codecs, Some(RED_PT), Some(DTMF_PT));
     // SD-07: music on hold needs a=sendonly and a=feature:MoH, only on the audio line (this
     // description has only that one).
     if l.music_on_hold && l.direction == Direction::SendOnly {
@@ -634,6 +667,9 @@ pub struct Negotiated {
     pub codec: Codec,
     pub payload_type: u8,
     pub dtmf_payload_type: Option<u8>,
+    /// Redundant audio ([MS-RTPRADEX]): the symmetric dynamic payload type, if both sides
+    /// listed it.
+    pub red_payload_type: Option<u8>,
     /// Where to send RTP and RTCP (the default candidate; ICE may replace it).
     pub remote_rtp: (IpAddr, u16),
     pub remote_rtcp: (IpAddr, u16),
@@ -756,6 +792,8 @@ pub fn answer_to_offer(
         codec,
         payload_type: pt,
         dtmf_payload_type: dtmf_pt(m),
+        // Symmetric (§3.1): only the number we offered.
+        red_payload_type: red_pt(m).filter(|&r| r == RED_PT),
         remote_rtp: rtp,
         remote_rtcp: rtcp,
         remote_key,
@@ -818,6 +856,8 @@ fn answer_audio(
         .collect();
     let (codec, pt) = *codecs.first().ok_or(Error::NoAudio)?;
     let dtmf = dtmf_pt(m);
+    // Answered with the offer's number: the binding is symmetric ([MS-RTPRADEX] §3.1).
+    let red = red_pt(m);
     let (rtp, rtcp) = endpoints(&s, m)?;
     let mut l = local.clone();
     l.key = ours;
@@ -831,13 +871,14 @@ fn answer_audio(
         Direction::Inactive => Direction::Inactive,
         Direction::SendRecv => local.direction,
     };
-    let sdp = write(&l, proto, &codecs, dtmf);
+    let sdp = write(&l, proto, &codecs, red, dtmf);
     Ok((
         sdp,
         Negotiated {
             codec,
             payload_type: pt,
             dtmf_payload_type: dtmf,
+            red_payload_type: red,
             remote_rtp: rtp,
             remote_rtcp: rtcp,
             remote_key,
