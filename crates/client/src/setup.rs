@@ -55,8 +55,10 @@ pub fn load_or_create_epid(rng: &mut OsRandom) -> Result<String, String> {
     Ok(epid)
 }
 
-/// Server domains the user trusts for this SIP domain (like `TrustModelData` of the Windows client,
-/// Microsoft KB 2531068): given ones and those in `~/.config/commscraft/trusted-domains`.
+/// Server domains the user trusts for one SIP account (like `TrustModelData` of the Windows
+/// client, Microsoft KB 2531068): given ones and those remembered for this account in
+/// `~/.config/commscraft/trusted-domains.d/ACCOUNT` (issue #208: a yes given for one account
+/// never applies to another; the earlier user-wide `trusted-domains` file is not read).
 #[derive(Clone)]
 pub struct Trust {
     domains: Vec<String>,
@@ -64,8 +66,13 @@ pub struct Trust {
 }
 
 impl Trust {
-    pub fn load(extra: &[String]) -> Self {
-        let file = config_dir().map(|d| d.join("trusted-domains"));
+    /// The trust of `account` (a SIP address, with or without `sip:`).
+    pub fn load(account: &str, extra: &[String]) -> Self {
+        Self::load_in(config_dir().as_deref(), account, extra)
+    }
+
+    fn load_in(config: Option<&std::path::Path>, account: &str, extra: &[String]) -> Self {
+        let file = Self::file_of(config, account);
         let mut domains: Vec<String> = file
             .as_ref()
             .and_then(|f| std::fs::read_to_string(f).ok())
@@ -73,6 +80,19 @@ impl Trust {
             .unwrap_or_default();
         domains.extend(extra.iter().filter_map(|d| commscraft_url::dns_host(d)));
         Self { domains, file }
+    }
+
+    /// The account's file: its address in lower case, encoded one-to-one as a file name.
+    fn file_of(config: Option<&std::path::Path>, account: &str) -> Option<PathBuf> {
+        let account = account
+            .trim()
+            .trim_start_matches("sip:")
+            .to_ascii_lowercase();
+        if !account.contains('@') {
+            return None;
+        }
+        let name = crate::photos::cache_name(&account)?;
+        Some(config?.join("trusted-domains.d").join(name))
     }
 
     pub fn trusts(&self, host: &str) -> bool {
@@ -300,6 +320,43 @@ pub fn meeting_focus(
     }
     let body = String::from_utf8(r.body).map_err(|_| "answer is not UTF-8")?;
     commscraft_conf::parse_meeting(&body).map_err(|e| format!("{e:?}"))
+}
+
+#[cfg(test)]
+mod trust_tests {
+    use super::Trust;
+
+    /// Issue #208: a domain trusted while signed in as one account is not trusted for another.
+    #[test]
+    fn trust_is_kept_per_account() {
+        let dir = std::env::temp_dir().join(format!("commscraft-trust-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let mut a = Trust::load_in(Some(&dir), "sip:Alice@contoso.test", &[]);
+        assert!(!a.trusts("sip.hoster.example"));
+        assert!(a.remember("hoster.example").is_some());
+        assert!(a.trusts("sip.hoster.example"));
+        // The same account later (other spelling): still trusted.
+        let again = Trust::load_in(Some(&dir), "alice@contoso.test", &[]);
+        assert!(again.trusts("sip.hoster.example"));
+        // Another account of the same Unix user: not trusted.
+        let b = Trust::load_in(Some(&dir), "sip:bob@fabrikam.test", &[]);
+        assert!(!b.trusts("sip.hoster.example"));
+        // Given on the command line: trusted for this run only.
+        let c = Trust::load_in(
+            Some(&dir),
+            "sip:bob@fabrikam.test",
+            &["hoster.example".into()],
+        );
+        assert!(c.trusts("sip.hoster.example"));
+        // The earlier user-wide file is not read.
+        std::fs::write(dir.join("trusted-domains"), "evil.example\n").unwrap();
+        assert!(!Trust::load_in(Some(&dir), "sip:bob@fabrikam.test", &[]).trusts("evil.example"));
+        // No account address: nothing is remembered.
+        assert!(Trust::load_in(Some(&dir), "nobody", &[])
+            .remember("x.example")
+            .is_none());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
 
 #[cfg(test)]

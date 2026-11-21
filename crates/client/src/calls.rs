@@ -447,11 +447,37 @@ fn spawn_playback(
     });
 }
 
+/// Plaintext media only after the user's explicit yes (`--allow-unencrypted-media`, issue
+/// #212); a server cannot switch encryption off on its own.
+static ALLOW_PLAINTEXT: AtomicBool = AtomicBool::new(false);
+
+/// The user allows unencrypted RTP when the server provisions `DoNotSupport`.
+pub fn allow_unencrypted_media(on: bool) {
+    ALLOW_PLAINTEXT.store(on, Ordering::Relaxed);
+}
+
 /// The encryption policy from provisioning (SD-14): Require ⇒ required, Support ⇒ optional
-/// without plaintext fallback (design), DoNotSupport ⇒ plaintext; unknown ⇒ required.
+/// without plaintext fallback (design), DoNotSupport ⇒ plaintext only if the user allowed it
+/// ([`allow_unencrypted_media`]), else required – fail closed (issue #212); unknown ⇒ required.
 pub fn policy(av: Option<commscraft_provisioning::AvEncryption>) -> sdp::Encryption {
+    policy_with(av, ALLOW_PLAINTEXT.load(Ordering::Relaxed))
+}
+
+/// The server asks for unencrypted media but the user did not allow it: calls stay encrypted
+/// (and may fail); worth a notice.
+pub fn plaintext_refused(av: Option<commscraft_provisioning::AvEncryption>) -> bool {
+    av == Some(commscraft_provisioning::AvEncryption::DoNotSupport)
+        && !ALLOW_PLAINTEXT.load(Ordering::Relaxed)
+}
+
+fn policy_with(
+    av: Option<commscraft_provisioning::AvEncryption>,
+    allow_plaintext: bool,
+) -> sdp::Encryption {
     match av {
-        Some(commscraft_provisioning::AvEncryption::DoNotSupport) => sdp::Encryption::Off,
+        Some(commscraft_provisioning::AvEncryption::DoNotSupport) if allow_plaintext => {
+            sdp::Encryption::Off
+        }
         Some(commscraft_provisioning::AvEncryption::Support) => sdp::Encryption::Optional {
             allow_plaintext: false,
         },
@@ -565,6 +591,31 @@ mod tests {
             commscraft_turn_bwm::Federation::Enterprise
         );
         assert_eq!(c.call_id, "id1");
+    }
+
+    /// Issue #212: a provisioned DoNotSupport no longer switches encryption off by itself.
+    #[test]
+    fn plaintext_media_needs_the_users_yes() {
+        use commscraft_provisioning::AvEncryption as A;
+        assert_eq!(
+            policy_with(Some(A::DoNotSupport), false),
+            sdp::Encryption::Required
+        );
+        assert_eq!(
+            policy_with(Some(A::DoNotSupport), true),
+            sdp::Encryption::Off
+        );
+        assert_eq!(
+            policy_with(Some(A::Require), true),
+            sdp::Encryption::Required
+        );
+        assert_eq!(policy_with(None, true), sdp::Encryption::Required);
+        assert_eq!(
+            policy_with(Some(A::Support), false),
+            sdp::Encryption::Optional {
+                allow_plaintext: false
+            }
+        );
     }
 
     #[test]
