@@ -3,7 +3,7 @@
 //! [`AppEvent`]s; nothing in the egui frame waits for the network.
 //!
 //! Security by design: TLS is always verified (system trust store); discovery uses only targets
-//! in the user's SIP domain, domains the user trusts in `~/.config/commscraft/trusted-domains`,
+//! in the user's SIP domain, domains the user trusts for this account in `~/.config/commscraft/trusted-domains.d/`,
 //! or an Autodiscover target the user trusts in the dialog (remembered there);
 //! the password goes into the registrar's wiped container at once; both queues are bounded.
 //! Calls go only to SIP addresses chosen in the interface, never to phone numbers, so the
@@ -921,7 +921,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
     let mut rng = OsRandom::new().map_err(|e| fail(e.to_string()))?;
     let epid = setup::load_or_create_epid(&mut rng).map_err(fail)?;
     let tls = TlsClient::new(ca).map_err(|e| fail(e.to_string()))?;
-    let mut trust = setup::Trust::load(&[]);
+    let mut trust = setup::Trust::load(&aor, &[]);
     let targets = if form.server.trim().is_empty() {
         let mut log = |line: &str| {
             if verbose() {

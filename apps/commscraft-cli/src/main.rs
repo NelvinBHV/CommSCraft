@@ -85,7 +85,8 @@ im        signs in, opens a 1:1 conversation with --to, sends --text, shows answ
 --discover-only  run only the discovery and print the result; no password, no sign-in.
 --trust-domain   trust SIP servers in DOMAIN although it differs from your SIP domain (like
               TrustModelData of the Windows client); only for servers named by Autodiscover.
-              A yes on the interactive question is remembered in ~/.config/commscraft/trusted-domains.
+              A yes on the interactive question is remembered for this account only, in
+              ~/.config/commscraft/trusted-domains.d/ACCOUNT.
 --address-book-delay MINUTES  interactive: the offline address book is fetched after sign-in at a
               random time within MINUTES (default 60, 0 = at once; like GalDownloadInitialDelay of
               the Windows client), then once a day, unless the server's policy allows the web
@@ -798,7 +799,7 @@ fn run(a: Args) -> Result<(), String> {
         None => None,
     };
     let tls = TlsClient::new(ca.as_deref()).map_err(|e| e.to_string())?;
-    let mut trust = Trust::load(&a.trust_domains);
+    let mut trust = Trust::load(&a.aor, &a.trust_domains);
     let targets: Vec<(String, u16)> = match &a.server {
         Some(s) => vec![s.clone()],
         None => discover(&tls, &a.aor, &user_domain, a.verbose, &mut trust)?,

@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-18 · **Change:** minor (copy a contact to another group)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-21 · **Change:** minor (trusted domains per account)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -40,7 +40,7 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   domain; `tested-in-lab`); Autodiscover and DNS SRV like the
   command-line tool (shared crate `commscraft-client`), NTLM with the password typed in the form, TLS always verified against the
   system trust store plus an optional `--ca-file`. A server outside the SIP domain is used only
-  when its domain is listed in `~/.config/commscraft/trusted-domains` or – for a server named by
+  when its domain is trusted for this account (`~/.config/commscraft/trusted-domains.d/ACCOUNT`) or – for a server named by
   Autodiscover over verified HTTPS – when the user trusts it in a dialog (an explicit yes; it is
   then remembered there; no answer within two minutes or closing the dialog means no). Kerberos can be tried first (a checkbox: the
   system's ticket, else the password; NTLM stays the fallback, and the reason is shown); TLS-DSK
