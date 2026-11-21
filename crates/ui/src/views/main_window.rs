@@ -10,13 +10,14 @@ use crate::widgets;
 use egui::{Align, CornerRadius, Frame, Layout, Margin, RichText, Sense, Stroke, Ui, Vec2};
 
 /// The presences a user can choose (the session publishes them).
-pub const CHOOSABLE: [Presence; 6] = [
+pub const CHOOSABLE: [Presence; 7] = [
     Presence::Available,
     Presence::Busy,
     Presence::DoNotDisturb,
     Presence::BeRightBack,
     Presence::OffWork,
     Presence::Away,
+    Presence::Offline,
 ];
 
 pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
@@ -172,10 +173,10 @@ pub fn status_menu(app: &mut CommsUi, ui: &mut Ui) {
                 usable,
                 egui::Button::selectable(
                     selected,
-                    if p == Presence::Away {
-                        t.appear_away
-                    } else {
-                        t.presence(p)
+                    match p {
+                        Presence::Away => t.appear_away,
+                        Presence::Offline => t.appear_offline,
+                        _ => t.presence(p),
                     },
                 ),
             )
@@ -590,18 +591,16 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     app.contacts_view = view;
     ui.add_space(4.0);
     let mut all: Vec<Contact> = app.state.contacts.values().cloned().collect();
+    // Alphabetically as in an address book (issue #224): case and accents do not decide.
+    let by_name = |a: &Contact, b: &Contact| {
+        crate::format::sort_key(a.display_name())
+            .cmp(&crate::format::sort_key(b.display_name()))
+            .then_with(|| a.uri.cmp(&b.uri))
+    };
     if app.prefs.sort_by_availability {
-        all.sort_by(|a, b| {
-            a.presence
-                .cmp(&b.presence)
-                .then(a.display_name().cmp(b.display_name()))
-        });
+        all.sort_by(|a, b| a.presence.cmp(&b.presence).then_with(|| by_name(a, b)));
     } else {
-        all.sort_by(|a, b| {
-            a.display_name()
-                .to_lowercase()
-                .cmp(&b.display_name().to_lowercase())
-        });
+        all.sort_by(by_name);
     }
     let groups: Vec<(String, Vec<Contact>)> = match app.contacts_view {
         ContactsView::Groups => {
@@ -647,7 +646,15 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     by_group.entry(g).or_default().push(c.clone());
                 }
             }
-            out.extend(by_group);
+            // Groups alphabetically too, "other contacts" last.
+            let other = t.other_contacts.to_string();
+            let mut named: Vec<(String, Vec<Contact>)> = by_group.into_iter().collect();
+            named.sort_by(|(a, _), (b, _)| {
+                (a == &other)
+                    .cmp(&(b == &other))
+                    .then_with(|| crate::format::sort_key(a).cmp(&crate::format::sort_key(b)))
+            });
+            out.extend(named);
             if app.prefs.away_group {
                 out.push((t.status_away_offline.to_string(), absent));
             }
@@ -883,15 +890,25 @@ fn dist_groups(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                                 .color(pal.muted),
                         );
                     }
-                    for c in m {
-                        // A member known in the contact list shows its presence there.
-                        let c = app
-                            .state
-                            .contacts
-                            .get(&c.uri)
-                            .cloned()
-                            .unwrap_or_else(|| c.clone());
-                        contact_row(app, ui, pal, &c);
+                    // Alphabetically like the contacts (issue #224).
+                    let mut sorted: Vec<Contact> = m
+                        .iter()
+                        .map(|c| {
+                            // A member known in the contact list shows its presence there.
+                            app.state
+                                .contacts
+                                .values()
+                                .find(|k| k.uri.eq_ignore_ascii_case(&c.uri))
+                                .cloned()
+                                .unwrap_or_else(|| c.clone())
+                        })
+                        .collect();
+                    sorted.sort_by(|a, b| {
+                        crate::format::sort_key(a.display_name())
+                            .cmp(&crate::format::sort_key(b.display_name()))
+                    });
+                    for c in &sorted {
+                        contact_row(app, ui, pal, c);
                     }
                     if g.partial {
                         ui.label(

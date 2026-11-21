@@ -970,6 +970,13 @@ fn another_group_extension_is_a_special_group() {
 fn be_right_back_off_work_and_the_note_bodies() {
     assert_eq!(UserStatus::BeRightBack.availability(), 12500);
     assert_eq!(UserStatus::parse("off-work"), Some(UserStatus::OffWork));
+    // Issue #225: appear offline is a manual state in the offline class.
+    assert_eq!(
+        UserStatus::parse("offline"),
+        Some(UserStatus::AppearOffline)
+    );
+    assert_eq!(UserStatus::AppearOffline.availability(), 18000);
+    assert_eq!(UserStatus::AppearOffline.activity(), None);
     let b =
         publish_state_body("sip:bob@contoso.com", UserStatus::BeRightBack, [0, 0], None).unwrap();
     assert!(b.contains("<availability>12500</availability></state>"));

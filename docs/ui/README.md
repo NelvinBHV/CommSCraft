@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-21 · **Change:** minor (contact photos over UCWA)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-21 · **Change:** minor (appear offline, sorting, group member presence)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -96,6 +96,15 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   microphone for calls separately, as the Windows client does – each the system's default
   (PipeWire) or a device ALSA lists (`/proc/asound/pcm`, playback or capture). A chosen
   microphone is opened also where PipeWire has no usable default source (`tested-in-lab`).
+- **Appear offline:** the status menu offers *Appear offline*, a manual state in the offline class
+  (18000) that the server's aggregation takes over ([MS-PRES] §3.8.5.1.2.2), so the others see
+  the user offline while signed in. `tested-in-lab`.
+- **Sorting:** contacts, the members of distribution groups and the groups are sorted
+  alphabetically regardless of letter case and accents (umlauts with their base letter); "other
+  contacts" last. `tested-offline`.
+- **Presence of distribution group members:** the members get presence also when the directory
+  spells their address in other letter case; an opened group adds a presence subscription of its
+  own instead of renewing all of them. `tested-offline`.
 - **Contact photos over UCWA:** when the directory and Exchange give no photo, the desktop client
   asks the Skype for Business server (UCWA), which fetches the photo itself – the contact list's
   photo links, a distribution group's members' links when the group is opened, a search for anyone

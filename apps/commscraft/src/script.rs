@@ -332,6 +332,7 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 "away" => Presence::Away,
                 "brb" => Presence::BeRightBack,
                 "offwork" => Presence::OffWork,
+                "offline" => Presence::Offline,
                 "reset" => return app.handle(UiIntent::ResetStatus),
                 _ => Presence::Available,
             };
