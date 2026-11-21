@@ -75,3 +75,6 @@ The video stream of a call, sans-I/O: access units through `h264uc` into SRTP pa
   - **Receiving:** The receiver follows the peer's stream to another SSRC of its range once the current SSRC has been silent for 200 ms (**design**). The switch resets the per-stream reception state and sends a PLI at once.
   - **PLI bits:** The PLI sets the bit of the priority ID that arrives. While that priority ID is unknown (after a switch), it sets the bits of every stream in the sender's layout.
 - **Status:** `tested-offline`, `tested-in-lab`.
+
+## Peer info for audio (2026-11-21)
+RT-29: the audio stream now sends peer info (type 12) in every report until the peer's positive bandwidth estimate for our stream arrives, as the video stream did; the inbound and outbound link bandwidths are our capacity for the stream (inference: the client knows no link speed). Test: `media::tests::rtcp_profile`.

@@ -28,6 +28,11 @@ jobs:
           persist-credentials: false
       - name: Offline Cargo sources with checksums from Cargo.lock
         run: python3 -I scripts/generate_flatpak_cargo_sources.py Cargo.lock packaging/flatpak/cargo-sources.json
+      # The image's runtimes cannot be updated in place inside the container ("Invalid
+      # cross-device link" since a new SDK 25.08 build, 2026-11-21): remove them, so the builder
+      # installs the current ones fresh.
+      - name: Fresh runtimes
+        run: flatpak uninstall --all --noninteractive -y || true
       - uses: flatpak/flatpak-github-actions/flatpak-builder@79327416609af08178ad73b352877e51450790b3 # v6.8
         with:
           bundle: CommSCraft.flatpak

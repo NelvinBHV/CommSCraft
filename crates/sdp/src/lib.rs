@@ -742,6 +742,13 @@ fn keys_of(m: &Media) -> Vec<Key> {
         .collect()
 }
 
+/// SRTP media: RTP/SAVP, or TCP/RTP/SAVP once ICE selected a TCP pair – [MS-SDPEXT] §3.1.5.9
+/// (p. 26) allows a connection-oriented transport only in a later offer/answer; the Windows
+/// client answers the final offer of a TCP pair with it (`tested-in-lab`).
+fn is_savp(proto: &str) -> bool {
+    proto.eq_ignore_ascii_case("RTP/SAVP") || proto.eq_ignore_ascii_case("TCP/RTP/SAVP")
+}
+
 /// Evaluates the peer's answer to our offer.
 pub fn answer_to_offer(
     answer: &[u8],
@@ -750,7 +757,7 @@ pub fn answer_to_offer(
 ) -> Result<Negotiated, Error> {
     let s = parse(answer)?;
     let m = audio(&s)?;
-    let secure = m.proto.eq_ignore_ascii_case("RTP/SAVP");
+    let secure = is_savp(&m.proto);
     let mut ssrtp = false;
     let remote_key = if secure {
         let ours = our_key.ok_or(Error::Crypto("SAVP answer without our offer of a key"))?;
@@ -826,7 +833,9 @@ fn answer_audio(
 ) -> Result<(String, Negotiated), Error> {
     let s = parse(offer)?;
     let m = audio(&s)?;
-    let required = m.proto.eq_ignore_ascii_case("RTP/SAVP");
+    let required = is_savp(&m.proto);
+    // A re-INVITE over a TCP pair carries TCP/RTP/SAVP (§3.1.5.9); the answer keeps it.
+    let tcp = m.proto.to_ascii_uppercase().starts_with("TCP/");
     let offered = keys_of(m).into_iter().next();
     let (proto, ours, remote_key) = match (offered, policy) {
         (Some(k), Encryption::Required | Encryption::Optional { .. }) => {
@@ -835,7 +844,11 @@ fn answer_audio(
             if mine.key == k.key {
                 return Err(Error::Crypto("key collision"));
             }
-            ("RTP/SAVP", Some(mine), Some(k))
+            (
+                if tcp { "TCP/RTP/SAVP" } else { "RTP/SAVP" },
+                Some(mine),
+                Some(k),
+            )
         }
         (Some(_), Encryption::Off) if !required => ("RTP/AVP", None, None),
         (None, _) if required => return Err(Error::Crypto("SAVP offer without usable key")),
