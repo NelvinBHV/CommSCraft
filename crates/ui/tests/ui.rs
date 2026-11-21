@@ -1401,3 +1401,30 @@ fn the_meeting_entry_info_names_the_dial_in_numbers() {
     assert!(h.query_by_label("Konferenz-ID: AB12CD34").is_some());
     assert!(h.query_by_label("Weitere Einwahlnummern").is_some());
 }
+
+/// Desktop notifications: with the desktop's notification service the interface's own
+/// notification window stays closed; message notifications follow the options.
+#[test]
+fn desktop_notifications_replace_the_own_window() {
+    use commscraft_ui::model::Presence;
+    let mut ui = online();
+    ui.state.apply(AppEvent::CallStarted {
+        id: 4,
+        peer: "sip:tim@beispiel.invalid".into(),
+        incoming: true,
+        at: NOW,
+    });
+    ui.system_notifications = true;
+    let mut h = harness(ui, BIG);
+    h.run();
+    assert_eq!(h.query_all_by_label_contains("ruft an").count(), 0);
+    let mut ui = online();
+    assert!(!ui.quiet_for_messages());
+    ui.state
+        .apply(AppEvent::OwnPresence(Presence::DoNotDisturb));
+    assert!(ui.quiet_for_messages(), "quiet while Do Not Disturb");
+    ui.prefs.quiet_when_dnd = false;
+    assert!(!ui.quiet_for_messages());
+    ui.prefs.message_alerts = false;
+    assert!(ui.quiet_for_messages());
+}

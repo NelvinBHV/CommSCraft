@@ -1661,7 +1661,11 @@ fn controls(
 
 /// Incoming calls, invitations and new messages, stacked in one small window.
 fn notifications(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
+    if app.system_notifications {
+        return;
+    }
     let t = app.t;
+    let quiet = app.quiet_for_messages();
     let calls: Vec<Call> = app
         .state
         .calls
@@ -1675,7 +1679,8 @@ fn notifications(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
         .conversations
         .iter()
         .filter(|c| {
-            c.unread > 0
+            !quiet
+                && c.unread > 0
                 && !app.windows.contains(&Win::Conv(c.key))
                 && !app.toasts_seen.contains(&(c.key, c.messages.len()))
         })

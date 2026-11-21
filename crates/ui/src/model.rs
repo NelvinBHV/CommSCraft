@@ -737,6 +737,10 @@ pub enum AppEvent {
         incoming: bool,
         at: u64,
     },
+    /// Show the conversation of this session (chosen in a desktop notification).
+    OpenSession {
+        session: u32,
+    },
     CallRinging {
         id: u32,
     },
@@ -1523,6 +1527,8 @@ impl AppState {
                     c.typing = false;
                 }
             }
+            // Handled by the interface (it opens the window).
+            AppEvent::OpenSession { .. } => {}
             AppEvent::CallStarted {
                 id,
                 peer,
