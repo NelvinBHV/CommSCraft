@@ -1,0 +1,15 @@
+[package]
+name = "commscraft-ucwa"
+description = "UCWA 2.0 messages for contact photos: OAuth challenge and token, application, contacts, search, distribution groups, photo links"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+commscraft-url = { path = "../url" }
+commscraft-xml = { path = "../xml" }
+
+[lints]
+workspace = true

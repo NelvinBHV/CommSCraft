@@ -126,6 +126,9 @@ pub struct Autodiscover {
     pending: Vec<String>,
     visited: Vec<String>,
     redirects: usize,
+    /// The links of the Root resource (e.g. `OAuth`, AD-06), kept while the Domain resource is
+    /// followed and handed on with the outcome.
+    root_links: Vec<WebLink>,
 }
 
 /// Domain of a `sip:user@domain` address of record (CON-10).
@@ -164,6 +167,7 @@ impl Autodiscover {
             pending: Vec::new(),
             visited: Vec::new(),
             redirects: 0,
+            root_links: Vec::new(),
         })
     }
 
@@ -316,6 +320,7 @@ impl Autodiscover {
         if kind.name == "Root" {
             // AD-10: the Domain resource needs no authentication and carries the SIP access points.
             let d = link("Domain").ok_or(Error::BadResponse("Root without Domain link"))?;
+            self.root_links = self.links_of(kind);
             return Ok(self.follow(&d));
         }
         let mut out = Outcome {
@@ -349,20 +354,37 @@ impl Autodiscover {
                 }
             }
         }
-        for l in kind.children_named("Link") {
+        out.links = self.links_of(kind);
+        // The Root's links (AD-06: `OAuth` is a Root link) where the Domain has none of that token.
+        for l in std::mem::take(&mut self.root_links) {
+            if !out
+                .links
+                .iter()
+                .any(|x| x.token.eq_ignore_ascii_case(&l.token))
+            {
+                out.links.push(l);
+            }
+        }
+        Ok(self.finish(Step::Done(out)))
+    }
+
+    /// The `Link` elements of a resource as web links; links that are not acceptable HTTPS URLs
+    /// are left out (fail closed per link); at most 64.
+    fn links_of(&self, kind: &Element) -> Vec<WebLink> {
+        let mut out = Vec::new();
+        for l in kind.children_named("Link").take(64) {
             let (Some(token), Some(href)) = (l.attr("token"), l.attr("href")) else {
                 continue;
             };
-            // Links that are not acceptable HTTPS URLs are left out (fail closed per link).
             if let Some(url) = parse_https(href) {
-                out.links.push(WebLink {
+                out.push(WebLink {
                     token: token.to_string(),
                     in_user_domain: in_domain(&url.host, &self.domain),
                     url,
                 });
             }
         }
-        Ok(self.finish(Step::Done(out)))
+        out
     }
 }
 

@@ -11,7 +11,7 @@ Classification: second, HTTP-based discovery path next to DNS SRV (MS-CONMGMT). 
 | AD-03 | Root resource `https://<fqdn>/autodiscover/autodiscoverservice.svc/root?sipuri=<uri>`; SfB omits the `sip:` prefix | MUST | §2.2.3.1, p. 9; §3.1.5.2, p. 19; <1> p. 31 |
 | AD-04 | Accept `application/vnd.microsoft.rtc.autodiscover+xml;v=1` or `+json;v=1` (no Accept ⇒ JSON; unknown ⇒ 406); UTF-8 without BOM | MUST | §2.1, p. 8; §3.1.5.1, pp. 18–19 |
 | AD-05 | Response `AutodiscoverResponse` (AccessLocation internal/external) with exactly one of Root/User/Domain; links `token`+`href` | MUST | §2.2.4.1–2.2.4.6, pp. 10–15; §2.2.5, pp. 15–17 |
-| AD-06 | Tokens: Internal/External Autodiscover, Internal/External AuthBroker (SOAP+MEX, MS-OCAUTHWS), Internal/External Ucwa (REST, MS-OCSMP), Redirect, User, Domain, OAuth (the example additionally `Self`) | – | §2.2.5.5, pp. 16–17; example p. 24 |
+| AD-06 | (The Root's links, e.g. `OAuth`, are handed on with the outcome for the UCWA photo path, file 40.) Tokens: Internal/External Autodiscover, Internal/External AuthBroker (SOAP+MEX, MS-OCAUTHWS), Internal/External Ucwa (REST, MS-OCSMP), Redirect, User, Domain, OAuth (the example additionally `Self`) | – | §2.2.5.5, pp. 16–17; example p. 24 |
 | AD-07 | The HTTP root always answers with a redirect; a foreign user ⇒ redirect to the next hop | MUST | §3.1.5.2, p. 19 |
 | AD-08 | User resource only with `X-Ms-WebTicket`; without ⇒ 401 + `X-Ms-WebTicketUrl` (web ticket service, MS-OCAUTHWS); unknown user ⇒ 404; another home pool ⇒ User with a single Redirect | MUST | §2.2.2.2–2.2.2.3, p. 9; §3.1.5.3, pp. 19–20 |
 | AD-09 | OAuth resource with `Authorization: Bearer …`; without ⇒ 401, invalid ⇒ 403 | MUST | §2.2.2.1, p. 8; §3.1.5.5, pp. 21–22; example pp. 24–25 |

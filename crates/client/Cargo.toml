@@ -29,6 +29,7 @@ commscraft-qoe = { path = "../qoe" }
 commscraft-sdp = { path = "../sdp" }
 commscraft-tones = { path = "../tones" }
 commscraft-turn-bwm = { path = "../turn-bwm" }
+commscraft-ucwa = { path = "../ucwa" }
 commscraft-url = { path = "../url" }
 commscraft-conf = { path = "../conf" }
 commscraft-h264uc = { path = "../h264uc" }
