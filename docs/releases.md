@@ -18,19 +18,22 @@ the function table of [`target-app-parity.md`](target-app-parity.md) by
 
 ## Procedure (after changes land on `main`)
 1. Measure the parity and set the workspace version in `Cargo.toml` (and the release entry of
-   `packaging/flatpak/io.github.nelvinbhv.CommSCraft.metainfo.xml`) in a pull request.
+   `packaging/flatpak/io.github.NelvinBHV.CommSCraft.metainfo.xml`) in a pull request.
 2. Tag `v‹version›` on `main`; the `flatpak` workflow (read-only, free runner) builds
    `CommSCraft.flatpak` as an artifact.
 3. Create the GitHub release (pre-release while `-alpha`) with the notes and attach the bundle.
 
 ## Flatpak
-- Manifest: [`packaging/flatpak/io.github.nelvinbhv.CommSCraft.yml`](../packaging/flatpak/io.github.nelvinbhv.CommSCraft.yml),
+- The Rust crates are built offline from checksum-verified sources that
+  `scripts/generate_flatpak_cargo_sources.py` derives from `Cargo.lock`; MIT Kerberos 1.22 and
+  craft-fonts are pinned sources too.
+- Manifest: [`packaging/flatpak/io.github.NelvinBHV.CommSCraft.yml`](../packaging/flatpak/io.github.NelvinBHV.CommSCraft.yml),
   runtime `org.freedesktop.Platform` 25.08.
 - In the bundle: CommSCraft (MIT OR Apache-2.0), its Rust dependencies, MIT Kerberos and the
   craft-fonts faces (pinned commit, required in a release; licences in craft-fonts). FFmpeg comes
   from the runtime; H.264 needs the runtime extension `org.freedesktop.Platform.ffmpeg-full`
   (Flathub, installed with the app or by `flatpak install flathub org.freedesktop.Platform.ffmpeg-full//25.08`).
 - Install: `flatpak install --user CommSCraft.flatpak` (the runtime from Flathub), start:
-  `flatpak run io.github.nelvinbhv.CommSCraft`.
+  `flatpak run io.github.NelvinBHV.CommSCraft`.
 - Permissions: network, Wayland/X11, PulseAudio, all devices (GPU for VA-API, camera), the keyring
   (Secret Service) and the session's idle time.
