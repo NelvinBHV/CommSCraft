@@ -287,14 +287,23 @@ fn incoming_conversation() {
         vec![Event::Text {
             conversation,
             sender: None,
-            text: "Hallo Alice".into()
+            text: "Hallo Alice".into(),
+            spans: Vec::new(),
         }]
     );
+    // A formatted message (the Windows client's text/html): its text and runs.
     let out = e.on_message(
-        &in_dialog(&mut server, "MESSAGE", "text/html", "<b>x</b>", 3),
+        &in_dialog(&mut server, "MESSAGE", "text/html", "<b>x</b> y", 3),
         NOW,
     );
-    assert_eq!(sends(&out).pop().unwrap().status_code(), Some(415));
+    assert_eq!(sends(&out).pop().unwrap().status_code(), Some(200));
+    match events(&out).as_slice() {
+        [Event::Text { text, spans, .. }] => {
+            assert_eq!(text, "x y");
+            assert!(spans.first().is_some_and(|s| s.bold && s.text == "x"));
+        }
+        other => panic!("{other:?}"),
+    }
     let out = e.on_message(&in_dialog(&mut server, "BYE", "text/plain", "", 4), NOW);
     assert_eq!(
         events(&out),
@@ -325,7 +334,9 @@ fn outgoing_conversation_with_queued_text() {
     );
     assert!(server.verify_client(&invite));
     // 1:1 sessions offer plain text only (CI-14 applies to IM MCU sessions).
-    assert!(String::from_utf8_lossy(&invite.body).contains("a=accept-types:text/plain\r\n"));
+    assert!(
+        String::from_utf8_lossy(&invite.body).contains("a=accept-types:text/plain text/html\r\n")
+    );
     // Written before the session is accepted: queued.
     assert!(e
         .command(
@@ -737,7 +748,7 @@ fn group_conversation_flow() {
     assert_eq!(Engine::<Counter>::request_uri(&chat_invite), Some(CHAT));
     // CI-14: towards the IM MCU the IMDN type is announced (the 202 + IMDN path of CI-05).
     assert!(String::from_utf8_lossy(&chat_invite.body)
-        .contains("a=accept-types:text/plain application/ms-imdn+xml"));
+        .contains("a=accept-types:text/plain text/html application/ms-imdn+xml"));
     assert!(chat_invite
         .header_values("Supported")
         .any(|v| v == "ms-sender"));
@@ -896,7 +907,8 @@ fn group_conversation_flow() {
         vec![Event::Text {
             conversation,
             sender: Some("sip:bob@contoso.com".into()),
-            text: "Hi all".into()
+            text: "Hi all".into(),
+            spans: Vec::new(),
         }]
     );
 

@@ -306,6 +306,12 @@ pub struct Prefs {
     /// No notifications for messages while the own status is Do Not Disturb.
     pub quiet_when_dnd: bool,
     pub chat_text_size: f32,
+    /// The look of our messages (sent formatted where the other side accepts it).
+    pub im_bold: bool,
+    pub im_italic: bool,
+    pub im_underline: bool,
+    /// The colour of our messages; `None`: the default text colour.
+    pub im_color: Option<[u8; 3]>,
     pub sounds: bool,
     pub quiet_sounds_busy: bool,
     /// The camera device; empty: the default.
@@ -354,6 +360,10 @@ impl Default for Prefs {
             message_alerts: true,
             quiet_when_dnd: true,
             chat_text_size: 14.0,
+            im_bold: false,
+            im_italic: false,
+            im_underline: false,
+            im_color: None,
             sounds: true,
             quiet_sounds_busy: false,
             camera: String::new(),

@@ -1065,6 +1065,12 @@ fn im_actions(
             s.send_signed(reg, answer)?;
             match incoming {
                 commscraft_im::Incoming::Text(t) => println!("{to}: {t}"),
+                commscraft_im::Incoming::Formatted(spans) => {
+                    println!(
+                        "{to}: {}",
+                        commscraft_im::printable(&commscraft_im::html::plain(&spans))
+                    )
+                }
                 commscraft_im::Incoming::Typing(true) => println!("({to} is typing)"),
                 commscraft_im::Incoming::Typing(false) => {}
                 commscraft_im::Incoming::Bye => {
@@ -2275,6 +2281,7 @@ fn interactive(
                         conversation,
                         sender,
                         text,
+                        ..
                     } => {
                         cues.notify(now());
                         let who = sender
@@ -3120,6 +3127,26 @@ fn interactive(
                     }
                     quitting = true;
                     Some(C::SignOut)
+                }
+                "/style" => {
+                    // The look of our messages, sent as text/html where the peer accepts it.
+                    let mut st = commscraft_im::html::Style::default();
+                    for w in arg.split_whitespace() {
+                        match w {
+                            "bold" => st.bold = true,
+                            "italic" => st.italic = true,
+                            "underline" => st.underline = true,
+                            c if c.len() == 7 && c.starts_with('#') => {
+                                if let Ok(v) = u32::from_str_radix(&c[1..], 16) {
+                                    let [_, r, g, b] = v.to_be_bytes();
+                                    st.color = Some([r, g, b]);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    println!("* message style: {st:?}");
+                    Some(C::SetMessageStyle(st))
                 }
                 "/sipcomp" => {
                     match conn.compression_stats() {

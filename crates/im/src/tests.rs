@@ -40,12 +40,13 @@ fn ok_200() -> Message {
 fn sdp_offer_and_check() {
     let s = sdp("192.0.2.1".parse().unwrap(), false);
     assert!(s.contains("m=message 5060 sip null\r\n"));
-    assert!(s.contains("a=accept-types:text/plain\r\n"));
+    // Plain text and, as the Windows client does, formatted messages (interop).
+    assert!(s.contains("a=accept-types:text/plain text/html\r\n"));
     assert!(!s.contains('*'), "never offer *");
     assert!(sdp("2001:db8::1".parse().unwrap(), false).contains("c=IN IP6 2001:db8::1"));
     // CI-14: towards an IM MCU the IMDN type is accepted too; still no `*` and plain text only.
     let c = sdp("192.0.2.1".parse().unwrap(), true);
-    assert!(c.contains("a=accept-types:text/plain application/ms-imdn+xml\r\n"));
+    assert!(c.contains("a=accept-types:text/plain text/html application/ms-imdn+xml\r\n"));
     assert_eq!(check_sdp(c.as_bytes()), Ok(()));
     assert_eq!(check_sdp(s.as_bytes()), Ok(()));
     // The MS-CONFIM example (p. 14): rtf, multipart, imdn – text/plain is still implied?
@@ -146,9 +147,26 @@ fn incoming_requests() {
     ));
     assert_eq!(i, Incoming::Text("Hi Alice[31m".into()));
     assert_eq!(r.status_code(), Some(200));
-    let (i, r) = handle_request(&peer("MESSAGE", "text/html", "<script>x</script>"));
+    // HTML is read into text runs; a script keeps nothing.
+    let (i, r) = handle_request(&peer("MESSAGE", "text/html", "<script>x</script><B>y</B>"));
+    assert_eq!(
+        i,
+        Incoming::Formatted(vec![crate::html::Span {
+            text: "y".into(),
+            bold: true,
+            ..Default::default()
+        }])
+    );
+    assert_eq!(r.status_code(), Some(200));
+    let (i, r) = handle_request(&peer("MESSAGE", "text/rtf", "{\\rtf1 x}"));
     assert_eq!(i, Incoming::Refused(415));
-    assert_eq!(r.single("Accept").unwrap(), Some("text/plain"));
+    assert_eq!(r.single("Accept").unwrap(), Some("text/plain, text/html"));
+    assert!(accepts_html(
+        b"m=message 5060 sip null\r\na=accept-types:text/plain text/html\r\n"
+    ));
+    assert!(!accepts_html(
+        b"m=message 5060 sip null\r\na=accept-types:text/plain\r\n"
+    ));
     let (i, _) = handle_request(&peer("MESSAGE", "text/plain; charset=ISO-8859-1", "x"));
     assert_eq!(i, Incoming::Refused(415));
     let (i, r) = handle_request(&peer(
@@ -173,4 +191,62 @@ fn incoming_requests() {
     assert_eq!((i, r.status_code()), (Incoming::Bye, Some(200)));
     let (i, r) = handle_request(&peer("REFER", "text/plain", ""));
     assert_eq!((i, r.status_code()), (Incoming::Refused(501), Some(501)));
+}
+
+/// The `text/html` body of the Windows client (lab capture form): runs with their look.
+#[test]
+fn html_body_of_the_windows_client() {
+    use crate::html::{parse, plain, to_html, Span, Style};
+    let body = "<B><SPAN id=\"38590281.0\" style='font-size:10pt; font-family:Segoe UI; color:#000000;'>Fett</SPAN></B><SPAN id=\"38590281.0\" style='font-size:10pt; font-family:'Segoe UI'; color:#000000;'> normal</SPAN>";
+    let spans = parse(body).unwrap();
+    assert_eq!(
+        spans,
+        vec![
+            Span {
+                text: "Fett".into(),
+                bold: true,
+                ..Span::default()
+            },
+            Span {
+                text: " normal".into(),
+                ..Span::default()
+            },
+        ]
+    );
+    assert_eq!(plain(&spans), "Fett normal");
+    // Colour, italics, entities, line breaks; unknown tags keep their text, scripts do not.
+    let spans = parse("<I><SPAN style='color:#C00000;'>a &amp; b&lt;c&gt;</SPAN></I><BR><SCRIPT>alert(1)</SCRIPT><X>d</X>&#228;").unwrap();
+    assert_eq!(plain(&spans), "a & b<c>\ndä");
+    assert_eq!(spans[0].color, Some([0xC0, 0, 0]));
+    assert!(spans[0].italic);
+    // Our own messages in the same form, escaped.
+    let style = Style {
+        bold: true,
+        color: Some([0, 0x70, 0xC0]),
+        ..Style::default()
+    };
+    let html = to_html("1 < 2 & \"x\"\nnext", &style);
+    assert_eq!(
+        html,
+        "<B><SPAN style='font-size:10pt; font-family:Segoe UI; color:#0070C0;'>1 &lt; 2 &amp; &quot;x&quot;<BR>next</SPAN></B>"
+    );
+    let back = parse(&html).unwrap();
+    assert_eq!(plain(&back), "1 < 2 & \"x\"\nnext");
+    assert!(back
+        .iter()
+        .all(|s| s.bold && s.color == Some([0, 0x70, 0xC0])));
+}
+
+#[test]
+fn html_bounds() {
+    use crate::html::{parse, MAX_HTML};
+    assert!(parse(&"a".repeat(MAX_HTML + 1)).is_none());
+    // Deep nesting stays bounded; unclosed tags and stray brackets do not panic.
+    let deep = "<B>".repeat(10_000) + "x";
+    assert_eq!(crate::html::plain(&parse(&deep).unwrap()), "x");
+    assert!(parse("<B unclosed").is_some());
+    assert!(parse("&#xFFFFFFFF; &bogus; <!-- open").is_some());
+    // Alternating looks: the run count is bounded.
+    let many = "<B>a</B>b".repeat(400);
+    assert!(parse(&many).is_none());
 }

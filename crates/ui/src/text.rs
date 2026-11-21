@@ -194,6 +194,13 @@ texts! {
     note_hint: "Was gibt es Neues?", "What's new?";
     note_label: "Persönliche Notiz", "Personal note";
     notifications: "Benachrichtigungen", "Notifications";
+    opt_im_font: "Schrift meiner Nachrichten", "Font of my messages";
+    opt_im_bold: "Fett", "Bold";
+    opt_im_italic: "Kursiv", "Italic";
+    opt_im_underline: "Unterstrichen", "Underlined";
+    opt_im_color: "Farbe", "Colour";
+    opt_im_color_default: "Standardfarbe", "Default colour";
+    opt_im_font_tip: "Gesprächspartner, deren Programm formatierte Nachrichten annimmt, sehen Ihre Nachrichten so; die anderen bekommen reinen Text.", "People whose program takes formatted messages see your messages like this; the others get plain text.";
     ok: "OK", "OK";
     open: "Öffnen", "Open";
     options: "Optionen", "Options";

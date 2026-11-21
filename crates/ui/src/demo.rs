@@ -102,6 +102,7 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
     let msg = |sender: Option<&str>, text: &str, at: u64, d: Delivery| Message {
         sender: sender.map(uri),
         text: text.into(),
+        runs: Vec::new(),
         at,
         delivery: d,
     };

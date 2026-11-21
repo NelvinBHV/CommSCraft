@@ -400,6 +400,12 @@ impl DesktopApp {
                     save_history: p.save_history,
                     audio_device: p.audio_device.clone(),
                     mic_device: p.mic_device.clone(),
+                    message_style: commscraft_im::html::Style {
+                        bold: p.im_bold,
+                        italic: p.im_italic,
+                        underline: p.im_underline,
+                        color: p.im_color,
+                    },
                 });
             }
             return;
@@ -553,6 +559,12 @@ impl DesktopApp {
                     save_history: p.save_history,
                     audio_device: p.audio_device.clone(),
                     mic_device: p.mic_device.clone(),
+                    message_style: commscraft_im::html::Style {
+                        bold: p.im_bold,
+                        italic: p.im_italic,
+                        underline: p.im_underline,
+                        color: p.im_color,
+                    },
                 })
             }
             UiIntent::Dtmf { id, digits } => Some(ToWorker::Dtmf { id, digits }),

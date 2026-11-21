@@ -129,6 +129,7 @@ fn messages_are_bounded() {
             session: 3,
             sender: None,
             text: "x".repeat(MAX_TEXT + 5),
+            runs: Vec::new(),
             at: i as u64,
         });
     }
@@ -607,4 +608,39 @@ fn names_sort_like_an_address_book() {
         ["Anna", "Ärger", "Bea", "bob", "ölmann", "Øyvind", "zora"]
     );
     assert_eq!(sort_key("Straße"), "strasse");
+}
+
+/// A formatted message keeps its runs (bounded and cleaned like plain text).
+#[test]
+fn formatted_messages_keep_their_runs() {
+    use commscraft_ui::model::TextRun;
+    let mut s = AppState::default();
+    s.apply(AppEvent::ConversationStarted {
+        session: 5,
+        peer: "sip:eva@beispiel.invalid".into(),
+        incoming: true,
+    });
+    s.apply(AppEvent::Text {
+        session: 5,
+        sender: None,
+        text: "Fett normal".into(),
+        runs: vec![
+            TextRun {
+                text: "Fett".into(),
+                bold: true,
+                ..TextRun::default()
+            },
+            TextRun {
+                text: " nor\u{7}mal".into(),
+                color: Some([0xC0, 0, 0]),
+                ..TextRun::default()
+            },
+        ],
+        at: 1,
+    });
+    let c = s.conversation(s.key_of_session(5).unwrap()).unwrap();
+    let m = c.messages.back().unwrap();
+    assert_eq!(m.runs.len(), 2);
+    assert!(m.runs[0].bold);
+    assert_eq!(m.runs[1].text, " normal", "control characters removed");
 }

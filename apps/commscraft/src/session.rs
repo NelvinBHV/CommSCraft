@@ -116,6 +116,8 @@ pub enum ToWorker {
         save_history: bool,
         /// The ALSA device for calls (empty: the default).
         audio_device: String,
+        /// The look of our messages (`SetMessageStyle`).
+        message_style: commscraft_im::html::Style,
         /// The microphone when it is another device (empty: the same).
         mic_device: String,
     },
@@ -2424,6 +2426,7 @@ impl Session {
                 save_history,
                 audio_device,
                 mic_device,
+                message_style,
             } => {
                 self.save_history = save_history;
                 self.audio_device = audio_device;
@@ -2438,7 +2441,8 @@ impl Session {
                 if !sounds {
                     self.cues.stop_all();
                 }
-                Vec::new()
+                self.engine
+                    .command(C::SetMessageStyle(message_style), now())
             }
             ToWorker::Dtmf { id, digits } => {
                 for d in digits
@@ -3005,6 +3009,7 @@ impl Session {
                 conversation,
                 sender,
                 text,
+                spans,
             } => {
                 if self.alert_sounds() {
                     self.cues.notify(now_ms());
@@ -3024,6 +3029,17 @@ impl Session {
                     session: conversation,
                     sender,
                     text,
+                    runs: spans
+                        .into_iter()
+                        .map(|s| commscraft_ui::model::TextRun {
+                            text: s.text,
+                            bold: s.bold,
+                            italic: s.italic,
+                            underline: s.underline,
+                            strike: s.strike,
+                            color: s.color,
+                        })
+                        .collect(),
                     at: t,
                 })
             }

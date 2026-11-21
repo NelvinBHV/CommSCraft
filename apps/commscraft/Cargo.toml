@@ -26,6 +26,7 @@ commscraft-rtp = { path = "../../crates/rtp" }
 commscraft-psom = { path = "../../crates/psom" }
 commscraft-call-media = { path = "../../crates/call-media" }
 commscraft-session = { path = "../../crates/session" }
+commscraft-im = { path = "../../crates/im" }
 commscraft-sip-msg = { path = "../../crates/sip-msg" }
 commscraft-sipae = { path = "../../crates/sipae" }
 commscraft-tlsdsk = { path = "../../crates/tlsdsk" }

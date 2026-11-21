@@ -105,6 +105,7 @@ impl<R: Random> Engine<R> {
                 queue: Vec::new(),
                 group: group.map(Box::new),
                 timer: None,
+                html: false,
             },
         );
         Some(id)
