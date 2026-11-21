@@ -19,9 +19,14 @@
 //! for gateways ([MS-OCPSTN] §2.2.4, PS-06).
 //!
 //! Scope: the media (sockets, TURN, ICE, SRTP, codec, devices) runs in the adapter; the engine
-//! carries the SDP. Not offered: ICE-06 SDP (OCS 2007, RE-65 fallback); as the callee we answer
-//! in the 200 only (no reliable 183 with an early answer, a SHOULD of SD-51); early media of a
-//! forked call (`Ms-Forking`) is not started (SHOULD-level in §3.1.5.12.2) – the 200 decides.
+//! carries the SDP. Not offered: ICE-06 SDP (OCS 2007, RE-65 fallback). As the callee the adapter
+//! may answer early in a reliable 183 (SD-51, `EarlyAnswer`): sent with `Require: 100rel` and
+//! RSeq 1, retransmitted from 1 s doubling until the PRACK (RFC 3262 §3), the 200 only after the
+//! PRACK and with the same answer (RFC 3262 §3, MS-SDPEXT §3.1.5.13: one offer/answer before
+//! acceptance); early media of a
+//! forked call (`Ms-Forking`) starts like any other (§3.1.5.12.2): incoming media plays, only
+//! DTMF is sent and only after the first received packet (`media`), speech after the 200 – which
+//! may come from another fork; then ICE starts again with its answer.
 //!
 //! Security by design: every SDP goes through the bounded `sdp` parser and the encryption
 //! policy (no silent plaintext); keys are never renegotiated in a re-INVITE (SD-13) – an update
@@ -32,6 +37,29 @@ use super::*;
 use commscraft_sdp as sdp;
 
 pub type CallId = u32;
+
+/// An incoming call answered early in a reliable 183 (SD-51).
+pub(crate) struct EarlyAnswer {
+    /// The 183 as sent (retransmitted until the PRACK).
+    response: Message,
+    body: String,
+    media: sdp::Negotiated,
+    local: sdp::Local,
+    policy: sdp::Encryption,
+    /// The PRACK arrived.
+    acknowledged: bool,
+    /// The user accepted before the PRACK: the 200 waits for it (RFC 3262 §3).
+    accept_pending: bool,
+    next_resend: u64,
+    interval: u64,
+    /// No PRACK by then: the call fails with 500 (RFC 3262 §3, 64·T1).
+    give_up: u64,
+}
+
+/// RSeq of our only reliable provisional response (RFC 3262 §3: any value 1 … 2^31 − 1).
+const EARLY_RSEQ: u32 = 1;
+/// 64·T1 with T1 = 500 ms, rounded up to the engine's seconds (RFC 3262 §3, RFC 3261 §17.1.1.2).
+const PRACK_WAIT: u64 = 32;
 pub const MAX_CALLS: usize = 4;
 /// An incoming call rings at most this long before 480 (design).
 pub const RING_TIMEOUT: u64 = 60;
@@ -96,8 +124,6 @@ pub(crate) struct Call {
     pub early: Vec<(Dialog, Option<u32>)>,
     /// The To tag whose SDP answer started early media.
     pub early_media: Option<String>,
-    /// A provisional response carried `Ms-Forking` (MS-SIPRE).
-    pub forked: bool,
     /// Content-ID of the offer part we answer (PS-09: copied to ms-accepted-content-id).
     pub content_id: Option<String>,
     /// Our transfer of this call (REFER sent).
@@ -375,7 +401,6 @@ impl<R: Random> Engine<R> {
                 ringing_reported: false,
                 early: Vec::new(),
                 early_media: None,
-                forked: false,
                 content_id: None,
                 transfer_out: None,
                 transfer_in: None,
@@ -576,9 +601,6 @@ impl<R: Random> Engine<R> {
             c.ringing_reported = true;
             Self::call_event(out, Event::CallRinging { call: id });
         }
-        if resp.single("Ms-Forking").ok().flatten().is_some() {
-            c.forked = true;
-        }
         let Some(tag) = to_tag(resp) else {
             return;
         };
@@ -624,11 +646,9 @@ impl<R: Random> Engine<R> {
             return;
         }
         // SD-50: one early answer per call (later or other answers are ignored), only with
-        // ICE, not for a forked call; an answer we cannot use is ignored – the 200 decides.
-        if c.early_media.is_some()
-            || c.forked
-            || c.state != (CallState::Inviting { cancelling: false })
-        {
+        // ICE; an answer we cannot use is ignored – the 200 decides. A forked call too
+        // (§3.1.5.12.2): the media core sends only DTMF, after the first received packet.
+        if c.early_media.is_some() || c.state != (CallState::Inviting { cancelling: false }) {
             return;
         }
         let Some(answer) = audio_sdp(resp) else {
@@ -1231,7 +1251,6 @@ impl<R: Random> Engine<R> {
                 ringing_reported: true,
                 early: Vec::new(),
                 early_media: None,
-                forked: false,
                 content_id,
                 transfer_out: None,
                 transfer_in: None,
@@ -1513,6 +1532,10 @@ impl<R: Random> Engine<R> {
         if !matches!(c.state, CallState::Ringing { .. }) {
             return;
         }
+        if self.early_answers.contains_key(&id) {
+            self.accept_early(id, now, out);
+            return;
+        }
         let invite = c.invite.clone();
         let fresh = local
             .key
@@ -1778,8 +1801,220 @@ impl<R: Random> Engine<R> {
         );
     }
 
+    /// `EarlyAnswer`: the reliable 183 with our answer (SD-51).
+    pub(crate) fn early_answer(
+        &mut self,
+        id: CallId,
+        local: sdp::Local,
+        policy: sdp::Encryption,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let Some(c) = self.calls.get(&id) else { return };
+        let supports_100rel = c
+            .invite
+            .header_values("Supported")
+            .chain(c.invite.header_values("Require"))
+            .flat_map(|v| v.split(','))
+            .any(|t| t.trim().eq_ignore_ascii_case("100rel"));
+        let video_offered = c.offer.windows(8).any(|w| w == b"m=video ");
+        if !matches!(c.state, CallState::Ringing { .. })
+            || self.screen_calls.contains(&id)
+            || self.early_answers.contains_key(&id)
+            || !supports_100rel
+            || video_offered
+            || (policy != sdp::Encryption::Off && local.key.is_none())
+        {
+            return;
+        }
+        let fresh = local
+            .key
+            .clone()
+            .unwrap_or_else(|| sdp::Key::new(0, [0; 30]));
+        let Ok((body, media, _)) =
+            sdp::video::answer_with_video(&c.offer, &local, fresh, None, policy)
+        else {
+            // Not answerable now: AcceptCall decides (and reports the reason) later.
+            return;
+        };
+        let mut r = response_to(&c.invite, 183, "Session Progress");
+        r.push_header("Contact", &format!("<{}>", self.gruu));
+        r.push_header("Require", "100rel");
+        r.push_header("RSeq", &EARLY_RSEQ.to_string());
+        if let Some(cid) = c.content_id.clone() {
+            r.push_header("ms-accepted-content-id", &cid);
+        }
+        r.push_header("Content-Type", "application/sdp");
+        r.body = body.clone().into_bytes();
+        let mut kept = local;
+        if let (Some(k), Some(tag)) = (kept.key.as_mut(), media.remote_key.as_ref().map(|r| r.tag))
+        {
+            k.tag = tag;
+        }
+        self.send_plain(r.clone(), now, out);
+        self.early_answers.insert(
+            id,
+            EarlyAnswer {
+                response: r,
+                body,
+                media: media.clone(),
+                local: kept,
+                policy,
+                acknowledged: false,
+                accept_pending: false,
+                next_resend: now + 1,
+                interval: 1,
+                give_up: now + PRACK_WAIT,
+            },
+        );
+        Self::call_event(
+            out,
+            Event::CallEarlyAnswered {
+                call: id,
+                media: Box::new(media),
+            },
+        );
+    }
+
+    /// A ringing call we answered early, if `req` is a request of its dialog.
+    pub(crate) fn early_answered_call_of(&self, req: &Message) -> Option<CallId> {
+        self.early_answers.keys().copied().find(|id| {
+            self.calls.get(id).is_some_and(|c| {
+                matches!(c.state, CallState::Ringing { .. })
+                    && c.dialog.as_ref().is_some_and(|d| d.is_peer_request(req))
+            })
+        })
+    }
+
+    /// PRACK of our reliable 183 (RFC 3262 §3, §7.2): `RAck: 1 <CSeq of the INVITE> INVITE`.
+    pub(crate) fn on_prack(&mut self, id: CallId, req: &Message, now: u64, out: &mut Vec<Output>) {
+        let invite_cseq = self
+            .calls
+            .get(&id)
+            .and_then(|c| c.invite.cseq().ok().flatten().map(|c| c.number));
+        let rack: Vec<String> = req
+            .single("RAck")
+            .ok()
+            .flatten()
+            .map(|v| v.split_whitespace().map(str::to_string).collect())
+            .unwrap_or_default();
+        let matches = match (rack.as_slice(), invite_cseq) {
+            ([rseq, cseq, method], Some(n)) => {
+                rseq.parse::<u32>().ok() == Some(EARLY_RSEQ)
+                    && cseq.parse::<u32>().ok() == Some(n)
+                    && method.eq_ignore_ascii_case("INVITE")
+            }
+            _ => false,
+        };
+        if !matches {
+            let r = response_to(req, 481, "Call/Transaction Does Not Exist");
+            self.send_plain(r, now, out);
+            return;
+        }
+        let r = response_to(req, 200, "OK");
+        self.send_plain(r, now, out);
+        let Some(e) = self.early_answers.get_mut(&id) else {
+            return;
+        };
+        e.acknowledged = true;
+        if e.accept_pending {
+            self.accept_early(id, now, out);
+        }
+    }
+
+    /// `AcceptCall` after an early answer: the 200 with the same answer, once the PRACK is in.
+    fn accept_early(&mut self, id: CallId, now: u64, out: &mut Vec<Output>) {
+        let Some(e) = self.early_answers.get_mut(&id) else {
+            return;
+        };
+        if !e.acknowledged {
+            e.accept_pending = true;
+            return;
+        }
+        let Some(e) = self.early_answers.remove(&id) else {
+            return;
+        };
+        let behalf = self.caller(id).and_then(|c| c.on_behalf_of);
+        let Some(c) = self.calls.get(&id) else { return };
+        let invite = c.invite.clone();
+        let mut ok = response_to(&invite, 200, "OK");
+        for rr in invite.header_values("Record-Route") {
+            ok.push_header("Record-Route", rr);
+        }
+        ok.push_header("Contact", &format!("<{}>", self.gruu));
+        ok.push_header("Supported", "ms-safe-transfer");
+        if let Some(b) = &behalf {
+            ok.push_header("P-Session-On-Behalf-Of", &format!("<{b}>"));
+        }
+        if let Some(cid) = c.content_id.clone() {
+            ok.push_header("ms-accepted-content-id", &cid);
+        }
+        ok.push_header("Content-Type", "application/sdp");
+        ok.body = e.body.into_bytes();
+        self.send_plain(ok, now, out);
+        if let Some(c) = self.calls.get_mut(&id) {
+            c.state = CallState::Active;
+            c.local = Some(e.local);
+            c.policy = e.policy;
+        }
+        self.keep_for_quality(id, &invite, now);
+        if let Some(old) = self.calls.get(&id).and_then(|c| c.replaces) {
+            self.hangup(old, now, out);
+        }
+        Self::call_event(
+            out,
+            Event::CallAnswered {
+                call: id,
+                media: Box::new(e.media),
+                continues_early: true,
+            },
+        );
+    }
+
+    /// Retransmission of unacknowledged reliable 183s, and giving up without a PRACK.
+    fn early_answer_tick(&mut self, now: u64, out: &mut Vec<Output>) {
+        let ringing: Vec<CallId> = self
+            .calls
+            .iter()
+            .filter(|(_, c)| matches!(c.state, CallState::Ringing { .. }))
+            .map(|(id, _)| *id)
+            .collect();
+        self.early_answers.retain(|id, _| ringing.contains(id));
+        let mut resend = Vec::new();
+        let mut failed = Vec::new();
+        for (id, e) in self.early_answers.iter_mut() {
+            if e.acknowledged {
+                continue;
+            }
+            if now >= e.give_up {
+                failed.push(*id);
+            } else if now >= e.next_resend {
+                resend.push(e.response.clone());
+                e.interval = (e.interval * 2).min(PRACK_WAIT);
+                e.next_resend = now + e.interval;
+            }
+        }
+        for r in resend {
+            self.send_plain(r, now, out);
+        }
+        for id in failed {
+            self.early_answers.remove(&id);
+            if let Some(c) = self.calls.remove(&id) {
+                self.answer_call_request(&c.invite, 500, "Server Internal Error", now, out);
+                Self::call_event(
+                    out,
+                    Event::CallEnded {
+                        call: id,
+                        status: 500,
+                    },
+                );
+            }
+        }
+    }
+
     /// Ringing timeout of incoming calls.
     pub(crate) fn call_tick(&mut self, now: u64, out: &mut Vec<Output>) {
+        self.early_answer_tick(now, out);
         let expired: Vec<CallId> = self
             .calls
             .iter()

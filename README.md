@@ -11,7 +11,7 @@ application, a ranked work list, and nothing copied from Microsoft products.
 > **Stage: M1 (sign-in), M4, M5 (video), M6 (viewing shared screens) and M7 (Exchange and extras) closed, pre-alpha.** Sign-in, presence, instant messaging (1:1 and group),
 > address book search, audio and video calls, meetings and telephony (transfer, forwarding, park, delegates,
 > emergency calls) exist as building blocks that pass offline tests and whose main flows also ran in the owner's private lab (50 crates,
-> 752 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
+> 754 tests) and can be used through the command-line tool `commscraft-cli`. `verified-interoperable` stays reserved
 > for the owner's runs on authorized servers. The desktop client `commscraft` (egui) signs in and offers chat (1:1 and group), presence, audio and video calls and viewing shared screens through the same session engine, also `tested-in-lab`; persistent chat rooms tested offline; meeting content with polls and voting. Read [`ROADMAP.md`](ROADMAP.md)
 > for where the project stands.
 
@@ -39,7 +39,7 @@ Teams; implement codecs that need a Microsoft licence (RTAudio, RTVideo). Detail
 ## What works today
 
 Status from [`docs/target-app-parity.md`](docs/target-app-parity.md) (2026-11-21): of 52 client
-functions, 34 are implemented and tested offline as a whole, 13 in parts, 0 not started.
+functions, 35 are implemented and tested offline as a whole, 12 in parts, 0 not started.
 
 | Area | In the code (tested offline) | Not yet |
 |---|---|---|
@@ -91,7 +91,7 @@ bundled Lucide subset. Screens and the capability gates are described in
 |---|---|
 | [`ROADMAP.md`](ROADMAP.md) | Stage, headline numbers, progress log |
 | [`docs/roadmap.md`](docs/roadmap.md) | Milestones, current focus, alpha gate |
-| [`docs/releases.md`](docs/releases.md) | Releases: version from the measured feature parity with the Windows client (now 86 %, version 0.86.0-alpha), Flatpak bundle and how to install it |
+| [`docs/releases.md`](docs/releases.md) | Releases: version from the measured feature parity with the Windows client (now 87 %, version 0.87.0-alpha), Flatpak bundle and how to install it |
 | [`docs/gaps.md`](docs/gaps.md) | Ranked list of everything missing or unresolved |
 | [`docs/interop-tests.md`](docs/interop-tests.md) | Test cases only the owner runs against a real server, each with a default |
 | [`docs/security.md`](docs/security.md) | Security by design: threat model and the rules every crate follows |

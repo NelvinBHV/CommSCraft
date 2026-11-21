@@ -1608,6 +1608,29 @@ fn incoming_invite(server: &mut Server, body: &str, multipart: bool) -> Message 
     server.sign(invite)
 }
 
+fn incoming_invite_100rel(server: &mut Server, body: &str, multipart: bool) -> Message {
+    let mut invite = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+    invite.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKcall");
+    invite.push_header("From", "<sip:bob@contoso.com>;tag=bobcall");
+    invite.push_header("To", "<sip:alice@contoso.com>");
+    invite.push_header("Call-ID", "call1");
+    invite.push_header("CSeq", "1 INVITE");
+    invite.push_header("Contact", "<sip:bob@contoso.com;opaque=user:epid:y;gruu>");
+    if multipart {
+        // MS-SIPRE §4.12.1 structure: ICEv6 part with ms-proxy-2007fallback, ICEv19 part last.
+        invite.push_header("Content-Type", "multipart/alternative;boundary=\"b\"");
+        invite.body = format!(
+            "--b\r\nContent-Type: application/sdp\r\nContent-Disposition: session; handling=optional; ms-proxy-2007fallback\r\n\r\nv=0\r\nc=IN IP4 198.51.100.66\r\nm=audio 1 RTP/AVP 0\r\n\r\n--b\r\nContent-Type: application/sdp\r\nContent-Disposition: session; handling=optional\r\n\r\n{body}\r\n--b--\r\n"
+        )
+        .into_bytes();
+    } else {
+        invite.push_header("Content-Type", "application/sdp");
+        invite.body = body.as_bytes().to_vec();
+    }
+    invite.push_header("Supported", "100rel");
+    server.sign(invite)
+}
+
 /// Incoming call: 180, the user accepts, 200 with the answer to the ICE-19 part; BYE ends it.
 #[test]
 fn incoming_call_flow() {
@@ -1803,7 +1826,8 @@ fn early_media_with_prack() {
     );
 }
 
-/// SD-50: no early media without ICE or for a forked call; 199 ends the early media of its fork.
+/// SD-50: no early media without ICE; a forked call gets it too; 199 ends the early media of its
+/// fork.
 #[test]
 fn early_media_limits() {
     let (mut e, mut server, _) = signed_in();
@@ -1834,7 +1858,7 @@ fn early_media_limits() {
     assert!(!events(&out)
         .iter()
         .any(|e| matches!(e, Event::CallEarlyMedia { .. })));
-    // Forked: no early media.
+    // Forked: early media as well (§3.1.5.12.2).
     let invite2 = call(&mut e);
     let out = e.on_message(
         &answer(
@@ -1847,7 +1871,7 @@ fn early_media_limits() {
         ),
         NOW,
     );
-    assert!(!events(&out)
+    assert!(events(&out)
         .iter()
         .any(|e| matches!(e, Event::CallEarlyMedia { .. })));
     // Unreliable 183 with ICE (gateway, PS-06): early media; 199 of that fork ends it.
@@ -5842,4 +5866,130 @@ fn ending_the_meeting_sends_delete_conference_to_the_focus() {
         b.contains("<deleteConference><conferenceKeys confEntity="),
         "{b}"
     );
+}
+
+/// SD-51: the callee answers early in a reliable 183, retransmits it until the PRACK, and sends
+/// the 200 with the same answer only after the PRACK, even when the user accepted before.
+#[test]
+fn callee_early_answer_with_prack() {
+    let (mut e, mut server, _) = signed_in();
+    e.on_message(
+        &incoming_invite_100rel(&mut server, &peer_sdp(9, "RTP/AVP"), false),
+        NOW,
+    );
+    let policy = commscraft_sdp::Encryption::Optional {
+        allow_plaintext: false,
+    };
+    let out = e.command(
+        Command::EarlyAnswer {
+            call: 1,
+            local: Box::new(media_local(42000, 3)),
+            policy,
+        },
+        NOW,
+    );
+    let early = sends(&out).pop().unwrap();
+    assert_eq!(early.status_code(), Some(183));
+    assert_eq!(early.single("Require").unwrap(), Some("100rel"));
+    assert_eq!(early.single("RSeq").unwrap(), Some("1"));
+    let early_body = early.body.clone();
+    assert!(String::from_utf8_lossy(&early_body).contains("m=audio"));
+    assert!(matches!(
+        events(&out).as_slice(),
+        [Event::CallEarlyAnswered { call: 1, .. }]
+    ));
+    // a second EarlyAnswer changes nothing (one offer/answer before acceptance)
+    let out = e.command(
+        Command::EarlyAnswer {
+            call: 1,
+            local: Box::new(media_local(43000, 4)),
+            policy,
+        },
+        NOW,
+    );
+    assert!(sends(&out).is_empty());
+    // retransmitted after 1 s, then after 2 s more
+    assert_eq!(sends(&e.on_tick(NOW + 1))[0].status_code(), Some(183));
+    assert!(sends(&e.on_tick(NOW + 2)).is_empty());
+    assert_eq!(sends(&e.on_tick(NOW + 3))[0].status_code(), Some(183));
+    // accepted before the PRACK: no 200 yet
+    let out = e.command(
+        Command::AcceptCall {
+            call: 1,
+            local: Box::new(media_local(42000, 3)),
+            policy,
+        },
+        NOW + 3,
+    );
+    assert!(sends(&out).is_empty());
+    let tag = early
+        .to()
+        .unwrap()
+        .unwrap()
+        .param("tag")
+        .unwrap()
+        .to_string();
+    let prack = |rack: &str, server: &mut Server| {
+        let mut p = Message::request("PRACK", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+        p.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKprack");
+        p.push_header("From", "<sip:bob@contoso.com>;tag=bobcall");
+        p.push_header("To", &format!("<sip:alice@contoso.com>;tag={tag}"));
+        p.push_header("Call-ID", "call1");
+        p.push_header("CSeq", "2 PRACK");
+        p.push_header("RAck", rack);
+        server.sign(p)
+    };
+    // a PRACK for another response is refused
+    let out = e.on_message(&prack("2 1 INVITE", &mut server), NOW + 4);
+    assert_eq!(sends(&out)[0].status_code(), Some(481));
+    let out = e.on_message(&prack("1 1 INVITE", &mut server), NOW + 4);
+    let s = sends(&out);
+    assert_eq!(s[0].status_code(), Some(200));
+    assert_eq!(s[0].cseq().unwrap().unwrap().method, "PRACK");
+    assert_eq!(s[1].status_code(), Some(200));
+    assert_eq!(s[1].cseq().unwrap().unwrap().method, "INVITE");
+    assert_eq!(s[1].body, early_body, "the 200 repeats the early answer");
+    assert!(matches!(
+        events(&out).as_slice(),
+        [Event::CallAnswered {
+            call: 1,
+            continues_early: true,
+            ..
+        }]
+    ));
+    // no more retransmissions
+    assert!(sends(&e.on_tick(NOW + 20)).is_empty());
+}
+
+/// SD-51: without 100rel support no early answer; without a PRACK the call fails with 500.
+#[test]
+fn callee_early_answer_needs_100rel_and_a_prack() {
+    let (mut e, mut server, _) = signed_in();
+    e.on_message(
+        &incoming_invite(&mut server, &peer_sdp(9, "RTP/AVP"), false),
+        NOW,
+    );
+    let early = |e: &mut Engine<Counter>| {
+        e.command(
+            Command::EarlyAnswer {
+                call: 1,
+                local: Box::new(media_local(42000, 3)),
+                policy: commscraft_sdp::Encryption::Required,
+            },
+            NOW,
+        )
+    };
+    assert!(sends(&early(&mut e)).is_empty(), "the caller lacks 100rel");
+    let (mut e, mut server, _) = signed_in();
+    e.on_message(
+        &incoming_invite_100rel(&mut server, &peer_sdp(9, "RTP/SAVP"), false),
+        NOW,
+    );
+    assert_eq!(sends(&early(&mut e))[0].status_code(), Some(183));
+    let out = e.on_tick(NOW + 32);
+    assert!(sends(&out).iter().any(|m| m.status_code() == Some(500)));
+    assert!(events(&out).contains(&Event::CallEnded {
+        call: 1,
+        status: 500
+    }));
 }

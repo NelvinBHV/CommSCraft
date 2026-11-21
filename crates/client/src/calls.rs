@@ -163,7 +163,7 @@ fn run(
         }
     };
     let started = if early {
-        media.start_early(&negotiated, CNAME, now_ms())
+        media.start_early(&negotiated, controlling, CNAME, now_ms())
     } else {
         media.start(&negotiated, controlling, CNAME, now_ms())
     };
@@ -177,6 +177,9 @@ fn run(
     // The final offer (IC-07) is a re-INVITE: only once the call is answered.
     let mut answered = !early;
     let mut selected_early = false;
+    // SD-51: the callee's checks may fail while the caller waits for the 200 before it checks
+    // (a forked call, SD-50); then ICE starts again with the answer instead of ending the call.
+    let mut early_failed = false;
     let stop = Arc::new(AtomicBool::new(false));
     let (cap_tx, cap_rx) = mpsc::sync_channel::<Vec<i16>>(8);
     let (play_tx, play_rx) = mpsc::sync_channel::<Vec<i16>>(8);
@@ -193,19 +196,27 @@ fn run(
             Ok(ToMedia::Stop) | Err(mpsc::TryRecvError::Disconnected) => break,
             Ok(ToMedia::Update(n)) => media.update(&n),
             Ok(ToMedia::Start {
-                media: n, early, ..
+                media: n,
+                early,
+                controlling: c,
             }) => {
                 restarted = Some(if early {
-                    media.start_early(&n, CNAME, now)
+                    media.start_early(&n, c, CNAME, now)
                 } else {
-                    media.start(&n, true, CNAME, now)
+                    media.start(&n, c, CNAME, now)
                 });
+                early_failed = false;
                 answered = !early;
                 final_sent = false;
                 selected_early = false;
             }
             Ok(ToMedia::Confirm(n)) => {
-                restarted = Some(media.confirm(&n, CNAME, now));
+                restarted = Some(if early_failed {
+                    early_failed = false;
+                    media.start(&n, controlling, CNAME, now)
+                } else {
+                    media.confirm(&n, controlling, CNAME, now)
+                });
                 answered = true;
                 if selected_early && controlling && !final_sent {
                     final_sent = true;
@@ -278,6 +289,10 @@ fn run(
                 }
                 cm::Event::Selected => None,
                 cm::Event::Dtmf(d) => Some(FromMedia::Dtmf(id, d)),
+                cm::Event::Failed(_) if !answered && !controlling => {
+                    early_failed = true;
+                    None
+                }
                 cm::Event::Failed(why) => Some(FromMedia::Failed(id, why)),
                 cm::Event::PeerBye => Some(FromMedia::PeerBye(id)),
                 // The audio stream carries no video.

@@ -338,6 +338,15 @@ pub enum Command {
         local: Box<sdp::Local>,
         policy: sdp::Encryption,
     },
+    /// While an incoming call rings: answer its offer early in a reliable 183 (MS-SDPEXT
+    /// §3.1.5.13, SD-51), so the connectivity checks run before the user picks up. Followed by
+    /// `CallEarlyAnswered`; `AcceptCall` later sends the same answer in the 200. Ignored when the
+    /// caller does not support 100rel or the offer carries video.
+    EarlyAnswer {
+        call: CallId,
+        local: Box<sdp::Local>,
+        policy: sdp::Encryption,
+    },
     /// Function 43: view what is shared in a conference (its application sharing MCU).
     ViewConferenceScreen {
         conversation: ConversationId,
@@ -593,6 +602,12 @@ pub enum Event {
         call: CallId,
         media: Box<sdp::Negotiated>,
     },
+    /// Our early answer to an incoming call went out (`EarlyAnswer`): the connectivity checks may
+    /// start, as the controlled agent; no speech until `CallAnswered` (with `continues_early`).
+    CallEarlyAnswered {
+        call: CallId,
+        media: Box<sdp::Negotiated>,
+    },
     /// The early media's fork ended (199, MS-SDPEXT §3.1.5.13): stop it, keep waiting.
     CallEarlyMediaEnded {
         call: CallId,
@@ -782,6 +797,8 @@ pub struct Engine<R: Random> {
     calendar_versions: [u32; pres::calendar::SLOTS],
     /// Function 43: calls that bring a shared screen to view, and those of them over RDP.
     screen_calls: std::collections::BTreeSet<CallId>,
+    /// Incoming calls answered early in a reliable 183 (SD-51), until accepted or ended.
+    early_answers: std::collections::BTreeMap<CallId, call::EarlyAnswer>,
     rdp_calls: std::collections::BTreeSet<CallId>,
     /// The routing rules the user published last (restored after an emergency call).
     routing_rules: pres::Forwarding,
@@ -913,6 +930,7 @@ impl<R: Random> Engine<R> {
             calendar: pres::calendar::Calendar::default(),
             calendar_versions: [0; pres::calendar::SLOTS],
             screen_calls: std::collections::BTreeSet::new(),
+            early_answers: std::collections::BTreeMap::new(),
             rdp_calls: std::collections::BTreeSet::new(),
             routing_rules: pres::Forwarding::default(),
             routing_known: false,
@@ -2338,6 +2356,11 @@ impl<R: Random> Engine<R> {
                 local,
                 policy,
             } => self.accept_call(call, *local, policy, now, &mut out),
+            Command::EarlyAnswer {
+                call,
+                local,
+                policy,
+            } => self.early_answer(call, *local, policy, now, &mut out),
             Command::UpdateCall { call, local } => self.update_call(call, *local, now, &mut out),
             Command::Hangup { call } => self.hangup(call, now, &mut out),
             Command::ParkCall { call } => self.park_call(call, now, &mut out),
@@ -3159,6 +3182,12 @@ impl<R: Random> Engine<R> {
         if let Some(id) = self.park_of(req) {
             self.on_park_request(id, req, now, out);
             return;
+        }
+        if method == "PRACK" {
+            if let Some(id) = self.early_answered_call_of(req) {
+                self.on_prack(id, req, now, out);
+                return;
+            }
         }
         if let Some(id) = self.call_of(req) {
             self.on_call_request(id, req, now, out);
