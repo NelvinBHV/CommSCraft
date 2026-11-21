@@ -157,6 +157,7 @@ impl TlsClient {
         Ok(SipConnection {
             tls: self.handshake(addr, server_name, timeout)?,
             decoder: StreamDecoder::new(Limits::default()),
+            compression: None,
         })
     }
 
@@ -251,7 +252,28 @@ impl TlsStream {
 pub struct SipConnection {
     tls: StreamOwned<ClientConnection, TcpStream>,
     decoder: StreamDecoder,
+    /// SIP compression, once negotiated ([MS-SIPCOMP], function 3).
+    compression: Option<Compression>,
 }
+
+#[derive(Default)]
+struct Compression {
+    inbound: commscraft_sipcomp::Inbound,
+    outbound: commscraft_sipcomp::Outbound,
+}
+
+/// Packet counts of a compressed connection (diagnostics).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CompressionStats {
+    pub sent: u64,
+    pub sent_compressed: u64,
+    pub received: u64,
+    pub received_compressed: u64,
+}
+
+/// Timer F for the NEGOTIATE transaction: 5 s in place of 32 s ([MS-SIPCOMP] 20250520 §3.1,
+/// p. 11, CP-03).
+const NEGOTIATE_TIMEOUT: Duration = Duration::from_secs(5);
 
 impl SipConnection {
     /// One read that ends by `deadline` at the latest (issue #210): the socket's read timeout is
@@ -307,8 +329,100 @@ impl SipConnection {
     }
 
     pub fn send_raw(&mut self, bytes: &[u8]) -> Result<(), NetError> {
-        self.tls.write_all(bytes).map_err(NetError::Io)?;
+        if let Some(c) = &mut self.compression {
+            // CP-04: compressed only after the server's first compressed packet.
+            let framed = c
+                .outbound
+                .frame(bytes, c.inbound.peer_compressed)
+                .map_err(compression_error)?;
+            self.tls.write_all(&framed).map_err(NetError::Io)?;
+        } else {
+            self.tls.write_all(bytes).map_err(NetError::Io)?;
+        }
         self.tls.flush().map_err(NetError::Io)
+    }
+
+    /// Asks the server for SIP compression ([MS-SIPCOMP] 20250520 §3.1.4.1, p. 11): a NEGOTIATE
+    /// as the first SIP message after the TLS handshake (CP-01, CP-02), answered within 5 s.
+    /// `Ok(true)`: compression is on for the rest of the connection. `Ok(false)`: no or another
+    /// answer in time – the connection goes on uncompressed (CP-03). A 200 without `LZ77-8K` is
+    /// an error, the caller closes the connection (CP-03). Call it right after connecting.
+    pub fn negotiate_compression(&mut self, from: &str, tag: &str) -> Result<bool, NetError> {
+        // Injection-safe: both go into header lines unquoted.
+        if from
+            .chars()
+            .chain(tag.chars())
+            .any(|c| c.is_control() || c.is_whitespace() || matches!(c, '<' | '>' | '"'))
+        {
+            return Err(NetError::Io(std::io::Error::new(
+                ErrorKind::InvalidInput,
+                "unusable From for NEGOTIATE",
+            )));
+        }
+        let local = self.local_addr()?;
+        let peer = self.tls.sock.peer_addr().map_err(NetError::Io)?;
+        let mut id = [0u8; 16];
+        getrandom::fill(&mut id).map_err(|e| NetError::Io(std::io::Error::other(e.to_string())))?;
+        let hex: String = id.iter().map(|b| format!("{b:02x}")).collect();
+        let (branch, call_id) = hex.split_at(12);
+        let request = format!(
+            "NEGOTIATE sip:{peer} SIP/2.0\r\nVia: SIP/2.0/TLS {local};branch=z9hG4bK{branch}\r\n\
+             Max-Forwards: 0\r\nFrom: <{from}>;tag={tag}\r\nTo: <sip:{peer}>\r\n\
+             Call-ID: {call_id}\r\nCSeq: 1 NEGOTIATE\r\nCompression: LZ77-8K\r\n\
+             Content-Length: 0\r\n\r\n"
+        );
+        let before = self.tls.sock.read_timeout().map_err(NetError::Io)?;
+        self.tls
+            .sock
+            .set_read_timeout(Some(NEGOTIATE_TIMEOUT))
+            .map_err(NetError::Io)?;
+        self.send_raw(request.as_bytes())?;
+        let deadline = std::time::Instant::now() + NEGOTIATE_TIMEOUT;
+        let mut answer = None;
+        while std::time::Instant::now() < deadline {
+            match self.recv()? {
+                Some(m)
+                    if m.is_response()
+                        && m.cseq()
+                            .ok()
+                            .flatten()
+                            .is_some_and(|c| c.method == "NEGOTIATE") =>
+                {
+                    answer = Some(m);
+                    break;
+                }
+                Some(_) => {}
+                None => break,
+            }
+        }
+        self.tls
+            .sock
+            .set_read_timeout(before)
+            .map_err(NetError::Io)?;
+        let Some(m) = answer.filter(|m| m.status_code() == Some(200)) else {
+            return Ok(false);
+        };
+        let lz = m
+            .header_values("Compression")
+            .flat_map(|v| v.split(','))
+            .any(|v| v.trim().eq_ignore_ascii_case("LZ77-8K"));
+        if !lz {
+            return Err(NetError::Io(std::io::Error::other(
+                "the server accepted compression without naming LZ77-8K",
+            )));
+        }
+        self.compression = Some(Compression::default());
+        Ok(true)
+    }
+
+    /// Packet counts while SIP compression is on.
+    pub fn compression_stats(&self) -> Option<CompressionStats> {
+        self.compression.as_ref().map(|c| CompressionStats {
+            sent: c.outbound.packets,
+            sent_compressed: c.outbound.compressed,
+            received: c.inbound.packets,
+            received_compressed: c.inbound.compressed,
+        })
     }
 
     /// Waits up to the socket timeout for the next complete message; `Ok(None)` on timeout.
@@ -322,7 +436,13 @@ impl SipConnection {
                 Ok(0) => return Err(NetError::Closed),
                 Ok(n) => {
                     let data = buf.get(..n).unwrap_or_default();
-                    self.decoder.push(data).map_err(NetError::Sip)?;
+                    match &mut self.compression {
+                        Some(c) => {
+                            let plain = c.inbound.push(data).map_err(compression_error)?;
+                            self.decoder.push(&plain).map_err(NetError::Sip)?;
+                        }
+                        None => self.decoder.push(data).map_err(NetError::Sip)?,
+                    }
                 }
                 Err(e) if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut) => {
                     return Ok(None)
@@ -338,6 +458,14 @@ impl SipConnection {
             .set_read_timeout(Some(timeout))
             .map_err(NetError::Io)
     }
+}
+
+/// A compression error closes the connection ([MS-SIPCOMP] §3.2.5.2, CP-08).
+fn compression_error(e: commscraft_sipcomp::Error) -> NetError {
+    NetError::Io(std::io::Error::new(
+        ErrorKind::InvalidData,
+        format!("SIP compression: {e:?}"),
+    ))
 }
 
 /// The OS CSPRNG for the protocol crates (`commscraft_register::Random`).

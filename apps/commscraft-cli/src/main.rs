@@ -45,7 +45,7 @@ use commscraft_sipae::Policy;
 
 const USAGE: &str =
     "usage: commscraft-cli sign-in|presence|im|interactive --aor sip:USER@DOMAIN --user NTLM_USER --domain NTLM_DOMAIN \
-[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--kerberos] [--tls-dsk] [--ntlm-legacy] \
+[--server HOST[:PORT]] [--ca-file PEM] [--epid HEX] [--verbose] [--discover-only] [--trust-domain DOMAIN] [--kerberos] [--tls-dsk] [--ntlm-legacy] [--compression] \
 [--set-status online|busy|dnd|away] [--max-contacts N] [--to sip:URI --text TEXT [--wait S]] --authorized
        commscraft-cli audio-check [--device ALSA_DEVICE] [--codec g722|pcma]   (local, no network)
 
@@ -108,6 +108,8 @@ im        signs in, opens a 1:1 conversation with --to, sends --text, shows answ
               ~/.local/share/commscraft/tlsdsk/ACCOUNT, key 0600), then a TLS handshake inside the
               SIP sign-in. Falls back to Kerberos (with --kerberos) or NTLM.
 --ntlm-legacy    diagnostic: NTLMv2 without the optional MIC/channel-binding additions, with LMv2.
+--compression ask the server for SIP compression (MS-SIPCOMP) right after the TLS handshake; the
+              connection stays uncompressed when the server declines. /sipcomp shows the counts.
 --verbose     also prints the non-secret NTLM facts (offered/chosen flags, domain names).
 The password is read from the terminal without echo, or as the first line of standard input.";
 
@@ -124,6 +126,8 @@ struct Args {
     discover_only: bool,
     trust_domains: Vec<String>,
     ntlm_legacy: bool,
+    /// Function 3: negotiate SIP compression after connecting.
+    compression: bool,
     /// Function 5: sign in with Kerberos when the server offers it (else NTLM).
     kerberos: bool,
     /// Function 6: sign in with TLS-DSK and a user certificate when the server offers it.
@@ -188,6 +192,7 @@ fn parse_args() -> Result<Args, String> {
         discover_only: false,
         trust_domains: Vec::new(),
         ntlm_legacy: false,
+        compression: false,
         kerberos: false,
         tls_dsk: false,
         calendar: true,
@@ -223,6 +228,7 @@ fn parse_args() -> Result<Args, String> {
             "--verbose" => a.verbose = true,
             "--discover-only" => a.discover_only = true,
             "--ntlm-legacy" => a.ntlm_legacy = true,
+            "--compression" => a.compression = true,
             "--kerberos" => a.kerberos = true,
             "--tls-dsk" => a.tls_dsk = true,
             "--set-status" => {
@@ -825,7 +831,16 @@ fn run(a: Args) -> Result<(), String> {
             Err(e) => eprintln!("  {e}"),
         }
     }
-    let conn = conn.ok_or("no server reachable")?;
+    let mut conn = conn.ok_or("no server reachable")?;
+    if a.compression {
+        // Function 3: NEGOTIATE before any other SIP message ([MS-SIPCOMP] §3.1.4.1, CP-01).
+        let tag = hex(&mut OsRandom::new().map_err(|e| e.to_string())?, 8);
+        match conn.negotiate_compression(&a.aor, &tag) {
+            Ok(true) => eprintln!("SIP compression on (LZ77-8K)"),
+            Ok(false) => eprintln!("SIP compression declined, going on uncompressed"),
+            Err(e) => return Err(format!("SIP compression: {e}")),
+        }
+    }
     let local = conn.local_addr().map_err(|e| e.to_string())?;
     let host = match local {
         std::net::SocketAddr::V4(v4) => v4.ip().to_string(),
@@ -3102,6 +3117,16 @@ fn interactive(
                     }
                     quitting = true;
                     Some(C::SignOut)
+                }
+                "/sipcomp" => {
+                    match conn.compression_stats() {
+                        Some(c) => println!(
+                            "* SIP compression: {} packets sent ({} compressed), {} received ({} compressed)",
+                            c.sent, c.sent_compressed, c.received, c.received_compressed
+                        ),
+                        None => println!("* SIP compression is off (start with --compression)"),
+                    }
+                    None
                 }
                 "/contacts" => {
                     for (uri, (name, state)) in &presence {

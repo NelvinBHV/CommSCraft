@@ -30,3 +30,13 @@ Consistency check: the example tuple <16,15> → `1111010000` (offset 16, class 
 - O-CP-1 **partly** (OB-02): flags in the high nibble is an inference from the diagram convention; the byte order of the length stays open. No public implementation or archived older edition found (OB-30).
 - Recomputed in `crates/sipcomp` (2026-10-27): RFC 2118 / MS-RDPBCGR examples for literals (0x56, 0xE7), offsets (3, 128, 1024) and lengths (3, 15, 120, 4097); the tuple <16,15> → `1111010000110111`; the token sequence of the "for whom the bell tolls" example; stream round trips with PACKET_AT_FRONT and PACKET_FLUSHED. The 6-byte header stays out of the code until O-CP-1 is settled.
 - O-CP-1, O-CP-3 **not needed** (OB-40, normative): only the client starts compression (§3.1.5, p. 11: the server MUST NOT). CommSCraft does not negotiate it; the crate stays `tested-offline` (optional interop test IT-12).
+
+## Interop findings (2026-11-21, `tested-in-lab`)
+Observed against Skype for Business Server 2019 in the owner's lab (details private); these are **interop observations**, not documented behaviour.
+- O-CP-1 **closed**: the flags sit in the high nibble of the first header byte (as the diagram convention suggests), the "Uncompressed size" is sent most significant byte first. A client packet with the flags in the low nibble or the size in the other byte order closes the connection.
+- A packet sent without compression carries PACKET_FLUSHED (`0x80`); one with no flag at all closes the connection. This matches the expansion rule of §3.2.5.1.1 (p. 15).
+- CP-04 is enforced: a compressed client packet before the server's first compressed packet closes the connection. The server sends its first compressed packet after the sign-in succeeds; the challenges before are uncompressed with PACKET_FLUSHED.
+- O-CP-3 **closed**: bits are packed most significant bit first.
+- K-CP-1 **closed**: the server encodes offsets 64–319 and 320–8191 with 64 and 320 subtracted, as RFC 2118 and MS-RDPBCGR do; the literal reading of MS-SIPCOMP §3.2.5.1 decodes the server's packets wrongly.
+- K-CP-2 (**new**, interop): after PACKET_AT_FRONT the server's copy-tuples may reach back past the front of the buffer into data left at its end by earlier packets – the history is addressed as a ring. Neither MS-SIPCOMP nor RFC 2118 says so. The decoder (`sipcomp::Decompressor`) addresses it as a ring but never reads where nothing was written since the last flush; the encoder stays linear, which is a valid subset.
+- A compressed payload has no length field; it ends with the byte holding the last bit of the token that completes the uncompressed size (inference from §2.2.4, confirmed by decoding the server's stream).
