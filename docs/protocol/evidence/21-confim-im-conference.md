@@ -40,3 +40,9 @@ Group IM: addConference (`openAuthenticated` as in [MS-CONFPRO] §4.1, p. 41, wi
 - **Failures:** they are not reported, since the dial-out of the same invitee reports the outcome.
 - **Inference:** `Supported: ms-sender`, taken from secondary sources.
 - **Status:** `tested-offline`, `tested-in-lab`.
+
+## Formatted messages (2026-11-21, interop, `tested-in-lab`)
+[MS-CONFIM] 20250520 §2.2.5 (p. 14) only names the message formats; the body of `text/html` is not specified. Observed with the Windows client:
+- The first message of an IM session comes in the INVITE three times: `ms-text-format: text/plain; charset=UTF-8; ms-body=<base64>` and `ms-im-format: text/html; …` and `ms-im-format: text/rtf; …`. Later messages follow the answerer's `a=accept-types`: with `text/plain` only, they are `text/plain`; with `text/plain text/html`, every message is `Content-Type: text/html` with a fragment such as `<B><SPAN id="…" style='font-size:10pt; font-family:Segoe UI; color:#000000;'>bold</SPAN></B><SPAN …> plain</SPAN>`, `<I>` for italics.
+- Messages we send as `text/html; charset=UTF-8` are accepted (200) but not shown; as `text/html` without parameters they are shown (bold seen; the colour was not shown – inference: the receiving client's own font setting).
+- Implemented: `im::html` (bounded reading into runs, our messages in the same form), the session offers `text/html`, `Event::Text` carries the runs, the desktop client shows them; tests `im::tests::html_*`, `session::tests::incoming_conversation`, UI `formatted_messages_keep_their_runs`.

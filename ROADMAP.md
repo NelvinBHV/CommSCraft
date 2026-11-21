@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (desktop notifications, SIP compression in the desktop client)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (formatted messages)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-21 | Formatted messages (`tested-in-lab`): the message session offers `text/html` as the Windows client does, which then sends every message as an HTML fragment (`<B>`, `<I>`, `<SPAN style>`); it is read into text runs and shown formatted in the desktop client. Our messages go out in the font of the options (bold, italic, underline, colour) where the other side accepts `text/html`, as `Content-Type: text/html` without parameters (with a charset the Windows client accepts but does not show them); CLI `/style`. Version 0.89.2-alpha. |
 | 2026-11-21 | Desktop client: notifications through the desktop's notification service (`org.freedesktop.Notifications`) in place of a notification area icon – incoming calls with answer and decline, meeting invitations, new messages while the window is not seen; the session worker shows them and carries out the chosen action, so they also work while the window is hidden or the screen locked (`tested-in-lab`); the options for message alerts and quiet while Do Not Disturb now take effect. SIP compression as a sign-in option (`tested-in-lab`). Version 0.89.1-alpha. |
 | 2026-11-21 | Calls over TCP ([MS-ICE2] §3.1.4.8.1.3, `tested-in-lab`): the TCP-only mode (`commscraft-cli --tcp-only`: active and passive TCP host candidates and the TCP relay, no UDP) connects to the Windows client even with UDP blocked – its artificial active candidate opens the connection to our passive one; without a TCP TURN server every call now also offers that artificial active TCP server-reflexive candidate, as the Windows client does. RTP and RTCP share the TCP connection; TCP/RTP/SAVP is accepted in the later offer/answer. Peer info now also in audio reports. Parity 89 % (`scripts/parity.py`), version 0.89.0-alpha. |
 | 2026-11-21 | Early answer as the callee and early media of forked calls ([MS-SDPEXT] §3.1.5.12–3.1.5.13, `tested-in-lab`): while a call rings, CLI and desktop client prepare the media and answer in a reliable 183 (`Require: 100rel`, RSeq, retransmitted until the PRACK), the 200 repeats the answer after the PRACK; as the caller, early media now also starts when the server forks the call (`Ms-Forking`), so the connectivity checks run before anyone picks up. Parity 87 % (`scripts/parity.py`), version 0.87.0-alpha. |

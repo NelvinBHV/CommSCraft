@@ -91,7 +91,7 @@ bundled Lucide subset. Screens and the capability gates are described in
 |---|---|
 | [`ROADMAP.md`](ROADMAP.md) | Stage, headline numbers, progress log |
 | [`docs/roadmap.md`](docs/roadmap.md) | Milestones, current focus, alpha gate |
-| [`docs/releases.md`](docs/releases.md) | Releases: version from the measured feature parity with the Windows client (now 89 %, version 0.89.1-alpha), Flatpak bundle and how to install it |
+| [`docs/releases.md`](docs/releases.md) | Releases: version from the measured feature parity with the Windows client (now 89 %, version 0.89.2-alpha), Flatpak bundle and how to install it |
 | [`docs/gaps.md`](docs/gaps.md) | Ranked list of everything missing or unresolved |
 | [`docs/interop-tests.md`](docs/interop-tests.md) | Test cases only the owner runs against a real server, each with a default |
 | [`docs/security.md`](docs/security.md) | Security by design: threat model and the rules every crate follows |
