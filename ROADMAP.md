@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (redundant audio)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (G.722.1/Siren not planned)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,7 +16,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **27** tested-offline as a whole, **17** in parts, **2** not started, 6 not planned/needs captures; **40** also `tested-in-lab` | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Implementation status of the 52 functions | **33** tested-offline as a whole, **13** in parts, **1** not started, 5 not planned/needs captures/deferred; **41** also `tested-in-lab`; parity **84 %** | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-21 | Audio codecs Siren and G.722.1 not planned: Polycom offers them only under personal, non-transferable licence terms with trademark display, which do not fit an openly redistributable client; calls keep G.722 and G.711. Parity 84 % (`scripts/parity.py`), version 0.84.0-alpha. |
 | 2026-11-21 | Redundant audio ([MS-RTPRADEX], RFC 2198 with one redundant block): offered and answered as `RED/8000`, lost packets played from the redundant block, sent while the peer reports loss; the Windows client accepts and answers it (`tested-in-lab`), the recovery `tested-offline`. |
 | 2026-11-21 | Dial-in numbers in the meeting entry info (getConferencingCapabilities, [MS-CONFPRO] §2.2.2.8): numbers of the suggested region, conference ID, link to all numbers; the request `tested-in-lab`, the numbers `tested-offline`; feature parity 81 %. |
 | 2026-11-21 | Typing indicator complete (`tested-in-lab`): the desktop client sends it while the user types and shows the peer's, both directions with the Windows client; video in A/V conferences recognised as tested in the lab; feature parity 80 %. |
