@@ -1,8 +1,8 @@
 # Flatpak build of the CommSCraft desktop client. Built by .github/workflows/flatpak.yml on free
 # GitHub-hosted runners; the bundle is attached to the GitHub release.
 #
-# Licensing: only CommSCraft (MIT OR Apache-2.0) and its Rust dependencies are built into the
-# bundle. FFmpeg is not bundled: the freedesktop runtime provides it, and the runtime extension
+# Licensing: CommSCraft (MIT OR Apache-2.0), its Rust dependencies and MIT Kerberos (MIT-style
+# licence) are built into the bundle. FFmpeg is not bundled: the freedesktop runtime provides it, and the runtime extension
 # org.freedesktop.Platform.ffmpeg-full (installed from Flathub on demand) adds H.264.
 app-id: io.github.nelvinbhv.CommSCraft
 runtime: org.freedesktop.Platform
@@ -34,12 +34,32 @@ add-extensions:
 cleanup-commands:
   - mkdir -p /app/lib/ffmpeg
 modules:
+  # MIT Kerberos (MIT-style licence, bundled): GSSAPI for the Kerberos sign-in; the freedesktop
+  # runtime has none.
+  - name: krb5
+    subdir: src
+    config-opts:
+      - --disable-static
+      - --disable-rpath
+      - --without-system-verto
+      - --without-keyutils
+    cleanup:
+      - /bin
+      - /sbin
+      - /share/man
+      - /share/examples
+      - /var
+    sources:
+      - type: archive
+        url: https://kerberos.org/dist/krb5/1.21/krb5-1.21.3.tar.gz
+        sha256: b7a4cd5ead67fb08b980b21abd150ff7217e85ea320c9ed0c6dadd304840ad35
   - name: commscraft
     buildsystem: simple
     build-options:
       append-path: /usr/lib/sdk/rust-stable/bin:/usr/lib/sdk/llvm20/bin
       env:
         CARGO_HOME: /run/build/commscraft/cargo
+        PKG_CONFIG_PATH: /app/lib/pkgconfig
         LIBCLANG_PATH: /usr/lib/sdk/llvm20/lib
       # The crates are fetched while building (a bundle for the release, not a Flathub build).
       build-args:
