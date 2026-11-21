@@ -393,3 +393,132 @@ pub fn parse_meetings(xml: &str) -> Result<(Response, Vec<Meeting>), Error> {
     }
     Ok((response, meetings))
 }
+
+/// One dial-in number of the conferencing service ([MS-CONFPRO] 20250520 §2.2.3.8, p. 30):
+/// the number as written for people, the language tags it speaks (default first), toll-free.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AccessNumber {
+    pub number: String,
+    pub languages: Vec<String>,
+    pub toll_free: bool,
+}
+
+/// The dial-in numbers of one region.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Region {
+    pub name: String,
+    pub numbers: Vec<AccessNumber>,
+}
+
+/// What the focus factory reports in a getConferencingCapabilities answer (§2.2.3.8, pp.
+/// 28–31): PSTN dial-in (numbers per region, the links to the full list, the region to
+/// emphasise) and the defaults for scheduling.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Capabilities {
+    pub pstn_enabled: bool,
+    pub regions: Vec<Region>,
+    pub default_region: Option<String>,
+    pub internal_url: Option<String>,
+    pub external_url: Option<String>,
+    pub anonymous_scheduling: Option<bool>,
+    pub default_admission: Option<Admission>,
+    pub schedule_locked: Option<bool>,
+    pub recording_allowed: Option<bool>,
+    pub pstn_lobby_bypass_allowed: Option<bool>,
+    pub default_autopromote: Option<u32>,
+    pub default_entry_exit_announcements: Option<bool>,
+}
+
+/// Most regions and numbers per region taken (design).
+pub const MAX_REGIONS: usize = 64;
+pub const MAX_NUMBERS: usize = 64;
+
+/// getConferencingCapabilities (§2.2.2.8, p. 22): no child elements, no server-mode attribute.
+pub fn get_conferencing_capabilities(
+    request_id: u32,
+    organizer: &str,
+    focus_factory: &str,
+) -> Result<String, Error> {
+    request(
+        request_id,
+        organizer,
+        focus_factory,
+        "<getConferencingCapabilities/>",
+    )
+}
+
+/// An `https` link from an answer (dial-in pages); anything else is left out.
+fn https_link(e: &Element) -> Option<String> {
+    let u = e.text().trim().to_string();
+    (u.len() <= 2048
+        && u.get(..8)
+            .is_some_and(|p| p.eq_ignore_ascii_case("https://"))
+        && !u.chars().any(|c| c.is_control() || c.is_whitespace()))
+    .then_some(u)
+}
+
+fn flag(e: &Element, name: &str) -> Option<bool> {
+    match e.child(name)?.text().trim() {
+        "true" | "1" => Some(true),
+        "false" | "0" => Some(false),
+        _ => None,
+    }
+}
+
+/// Reads a getConferencingCapabilities answer (§2.2.3.8). Text is bounded and printable; at most
+/// [`MAX_REGIONS`] regions of [`MAX_NUMBERS`] numbers.
+pub fn parse_capabilities(xml: &str) -> Result<(Response, Capabilities), Error> {
+    let response = parse_response(xml)?;
+    let root = commscraft_xml::parse(xml, &limits()).map_err(Error::Xml)?;
+    let mut c = Capabilities::default();
+    let Some(cmd) = root.child("getConferencingCapabilities") else {
+        return Ok((response, c));
+    };
+    if let Some(p) = cmd.child("pstn-bridging") {
+        c.pstn_enabled = flag(p, "enabled").unwrap_or(false);
+        if let Some(a) = p.child("access-numbers") {
+            c.internal_url = a.child("internal-url").and_then(https_link);
+            c.external_url = a.child("external-url").and_then(https_link);
+            c.default_region = a.child("default-region").and_then(|e| text_of(e, 128));
+            for r in a.children_named("region").take(MAX_REGIONS) {
+                let Some(name) = r.attr("name").map(printable).filter(|n| !n.is_empty()) else {
+                    continue;
+                };
+                let numbers = r
+                    .children_named("access-number")
+                    .take(MAX_NUMBERS)
+                    .filter_map(|n| {
+                        let number = n.child("number").and_then(|e| text_of(e, 64))?;
+                        Some(AccessNumber {
+                            number,
+                            languages: n
+                                .children_named("language")
+                                .filter_map(|l| l.attr("tag"))
+                                .map(printable)
+                                .filter(|t| !t.is_empty() && t.len() <= 35)
+                                .take(16)
+                                .collect(),
+                            toll_free: flag(n, "toll-free").unwrap_or(false),
+                        })
+                    })
+                    .collect();
+                c.regions.push(Region {
+                    name: name.chars().take(128).collect(),
+                    numbers,
+                });
+            }
+        }
+    }
+    c.anonymous_scheduling = flag(cmd, "anonymous-scheduling");
+    c.default_admission = cmd
+        .child("default-admission-policy")
+        .and_then(|e| Admission::parse(&e.text()));
+    c.schedule_locked = flag(cmd, "schedule-locked");
+    c.recording_allowed = flag(cmd, "recording-allowed");
+    c.pstn_lobby_bypass_allowed = flag(cmd, "pstn-lobby-bypass-allowed");
+    c.default_autopromote = cmd
+        .child("default-autopromote")
+        .and_then(|e| e.text().trim().parse().ok());
+    c.default_entry_exit_announcements = flag(cmd, "default-entry-exit-announcements");
+    Ok((response, c))
+}

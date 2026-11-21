@@ -1030,6 +1030,25 @@ fn schedule_list_show_cancel_meeting() {
         .iter()
         .any(|ev| matches!(ev, Event::Meetings(l) if l.len() == 1)));
 
+    // Dial-in numbers and scheduling defaults (getConferencingCapabilities, [MS-CONFPRO] §2.2.2.8).
+    let out = e.command(Command::ConferencingCapabilities, NOW);
+    let caps = find(&out, "SERVICE");
+    assert!(String::from_utf8_lossy(&caps.body).contains("<getConferencingCapabilities/>"));
+    let answered = r#"<response xmlns="urn:ietf:params:xml:ns:cccp" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" requestId="9" code="success"><getConferencingCapabilities capability-version="0"><mcu-types/><pstn-bridging><enabled>true</enabled><access-numbers><msci:region name="Hamburg"><msci:access-number><msci:language tag="de-DE" lcid="1031"/><msci:number>+49 40 1234</msci:number></msci:access-number></msci:region></access-numbers></pstn-bridging><anonymous-scheduling>false</anonymous-scheduling></getConferencingCapabilities></response>"#;
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &caps,
+            200,
+            Some("application/cccp+xml"),
+            answered,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(events(&out).iter().any(|ev| matches!(ev,
+        Event::ConferencingCapabilities(c) if c.pstn_enabled && c.regions[0].numbers[0].number == "+49 40 1234")));
+
     let out = e.command(
         Command::CancelMeeting {
             conference_id: id.clone(),

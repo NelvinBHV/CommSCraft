@@ -1094,3 +1094,70 @@ fn dial_in_response_connection_info() {
     assert!(with("alternativeName", "a/b").is_err());
     assert!(DataConnection::from_info(&[]).is_err());
 }
+
+mod capabilities_tests {
+    use crate::schedule::*;
+    use crate::Code;
+
+    const FF: &str = "sip:alice@contoso.com;gruu;opaque=app:conf:focusfactory";
+
+    /// [MS-CONFPRO] 20250520 §4 example of getConferencingCapabilities (pp. 56–57; line breaks of
+    /// the PDF joined): dial-in numbers per region, links, defaults.
+    #[test]
+    fn conferencing_capabilities() {
+        let x = get_conferencing_capabilities(4, "sip:alice@contoso.com", FF).unwrap();
+        assert!(x.contains("<getConferencingCapabilities/>") && x.contains("requestId=\"4\""));
+        let answer = r#"<response C3PVersion="1" requestId="1" from="sip:alice@contoso.com;gruu;opaque=app:conf:focusfactory" to="sip:alice@contoso.com" code="success" xmlns="urn:ietf:params:xml:ns:cccp" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" xmlns:msci2="http://schemas.microsoft.com/rtc/2008/12/confinfoextensions" xmlns:mscp="http://schemas.microsoft.com/rtc/2005/08/cccpextensions">
+  <getConferencingCapabilities capability-version="0">
+    <mcu-types><mcuType>audio-video</mcuType><mcuType>chat</mcuType></mcu-types>
+    <pstn-bridging>
+      <enabled>true</enabled>
+      <access-numbers>
+        <msci:internal-url>https://tk5ucdfpl01.exchange.corp.microsoft.com:443/Dialin</msci:internal-url>
+        <msci:external-url>https://lslm84.meet.microsoft.com:443/Dialin</msci:external-url>
+        <msci:region name="Redmond">
+          <msci:access-number>
+            <msci:language tag="en-US" lcid="1033" />
+            <msci:language tag="de-DE" lcid="1031" />
+            <msci:number>425-707-0001</msci:number>
+            <msci:toll-free>true</msci:toll-free>
+          </msci:access-number>
+          <msci:access-number>
+            <msci:language tag="en-US" lcid="1033" />
+            <msci:number>425-707-0002</msci:number>
+          </msci:access-number>
+        </msci:region>
+        <msci2:default-region>Redmond</msci2:default-region>
+      </access-numbers>
+    </pstn-bridging>
+    <anonymous-scheduling>true</anonymous-scheduling>
+    <default-admission-policy>anonymous</default-admission-policy>
+    <mscp:schedule-locked>true</mscp:schedule-locked>
+    <mscp:default-autopromote>32768</mscp:default-autopromote>
+    <msci:pstn-lobby-bypass-allowed>true</msci:pstn-lobby-bypass-allowed>
+    <msci:recording-allowed>true</msci:recording-allowed>
+    <msci:default-entry-exit-announcements>false</msci:default-entry-exit-announcements>
+  </getConferencingCapabilities>
+</response>"#;
+        let (r, c) = parse_capabilities(answer).unwrap();
+        assert_eq!(r.code, Code::Success);
+        assert!(c.pstn_enabled);
+        assert_eq!(c.default_region.as_deref(), Some("Redmond"));
+        assert_eq!(c.regions.len(), 1);
+        let n = &c.regions[0].numbers;
+        assert_eq!(n[0].number, "425-707-0001");
+        assert_eq!(n[0].languages, ["en-US", "de-DE"]);
+        assert!(n[0].toll_free && !n[1].toll_free);
+        assert_eq!(
+            c.external_url.as_deref(),
+            Some("https://lslm84.meet.microsoft.com:443/Dialin")
+        );
+        assert_eq!(c.default_admission, Some(Admission::Anonymous));
+        assert_eq!(c.default_autopromote, Some(32768));
+        assert_eq!(c.schedule_locked, Some(true));
+        assert_eq!(c.default_entry_exit_announcements, Some(false));
+        // A link that is not https is left out.
+        let plain = answer.replace("https://lslm84", "http://lslm84");
+        assert_eq!(parse_capabilities(&plain).unwrap().1.external_url, None);
+    }
+}

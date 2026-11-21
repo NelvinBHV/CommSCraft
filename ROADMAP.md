@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (Lucide icons, craft-fonts, Noto Emoji)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (dial-in numbers)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-21 | Dial-in numbers in the meeting entry info (getConferencingCapabilities, [MS-CONFPRO] §2.2.2.8): numbers of the suggested region, conference ID, link to all numbers; the request `tested-in-lab`, the numbers `tested-offline`. |
 | 2026-11-21 | Fonts and icons: craft-fonts (Inter, script and symbol faces) embedded at build time with `CRAFT_FONTS_DIR` (required for releases), Noto Emoji bundled for emoji, Lucide icons (a subset of the icon font, ISC) instead of the own line drawings (kept as fallback). |
 | 2026-11-21 | Appear offline (`tested-in-lab`), alphabetical sorting regardless of case and accents, presence of distribution group members regardless of letter case; presence subscriptions are no longer renewed when the contact list comes again unchanged, and failures the session handles itself (an ended subscription, 481 with a new subscription at once) are no longer shown as warnings (issues #223–#225). |
 | 2026-11-21 | Contact photos over UCWA as a second path (`tested-in-lab`): token with the Windows grant over NTLM, photo links from the contact list, expanded distribution groups and searches, the own photo; new crate `ucwa`; Autodiscover now hands on the Root's `OAuth` link. |

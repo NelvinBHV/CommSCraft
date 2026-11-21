@@ -586,6 +586,18 @@ pub struct HistoryEntry {
     pub with: String,
 }
 
+/// Dial-in numbers of the conferencing service (getConferencingCapabilities): the region to
+/// show first, its numbers, and a page with all numbers.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct DialIn {
+    pub region: String,
+    /// Number and whether it is toll-free.
+    pub numbers: Vec<(String, bool)>,
+    /// Further regions' names (all numbers are on the page).
+    pub other_regions: Vec<String>,
+    pub page: Option<String>,
+}
+
 /// Who may join a meeting without waiting in the lobby.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum MeetingAccess {
@@ -800,6 +812,8 @@ pub enum AppEvent {
     /// One meeting's details (subject, expiry, link) into its entry of the list.
     MeetingDetails(Meeting),
     MeetingCancelled(String),
+    /// The dial-in numbers of the conferencing service (`None`: no dial-in).
+    DialIn(Option<DialIn>),
     Invitation(Invitation),
     /// Discovery named a server outside the SIP domain: may the password go there?
     TrustQuestion(TrustQuestion),
@@ -965,6 +979,8 @@ pub struct AppState {
     /// The ended call offered for rating: call ID and peer.
     pub rate_call: Option<(u32, String)>,
     /// The Conversation History folder, once asked for.
+    /// The dial-in numbers of the conferencing service, once reported.
+    pub dial_in: Option<DialIn>,
     /// The microphone's level while it is tested (0–100).
     pub mic_level: Option<u8>,
     pub history: Option<Result<Vec<HistoryEntry>, String>>,
@@ -995,6 +1011,7 @@ impl Default for AppState {
             subscribers: Vec::new(),
             quality_rating: false,
             mic_level: None,
+            dial_in: None,
             history: None,
             video: BTreeMap::new(),
             history_open: None,
@@ -1619,6 +1636,19 @@ impl AppState {
             AppEvent::MeetingCancelled(id) => self.meetings.retain(|m| m.conference_id != id),
             AppEvent::QualityRating(on) => self.quality_rating = on,
             AppEvent::MicLevel(l) => self.mic_level = l.map(|l| l.min(100)),
+            AppEvent::DialIn(d) => {
+                self.dial_in = d.map(|d| DialIn {
+                    region: label(&d.region),
+                    numbers: d
+                        .numbers
+                        .into_iter()
+                        .take(32)
+                        .map(|(n, free)| (label(&n), free))
+                        .collect(),
+                    other_regions: d.other_regions.iter().take(64).map(|r| label(r)).collect(),
+                    page: d.page,
+                })
+            }
             AppEvent::ConferenceFocus { session, focus } => {
                 if let Some(c) = self.by_session(session) {
                     c.focus = Some(label(&focus));
