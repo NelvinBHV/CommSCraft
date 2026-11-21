@@ -9,6 +9,7 @@
 mod desktop;
 mod fonts;
 mod idle;
+mod notify;
 mod photos;
 mod prefs;
 mod script;
@@ -31,7 +32,7 @@ const USAGE: &str =
     "usage: commscraft [--demo] [--lang de|en] [--view chats|contacts|calls|meetings|settings]
                   [--size WIDTHxHEIGHT] [--screenshot FILE.png] [--screenshot-after SECONDS]
                   [--ca-file PEM] [--commands FILE] [--embed-windows]
-                  [--sign-in sip:ADDRESS [--user USER] [--domain DOMAIN] [--server HOST:PORT] [--kerberos] [--tls-dsk] [--remember]]
+                  [--sign-in sip:ADDRESS [--user USER] [--domain DOMAIN] [--server HOST:PORT] [--kerberos] [--tls-dsk] [--compression] [--remember]]
   --ca-file    adds an enterprise CA to the system trust store (never replaces the checks)
   --sign-in    signs in at start; the password is the first line of standard input
   --commands   follows FILE for test commands (see the documentation in docs/ui/README.md)";
@@ -116,6 +117,7 @@ fn parse_args() -> Result<Args, String> {
             "--server" => form.server = it.next().ok_or(USAGE)?,
             "--kerberos" => form.kerberos = true,
             "--tls-dsk" => form.tls_dsk = true,
+            "--compression" => form.compression = true,
             "--remember" => form.remember = true,
             "-h" | "--help" => return Err(USAGE.into()),
             other => return Err(format!("unknown argument {other}\n{USAGE}")),
@@ -247,9 +249,76 @@ pub(crate) struct DesktopApp {
     machine: commscraft_presence::MachineActivity,
     /// A test script's idle time in place of the desktop's (`idle SECONDS`).
     pub(crate) idle_override: Option<u64>,
+    /// The desktop's notification service, asked for once (`None` inside: none there); not
+    /// used for demos and screenshots.
+    notifier: Option<Option<notify::Notifier>>,
+    /// Our notifications on the desktop and their tags.
+    notes_shown: std::collections::BTreeMap<commscraft_ui::notes::NoteKey, u64>,
+    next_note: u64,
 }
 
 impl DesktopApp {
+    /// Incoming calls, invitations and new messages as desktop notifications: new items are
+    /// shown, items no longer pending are taken back, actions chosen there are carried out.
+    fn notes_tick(&mut self) {
+        let notifier = self.notifier.get_or_insert_with(notify::Notifier::start);
+        let Some(n) = notifier.as_ref() else {
+            self.ui.system_notifications = false;
+            return;
+        };
+        self.ui.system_notifications = true;
+        let pending = self.ui.pending_notes();
+        let gone: Vec<commscraft_ui::notes::NoteKey> = self
+            .notes_shown
+            .keys()
+            .filter(|k| !pending.iter().any(|p| &p.key == *k))
+            .cloned()
+            .collect();
+        for k in gone {
+            if let Some(tag) = self.notes_shown.remove(&k) {
+                n.close(tag);
+            }
+        }
+        for p in pending {
+            if self.notes_shown.contains_key(&p.key) {
+                continue;
+            }
+            let tag = self.next_note;
+            self.next_note += 1;
+            n.show(notify::Show {
+                tag,
+                summary: p.summary,
+                body: p.body,
+                actions: p
+                    .actions
+                    .into_iter()
+                    .map(|(a, l)| (a.to_string(), l))
+                    .collect(),
+                urgent: p.urgent,
+            });
+            self.notes_shown.insert(p.key, tag);
+        }
+        let replies: Vec<notify::Reply> = n.replies.try_iter().take(16).collect();
+        for (tag, action) in replies {
+            let Some(key) = self
+                .notes_shown
+                .iter()
+                .find(|(_, t)| **t == tag)
+                .map(|(k, _)| k.clone())
+            else {
+                continue;
+            };
+            if action == "closed" {
+                self.ui.note_dismissed(&key);
+            } else {
+                self.ui.note_action(&key, &action);
+                if let Some(ctx) = &self.ctx {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
+                }
+            }
+        }
+    }
+
     /// The status automation: idle time against the user's limits; a change goes to the
     /// session, which publishes the machine state again.
     fn idle_tick(&mut self) {
@@ -669,6 +738,7 @@ impl eframe::App for DesktopApp {
             self.ctx = Some(ctx.clone());
         }
         self.pump_session();
+        self.notes_tick();
         self.idle_tick();
         if self.worker_done {
             self.worker_done = false;
@@ -827,6 +897,7 @@ fn main() {
                 }
             }
             ui.prefs.lang = lang;
+            let quiet_desktop = args.demo || args.screenshot.is_some();
             let mut app = DesktopApp {
                 ui,
                 lang,
@@ -851,6 +922,9 @@ fn main() {
                 idle: None,
                 machine: commscraft_presence::MachineActivity::Active,
                 idle_override: None,
+                notifier: quiet_desktop.then_some(None),
+                notes_shown: std::collections::BTreeMap::new(),
+                next_note: 1,
             };
             if args.demo {
                 app.start_demo();

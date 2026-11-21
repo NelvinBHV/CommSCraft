@@ -996,6 +996,15 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         }
     }
     let mut conn = conn.ok_or_else(|| fail(format!("no server reachable ({last})")))?;
+    if form.compression {
+        // Function 3: NEGOTIATE before any other SIP message ([MS-SIPCOMP] §3.1.4.1, CP-01); a
+        // server that declines leaves the connection uncompressed (CP-03).
+        let mut tag = [0u8; 8];
+        commscraft_register::Random::fill(&mut rng, &mut tag);
+        let tag: String = tag.iter().map(|b| format!("{b:02x}")).collect();
+        conn.negotiate_compression(&aor, &tag)
+            .map_err(|e| fail(format!("SIP compression: {e}")))?;
+    }
     let local = conn.local_addr().map_err(|e| fail(e.to_string()))?;
     let host = match local {
         std::net::SocketAddr::V4(v4) => v4.ip().to_string(),

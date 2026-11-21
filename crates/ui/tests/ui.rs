@@ -1401,3 +1401,58 @@ fn the_meeting_entry_info_names_the_dial_in_numbers() {
     assert!(h.query_by_label("Konferenz-ID: AB12CD34").is_some());
     assert!(h.query_by_label("Weitere Einwahlnummern").is_some());
 }
+
+/// Desktop notifications: an incoming call and an invitation become notifications with the
+/// actions of the toasts; an action there does what the button does; with system
+/// notifications the interface's own window stays closed; no message notifications when off.
+#[test]
+fn incoming_items_become_desktop_notifications() {
+    use commscraft_ui::model::Invitation;
+    use commscraft_ui::notes::NoteKey;
+    let mut ui = online();
+    ui.state.apply(AppEvent::CallStarted {
+        id: 4,
+        peer: "sip:tim@beispiel.invalid".into(),
+        incoming: true,
+        at: NOW,
+    });
+    ui.state.apply(AppEvent::Invitation(Invitation {
+        from: "sip:eva@beispiel.invalid".into(),
+        focus: "sip:eva@beispiel.invalid;gruu;opaque=app:conf:focus:id:X1".into(),
+        subject: "Planung".into(),
+    }));
+    let notes = ui.pending_notes();
+    assert_eq!(notes.len(), 2);
+    let call = &notes[0];
+    assert_eq!(call.key, NoteKey::Call(4));
+    assert!(call.urgent);
+    assert_eq!(
+        call.actions.iter().map(|(a, _)| *a).collect::<Vec<_>>(),
+        vec!["answer", "decline"]
+    );
+    assert!(notes[1].body.contains("Planung"));
+    ui.note_action(&call.key, "answer");
+    let invitation = notes[1].key.clone();
+    ui.note_action(&invitation, "decline");
+    let intents = ui.take_intents();
+    assert!(intents.contains(&UiIntent::AnswerCall { id: 4 }));
+    assert!(intents.contains(&UiIntent::DeclineInvitation { index: 0 }));
+    // System notifications: no notification window of our own.
+    ui.system_notifications = true;
+    let mut h = harness(ui, BIG);
+    h.run();
+    assert!(!h
+        .state()
+        .ui
+        .windows()
+        .iter()
+        .any(|w| format!("{w:?}").contains("Notif")));
+    assert_eq!(h.query_all_by_label_contains("ruft an").count(), 0);
+    // Message notifications switched off in the options.
+    let mut ui = online();
+    ui.prefs.message_alerts = false;
+    assert!(ui
+        .pending_notes()
+        .iter()
+        .all(|n| !matches!(n.key, NoteKey::Message(..))));
+}

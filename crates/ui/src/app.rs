@@ -253,6 +253,8 @@ pub struct SignIn {
     pub tls_dsk: bool,
     /// Keep the password in the system's keyring after a successful sign-in.
     pub remember: bool,
+    /// Ask the server for SIP compression ([MS-SIPCOMP]; for slow links).
+    pub compression: bool,
 }
 
 impl std::fmt::Debug for SignIn {
@@ -265,6 +267,7 @@ impl std::fmt::Debug for SignIn {
             .field("server", &self.server)
             .field("kerberos", &self.kerberos)
             .field("tls_dsk", &self.tls_dsk)
+            .field("compression", &self.compression)
             .field("remember", &self.remember)
             .finish()
     }
@@ -517,6 +520,8 @@ pub struct CommsUi {
     pub(crate) participants_open: BTreeSet<ConvKey>,
     /// Message notifications the user ignored: conversation and its message count then.
     pub(crate) toasts_seen: BTreeSet<(ConvKey, usize)>,
+    /// The desktop shows the notifications (`notes`); the interface's own window stays closed.
+    pub system_notifications: bool,
     /// Calls whose window was opened once (closing it does not open it again).
     pub(crate) call_windows_opened: BTreeSet<u32>,
     /// A screenshot of a window of its own, taken in that window's own frame (tests and
@@ -586,6 +591,7 @@ impl CommsUi {
             card_dock: None,
             participants_open: BTreeSet::new(),
             toasts_seen: BTreeSet::new(),
+            system_notifications: false,
             call_windows_opened: BTreeSet::new(),
             screenshot: None,
             stored_password_for: None,

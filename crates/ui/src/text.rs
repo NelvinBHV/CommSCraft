@@ -591,6 +591,8 @@ texts! {
     sign_in: "Anmelden", "Sign in";
     sign_in_again: "Neu anmelden", "Sign in again";
     sign_in_tls_dsk: "Mit Benutzerzertifikat (TLS-DSK)", "With a user certificate (TLS-DSK)";
+    sign_in_compression: "SIP-Kompression", "SIP compression";
+    sign_in_compression_tip: "Bittet den Server, die Signalisierung zu komprimieren (für langsame Verbindungen). Lehnt er ab, geht es unkomprimiert weiter.", "Asks the server to compress the signalling (for slow links). If it declines, the connection goes on uncompressed.";
     sign_in_tls_dsk_tip: "Holt beim ersten Mal ein Zertifikat beim Zertifikatsdienst des Servers (mit dem Kennwort) und meldet sich danach damit an – ohne Kennwort, solange es gültig ist.", "Gets a certificate from the server's certificate service the first time (with the password) and signs in with it afterwards – without a password while it is valid.";
     trust_title: "Server außerhalb Ihrer Domäne", "Server outside your domain";
     trust_no: "Nicht vertrauen", "Do not trust";
