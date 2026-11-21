@@ -153,35 +153,30 @@ impl Identity {
         der::certificate_facts(&self.certificate).map(|c| c.not_after.saturating_sub(now()))
     }
 
-    /// Writes certificate and key to `dir` (created 0700; files 0600).
+    /// Writes certificate and key to `dir` (issue #211): the directory must be a real directory
+    /// (not a symbolic link) and is set to 0700; each file is written to a new temporary file
+    /// (created exclusively, 0600, so no existing file or link is followed), synced and then
+    /// renamed over the old one – an interrupted write leaves the old pair, never a cut one.
     pub fn store(&self, dir: &Path) -> Result<(), Error> {
-        use std::io::Write;
-        use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
-        std::fs::DirBuilder::new()
-            .recursive(true)
-            .mode(0o700)
-            .create(dir)
-            .map_err(|e| Error::Storage(e.to_string()))?;
+        let storage = |e: std::io::Error| Error::Storage(e.to_string());
+        private_dir(dir).map_err(storage)?;
         for (name, data) in [
             ("certificate.der", &self.certificate[..]),
             ("key.pk8", &self.key_pkcs8[..]),
         ] {
-            std::fs::OpenOptions::new()
-                .write(true)
-                .create(true)
-                .truncate(true)
-                .mode(0o600)
-                .open(dir.join(name))
-                .and_then(|mut f| f.write_all(data))
-                .map_err(|e| Error::Storage(e.to_string()))?;
+            replace_private(dir, name, data).map_err(storage)?;
         }
-        Ok(())
+        // The renames themselves are durable once the directory is synced.
+        std::fs::File::open(dir)
+            .and_then(|d| d.sync_all())
+            .map_err(storage)
     }
 
     /// The stored identity, if it is still valid (at least `margin` seconds) and the key fits.
+    /// Only private regular files are read (no symbolic link, nothing readable by others).
     pub fn load(dir: &Path, margin: u64) -> Option<Identity> {
-        let certificate = std::fs::read(dir.join("certificate.der")).ok()?;
-        let key_pkcs8 = Zeroizing::new(std::fs::read(dir.join("key.pk8")).ok()?);
+        let certificate = read_private(&dir.join("certificate.der"))?;
+        let key_pkcs8 = Zeroizing::new(read_private(&dir.join("key.pk8"))?);
         let c = der::certificate_facts(&certificate)?;
         let pair = ring::rsa::KeyPair::from_pkcs8(&key_pkcs8).ok()?;
         let fits = der::rsa_public_key_of(&c.public_key_info)
@@ -193,6 +188,76 @@ impl Identity {
             },
         )
     }
+}
+
+/// Creates `dir` (0700) or checks the existing one: a directory, not a symbolic link, owned by
+/// this user; its mode is set to 0700.
+fn private_dir(dir: &Path) -> std::io::Result<()> {
+    use std::os::unix::fs::{DirBuilderExt, MetadataExt, PermissionsExt};
+    std::fs::DirBuilder::new()
+        .recursive(true)
+        .mode(0o700)
+        .create(dir)?;
+    // symlink_metadata does not follow a link: a link is no directory here.
+    let meta = std::fs::symlink_metadata(dir)?;
+    if !meta.is_dir() || meta.uid() != effective_uid(dir)? {
+        return Err(std::io::Error::other("not a private directory"));
+    }
+    if meta.permissions().mode() & 0o777 != 0o700 {
+        std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700))?;
+    }
+    Ok(())
+}
+
+/// The owner a new file of ours gets: probed with a file created in `dir` (no libc needed).
+fn effective_uid(dir: &Path) -> std::io::Result<u32> {
+    use std::os::unix::fs::MetadataExt;
+    let probe = temporary(dir, ".owner");
+    let made = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&probe)
+        .and_then(|f| f.metadata());
+    let _ = std::fs::remove_file(&probe);
+    made.map(|m| m.uid())
+}
+
+/// A temporary name next to `name` in `dir`, unique for this process and moment.
+fn temporary(dir: &Path, name: &str) -> PathBuf {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.subsec_nanos());
+    dir.join(format!(".{name}.{}.{nanos}.tmp", std::process::id()))
+}
+
+/// Writes `data` to a new 0600 file and renames it over `dir/name`.
+fn replace_private(dir: &Path, name: &str, data: &[u8]) -> std::io::Result<()> {
+    use std::io::Write;
+    use std::os::unix::fs::OpenOptionsExt;
+    let tmp = temporary(dir, name);
+    let written = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(&tmp)
+        .and_then(|mut f| {
+            f.write_all(data)?;
+            f.sync_all()
+        })
+        .and_then(|()| std::fs::rename(&tmp, dir.join(name)));
+    if written.is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    written
+}
+
+/// A regular file that only its owner can read (0600 or stricter), not through a symbolic link.
+fn read_private(path: &Path) -> Option<Vec<u8>> {
+    use std::os::unix::fs::PermissionsExt;
+    let meta = std::fs::symlink_metadata(path).ok()?;
+    (meta.is_file() && meta.permissions().mode() & 0o077 == 0)
+        .then(|| std::fs::read(path).ok())
+        .flatten()
 }
 
 /// The registrar's TLS-DSK provider: the stored identity of the account, the trust anchors of

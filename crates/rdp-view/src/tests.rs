@@ -325,3 +325,31 @@ fn gfx_filter_errors_on_garbage() {
     assert!(f.process(1, &[0xff, 0xff, 0xff]).is_err());
     assert!(f.process(1, &[]).is_err());
 }
+
+/// Issue #209: a sharer announcing a huge screen ends the session before the picture is
+/// allocated; a large but real one (two 4K screens) is taken.
+#[test]
+fn huge_screen_sizes_are_refused() {
+    assert!(screen_size_ok(7680, 2160));
+    assert!(screen_size_ok(3840, 2160));
+    assert!(!screen_size_ok(8192, 8192));
+    assert!(!screen_size_ok(4800, 4800));
+    assert!(!screen_size_ok(0, 600));
+    assert!(!screen_size_ok(9000, 10));
+    let mut v = until_demand_active();
+    let demand = share_control(ShareControlPdu::ServerDemandActive(ServerDemandActive {
+        pdu: DemandActive {
+            source_descriptor: "RDP".into(),
+            capability_sets: vec![CapabilitySet::Bitmap(Bitmap {
+                pref_bits_per_pix: 32,
+                desktop_width: 8192,
+                desktop_height: 8192,
+                desktop_resize_flag: false,
+                drawing_flags: BitmapDrawingFlags::empty(),
+            })],
+        },
+    }));
+    let r = v.on_bytes(&demand);
+    assert!(matches!(r, Err(Error::Protocol(_))), "{r:?}");
+    assert!(v.image().is_none());
+}
