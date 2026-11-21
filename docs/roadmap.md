@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (redundant audio)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (G.722.1/Siren not planned)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).
@@ -41,7 +41,7 @@ Next steps in order: all milestones from M1 to M7 are closed apart from the owne
 | M6 | Viewing shared screens | 43 | View a desktop/application share (RDP over RTP); verified |
 | M7 | Exchange and extras | 16, 20, 38, 44, 47, 49 (48 not planned, 51 deferred) | Calendar state, OOF note, conversation history, voicemail, persistent chat, PSOM content; verified where documented |
 
-Functions 27 (G.722.1 only, after licence clearance), 29 (RTVideo — not planned) and 52 (file
+Functions 27 (RTAudio, Siren, G.722.1 — not planned: licence terms), 29 (RTVideo — not planned) and 52 (file
 transfer — needs captures) stay outside the milestones for now.
 
 ## Alpha gate (core workflows)

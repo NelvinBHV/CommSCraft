@@ -56,7 +56,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.82.0-alpha"
+version = "0.84.0-alpha"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/NelvinBHV/CommSCraft"
