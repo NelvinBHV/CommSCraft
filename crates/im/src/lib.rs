@@ -11,11 +11,14 @@
 //! l. 120–150 (typing as INFO `application/xml` `<KeyboardActivity><status status="type"/>`).
 //!
 //! Security by design (`docs/security.md`):
-//! - only `text/plain` is offered and accepted; HTML or RTF from others is refused with 415, never
-//!   rendered, so no markup or scripts can be injected through messages;
+//! - `text/plain` and `text/html` are offered and accepted; HTML is never rendered, only read
+//!   into text runs with a narrow look (`html`), so no markup or scripts can be injected; RTF and
+//!   other types are refused with 415;
 //! - incoming text is UTF-8 checked, bounded and stripped of control characters before display;
 //! - the SDP of the peer is parsed with limits and must describe a message session;
 //! - the typing indicator is recognised only in its exact, small XML form.
+
+pub mod html;
 
 use commscraft_sip_msg::dialog::{response_to, Dialog};
 use commscraft_sip_msg::Message;
@@ -46,7 +49,7 @@ pub fn sdp(ip: std::net::IpAddr, conference: bool) -> String {
         std::net::IpAddr::V6(v6) => ("IP6", v6.to_string()),
     };
     format!(
-        "v=0\r\no=- 0 0 IN {family} {addr}\r\ns=session\r\nc=IN {family} {addr}\r\nt=0 0\r\nm=message 5060 sip null\r\na=accept-types:text/plain{}\r\n",
+        "v=0\r\no=- 0 0 IN {family} {addr}\r\ns=session\r\nc=IN {family} {addr}\r\nt=0 0\r\nm=message 5060 sip null\r\na=accept-types:text/plain text/html{}\r\n",
         if conference {
             " application/ms-imdn+xml"
         } else {
@@ -186,10 +189,37 @@ pub fn typing(dialog: &mut Dialog, typing: bool) -> Message {
     m
 }
 
+/// The peer's message session SDP names `text/html` in its accept-types: it takes formatted
+/// messages (`html`).
+pub fn accepts_html(body: &[u8]) -> bool {
+    std::str::from_utf8(body).is_ok_and(|s| {
+        s.lines()
+            .filter_map(|l| l.trim().strip_prefix("a=accept-types:"))
+            .flat_map(str::split_whitespace)
+            .any(|t| t.eq_ignore_ascii_case("text/html"))
+    })
+}
+
+/// A formatted message (`text/html`), in the form the Windows client sends (`html::to_html`).
+pub fn message_html(dialog: &mut Dialog, html: &str) -> Result<Message, Error> {
+    if html.trim().is_empty() {
+        return Err(Error::EmptyText);
+    }
+    if html.len() > html::MAX_HTML {
+        return Err(Error::TextTooLong);
+    }
+    let mut m = dialog.request("MESSAGE");
+    m.push_header("Content-Type", "text/html; charset=UTF-8");
+    m.body = html.as_bytes().to_vec();
+    Ok(m)
+}
+
 /// What a request of the peer in the IM dialog means.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Incoming {
     Text(String),
+    /// A formatted message: its text runs (`html`).
+    Formatted(Vec<html::Span>),
     Typing(bool),
     Bye,
     /// Not supported; answered with the given status (415 for other content types, 488/501 …).
@@ -222,6 +252,10 @@ pub fn handle_request(req: &Message) -> (Incoming, Message) {
                 Ok(t) if ct == "text/plain" && charset_ok && req.body.len() <= MAX_TEXT => {
                     Incoming::Text(printable(t))
                 }
+                Ok(t) if ct == "text/html" && charset_ok => match html::parse(t) {
+                    Some(spans) => Incoming::Formatted(spans),
+                    None => Incoming::Refused(413),
+                },
                 _ => Incoming::Refused(415),
             }
         }
@@ -240,9 +274,10 @@ pub fn handle_request(req: &Message) -> (Incoming, Message) {
     let answer = match &incoming {
         Incoming::Refused(415) => {
             let mut r = response_to(req, 415, "Unsupported Media Type");
-            r.push_header("Accept", "text/plain");
+            r.push_header("Accept", "text/plain, text/html");
             r
         }
+        Incoming::Refused(413) => response_to(req, 413, "Request Entity Too Large"),
         Incoming::Refused(code) => response_to(req, *code, "Not Implemented"),
         _ => response_to(req, 200, "OK"),
     };

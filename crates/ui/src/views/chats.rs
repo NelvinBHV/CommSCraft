@@ -303,16 +303,67 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
                 .inner_margin(Margin::symmetric(16, 12))
                 .show(ui, |ui| {
                     ui.set_max_width(max_w);
-                    ui.add(
-                        egui::Label::new(
-                            RichText::new(&shown).size(theme::text::BODY).color(pal.ink),
-                        )
-                        .wrap(),
-                    );
+                    if m.runs.is_empty() {
+                        ui.add(
+                            egui::Label::new(
+                                RichText::new(&shown).size(theme::text::BODY).color(pal.ink),
+                            )
+                            .wrap(),
+                        );
+                    } else {
+                        ui.add(egui::Label::new(formatted(&m.runs, max_w, pal)).wrap());
+                    }
                 });
         });
     });
     ui.add_space(4.0);
+}
+
+/// A formatted message as the sender wrote it: bold, italic, underline, strike-through and its
+/// colour (a colour too close to the background falls back to the text colour).
+fn formatted(runs: &[crate::model::TextRun], width: f32, pal: &Palette) -> egui::text::LayoutJob {
+    let mut job = egui::text::LayoutJob::default();
+    job.wrap.max_width = width;
+    for r in runs {
+        let family = if r.bold {
+            crate::theme::bold()
+        } else {
+            egui::FontFamily::Proportional
+        };
+        let color = r
+            .color
+            .map(|[cr, cg, cb]| egui::Color32::from_rgb(cr, cg, cb))
+            .filter(|c| readable(*c, pal.message_incoming))
+            .unwrap_or(pal.ink);
+        let stroke = |on: bool| {
+            if on {
+                egui::Stroke::new(1.0, color)
+            } else {
+                egui::Stroke::NONE
+            }
+        };
+        job.append(
+            &r.text,
+            0.0,
+            egui::TextFormat {
+                font_id: egui::FontId::new(theme::text::BODY, family),
+                color,
+                italics: r.italic,
+                underline: stroke(r.underline),
+                strikethrough: stroke(r.strike),
+                ..Default::default()
+            },
+        );
+    }
+    job
+}
+
+/// Enough contrast between a sender's colour and the bubble (relative luminance distance).
+fn readable(fg: egui::Color32, bg: egui::Color32) -> bool {
+    let lum = |c: egui::Color32| {
+        0.2126 * f32::from(c.r()) + 0.7152 * f32::from(c.g()) + 0.0722 * f32::from(c.b())
+    };
+    (lum(fg) - lum(bg)).abs() > 60.0
 }
 
 /// The emoticons, as the Windows client's picker: a click writes the code into the draft.

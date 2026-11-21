@@ -165,6 +165,9 @@ pub enum Command {
         conversation: ConversationId,
         text: String,
     },
+    /// The look of our messages (bold, italic, underline, colour): sent as `text/html` to peers
+    /// whose session accepts it, plain otherwise (`im::html`).
+    SetMessageStyle(im::html::Style),
     Typing {
         conversation: ConversationId,
         typing: bool,
@@ -490,6 +493,8 @@ pub enum Event {
         /// In group conversations: the sender (`Ms-Sender`, CI-06), checked SIP URI.
         sender: Option<String>,
         text: String,
+        /// A formatted message: its text runs (`text` is their plain text); empty for plain.
+        spans: Vec<im::html::Span>,
     },
     /// We wait in the lobby of a conference (`true`) or were admitted (`false`) (CB-23).
     ConferenceLobby {
@@ -763,11 +768,15 @@ struct Conversation {
     group: Option<Box<group::Group>>,
     /// RFC 4028 session timer of `dialog` if we are the refresher.
     timer: Option<group::SessionTimer>,
+    /// The peer's session accepts `text/html` (formatted messages).
+    html: bool,
 }
 
 /// The engine of one account.
 pub struct Engine<R: Random> {
     cfg: Config,
+    /// The look of our messages (`SetMessageStyle`).
+    message_style: im::html::Style,
     reg: Registrar<R>,
     gruu: String,
     registered: bool,
@@ -910,6 +919,7 @@ impl<R: Random> Engine<R> {
         let gruu = cfg.aor.clone();
         Self {
             cfg,
+            message_style: im::html::Style::default(),
             reg,
             gruu,
             registered: false,
@@ -1849,6 +1859,7 @@ impl<R: Random> Engine<R> {
                 queue: first.into_iter().collect(),
                 group: None,
                 timer: None,
+                html: false,
             },
         );
         self.send_request(m, Purpose::Invite(id), now, out);
@@ -1870,7 +1881,14 @@ impl<R: Random> Engine<R> {
             c.queue.push(text);
             return;
         };
-        let msg = im::message(&mut d, &text);
+        let msg = if c.html && !self.message_style.is_plain() {
+            im::message_html(
+                &mut d,
+                &im::html::to_html(&im::printable(&text), &self.message_style),
+            )
+        } else {
+            im::message(&mut d, &text)
+        };
         c.dialog = Some(d);
         match msg {
             Ok(mut m) => {
@@ -1981,6 +1999,7 @@ impl<R: Random> Engine<R> {
                 queue: Vec::new(),
                 group: group.map(Box::new),
                 timer,
+                html: im::accepts_html(&req.body),
             },
         );
         out.push(Output::Event(Event::ConversationStarted {
@@ -2046,6 +2065,24 @@ impl<R: Random> Engine<R> {
                     conversation: id,
                     sender,
                     text,
+                    spans: Vec::new(),
+                }))
+            }
+            im::Incoming::Formatted(spans) => {
+                let sender = if is_group {
+                    req.single("Ms-Sender")
+                        .ok()
+                        .flatten()
+                        .and_then(conf::ms_sender)
+                        .map(|(_, uri)| uri)
+                } else {
+                    None
+                };
+                out.push(Output::Event(Event::Text {
+                    conversation: id,
+                    sender,
+                    text: im::printable(&im::html::plain(&spans)),
+                    spans,
                 }))
             }
             im::Incoming::Typing(typing) => out.push(Output::Event(Event::Typing {
@@ -2100,6 +2137,7 @@ impl<R: Random> Engine<R> {
             Command::SendText { conversation, text } => {
                 self.send_text(conversation, text, now, &mut out)
             }
+            Command::SetMessageStyle(style) => self.message_style = style,
             Command::Typing {
                 conversation,
                 typing,
@@ -2881,6 +2919,7 @@ impl<R: Random> Engine<R> {
                 let peer = c.peer.clone();
                 let queue = std::mem::take(&mut c.queue);
                 c.dialog = Some(d.clone());
+                c.html = im::accepts_html(&resp.body);
                 c.timer = group::our_session_timer(resp, true, now);
                 let is_group = c.group.is_some();
                 let invite_cseq = p.request.cseq().ok().flatten().map_or(1, |x| x.number);

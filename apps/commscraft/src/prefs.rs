@@ -102,6 +102,19 @@ pub fn parse(text: &str) -> Prefs {
             {
                 p.camera = v.to_string()
             }
+            "im_bold" => p.im_bold = v == "true",
+            "im_italic" => p.im_italic = v == "true",
+            "im_underline" => p.im_underline = v == "true",
+            "im_color" => {
+                p.im_color = v
+                    .strip_prefix('#')
+                    .filter(|h| h.len() == 6)
+                    .and_then(|h| u32::from_str_radix(h, 16).ok())
+                    .map(|c| {
+                        let [_, r, g, b] = c.to_be_bytes();
+                        [r, g, b]
+                    })
+            }
             "chat_text_size" => {
                 if let Ok(s) = v.parse::<f32>() {
                     if (12.0..=20.0).contains(&s) {
@@ -167,6 +180,13 @@ pub fn format(p: &Prefs) -> String {
         out.push_str(&format!("{k}={v}\n"));
     }
     out.push_str(&format!("chat_text_size={}\n", p.chat_text_size));
+    out.push_str(&format!(
+        "im_bold={}\nim_italic={}\nim_underline={}\n",
+        p.im_bold, p.im_italic, p.im_underline
+    ));
+    if let Some([r, g, b]) = p.im_color {
+        out.push_str(&format!("im_color=#{r:02X}{g:02X}{b:02X}\n"));
+    }
     out.push_str(&format!("inactive_minutes={}\n", p.inactive_minutes));
     if valid_device(&p.audio_device) {
         out.push_str(&format!("audio_device={}\n", p.audio_device));
@@ -292,6 +312,10 @@ mod tests {
             sounds: false,
             camera: "/dev/video2".into(),
             chat_text_size: 16.0,
+            im_bold: true,
+            im_italic: false,
+            im_underline: false,
+            im_color: Some([0xC0, 0x00, 0x00]),
             last_address: "sip:mara@beispiel.invalid".into(),
             inactive_minutes: 0,
             away_minutes: 30,

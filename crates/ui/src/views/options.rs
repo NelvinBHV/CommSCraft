@@ -285,6 +285,23 @@ fn page_ui(
                         egui::WidgetInfo::labeled(egui::Role::Slider, true, t.opt_text_size)
                     });
             });
+            ui.label(RichText::new(t.opt_im_font).family(crate::theme::bold()))
+                .on_hover_text(t.opt_im_font_tip);
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut p.im_bold, t.opt_im_bold);
+                ui.checkbox(&mut p.im_italic, t.opt_im_italic);
+                ui.checkbox(&mut p.im_underline, t.opt_im_underline);
+            });
+            ui.horizontal(|ui| {
+                ui.label(t.opt_im_color);
+                let mut c = p.im_color.unwrap_or([0, 0, 0]);
+                if ui.color_edit_button_srgb(&mut c).changed() {
+                    p.im_color = (c != [0, 0, 0]).then_some(c);
+                }
+                if p.im_color.is_some() && ui.button(t.opt_im_color_default).clicked() {
+                    p.im_color = None;
+                }
+            });
             // The server's policy, when it sets one, decides; this is the user's choice.
             ui.checkbox(&mut p.save_history, t.opt_save_history);
             ui.checkbox(&mut p.tabbed_conversations, t.opt_tabbed);

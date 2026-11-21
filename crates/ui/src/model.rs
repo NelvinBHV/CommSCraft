@@ -307,11 +307,27 @@ pub enum Delivery {
     Unknown,
 }
 
+/// Most runs of one message kept (design; the session bounds them too).
+const MAX_RUNS: usize = 512;
+
+/// One run of a formatted message (bold, italic, underline, strike-through, colour).
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct TextRun {
+    pub text: String,
+    pub bold: bool,
+    pub italic: bool,
+    pub underline: bool,
+    pub strike: bool,
+    pub color: Option<[u8; 3]>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Message {
     /// `None`: our own message.
     pub sender: Option<String>,
     pub text: String,
+    /// A formatted message: its runs (their text is `text`); empty for plain text.
+    pub runs: Vec<TextRun>,
     /// Unix seconds.
     pub at: u64,
     pub delivery: Delivery,
@@ -704,6 +720,8 @@ pub enum AppEvent {
         session: u32,
         sender: Option<String>,
         text: String,
+        /// A formatted message's runs; empty for plain text.
+        runs: Vec<TextRun>,
         at: u64,
     },
     /// Our own message, shown at once with `Sending`.
@@ -1198,6 +1216,7 @@ impl AppState {
             c.messages.push_back(Message {
                 sender: Some(SYSTEM_SENDER.into()),
                 text,
+                runs: Vec::new(),
                 at,
                 delivery: Delivery::Unknown,
             });
@@ -1445,6 +1464,7 @@ impl AppState {
                 session,
                 sender,
                 text,
+                runs,
                 at,
             } => {
                 if let Some(c) = self.by_session(session) {
@@ -1457,6 +1477,14 @@ impl AppState {
                                 .unwrap_or_else(|| c.peer.as_deref().unwrap_or_default()),
                         )),
                         text: clean(&text, MAX_TEXT, true),
+                        runs: runs
+                            .into_iter()
+                            .take(MAX_RUNS)
+                            .map(|r| TextRun {
+                                text: clean(&r.text, MAX_TEXT, true),
+                                ..r
+                            })
+                            .collect(),
                         at,
                         delivery: Delivery::Unknown,
                     });
@@ -1467,6 +1495,7 @@ impl AppState {
                     c.push(Message {
                         sender: None,
                         text: clean(&text, MAX_TEXT, true),
+                        runs: Vec::new(),
                         at,
                         delivery: Delivery::Sending,
                     });
@@ -1833,6 +1862,7 @@ impl AppState {
                     c.push(Message {
                         sender,
                         text: clean(&p.text, MAX_TEXT, true),
+                        runs: Vec::new(),
                         at: p.at,
                         delivery: if own {
                             Delivery::Delivered
