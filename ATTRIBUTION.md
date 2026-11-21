@@ -1,6 +1,6 @@
 # Attribution and provenance of assets
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-17 · **Change:** minor (desktop interface screenshots of the window structure)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (Lucide icons, Noto Emoji, craft-fonts)
 
 Every non-code asset of CommSCraft – images, icons, sounds, fonts – has a row here, added in the
 same commit as the asset (rule in `AGENTS.md` / `CLAUDE.md`). No asset is taken from Microsoft
@@ -28,6 +28,17 @@ UI Selection Stinger) were superseded by the owner's own sound pack and are not 
 | `docs/ui/screenshots/options.png` | `1919194657405059b88803f1393d4c438a527506aed1e6abb2d65cc985ccd591` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; own drawn line icons only | `MIT OR Apache-2.0` |
 | `docs/ui/screenshots/signin.png` | `adb15899f5c790493503c22de76bccbbb8b4362b085cf949d19b21e06f357da1` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; shows the unchanged brand icon | `MIT OR Apache-2.0`; the brand icon in it: `assets/branding/BRAND-POLICY.md` |
 | `docs/ui/screenshots/windows.png` | `d55771270eeafd66ee764f219a4868f3c24213e5de2a27558d7be16d6ef7da85` | Screenshot of the CommSCraft desktop client's own build (`commscraft --demo … --screenshot`), synthetic demo data only; own drawn line icons only | `MIT OR Apache-2.0` |
+| `assets/icons/lucide-subset.ttf` | `220614177d3612199352ebf3f73672757a7e20b345221644184d44cf99d96e75` | Lucide icon font, npm package `lucide-static` 1.70.0 (`font/lucide.ttf`, integrity `sha512-A9UgY98g94IuHQY7rl7/AFwHX7T1qNpzryim+Kw5CGhdV2STobtBY+ib/Z44ohyqXEJB88gvXFAeJ87uOOHKLw==`), cut to the 41 glyphs listed in `assets/icons/README.md` with fontTools 4.60.1 (`pyftsubset --no-hinting --desubroutinize`) | ISC (`assets/icons/LUCIDE-LICENSE.txt`; parts derived from Feather, MIT, same file) |
+| `assets/icons/LUCIDE-LICENSE.txt` | `b495047bd93a9b06913511076f504daba17d5bbeb3e0650f3bb53a4220329c57` | `LICENSE` of `lucide-static` 1.70.0 | ISC / MIT |
+
+## Fonts
+
+| File | SHA-256 | Origin | Licence / terms |
+|---|---|---|---|
+| `assets/fonts/NotoEmoji-Regular.ttf` | `d24d2f8d422dfca6511a8876e72d1ce786e9ddf2cf0bf0d452eebb3dc87164d4` | Noto Emoji (Google), `google/fonts` commit `8b0a1d0f5983c89bc2b93f1b5fb55f9e252744b5`, `ofl/notoemoji/NotoEmoji[wght].ttf` (SHA-256 `de6c18832938afc99caf132b39d6a30a19bac7f2e812e28db2535b4608d27551`), static instance at weight 400 made with fontTools 4.60.1 (`varLib.instancer`) | SIL Open Font License 1.1 (`assets/fonts/NotoEmoji-OFL.txt`) |
+| `assets/fonts/NotoEmoji-OFL.txt` | `500bb1ccf43df7bbb522112f9133a52b16e1c35e809632f5d8609b179152de5b` | `OFL.txt` of the same directory | OFL-1.1 |
+
+Not in the repository: the fonts of craft-fonts (https://github.com/storytold/craft-fonts) are embedded into the desktop client at build time when `CRAFT_FONTS_DIR` names a checkout (release builds: commit `26a79230872f9b2acd3dd68500677e294350ab94`): every face of its `fonts/manifest.txt` and Inter from `fonts/latin-manifest.txt`. Their files, licences (OFL-1.1 and others) and sources are listed in craft-fonts' own `fonts/manifest.txt`, `ATTRIBUTION.md` and licence files.
 
 ## Sounds
 

@@ -79,8 +79,11 @@ with made-up data and no network connection at all:
 ./target/release/commscraft --demo                       # German or English from LANG; --lang de|en
 ```
 
-It needs a system sans font (found through fontconfig, nothing is bundled). Screens and the
-capability gates are described in [`docs/ui/README.md`](docs/ui/README.md).
+Fonts: built with `CRAFT_FONTS_DIR=/path/to/craft-fonts` (https://github.com/storytold/craft-fonts;
+release builds always) it embeds Inter and the script and symbol faces of craft-fonts; without it,
+it uses a system sans font (fontconfig). Emoji come from the bundled Noto Emoji, the icons from the
+bundled Lucide subset. Screens and the capability gates are described in
+[`docs/ui/README.md`](docs/ui/README.md).
 
 ## How the work is documented
 

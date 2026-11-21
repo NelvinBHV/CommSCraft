@@ -1,6 +1,6 @@
 # Desktop interface
 
-> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-21 · **Change:** minor (appear offline, sorting, group member presence)
+> **Last reviewed:** 2026-11-17 · **Last updated:** 2026-11-21 · **Change:** minor (Lucide icons, craft-fonts, Noto Emoji)
 
 The Linux desktop client `commscraft` (`apps/commscraft`) puts an egui interface on top of the
 session engine. The interface lives in its own crate, `commscraft-ui` (`crates/ui`): theme, view
@@ -126,8 +126,8 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   Organization and Membership. `tested-in-lab`.
 - **Emoticons:** the composer's *Emoticons* picker writes the common text codes (`:)`, `(y)`,
   `<3` …), which the Windows client shows as its own pictures (`tested-in-lab`); in our
-  conversations a code that stands alone is shown as the emoji of the system's emoji font
-  (outline faces such as Noto Emoji; without one the code stays). No images are shipped.
+  conversations a code that stands alone is shown as its emoji from the bundled Noto Emoji face
+  (craft-fonts has symbol faces but no emoji face). No images are shipped.
 - **Offline address book:** after provisioning the desktop client uses the cached address book
   file at once and brings it up to date in the background (delta or newest full file, [MS-ABS],
   the same code as the command-line client, now in `client::address_book`); the search asks it
@@ -283,7 +283,7 @@ ringing are separate states.
 
 The interface takes the operating structure of the Windows desktop client of Skype for Business –
 a narrow main window, conversations and calls in windows of their own, menus and an options
-window with the same areas – with its own look: own line icons drawn in code, the blue and slate
+window with the same areas – with its own look: Lucide icons (ISC; own line drawings as fallback), the blue and slate
 colours, own wording. No Microsoft image, icon, sound or font is used, and the appearance is not
 copied (clean-room rule).
 
@@ -356,7 +356,7 @@ reference designs (1440 × 900), with screenshots of the real build (above).
 | Project integrity | `AGENTS.md`/`CLAUDE.md` unchanged; egui as decided; the protocol core has no interface dependency (`crates/ui` depends only on egui; the session engine gained one accessor, `next_conversation_id`); Linux desktop only; no alarm, situation, escalation or acknowledgement function (a test checks the screens for such words); the emergency call code is unchanged and not reachable from the desktop client (it calls SIP addresses only) |
 | Layout | top bar 66, rail 92, list 300, context 290 (can be hidden, closes below 1100 px), status bar 28; screens for chats, contacts, calls, meetings, settings; usable at 1440 × 900, 1280 × 800 and at 200 % scale (test) |
 | Colours | the blue and slate tokens in `theme.rs`; deviation: secondary text `#586A80` and success text `#177A59` for 4.5:1 (tested); status always with a word |
-| Typography | system sans, bold and monospace faces through fontconfig (none bundled); sizes 22/19/14.5/13.5/11.5 pt; deviation from the references: the system face instead of Inter when Inter is not installed |
+| Typography | Inter and the script and symbol faces of craft-fonts (embedded with `CRAFT_FONTS_DIR`; without it the system's sans face through fontconfig), Noto Emoji for emoji, monospace from the system; sizes 22/19/14.5/13.5/11.5 pt |
 | Raster and icons | 8 px spacing, radius 8–10; deviation: two-letter monograms instead of drawn icons in the rail and call tiles |
 | Interaction, keyboard, focus | Ctrl+K, Ctrl+N, Ctrl+1…4, Esc, Enter/Shift+Enter, Tab and arrow keys in the lists; visible focus rings on rows, rail buttons and tiles; drafts kept per conversation; scroll position kept per conversation |
 | Data states | demo marked everywhere; delivery is never shown as read; a call is connected only after the answer (test); empty lists, offline, failed sign-in, a lost connection (with "sign in again"), a missing microphone (notice, the call goes on) all have words (tests and lab) |
