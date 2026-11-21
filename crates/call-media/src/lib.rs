@@ -1094,14 +1094,16 @@ impl CallMedia {
     }
 
     /// Early media from an SDP answer in a provisional response (MS-SDPEXT §3.1.5.12): ICE runs
-    /// as for a final answer (§3.1.5.12.4), incoming audio plays, only DTMF is sent.
+    /// as for a final answer (§3.1.5.12.4), incoming audio plays, only DTMF is sent. The caller
+    /// is the controlling agent; the callee that answered early (SD-51) the controlled one.
     pub fn start_early(
         &mut self,
         n: &sdp::Negotiated,
+        controlling: bool,
         cname: &str,
         now: u64,
     ) -> Result<(), String> {
-        self.start(n, true, cname, now)?;
+        self.start(n, controlling, cname, now)?;
         if let Some(a) = self.audio.as_mut() {
             a.set_early(true);
         }
@@ -1111,7 +1113,13 @@ impl CallMedia {
     /// The 200 of the early media's fork (§3.1.5.12.3): speech starts and the differences of the
     /// final answer take effect – direction, a changed key (the audio core is rebuilt with it);
     /// other ICE credentials mean a new start.
-    pub fn confirm(&mut self, n: &sdp::Negotiated, cname: &str, now: u64) -> Result<(), String> {
+    pub fn confirm(
+        &mut self,
+        n: &sdp::Negotiated,
+        controlling: bool,
+        cname: &str,
+        now: u64,
+    ) -> Result<(), String> {
         let same_ice = match (&self.remote_ice, &n.remote_ice) {
             (Some(a), Some(b)) => a.ufrag == b.ufrag && a.pwd == b.pwd,
             _ => false,
@@ -1119,7 +1127,7 @@ impl CallMedia {
         let same_key = self.remote_key.as_ref().map(sdp::Key::attribute)
             == n.remote_key.as_ref().map(sdp::Key::attribute);
         if !same_ice {
-            return self.start(n, true, cname, now);
+            return self.start(n, controlling, cname, now);
         }
         if !same_key || self.audio.as_ref().map(Audio::codec) != Some(n.codec) {
             let mut random = [0u8; 10];

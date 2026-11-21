@@ -1625,6 +1625,10 @@ fn interactive(
     // E9-08: the addresses of the last /location city, to pick from.
     let mut city_choices: Vec<commscraft_lis::Location> = Vec::new();
     let mut pending_in: BTreeMap<u32, u32> = BTreeMap::new();
+    // SD-51: media prepared while a call rings (media id → call), and the prepared answer of an
+    // early-answered call (call → media id, local), kept for the 200.
+    let mut early_in: BTreeMap<u32, u32> = BTreeMap::new();
+    let mut early_ready: BTreeMap<u32, (u32, Box<commscraft_sdp::Local>)> = BTreeMap::new();
     // Media prepared for a conference's audio: media id → conversation.
     // Media handle → (conversation, announcement language, CA-24).
     let mut pending_conf: BTreeMap<u32, (u32, Option<String>)> = BTreeMap::new();
@@ -1915,6 +1919,11 @@ fn interactive(
                             println!(
                                 "* incoming call {call} from {who} – /answer {call} or /hangup {call}"
                             );
+                            // SD-51: prepare the media now and answer early, so the
+                            // connectivity checks run while it rings (audio-only offers).
+                            if !engine.incoming_video(call) {
+                                let _ = self_tx.send(format!("/early {call}"));
+                            }
                         }
                         current_call = Some(call);
                     }
@@ -1962,6 +1971,16 @@ fn interactive(
                             let _ = h.tx.send(calls::ToMedia::Start {
                                 media,
                                 controlling: true,
+                                early: true,
+                            });
+                        }
+                    }
+                    E::CallEarlyAnswered { call, media } => {
+                        println!("* call {call}: answered early, checking the connection");
+                        if let Some(h) = media_of_call.get(&call).and_then(|m| handles.get(m)) {
+                            let _ = h.tx.send(calls::ToMedia::Start {
+                                media,
+                                controlling: false,
                                 early: true,
                             });
                         }
@@ -2073,6 +2092,18 @@ fn interactive(
                     }
                     E::CallEnded { call, status } => {
                         cues.stop_ring(call);
+                        early_ready.remove(&call);
+                        let unused: Vec<u32> = early_in
+                            .iter()
+                            .filter(|(_, &c)| c == call)
+                            .map(|(&m, _)| m)
+                            .collect();
+                        for m in unused {
+                            early_in.remove(&m);
+                            if let Some(h) = handles.remove(&m) {
+                                let _ = h.tx.send(calls::ToMedia::Stop);
+                            }
+                        }
                         meeting_calls.remove(&call);
                         println!("* call {call} ended ({status})");
                         rdp_offers.remove(&call);
@@ -2999,6 +3030,17 @@ fn interactive(
                             },
                             now(),
                         ));
+                    } else if let Some(call) = early_in.remove(&id) {
+                        media_of_call.insert(call, id);
+                        early_ready.insert(call, (id, local.clone()));
+                        outputs.extend(engine.command(
+                            C::EarlyAnswer {
+                                call,
+                                local,
+                                policy,
+                            },
+                            now(),
+                        ));
                     }
                 }
                 calls::FromMedia::Selected(id, local) => {
@@ -3514,9 +3556,39 @@ fn interactive(
                         None
                     }
                 },
-                "/answer" | "/answervideo" => match arg.parse::<u32>().ok().or(current_call) {
+                "/answer"
+                    if arg.parse::<u32>().ok().or(current_call).is_some_and(|c| {
+                        early_ready.contains_key(&c) || early_in.values().any(|&x| x == c)
+                    }) =>
+                {
+                    // SD-51: the media is ready (or being prepared) since the call rang.
+                    let call = arg.parse::<u32>().ok().or(current_call).unwrap_or_default();
+                    cues.stop_ring(call);
+                    if let Some((_, local)) = early_ready.remove(&call) {
+                        let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
+                        outputs.extend(engine.command(
+                            C::AcceptCall {
+                                call,
+                                local,
+                                policy,
+                            },
+                            now(),
+                        ));
+                    } else if let Some((&m, _)) = early_in.iter().find(|(_, &c)| c == call) {
+                        early_in.remove(&m);
+                        pending_in.insert(m, call);
+                    }
+                    None
+                }
+                "/answer" | "/answervideo" | "/early" => match arg
+                    .parse::<u32>()
+                    .ok()
+                    .or(current_call)
+                {
                     Some(call) => {
-                        cues.stop_ring(call);
+                        if cmd != "/early" {
+                            cues.stop_ring(call);
+                        }
                         let relay = engine.media_relay().and_then(calls::relay_from);
                         // The callee is the bandwidth-managing endpoint ([MS-ICE2BWM] §3.1.4).
                         let bwm = calls::bandwidth_config(
@@ -3540,7 +3612,11 @@ fn interactive(
                             media_tx.clone(),
                         );
                         handles.insert(id, h);
-                        pending_in.insert(id, call);
+                        if cmd == "/early" {
+                            early_in.insert(id, call);
+                        } else {
+                            pending_in.insert(id, call);
+                        }
                         if cmd == "/answervideo" {
                             if engine.incoming_video(call) {
                                 let vid = next_media;

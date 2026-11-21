@@ -538,6 +538,10 @@ struct Session {
     /// Audio streams being prepared for a meeting's audio: media ID → conversation.
     pending_conf: BTreeMap<u32, u32>,
     pending_in: BTreeMap<u32, u32>,
+    /// SD-51: media prepared while a call rings (media ID → call) and the early answer of a
+    /// call (call → media ID, local), sent again in the 200.
+    early_in: BTreeMap<u32, u32>,
+    early_ready: BTreeMap<u32, (u32, Box<commscraft_sdp::Local>)>,
     outgoing: BTreeSet<u32>,
     next_media: u32,
     cues: cues::Cues,
@@ -1088,6 +1092,8 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         pending_out: BTreeMap::new(),
         pending_conf: BTreeMap::new(),
         pending_in: BTreeMap::new(),
+        early_in: BTreeMap::new(),
+        early_ready: BTreeMap::new(),
         outgoing: BTreeSet::new(),
         next_media: 1,
         cues,
@@ -2192,6 +2198,23 @@ impl Session {
             }
             ToWorker::AnswerCall { id: call } => {
                 self.cues.stop_ring(call);
+                // SD-51: the media is ready (or being prepared) since the call rang.
+                if let Some((_, local)) = self.early_ready.remove(&call) {
+                    let policy = self.policy();
+                    return self.engine.command(
+                        C::AcceptCall {
+                            call,
+                            local,
+                            policy,
+                        },
+                        t,
+                    );
+                }
+                if let Some((&m, _)) = self.early_in.iter().find(|(_, &c)| c == call) {
+                    self.early_in.remove(&m);
+                    self.pending_in.insert(m, call);
+                    return Vec::new();
+                }
                 let id = self.spawn_media(None, Some(call));
                 self.pending_in.insert(id, call);
                 Vec::new()
@@ -2591,6 +2614,17 @@ impl Session {
                         },
                         t,
                     )
+                } else if let Some(call) = self.early_in.remove(&id) {
+                    self.media_of_call.insert(call, id);
+                    self.early_ready.insert(call, (id, local.clone()));
+                    self.engine.command(
+                        C::EarlyAnswer {
+                            call,
+                            local,
+                            policy,
+                        },
+                        t,
+                    )
                 } else {
                     Vec::new()
                 }
@@ -2615,6 +2649,7 @@ impl Session {
                     None => {
                         self.pending_out.remove(&id);
                         self.pending_in.remove(&id);
+                        self.early_in.remove(&id);
                         self.pending_conf.remove(&id);
                         self.v.ready_audio.remove(&id);
                         if let Some(h) = self
@@ -3300,6 +3335,11 @@ impl Session {
                 });
                 if self.engine.incoming_video(call) {
                     out.event(AppEvent::CallOffersVideo { id: call });
+                } else {
+                    // SD-51: prepare the media now and answer early, so the connectivity checks
+                    // run while it rings.
+                    let id = self.spawn_media(None, Some(call));
+                    self.early_in.insert(id, call);
                 }
             }
             E::CallVideo { call, video } => {
@@ -3372,9 +3412,30 @@ impl Session {
                     early: true,
                 },
             ),
+            E::CallEarlyAnswered { call, media } => self.to_media(
+                call,
+                calls::ToMedia::Start {
+                    media,
+                    controlling: false,
+                    early: true,
+                },
+            ),
             E::CallEarlyMediaEnded { call } => self.to_media(call, calls::ToMedia::EndEarly),
             E::CallUpdated { call, media } => self.to_media(call, calls::ToMedia::Update(media)),
             E::CallEnded { call, status } => {
+                self.early_ready.remove(&call);
+                let unused: Vec<u32> = self
+                    .early_in
+                    .iter()
+                    .filter(|(_, &c)| c == call)
+                    .map(|(&m, _)| m)
+                    .collect();
+                for m in unused {
+                    self.early_in.remove(&m);
+                    if let Some(h) = self.media.remove(&m) {
+                        let _ = h.tx.send(calls::ToMedia::Stop);
+                    }
+                }
                 out.event(AppEvent::QualityRating(self.engine.quality_service()));
                 if let Some(vid) = self.v.of_call.get(&call).copied() {
                     self.v.conf_video.retain(|_, (v, _)| *v != vid);

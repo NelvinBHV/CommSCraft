@@ -376,7 +376,7 @@ fn early_media_then_confirm() {
     let (mut a, _) = CallMedia::prepare(ip, None, t0).unwrap();
     let (mut b, _) = CallMedia::prepare(ip, None, t0).unwrap();
     let (na, nb) = (negotiated_from(&b), negotiated_from(&a));
-    a.start_early(&na, "a@test", t0).unwrap();
+    a.start_early(&na, true, "a@test", t0).unwrap();
     b.start(&nb, false, "b@test", t0).unwrap();
     let frame: Vec<i16> = (0..320)
         .map(|i| {
@@ -401,7 +401,7 @@ fn early_media_then_confirm() {
     let (at_a, at_b) = run(&mut a, &mut b, 400);
     assert!(at_a > 1e9, "A hears B's early media: {at_a}");
     assert!(at_b < 1e6, "A sends no speech before the answer: {at_b}");
-    a.confirm(&na, "a@test", now_ms()).unwrap();
+    a.confirm(&na, true, "a@test", now_ms()).unwrap();
     let (_, at_b) = run(&mut a, &mut b, 60);
     assert!(at_b > 1e9, "speech after the answer: {at_b}");
 }
