@@ -2772,6 +2772,15 @@ impl Session {
                 }
             }
             E::Provisioned(c) => {
+                // Issue #212: the server cannot switch media encryption off.
+                if calls::plaintext_refused(c.av_encryption) {
+                    out.notice(
+                        NoticeKind::Warning,
+                        String::from(
+                            "the server provisions calls without encryption; they stay encrypted and may fail",
+                        ),
+                    );
+                }
                 // The offline address book: the cached copy at once, then brought up to date
                 // in the background (as the Windows client uses its local copy at once).
                 if self.address_book.is_none() {

@@ -12,8 +12,8 @@
 //! section); every value that later reaches a socket or a key is parsed into a typed value
 //! (IP address, port, 30-byte key ‖ salt, 1-byte MKI) or refused; only AES_CM_128_HMAC_SHA1_80
 //! with inline keys; an answer without usable keys to an encrypted offer is refused; plaintext
-//! media only with an explicit policy (`Encryption::Off`, provisioned `DoNotSupport`) – never as
-//! a silent fallback.
+//! media only with an explicit policy (`Encryption::Off`: provisioned `DoNotSupport` and the
+//! user's explicit yes, issue #212) – never as a silent fallback.
 
 use std::net::IpAddr;
 
