@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (security fixes #207–#213)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (appear offline, sorting, group member presence)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -20,7 +20,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
-| Program code | **49 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **724 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
+| Program code | **50 crates + 2 apps** (`commscraft-cli`, the desktop client `commscraft`), **734 tests** (specification test vectors and examples, ITU/RFC/libsrtp reference data, hostile-input tests, offline sign-in, TLS and media loopback tests); network and device code only in adapter crates (`net`, `call-media`, `audio-alsa`) | measured |
 | Interop test environment | **private owner lab** (since 2026-10-31): details are not published, public statuses are `tested-offline` and `tested-in-lab` | – |
 
 Legend: **B** fully documented; **B\*** documented, with conflicts or gaps that need a decision or an
@@ -52,6 +52,8 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-21 | Appear offline (`tested-in-lab`), alphabetical sorting regardless of case and accents, presence of distribution group members regardless of letter case; presence subscriptions are no longer renewed when the contact list comes again unchanged, and failures the session handles itself (an ended subscription, 481 with a new subscription at once) are no longer shown as warnings (issues #223–#225). |
+| 2026-11-21 | Contact photos over UCWA as a second path (`tested-in-lab`): token with the Windows grant over NTLM, photo links from the contact list, expanded distribution groups and searches, the own photo; new crate `ucwa`; Autodiscover now hands on the Root's `OAuth` link. |
 | 2026-11-21 | Security fixes from the source audit (issues #207–#213): video helper in two confinement profiles (embedded: no socket, no runtime directory, own `/proc` only), trusted domains per SIP account, RDP screen area bounded before allocation, HTTP exchanges end by a deadline, TLS-DSK key files replaced atomically and never through a link, no plaintext media on the server's word alone, CI actions pinned to commit SHAs. |
 | 2026-11-18 | Copy contact to another group as in the Windows client (`tested-in-lab`): the contact keeps its groups and is shown in each. |
 | 2026-11-18 | Add menu as in the Windows client (`tested-offline`): in my organization, not in my organization by address, new group, display options. |

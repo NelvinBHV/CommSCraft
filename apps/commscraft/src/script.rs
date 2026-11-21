@@ -332,6 +332,7 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 "away" => Presence::Away,
                 "brb" => Presence::BeRightBack,
                 "offwork" => Presence::OffWork,
+                "offline" => Presence::Offline,
                 "reset" => return app.handle(UiIntent::ResetStatus),
                 _ => Presence::Available,
             };
@@ -341,6 +342,10 @@ pub fn run(app: &mut DesktopApp, line: &str) {
         "idle" => app.idle_override = arg.trim().parse().ok(),
         // `note TEXT` (empty: remove the note)
         "note" => app.handle(UiIntent::SetNote(arg.trim().to_string())),
+        // `expand ADDRESS`: the members of a distribution group (as opening it in the contact list).
+        "expand" => app.handle(UiIntent::ExpandGroup {
+            email: arg.trim().to_string(),
+        }),
         // `card ADDRESS`: the contact card of this person.
         "card" => {
             if let Some(uri) = commscraft_ui::normalise_address(arg.trim()) {

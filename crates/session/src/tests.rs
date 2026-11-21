@@ -5628,14 +5628,30 @@ fn watched_addresses_join_the_presence_subscriptions() {
     assert_eq!(subs.len(), 1);
     let body = String::from_utf8_lossy(&subs[0].body);
     assert_eq!(body.matches("sip:bob@contoso.com").count(), 1, "{body}");
-    // The same address again: nothing new.
+    // The same address again (also in other spelling): nothing new.
     let again = e.command(
         Command::WatchPresence {
-            uris: vec!["sip:bob@contoso.com".into()],
+            uris: vec!["sip:Bob@contoso.com".into()],
         },
         NOW,
     );
     assert!(sends(&again).is_empty());
+    // A further address: one more subscription of its own, the existing one is not ended
+    // (no SUBSCRIBE with Expires 0, so no late 481 for an ended dialog).
+    let more = e.command(
+        Command::WatchPresence {
+            uris: vec!["sip:carol@contoso.com".into()],
+        },
+        NOW,
+    );
+    let subs: Vec<_> = sends(&more)
+        .into_iter()
+        .filter(|m| m.method() == Some("SUBSCRIBE"))
+        .collect();
+    assert_eq!(subs.len(), 1);
+    assert!(subs[0].single("Expires").ok().flatten() != Some("0"));
+    let body = String::from_utf8_lossy(&subs[0].body);
+    assert!(body.contains("sip:carol@contoso.com") && !body.contains("sip:bob@contoso.com"));
 }
 
 #[test]

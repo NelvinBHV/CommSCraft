@@ -63,6 +63,34 @@ pub fn duration(seconds: u64) -> String {
     }
 }
 
+/// The key a name is sorted by: lower case, the common accented letters and umlauts as their base
+/// letters (ä → a, ß → ss …), so "Ärger" sorts with "Arger", not after "Z" (as a person expects
+/// it in an address book).
+pub fn sort_key(name: &str) -> String {
+    let mut out = String::with_capacity(name.len());
+    for c in name.trim().chars().flat_map(char::to_lowercase) {
+        match c {
+            'ä' | 'à' | 'á' | 'â' | 'ã' | 'å' | 'ā' => out.push('a'),
+            'æ' => out.push_str("ae"),
+            'ç' | 'č' | 'ć' => out.push('c'),
+            'é' | 'è' | 'ê' | 'ë' | 'ē' | 'ę' | 'ě' => out.push('e'),
+            'í' | 'ì' | 'î' | 'ï' => out.push('i'),
+            'ñ' | 'ń' | 'ň' => out.push('n'),
+            'ö' | 'ò' | 'ó' | 'ô' | 'õ' | 'ø' => out.push('o'),
+            'œ' => out.push_str("oe"),
+            'ß' => out.push_str("ss"),
+            'š' | 'ś' => out.push('s'),
+            'ü' | 'ù' | 'ú' | 'û' | 'ů' => out.push('u'),
+            'ý' | 'ÿ' => out.push('y'),
+            'ž' | 'ź' | 'ż' => out.push('z'),
+            'ł' => out.push('l'),
+            'ř' => out.push('r'),
+            c => out.push(c),
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

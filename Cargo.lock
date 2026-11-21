@@ -811,6 +811,7 @@ dependencies = [
  "commscraft-tlsdsk",
  "commscraft-tones",
  "commscraft-turn-bwm",
+ "commscraft-ucwa",
  "commscraft-url",
  "commscraft-video-ffmpeg",
  "commscraft-video-wayland",
@@ -1131,6 +1132,14 @@ dependencies = [
 [[package]]
 name = "commscraft-turn-bwm"
 version = "0.78.0-alpha"
+
+[[package]]
+name = "commscraft-ucwa"
+version = "0.1.0-alpha.1"
+dependencies = [
+ "commscraft-url",
+ "commscraft-xml",
+]
 
 [[package]]
 name = "commscraft-ui"

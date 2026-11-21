@@ -567,3 +567,44 @@ fn the_self_view_belongs_to_its_call_and_goes_with_it() {
     });
     assert!(!s.video.contains_key(&(4 | SELF_VIEW)));
 }
+
+/// Issue #223: a distribution group member's presence arrives even when the directory spells
+/// the SIP address with other letter case than the presence document.
+#[test]
+fn distribution_members_get_presence_regardless_of_letter_case() {
+    let mut s = online();
+    s.apply(AppEvent::DistributionGroups(vec![(
+        "Team".into(),
+        "team@beispiel.invalid".into(),
+    )]));
+    s.apply(AppEvent::DistributionMembers {
+        email: "team@beispiel.invalid".into(),
+        members: Ok(vec![Contact::new(
+            "sip:Max.Muster@beispiel.invalid",
+            "Max Muster",
+            Source::Directory,
+        )]),
+        partial: false,
+    });
+    s.apply(AppEvent::Presence {
+        uri: "sip:max.muster@beispiel.invalid".into(),
+        presence: Some(Presence::Busy),
+        note: String::new(),
+        name: None,
+    });
+    let m = s.distribution[0].members.as_ref().unwrap();
+    assert_eq!(m[0].presence, Presence::Busy);
+}
+
+/// Issue #224: names sort alphabetically regardless of case and umlauts.
+#[test]
+fn names_sort_like_an_address_book() {
+    use commscraft_ui::format::sort_key;
+    let mut names = vec!["zora", "Ärger", "bob", "Anna", "Øyvind", "ölmann", "Bea"];
+    names.sort_by_key(|n| sort_key(n));
+    assert_eq!(
+        names,
+        ["Anna", "Ärger", "Bea", "bob", "ölmann", "Øyvind", "zora"]
+    );
+    assert_eq!(sort_key("Straße"), "strasse");
+}

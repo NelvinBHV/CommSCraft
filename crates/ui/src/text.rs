@@ -87,6 +87,7 @@ texts! {
     filter_rooms: "Räume", "Rooms";
     add: "Hinzufügen", "Add";
     appear_away: "Als abwesend anzeigen", "Appear away";
+    appear_offline: "Als offline anzeigen", "Appear offline";
     meeting_link_hint: "Besprechungslink (https://…)", "Meeting link (https://…)";
     new_meeting_dots: "Neue Besprechung …", "New meeting …";
     new_meeting: "Neue Besprechung", "New meeting";
