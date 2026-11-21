@@ -26,7 +26,8 @@ the function table of [`target-app-parity.md`](target-app-parity.md) by
 ## Flatpak
 - Manifest: [`packaging/flatpak/io.github.nelvinbhv.CommSCraft.yml`](../packaging/flatpak/io.github.nelvinbhv.CommSCraft.yml),
   runtime `org.freedesktop.Platform` 25.08.
-- Only CommSCraft (MIT OR Apache-2.0) and its Rust dependencies are in the bundle. FFmpeg comes
+- In the bundle: CommSCraft (MIT OR Apache-2.0), its Rust dependencies, MIT Kerberos and the
+  craft-fonts faces (pinned commit, required in a release; licences in craft-fonts). FFmpeg comes
   from the runtime; H.264 needs the runtime extension `org.freedesktop.Platform.ffmpeg-full`
   (Flathub, installed with the app or by `flatpak install flathub org.freedesktop.Platform.ffmpeg-full//25.08`).
 - Install: `flatpak install --user CommSCraft.flatpak` (the runtime from Flathub), start:

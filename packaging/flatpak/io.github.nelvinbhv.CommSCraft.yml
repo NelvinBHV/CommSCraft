@@ -63,6 +63,9 @@ modules:
       env:
         CARGO_HOME: /run/build/commscraft/cargo
         PKG_CONFIG_PATH: /app/lib/pkgconfig
+        # The craft-fonts faces are required in a release (build.rs).
+        CRAFT_FONTS_DIR: /run/build/commscraft/craft-fonts
+        CRAFT_FONTS_REQUIRED: '1'
         LIBCLANG_PATH: /usr/lib/sdk/llvm20/lib
       # The crates are fetched while building (a bundle for the release, not a Flathub build).
       build-args:
@@ -78,3 +81,7 @@ modules:
     sources:
       - type: dir
         path: ../..
+      - type: git
+        url: https://github.com/storytold/craft-fonts.git
+        commit: 26a79230872f9b2acd3dd68500677e294350ab94
+        dest: craft-fonts
