@@ -7,3 +7,4 @@
 *.pcap
 *.pcapng
 *.etl
+packaging/flatpak/cargo-sources.json

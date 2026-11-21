@@ -2944,10 +2944,13 @@ impl Session {
             E::Typing {
                 conversation,
                 typing,
-            } => out.event(AppEvent::Typing {
-                session: conversation,
-                typing,
-            }),
+            } => {
+                trace_line(&format!("typing in conversation {conversation}: {typing}"));
+                out.event(AppEvent::Typing {
+                    session: conversation,
+                    typing,
+                })
+            }
             E::Delivered { conversation } => out.event(AppEvent::Delivered {
                 session: conversation,
             }),

@@ -342,6 +342,15 @@ pub fn run(app: &mut DesktopApp, line: &str) {
         "idle" => app.idle_override = arg.trim().parse().ok(),
         // `note TEXT` (empty: remove the note)
         "note" => app.handle(UiIntent::SetNote(arg.trim().to_string())),
+        // `typing on|off`: the typing notification in the selected conversation.
+        "typing" => {
+            if let Some(key) = app.ui.selected_conversation() {
+                app.handle(UiIntent::Typing {
+                    key,
+                    typing: arg.trim() != "off",
+                });
+            }
+        }
         // `expand ADDRESS`: the members of a distribution group (as opening it in the contact list).
         "expand" => app.handle(UiIntent::ExpandGroup {
             email: arg.trim().to_string(),
