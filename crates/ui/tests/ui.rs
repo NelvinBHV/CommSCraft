@@ -29,6 +29,7 @@ fn fonts(ctx: &egui::Context) {
         .unwrap_or_default();
     defs.families
         .insert(FontFamily::Name(commscraft_ui::theme::BOLD.into()), regular);
+    commscraft_ui::install_icons(&mut defs);
     ctx.set_fonts(defs);
 }
 

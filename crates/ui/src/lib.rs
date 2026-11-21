@@ -16,6 +16,8 @@ mod views;
 pub mod widgets;
 
 pub use app::{CommsUi, UiIntent};
+/// Installs the Lucide icon font into font definitions (see `views::icons`).
+pub use views::icons::install as install_icons;
 
 /// `name@domain` or `sip:name@domain` → `sip:name@domain` (the check of the sign-in form).
 pub fn normalise_address(text: &str) -> Option<String> {
