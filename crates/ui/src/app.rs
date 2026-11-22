@@ -283,6 +283,13 @@ impl std::fmt::Debug for SignIn {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Prefs {
     pub favorites: BTreeSet<String>,
+    /// Collapsed sections of the contact list (group names, `dg:` distribution groups), kept
+    /// across restarts (issue #243).
+    pub collapsed: BTreeSet<String>,
+    /// The user's order of the groups (dragged), see `order`.
+    pub group_order: Vec<String>,
+    /// The user's order of the contacts per group (addresses), see `order`.
+    pub contact_order: BTreeMap<String, Vec<String>>,
     /// Reopen the conversations that were open when signing in again (as the Windows client's
     /// option); `reopen` holds their peers (addresses only, no content).
     pub reopen_conversations: bool,
@@ -352,6 +359,9 @@ impl Default for Prefs {
     fn default() -> Self {
         Self {
             favorites: BTreeSet::new(),
+            collapsed: BTreeSet::new(),
+            group_order: Vec::new(),
+            contact_order: BTreeMap::new(),
             status_alerts: BTreeSet::new(),
             meeting_audio_ask: true,
             reopen_conversations: false,
@@ -503,7 +513,6 @@ pub struct CommsUi {
     pub(crate) seen_note: String,
     /// The newest warning the user closed (its time).
     pub(crate) dismissed_alert: u64,
-    pub(crate) collapsed: BTreeSet<String>,
     /// The name dialog: a new group, or renaming one (its old name).
     pub(crate) group_dialog: Option<(Option<String>, String)>,
     /// The meeting link typed in the meetings tab.
@@ -596,7 +605,6 @@ impl CommsUi {
             published_note: String::new(),
             seen_note: String::new(),
             dismissed_alert: 0,
-            collapsed: BTreeSet::new(),
             group_dialog: None,
             meeting_link: String::new(),
             im_hidden: BTreeSet::new(),
