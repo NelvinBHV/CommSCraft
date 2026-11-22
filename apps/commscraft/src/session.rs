@@ -553,6 +553,8 @@ struct Session {
     pending_out: BTreeMap<u32, String>,
     /// Audio streams being prepared for a meeting's audio: media ID → conversation.
     pending_conf: BTreeMap<u32, u32>,
+    /// The audio call of each meeting (conversation → call), for recording it.
+    conf_call: BTreeMap<u32, u32>,
     pending_in: BTreeMap<u32, u32>,
     /// SD-51: media prepared while a call rings (media ID → call) and the early answer of a
     /// call (call → media ID, local), sent again in the 200.
@@ -1122,6 +1124,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         media_of_call: BTreeMap::new(),
         pending_out: BTreeMap::new(),
         pending_conf: BTreeMap::new(),
+        conf_call: BTreeMap::new(),
         pending_in: BTreeMap::new(),
         early_in: BTreeMap::new(),
         early_ready: BTreeMap::new(),
@@ -2053,6 +2056,16 @@ impl Session {
                 }
                 Vec::new()
             }
+            ToWorker::ConferenceCommand {
+                session,
+                command: commscraft_ui::model::ConfCommand::Record(recording),
+            } => self.engine.command(
+                C::ConferenceRecording {
+                    conversation: session,
+                    recording,
+                },
+                t,
+            ),
             ToWorker::ConferenceCommand { session, command } => {
                 use commscraft_session::ConferenceAction as A;
                 use commscraft_ui::model::ConfCommand as K;
@@ -2088,6 +2101,7 @@ impl Session {
                     K::Announcements(on) => A::Announcements(on),
                     K::DialOut(number) => A::DialOut { number },
                     K::End => A::End,
+                    K::Record(_) => return Vec::new(),
                 };
                 self.engine.command(
                     C::ConferenceControl {
@@ -2640,6 +2654,7 @@ impl Session {
                     let call = self.engine.next_call_id();
                     self.media_of_call.insert(call, id);
                     self.outgoing.insert(call);
+                    self.conf_call.insert(conversation, call);
                     out.event(AppEvent::CallStarted {
                         id: call,
                         peer: String::new(),
@@ -2692,6 +2707,13 @@ impl Session {
             }
             calls::FromMedia::Notice(_, what) => {
                 out.notice(NoticeKind::Warning, what);
+                Vec::new()
+            }
+            calls::FromMedia::Recorded(_, path) => {
+                out.notice(
+                    NoticeKind::Info,
+                    format!("recording saved: {}", path.display()),
+                );
                 Vec::new()
             }
             calls::FromMedia::Failed(id, why) => {
@@ -3108,6 +3130,16 @@ impl Session {
                     session: conversation,
                 })
             }
+            E::ConferenceRecording {
+                conversation,
+                recording,
+            } => match self.conf_call.get(&conversation).copied() {
+                Some(call) => self.to_media(call, calls::ToMedia::Record(recording)),
+                None if recording => {
+                    out.notice(NoticeKind::Warning, "join the meeting's audio to record it")
+                }
+                None => {}
+            },
             E::Participants {
                 conversation,
                 participants,
@@ -3202,6 +3234,7 @@ impl Session {
                             in_chat: p.in_chat(),
                             video: p.video_source().is_some(),
                             sharing: p.endpoints.iter().any(|e| e.sharing == Some(true)),
+                            recording: p.endpoints.iter().any(|e| e.recording),
                         })
                         .collect(),
                 });

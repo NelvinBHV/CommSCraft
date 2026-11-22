@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (formatted messages)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (meeting recording)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -16,7 +16,7 @@ an on-premises Skype for Business Server. This page is the summary; the assessme
 | --- | --- | --- |
 | Client functions identified | **52** | measured (analysis) |
 | Evidence status | **B 24 · B\* 17 · T 9 · N 2** | measured (analysis, see legend) |
-| Implementation status of the 52 functions | **37** tested-offline as a whole, **10** in parts, **0** not started, 5 not planned/needs captures/deferred; **42** also `tested-in-lab`; parity **89 %** | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
+| Implementation status of the 52 functions | **38** tested-offline as a whole, **9** in parts, **0** not started, 5 not planned/needs captures/deferred; **42** also `tested-in-lab`; parity **90 %** | measured ([`docs/target-app-parity.md`](docs/target-app-parity.md)) |
 | Conflicts / gaps / open points in the generated list | **59** / **19** (16 closed or no evidence problem) / **29** (24 closed or not needed) | measured ([`docs/protocol/conflicts-gaps-open-points.md`](docs/protocol/conflicts-gaps-open-points.md)) |
 | Owner test cases | **33** (IT-01 … IT-33, [`docs/interop-tests.md`](docs/interop-tests.md)) | measured |
 | Specification documents reviewed | 865 Microsoft Open Specifications PDFs, 193 RFCs, 20 Internet-Drafts, ITU-T G.711, G.722 (incl. digital test sequences), G.722.1, P.562, P.800.1 | measured |
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-22 | Recording meetings ([MS-CONFBAS] §4.4.9, `tested-in-lab`): after checking meetingPolicy AllowRecording and the conference's recording-allowed, the client tells the focus with modifyEndpoint/client-recording, everyone sees who records (roster), and the meeting's audio with the own microphone is kept as a WAV file in the XDG videos folder (`CommSCraft/`); CLI `/record`, desktop client in the meeting menu with a „being recorded“ note. Parity 90 % (`scripts/parity.py`), version 0.90.0-alpha. |
 | 2026-11-21 | Formatted messages (`tested-in-lab`): the message session offers `text/html` as the Windows client does, which then sends every message as an HTML fragment (`<B>`, `<I>`, `<SPAN style>`); it is read into text runs and shown formatted in the desktop client. Our messages go out in the font of the options (bold, italic, underline, colour) where the other side accepts `text/html`, as `Content-Type: text/html` without parameters (with a charset the Windows client accepts but does not show them); CLI `/style`. Version 0.89.2-alpha. |
 | 2026-11-21 | Desktop client: notifications through the desktop's notification service (`org.freedesktop.Notifications`) in place of a notification area icon – incoming calls with answer and decline, meeting invitations, new messages while the window is not seen; the session worker shows them and carries out the chosen action, so they also work while the window is hidden or the screen locked (`tested-in-lab`); the options for message alerts and quiet while Do Not Disturb now take effect. SIP compression as a sign-in option (`tested-in-lab`). Version 0.89.1-alpha. |
 | 2026-11-21 | Calls over TCP ([MS-ICE2] §3.1.4.8.1.3, `tested-in-lab`): the TCP-only mode (`commscraft-cli --tcp-only`: active and passive TCP host candidates and the TCP relay, no UDP) connects to the Windows client even with UDP blocked – its artificial active candidate opens the connection to our passive one; without a TCP TURN server every call now also offers that artificial active TCP server-reflexive candidate, as the Windows client does. RTP and RTCP share the TCP connection; TCP/RTP/SAVP is accepted in the later offer/answer. Peer info now also in audio reports. Parity 89 % (`scripts/parity.py`), version 0.89.0-alpha. |

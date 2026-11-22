@@ -14,6 +14,7 @@ pub mod exchange;
 pub mod meeting_content;
 pub mod photos;
 pub mod rdp_call;
+pub mod recording;
 pub mod setup;
 pub mod tlsdsk;
 pub mod ucwa;

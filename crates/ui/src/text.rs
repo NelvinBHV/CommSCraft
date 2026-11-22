@@ -480,6 +480,10 @@ texts! {
     card_membership: "MITGLIEDSCHAFT", "MEMBERSHIP";
     card_group: "Gruppe", "Group";
     end_meeting: "Besprechung beenden", "End meeting";
+    start_recording: "Aufzeichnung starten", "Start recording";
+    stop_recording: "Aufzeichnung beenden", "Stop recording";
+    recording_tip: "Zeichnet den Ton der Besprechung auf diesem Computer auf (Ordner Videos/CommSCraft); die anderen Teilnehmer sehen, dass Sie aufzeichnen.", "Records the meeting's audio on this computer (folder Videos/CommSCraft); the other participants see that you record.";
+    being_recorded: "Wird aufgezeichnet", "Being recorded";
     end_meeting_dots: "Besprechung beenden …", "End meeting …";
     end_meeting_question: "Damit endet die Besprechung für alle Teilnehmer. Fortfahren?", "This ends the meeting for all participants. Continue?";
     add_in_organisation: "Kontakt aus meiner Organisation hinzufügen", "Add a contact in my organization";
