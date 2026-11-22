@@ -366,6 +366,56 @@ fn readable(fg: egui::Color32, bg: egui::Color32) -> bool {
     (lum(fg) - lum(bg)).abs() > 60.0
 }
 
+/// Right click on a misspelled word in the composer: its suggestions; a click replaces it.
+fn spelling_menu(app: &mut CommsUi, ui: &mut Ui, r: &egui::Response, key: ConvKey) {
+    let Some(speller) = app.speller.clone().filter(|_| app.prefs.spell_check) else {
+        return;
+    };
+    let draft = app.drafts.get(&key).cloned().unwrap_or_default();
+    let cursor = egui::TextEdit::load_state(ui.ctx(), r.id)
+        .and_then(|s| s.cursor.char_range())
+        .map(|c| c.primary.index);
+    let at = cursor.map(|c| {
+        draft
+            .char_indices()
+            .nth(c.0)
+            .map_or(draft.len(), |(i, _)| i)
+    });
+    let target = at
+        .and_then(|a| crate::spell::word_at(&draft, a))
+        .filter(|w| draft.get(w.clone()).is_some_and(|x| !speller.check(x)));
+    let t = app.t;
+    r.context_menu(|ui| {
+        let Some(range) = target.clone() else {
+            ui.label(t.spelling_no_suggestion);
+            return;
+        };
+        let word = draft.get(range.clone()).unwrap_or_default().to_string();
+        if app.spell_menu.as_ref().is_none_or(|(w, _)| *w != word) {
+            app.spell_menu = Some((word.clone(), speller.suggest(&word)));
+        }
+        let suggestions = app
+            .spell_menu
+            .as_ref()
+            .map(|(_, s)| s.clone())
+            .unwrap_or_default();
+        if suggestions.is_empty() {
+            ui.label(t.spelling_no_suggestion);
+        }
+        for s in suggestions.into_iter().take(8) {
+            if ui.button(&s).clicked() {
+                if let Some(d) = app.drafts.get_mut(&key) {
+                    if d.get(range.clone()) == Some(word.as_str()) {
+                        d.replace_range(range.clone(), &s);
+                    }
+                }
+                app.spell_menu = None;
+                ui.close();
+            }
+        }
+    });
+}
+
 /// The emoticons, as the Windows client's picker: a click writes the code into the draft.
 fn emoticon_picker(app: &mut CommsUi, ui: &mut Ui, key: ConvKey, enabled: bool) {
     let t = app.t;
@@ -452,7 +502,45 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                         })
                         .to_string()
                     };
+                    // Misspelled words underlined (the word being typed is left alone).
+                    let speller = app
+                        .speller
+                        .clone()
+                        .filter(|_| app.prefs.spell_check && can_send);
+                    let ink = pal.ink;
+                    let wrong = pal.error;
+                    let mut layouter = |ui: &Ui, buf: &dyn egui::TextBuffer, width: f32| {
+                        let text = buf.as_str();
+                        let bad = speller
+                            .as_deref()
+                            .map(|s| crate::spell::misspelled(s, text))
+                            .unwrap_or_default();
+                        let font = egui::FontId::proportional(theme::text::BODY);
+                        let mut job = egui::text::LayoutJob::default();
+                        job.wrap.max_width = width;
+                        let mut at = 0;
+                        for r in bad.iter().chain(std::iter::once(&(text.len()..text.len()))) {
+                            if let Some(part) = text.get(at..r.start) {
+                                job.append(part, 0.0, egui::TextFormat::simple(font.clone(), ink));
+                            }
+                            if let Some(word) = text.get(r.clone()) {
+                                job.append(
+                                    word,
+                                    0.0,
+                                    egui::TextFormat {
+                                        font_id: font.clone(),
+                                        color: ink,
+                                        underline: egui::Stroke::new(1.5, wrong),
+                                        ..Default::default()
+                                    },
+                                );
+                            }
+                            at = r.end;
+                        }
+                        ui.fonts_mut(|f| f.layout_job(job))
+                    };
                     let edit = egui::TextEdit::multiline(draft)
+                        .layouter(&mut layouter)
                         .hint_text(hint)
                         .frame(Frame::NONE)
                         .desired_rows(1)
@@ -463,6 +551,7 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                     r.widget_info(|| {
                         egui::WidgetInfo::labeled(egui::Role::TextInput, true, "composer")
                     });
+                    spelling_menu(app, ui, &r, key);
                     if app.focus_composer && can_send {
                         r.request_focus();
                         app.focus_composer = false;
