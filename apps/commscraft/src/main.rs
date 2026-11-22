@@ -14,6 +14,7 @@ mod photos;
 mod prefs;
 mod script;
 mod session;
+mod spell;
 mod vault;
 
 use commscraft_ui::app::{CommsUi, UiIntent};
@@ -254,6 +255,11 @@ pub(crate) struct DesktopApp {
     notifier: Option<Option<std::sync::Arc<notify::Notifier>>>,
     /// What the worker needs to know about the interface for them.
     notes_ui: notify::UiState,
+    /// The dictionary being built for this language (spell checking).
+    spell_rx: Option<
+        std::sync::mpsc::Receiver<Option<std::sync::Arc<dyn commscraft_ui::spell::Speller>>>,
+    >,
+    spell_lang: Option<Lang>,
 }
 
 impl DesktopApp {
@@ -273,6 +279,24 @@ impl DesktopApp {
         self.notes_ui
             .messages_quiet
             .store(self.ui.quiet_for_messages(), Ordering::Relaxed);
+    }
+
+    /// Spell checking: the dictionary of the interface's language, built in the background;
+    /// again when the language changes.
+    fn spell_tick(&mut self) {
+        if !self.ui.prefs.spell_check {
+            return;
+        }
+        let lang = self.ui.prefs.lang;
+        if self.spell_lang != Some(lang) {
+            self.spell_lang = Some(lang);
+            self.ui.speller = None;
+            self.spell_rx = Some(spell::start(lang));
+        }
+        if let Some(Ok(d)) = self.spell_rx.as_ref().map(|r| r.try_recv()) {
+            self.ui.speller = d;
+            self.spell_rx = None;
+        }
     }
 
     /// The status automation: idle time against the user's limits; a change goes to the
@@ -716,6 +740,7 @@ impl eframe::App for DesktopApp {
         }
         self.pump_session();
         self.notes_tick();
+        self.spell_tick();
         self.idle_tick();
         if self.worker_done {
             self.worker_done = false;
@@ -900,6 +925,8 @@ fn main() {
                 machine: commscraft_presence::MachineActivity::Active,
                 idle_override: None,
                 notifier: quiet_desktop.then_some(None),
+                spell_rx: None,
+                spell_lang: None,
                 notes_ui: notify::UiState {
                     last_frame_ms: std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0)),
                     messages_quiet: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
