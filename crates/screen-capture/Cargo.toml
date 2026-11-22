@@ -1,12 +1,12 @@
 [package]
 name = "commscraft-screen-capture"
-description = "Capturing the own screen: xdg-desktop-portal ScreenCast and PipeWire (adapter crate)"
+description = "Capturing the own screen and camera: xdg-desktop-portal ScreenCast and Camera, PipeWire (adapter crate)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-ashpd = { version = "=0.14.3", default-features = false, features = ["async-io", "screencast"] }
+ashpd = { version = "=0.14.3", default-features = false, features = ["async-io", "screencast", "camera"] }
 pipewire = "=0.10.1"
 futures-lite = "2"
 

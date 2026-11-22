@@ -4,6 +4,9 @@
 //! frames. Adapter crate: D-Bus through `ashpd` (zbus 6), PipeWire through `pipewire` (the FFI
 //! stays in pipewire-rs; this crate has no `unsafe`).
 //!
+//! The camera goes the same way (issue #257): the Camera portal hands over a PipeWire remote
+//! with the cameras the user allowed, so the Flatpak needs no access to `/dev/video*`.
+//!
 //! Security by design: nothing is captured without the user's choice in the portal dialog; the
 //! portal session ends with [`Capture`]; frames go through a bounded channel (a slow encoder
 //! drops frames instead of piling them up); sizes are checked against [`MAX_SIDE`].
@@ -19,13 +22,33 @@ pub const MAX_SIDE: u32 = 7680;
 /// Frames waiting for the encoder at most.
 const QUEUE: usize = 2;
 
-/// The pixel layout of a frame (4 bytes per pixel).
+/// The pixel layout of a frame: 4-byte RGB (screens), YUYV 4:2:2 with 2 bytes per pixel
+/// (cameras).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Pixels {
     Bgrx,
     Rgbx,
     Bgra,
     Rgba,
+    Yuy2,
+}
+
+impl Pixels {
+    /// Bytes per pixel.
+    pub fn bytes(self) -> u32 {
+        match self {
+            Pixels::Yuy2 => 2,
+            _ => 4,
+        }
+    }
+}
+
+/// What a stream is asked for: a screen (4-byte RGB, any size) or a camera (YUYV at a size
+/// and rate).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Want {
+    Screen,
+    Camera { width: u32, height: u32, fps: u32 },
 }
 
 /// One captured frame.
@@ -49,7 +72,7 @@ pub enum Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::Portal(e) => write!(f, "screen cast portal: {e}"),
+            Error::Portal(e) => write!(f, "desktop portal: {e}"),
             Error::PipeWire(e) => write!(f, "PipeWire: {e}"),
         }
     }
@@ -61,6 +84,9 @@ pub enum Source {
     Portal { remote: OwnedFd, node: u32 },
     /// A node of the user's PipeWire session (tests: a video test source).
     Node(u32),
+    /// A portal's PipeWire remote; the session manager links the stream to its default node
+    /// (the Camera portal's remote shows only the allowed cameras).
+    Remote(OwnedFd),
 }
 
 /// A running capture; dropping it stops the stream (and ends the portal session it holds).
@@ -81,9 +107,51 @@ impl Drop for Capture {
 }
 
 /// Keeps the portal session (and its connection) alive while capturing.
-struct PortalSession {
-    _proxy: ashpd::desktop::screencast::Screencast,
-    _session: ashpd::desktop::Session<ashpd::desktop::screencast::Screencast>,
+enum PortalSession {
+    Screen {
+        _proxy: ashpd::desktop::screencast::Screencast,
+        _session: ashpd::desktop::Session<ashpd::desktop::screencast::Screencast>,
+    },
+    Camera {
+        _proxy: ashpd::desktop::camera::Camera,
+    },
+}
+
+/// Whether the desktop's Camera portal reports a camera (false without portal).
+pub fn camera_present() -> bool {
+    futures_lite::future::block_on(async {
+        match ashpd::desktop::camera::Camera::new().await {
+            Ok(c) => c.is_present().await.unwrap_or(false),
+            Err(_) => false,
+        }
+    })
+}
+
+/// Asks the desktop for the camera (the Camera portal; the desktop may ask the user once) and
+/// starts reading it as YUYV at the given size and rate.
+pub fn start_camera_portal(width: u32, height: u32, fps: u32) -> Result<Capture, Error> {
+    use ashpd::desktop::camera::{Camera, CameraAccessOptions, OpenPipeWireRemoteOptions};
+    let (proxy, remote) = futures_lite::future::block_on(async {
+        let p = |e: ashpd::Error| Error::Portal(e.to_string());
+        let proxy = Camera::new().await.map_err(p)?;
+        if !proxy.is_present().await.map_err(p)? {
+            return Err(Error::Portal("no camera".into()));
+        }
+        proxy
+            .request_access(CameraAccessOptions::default())
+            .await
+            .map_err(p)?
+            .response()
+            .map_err(p)?;
+        let remote = proxy
+            .open_pipe_wire_remote(OpenPipeWireRemoteOptions::default())
+            .await
+            .map_err(p)?;
+        Ok::<_, Error>((proxy, remote))
+    })?;
+    let mut c = start_with(Source::Remote(remote), Want::Camera { width, height, fps })?;
+    c._portal = Some(PortalSession::Camera { _proxy: proxy });
+    Ok(c)
 }
 
 /// Asks the desktop for a screen or window (its own dialog) and starts reading it.
@@ -131,22 +199,27 @@ pub fn start_portal(windows: bool) -> Result<Capture, Error> {
         Ok::<_, Error>((proxy, session, remote, node))
     })?;
     let mut c = start(Source::Portal { remote, node })?;
-    c._portal = Some(PortalSession {
+    c._portal = Some(PortalSession::Screen {
         _proxy: proxy,
         _session: session,
     });
     Ok(c)
 }
 
-/// Starts reading a PipeWire video stream in a thread of its own.
+/// Starts reading a PipeWire screen stream in a thread of its own.
 pub fn start(source: Source) -> Result<Capture, Error> {
+    start_with(source, Want::Screen)
+}
+
+/// Starts reading a PipeWire video stream (screen or camera) in a thread of its own.
+pub fn start_with(source: Source, want: Want) -> Result<Capture, Error> {
     let (tx, frames) = std::sync::mpsc::sync_channel::<Frame>(QUEUE);
     let (stop, stop_rx) = pw::channel::channel::<()>();
     let (ready_tx, ready_rx) = std::sync::mpsc::channel::<Result<(), Error>>();
     let thread = std::thread::Builder::new()
         .name("screen-capture".into())
         .spawn(move || {
-            if let Err(e) = run(source, tx, stop_rx, &ready_tx) {
+            if let Err(e) = run(source, want, tx, stop_rx, &ready_tx) {
                 let _ = ready_tx.send(Err(e));
             }
         })
@@ -177,12 +250,14 @@ fn pixels_of(f: spa::param::video::VideoFormat) -> Option<Pixels> {
         V::RGBx => Some(Pixels::Rgbx),
         V::BGRA => Some(Pixels::Bgra),
         V::RGBA => Some(Pixels::Rgba),
+        V::YUY2 => Some(Pixels::Yuy2),
         _ => None,
     }
 }
 
 fn run(
     source: Source,
+    want: Want,
     tx: SyncSender<Frame>,
     stop: pw::channel::Receiver<()>,
     ready: &std::sync::mpsc::Sender<Result<(), Error>>,
@@ -196,26 +271,38 @@ fn run(
             (context.connect_fd_rc(remote, None).map_err(e)?, Some(node))
         }
         Source::Node(node) => (context.connect_rc(None).map_err(e)?, Some(node)),
+        Source::Remote(remote) => (context.connect_fd_rc(remote, None).map_err(e)?, None),
+    };
+    let (category, role) = match want {
+        Want::Screen => ("Capture", "Screen"),
+        Want::Camera { .. } => ("Capture", "Camera"),
     };
     let stream = pw::stream::StreamBox::new(
         &core,
         "commscraft-screen",
         pw::properties::properties! {
             *pw::keys::MEDIA_TYPE => "Video",
-            *pw::keys::MEDIA_CATEGORY => "Capture",
-            *pw::keys::MEDIA_ROLE => "Screen",
+            *pw::keys::MEDIA_CATEGORY => category,
+            *pw::keys::MEDIA_ROLE => role,
         },
     )
     .map_err(e)?;
     let _listener = stream
         .add_local_listener_with_user_data(Negotiated::default())
-        .param_changed(|_, n, id, param| {
+        .param_changed(|stream, n, id, param| {
             let Some(param) = param else { return };
             if id != spa::param::ParamType::Format.as_raw() {
                 return;
             }
             if n.info.parse(param).is_ok() {
                 n.pixels = pixels_of(n.info.format());
+                // Buffers we can map (memory or memfd): a camera node otherwise offers DMA-BUFs
+                // we do not import, and the buffer negotiation fails.
+                if let Some(b) = buffers_pod() {
+                    if let Some(pod) = spa::pod::Pod::from_bytes(&b) {
+                        let _ = stream.update_params(&mut [pod]);
+                    }
+                }
             }
         })
         .process(move |stream, n| {
@@ -232,7 +319,9 @@ fn run(
             let datas = buffer.datas_mut();
             let Some(d) = datas.first_mut() else { return };
             let chunk = d.chunk();
-            let stride = u32::try_from(chunk.stride()).unwrap_or(0).max(w * 4);
+            let stride = u32::try_from(chunk.stride())
+                .unwrap_or(0)
+                .max(w * pixels.bytes());
             let offset = chunk.offset() as usize;
             let len = (stride as usize).saturating_mul(h as usize);
             let Some(bytes) = d
@@ -253,7 +342,11 @@ fn run(
         })
         .register()
         .map_err(e)?;
-    let format = format_pod().ok_or_else(|| Error::PipeWire("format".into()))?;
+    let format = match want {
+        Want::Screen => format_pod(),
+        Want::Camera { width, height, fps } => camera_pod(width, height, fps),
+    }
+    .ok_or_else(|| Error::PipeWire("format".into()))?;
     let pod = spa::pod::Pod::from_bytes(&format).ok_or_else(|| Error::PipeWire("pod".into()))?;
     stream
         .connect(
@@ -324,4 +417,90 @@ fn format_pod() -> Option<Vec<u8>> {
     )
     .ok()
     .map(|(c, _)| c.into_inner())
+}
+
+/// The format a camera is asked for: uncompressed YUYV (no JPEG decoding of camera data), the
+/// size and rate given preferred, others within bounds accepted (the encoder scales).
+fn camera_pod(width: u32, height: u32, fps: u32) -> Option<Vec<u8>> {
+    use spa::param::format::{FormatProperties as F, MediaSubtype, MediaType};
+    use spa::param::video::VideoFormat as V;
+    let obj = spa::pod::object!(
+        spa::utils::SpaTypes::ObjectParamFormat,
+        spa::param::ParamType::EnumFormat,
+        spa::pod::property!(F::MediaType, Id, MediaType::Video),
+        spa::pod::property!(F::MediaSubtype, Id, MediaSubtype::Raw),
+        spa::pod::property!(F::VideoFormat, Id, V::YUY2),
+        spa::pod::property!(
+            F::VideoSize,
+            Choice,
+            Range,
+            Rectangle,
+            spa::utils::Rectangle { width, height },
+            spa::utils::Rectangle {
+                width: 1,
+                height: 1
+            },
+            spa::utils::Rectangle {
+                width: MAX_SIDE,
+                height: MAX_SIDE
+            }
+        ),
+        spa::pod::property!(
+            F::VideoFramerate,
+            Choice,
+            Range,
+            Fraction,
+            spa::utils::Fraction { num: fps, denom: 1 },
+            spa::utils::Fraction { num: 0, denom: 1 },
+            spa::utils::Fraction { num: 120, denom: 1 }
+        ),
+    );
+    spa::pod::serialize::PodSerializer::serialize(
+        std::io::Cursor::new(Vec::new()),
+        &spa::pod::Value::Object(obj),
+    )
+    .ok()
+    .map(|(c, _)| c.into_inner())
+}
+
+/// The buffer types taken: plain memory or memfd, both mapped by PipeWire (MAP_BUFFERS).
+fn buffers_pod() -> Option<Vec<u8>> {
+    use spa::pod::{ChoiceValue, Object, Property, PropertyFlags, Value};
+    use spa::utils::{Choice, ChoiceEnum, ChoiceFlags};
+    let mask = (1i32 << spa::sys::SPA_DATA_MemPtr) | (1i32 << spa::sys::SPA_DATA_MemFd);
+    let obj = Object {
+        type_: spa::utils::SpaTypes::ObjectParamBuffers.as_raw(),
+        id: spa::param::ParamType::Buffers.as_raw(),
+        properties: vec![Property {
+            key: spa::sys::SPA_PARAM_BUFFERS_dataType,
+            flags: PropertyFlags::empty(),
+            value: Value::Choice(ChoiceValue::Int(Choice(
+                ChoiceFlags::empty(),
+                ChoiceEnum::Flags {
+                    default: mask,
+                    flags: vec![mask],
+                },
+            ))),
+        }],
+    };
+    spa::pod::serialize::PodSerializer::serialize(
+        std::io::Cursor::new(Vec::new()),
+        &Value::Object(obj),
+    )
+    .ok()
+    .map(|(c, _)| c.into_inner())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn format_pods_serialize() {
+        assert!(format_pod().is_some_and(|p| !p.is_empty()));
+        assert!(camera_pod(640, 360, 15).is_some_and(|p| !p.is_empty()));
+        assert!(buffers_pod().is_some_and(|p| !p.is_empty()));
+        assert_eq!(Pixels::Yuy2.bytes(), 2);
+        assert_eq!(Pixels::Bgrx.bytes(), 4);
+    }
 }

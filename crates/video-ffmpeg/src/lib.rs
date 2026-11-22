@@ -667,13 +667,25 @@ impl Scaler {
     }
 }
 
-/// The byte order of a 4-byte RGB screen frame.
+/// The layout of a packed frame from PipeWire: 4-byte RGB (screen) or YUYV 4:2:2 (a camera
+/// through the camera portal, 2 bytes per pixel).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Rgb4 {
     Bgrx,
     Rgbx,
     Bgra,
     Rgba,
+    Yuyv,
+}
+
+impl Rgb4 {
+    /// Bytes per pixel.
+    pub fn bytes(self) -> usize {
+        match self {
+            Rgb4::Yuyv => 2,
+            _ => 4,
+        }
+    }
 }
 
 /// Converts 4-byte RGB screen frames (PipeWire, function 43) to I420 of a given size (swscale);
@@ -701,8 +713,9 @@ impl RgbConverter {
             || height == 0
             || width > MAX_WIDTH * 4
             || height > MAX_HEIGHT * 4
-            || (stride as usize) < (width as usize) * 4
+            || (stride as usize) < (width as usize) * layout.bytes()
             || data.len() < (stride as usize) * (height as usize)
+            || (layout == Rgb4::Yuyv && !width.is_multiple_of(2))
         {
             return Err(Error::BadParameter("screen frame"));
         }
@@ -711,6 +724,7 @@ impl RgbConverter {
             Rgb4::Rgbx => ff::format::Pixel::RGBZ,
             Rgb4::Bgra => ff::format::Pixel::BGRA,
             Rgb4::Rgba => ff::format::Pixel::RGBA,
+            Rgb4::Yuyv => ff::format::Pixel::YUYV422,
         };
         let key = (width, height, layout);
         if self.ctx.as_ref().is_none_or(|(_, k)| *k != key) {
@@ -726,7 +740,7 @@ impl RgbConverter {
             self.ctx = Some((c, key));
         }
         let mut src = ff::frame::Video::new(pixel, width, height);
-        let line = (width as usize) * 4;
+        let line = (width as usize) * layout.bytes();
         let dst_stride = src.stride(0);
         {
             let plane = src.data_mut(0);
