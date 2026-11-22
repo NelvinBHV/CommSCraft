@@ -49,7 +49,7 @@ functions, 38 are implemented and tested offline as a whole, 9 in parts, 0 not s
 | Audio calls | G.722 and G.711, SRTP, ICE, MS-TURN relay over UDP and over TCP 443 (pseudo-TLS), DTMF, mute, hold/resume, early media, call admission control, ALSA/PipeWire devices; ringing, notification sound and music on hold (the approved CommSCraft sound pack, or a WAV file of the user's; `off` and a volume per sound) | – |
 | Meetings | schedule, join by address or meeting link, lobby, roster, audio and video in the A/V MCU (SRTP/SSRTP), mute yourself; view what others share (screen or window); whiteboards, polls (with voting) and slides of the meeting; as presenter: admit, roles, lock, remove, mute others or the audience | sharing one's own screen, drawing whiteboards and slides, creating content |
 | Telephony | phone numbers with the dial plan (phone-context), calls from gateways with caller number, call back, anonymous callers, early media, call transfer (blind and with consultation), call forwarding and simultaneous ring, team and delegate calls, call park, emergency calls with location, voicemail (list, listening), response group agent | – |
-| Video, screen sharing | video calls and meeting video (H.264), viewing shared screens (1:1 and in meetings) and windows shared over RDP (1:1 and in meetings) | sharing one's own screen |
+| Video, screen sharing | video calls and meeting video (H.264), viewing shared screens (1:1 and in meetings) and windows shared over RDP (1:1 and in meetings), sharing one's own screen or a window 1:1 | sharing one's own screen in meetings |
 | Exchange | contact photos, contact list (unified contact store), calendar state and out-of-office note (own and contacts'), conversation history, voicemail list and listening | – |
 
 ## Building and running
@@ -96,7 +96,7 @@ bundled Lucide subset. Screens and the capability gates are described in
 |---|---|
 | [`ROADMAP.md`](ROADMAP.md) | Stage, headline numbers, progress log |
 | [`docs/roadmap.md`](docs/roadmap.md) | Milestones, current focus, alpha gate |
-| [`docs/releases.md`](docs/releases.md) | Releases: version from the measured feature parity with the Windows client (now 90 %, version 0.90.6-alpha), Flatpak bundle and how to install it |
+| [`docs/releases.md`](docs/releases.md) | Releases: version from the measured feature parity with the Windows client (now 90 %, version 0.90.7-alpha), Flatpak bundle and how to install it |
 | [`docs/gaps.md`](docs/gaps.md) | Ranked list of everything missing or unresolved |
 | [`docs/interop-tests.md`](docs/interop-tests.md) | Test cases only the owner runs against a real server, each with a default |
 | [`docs/security.md`](docs/security.md) | Security by design: threat model and the rules every crate follows |

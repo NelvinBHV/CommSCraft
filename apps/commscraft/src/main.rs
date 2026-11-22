@@ -521,6 +521,10 @@ impl DesktopApp {
         let session_of = |k| state.conversation(k).and_then(|c| c.session);
         let cmd = match intent {
             UiIntent::SetPresence(p) => Some(ToWorker::SetPresence(p)),
+            UiIntent::ShareScreen { key, windows } => {
+                self.share_screen(key, windows);
+                return;
+            }
             UiIntent::ResetStatus => Some(ToWorker::ResetStatus),
             UiIntent::SetNote(n) => Some(ToWorker::SetNote(n)),
             UiIntent::StartConversation { key, peer } => {
@@ -758,6 +762,43 @@ impl DesktopApp {
         if let Err(e) = prefs::save(&self.ui.prefs) {
             eprintln!("preferences not saved: {e}");
         }
+    }
+
+    /// Sharing the own screen with the conversation's peer: the desktop's dialog runs in a
+    /// thread of its own (it waits for the user), then the capture goes to the worker.
+    fn share_screen(&mut self, key: commscraft_ui::model::ConvKey, windows: bool) {
+        let Some(peer) = self.ui.state.conversation(key).and_then(|c| c.peer.clone()) else {
+            return;
+        };
+        let Some(tx) = self.worker.as_ref().map(|w| w.sender()) else {
+            return;
+        };
+        let notices = self.audio_test.0.clone();
+        let failed = self.ui.t.share_failed;
+        let repaint = self.ctx.clone();
+        let _ = std::thread::Builder::new()
+            .name("share-portal".into())
+            .spawn(move || {
+                let result = commscraft_screen_capture::start_portal(windows)
+                    .map_err(|e| e.to_string())
+                    .and_then(|capture| {
+                        tx.try_send(ToWorker::ShareScreen {
+                            to: peer,
+                            capture: session::ScreenCapture(capture),
+                        })
+                        .map_err(|e| e.to_string())
+                    });
+                if let Err(e) = result {
+                    let _ = notices.send(AppEvent::Notice(
+                        NoticeKind::Warning,
+                        format!("{failed}: {e}"),
+                        now(),
+                    ));
+                    if let Some(c) = repaint {
+                        c.request_repaint();
+                    }
+                }
+            });
     }
 
     /// The notification area icon: started once, kept in line with the own status, its
