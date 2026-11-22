@@ -11,6 +11,7 @@ pub fn state_text(app: &CommsUi, s: CallState, held: bool, kind: CallKind) -> St
         CallKind::Audio => t.call_connected,
         CallKind::Video => t.call_connected_video,
         CallKind::Screen => t.call_connected_screen,
+        CallKind::Sharing => t.call_presenting,
     };
     match s {
         CallState::Dialing => t.call_dialing.to_string(),

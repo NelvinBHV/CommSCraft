@@ -524,6 +524,15 @@ pub enum CallKind {
     Video,
     /// Someone shares a screen or window with us (function 43, receive only).
     Screen,
+    /// We share our screen or a window (function 43, send only).
+    Sharing,
+}
+
+impl CallKind {
+    /// A screen sharing call (either way): no microphone, no call controls.
+    pub fn is_screen(self) -> bool {
+        matches!(self, CallKind::Screen | CallKind::Sharing)
+    }
 }
 
 /// The received picture of a call: shown in the sandboxed video window, never in this process.

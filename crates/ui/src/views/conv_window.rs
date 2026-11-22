@@ -1070,17 +1070,23 @@ pub fn end_meeting_dialog(app: &mut CommsUi, ctx: &egui::Context) {
     }
 }
 
-/// Present: what can be shown to the others (sharing our own screen is not built).
+/// Present: sharing the own screen or a window with the other person (1:1; the desktop's
+/// dialog picks it); slides, whiteboards and polls are not built.
 fn present_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
     let t = app.t;
     let not_built = Gate::Unavailable(crate::model::Reason::NotImplemented);
-    for label in [
-        t.share_desktop,
-        t.share_window,
-        t.present_slides,
-        t.whiteboard_new,
-        t.poll_new,
-    ] {
+    let peer = app.state.conversation(key).and_then(|c| c.peer.clone());
+    let can_share = peer.is_some() && app.state.capabilities.video_call.usable();
+    for (label, windows) in [(t.share_desktop, false), (t.share_window, true)] {
+        if ui
+            .add_enabled(can_share, egui::Button::new(label))
+            .clicked()
+        {
+            app.emit(UiIntent::ShareScreen { key, windows });
+            ui.close();
+        }
+    }
+    for label in [t.present_slides, t.whiteboard_new, t.poll_new] {
         widgets::gated(ui, label, &not_built, t, &app.palette(), |ui, l, en| {
             ui.add_enabled(en, egui::Button::new(l))
         });
@@ -1587,7 +1593,7 @@ fn stage_controls(
         }
     }
     ui.add_space(12.0);
-    if call.kind != CallKind::Screen
+    if !call.kind.is_screen()
         && round_button(
             ui,
             Icon::Mic,
@@ -1603,16 +1609,16 @@ fn stage_controls(
             muted: !call.muted,
         });
     }
-    let hang = if call.kind == CallKind::Screen {
-        t.stop_viewing
-    } else {
-        t.hang_up
+    let hang = match call.kind {
+        CallKind::Screen => t.stop_viewing,
+        CallKind::Sharing => t.stop_presenting,
+        _ => t.hang_up,
     };
     if round_button(ui, Icon::HangUp, hang, red, true, false).clicked() {
         app.emit(UiIntent::HangUp { id: call.id });
     }
     ui.add_space(12.0);
-    if call.kind != CallKind::Screen {
+    if !call.kind.is_screen() {
         let b = round_button(ui, Icon::Phone, t.call_controls, grey, connected, false);
         egui::Popup::menu(&b).show(|ui| call_menu(app, ui, call, connected, caps));
     }
@@ -1657,7 +1663,7 @@ fn controls(
 ) {
     let t = app.t;
     ui.horizontal(|ui| {
-        if call.kind != CallKind::Screen {
+        if !call.kind.is_screen() {
             if ui
                 .add_enabled(
                     connected,
@@ -1754,10 +1760,10 @@ fn controls(
     // The call window has its own hang-up button; the stage's menu does not need one.
     if app.state.conversation_of_call(call).is_none() {
         ui.add_space(12.0);
-        let label = if call.kind == CallKind::Screen {
-            t.stop_viewing
-        } else {
-            t.hang_up
+        let label = match call.kind {
+            CallKind::Screen => t.stop_viewing,
+            CallKind::Sharing => t.stop_presenting,
+            _ => t.hang_up,
         };
         if widgets::danger(ui, label, pal).clicked() {
             app.emit(UiIntent::HangUp { id: call.id });

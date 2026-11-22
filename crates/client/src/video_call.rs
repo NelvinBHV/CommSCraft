@@ -1145,9 +1145,25 @@ fn spawn_screen(
         let mut hardware = hardware_allowed();
         let mut next_due = 0u64;
         let mut announced = false;
+        // The desktop sends a picture only when the screen changes: the last one is sent again
+        // when a key frame is asked for or nothing new came for a while (the viewer may have
+        // joined after the first key frame).
+        let mut last: Option<commscraft_screen_capture::Frame> = None;
+        let mut last_sent = 0u64;
         while !stop.load(Ordering::Relaxed) {
-            let Ok(f) = capture.frames.recv_timeout(Duration::from_millis(200)) else {
-                continue;
+            let f = match capture.frames.recv_timeout(Duration::from_millis(200)) {
+                Ok(f) => {
+                    last = Some(f.clone());
+                    f
+                }
+                Err(_) => {
+                    let due = idr.load(Ordering::Relaxed)
+                        || now_ms().saturating_sub(last_sent) >= REPEAT_MS;
+                    match (due, &last) {
+                        (true, Some(f)) => f.clone(),
+                        _ => continue,
+                    }
+                }
             };
             let now = now_ms();
             let t = targets
@@ -1210,6 +1226,7 @@ fn spawn_screen(
             };
             let key = idr.swap(false, Ordering::Relaxed);
             let ts = (now as u32).wrapping_mul(90);
+            last_sent = now;
             match enc.encode(&picture, key) {
                 Ok(units) => {
                     for au in units {
@@ -1227,6 +1244,10 @@ fn spawn_screen(
         }
     });
 }
+
+/// A still screen's last picture is sent again after this long (design: the viewer sees a
+/// late joiner's picture within a second, at little cost).
+const REPEAT_MS: u64 = 1000;
 
 /// An encoder for a target (GPU first).
 fn encoder_for(t: Target, hardware: bool) -> Result<vf::Encoder, vf::Error> {

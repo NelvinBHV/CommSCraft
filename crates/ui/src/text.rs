@@ -419,6 +419,9 @@ texts! {
     transfer: "Übertragen", "Transfer";
     hang_up: "Anruf beenden", "End call";
     stop_viewing: "Ansehen beenden", "Stop viewing";
+    stop_presenting: "Präsentation beenden", "Stop presenting";
+    call_presenting: "Sie präsentieren", "You are presenting";
+    share_failed: "Bildschirm nicht freigegeben", "Screen not shared";
     call_hint_title: "Hinweis zum Anrufstatus", "About the call status";
     call_hint: "„Verbunden“ erscheint erst, wenn die Sitzung die Antwort der Gegenstelle gemeldet hat; Wählen und Klingeln werden getrennt angezeigt.", "“Connected” appears only once the session reported the peer's answer; dialling and ringing are shown separately.";
     call_hint_demo: "Anrufstatus, Timer, Halten und Stummschalten sind hier Demo-Daten; es wird nichts gewählt.", "Call state, timer, hold and mute are demo data here; nothing is dialled.";
