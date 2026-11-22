@@ -10,6 +10,7 @@ members = [
     "crates/psom",
     "crates/xccos",
     "crates/sipcomp",
+    "crates/screen-capture",
     "crates/turn-bwm",
     "crates/sip-msg",
     "crates/sipae",
