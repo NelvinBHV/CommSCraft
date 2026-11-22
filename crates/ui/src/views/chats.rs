@@ -123,7 +123,7 @@ fn window_header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
             let link = ui
                 .add(
                     egui::Button::new(
-                        RichText::new(t.members_count(count))
+                        RichText::new(t.participants_count(count))
                             .size(theme::text::SMALL + 0.5)
                             .color(pal.primary),
                     )

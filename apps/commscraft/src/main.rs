@@ -437,6 +437,10 @@ impl DesktopApp {
         match intent {
             UiIntent::Minimize => return root(egui::ViewportCommand::Minimized(true)),
             UiIntent::FocusMain => return root(egui::ViewportCommand::Focus),
+            UiIntent::OpenRecordings => {
+                desktop::open_recordings();
+                return;
+            }
             UiIntent::SendEmail { address } => {
                 desktop::send_email(&address);
                 return;
@@ -728,6 +732,7 @@ impl DesktopApp {
             }
             UiIntent::Quit
             | UiIntent::Minimize
+            | UiIntent::OpenRecordings
             | UiIntent::FocusMain
             | UiIntent::SendEmail { .. }
             | UiIntent::TestSpeaker { .. }

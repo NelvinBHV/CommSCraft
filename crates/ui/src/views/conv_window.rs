@@ -482,6 +482,8 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
             })
             .cloned()
         {
+            // The participants take the pane at the left, as in the Windows client.
+            side_panel(app, ui, pal, key, &c);
             egui::CentralPanel::default()
                 .frame(Frame::new().fill(STAGE).inner_margin(Margin::same(10)))
                 .show(ui, |ui| stage(app, ui, pal, &call, &c.title));
@@ -489,6 +491,15 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
         }
     }
     if let Some(call) = active {
+        // The left pane shows the participants or the IM (one at a time, as in the Windows
+        // client).
+        if app.participants_open.contains(&key) {
+            side_panel(app, ui, pal, key, &c);
+            egui::CentralPanel::default()
+                .frame(Frame::new().fill(STAGE).inner_margin(Margin::same(10)))
+                .show(ui, |ui| stage(app, ui, pal, &call, &c.title));
+            return;
+        }
         side_panel(app, ui, pal, key, &c);
         let width = IM_PANE_WIDTH.min(ui.available_width() * 0.5);
         egui::Panel::left(("conv-im", key.0))
@@ -712,8 +723,9 @@ fn sharing_banner(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c
 fn side_panel(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &Conversation) {
     let t = app.t;
     if app.participants_open.contains(&key) || c.content.is_some() {
-        egui::Panel::right(("conv-side", key.0))
-            .default_size(230.0)
+        egui::Panel::left(("conv-side", key.0))
+            .resizable(true)
+            .default_size(260.0)
             .frame(
                 Frame::new()
                     .fill(pal.surface)
@@ -722,11 +734,31 @@ fn side_panel(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &C
             .show(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     if app.participants_open.contains(&key) {
-                        ui.label(
-                            RichText::new(t.participants)
-                                .family(theme::bold())
-                                .color(pal.ink),
-                        );
+                        // As in the Windows client: "PARTICIPANTS" with a close button.
+                        ui.horizontal(|ui| {
+                            ui.label(
+                                RichText::new(t.participants.to_uppercase())
+                                    .family(theme::bold())
+                                    .size(theme::text::SMALL)
+                                    .color(pal.muted),
+                            );
+                            ui.add_space((ui.available_width() - 22.0).max(0.0));
+                            if icons::button(
+                                ui,
+                                Icon::Close,
+                                t.close,
+                                20.0,
+                                false,
+                                true,
+                                pal.muted,
+                                pal.primary,
+                            )
+                            .on_hover_text(t.close)
+                            .clicked()
+                            {
+                                app.participants_open.remove(&key);
+                            }
+                        });
                         if c.participants.is_empty() {
                             let who = c
                                 .peer
@@ -811,6 +843,18 @@ fn side_panel(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &C
                             for p in members {
                                 participant_row(app, ui, pal, key, p, presenter && p.uri != me);
                             }
+                        }
+                        ui.add_space(10.0);
+                        // "Invite more people", as at the bottom of the Windows client's list.
+                        let gate = app.state.capabilities.group_chat.clone();
+                        if ui
+                            .add_enabled(gate.usable(), egui::Button::new(t.invite_more))
+                            .clicked()
+                        {
+                            app.new_chat = Some(crate::app::NewChat {
+                                text: String::new(),
+                                purpose: crate::app::AddressFor::Invite(key),
+                            });
                         }
                         ui.add_space(10.0);
                     }
@@ -1301,6 +1345,36 @@ fn more_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
             }
         }
     }
+    // As the Windows client's "more" menu: recordings, IM text size, font, help.
+    ui.separator();
+    if ui.button(t.manage_recordings).clicked() {
+        app.emit(UiIntent::OpenRecordings);
+        ui.close();
+    }
+    ui.menu_button(t.im_text_size, |ui| {
+        for (label, size) in [
+            (t.size_small, 13.0),
+            (t.size_medium, 15.0),
+            (t.size_large, 18.0),
+        ] {
+            if ui
+                .radio((app.prefs.chat_text_size - size).abs() < 0.5, label)
+                .clicked()
+            {
+                app.prefs.chat_text_size = size;
+                app.emit(UiIntent::PrefsChanged);
+                ui.close();
+            }
+        }
+    });
+    if ui.button(t.change_font_dots).clicked() {
+        app.open_options(crate::views::options::IM);
+        ui.close();
+    }
+    if ui.button(t.menu_help).clicked() {
+        app.open_window(crate::app::Win::About);
+        ui.close();
+    }
     ui.separator();
     if !c.is_room()
         && matches!(c.state, ConvState::Open | ConvState::Opening)
@@ -1416,16 +1490,59 @@ fn stage(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, call: &Call, title: &str
     };
     let light = egui::Color32::from_gray(235);
     let state = crate::views::calls::state_text(app, call.state, call.held, call.kind);
-    // State on the right, the name in what is left (shortened in a narrow window).
+    // As in the Windows client: the participants at the left, the state (with the call's
+    // length) and the add-people button at the right; the name is on the picture.
+    let key = app.state.conversation_of_call(call);
+    let count = key
+        .and_then(|k| app.state.conversation(k))
+        .map_or(2, |c| c.participants.len().max(2));
     ui.horizontal(|ui| {
+        let open = key.is_some_and(|k| app.participants_open.contains(&k));
+        if icons::round(
+            ui,
+            Icon::People,
+            t.participants,
+            34.0,
+            light,
+            open,
+            key.is_some(),
+        )
+        .clicked()
+        {
+            if let Some(k) = key {
+                if open {
+                    app.participants_open.remove(&k);
+                } else {
+                    app.participants_open.insert(k);
+                }
+            }
+        }
+        ui.label(
+            RichText::new(t.participants_count(count))
+                .size(theme::text::HEADING - 2.0)
+                .color(light),
+        );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            let gate = app.state.capabilities.group_chat.clone();
+            let add = icons::round(
+                ui,
+                Icon::AddPerson,
+                t.invite,
+                34.0,
+                light,
+                false,
+                gate.usable() && key.is_some(),
+            );
+            if add.clicked() {
+                if let Some(k) = key {
+                    app.new_chat = Some(crate::app::NewChat {
+                        text: String::new(),
+                        purpose: crate::app::AddressFor::Invite(k),
+                    });
+                }
+            }
+            ui.add_space(8.0);
             ui.label(RichText::new(&state).size(theme::text::SMALL).color(light));
-            ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                ui.add(
-                    egui::Label::new(RichText::new(&name).size(theme::text::HEADING).color(light))
-                        .truncate(),
-                );
-            });
         });
     });
     let controls_h = 46.0;
@@ -1465,6 +1582,7 @@ fn stage(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, call: &Call, title: &str
             );
             child.add_space((rect.height() / 2.0 - 70.0).max(0.0));
             app.avatar(&mut child, Some(call.peer.as_str()), &name, 96.0, None, pal);
+            child.label(RichText::new(&name).size(theme::text::HEADING).color(light));
             let note = match &call.video {
                 VideoState::Starting => Some(t.video_starting.to_string()),
                 VideoState::Failed(why) => Some(format!("{}: {why}", t.video_failed)),
@@ -1640,17 +1758,17 @@ fn stage_controls(
     let t = app.t;
     let blue = pal.primary;
     let red = egui::Color32::from_rgb(0xd9, 0x2b, 0x2b);
-    let grey = egui::Color32::from_gray(90);
+    let light = egui::Color32::from_gray(225);
+    let key = app.state.conversation_of_call(call);
+    // As in the Windows client: the chat button outlined at the left; video, microphone,
+    // present (blue) and hang up (red) in the middle; call controls and more outlined at the
+    // right.
+    let x0 = ui.cursor().min.x;
+    let full = ui.available_width();
     ui.add_space(4.0);
-    if let Some(key) = app.state.conversation_of_call(call) {
+    if let Some(key) = key {
         let hidden = app.im_hidden.contains(&key);
-        // As in the Windows client: the plain chat symbol, lighter while the pane is open.
-        let colour = if hidden {
-            grey
-        } else {
-            egui::Color32::from_gray(130)
-        };
-        if round_button(ui, Icon::Chat, t.im_pane, colour, true, false).clicked() {
+        if icons::round(ui, Icon::Chat, t.im_pane, 40.0, light, !hidden, true).clicked() {
             if hidden {
                 app.im_hidden.remove(&key);
             } else {
@@ -1658,9 +1776,26 @@ fn stage_controls(
             }
         }
     }
-    ui.add_space(12.0);
-    if !call.kind.is_screen()
-        && round_button(
+    let screen = call.kind.is_screen();
+    let middle_count = if screen { 1.0 } else { 4.0 };
+    let middle = middle_count * 40.0 + (middle_count - 1.0) * ui.spacing().item_spacing.x;
+    let used = ui.cursor().min.x - x0;
+    ui.add_space(((full - middle) / 2.0 - used).max(8.0));
+    if !screen {
+        // Video is part of the call from its start (a video call); adding it later is not
+        // built yet.
+        let video = call.kind == CallKind::Video;
+        icons::round(
+            ui,
+            Icon::Camera,
+            if video { t.video_call } else { t.add_video },
+            40.0,
+            blue,
+            true,
+            false,
+        )
+        .on_disabled_hover_text(t.reason(crate::model::Reason::NotImplemented));
+        if round_button(
             ui,
             Icon::Mic,
             if call.muted { t.unmute } else { t.mute },
@@ -1669,11 +1804,16 @@ fn stage_controls(
             call.muted,
         )
         .clicked()
-    {
-        app.emit(UiIntent::Mute {
-            id: call.id,
-            muted: !call.muted,
-        });
+        {
+            app.emit(UiIntent::Mute {
+                id: call.id,
+                muted: !call.muted,
+            });
+        }
+        let present = icons::round(ui, Icon::Screen, t.present, 40.0, blue, true, key.is_some());
+        if let Some(key) = key {
+            egui::Popup::menu(&present).show(|ui| present_menu(app, ui, key));
+        }
     }
     let hang = match call.kind {
         CallKind::Screen => t.stop_viewing,
@@ -1683,11 +1823,25 @@ fn stage_controls(
     if round_button(ui, Icon::HangUp, hang, red, true, false).clicked() {
         app.emit(UiIntent::HangUp { id: call.id });
     }
-    ui.add_space(12.0);
-    if !call.kind.is_screen() {
-        let b = round_button(ui, Icon::Phone, t.call_controls, grey, connected, false);
-        egui::Popup::menu(&b).show(|ui| call_menu(app, ui, call, connected, caps));
-    }
+    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+        ui.add_space(4.0);
+        if let Some(key) = key {
+            let more = icons::round(ui, Icon::More, t.more_options, 40.0, light, false, true);
+            egui::Popup::menu(&more).show(|ui| more_menu(app, ui, key));
+        }
+        if !screen {
+            let b = icons::round(
+                ui,
+                Icon::Phone,
+                t.call_controls,
+                40.0,
+                light,
+                false,
+                connected,
+            );
+            egui::Popup::menu(&b).show(|ui| call_menu(app, ui, call, connected, caps));
+        }
+    });
 }
 
 fn incoming_buttons(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, call: &Call) {
