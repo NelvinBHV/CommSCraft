@@ -140,22 +140,29 @@ pub fn status_menu(app: &mut CommsUi, ui: &mut Ui) {
     let t = app.t;
     ui.set_min_width(200.0);
     let usable = app.state.capabilities.presence.usable();
+    let pal = app.palette();
     for p in CHOOSABLE {
         let selected = app.state.me.presence == p;
-        if ui
-            .add_enabled(
-                usable,
-                egui::Button::selectable(
-                    selected,
-                    match p {
-                        Presence::Away => t.appear_away,
-                        Presence::Offline => t.appear_offline,
-                        _ => t.presence(p),
-                    },
-                ),
-            )
-            .clicked()
-        {
+        // As in the Windows client: the status symbol in its colour before each entry.
+        let clicked = ui
+            .horizontal(|ui| {
+                let (r, _) = ui.allocate_exact_size(Vec2::splat(14.0), Sense::hover());
+                status_symbol(ui, r, p, &pal);
+                ui.add_enabled(
+                    usable,
+                    egui::Button::selectable(
+                        selected,
+                        match p {
+                            Presence::Away => t.appear_away,
+                            Presence::Offline => t.appear_offline,
+                            _ => t.presence(p),
+                        },
+                    ),
+                )
+                .clicked()
+            })
+            .inner;
+        if clicked {
             app.emit(UiIntent::SetPresence(p));
         }
     }
@@ -173,6 +180,45 @@ pub fn status_menu(app: &mut CommsUi, ui: &mut Ui) {
     }
     if ui.button(t.quit).clicked() {
         app.emit(UiIntent::Quit);
+    }
+}
+
+/// A status symbol as the Windows client draws them: a filled circle in the status colour;
+/// available with a check, do not disturb with a bar, away and be right back with a clock hand.
+pub(crate) fn status_symbol(ui: &Ui, rect: egui::Rect, p: Presence, pal: &Palette) {
+    let c = rect.center();
+    let r = rect.width().min(rect.height()) / 2.0 - 0.5;
+    let painter = ui.painter();
+    painter.circle_filled(c, r, widgets::presence_colour(p, pal));
+    let white = Stroke::new(1.6, egui::Color32::WHITE);
+    match p {
+        Presence::Available => {
+            painter.line_segment(
+                [
+                    c + Vec2::new(-r * 0.45, 0.0),
+                    c + Vec2::new(-r * 0.1, r * 0.4),
+                ],
+                white,
+            );
+            painter.line_segment(
+                [
+                    c + Vec2::new(-r * 0.1, r * 0.4),
+                    c + Vec2::new(r * 0.5, -r * 0.35),
+                ],
+                white,
+            );
+        }
+        Presence::DoNotDisturb => {
+            painter.line_segment(
+                [c + Vec2::new(-r * 0.5, 0.0), c + Vec2::new(r * 0.5, 0.0)],
+                white,
+            );
+        }
+        Presence::Away | Presence::BeRightBack | Presence::OffWork | Presence::Inactive => {
+            painter.line_segment([c, c + Vec2::new(0.0, -r * 0.55)], white);
+            painter.line_segment([c, c + Vec2::new(r * 0.4, r * 0.2)], white);
+        }
+        _ => {}
     }
 }
 

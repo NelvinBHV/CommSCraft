@@ -18,6 +18,7 @@ distributionGroup, expandDistributionGroup.
 | UW-07 | `contact` carries `contactPhoto`; `GET contactPhoto?size=HR{n}X{n}` (default HR48X48), `Accept: image/jpeg` → `image/jpeg`; 403 when the administrator disabled photos; the user's own photo is `photo` on `me` | contact, contactPhoto, photo |
 | UW-08 | `GET search?query=…&limit=1…100` (query ≤ 256 characters) → `contact` and `distributionGroup` resources | search |
 | UW-09 | `distributionGroup` (uri, name) carries `expandDistributionGroup`; its GET returns the members as `contact` resources (each with `contactPhoto`) and nested groups; 403 `TooManyContacts` | distributionGroup, expandDistributionGroup |
+| UW-11 | The User resource may answer with a `Redirect` link to the Root of the user's home pool; discovery (and the token) start again there, its Root naming the `OAuth` resource. `AccessLocation` (`internal`/`external`) says which of `Internal/Ucwa` and `External/Ucwa` serves the client | [MS-OCDISCWS] 20250520 §2.2.5.1, §2.2.5.5, §3.1.5.5, §4.1 (pp. 24–26); "Create an application" (discovery and UCWA on different hosts, `lyncdiscover` → `lyncweb`) |
 | UW-10 | Links in answers are server-relative (`/ucwa/…`) or absolute on the service | all examples; design: followed only on the same host and port |
 
 ## Implementation (2026-11-21)
@@ -30,6 +31,12 @@ distributionGroup, expandDistributionGroup.
   `me`. Used by the desktop client when the directory and Exchange paths give no photo.
 - `docs/protocol/evidence/08-ocdiscws-autodiscover.md` AD-06: the discovery state machine now hands
   on the Root's links (`OAuth`) with the outcome.
+- 2026-11-22 (owner: no photos in a production environment any more): the session follows a
+  `Redirect` of the User resource (at most three, only to hosts in the SIP domain or trusted, a new
+  token per pool) and takes the UCWA service of the access location first, trying the next one
+  when it cannot be reached (UW-11); before, the internal service was always first, which a client
+  outside the company network cannot reach. Redirect and external access `tested-offline` (the
+  lab has one front end and no edge); the lab path still `tested-in-lab`.
 - Status: `tested-offline`, `tested-in-lab` (token over NTLM, application, own photo, a contact's
   photo, a search hit's photo, members of an expanded distribution group; the server took about
   20 s to create the application).

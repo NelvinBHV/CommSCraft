@@ -2189,10 +2189,22 @@ fn card(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 {
                     app.call(&uri, true);
                 }
-                if ui.button(t.send_email).clicked() {
-                    app.emit(UiIntent::SendEmail {
-                        address: address.clone(),
-                    });
+                // The sign-in address doubles as the mail address, as the Windows client uses it.
+                let mail = address.clone();
+                if icons::button(
+                    ui,
+                    Icon::Mail,
+                    t.send_email,
+                    30.0,
+                    false,
+                    true,
+                    pal.muted,
+                    pal.primary,
+                )
+                .on_hover_text(t.send_email)
+                .clicked()
+                {
+                    app.emit(UiIntent::SendEmail { address: mail });
                 }
                 let more = bar_button(
                     ui,
@@ -2212,12 +2224,13 @@ fn card(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     return;
                 }
                 ui.add_space(4.0);
-                ui.label(
-                    RichText::new(title)
-                        .size(theme::text::SMALL)
-                        .family(theme::bold())
-                        .color(pal.muted),
-                );
+                if !title.is_empty() {
+                    ui.label(
+                        RichText::new(title)
+                            .size(theme::text::NAME + 1.0)
+                            .color(pal.ink),
+                    );
+                }
                 for (label, v) in rows.iter().filter(|(_, v)| !v.is_empty()) {
                     ui.horizontal(|ui| {
                         ui.label(RichText::new(*label).color(pal.muted));
@@ -2239,15 +2252,42 @@ fn card(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 .as_ref()
                 .map(|c| t.presence(c.presence).to_string())
                 .unwrap_or_default();
-            section(
-                ui,
-                t.card_contact,
-                &[
-                    (t.card_state, &state),
-                    (t.card_im, &address),
-                    (t.phone_label, &phone),
-                ],
+            // As in the Windows client: "Contact" with the status (its symbol) and the e-mail
+            // address as a link, then the further details.
+            ui.add_space(6.0);
+            ui.label(
+                RichText::new(t.card_contact)
+                    .size(theme::text::NAME + 1.0)
+                    .color(pal.ink),
             );
+            if let Some(k) = &c {
+                ui.horizontal(|ui| {
+                    let (r, _) =
+                        ui.allocate_exact_size(egui::vec2(14.0, 14.0), egui::Sense::hover());
+                    crate::views::main_window::status_symbol(ui, r, k.presence, pal);
+                    ui.label(RichText::new(&state).color(pal.ink));
+                });
+                {
+                    ui.horizontal(|ui| {
+                        let (r, _) =
+                            ui.allocate_exact_size(egui::vec2(14.0, 14.0), egui::Sense::hover());
+                        icons::draw(ui.painter(), r, Icon::Mail, pal.muted);
+                        if ui
+                            .add(
+                                egui::Button::new(RichText::new(&address).color(pal.primary))
+                                    .frame(false),
+                            )
+                            .clicked()
+                        {
+                            app.emit(UiIntent::SendEmail {
+                                address: address.clone(),
+                            });
+                        }
+                    });
+                }
+            }
+            section(ui, "", &[(t.phone_label, &phone)]);
+            ui.separator();
             section(
                 ui,
                 t.card_organisation,
