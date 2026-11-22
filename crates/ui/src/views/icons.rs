@@ -40,7 +40,6 @@ fn lucide(icon: Icon) -> char {
         Icon::ChevronDown => 0xe06d,  // chevron-down
         Icon::ChevronRight => 0xe06f, // chevron-right
         Icon::Speaker => 0xe1ab,      // volume-2
-        Icon::Star => 0xe176,         // star
         Icon::Mic => 0xe118,          // mic
         Icon::HangUp => 0xe138,       // phone-off
         Icon::Paperclip => 0xe12d,    // paperclip
@@ -77,8 +76,6 @@ pub enum Icon {
     ChevronDown,
     ChevronRight,
     Speaker,
-    /// A five-pointed star (call rating).
-    Star,
     /// A microphone (struck through when muted is drawn by the caller).
     Mic,
     /// A handset lying down: hang up.
@@ -179,17 +176,6 @@ fn draw_lines(p: &Painter, rect: Rect, icon: Icon, colour: Color32) {
             for x in [-0.62f32, 0.62] {
                 p.circle_filled(at(x, 0.0), r * 0.2, colour);
             }
-        }
-        Icon::Star => {
-            // Ten points, alternating outer and inner radius, starting at the top.
-            let pts: Vec<Pos2> = (0..10)
-                .map(|i| {
-                    let k = if i % 2 == 0 { 0.9 } else { 0.38 };
-                    let a = std::f32::consts::PI * (i as f32) / 5.0 - std::f32::consts::FRAC_PI_2;
-                    at(k * a.cos(), k * a.sin())
-                })
-                .collect();
-            p.add(egui::Shape::closed_line(pts, s));
         }
         Icon::Chat => {
             let body = Rect::from_min_max(at(-0.8, -0.65), at(0.8, 0.4));

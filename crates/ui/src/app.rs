@@ -530,8 +530,6 @@ pub struct CommsUi {
     reopened: bool,
     /// The sound devices the desktop offers: (ALSA name, label).
     pub audio_devices: Vec<(String, String)>,
-    /// The star under the pointer in the call rating (0: none).
-    pub(crate) rating_hover: u8,
     /// The schedule dialog: the meeting changed (its ID) or a new one, subject, minutes, access.
     pub(crate) meeting_dialog: Option<MeetingDialog>,
     /// Distribution groups whose members were asked for.
@@ -612,7 +610,6 @@ impl CommsUi {
             ask_audio_next: false,
             reopened: false,
             audio_devices: Vec::new(),
-            rating_hover: 0,
             meeting_dialog: None,
             expanded_groups: BTreeSet::new(),
             windows: Vec::new(),
@@ -756,6 +753,23 @@ impl CommsUi {
             if self.selected_conv == Some(k) {
                 self.selected_conv = None;
             }
+        }
+        // As in the Windows client: closing the window of a call ends it (a meeting's audio
+        // and video too); an incoming call that still rings is left alone.
+        let ending: Vec<u32> = self
+            .state
+            .calls
+            .iter()
+            .filter(|c| c.state != crate::model::CallState::Incoming)
+            .filter(|c| match w {
+                Win::Conv(k) => self.state.conversation_of_call(c) == Some(k),
+                Win::Call(id) => c.id == id,
+                _ => false,
+            })
+            .map(|c| c.id)
+            .collect();
+        for id in ending {
+            self.intents.push(UiIntent::HangUp { id });
         }
     }
 

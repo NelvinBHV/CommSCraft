@@ -845,37 +845,6 @@ fn a_shared_screen_in_a_meeting_is_offered_for_viewing() {
 }
 
 #[test]
-fn an_ended_call_can_be_rated_when_the_server_has_a_quality_service() {
-    let mut ui = demo_quiet();
-    ui.state.apply(AppEvent::QualityRating(true));
-    ui.state.apply(AppEvent::CallStarted {
-        id: 5,
-        peer: "sip:anna@beispiel.invalid".into(),
-        incoming: false,
-        at: NOW - 60,
-    });
-    ui.state.apply(AppEvent::CallConnected {
-        id: 5,
-        at: NOW - 50,
-    });
-    ui.state.apply(AppEvent::CallEnded {
-        id: 5,
-        status: 200,
-        at: NOW,
-    });
-    let mut h = harness(ui, (420.0, 760.0));
-    h.run();
-    h.get_by_label("4 von 5").click();
-    h.run();
-    assert!(h
-        .state()
-        .intents
-        .iter()
-        .any(|i| matches!(i, UiIntent::RateCall { id: 5, stars: 4 })));
-    assert!(h.state().ui.state.rate_call.is_none());
-}
-
-#[test]
 fn a_call_is_transferred_to_the_party_of_another_call() {
     use commscraft_ui::model::CallState;
     let mut ui = online();
@@ -1430,4 +1399,52 @@ fn desktop_notifications_replace_the_own_window() {
     assert!(!ui.quiet_for_messages());
     ui.prefs.message_alerts = false;
     assert!(ui.quiet_for_messages());
+}
+
+/// As in the Windows client: closing a call's conversation window ends the call.
+#[test]
+fn closing_the_call_window_hangs_up() {
+    let mut ui = online();
+    ui.state.apply(AppEvent::CallStarted {
+        id: 9,
+        peer: "sip:tim@beispiel.invalid".into(),
+        incoming: false,
+        at: NOW,
+    });
+    ui.state.apply(AppEvent::CallConnected { id: 9, at: NOW });
+    let mut h = harness(ui, BIG);
+    h.run();
+    let key = h
+        .state()
+        .ui
+        .state
+        .conversation_with("sip:tim@beispiel.invalid")
+        .expect("a conversation for the call");
+    h.state_mut().ui.close_window(Win::Conv(key));
+    let intents = h.state_mut().ui.take_intents();
+    assert!(intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::HangUp { id: 9 })));
+}
+
+/// An old notice leaves the footer (it would contradict the state shown above).
+#[test]
+fn an_old_notice_leaves_the_footer() {
+    use commscraft_ui::model::NoticeKind;
+    let mut ui = online();
+    ui.state.apply(AppEvent::Notice(
+        NoticeKind::Info,
+        "stale refusal".into(),
+        NOW - 120,
+    ));
+    let mut h = harness(ui, BIG);
+    h.run();
+    assert!(h.query_by_label_contains("stale refusal").is_none());
+    h.state_mut().ui.state.apply(AppEvent::Notice(
+        NoticeKind::Info,
+        "fresh notice".into(),
+        NOW,
+    ));
+    h.run();
+    assert!(h.query_by_label_contains("fresh notice").is_some());
 }

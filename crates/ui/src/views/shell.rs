@@ -67,7 +67,13 @@ pub fn statusbar(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     {
                         app.emit(UiIntent::SignOut);
                     }
-                    if let Some(n) = app.state.notices.back() {
+                    // A notice stays a minute (as in the main window's footer).
+                    let recent = app
+                        .state
+                        .notices
+                        .back()
+                        .filter(|n| app.now.saturating_sub(n.at) <= 60);
+                    if let Some(n) = recent {
                         let c = match n.kind {
                             NoticeKind::Info => pal.muted,
                             NoticeKind::Warning => pal.ink,

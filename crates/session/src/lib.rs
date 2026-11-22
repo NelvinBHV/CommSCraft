@@ -2141,6 +2141,11 @@ impl<R: Random> Engine<R> {
             self.machine = *a;
             return out;
         }
+        // The own message style is a local setting: kept before the sign-in too.
+        if let (false, Command::SetMessageStyle(style)) = (self.registered, &cmd) {
+            self.message_style = *style;
+            return out;
+        }
         if !self.registered {
             out.push(Output::Event(Event::Notice("not signed in".into())));
             return out;

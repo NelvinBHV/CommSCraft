@@ -22,7 +22,6 @@ pub const CHOOSABLE: [Presence; 7] = [
 
 pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     footer(app, ui, pal);
-    rating(app, ui, pal);
     egui::Panel::top("main-head")
         .frame(
             Frame::new()
@@ -46,52 +45,6 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             MainTab::Conversations => conversations(app, ui, pal),
             MainTab::Meetings => crate::views::meetings::list(app, ui, pal),
             MainTab::Rooms => rooms(app, ui, pal),
-        });
-}
-
-/// After a call: how was its quality? (sent to the server's quality service).
-fn rating(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
-    let t = app.t;
-    let Some((id, peer)) = app.state.rate_call.clone() else {
-        return;
-    };
-    egui::Panel::bottom("call-rating")
-        .frame(
-            Frame::new()
-                .fill(pal.primary_soft)
-                .inner_margin(egui::Margin::symmetric(10, 8)),
-        )
-        .show(ui, |ui| {
-            let name = app.state.name_of(&peer);
-            ui.label(RichText::new(format!("{} {name}?", t.rate_call_question)).color(pal.ink));
-            ui.horizontal(|ui| {
-                // Five stars; the one under the pointer and those before it light up.
-                let hovered = app.rating_hover;
-                app.rating_hover = 0;
-                for stars in 1u8..=5 {
-                    let lit = stars <= hovered;
-                    let r = icons::button(
-                        ui,
-                        Icon::Star,
-                        &format!("{stars} {}", t.stars),
-                        28.0,
-                        lit,
-                        true,
-                        if lit { pal.primary } else { pal.muted },
-                        pal.primary,
-                    );
-                    if r.hovered() {
-                        app.rating_hover = stars;
-                    }
-                    if r.clicked() {
-                        app.emit(UiIntent::RateCall { id, stars });
-                        app.state.rate_call = None;
-                    }
-                }
-                if ui.button(t.not_now).clicked() {
-                    app.state.rate_call = None;
-                }
-            });
         });
 }
 
@@ -409,6 +362,9 @@ fn alert(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         });
 }
 
+/// How long the footer shows the newest notice, in seconds.
+const NOTICE_SHOWN: u64 = 60;
+
 fn footer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     let t = app.t;
     egui::Panel::bottom("main-foot")
@@ -464,7 +420,14 @@ fn footer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     {
                         app.emit(UiIntent::SignOut);
                     }
-                    if let Some(n) = app.state.notices.back() {
+                    // A notice stays a minute (an old one would contradict the state shown
+                    // above, e.g. a refusal from while signing in).
+                    let recent = app
+                        .state
+                        .notices
+                        .back()
+                        .filter(|n| app.now.saturating_sub(n.at) <= NOTICE_SHOWN);
+                    if let Some(n) = recent {
                         widgets::ellipsis(
                             ui,
                             RichText::new(&n.text)
