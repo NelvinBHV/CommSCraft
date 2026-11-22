@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (meeting recording)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (spell checking)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-22 | Spell checking in the composer (`tested-offline`): misspelled words are underlined, the word being typed is left alone, a right click offers suggestions (swapped letters first); Hunspell dictionaries read with zspell (pure Rust) from the XDG data directories in the background, the Flatpak brings de_DE and en_US. Version 0.90.1-alpha. |
 | 2026-11-22 | Recording meetings ([MS-CONFBAS] §4.4.9, `tested-in-lab`): after checking meetingPolicy AllowRecording and the conference's recording-allowed, the client tells the focus with modifyEndpoint/client-recording, everyone sees who records (roster), and the meeting's audio with the own microphone is kept as a WAV file in the XDG videos folder (`CommSCraft/`); CLI `/record`, desktop client in the meeting menu with a „being recorded“ note. Parity 90 % (`scripts/parity.py`), version 0.90.0-alpha. |
 | 2026-11-21 | Formatted messages (`tested-in-lab`): the message session offers `text/html` as the Windows client does, which then sends every message as an HTML fragment (`<B>`, `<I>`, `<SPAN style>`); it is read into text runs and shown formatted in the desktop client. Our messages go out in the font of the options (bold, italic, underline, colour) where the other side accepts `text/html`, as `Content-Type: text/html` without parameters (with a charset the Windows client accepts but does not show them); CLI `/style`. Version 0.89.2-alpha. |
 | 2026-11-21 | Desktop client: notifications through the desktop's notification service (`org.freedesktop.Notifications`) in place of a notification area icon – incoming calls with answer and decline, meeting invitations, new messages while the window is not seen; the session worker shows them and carries out the chosen action, so they also work while the window is hidden or the screen locked (`tested-in-lab`); the options for message alerts and quiet while Do Not Disturb now take effect. SIP compression as a sign-in option (`tested-in-lab`). Version 0.89.1-alpha. |

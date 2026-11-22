@@ -11,6 +11,7 @@ pub mod emoticons;
 pub mod format;
 pub mod model;
 pub mod notes;
+pub mod spell;
 pub mod text;
 pub mod theme;
 mod views;
