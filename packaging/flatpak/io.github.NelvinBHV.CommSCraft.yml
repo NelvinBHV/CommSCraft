@@ -23,6 +23,8 @@ finish-args:
   # Keyring (Secret Service), idle time for the status automation.
   - --talk-name=org.freedesktop.secrets
   - --talk-name=org.freedesktop.Notifications
+  # Meeting recordings (XDG videos folder).
+  - --filesystem=xdg-videos/CommSCraft:create
   - --talk-name=org.gnome.Mutter.IdleMonitor
   - --talk-name=org.freedesktop.ScreenSaver
 add-extensions:

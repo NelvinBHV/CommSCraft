@@ -1658,6 +1658,8 @@ fn interactive(
     let mut pending_conf: BTreeMap<u32, (u32, Option<String>)> = BTreeMap::new();
     // Conference audio calls whose media id is known before the engine names the call.
     let mut conf_media: BTreeMap<u32, u32> = BTreeMap::new();
+    // The audio call of each meeting (conversation → call), for recording it.
+    let mut conf_call: BTreeMap<u32, u32> = BTreeMap::new();
     let mut media_of_call: BTreeMap<u32, u32> = BTreeMap::new();
     // Media of ended calls whose quality figures are still to come (bounded).
     let mut ended_media: BTreeMap<u32, u32> = BTreeMap::new();
@@ -2345,6 +2347,25 @@ fn interactive(
                         }
                         meeting_settings.insert(conversation, settings);
                     }
+                    E::ConferenceRecording {
+                        conversation,
+                        recording,
+                    } => match conf_call
+                        .get(&conversation)
+                        .and_then(|c| media_of_call.get(c))
+                        .and_then(|m| handles.get(m))
+                    {
+                        Some(h) => {
+                            println!(
+                                "* [{conversation}] recording {}",
+                                if recording { "started" } else { "stopped" }
+                            );
+                            let _ = h.tx.send(calls::ToMedia::Record(recording));
+                        }
+                        None => {
+                            println!("* [{conversation}] join the meeting's audio to record it")
+                        }
+                    },
                     E::Participants {
                         conversation,
                         participants,
@@ -2420,10 +2441,15 @@ fn interactive(
                                 } else {
                                     n
                                 };
-                                match p.audio_muted() {
+                                let n = match p.audio_muted() {
                                     Some(true) => format!("{n} (audio, muted)"),
                                     Some(false) => format!("{n} (audio)"),
                                     None => n,
+                                };
+                                if p.endpoints.iter().any(|e| e.recording) {
+                                    format!("{n} (recording)")
+                                } else {
+                                    n
                                 }
                             })
                             .collect();
@@ -2571,6 +2597,7 @@ fn interactive(
                     }
                     E::ConferenceAudio { conversation, call } => {
                         meeting_calls.insert(call);
+                        conf_call.insert(conversation, call);
                         if let Some((vid, _)) = conf_video.get(&conversation) {
                             video_of_call.insert(call, *vid);
                         }
@@ -3093,6 +3120,9 @@ fn interactive(
                             now(),
                         ));
                     }
+                }
+                calls::FromMedia::Recorded(_, path) => {
+                    println!("* recording saved: {}", path.display())
                 }
                 calls::FromMedia::Notice(id, what) => {
                     match media_of_call.iter().find(|(_, &m)| m == id) {
@@ -4315,6 +4345,10 @@ fn interactive(
                         })
                     }
                 }
+                "/record" => current.map(|conversation| C::ConferenceRecording {
+                    conversation,
+                    recording: arg.trim() != "off",
+                }),
                 "/confmute" | "/confunmute" => current.map(|conversation| C::ConferenceMute {
                     conversation,
                     mute: cmd == "/confmute",

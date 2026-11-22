@@ -130,6 +130,7 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
                     in_chat: true,
                     video: false,
                     sharing: false,
+                    recording: false,
                 })
                 .collect(),
             sharer: None,

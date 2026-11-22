@@ -362,6 +362,8 @@ pub struct Participant {
     pub in_chat: bool,
     pub video: bool,
     pub sharing: bool,
+    /// Records the meeting ([MS-CONFBAS] client-recording).
+    pub recording: bool,
 }
 
 /// Who becomes a presenter on joining a meeting.
@@ -413,6 +415,8 @@ pub enum ConfCommand {
     DialOut(String),
     /// End the meeting for everyone.
     End,
+    /// Start or stop recording the meeting (its audio, kept on this computer).
+    Record(bool),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1460,6 +1464,7 @@ impl AppState {
                             in_chat: p.in_chat,
                             video: p.video,
                             sharing: p.sharing,
+                            recording: p.recording,
                         })
                         .collect();
                 }
@@ -1809,6 +1814,7 @@ impl AppState {
                         in_chat: true,
                         video: false,
                         sharing: false,
+                        recording: false,
                     })
                     .collect();
                 if let Some(c) = self.conversation_mut(key) {

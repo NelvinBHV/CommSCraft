@@ -40,6 +40,9 @@ pub enum ToMedia {
         hold: bool,
         music: Option<crate::cues::Sound>,
     },
+    /// Record what is heard, with the microphone mixed in, into a WAV file (`recording`) –
+    /// a meeting's audio; `false` stops it.
+    Record(bool),
     Stop,
 }
 
@@ -53,6 +56,8 @@ pub enum FromMedia {
     Failed(u32, String),
     /// Something the user should know that does not end the call (a missing audio device).
     Notice(u32, String),
+    /// A recording was saved (or stopped at its size limit) in this file.
+    Recorded(u32, std::path::PathBuf),
     /// The media ended: its quality figures for the report (function 45).
     Quality(u32, Box<cm::QualitySnapshot>),
     PeerBye(u32),
@@ -189,6 +194,7 @@ fn run(
     // Checks before the 200 may fail while the other side waits for the 200 before it checks
     // (SD-50/SD-51); then ICE starts again with the answer instead of ending the call.
     let mut early_failed = false;
+    let mut recorder: Option<crate::recording::Recorder> = None;
     let stop = Arc::new(AtomicBool::new(false));
     let (cap_tx, cap_rx) = mpsc::sync_channel::<Vec<i16>>(8);
     let (play_tx, play_rx) = mpsc::sync_channel::<Vec<i16>>(8);
@@ -247,6 +253,23 @@ fn run(
                 hold_media.set_user_muted(m);
                 media.set_muted(hold_media.muted());
             }
+            Ok(ToMedia::Record(true)) if recorder.is_none() => {
+                let made = crate::recording::folder()
+                    .ok_or_else(|| std::io::Error::other("no home folder"))
+                    .and_then(|d| crate::recording::Recorder::create(&d, rate, now / 1000));
+                match made {
+                    Ok(r) => recorder = Some(r),
+                    Err(e) => {
+                        let _ = events.send(FromMedia::Notice(id, format!("not recorded: {e}")));
+                    }
+                }
+            }
+            Ok(ToMedia::Record(false)) => {
+                if let Some(Ok(p)) = recorder.take().map(crate::recording::Recorder::finish) {
+                    let _ = events.send(FromMedia::Recorded(id, p));
+                }
+            }
+            Ok(ToMedia::Record(true)) => {}
             Ok(ToMedia::Hold { hold, music }) => {
                 hold_media.set_hold(hold, music.as_ref(), rate);
                 media.set_hold(hold);
@@ -278,11 +301,23 @@ fn run(
         }
         while let Ok(frame) = cap_rx.try_recv() {
             // The microphone paces the frames; while we hold with music, only the music is sent.
-            media.send_frame(&hold_media.frame(&frame), now);
+            let sent = hold_media.frame(&frame);
+            if let Some(r) = recorder.as_mut() {
+                r.microphone(&sent);
+            }
+            media.send_frame(&sent, now);
         }
         while playout_clock.due(now) {
+            let frame = media.playout();
+            if let Some(r) = recorder.as_mut() {
+                if !r.played(&frame) {
+                    if let Some(Ok(p)) = recorder.take().map(crate::recording::Recorder::finish) {
+                        let _ = events.send(FromMedia::Recorded(id, p));
+                    }
+                }
+            }
             // Bounded: if the speaker falls behind, the frame is dropped.
-            let _ = play_tx.try_send(media.playout());
+            let _ = play_tx.try_send(frame);
         }
         for e in media.poll(now) {
             let report = match e {
@@ -314,6 +349,9 @@ fn run(
         std::thread::sleep(Duration::from_millis(4));
     }
     stop.store(true, Ordering::Relaxed);
+    if let Some(Ok(p)) = recorder.take().map(crate::recording::Recorder::finish) {
+        let _ = events.send(FromMedia::Recorded(id, p));
+    }
     if let Some(q) = media.quality() {
         let _ = events.send(FromMedia::Quality(id, Box::new(q)));
     }

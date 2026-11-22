@@ -471,6 +471,18 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                     }
                 }
                 ui.add_space(12.0);
+                // Someone records the meeting ([MS-CONFBAS] client-recording in the roster).
+                let recorders: Vec<String> = c
+                    .participants
+                    .iter()
+                    .filter(|p| p.recording)
+                    .map(|p| p.name.clone())
+                    .collect();
+                if !recorders.is_empty() {
+                    ui.label(RichText::new(format!("● {}", t.being_recorded)).color(pal.error))
+                        .on_hover_text(recorders.join(", "));
+                    ui.add_space(12.0);
+                }
                 let peer = c.peer.clone();
                 // A person: a call; a meeting (group conversation): join its audio or video.
                 let meeting = peer.is_none() && c.is_group() && c.state == ConvState::Open;
@@ -1100,6 +1112,23 @@ fn more_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
     if c.is_group() && c.focus.is_some() && ui.button(t.meeting_entry_info).clicked() {
         app.entry_info = Some(key);
         ui.close();
+    }
+    // Recording the meeting (its audio, on this computer; the others see that we record).
+    if c.is_group() && c.focus.is_some() && c.state == ConvState::Open {
+        let me = app.state.me.uri.clone();
+        let recording = c.participants.iter().any(|p| p.uri == me && p.recording);
+        let label = if recording {
+            t.stop_recording
+        } else {
+            t.start_recording
+        };
+        if ui.button(label).on_hover_text(t.recording_tip).clicked() {
+            app.emit(UiIntent::ConferenceCommand {
+                key,
+                command: ConfCommand::Record(!recording),
+            });
+            ui.close();
+        }
     }
     // A presenter's meeting commands.
     let me = app.state.me.uri.clone();
