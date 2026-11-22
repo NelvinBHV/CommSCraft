@@ -83,6 +83,9 @@ pub(crate) struct Extras<'a> {
     /// Viewing a shared window over RDP (function 43): the offer is
     /// `sdp::screen::rdp_viewer_offer` of the call's local description, without audio.
     pub rdp: bool,
+    /// Sharing the own screen (function 43): with `screen`, the offer is
+    /// `sdp::screen::sharer_offer` of `video`.
+    pub share: bool,
 }
 
 /// One more MIME part of an outgoing INVITE (the PIDF-LO of an emergency call). The fields come
@@ -332,6 +335,15 @@ impl<R: Random> Engine<R> {
                     return None;
                 }
             },
+            Some(v) if extras.screen && extras.share => {
+                match sdp::screen::sharer_offer(v, policy) {
+                    Ok(o) => o,
+                    Err(_) => {
+                        out.push(Output::Event(Event::Notice("unusable video stream".into())));
+                        return None;
+                    }
+                }
+            }
             Some(v) if extras.screen => match sdp::screen::viewer_offer(v, policy) {
                 Ok(o) => o,
                 Err(_) => {
@@ -950,6 +962,7 @@ impl<R: Random> Engine<R> {
         out: &mut Vec<Output>,
     ) {
         let screen = self.screen_calls.contains(&id);
+        let share = self.share_calls.contains(&id);
         let Some(c) = self.calls.get_mut(&id) else {
             return;
         };
@@ -960,7 +973,12 @@ impl<R: Random> Engine<R> {
         if !screen || c.state != CallState::Active {
             return;
         }
-        let Ok(offer) = sdp::screen::viewer_offer(&video, c.policy) else {
+        let offer = if share {
+            sdp::screen::sharer_offer(&video, c.policy)
+        } else {
+            sdp::screen::viewer_offer(&video, c.policy)
+        };
+        let Ok(offer) = offer else {
             return;
         };
         let Some(d) = c.dialog.as_mut() else { return };
@@ -1276,6 +1294,38 @@ impl<R: Random> Engine<R> {
         } else {
             Self::call_event(out, Event::IncomingCall { call: id, from });
         }
+    }
+
+    /// `ShareScreen` (function 43): share the own screen with `to` – a call with our sharer
+    /// offer (`sdp::screen::sharer_offer`), without audio, as the Windows client starts it; the
+    /// answer and the final offer go the way of a viewing call.
+    pub(crate) fn share_screen(
+        &mut self,
+        to: &str,
+        video: sdp::video::VideoLocal,
+        policy: sdp::Encryption,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) -> Option<CallId> {
+        let calls = &self.calls;
+        self.share_calls.retain(|c| calls.contains_key(c));
+        let local = video.media.clone();
+        let call = self.start_call_with(
+            to,
+            local,
+            policy,
+            Extras {
+                video: Some(&video),
+                screen: true,
+                share: true,
+                ..Default::default()
+            },
+            now,
+            out,
+        )?;
+        self.screen_calls.insert(call);
+        self.share_calls.insert(call);
+        Some(call)
     }
 
     /// `AcceptScreenShare` (function 43): answer the sharer's offer as viewer – the screen video

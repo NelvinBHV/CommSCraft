@@ -9,6 +9,7 @@ publish.workspace = true
 
 [dependencies]
 commscraft-client = { path = "../../crates/client" }
+commscraft-screen-capture = { path = "../../crates/screen-capture" }
 commscraft-net = { path = "../../crates/net" }
 commscraft-register = { path = "../../crates/register" }
 commscraft-gssapi = { path = "../../crates/gssapi" }

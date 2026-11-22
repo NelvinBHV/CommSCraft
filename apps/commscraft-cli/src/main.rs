@@ -1599,6 +1599,8 @@ fn interactive(
     // a meeting by conversation, and the video stream of each such conversation; conversations
     // whose sharing was announced.
     let mut pending_screen: BTreeMap<u32, u32> = BTreeMap::new();
+    // Function 43: our screen being prepared for sharing (video id → whom).
+    let mut pending_share: BTreeMap<u32, String> = BTreeMap::new();
     // Function 43 over RDP: calls offering only RDP (a shared window), the viewer of each call
     // being viewed, and the viewers waiting for their data stream (id → call).
     let (rdp_tx, rdp_rx) = mpsc::channel::<rdp_call::FromRdp>();
@@ -2899,6 +2901,23 @@ fn interactive(
                         ));
                     }
                 }
+                video_call::FromVideo::Ready(vid, local) if pending_share.contains_key(&vid) => {
+                    if let Some(to) = pending_share.remove(&vid) {
+                        let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
+                        let call = engine.next_call_id();
+                        video_of_call.insert(call, vid);
+                        outgoing.insert(call);
+                        println!("* sharing the screen with {to} (call {call})");
+                        outputs.extend(engine.command(
+                            C::ShareScreen {
+                                to,
+                                video: local,
+                                policy,
+                            },
+                            now(),
+                        ));
+                    }
+                }
                 video_call::FromVideo::Ready(vid, local) => match pending_screen.remove(&vid) {
                     Some(call) => {
                         let policy = calls::policy(services.as_ref().and_then(|s| s.av_encryption));
@@ -3365,6 +3384,45 @@ fn interactive(
                             Err(e) => println!("* voicemail list not read: {e}"),
                         },
                         None => println!("* no Exchange web services known"),
+                    }
+                    None
+                }
+                "/share" => {
+                    // Function 43: the desktop's dialog picks the screen or window; a PipeWire
+                    // node in COMMSCRAFT_SCREEN_NODE skips it (tests with a video test source).
+                    if !arg.starts_with("sip:") {
+                        println!("* /share sip:URI");
+                        continue;
+                    }
+                    let capture = match std::env::var("COMMSCRAFT_SCREEN_NODE")
+                        .ok()
+                        .and_then(|n| n.trim().parse::<u32>().ok())
+                    {
+                        Some(node) => commscraft_screen_capture::start(
+                            commscraft_screen_capture::Source::Node(node),
+                        ),
+                        None => commscraft_screen_capture::start_portal(true),
+                    };
+                    match capture {
+                        Ok(c) => {
+                            let vid = next_media;
+                            next_media = next_media.wrapping_add(1).max(1);
+                            let relay = engine.media_relay().and_then(calls::relay_from);
+                            video_handles.insert(
+                                vid,
+                                video_call::spawn_sharing(
+                                    vid,
+                                    local_ip,
+                                    relay,
+                                    None,
+                                    c,
+                                    video_tx.clone(),
+                                ),
+                            );
+                            pending_share.insert(vid, arg.clone());
+                            println!("* preparing to share the screen …");
+                        }
+                        Err(e) => println!("* screen not shared: {e}"),
                     }
                     None
                 }

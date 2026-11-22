@@ -578,3 +578,18 @@ fn display_shows_pictures() {
     }
     assert!(d.show(&gradient(160, 120, 0)).is_err());
 }
+
+/// Function 43: a BGRx screen frame (with a padded stride) becomes I420 of the wanted size;
+/// white stays white, a short buffer is refused.
+#[test]
+fn screen_frame_to_i420() {
+    init().unwrap();
+    let (w, h, stride) = (64u32, 36u32, 64 * 4 + 16);
+    let data = vec![255u8; (stride * h) as usize];
+    let mut c = RgbConverter::new((32, 18)).unwrap();
+    let p = c.convert(w, h, stride, Rgb4::Bgrx, &data).unwrap();
+    assert_eq!((p.width, p.height), (32, 18));
+    assert_eq!(p.data.len(), Picture::i420_len(32, 18));
+    assert!(p.data[0] > 230, "white luma: {}", p.data[0]);
+    assert!(c.convert(w, h, stride, Rgb4::Bgrx, &data[..100]).is_err());
+}

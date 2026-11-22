@@ -377,6 +377,13 @@ pub enum Command {
         local: Box<sdp::Local>,
         policy: sdp::Encryption,
     },
+    /// Function 43: share the own screen with someone (video-based screen sharing, send only):
+    /// `video` from the media adapter. The call gets the next call ID (`next_call_id`).
+    ShareScreen {
+        to: String,
+        video: Box<sdp::video::VideoLocal>,
+        policy: sdp::Encryption,
+    },
     /// Function 43: view a shared screen (video-based screen sharing, receive only).
     AcceptScreenShare {
         call: CallId,
@@ -817,6 +824,8 @@ pub struct Engine<R: Random> {
     /// Function 16: what the server has of the calendar publications, and their versions.
     calendar: pres::calendar::Calendar,
     calendar_versions: [u32; pres::calendar::SLOTS],
+    /// Function 43: the calls that share our own screen (a subset of `screen_calls`).
+    share_calls: std::collections::BTreeSet<CallId>,
     /// Function 43: calls that bring a shared screen to view, and those of them over RDP.
     screen_calls: std::collections::BTreeSet<CallId>,
     /// Incoming calls answered early in a reliable 183 (SD-51), until accepted or ended.
@@ -955,6 +964,7 @@ impl<R: Random> Engine<R> {
             calendar: pres::calendar::Calendar::default(),
             calendar_versions: [0; pres::calendar::SLOTS],
             screen_calls: std::collections::BTreeSet::new(),
+            share_calls: std::collections::BTreeSet::new(),
             early_answers: std::collections::BTreeMap::new(),
             rdp_calls: std::collections::BTreeSet::new(),
             routing_rules: pres::Forwarding::default(),
@@ -2307,6 +2317,9 @@ impl<R: Random> Engine<R> {
                 video,
                 policy,
             } => self.accept_screen(call, *video, policy, now, &mut out),
+            Command::ShareScreen { to, video, policy } => {
+                let _ = self.share_screen(&to, *video, policy, now, &mut out);
+            }
             Command::Call { to, local, policy } => {
                 self.start_call(&to, *local, policy, now, &mut out)
             }
@@ -2344,6 +2357,7 @@ impl<R: Random> Engine<R> {
                             emergency: false,
                             screen: false,
                             rdp: false,
+                            share: false,
                         },
                         now,
                         &mut out,

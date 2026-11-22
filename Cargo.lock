@@ -126,6 +126,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc7eb209b1518d6bb87b283c20095f5228ecda460da70b44f0802523dea6da04"
 
 [[package]]
+name = "annotate-snippets"
+version = "0.11.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "710e8eae58854cdc1790fcb56cca04d712a17be849eeb81da2a724bf4bae2bc4"
+dependencies = [
+ "anstyle",
+ "unicode-width",
+]
+
+[[package]]
+name = "anstyle"
+version = "1.0.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
+
+[[package]]
 name = "arboard"
 version = "3.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -160,14 +176,15 @@ checksum = "175571dd1d178ced59193a6fc02dde1b972eb0bc56c892cde9beeceac5bf0f6b"
 
 [[package]]
 name = "ashpd"
-version = "0.14.0"
+version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ba377f1fb1e3972907220f1f8e7c0a45164580905c981d872c1fb90d921cbcc"
+checksum = "b60a01f4fbcba6a522ec4d285893bd0ce36f5987a8b3bf636e6aeb2d2acdf8ac"
 dependencies = [
  "bitflags 2.13.2",
  "futures-util",
  "getrandom 0.4.3",
  "serde",
+ "serde_repr",
  "zbus",
 ]
 
@@ -315,6 +332,25 @@ dependencies = [
  "itertools 0.13.0",
  "log",
  "prettyplease",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "rustc-hash 2.1.3",
+ "shlex 1.3.0",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "bindgen"
+version = "0.72.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "993776b509cfb49c750f11b8f07a46fa23e0a1386ffc01fb1e7d343efc387895"
+dependencies = [
+ "annotate-snippets",
+ "bitflags 2.13.2",
+ "cexpr",
+ "clang-sys",
+ "itertools 0.13.0",
  "proc-macro2",
  "quote",
  "regex",
@@ -572,6 +608,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cfg-expr"
+version = "0.20.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edd44d82755fb9210fb10d9daf8dd7e522da0efe1d5f263cffc5db07725663ff"
+dependencies = [
+ "smallvec",
+ "target-lexicon",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -670,7 +716,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-abs",
  "commscraft-audio-alsa",
@@ -709,21 +755,21 @@ dependencies = [
 
 [[package]]
 name = "commscraft-abs"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "regex",
 ]
 
 [[package]]
 name = "commscraft-audio-alsa"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "alsa",
 ]
 
 [[package]]
 name = "commscraft-avedgea"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-xml",
  "zeroize",
@@ -731,7 +777,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-call-media"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-h264uc",
  "commscraft-ice",
@@ -748,7 +794,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-cli"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-abs",
  "commscraft-audio-alsa",
@@ -774,6 +820,7 @@ dependencies = [
  "commscraft-register",
  "commscraft-rgs",
  "commscraft-rtp",
+ "commscraft-screen-capture",
  "commscraft-sdp",
  "commscraft-session",
  "commscraft-sip-identity",
@@ -790,7 +837,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-client"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-abs",
  "commscraft-audio-alsa",
@@ -812,6 +859,7 @@ dependencies = [
  "commscraft-rdp-view",
  "commscraft-register",
  "commscraft-rtp",
+ "commscraft-screen-capture",
  "commscraft-sdp",
  "commscraft-session",
  "commscraft-sip-identity",
@@ -831,7 +879,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-conf"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-presence",
  "commscraft-sip-msg",
@@ -840,7 +888,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-discovery"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-url",
  "commscraft-xml",
@@ -848,29 +896,29 @@ dependencies = [
 
 [[package]]
 name = "commscraft-dlx"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-ews"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-g711"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 
 [[package]]
 name = "commscraft-g722"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 
 [[package]]
 name = "commscraft-gssapi"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-register",
  "commscraft-sipae",
@@ -880,15 +928,15 @@ dependencies = [
 
 [[package]]
 name = "commscraft-h264uc"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 
 [[package]]
 name = "commscraft-ice"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 
 [[package]]
 name = "commscraft-ice-agent"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-ice",
  "commscraft-stun",
@@ -896,7 +944,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-im"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-sip-msg",
  "commscraft-sipae",
@@ -905,14 +953,14 @@ dependencies = [
 
 [[package]]
 name = "commscraft-lis"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-media"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-g711",
  "commscraft-g722",
@@ -924,7 +972,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-net"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-register",
  "commscraft-sip-msg",
@@ -937,7 +985,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-ntlm"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "hmac 0.12.1",
  "md-5 0.10.6",
@@ -948,7 +996,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-ocauthws"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-sipae",
  "commscraft-xml",
@@ -956,7 +1004,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-ocer"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-sip-msg",
  "commscraft-xml",
@@ -964,7 +1012,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-park"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-presence",
  "commscraft-xml",
@@ -972,7 +1020,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-presence"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-sip-msg",
  "commscraft-xml",
@@ -980,7 +1028,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-provisioning"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-sip-msg",
  "commscraft-url",
@@ -989,18 +1037,18 @@ dependencies = [
 
 [[package]]
 name = "commscraft-psom"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 
 [[package]]
 name = "commscraft-qoe"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-rdp-view"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "ironrdp-core",
  "ironrdp-dvc",
@@ -1013,7 +1061,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-register"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-ntlm",
  "commscraft-sip-identity",
@@ -1025,18 +1073,27 @@ dependencies = [
 
 [[package]]
 name = "commscraft-rgs"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-rtp"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
+
+[[package]]
+name = "commscraft-screen-capture"
+version = "0.90.3-alpha"
+dependencies = [
+ "ashpd",
+ "futures-lite",
+ "pipewire",
+]
 
 [[package]]
 name = "commscraft-sdp"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-sipae",
  "zeroize",
@@ -1044,7 +1101,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-session"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-avedgea",
  "commscraft-conf",
@@ -1064,18 +1121,18 @@ dependencies = [
 
 [[package]]
 name = "commscraft-sip-identity"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "sha1 0.10.7",
 ]
 
 [[package]]
 name = "commscraft-sip-msg"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 
 [[package]]
 name = "commscraft-sipae"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-ntlm",
  "commscraft-sip-msg",
@@ -1085,11 +1142,11 @@ dependencies = [
 
 [[package]]
 name = "commscraft-sipcomp"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 
 [[package]]
 name = "commscraft-srtp"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "aes 0.8.4",
  "hmac 0.12.1",
@@ -1099,7 +1156,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-stun"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-ice",
  "hmac 0.12.1",
@@ -1111,7 +1168,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-tlsdsk"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-register",
  "commscraft-sipae",
@@ -1128,11 +1185,11 @@ dependencies = [
 
 [[package]]
 name = "commscraft-tones"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 
 [[package]]
 name = "commscraft-turn"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-stun",
  "zeroize",
@@ -1140,11 +1197,11 @@ dependencies = [
 
 [[package]]
 name = "commscraft-turn-bwm"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 
 [[package]]
 name = "commscraft-ucwa"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-url",
  "commscraft-xml",
@@ -1152,7 +1209,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-ui"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "egui",
  "egui_kittest",
@@ -1160,11 +1217,11 @@ dependencies = [
 
 [[package]]
 name = "commscraft-url"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 
 [[package]]
 name = "commscraft-video-ffmpeg"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-h264uc",
  "ffmpeg-next",
@@ -1172,7 +1229,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-video-wayland"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-video-ffmpeg",
  "rustix 1.1.6",
@@ -1182,14 +1239,14 @@ dependencies = [
 
 [[package]]
 name = "commscraft-xccos"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-xml"
-version = "0.90.2-alpha"
+version = "0.90.3-alpha"
 
 [[package]]
 name = "concurrent-queue"
@@ -1211,6 +1268,12 @@ name = "const-oid"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
+
+[[package]]
+name = "cookie-factory"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9885fa71e26b8ab7855e2ec7cae6e9b380edff76cd052e07c683a0319d51b3a2"
 
 [[package]]
 name = "core-foundation"
@@ -2209,6 +2272,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "heck"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
+
+[[package]]
 name = "hermit-abi"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2652,6 +2721,33 @@ dependencies = [
  "libc",
  "plain",
  "redox_syscall 0.9.5",
+]
+
+[[package]]
+name = "libspa"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "882f7427e7989dcc9d388b7f05c4630390a1d7696f9ffa469cd4a7a48f0b4c40"
+dependencies = [
+ "bitflags 2.13.2",
+ "cc",
+ "cookie-factory",
+ "libc",
+ "libspa-sys",
+ "nom 8.0.0",
+ "rustix 1.1.6",
+ "system-deps",
+]
+
+[[package]]
+name = "libspa-sys"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b6e17bdaf63ed0d5e4144022624032b41fd9733112e8c74ac26fc9bf1291924"
+dependencies = [
+ "bindgen 0.72.1",
+ "cc",
+ "system-deps",
 ]
 
 [[package]]
@@ -3511,6 +3607,31 @@ dependencies = [
  "atomic-waker",
  "fastrand",
  "futures-io",
+]
+
+[[package]]
+name = "pipewire"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bde71084c4e25959d68f1ea54daa75e5ecdb338e5caf0b5510143b79baa32d5c"
+dependencies = [
+ "bitflags 2.13.2",
+ "libc",
+ "libspa",
+ "libspa-sys",
+ "pipewire-sys",
+ "rustix 1.1.6",
+]
+
+[[package]]
+name = "pipewire-sys"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ce653f53e63e5b93853218092ee9a8906a5d082c92f3f1db26316955dd63ce0"
+dependencies = [
+ "bindgen 0.72.1",
+ "libspa-sys",
+ "system-deps",
 ]
 
 [[package]]
@@ -4446,10 +4567,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "system-deps"
+version = "7.0.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "396a35feb67335377e0251fcbc1092fc85c484bd4e3a7a54319399da127796e7"
+dependencies = [
+ "cfg-expr",
+ "heck",
+ "pkg-config",
+ "toml",
+ "version-compare",
+]
+
+[[package]]
 name = "tap"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "55937e1799185b12863d447f42597ed69d9928686b8d88a1df17376a097d8369"
+
+[[package]]
+name = "target-lexicon"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "adb6935a6f5c20170eeceb1a3835a49e12e19d792f6dd344ccc76a985ca5a6ca"
 
 [[package]]
 name = "tempfile"
@@ -4591,10 +4731,12 @@ version = "1.2.1+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5755c51863cdac711f1956baf8eb9588e060755f7d3c4c979e70ea1e1f32cd7"
 dependencies = [
+ "indexmap",
  "serde_core",
  "serde_spanned",
  "toml_datetime",
  "toml_parser",
+ "toml_writer",
  "winnow",
 ]
 
@@ -4627,6 +4769,12 @@ checksum = "baa693a8032d7e1cada7d0041e96126df243179ff061456783ac7f12bda4744c"
 dependencies = [
  "winnow",
 ]
+
+[[package]]
+name = "toml_writer"
+version = "1.2.0+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "009dbb7700f11c55ef83aebbe4c0e9cf1f1ac0844bd8d6f00dc38f302026e13a"
 
 [[package]]
 name = "tracing"
@@ -4776,6 +4924,12 @@ dependencies = [
  "hashbrown 0.17.1",
  "vello_common",
 ]
+
+[[package]]
+name = "version-compare"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "03c2856837ef78f57382f06b2b8563a2f512f7185d732608fd9176cb3b8edf0e"
 
 [[package]]
 name = "version_check"

@@ -27,6 +27,8 @@ jobs:
         run: sudo apt-get install -y -q --no-install-recommends pkg-config clang libclang-dev libavcodec-dev libavformat-dev libavdevice-dev libavutil-dev libswscale-dev
       - name: Kerberos (GSSAPI) headers for the Kerberos adapter
         run: sudo apt-get install -y -q --no-install-recommends libkrb5-dev
+      - name: PipeWire headers for the screen capture adapter
+        run: sudo apt-get install -y -q --no-install-recommends libpipewire-0.3-dev
       - name: Format
         run: cargo fmt --all -- --check
       - name: Clippy
