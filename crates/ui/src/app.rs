@@ -512,6 +512,8 @@ pub struct CommsUi {
     pub(crate) im_hidden: BTreeSet<ConvKey>,
     /// Calls whose IM pane got its first state (hidden unless there were messages).
     pub(crate) im_call_seen: BTreeSet<u32>,
+    /// Conversation windows grown by the IM pane (they shrink again when it closes).
+    pub(crate) im_widened: BTreeSet<ConvKey>,
     /// The tab window's close question is open.
     pub(crate) close_tabs_question: bool,
     /// The meeting options dialog: the meeting and the options being edited.
@@ -601,6 +603,7 @@ impl CommsUi {
             meeting_link: String::new(),
             im_hidden: BTreeSet::new(),
             im_call_seen: BTreeSet::new(),
+            im_widened: BTreeSet::new(),
             close_tabs_question: false,
             meeting_options: None,
             entry_info: None,

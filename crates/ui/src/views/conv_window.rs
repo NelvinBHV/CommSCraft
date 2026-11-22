@@ -445,6 +445,34 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
         if app.im_call_seen.insert(call.id) && c.messages.is_empty() {
             app.im_hidden.insert(key);
         }
+        // As the Windows client: the window grows by the pane when it opens and shrinks again
+        // when it closes (embedded windows keep their size).
+        let shown = !app.im_hidden.contains(&key);
+        if shown != app.im_widened.contains(&key) && !ui.ctx().embed_viewports() {
+            let inner = ui.ctx().input(|i| i.viewport().inner_rect);
+            if let Some(r) = inner {
+                let w = if shown {
+                    r.width() + IM_PANE_WIDTH
+                } else {
+                    (r.width() - IM_PANE_WIDTH).max(340.0)
+                };
+                ui.ctx()
+                    .send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(w, r.height())));
+            }
+            if shown {
+                app.im_widened.insert(key);
+            } else {
+                app.im_widened.remove(&key);
+            }
+        }
+    }
+    // The call ended: the window goes back to its chat size.
+    if active.is_none() && app.im_widened.remove(&key) && !ui.ctx().embed_viewports() {
+        if let Some(r) = ui.ctx().input(|i| i.viewport().inner_rect) {
+            let w = (r.width() - IM_PANE_WIDTH).max(340.0);
+            ui.ctx()
+                .send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(w, r.height())));
+        }
     }
     if app.im_hidden.contains(&key) {
         if let Some(call) = app
@@ -464,7 +492,7 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     }
     if let Some(call) = active {
         side_panel(app, ui, pal, key, &c);
-        let width = (ui.available_width() * 0.38).clamp(280.0, 440.0);
+        let width = IM_PANE_WIDTH.min(ui.available_width() * 0.5);
         egui::Panel::left(("conv-im", key.0))
             .resizable(true)
             .default_size(width)
@@ -485,6 +513,9 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     side_panel(app, ui, pal, key, &c);
     crate::views::chats::conversation_body(app, ui, pal, key);
 }
+
+/// The IM pane's width beside a call's stage (design: as wide as the Windows client's).
+const IM_PANE_WIDTH: f32 = 320.0;
 
 /// The head of the IM pane in a call: its title and a button that hides it.
 fn im_pane_head(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
