@@ -926,7 +926,14 @@ fn forward_notices(child: &mut Child, events: &Sender<FromVideo>, id: u32) {
                 if reader.read_exact(&mut rgba).is_err() {
                     return;
                 }
-                let _ = events.send(FromVideo::Frame(id, w as u32, h as u32, rgba));
+                // Dropped when the session loop is behind (issue #253).
+                if crate::backlog::FRAMES.enter()
+                    && events
+                        .send(FromVideo::Frame(id, w as u32, h as u32, rgba))
+                        .is_err()
+                {
+                    crate::backlog::FRAMES.leave();
+                }
                 continue;
             }
             if left > 0 {

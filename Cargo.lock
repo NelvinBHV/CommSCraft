@@ -716,7 +716,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-abs",
  "commscraft-audio-alsa",
@@ -755,21 +755,21 @@ dependencies = [
 
 [[package]]
 name = "commscraft-abs"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "regex",
 ]
 
 [[package]]
 name = "commscraft-audio-alsa"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "alsa",
 ]
 
 [[package]]
 name = "commscraft-avedgea"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-xml",
  "zeroize",
@@ -777,7 +777,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-call-media"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-h264uc",
  "commscraft-ice",
@@ -794,7 +794,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-cli"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-abs",
  "commscraft-audio-alsa",
@@ -837,7 +837,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-client"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-abs",
  "commscraft-audio-alsa",
@@ -879,7 +879,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-conf"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-presence",
  "commscraft-sip-msg",
@@ -888,7 +888,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-discovery"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-url",
  "commscraft-xml",
@@ -896,29 +896,29 @@ dependencies = [
 
 [[package]]
 name = "commscraft-dlx"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-ews"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-g711"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "commscraft-g722"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "commscraft-gssapi"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-register",
  "commscraft-sipae",
@@ -928,15 +928,15 @@ dependencies = [
 
 [[package]]
 name = "commscraft-h264uc"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "commscraft-ice"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "commscraft-ice-agent"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-ice",
  "commscraft-stun",
@@ -944,7 +944,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-im"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-sip-msg",
  "commscraft-sipae",
@@ -953,14 +953,14 @@ dependencies = [
 
 [[package]]
 name = "commscraft-lis"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-media"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-g711",
  "commscraft-g722",
@@ -972,7 +972,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-net"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-register",
  "commscraft-sip-msg",
@@ -985,7 +985,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-ntlm"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "hmac 0.12.1",
  "md-5 0.10.6",
@@ -996,7 +996,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-ocauthws"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-sipae",
  "commscraft-xml",
@@ -1004,7 +1004,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-ocer"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-sip-msg",
  "commscraft-xml",
@@ -1012,7 +1012,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-park"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-presence",
  "commscraft-xml",
@@ -1020,7 +1020,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-presence"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-sip-msg",
  "commscraft-xml",
@@ -1028,7 +1028,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-provisioning"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-sip-msg",
  "commscraft-url",
@@ -1037,18 +1037,18 @@ dependencies = [
 
 [[package]]
 name = "commscraft-psom"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "commscraft-qoe"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-rdp-view"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "ironrdp-core",
  "ironrdp-dvc",
@@ -1061,7 +1061,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-register"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-ntlm",
  "commscraft-sip-identity",
@@ -1073,18 +1073,18 @@ dependencies = [
 
 [[package]]
 name = "commscraft-rgs"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-rtp"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "commscraft-screen-capture"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "ashpd",
  "futures-lite",
@@ -1093,7 +1093,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-sdp"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-sipae",
  "zeroize",
@@ -1101,7 +1101,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-session"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-avedgea",
  "commscraft-conf",
@@ -1121,18 +1121,18 @@ dependencies = [
 
 [[package]]
 name = "commscraft-sip-identity"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "sha1 0.10.7",
 ]
 
 [[package]]
 name = "commscraft-sip-msg"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "commscraft-sipae"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-ntlm",
  "commscraft-sip-msg",
@@ -1142,11 +1142,11 @@ dependencies = [
 
 [[package]]
 name = "commscraft-sipcomp"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "commscraft-srtp"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "aes 0.8.4",
  "hmac 0.12.1",
@@ -1156,7 +1156,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-stun"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-ice",
  "hmac 0.12.1",
@@ -1168,7 +1168,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-tlsdsk"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-register",
  "commscraft-sipae",
@@ -1185,11 +1185,11 @@ dependencies = [
 
 [[package]]
 name = "commscraft-tones"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "commscraft-turn"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-stun",
  "zeroize",
@@ -1197,19 +1197,20 @@ dependencies = [
 
 [[package]]
 name = "commscraft-turn-bwm"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "commscraft-ucwa"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-url",
  "commscraft-xml",
+ "zeroize",
 ]
 
 [[package]]
 name = "commscraft-ui"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "egui",
  "egui_kittest",
@@ -1217,11 +1218,11 @@ dependencies = [
 
 [[package]]
 name = "commscraft-url"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "commscraft-video-ffmpeg"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-h264uc",
  "ffmpeg-next",
@@ -1229,7 +1230,7 @@ dependencies = [
 
 [[package]]
 name = "commscraft-video-wayland"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-video-ffmpeg",
  "rustix 1.1.6",
@@ -1239,14 +1240,14 @@ dependencies = [
 
 [[package]]
 name = "commscraft-xccos"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 dependencies = [
  "commscraft-xml",
 ]
 
 [[package]]
 name = "commscraft-xml"
-version = "0.90.3-alpha"
+version = "0.90.4-alpha"
 
 [[package]]
 name = "concurrent-queue"

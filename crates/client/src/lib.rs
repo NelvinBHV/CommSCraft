@@ -7,6 +7,7 @@
 //! machines stay in their own crates.
 
 pub mod address_book;
+pub mod backlog;
 pub mod calls;
 pub mod cues;
 pub mod directory;

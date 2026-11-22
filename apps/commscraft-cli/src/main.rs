@@ -2827,6 +2827,7 @@ fn interactive(
         }
         // Function 44: what the meeting content reports.
         while let Ok(c) = content_rx.try_recv() {
+            meeting_content::taken(&c);
             match c {
                 meeting_content::FromContent::Line(conversation, line) => {
                     println!("* [{conversation}] {line}")
@@ -2884,6 +2885,7 @@ fn interactive(
         }
         // Video streams: ready, selected, notices (function 28).
         while let Ok(v) = video_rx.try_recv() {
+            frame_taken(&v);
             match v {
                 video_call::FromVideo::Ready(vid, local)
                     if pending_conf_screen.contains_key(&vid) =>
@@ -5650,6 +5652,16 @@ fn promote_name(v: u32) -> &'static str {
         "people from the company"
     } else {
         "nobody"
+    }
+}
+
+/// A decoded picture taken from the queue gives its place back (issue #253).
+fn frame_taken(v: &video_call::FromVideo) {
+    if matches!(
+        v,
+        video_call::FromVideo::Frame(..) | video_call::FromVideo::SelfFrame(..)
+    ) {
+        commscraft_client::backlog::FRAMES.leave();
     }
 }
 
