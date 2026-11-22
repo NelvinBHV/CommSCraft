@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (hardening from issues #252–#254, #258)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (Flatpak: camera through the portal, GPU only; native components checked)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).

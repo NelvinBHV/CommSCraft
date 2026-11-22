@@ -37,8 +37,9 @@ jobs:
         run: cargo test --locked
 
   # Issue #147: known advisories (RustSec) for every crate in Cargo.lock, warnings such as
-  # unmaintained or unsound crates included. The native FFmpeg, ALSA and Kerberos libraries come
-  # from the build host's packages and are not covered here (see docs/security.md).
+  # unmaintained or unsound crates included. The native libraries are covered elsewhere: the
+  # bundled MIT Kerberos by the native-components workflow, the Flatpak runtime and FFmpeg by
+  # Flathub (their builds listed per release in components.txt; see docs/security.md).
   advisories:
     runs-on: ubuntu-latest
     timeout-minutes: 15
