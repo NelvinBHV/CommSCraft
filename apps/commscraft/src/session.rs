@@ -3,7 +3,7 @@
 //! [`AppEvent`]s; nothing in the egui frame waits for the network.
 //!
 //! Security by design: TLS is always verified (system trust store); discovery uses only targets
-//! in the user's SIP domain, domains the user trusts for this account in `~/.config/commscraft/trusted-domains.d/`,
+//! in the user's SIP domain, domains the user trusts for this account in `~/.config/CommSCraft/trusted-domains.d/`,
 //! or an Autodiscover target the user trusts in the dialog (remembered there);
 //! the password goes into the registrar's wiped container at once; both queues are bounded.
 //! Calls go only to SIP addresses chosen in the interface, never to phone numbers, so the

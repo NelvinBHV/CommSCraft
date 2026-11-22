@@ -1,4 +1,4 @@
-//! Local preferences of the desktop client in `~/.config/commscraft/desktop.conf` (mode 0600):
+//! Local preferences of the desktop client in `~/.config/CommSCraft/desktop.conf` (mode 0600):
 //! favourites (SIP addresses, group titles, chat rooms) and the options of the options window
 //! (language, display, contact list, notifications, sounds, camera device, meetings).
 //!

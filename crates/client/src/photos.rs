@@ -115,12 +115,9 @@ pub fn photo_cache(base: &Path, aor: &str, host: &str, email: &str) -> Option<(P
     Some((base.join(account).join(server), key))
 }
 
-/// `$XDG_CACHE_HOME/commscraft/photos` (else `~/.cache/…`).
+/// `$XDG_CACHE_HOME/CommSCraft/photos` (else `~/.cache/…`).
 pub fn photos_dir() -> Option<PathBuf> {
-    std::env::var_os("XDG_CACHE_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))
-        .map(|b| b.join("commscraft").join("photos"))
+    crate::xdg::dir(crate::xdg::Kind::Cache).map(|d| d.join("photos"))
 }
 
 fn write_private(path: &Path, data: &[u8]) -> Result<(), String> {
