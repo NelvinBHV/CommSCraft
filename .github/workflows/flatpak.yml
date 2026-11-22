@@ -15,27 +15,34 @@ concurrency:
   cancel-in-progress: true
 jobs:
   bundle:
-    # The build container runs privileged: no code from fork pull requests in it.
+    # Builds on the plain runner (no container): flatpak-builder from Ubuntu, the runtimes
+    # installed fresh into the user installation. The Flatpak container image could no longer
+    # update or remove its preinstalled runtimes ("Invalid cross-device link" on its overlay
+    # file system, since a new SDK 25.08 build on 2026-11-21).
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
-      options: --privileged
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
       - name: Offline Cargo sources with checksums from Cargo.lock
         run: python3 -I scripts/generate_flatpak_cargo_sources.py Cargo.lock packaging/flatpak/cargo-sources.json
-      # The image's runtimes cannot be updated in place inside the container ("Invalid
-      # cross-device link" since a new SDK 25.08 build, 2026-11-21): remove them, so the builder
-      # installs the current ones fresh.
-      - name: Fresh runtimes
-        run: flatpak uninstall --all --noninteractive -y || true
-      - uses: flatpak/flatpak-github-actions/flatpak-builder@79327416609af08178ad73b352877e51450790b3 # v6.8
+      - name: flatpak and flatpak-builder
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends flatpak flatpak-builder
+          # bubblewrap needs unprivileged user namespaces, which Ubuntu restricts by default.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+      - name: Build the bundle
+        run: |
+          flatpak-builder --user --install-deps-from=flathub --disable-rofiles-fuse --force-clean \
+            --repo=repo build-dir packaging/flatpak/io.github.NelvinBHV.CommSCraft.yml
+          flatpak build-bundle repo CommSCraft.flatpak io.github.NelvinBHV.CommSCraft \
+            --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          bundle: CommSCraft.flatpak
-          manifest-path: packaging/flatpak/io.github.NelvinBHV.CommSCraft.yml
-          cache: false
-          upload-artifact: true
+          name: CommSCraft-x86_64.flatpak
+          path: CommSCraft.flatpak
+          if-no-files-found: error
