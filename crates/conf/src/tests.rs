@@ -1161,3 +1161,74 @@ mod capabilities_tests {
         assert_eq!(parse_capabilities(&plain).unwrap().1.external_url, None);
     }
 }
+
+/// [MS-CONFBAS] §4.4.9 (pp. 156–160): modifyEndpoint with client-recording, the focus's
+/// notification marks the endpoint, a notification without the element clears it; the
+/// conference description says whether recording is allowed (§2.2.2.3).
+#[test]
+fn meeting_recording() {
+    let body = modify_endpoint_recording(
+        298246656,
+        "sip:alice@contoso.com",
+        FOCUS,
+        "sip:alice@contoso.com",
+        "{1D5E1076-AB39-46C0-8D74-46B79B1DCA27}",
+        true,
+    )
+    .unwrap();
+    let x = commscraft_xml::parse(&body, &commscraft_xml::Limits::default()).unwrap();
+    let m = x.child("modifyEndpoint").unwrap();
+    let keys = m.child("endpointKeys").unwrap();
+    assert_eq!(keys.attr("confEntity"), Some(FOCUS));
+    assert_eq!(
+        keys.attr("endpointEntity"),
+        Some("{1D5E1076-AB39-46C0-8D74-46B79B1DCA27}")
+    );
+    let ep = m.child("endpoint").unwrap();
+    assert_eq!(ep.children_named("separator").count(), 2);
+    assert!(ep.child("client-recording").is_some());
+    let stop = modify_endpoint_recording(
+        2,
+        "sip:alice@contoso.com",
+        FOCUS,
+        "sip:alice@contoso.com",
+        "{1D5E1076-AB39-46C0-8D74-46B79B1DCA27}",
+        false,
+    )
+    .unwrap();
+    assert!(!stop.contains("client-recording"));
+    assert!(modify_endpoint_recording(
+        3,
+        "sip:alice@contoso.com",
+        FOCUS,
+        "sip:alice@contoso.com",
+        "x\"y",
+        true
+    )
+    .is_err());
+
+    let mut r = Roster::default();
+    r.apply(&roster_full(), FOCUS).unwrap();
+    let (user, ep) = r
+        .own_focus_endpoint("sip:alice@contoso.com", "sip:alice@contoso.com;gruu")
+        .unwrap();
+    assert_eq!(
+        (user.as_str(), ep.as_str()),
+        (
+            "sip:alice@contoso.com",
+            "{1D5E1076-AB39-46C0-8D74-46B79B1DCA27}"
+        )
+    );
+    let note = |v: u32, rec: &str| {
+        format!(
+            r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:cis="urn:ietf:params:xml:ns:conference-info-separator" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="partial" version="{v}"><conference-description><msci:recording-allowed>true</msci:recording-allowed><msci:externaluser-recording-allowed>false</msci:externaluser-recording-allowed></conference-description><users state="partial"><user entity="sip:bob@contoso.com" state="partial"><endpoint entity="{{B1}}" msci:session-type="focus"><cis:separator/><cis:separator/>{rec}</endpoint></user></users></conference-info>"#
+        )
+    };
+    r.apply(&note(9, "<msci:client-recording/>"), FOCUS)
+        .unwrap();
+    assert!(r.participants[1].endpoints.iter().any(|e| e.recording));
+    assert_eq!(r.settings.recording_allowed, Some(true));
+    assert_eq!(r.settings.external_recording_allowed, Some(false));
+    r.apply(&note(10, ""), FOCUS).unwrap();
+    assert!(!r.participants[1].endpoints.iter().any(|e| e.recording));
+}

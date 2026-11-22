@@ -690,6 +690,7 @@ fn a_presenter_admits_from_the_lobby_and_promotes() {
         in_chat: true,
         video: false,
         sharing: false,
+        recording: false,
     };
     let c = ui
         .state
@@ -1027,6 +1028,7 @@ fn a_presenter_changes_the_meeting_options() {
         in_chat: true,
         video: false,
         sharing: false,
+        recording: false,
     }];
     ui.state.apply(AppEvent::MeetingSettings {
         session: 5,
@@ -1303,6 +1305,7 @@ fn ending_the_meeting_asks_first() {
         in_chat: true,
         video: false,
         sharing: false,
+        recording: false,
     }];
     let mut h = harness(ui, BIG);
     h.run();

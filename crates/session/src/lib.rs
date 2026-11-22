@@ -269,6 +269,14 @@ pub enum Command {
         conversation: ConversationId,
         mute: bool,
     },
+    /// Record a meeting (start or stop): the focus is told with modifyEndpoint/client-recording
+    /// ([MS-CONFBAS] §4.4.9), after the client checked the policy (meetingPolicy AllowRecording,
+    /// the conference's recording-allowed); followed by `ConferenceRecording`, on which the
+    /// adapter records the meeting's audio locally.
+    ConferenceRecording {
+        conversation: ConversationId,
+        recording: bool,
+    },
     /// Audio call (OCS-UC12): `local` from the media adapter (candidates, key).
     Call {
         to: String,
@@ -526,6 +534,11 @@ pub enum Event {
     Participants {
         conversation: ConversationId,
         participants: Vec<conf::Participant>,
+    },
+    /// Our recording of a meeting started or stopped (`Command::ConferenceRecording`).
+    ConferenceRecording {
+        conversation: ConversationId,
+        recording: bool,
     },
     /// An invitation to a conference arrived; joining is the user's decision.
     ConferenceInvitation {
@@ -815,6 +828,8 @@ pub struct Engine<R: Random> {
     routing_known: bool,
     /// locationPolicy from provisioning (RG-51) and the current location (E9-04).
     location_policy: Option<commscraft_provisioning::LocationPolicy>,
+    /// meetingPolicy AllowRecording ([MS-SIPREGE] §2.2.2.5.2, pp. 29–32), when provisioned.
+    recording_policy: Option<bool>,
     location: Option<commscraft_lis::Location>,
     /// The emergency calls in progress (RE-67); forwarding stays suspended while any of them
     /// exists (issue #70).
@@ -945,6 +960,7 @@ impl<R: Random> Engine<R> {
             routing_rules: pres::Forwarding::default(),
             routing_known: false,
             location_policy: None,
+            recording_policy: None,
             location: None,
             emergency_calls: Vec::new(),
             focus_factory: None,
@@ -2267,6 +2283,10 @@ impl<R: Random> Engine<R> {
             Command::ConferenceMute { conversation, mute } => {
                 self.conference_mute(conversation, mute, now, &mut out)
             }
+            Command::ConferenceRecording {
+                conversation,
+                recording,
+            } => self.conference_recording(conversation, recording, now, &mut out),
             Command::ViewConferenceScreen {
                 conversation,
                 video,
@@ -2792,6 +2812,17 @@ impl<R: Random> Engine<R> {
                     self.container_manifest = p.container_manifest().cloned();
                     self.apply_manifest(now, out);
                     // RG-51: the location policy decides about emergency numbers.
+                    if let Some(g) = p.group("meetingPolicy") {
+                        // A policy group comes as one instance of properties (RG-43).
+                        let allow = g.get("AllowRecording").or_else(|| {
+                            g.instances.first().and_then(|i| {
+                                i.iter()
+                                    .find(|(n, _)| n.eq_ignore_ascii_case("AllowRecording"))
+                                    .map(|(_, v)| v.as_str())
+                            })
+                        });
+                        self.recording_policy = allow.map(|v| v.eq_ignore_ascii_case("true"));
+                    }
                     if let Some(g) = p.group("locationPolicy") {
                         let policy = prov::LocationPolicy::from_group(g);
                         out.push(Output::Event(Event::LocationPolicy(Box::new(

@@ -1033,6 +1033,55 @@ impl<R: Random> Engine<R> {
         );
     }
 
+    /// `ConferenceRecording` ([MS-CONFBAS] §4.4.9, pp. 156–160): the focus does not check the
+    /// recording policy, the client does – meetingPolicy AllowRecording and the conference's
+    /// recording-allowed (§2.2.2.3, p. 30); then modifyEndpoint with or without client-recording.
+    pub(crate) fn conference_recording(
+        &mut self,
+        id: ConversationId,
+        recording: bool,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let conference_allows = self
+            .group_mut(id)
+            .and_then(|g| g.roster.settings.recording_allowed);
+        if recording && self.recording_policy == Some(false) {
+            out.push(Output::Event(Event::Notice(
+                "recording is not allowed by your meeting policy".into(),
+            )));
+            return;
+        }
+        if recording && conference_allows == Some(false) {
+            out.push(Output::Event(Event::Notice(
+                "recording is not allowed in this meeting".into(),
+            )));
+            return;
+        }
+        let (aor, gruu) = (self.cfg.aor.clone(), self.gruu.clone());
+        let Some((user, endpoint)) = self
+            .group_mut(id)
+            .and_then(|g| g.roster.own_focus_endpoint(&aor, &gruu))
+        else {
+            out.push(Output::Event(Event::Notice(
+                "we are not in the meeting's roster yet".into(),
+            )));
+            return;
+        };
+        self.send_c3p(
+            id,
+            |r, from, focus, _| {
+                conf::modify_endpoint_recording(r, from, focus, &user, &endpoint, recording)
+            },
+            now,
+            out,
+        );
+        out.push(Output::Event(Event::ConferenceRecording {
+            conversation: id,
+            recording,
+        }));
+    }
+
     /// `ConferenceControl`: presenter commands (CB-33: only presenters; the focus checks too).
     pub(crate) fn conference_control(
         &mut self,

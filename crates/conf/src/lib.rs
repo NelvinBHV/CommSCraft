@@ -503,6 +503,10 @@ pub struct Settings {
     /// [MS-CONFAV] §2.2.1.1.4, p. 16).
     pub announcements: Option<bool>,
     pub announcements_modifiable: Option<bool>,
+    /// Internal and external participants may record ([MS-CONFBAS] §2.2.2.3, p. 30: set by the
+    /// administrator; the external flag only applies when recording is allowed).
+    pub recording_allowed: Option<bool>,
+    pub external_recording_allowed: Option<bool>,
 }
 
 impl Settings {
@@ -538,6 +542,11 @@ impl Settings {
                 "pstn-lobby-bypass-allowed",
                 &mut self.pstn_lobby_bypass_allowed,
             ),
+            ("recording-allowed", &mut self.recording_allowed),
+            (
+                "externaluser-recording-allowed",
+                &mut self.external_recording_allowed,
+            ),
         ] {
             if d.child(name).is_some() {
                 *slot = flag(name);
@@ -550,6 +559,42 @@ impl Settings {
             self.autopromote_allowed = number("autopromote-allowed");
         }
     }
+}
+
+/// modifyEndpoint with `client-recording` ([MS-CONFBAS] v20250520 §2.2.3.23, p. 50; example
+/// §4.4.9, pp. 156–160): tells the focus that our endpoint records the conference (`recording`)
+/// or stopped (the element left out). The focus does not check the recording policy; the client
+/// has to (§4.4.9, p. 160).
+pub fn modify_endpoint_recording(
+    request_id: u32,
+    from: &str,
+    focus: &str,
+    user: &str,
+    endpoint: &str,
+    recording: bool,
+) -> Result<String, Error> {
+    let focus_c = uri(focus)?;
+    let user = uri(user)?;
+    if !safe_token(endpoint) {
+        return Err(Error::BadValue("endpoint entity"));
+    }
+    request(
+        request_id,
+        from,
+        focus,
+        &format!(
+            "<modifyEndpoint><endpointKeys confEntity=\"{}\" userEntity=\"{}\" endpointEntity=\"{}\"/><ci:endpoint xmlns:ci=\"{NS_CI}\" entity=\"{}\"><cis:separator xmlns:cis=\"{NS_SEPARATOR}\"></cis:separator><cis:separator xmlns:cis=\"{NS_SEPARATOR}\"></cis:separator>{}</ci:endpoint></modifyEndpoint>",
+            escape(&focus_c),
+            escape(&user),
+            escape(endpoint),
+            escape(endpoint),
+            if recording {
+                format!("<msci:client-recording xmlns:msci=\"{NS_MSCI}\"/>")
+            } else {
+                String::new()
+            }
+        ),
+    )
 }
 
 /// deleteConference to the focus ([MS-CONFBAS] v20250520 §2.2.3.13 with its example, p. 44;
@@ -844,6 +889,9 @@ pub struct Endpoint {
     pub uri: Option<String>,
     /// A/V endpoint: the audio media's ID and whether the MCU blocks it (CA-12, CA-20).
     pub audio: Option<(String, bool)>,
+    /// The endpoint records the conference (`client-recording`, [MS-CONFBAS] §2.2.2.3, p. 30;
+    /// example §4.4.9, pp. 156–160).
+    pub recording: bool,
     /// A/V endpoint: the main video's media source ID (MSI) and whether the participant sends
     /// it (status sendrecv or sendonly) (CA-12; [MS-CONFAV] §2.2.2.1.2.3, example §4.1).
     pub video: Option<(u32, bool)>,
@@ -1068,10 +1116,20 @@ impl Roster {
                 status: String::new(),
                 uri: None,
                 audio: None,
+                recording: false,
                 video: None,
                 sharing: None,
                 screen_source: None,
             });
+            // §4.4.9: the focus's notification after modifyEndpoint carries the endpoint with its
+            // two separators and `client-recording` once per recording, none when it stopped.
+            // An endpoint element without separators (another partial update) leaves it as it
+            // was (inference: §4.4.9 shows only full endpoint elements).
+            if ep.child("client-recording").is_some() {
+                e.recording = true;
+            } else if ep.child("separator").is_some() {
+                e.recording = false;
+            }
             if let Some(k) = attr_local(ep, "session-type") {
                 e.kind = printable(k);
             }
@@ -1174,6 +1232,24 @@ impl Roster {
             endpoint: e.entity.clone(),
             media_id: e.audio.as_ref()?.0.clone(),
         })
+    }
+
+    /// Our endpoint in the focus session (for modifyEndpoint): the one with our GRUU, else the
+    /// first focus endpoint of ours.
+    pub fn own_focus_endpoint(&self, own: &str, gruu: &str) -> Option<(String, String)> {
+        let p = self.own(own)?;
+        let focus = |e: &&Endpoint| e.kind == "focus";
+        let e = p
+            .endpoints
+            .iter()
+            .filter(focus)
+            .find(|e| {
+                e.uri
+                    .as_deref()
+                    .is_some_and(|u| u.eq_ignore_ascii_case(gruu))
+            })
+            .or_else(|| p.endpoints.iter().find(focus))?;
+        Some((p.uri.clone(), e.entity.clone()))
     }
 
     /// The keys of another participant's audio (to mute them, CA-20).

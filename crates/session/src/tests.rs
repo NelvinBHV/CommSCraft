@@ -6005,3 +6005,40 @@ fn callee_early_answer_needs_100rel_and_a_prack() {
         status: 500
     }));
 }
+
+/// [MS-CONFBAS] §4.4.9: recording a meeting – modifyEndpoint with client-recording over INFO
+/// in the focus dialog, then `ConferenceRecording`; a conference that does not allow recording
+/// is refused by the client (the focus would not check).
+#[test]
+fn meeting_recording_is_announced_to_the_focus() {
+    let (mut e, _server, _, conversation) = joined_meeting(PRESENTER_ROSTER);
+    let out = e.command(
+        Command::ConferenceRecording {
+            conversation,
+            recording: true,
+        },
+        NOW,
+    );
+    let info = find(&out, "INFO");
+    let body = String::from_utf8_lossy(&info.body).to_string();
+    assert!(body.contains("<modifyEndpoint>"));
+    assert!(body.contains("endpointEntity=\"{A}\""));
+    assert!(body.contains("client-recording"));
+    assert!(events(&out).contains(&Event::ConferenceRecording {
+        conversation,
+        recording: true
+    }));
+    let (mut e, _server, _, conversation) = joined_meeting_with(
+        PRESENTER_ROSTER,
+        "<msci:recording-allowed>false</msci:recording-allowed>",
+    );
+    let out = e.command(
+        Command::ConferenceRecording {
+            conversation,
+            recording: true,
+        },
+        NOW,
+    );
+    assert!(sends(&out).iter().all(|m| m.method() != Some("INFO")));
+    assert!(matches!(events(&out).as_slice(), [Event::Notice(n)] if n.contains("not allowed")));
+}
