@@ -568,6 +568,9 @@ pub struct CommsUi {
     pub stored_password_for: Option<String>,
     /// Textures of the contact photos, made when first shown.
     pub(crate) textures: std::cell::RefCell<BTreeMap<String, egui::TextureHandle>>,
+    /// The coloured emoticon pictures by emoji (Noto Color Emoji, given by the app); without
+    /// one the emoji character is shown.
+    pub(crate) emoticon_images: BTreeMap<String, std::sync::Arc<egui::ColorImage>>,
     /// The received video per call: picture count and texture.
     pub(crate) video_textures: std::cell::RefCell<BTreeMap<u32, (u64, egui::TextureHandle)>>,
 }
@@ -635,6 +638,7 @@ impl CommsUi {
             screenshot: None,
             stored_password_for: None,
             textures: std::cell::RefCell::new(BTreeMap::new()),
+            emoticon_images: BTreeMap::new(),
             video_textures: std::cell::RefCell::new(BTreeMap::new()),
         }
     }
@@ -829,6 +833,33 @@ impl CommsUi {
         } else {
             self.im_hidden.insert(key);
         }
+    }
+
+    /// The coloured emoticon pictures (emoji, RGBA picture), given once by the app.
+    pub fn set_emoticon_images(&mut self, images: Vec<(String, egui::ColorImage)>) {
+        self.emoticon_images = images
+            .into_iter()
+            .map(|(e, img)| (e, std::sync::Arc::new(img)))
+            .collect();
+    }
+
+    /// The texture of an emoticon's picture, made when first shown.
+    pub(crate) fn emoticon_texture(
+        &self,
+        ctx: &egui::Context,
+        emoji: &str,
+    ) -> Option<egui::TextureHandle> {
+        let img = self.emoticon_images.get(emoji)?;
+        let key = format!("emo:{emoji}");
+        let mut cache = self.textures.borrow_mut();
+        Some(
+            cache
+                .entry(key.clone())
+                .or_insert_with(|| {
+                    ctx.load_texture(key, (**img).clone(), egui::TextureOptions::LINEAR)
+                })
+                .clone(),
+        )
     }
 
     /// Drops the textures of a window that is gone (they belong to its painter); they are

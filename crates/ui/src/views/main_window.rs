@@ -1645,16 +1645,8 @@ fn conversation_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey)
             RichText::new(&c.title).color(pal.ink)
         };
         widgets::ellipsis(ui, title);
-        let last = c
-            .last_text()
-            .map(|m| m.text.replace('\n', " "))
-            .unwrap_or_default();
-        widgets::ellipsis(
-            ui,
-            RichText::new(last)
-                .size(theme::text::SMALL)
-                .color(pal.muted),
-        );
+        let last = c.last_text().map(|m| m.text.clone()).unwrap_or_default();
+        crate::views::chats::emoticon_line(app, ui, &last, theme::text::SMALL, pal.muted);
     });
     let info = format!("{}, {}", c.title, app.t.unread_count(c.unread));
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &info));

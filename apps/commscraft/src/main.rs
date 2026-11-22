@@ -7,6 +7,7 @@
 //! commands (`script.rs`) that trigger the same actions as the interface.
 
 mod desktop;
+mod emoticon_images;
 mod fonts;
 mod idle;
 mod notify;
@@ -184,6 +185,21 @@ fn parse_offset(v: &str) -> Option<i64> {
 }
 
 /// RGBA pixels of a PNG (bounded: the brand icon is 128 × 128).
+/// The coloured emoticon pictures (Noto Color Emoji) decoded for the interface.
+fn emoticon_pictures() -> Vec<(String, egui::ColorImage)> {
+    emoticon_images::IMAGES
+        .iter()
+        .filter_map(|(emoji, png)| {
+            let (w, h, rgba) = decode_png(png)?;
+            let size = [usize::try_from(w).ok()?, usize::try_from(h).ok()?];
+            Some((
+                emoji.to_string(),
+                egui::ColorImage::from_rgba_unmultiplied(size, &rgba),
+            ))
+        })
+        .collect()
+}
+
 fn decode_png(bytes: &[u8]) -> Option<(u32, u32, Vec<u8>)> {
     let mut dec = png::Decoder::new(std::io::Cursor::new(bytes));
     dec.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
@@ -743,6 +759,7 @@ impl DesktopApp {
         self.ui.logo = logo;
         self.ui.prefs = kept;
         self.ui.audio_devices = desktop::sound_devices();
+        self.ui.set_emoticon_images(emoticon_pictures());
         self.ui.set_view(view);
         self.worker = None;
     }
@@ -1136,6 +1153,7 @@ fn main() {
     let mut first = Some(move |cc: &eframe::CreationContext<'_>| -> DesktopApp {
         let mut ui = CommsUi::new(lang, offset);
         ui.audio_devices = desktop::sound_devices();
+        ui.set_emoticon_images(emoticon_pictures());
         ui.set_view(args.view);
         // Screenshots use the defaults, not the user's preferences.
         if args.screenshot.is_none() && !args.demo {
