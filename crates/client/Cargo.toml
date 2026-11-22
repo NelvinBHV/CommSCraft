@@ -38,6 +38,7 @@ commscraft-rdp-view = { path = "../rdp-view" }
 commscraft-rtp = { path = "../rtp" }
 commscraft-session = { path = "../session" }
 commscraft-video-ffmpeg = { path = "../video-ffmpeg" }
+commscraft-screen-capture = { path = "../screen-capture" }
 commscraft-video-wayland = { path = "../video-wayland" }
 # The kernel's sandbox (Landlock) for the video window process.
 landlock = "=0.4.7"

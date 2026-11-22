@@ -109,6 +109,7 @@ impl<R: Random> Engine<R> {
                 emergency: true,
                 screen: false,
                 rdp: false,
+                share: false,
             },
             now,
             &mut call_out,

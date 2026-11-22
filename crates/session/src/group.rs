@@ -837,6 +837,7 @@ impl<R: Random> Engine<R> {
                 emergency: false,
                 screen: false,
                 rdp: false,
+                share: false,
             },
             now,
             out,

@@ -116,6 +116,38 @@ pub fn viewer_offer(video: &VideoLocal, policy: Encryption) -> Result<String, Er
     Ok(out)
 }
 
+/// Our offer as sharer of the own screen, 1:1 (video-based screen sharing, function 43): as the
+/// Windows client offers it (`tested-in-lab`, L-107) – the screen video line send-only with the
+/// screen label, required (`x-mediasettings`), bandwidth at session level – with the
+/// application sharing line disabled (we share no RDP), port 0, role sharer.
+pub fn sharer_offer(video: &VideoLocal, policy: Encryption) -> Result<String, Error> {
+    let proto = match policy {
+        Encryption::Required => "RTP/SAVP",
+        _ => "RTP/AVP",
+    };
+    let mut v = video.clone();
+    v.media.direction = Direction::SendOnly;
+    if policy == Encryption::Off {
+        v.media.key = None;
+    }
+    let mut out = header(&v.media);
+    out.push_str(&format!(
+        "a=x-mediabw:{SCREEN_VIDEO_LABEL} send={SCREEN_MEDIABW_KBPS};recv={SCREEN_MEDIABW_KBPS}\r\n"
+    ));
+    out.push_str(&format!(
+        "a=x-mediasettings:{SCREEN_VIDEO_LABEL}=required\r\n"
+    ));
+    out.push_str("m=applicationsharing 0 TCP/RTP/AVP 127\r\na=x-applicationsharing-role:sharer\r\na=x-applicationsharing-media-type:rdp\r\na=x-applicationsharing-contentflow:inactive\r\na=rtpmap:127 x-data/90000\r\n");
+    out.push_str(&super::video::labelled_video_section(
+        &v,
+        proto,
+        super::video::H264UC_PT,
+        Some(super::video::ULPFEC_PT),
+        SCREEN_VIDEO_LABEL,
+    )?);
+    Ok(out)
+}
+
 /// What the viewer needs of a sharer's RDP line (SD-80, SD-81).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NegotiatedRdp {

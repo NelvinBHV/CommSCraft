@@ -667,6 +667,87 @@ impl Scaler {
     }
 }
 
+/// The byte order of a 4-byte RGB screen frame.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Rgb4 {
+    Bgrx,
+    Rgbx,
+    Bgra,
+    Rgba,
+}
+
+/// Converts 4-byte RGB screen frames (PipeWire, function 43) to I420 of a given size (swscale);
+/// the source size may change between frames (a window being resized).
+pub struct RgbConverter {
+    ctx: Option<(ff::software::scaling::Context, (u32, u32, Rgb4))>,
+    to: (u32, u32),
+}
+
+impl RgbConverter {
+    pub fn new(to: (u32, u32)) -> Result<RgbConverter, Error> {
+        check_size(to.0, to.1)?;
+        Ok(RgbConverter { ctx: None, to })
+    }
+
+    pub fn convert(
+        &mut self,
+        width: u32,
+        height: u32,
+        stride: u32,
+        layout: Rgb4,
+        data: &[u8],
+    ) -> Result<Picture, Error> {
+        if width == 0
+            || height == 0
+            || width > MAX_WIDTH * 4
+            || height > MAX_HEIGHT * 4
+            || (stride as usize) < (width as usize) * 4
+            || data.len() < (stride as usize) * (height as usize)
+        {
+            return Err(Error::BadParameter("screen frame"));
+        }
+        let pixel = match layout {
+            Rgb4::Bgrx => ff::format::Pixel::BGRZ,
+            Rgb4::Rgbx => ff::format::Pixel::RGBZ,
+            Rgb4::Bgra => ff::format::Pixel::BGRA,
+            Rgb4::Rgba => ff::format::Pixel::RGBA,
+        };
+        let key = (width, height, layout);
+        if self.ctx.as_ref().is_none_or(|(_, k)| *k != key) {
+            let c = ff::software::scaling::Context::get(
+                pixel,
+                width,
+                height,
+                ff::format::Pixel::YUV420P,
+                self.to.0,
+                self.to.1,
+                ff::software::scaling::Flags::BILINEAR,
+            )?;
+            self.ctx = Some((c, key));
+        }
+        let mut src = ff::frame::Video::new(pixel, width, height);
+        let line = (width as usize) * 4;
+        let dst_stride = src.stride(0);
+        {
+            let plane = src.data_mut(0);
+            for row in 0..height as usize {
+                let from = data
+                    .get(row * stride as usize..row * stride as usize + line)
+                    .ok_or(Error::BadParameter("screen frame"))?;
+                plane
+                    .get_mut(row * dst_stride..row * dst_stride + line)
+                    .ok_or(Error::BadParameter("screen frame"))?
+                    .copy_from_slice(from);
+            }
+        }
+        let mut dst = ff::frame::Video::new(ff::format::Pixel::YUV420P, self.to.0, self.to.1);
+        if let Some((c, _)) = self.ctx.as_mut() {
+            c.run(&src, &mut dst)?;
+        }
+        from_frame(&dst)
+    }
+}
+
 /// A window showing pictures through FFmpeg's XVideo output device (libavdevice; under
 /// Wayland through Xwayland). Pictures of the window's size only.
 pub struct Display {

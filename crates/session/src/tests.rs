@@ -6042,3 +6042,51 @@ fn meeting_recording_is_announced_to_the_focus() {
     assert!(sends(&out).iter().all(|m| m.method() != Some("INFO")));
     assert!(matches!(events(&out).as_slice(), [Event::Notice(n)] if n.contains("not allowed")));
 }
+
+/// Function 43: sharing the own screen 1:1 – the sharer offer (video send-only with the screen
+/// label, required, the RDP line disabled), no audio; the viewer's recvonly answer starts the
+/// stream.
+#[test]
+fn sharing_the_own_screen() {
+    let (mut e, mut server, _) = signed_in();
+    let call = e.next_call_id();
+    let out = e.command(
+        Command::ShareScreen {
+            to: "sip:bob@contoso.com".into(),
+            video: Box::new(video_local(42004, 5)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let invite = find(&out, "INVITE");
+    let body = String::from_utf8_lossy(&invite.body).to_string();
+    assert!(body.contains("a=x-mediasettings:applicationsharing-video=required\r\n"));
+    assert!(body
+        .contains("m=applicationsharing 0 TCP/RTP/AVP 127\r\na=x-applicationsharing-role:sharer"));
+    assert!(body.contains("m=video 42004 RTP/SAVP 122 123"));
+    assert!(
+        body.contains("a=label:applicationsharing-video\r\n") && body.contains("a=sendonly\r\n")
+    );
+    assert!(!body.contains("m=audio"));
+    let answer_sdp = "v=0\r\no=- 2 0 IN IP4 192.0.2.20\r\ns=session\r\nc=IN IP4 192.0.2.20\r\nt=0 0\r\n\
+m=applicationsharing 0 TCP/RTP/AVP 127\r\n\
+m=video 51632 RTP/SAVP 122 123\r\na=x-ssrc-range:5000-5099\r\na=rtcp-fb:* x-message app send:src,x-pli recv:src,x-pli\r\na=rtcp-rsize\r\na=label:applicationsharing-video\r\n\
+a=ice-ufrag:cccc\r\na=ice-pwd:dddddddddddddddddddddddd\r\na=candidate:1 1 UDP 2130706431 192.0.2.20 51632 typ host\r\n\
+a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
+a=rtcp:51633\r\na=recvonly\r\na=rtpmap:122 X-H264UC/90000\r\na=fmtp:122 packetization-mode=1;mst-mode=NI-TC\r\na=rtpmap:123 x-ulpfecuc/90000\r\n";
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            answer_sdp,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(sends(&out).iter().any(|m| m.method() == Some("ACK")));
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::CallVideo { call: c, .. } if *c == call)));
+}

@@ -408,7 +408,33 @@ pub fn spawn(
     events: Sender<FromVideo>,
 ) -> VideoHandle {
     let (tx, rx) = mpsc::channel::<ToVideo>();
-    std::thread::spawn(move || run(id, local_ip, relay, bwm, camera, rx, events));
+    std::thread::spawn(move || run(id, local_ip, relay, bwm, camera, None, rx, events));
+    VideoHandle { tx }
+}
+
+/// Spawns the video stream that shares the own screen (function 43): send only, the frames of
+/// `capture` (the screen cast portal) encoded at the size the viewer asks for.
+pub fn spawn_sharing(
+    id: u32,
+    local_ip: IpAddr,
+    relay: Option<cm::Relay>,
+    bwm: Option<cm::BwmConfig>,
+    capture: commscraft_screen_capture::Capture,
+    events: Sender<FromVideo>,
+) -> VideoHandle {
+    let (tx, rx) = mpsc::channel::<ToVideo>();
+    std::thread::spawn(move || {
+        run(
+            id,
+            local_ip,
+            relay,
+            bwm,
+            String::new(),
+            Some(capture),
+            rx,
+            events,
+        )
+    });
     VideoHandle { tx }
 }
 
@@ -430,12 +456,14 @@ fn wait_for_start(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn run(
     id: u32,
     local_ip: IpAddr,
     relay: Option<cm::Relay>,
     bwm: Option<cm::BwmConfig>,
     camera: String,
+    share: Option<commscraft_screen_capture::Capture>,
     rx: Receiver<ToVideo>,
     events: Sender<FromVideo>,
 ) {
@@ -469,9 +497,10 @@ fn run(
     // Without a camera we only receive, and say so: in a meeting the others would otherwise pick
     // our video to watch and wait for it in vain.
     // An empty camera name: receive only by intent (a shared screen, function 43).
-    let screen = camera.is_empty();
+    let sharing = share.is_some();
+    let screen = camera.is_empty() && !sharing;
     let want = if screen { wanted_screen() } else { wanted() };
-    let camera_works = !screen && camera_available(&camera);
+    let camera_works = !screen && !sharing && camera_available(&camera);
     if !camera_works && !camera.is_empty() {
         let _ = events.send(FromVideo::Notice(
             id,
@@ -481,7 +510,9 @@ fn run(
     let local = |m: &CallMedia, d: sdp::Local| sdp::video::VideoLocal {
         media: sdp::Local {
             key: Some(m.key().clone()),
-            direction: if camera_works {
+            direction: if sharing {
+                sdp::Direction::SendOnly
+            } else if camera_works {
                 d.direction
             } else {
                 sdp::Direction::RecvOnly
@@ -529,6 +560,17 @@ fn run(
     let simulcast_ok = Arc::new(AtomicBool::new(true));
     let (au_tx, au_rx) = mpsc::sync_channel::<(u8, Vec<u8>, u32)>(8);
     let (dec_tx, dec_rx) = mpsc::sync_channel::<Vec<u8>>(8);
+    if let Some(capture) = share {
+        spawn_screen(
+            capture,
+            au_tx.clone(),
+            stop.clone(),
+            idr.clone(),
+            targets.clone(),
+            events.clone(),
+            id,
+        );
+    }
     if camera_works {
         spawn_camera(
             camera,
@@ -996,6 +1038,121 @@ fn spawn_camera(
     });
 }
 
+/// The size we send a screen at: the source's aspect inside what the viewer allows (at most
+/// 1920×1080, design), even sides of at least 16.
+fn screen_size(src: (u32, u32), allowed: (u32, u32)) -> (u32, u32) {
+    let (mw, mh) = (allowed.0.clamp(16, 1920), allowed.1.clamp(16, 1080));
+    let (sw, sh) = (src.0.max(1), src.1.max(1));
+    let (w, h) = if u64::from(sw) * u64::from(mh) > u64::from(sh) * u64::from(mw) {
+        (mw, (u64::from(mw) * u64::from(sh) / u64::from(sw)) as u32)
+    } else {
+        ((u64::from(mh) * u64::from(sw) / u64::from(sh)) as u32, mh)
+    };
+    ((w.max(16) / 2) * 2, (h.max(16) / 2) * 2)
+}
+
+/// Screen frames to the encoder (function 43): one stream (no simulcast), at most 15 frames a
+/// second (design: a desktop changes little), sized by [`screen_size`]; the encoder is rebuilt
+/// when the source or the request changes.
+fn spawn_screen(
+    capture: commscraft_screen_capture::Capture,
+    out: SyncSender<(u8, Vec<u8>, u32)>,
+    stop: Arc<AtomicBool>,
+    idr: Arc<AtomicBool>,
+    targets: Arc<Mutex<Vec<Target>>>,
+    events: Sender<FromVideo>,
+    id: u32,
+) {
+    std::thread::spawn(move || {
+        if vf::init().is_err() {
+            return;
+        }
+        let mut state: Option<((u32, u32), vf::RgbConverter, vf::Encoder)> = None;
+        let mut hardware = hardware_allowed();
+        let mut next_due = 0u64;
+        let mut announced = false;
+        while !stop.load(Ordering::Relaxed) {
+            let Ok(f) = capture.frames.recv_timeout(Duration::from_millis(200)) else {
+                continue;
+            };
+            let now = now_ms();
+            let t = targets
+                .lock()
+                .ok()
+                .and_then(|t| t.first().copied())
+                .unwrap_or(START);
+            let fps = t.fps.clamp(1, 15);
+            if now < next_due {
+                continue;
+            }
+            next_due = now + 1000 / u64::from(fps) - 5;
+            let size = screen_size((f.width, f.height), (t.width.max(1280), t.height.max(720)));
+            if state.as_ref().is_none_or(|(s, _, _)| *s != size) {
+                // The old encoder (and its GPU session) goes before the new one is opened.
+                drop(state.take());
+                let target = Target {
+                    width: size.0,
+                    height: size.1,
+                    fps,
+                    bitrate: t.bitrate.max(1_500_000),
+                };
+                let enc = encoder_for(target, hardware).or_else(|_| {
+                    hardware = false;
+                    encoder_for(target, false)
+                });
+                match (vf::RgbConverter::new(size), enc) {
+                    (Ok(c), Ok(e)) => {
+                        if !announced {
+                            announced = true;
+                            let _ = events.send(FromVideo::Notice(
+                                id,
+                                format!("sharing the screen at {}x{}", size.0, size.1),
+                            ));
+                        }
+                        state = Some((size, c, e));
+                        idr.store(true, Ordering::Relaxed);
+                    }
+                    (_, Err(e)) | (Err(e), _) => {
+                        let _ = events.send(FromVideo::Notice(
+                            id,
+                            format!("screen encoder stopped: {e:?}"),
+                        ));
+                        return;
+                    }
+                }
+            }
+            let Some((_, conv, enc)) = state.as_mut() else {
+                continue;
+            };
+            let layout = match f.pixels {
+                commscraft_screen_capture::Pixels::Bgrx => vf::Rgb4::Bgrx,
+                commscraft_screen_capture::Pixels::Rgbx => vf::Rgb4::Rgbx,
+                commscraft_screen_capture::Pixels::Bgra => vf::Rgb4::Bgra,
+                commscraft_screen_capture::Pixels::Rgba => vf::Rgb4::Rgba,
+            };
+            let Ok(picture) = conv.convert(f.width, f.height, f.stride, layout, &f.data) else {
+                continue;
+            };
+            let key = idr.swap(false, Ordering::Relaxed);
+            let ts = (now as u32).wrapping_mul(90);
+            match enc.encode(&picture, key) {
+                Ok(units) => {
+                    for au in units {
+                        let _ = out.try_send((0, au, ts));
+                    }
+                }
+                Err(e) => {
+                    let _ = events.send(FromVideo::Notice(
+                        id,
+                        format!("screen encoder stopped: {e:?}"),
+                    ));
+                    return;
+                }
+            }
+        }
+    });
+}
+
 /// An encoder for a target (GPU first).
 fn encoder_for(t: Target, hardware: bool) -> Result<vf::Encoder, vf::Error> {
     vf::Encoder::new(vf::EncoderConfig {
@@ -1273,5 +1430,16 @@ mod tests {
             "too soon"
         );
         assert!(needs_rebuild(cur, t(640, 480, 30, 720_000), 2_000));
+    }
+}
+
+#[cfg(test)]
+mod screen_size_tests {
+    #[test]
+    fn screen_size_keeps_the_aspect() {
+        assert_eq!(super::screen_size((2560, 1440), (1920, 1200)), (1920, 1080));
+        assert_eq!(super::screen_size((1920, 1200), (1920, 1200)), (1728, 1080));
+        assert_eq!(super::screen_size((800, 1280), (1280, 720)), (450, 720));
+        assert_eq!(super::screen_size((1, 1), (5, 5)), (16, 16));
     }
 }
