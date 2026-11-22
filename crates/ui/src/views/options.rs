@@ -217,6 +217,7 @@ fn page_ui(
                     me.trim_start_matches("sip:")
                 ));
                 ui.checkbox(&mut p.autostart, t.opt_autostart);
+                ui.checkbox(&mut p.close_to_tray, t.opt_close_to_tray);
             });
             group(ui, pal, t.opt_exchange, |ui| {
                 note(ui, pal, t.opt_exchange_body)

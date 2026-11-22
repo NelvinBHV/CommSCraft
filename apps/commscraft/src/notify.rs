@@ -204,6 +204,9 @@ async fn signals(conn: &zbus::Connection, ids: &Ids, tx: &Sender<Reply>) {
 pub struct UiState {
     pub last_frame_ms: Arc<std::sync::atomic::AtomicU64>,
     pub messages_quiet: Arc<std::sync::atomic::AtomicBool>,
+    /// "Notifications off" in the notification area icon's menu: no notifications for
+    /// messages and invitations (calls still ring and show).
+    pub muted: Arc<std::sync::atomic::AtomicBool>,
 }
 
 /// A window that drew no frame for this long is taken as not seen (design).
@@ -284,6 +287,11 @@ impl WorkerNotes {
         actions: Vec<(&str, &str)>,
         urgent: bool,
     ) {
+        if !matches!(about, About::Call(_))
+            && self.ui.muted.load(std::sync::atomic::Ordering::Relaxed)
+        {
+            return;
+        }
         let tag = self.next;
         self.next += 1;
         self.notifier.show(Show {
