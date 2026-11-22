@@ -119,9 +119,10 @@ pub fn windows_token_request() -> String {
 }
 
 /// An OAuth access token (UW-02): `access_token` as given (`cwt=…`), its lifetime in seconds.
-#[derive(Clone, PartialEq, Eq)]
+/// A credential: wiped from memory when dropped, not `Clone` (issue #258).
+#[derive(PartialEq, Eq)]
 pub struct Token {
-    pub access_token: String,
+    pub access_token: zeroize::Zeroizing<String>,
     pub expires_in: u64,
 }
 
@@ -133,9 +134,12 @@ impl std::fmt::Debug for Token {
 }
 
 impl Token {
-    /// The value of the `Authorization` header (UW-03).
-    pub fn authorization(&self) -> String {
-        format!("Bearer {}", self.access_token)
+    /// The value of the `Authorization` header (UW-03); wiped when dropped.
+    pub fn authorization(&self) -> zeroize::Zeroizing<String> {
+        let mut h = zeroize::Zeroizing::new(String::with_capacity(7 + self.access_token.len()));
+        h.push_str("Bearer ");
+        h.push_str(&self.access_token);
+        h
     }
 }
 
@@ -146,7 +150,8 @@ pub fn token(body: &[u8]) -> Result<Token, Error> {
         return Err(Error::BadAnswer("token answer too large"));
     }
     let text = std::str::from_utf8(body).map_err(|_| Error::BadAnswer("token answer not UTF-8"))?;
-    let fields = flat_json(text).ok_or(Error::BadAnswer("token answer not a flat JSON object"))?;
+    let mut fields =
+        flat_json(text).ok_or(Error::BadAnswer("token answer not a flat JSON object"))?;
     let get = |k: &str| fields.iter().find(|(n, _)| n == k).map(|(_, v)| v.as_str());
     if !get("token_type").is_some_and(|t| t.eq_ignore_ascii_case("bearer")) {
         return Err(Error::BadAnswer("token type"));
@@ -158,14 +163,17 @@ pub fn token(body: &[u8]) -> Result<Token, Error> {
                 && t.bytes()
                     .all(|b| b.is_ascii_graphic() && b != b'"' && b != b'\\')
         })
-        .ok_or(Error::BadAnswer("access token"))?
-        .to_string();
+        .map(|t| zeroize::Zeroizing::new(t.to_string()));
     let expires_in = get("expires_in")
         .and_then(|v| v.parse::<u64>().ok())
         .unwrap_or(3600)
         .min(86_400);
+    // The parsed copies of the answer's values (the token among them) are wiped too.
+    for (_, v) in fields.iter_mut() {
+        zeroize::Zeroize::zeroize(v);
+    }
     Ok(Token {
-        access_token,
+        access_token: access_token.ok_or(Error::BadAnswer("access token"))?,
         expires_in,
     })
 }

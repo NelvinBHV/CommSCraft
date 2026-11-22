@@ -978,7 +978,11 @@ fn spawn_camera(
                     crate::video_window::SELF_VIEW_WIDTH,
                     crate::video_window::SELF_VIEW_HEIGHT,
                 ) {
-                    let _ = events.send(FromVideo::SelfFrame(id, w, h, rgba));
+                    if crate::backlog::FRAMES.enter()
+                        && events.send(FromVideo::SelfFrame(id, w, h, rgba)).is_err()
+                    {
+                        crate::backlog::FRAMES.leave();
+                    }
                 }
             }
             // A key frame asked for: on the next picture of every stream.

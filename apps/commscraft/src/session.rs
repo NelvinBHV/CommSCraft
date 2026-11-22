@@ -1222,12 +1222,14 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
             outputs.extend(s.media_event(m, out));
         }
         while let Ok(v) = video_rx.try_recv() {
+            frame_taken(&v);
             outputs.extend(s.video_event(v, out));
         }
         while let Ok(r) = rdp_rx.try_recv() {
             outputs.extend(s.rdp_event(r, out));
         }
         while let Ok(c) = content_rx.try_recv() {
+            meeting_content::taken(&c);
             s.content_event(c, out);
         }
         // The photo thread's NTLM steps, with the signed-in registrar.
@@ -3610,6 +3612,16 @@ impl Session {
             _ => {}
         }
         None
+    }
+}
+
+/// A decoded picture taken from the queue gives its place back (issue #253).
+fn frame_taken(v: &video_call::FromVideo) {
+    if matches!(
+        v,
+        video_call::FromVideo::Frame(..) | video_call::FromVideo::SelfFrame(..)
+    ) {
+        commscraft_client::backlog::FRAMES.leave();
     }
 }
 

@@ -43,6 +43,53 @@ pub fn spawn(
     ContentHandle { tx }
 }
 
+/// Bounds on what is kept of a meeting's content (issue #254): server events with ever new
+/// IDs cannot grow the state without limit; past a bound, new entries are not kept (shown by
+/// their number only). Design values: a meeting has at most 1000 users in its roster (the
+/// conference roster's bound) and far fewer than 256 contents.
+const MAX_USERS: usize = 1000;
+const MAX_CONTENTS: usize = 256;
+/// Longest name or title kept, in characters.
+const MAX_TEXT: usize = 512;
+/// A poll has seven places ([MS-PSOM] poll content).
+const MAX_CHOICES: usize = 7;
+
+/// Inserts into a bounded map: an existing key is updated, a new one only below `max`.
+fn put<V>(map: &mut BTreeMap<i64, V>, key: i64, value: V, max: usize) {
+    if map.len() < max || map.contains_key(&key) {
+        map.insert(key, value);
+    }
+}
+
+fn short(s: String) -> String {
+    if s.chars().count() > MAX_TEXT {
+        s.chars().take(MAX_TEXT).collect()
+    } else {
+        s
+    }
+}
+
+/// Most events taken from one read of the network (16 KiB): room for these, and their lines,
+/// is needed before reading (issue #253).
+const MAX_EVENTS_PER_READ: usize = 1024;
+
+/// Sends a content event or line counted in [`crate::backlog::CONTENT`]; the consumer gives
+/// the place back with [`taken`].
+fn send_counted(out: &Sender<FromContent>, item: FromContent) {
+    // Room was checked before the read; a full count still sends (never drop content).
+    let counted = crate::backlog::CONTENT.enter();
+    if out.send(item).is_err() && counted {
+        crate::backlog::CONTENT.leave();
+    }
+}
+
+/// The consumer took a content event or line from the queue: gives its place back.
+pub fn taken(item: &FromContent) {
+    if matches!(item, FromContent::Event(..) | FromContent::Line(..)) {
+        crate::backlog::CONTENT.leave();
+    }
+}
+
 /// What the terminal shows of each content.
 #[derive(Default)]
 struct Shown {
@@ -74,7 +121,7 @@ impl Shown {
             Event::UsersAdded(users) => {
                 for (id, uri, name) in users {
                     let shown = if name.is_empty() { uri } else { name };
-                    self.users.insert(id, shown);
+                    put(&mut self.users, id, short(shown), MAX_USERS);
                 }
                 return None;
             }
@@ -86,7 +133,7 @@ impl Shown {
             }
             Event::ContentAdded { content, kind } => {
                 let what = kind.trim_start_matches("Content.").to_string();
-                self.kinds.insert(content, kind);
+                put(&mut self.kinds, content, short(kind), MAX_CONTENTS);
                 format!("content {content} added: {what}")
             }
             Event::ContentRemoved(content) => {
@@ -97,7 +144,12 @@ impl Shown {
                 line
             }
             Event::Title { content, title } => {
-                self.titles.insert(content, title.clone());
+                put(
+                    &mut self.titles,
+                    content,
+                    short(title.clone()),
+                    MAX_CONTENTS,
+                );
                 format!("content {content} is \"{title}\"")
             }
             Event::ActiveContent(0) => "nothing is presented".into(),
@@ -124,7 +176,8 @@ impl Shown {
                     .filter(|(_, c)| !c.is_empty())
                     .map(|(i, c)| format!("{i}) {c}"))
                     .collect();
-                self.choices.insert(content, choices);
+                let kept: Vec<String> = choices.into_iter().take(MAX_CHOICES).map(short).collect();
+                put(&mut self.choices, content, kept, MAX_CONTENTS);
                 format!(
                     "poll {content}: {question} – {} – /vote {content} N",
                     list.join("  ")
@@ -221,6 +274,7 @@ fn run(
     stream.send(&first).map_err(|e| format!("{e:?}"))?;
     let mut shown = Shown::default();
     let mut buf = vec![0u8; 16 * 1024];
+    let mut waited_ms = 0u64;
     loop {
         match rx.try_recv() {
             Ok(ToContent::Vote { content, choice }) => {
@@ -238,6 +292,16 @@ fn run(
             }
             Err(TryRecvError::Empty) => {}
         }
+        // Backpressure (issue #253): no more reading while the session loop is behind.
+        if !crate::backlog::CONTENT.room_for(MAX_EVENTS_PER_READ) {
+            if waited_ms >= crate::backlog::CONTENT_WAIT_MS {
+                return Err("meeting content events were not taken".into());
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+            waited_ms += 20;
+            continue;
+        }
+        waited_ms = 0;
         let n = stream.recv(&mut buf).map_err(|e| format!("{e:?}"))?;
         let now = now_ms(start);
         if n == Some(0) {
@@ -250,9 +314,10 @@ fn run(
                 .map_err(|e| format!("protocol error ({e:?})"))?;
             let closed = events.iter().any(|e| matches!(e, Event::Closed(_)));
             for e in events {
-                let _ = out.send(FromContent::Event(conversation, Box::new(e.clone())));
+                // Counted (issue #253); places are checked before reading, so this fits.
+                send_counted(out, FromContent::Event(conversation, Box::new(e.clone())));
                 if let Some(line) = shown.line(e) {
-                    let _ = out.send(FromContent::Line(conversation, line));
+                    send_counted(out, FromContent::Line(conversation, line));
                 }
             }
             if closed {
@@ -317,5 +382,23 @@ mod tests {
             .unwrap(),
             "7 \"Lunch\": 4 annotations"
         );
+    }
+}
+
+#[cfg(test)]
+mod bound_tests {
+    use super::*;
+
+    /// Issue #254: ever new IDs do not grow the state past its bounds; known IDs still update.
+    #[test]
+    fn content_state_is_bounded() {
+        let mut m = BTreeMap::new();
+        for i in 0..2000 {
+            put(&mut m, i, i, MAX_USERS);
+        }
+        assert_eq!(m.len(), MAX_USERS);
+        put(&mut m, 5, -5, MAX_USERS);
+        assert_eq!(m.get(&5), Some(&-5));
+        assert_eq!(short("x".repeat(5000)).chars().count(), MAX_TEXT);
     }
 }

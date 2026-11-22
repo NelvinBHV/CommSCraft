@@ -644,3 +644,16 @@ fn formatted_messages_keep_their_runs() {
     assert!(m.runs[0].bold);
     assert_eq!(m.runs[1].text, " normal", "control characters removed");
 }
+
+/// Issue #252: distribution groups in alphabetical order, regardless of case and accents.
+#[test]
+fn distribution_groups_are_sorted() {
+    let mut s = AppState::default();
+    s.apply(AppEvent::DistributionGroups(vec![
+        ("Vertrieb".into(), "vertrieb@beispiel.invalid".into()),
+        ("ärzte".into(), "aerzte@beispiel.invalid".into()),
+        ("Buchhaltung".into(), "buch@beispiel.invalid".into()),
+    ]));
+    let names: Vec<&str> = s.distribution.iter().map(|g| g.name.as_str()).collect();
+    assert_eq!(names, vec!["ärzte", "Buchhaltung", "Vertrieb"]);
+}
