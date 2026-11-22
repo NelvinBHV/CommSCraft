@@ -482,6 +482,8 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
             })
             .cloned()
         {
+            // The participants take the pane at the left, as in the Windows client.
+            side_panel(app, ui, pal, key, &c);
             egui::CentralPanel::default()
                 .frame(Frame::new().fill(STAGE).inner_margin(Margin::same(10)))
                 .show(ui, |ui| stage(app, ui, pal, &call, &c.title));
@@ -489,6 +491,15 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
         }
     }
     if let Some(call) = active {
+        // The left pane shows the participants or the IM (one at a time, as in the Windows
+        // client).
+        if app.participants_open.contains(&key) {
+            side_panel(app, ui, pal, key, &c);
+            egui::CentralPanel::default()
+                .frame(Frame::new().fill(STAGE).inner_margin(Margin::same(10)))
+                .show(ui, |ui| stage(app, ui, pal, &call, &c.title));
+            return;
+        }
         side_panel(app, ui, pal, key, &c);
         let width = IM_PANE_WIDTH.min(ui.available_width() * 0.5);
         egui::Panel::left(("conv-im", key.0))
@@ -712,8 +723,9 @@ fn sharing_banner(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c
 fn side_panel(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &Conversation) {
     let t = app.t;
     if app.participants_open.contains(&key) || c.content.is_some() {
-        egui::Panel::right(("conv-side", key.0))
-            .default_size(230.0)
+        egui::Panel::left(("conv-side", key.0))
+            .resizable(true)
+            .default_size(260.0)
             .frame(
                 Frame::new()
                     .fill(pal.surface)
@@ -722,11 +734,31 @@ fn side_panel(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &C
             .show(ui, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     if app.participants_open.contains(&key) {
-                        ui.label(
-                            RichText::new(t.participants)
-                                .family(theme::bold())
-                                .color(pal.ink),
-                        );
+                        // As in the Windows client: "PARTICIPANTS" with a close button.
+                        ui.horizontal(|ui| {
+                            ui.label(
+                                RichText::new(t.participants.to_uppercase())
+                                    .family(theme::bold())
+                                    .size(theme::text::SMALL)
+                                    .color(pal.muted),
+                            );
+                            ui.add_space((ui.available_width() - 22.0).max(0.0));
+                            if icons::button(
+                                ui,
+                                Icon::Close,
+                                t.close,
+                                20.0,
+                                false,
+                                true,
+                                pal.muted,
+                                pal.primary,
+                            )
+                            .on_hover_text(t.close)
+                            .clicked()
+                            {
+                                app.participants_open.remove(&key);
+                            }
+                        });
                         if c.participants.is_empty() {
                             let who = c
                                 .peer
@@ -811,6 +843,18 @@ fn side_panel(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &C
                             for p in members {
                                 participant_row(app, ui, pal, key, p, presenter && p.uri != me);
                             }
+                        }
+                        ui.add_space(10.0);
+                        // "Invite more people", as at the bottom of the Windows client's list.
+                        let gate = app.state.capabilities.group_chat.clone();
+                        if ui
+                            .add_enabled(gate.usable(), egui::Button::new(t.invite_more))
+                            .clicked()
+                        {
+                            app.new_chat = Some(crate::app::NewChat {
+                                text: String::new(),
+                                purpose: crate::app::AddressFor::Invite(key),
+                            });
                         }
                         ui.add_space(10.0);
                     }

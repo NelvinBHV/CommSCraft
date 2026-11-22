@@ -525,6 +525,7 @@ texts! {
     conversation_heading: "UNTERHALTUNG", "CONVERSATION";
     notices_title: "Hinweise", "Notices";
     add_video: "Video hinzufügen", "Add video";
+    invite_more: "Weitere Personen einladen", "Invite more people";
     no_notices: "Keine Hinweise", "No notices";
     call_controls: "Anrufsteuerung", "Call controls";
     transfer_to_person: "An eine Person …", "To a person …";
