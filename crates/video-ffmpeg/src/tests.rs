@@ -593,3 +593,18 @@ fn screen_frame_to_i420() {
     assert!(p.data[0] > 230, "white luma: {}", p.data[0]);
     assert!(c.convert(w, h, stride, Rgb4::Bgrx, &data[..100]).is_err());
 }
+
+/// A YUYV camera frame from PipeWire (camera portal, issue #257) becomes I420 of the size asked.
+#[test]
+fn camera_yuyv_frame_to_i420() {
+    init().unwrap();
+    let (w, h) = (64u32, 48u32);
+    let stride = w * 2;
+    let data: Vec<u8> = (0..stride * h)
+        .map(|i| if i % 2 == 0 { 200 } else { 128 })
+        .collect();
+    let mut c = RgbConverter::new((32, 24)).unwrap();
+    let p = c.convert(w, h, stride, Rgb4::Yuyv, &data).unwrap();
+    assert_eq!((p.width, p.height), (32, 24));
+    assert!(c.convert(63, h, stride, Rgb4::Yuyv, &data).is_err());
+}

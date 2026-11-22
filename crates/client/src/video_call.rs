@@ -820,9 +820,79 @@ fn has_parameter_sets(au: &[u8]) -> bool {
 
 /// Whether the camera can be opened now (it is closed again at once).
 fn camera_available(device: &str) -> bool {
+    if portal_wanted(device) {
+        return commscraft_screen_capture::camera_present();
+    }
     vf::init()
         .and_then(|()| vf::Camera::open(device, WIDTH, HEIGHT, FPS))
         .is_ok()
+        || commscraft_screen_capture::camera_present()
+}
+
+/// Inside the Flatpak sandbox (it has no `/dev/video*`, issue #257).
+fn sandboxed() -> bool {
+    std::path::Path::new("/.flatpak-info").exists()
+}
+
+/// The camera through the desktop's Camera portal: in the sandbox, or when chosen.
+fn portal_wanted(device: &str) -> bool {
+    sandboxed() || device == "portal"
+}
+
+/// The camera: V4L2 directly, or the Camera portal over PipeWire (the Flatpak, issue #257).
+/// Both deliver I420 pictures of [`WIDTH`] × [`HEIGHT`].
+enum CameraSource {
+    V4l2(vf::Camera),
+    Portal(commscraft_screen_capture::Capture, vf::RgbConverter),
+}
+
+impl CameraSource {
+    /// Opens the camera: the portal when wanted, else V4L2 and the portal if that fails.
+    fn open(device: &str) -> Result<CameraSource, String> {
+        let portal = || {
+            let c = commscraft_screen_capture::start_camera_portal(WIDTH, HEIGHT, FPS)
+                .map_err(|e| e.to_string())?;
+            let conv = vf::RgbConverter::new((WIDTH, HEIGHT)).map_err(|e| format!("{e:?}"))?;
+            Ok(CameraSource::Portal(c, conv))
+        };
+        if portal_wanted(device) {
+            return portal();
+        }
+        match vf::Camera::open(device, WIDTH, HEIGHT, FPS) {
+            Ok(c) => Ok(CameraSource::V4l2(c)),
+            Err(e) => portal().map_err(|p: String| format!("{e:?}; camera portal: {p}")),
+        }
+    }
+
+    /// The next picture (blocks until the camera delivers one, at most two seconds through the
+    /// portal).
+    fn next_picture(&mut self) -> Result<vf::Picture, String> {
+        match self {
+            CameraSource::V4l2(c) => c.next_picture().map_err(|e| format!("{e:?}")),
+            CameraSource::Portal(c, conv) => {
+                let f = c
+                    .frames
+                    .recv_timeout(Duration::from_secs(2))
+                    .map_err(|_| "no picture from the camera portal".to_string())?;
+                let layout = match f.pixels {
+                    commscraft_screen_capture::Pixels::Yuy2 => vf::Rgb4::Yuyv,
+                    commscraft_screen_capture::Pixels::Bgrx => vf::Rgb4::Bgrx,
+                    commscraft_screen_capture::Pixels::Rgbx => vf::Rgb4::Rgbx,
+                    commscraft_screen_capture::Pixels::Bgra => vf::Rgb4::Bgra,
+                    commscraft_screen_capture::Pixels::Rgba => vf::Rgb4::Rgba,
+                };
+                conv.convert(f.width, f.height, f.stride, layout, &f.data)
+                    .map_err(|e| format!("{e:?}"))
+            }
+        }
+    }
+
+    fn kind(&self) -> &'static str {
+        match self {
+            CameraSource::V4l2(_) => "V4L2",
+            CameraSource::Portal(..) => "camera portal",
+        }
+    }
 }
 
 /// One simulcast stream of the camera thread: its encoder, scaler and frame rate clock.
@@ -877,24 +947,25 @@ fn spawn_camera(
             }
             t
         };
-        let setup = vf::init().and_then(|()| {
-            let cam = vf::Camera::open(&device, WIDTH, HEIGHT, FPS)?;
+        let setup = vf::init().map_err(|e| format!("{e:?}")).and_then(|()| {
+            let cam = CameraSource::open(&device)?;
             // What is asked for already (a request may come before the camera is open).
             let first = wanted_now().first().copied().unwrap_or(START);
-            let enc = encoder_for(first, hardware_allowed())?;
+            let enc = encoder_for(first, hardware_allowed()).map_err(|e| format!("{e:?}"))?;
             Ok((cam, enc, first))
         });
         let (mut cam, enc, first) = match setup {
             Ok(x) => x,
             Err(e) => {
-                let _ = events.send(FromVideo::Notice(id, format!("no camera picture: {e:?}")));
+                let _ = events.send(FromVideo::Notice(id, format!("no camera picture: {e}")));
                 return;
             }
         };
         let _ = events.send(FromVideo::Notice(
             id,
             format!(
-                "camera on, encoding on the {}",
+                "camera on ({}), encoding on the {}",
+                cam.kind(),
                 match enc.backend() {
                     vf::Backend::Vaapi => "GPU (VA-API)",
                     vf::Backend::Software => "CPU (libx264)",
@@ -964,8 +1035,7 @@ fn spawn_camera(
                 Err(e) => {
                     camera_errors += 1;
                     if camera_gone(camera_errors) {
-                        let _ =
-                            events.send(FromVideo::Notice(id, format!("camera stopped: {e:?}")));
+                        let _ = events.send(FromVideo::Notice(id, format!("camera stopped: {e}")));
                         return;
                     }
                     continue;
@@ -1129,6 +1199,7 @@ fn spawn_screen(
                 commscraft_screen_capture::Pixels::Rgbx => vf::Rgb4::Rgbx,
                 commscraft_screen_capture::Pixels::Bgra => vf::Rgb4::Bgra,
                 commscraft_screen_capture::Pixels::Rgba => vf::Rgb4::Rgba,
+                commscraft_screen_capture::Pixels::Yuy2 => vf::Rgb4::Yuyv,
             };
             let Ok(picture) = conv.convert(f.width, f.height, f.stride, layout, &f.data) else {
                 continue;
