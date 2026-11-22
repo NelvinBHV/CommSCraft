@@ -12,12 +12,9 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::time::Duration;
 
-/// `$XDG_CONFIG_HOME/commscraft` or `~/.config/commscraft`.
+/// `$XDG_CONFIG_HOME/CommSCraft` or `~/.config/CommSCraft` (`xdg`).
 pub fn config_dir() -> Option<PathBuf> {
-    std::env::var_os("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))
-        .map(|b| b.join("commscraft"))
+    crate::xdg::dir(crate::xdg::Kind::Config)
 }
 
 fn private_dir(dir: &std::path::Path) -> Result<(), String> {
@@ -57,7 +54,7 @@ pub fn load_or_create_epid(rng: &mut OsRandom) -> Result<String, String> {
 
 /// Server domains the user trusts for one SIP account (like `TrustModelData` of the Windows
 /// client, Microsoft KB 2531068): given ones and those remembered for this account in
-/// `~/.config/commscraft/trusted-domains.d/ACCOUNT` (issue #208: a yes given for one account
+/// `~/.config/CommSCraft/trusted-domains.d/ACCOUNT` (issue #208: a yes given for one account
 /// never applies to another; the earlier user-wide `trusted-domains` file is not read).
 #[derive(Clone)]
 pub struct Trust {

@@ -20,3 +20,4 @@ pub mod tlsdsk;
 pub mod ucwa;
 pub mod video_call;
 pub mod video_window;
+pub mod xdg;

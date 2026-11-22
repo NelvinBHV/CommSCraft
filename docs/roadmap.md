@@ -1,6 +1,6 @@
 # CommSCraft roadmap: milestones and what's next
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (spell checking)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (files under CommSCraft/ in the XDG folders)
 
 Forward-looking plan. The summary is [`ROADMAP.md`](../ROADMAP.md); the ranked work list is
 [`gaps.md`](gaps.md); the function list is in [`target-app-parity.md`](target-app-parity.md).

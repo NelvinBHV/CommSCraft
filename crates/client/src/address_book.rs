@@ -42,7 +42,7 @@ fn abs_file(
 
 /// Where the newest full address book file of a service is kept: the user's cache directory,
 /// one directory per signed-in account and one file per service URL
-/// (`$XDG_CACHE_HOME/commscraft/abs/ACCOUNT/HOST_PATH.lsabs`, directories 0700, names encoded
+/// (`$XDG_CACHE_HOME/CommSCraft/abs/ACCOUNT/HOST_PATH.lsabs`, directories 0700, names encoded
 /// one-to-one by [`cache_name`]). Issues #124, #129: two accounts of the same Unix user never
 /// share a cached directory. Files of the earlier layouts (one per host for every account; a
 /// lossy account name) are removed.
@@ -52,11 +52,7 @@ pub fn abs_cache_path(
 ) -> Option<PathBuf> {
     use std::os::unix::fs::DirBuilderExt;
     let (dir, file) = abs_cache_names(account, base)?;
-    let root = std::env::var_os("XDG_CACHE_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache")))?
-        .join("commscraft")
-        .join("abs");
+    let root = crate::xdg::dir(crate::xdg::Kind::Cache)?.join("abs");
     let _ = std::fs::remove_file(root.join(format!("{}.lsabs", base.host)));
     let legacy = legacy_cache_name(account.trim_start_matches("sip:"));
     if legacy != dir && legacy.contains('@') && !legacy.starts_with('.') {
