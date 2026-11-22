@@ -5,8 +5,10 @@
 //! "AppIndicator and KStatusNotifierItem Support". Without a host there is no icon and closing
 //! the window quits as before.
 //!
-//! The menu: open CommSCraft, the own status, notifications off, quit. The icon is the brand
-//! icon with a dot in the colour of the own status.
+//! The menu: open CommSCraft, the own status, notifications off, quit. The icon is the owner's
+//! tray icon (`assets/branding/tray`), symbolic so the host colours it for its panel; the own
+//! status is an overlay dot where the host shows overlays (the tool tip names it everywhere).
+//! Hosts that cannot read the icon file get the brand icon with the dot as pixmaps.
 //!
 //! Security by design: the item is registered with the connection's unique name (no
 //! well-known name to own, so the Flatpak needs only `--talk-name=org.kde.StatusNotifierWatcher`);
@@ -26,6 +28,21 @@ const ITEM_PATH: &str = "/StatusNotifierItem";
 const MENU_PATH: &str = "/MenuBar";
 const WATCHER: &str = "org.kde.StatusNotifierWatcher";
 const WATCHER_PATH: &str = "/StatusNotifierWatcher";
+/// The tray icon's name; `-symbolic`: hosts colour it like their panel.
+const ICON_NAME: &str = "commscraft-tray-symbolic";
+const ICON_SVG: &str = include_str!("../../../assets/branding/tray/CommSCraft-tray-symbolic.svg");
+
+/// Writes the tray icon to `$XDG_DATA_HOME/CommSCraft/tray` (where the host, outside a sandbox
+/// too, can read it) and gives that folder as the icon theme path; `None` if it cannot.
+fn icon_dir() -> Option<String> {
+    let dir = commscraft_client::xdg::dir(commscraft_client::xdg::Kind::Data)?.join("tray");
+    std::fs::create_dir_all(&dir).ok()?;
+    let file = dir.join(format!("{ICON_NAME}.svg"));
+    if std::fs::read_to_string(&file).ok().as_deref() != Some(ICON_SVG) {
+        std::fs::write(&file, ICON_SVG).ok()?;
+    }
+    dir.to_str().map(str::to_string)
+}
 
 /// What the user chose in the icon's menu (or by clicking the icon).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -149,6 +166,25 @@ fn pixmaps(base: &Icon, presence: Option<Presence>) -> Vec<(i32, i32, Vec<u8>)> 
         .collect()
 }
 
+/// The status dot alone, on a transparent square (the overlay hosts draw over the icon).
+fn dots(p: Presence) -> Vec<Pixmap> {
+    [16u32, 22, 32]
+        .iter()
+        .filter_map(|&size| {
+            let mut rgba = vec![0u8; (size * size * 4) as usize];
+            dot(&mut rgba, size, dot_colour(p), p == Presence::DoNotDisturb);
+            let argb: Vec<u8> = rgba
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .flat_map(|&[r, g, b, a]| [a, r, g, b])
+                .collect();
+            let s = i32::try_from(size).ok()?;
+            Some((s, s, argb))
+        })
+        .collect()
+}
+
 /// Box-filtered downscale of the square brand icon to `size` × `size`.
 fn scale(base: &Icon, size: u32) -> Option<Vec<u8>> {
     if base.w == 0 || base.h == 0 || size == 0 || base.rgba.len() != (base.w * base.h * 4) as usize
@@ -229,6 +265,10 @@ type ToolTip = (String, Vec<Pixmap>, String, String);
 
 struct Item {
     icon: Vec<(i32, i32, Vec<u8>)>,
+    /// The status dot alone (overlay).
+    overlay: Vec<Pixmap>,
+    /// The folder holding the tray icon; empty: pixmaps only.
+    theme_path: String,
     tip: String,
     events: Sender<TrayEvent>,
 }
@@ -257,7 +297,11 @@ impl Item {
     }
     #[zbus(property)]
     fn icon_name(&self) -> &str {
-        ""
+        if self.theme_path.is_empty() {
+            ""
+        } else {
+            ICON_NAME
+        }
     }
     #[zbus(property)]
     fn icon_pixmap(&self) -> Vec<(i32, i32, Vec<u8>)> {
@@ -273,7 +317,11 @@ impl Item {
     }
     #[zbus(property)]
     fn icon_theme_path(&self) -> &str {
-        ""
+        &self.theme_path
+    }
+    #[zbus(property)]
+    fn overlay_icon_pixmap(&self) -> Vec<Pixmap> {
+        self.overlay.clone()
     }
     #[zbus(property)]
     fn tool_tip(&self) -> ToolTip {
@@ -307,6 +355,8 @@ impl Item {
     async fn new_icon(e: &SignalEmitter<'_>) -> zbus::Result<()>;
     #[zbus(signal)]
     async fn new_tool_tip(e: &SignalEmitter<'_>) -> zbus::Result<()>;
+    #[zbus(signal)]
+    async fn new_overlay_icon(e: &SignalEmitter<'_>) -> zbus::Result<()>;
 }
 
 /// Menu item IDs (fixed; nothing else is acted on).
@@ -491,6 +541,8 @@ async fn register(
             .map(|b| pixmaps(b, presence))
             .unwrap_or_default(),
         tip: shown.status_text.clone(),
+        overlay: presence.map(dots).unwrap_or_default(),
+        theme_path: icon_dir().unwrap_or_default(),
         events: events.clone(),
     };
     let menu = Menu {
@@ -547,9 +599,15 @@ async fn update(conn: &zbus::Connection, s: Shown, base: Option<&Icon>) {
             i.icon = base
                 .map(|b| pixmaps(b, s.signed_in.then_some(s.presence)))
                 .unwrap_or_default();
+            i.overlay = if s.signed_in {
+                dots(s.presence)
+            } else {
+                Vec::new()
+            };
             i.tip = s.status_text.clone();
         }
         let _ = Item::new_icon(item.signal_emitter()).await;
+        let _ = Item::new_overlay_icon(item.signal_emitter()).await;
         let _ = Item::new_tool_tip(item.signal_emitter()).await;
     }
     if let Ok(menu) = server.interface::<_, Menu>(MENU_PATH).await {
@@ -612,6 +670,19 @@ mod tests {
         let state = busy.1.get("toggle-state").unwrap();
         assert_eq!(i32::try_from(state).unwrap(), 1);
         assert_eq!(e.len(), 12);
+    }
+
+    #[test]
+    fn the_tray_icon_is_symbolic_and_the_dot_overlay_has_the_status_colour() {
+        assert!(ICON_SVG.contains("fill=\"currentColor\""));
+        assert!(ICON_NAME.ends_with("-symbolic"));
+        let d = dots(Presence::Busy);
+        assert_eq!(d.len(), 3);
+        let (_, _, px) = &d[1];
+        // Upper left transparent, lower right the red dot.
+        assert_eq!(px[0], 0);
+        let c = ((22 - 5) * 22 + (22 - 5)) * 4;
+        assert_eq!(&px[c..c + 4], &[255, 0xc4, 0x31, 0x4b]);
     }
 
     #[test]
