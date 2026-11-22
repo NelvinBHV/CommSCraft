@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (coloured emoticons)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** patch (emoticons in own messages, tab list)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-22 | Emoticon fix: in own (right-aligned) messages the words came in reverse order around the pictures, and the conversation tabs showed the codes; both fixed. Version 0.90.15-alpha. |
 | 2026-11-22 | Coloured emoticons as in the Windows client: the picker has the Windows client's 106 emoticons in its order with the text codes it sends (captured in the lab), ten in a row; messages and conversation previews show them as coloured pictures (Noto Color Emoji, 72 px, OFL-1.1, fetched at a pinned commit by `scripts/fetch_noto_emoticons.py`), the emoji character where a picture is missing; common spellings such as `:-)` are understood. Version 0.90.14-alpha. |
 | 2026-11-22 | Visual parity, call stage: participants (round button and "2 Teilnehmer") at the top left, state and length with an add-people button at the right, the name under the picture; at the bottom the chat button at the left, video, microphone, present and hang up in the middle (adding video to an audio call is shown unavailable, it is not built), call controls and more at the right. The participants list sits at the left as in the Windows client (in a call it takes the place of the IM) with "PARTICIPANTS", a close button and "invite more people". The more menu gains manage recordings (opens the recordings folder), IM text size, change font and help. Version 0.90.13-alpha. |
 | 2026-11-22 | Visual parity, conversation window: the head with a presence dot, the name, the status, the participants as a link and a round add-people button (a 1:1 conversation becomes a group with both, as in the Windows client); the composer without a box, its symbols at the right with a round blue send button; the bottom bar with outlined round buttons at the sides (participants, more) and the filled blue video, call and present buttons in the middle. Version 0.90.12-alpha. |

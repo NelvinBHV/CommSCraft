@@ -321,11 +321,12 @@ fn tab_list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, convs: &[ConvKey], cu
                     },
                 );
                 if !preview.is_empty() {
-                    widgets::ellipsis(
+                    crate::views::chats::emoticon_line(
+                        app,
                         ui,
-                        RichText::new(&preview)
-                            .size(theme::text::SMALL)
-                            .color(pal.muted),
+                        &preview,
+                        theme::text::SMALL,
+                        pal.muted,
                     );
                 }
             });
