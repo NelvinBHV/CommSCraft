@@ -57,6 +57,9 @@ functions, 38 are implemented and tested offline as a whole, 9 in parts, 0 not s
 Requirements: Rust (stable) and the ALSA development files (`libasound2-dev` / `alsa-lib`).
 The Flatpak takes the camera through the desktop's Camera portal: PipeWire needs camera
 support (standard in most distributions; on Gentoo `media-video/pipewire[v4l]`).
+The notification area icon needs a StatusNotifierItem host: built into KDE Plasma, Xfce,
+Cinnamon, MATE, Budgie, LXQt and waybar; on GNOME the extension “AppIndicator and
+KStatusNotifierItem Support”.
 
 ```
 cargo build --release
@@ -93,7 +96,7 @@ bundled Lucide subset. Screens and the capability gates are described in
 |---|---|
 | [`ROADMAP.md`](ROADMAP.md) | Stage, headline numbers, progress log |
 | [`docs/roadmap.md`](docs/roadmap.md) | Milestones, current focus, alpha gate |
-| [`docs/releases.md`](docs/releases.md) | Releases: version from the measured feature parity with the Windows client (now 90 %, version 0.90.5-alpha), Flatpak bundle and how to install it |
+| [`docs/releases.md`](docs/releases.md) | Releases: version from the measured feature parity with the Windows client (now 90 %, version 0.90.6-alpha), Flatpak bundle and how to install it |
 | [`docs/gaps.md`](docs/gaps.md) | Ranked list of everything missing or unresolved |
 | [`docs/interop-tests.md`](docs/interop-tests.md) | Test cases only the owner runs against a real server, each with a default |
 | [`docs/security.md`](docs/security.md) | Security by design: threat model and the rules every crate follows |

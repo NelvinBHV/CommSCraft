@@ -1,8 +1,8 @@
 //! Desktop notifications over the session bus: the Desktop Notifications Specification 1.2
 //! (`org.freedesktop.Notifications`: `Notify`, `CloseNotification`, the signals `ActionInvoked`
 //! and `NotificationClosed`) – the standard notification service of Linux desktops, which a
-//! Flatpak reaches with `--talk-name=org.freedesktop.Notifications`. In place of a notification
-//! area icon (the GNOME desktops in use have no StatusNotifierItem host).
+//! Flatpak reaches with `--talk-name=org.freedesktop.Notifications`. Next to the notification
+//! area icon (`tray`).
 //!
 //! Security by design: two threads of their own; only the title, a short text and fixed action
 //! IDs leave the process (the text is the start of the newest message, as the toast of the
