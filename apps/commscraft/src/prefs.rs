@@ -38,6 +38,12 @@ fn valid_device(name: &str) -> bool {
         .is_ok()
 }
 
+/// A group name or contact-list key as stored in the order and collapsed lines: printable, one
+/// line, no tab (the separator of `contact_order`).
+fn valid_name(v: &str) -> bool {
+    !v.is_empty() && v.len() <= 300 && v.chars().all(|c| !c.is_control())
+}
+
 /// Longest idle limit in minutes (design).
 pub const MAX_IDLE_MINUTES: u32 = 360;
 
@@ -63,6 +69,35 @@ pub fn parse(text: &str) -> Prefs {
             "sort_by_availability" => p.sort_by_availability = v == "true",
             "away_group" => p.away_group = v == "true",
             "close_to_tray" => p.close_to_tray = v != "false",
+            // The contact list's own order and collapsed sections (issue #243), bounded.
+            "collapsed"
+                if valid_name(v) && p.collapsed.len() < commscraft_ui::order::MAX_GROUPS =>
+            {
+                p.collapsed.insert(v.to_string());
+            }
+            "group_order"
+                if valid_name(v)
+                    && p.group_order.len() < commscraft_ui::order::MAX_GROUPS
+                    && !p.group_order.iter().any(|g| g == v) =>
+            {
+                p.group_order.push(v.to_string());
+            }
+            "contact_order" => {
+                let total: usize = p.contact_order.values().map(Vec::len).sum();
+                if let Some((group, uri)) = v.split_once('\t') {
+                    if valid_name(group)
+                        && commscraft_ui::normalise_address(uri).as_deref() == Some(uri)
+                        && total < commscraft_ui::order::MAX_CONTACTS
+                        && (p.contact_order.contains_key(group)
+                            || p.contact_order.len() < commscraft_ui::order::MAX_GROUPS)
+                    {
+                        let list = p.contact_order.entry(group.to_string()).or_default();
+                        if !list.iter().any(|u| u == uri) {
+                            list.push(uri.to_string());
+                        }
+                    }
+                }
+            }
             "favorites_group" => p.favorites_group = v != "false",
             "meeting_audio_ask" => p.meeting_audio_ask = v != "false",
             "call_me_number"
@@ -180,6 +215,19 @@ pub fn format(p: &Prefs) -> String {
         ("always_close_all_tabs", p.always_close_all_tabs),
     ] {
         out.push_str(&format!("{k}={v}\n"));
+    }
+    for c in p.collapsed.iter().filter(|c| valid_name(c)) {
+        out.push_str(&format!("collapsed={c}\n"));
+    }
+    for g in p.group_order.iter().filter(|g| valid_name(g)) {
+        out.push_str(&format!("group_order={g}\n"));
+    }
+    for (group, uris) in p.contact_order.iter().filter(|(g, _)| valid_name(g)) {
+        for u in uris {
+            if commscraft_ui::normalise_address(u).as_deref() == Some(u.as_str()) {
+                out.push_str(&format!("contact_order={group}\t{u}\n"));
+            }
+        }
     }
     out.push_str(&format!("chat_text_size={}\n", p.chat_text_size));
     out.push_str(&format!(
@@ -343,5 +391,36 @@ mod tests {
         assert!(odd.favorites.is_empty());
         assert_eq!(odd.scale, 1.0);
         assert!(!odd.high_contrast);
+    }
+}
+
+#[cfg(test)]
+mod order_tests {
+    use super::*;
+
+    /// Issue #243: the contact list's order and collapsed sections survive a restart; hostile
+    /// lines are skipped.
+    #[test]
+    fn the_contact_list_order_round_trips() {
+        let mut p = Prefs::default();
+        p.collapsed.insert("Kunden".into());
+        p.collapsed.insert("dg:team@beispiel.invalid".into());
+        p.group_order = vec!["Team".into(), "Kunden".into()];
+        p.contact_order.insert(
+            "Team".into(),
+            vec![
+                "sip:b@beispiel.invalid".into(),
+                "sip:a@beispiel.invalid".into(),
+            ],
+        );
+        let back = parse(&format(&p));
+        assert_eq!(back.collapsed, p.collapsed);
+        assert_eq!(back.group_order, p.group_order);
+        assert_eq!(back.contact_order, p.contact_order);
+        let hostile =
+            parse("contact_order=Team\tnot-an-address\ncollapsed=\ngroup_order=x\u{7}y\n");
+        assert!(hostile.contact_order.is_empty());
+        assert!(hostile.collapsed.is_empty());
+        assert!(hostile.group_order.is_empty());
     }
 }

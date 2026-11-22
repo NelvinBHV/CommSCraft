@@ -1448,3 +1448,57 @@ fn an_old_notice_leaves_the_footer() {
     h.run();
     assert!(h.query_by_label_contains("fresh notice").is_some());
 }
+
+/// Issue #243: a group's open or closed state is a preference (kept across restarts), and the
+/// user's order of groups and contacts decides the list.
+#[test]
+fn the_contact_list_keeps_collapsed_groups_and_the_users_order() {
+    let mut ui = online();
+    ui.state
+        .apply(AppEvent::Groups(vec!["Alpha".into(), "Beta".into()]));
+    let mk = |uri: &str, name: &str, group: &str| {
+        let mut c = commscraft_ui::model::Contact::new(
+            uri,
+            name,
+            commscraft_ui::model::Source::ContactList,
+        );
+        c.group = group.into();
+        c
+    };
+    ui.state.apply(AppEvent::Contacts(vec![
+        mk("sip:anna@beispiel.invalid", "Anna", "Alpha"),
+        mk("sip:bert@beispiel.invalid", "Bert", "Alpha"),
+        mk("sip:cora@beispiel.invalid", "Cora", "Beta"),
+    ]));
+    // Beta before Alpha, Bert before Anna (dragged earlier).
+    ui.prefs.group_order = vec!["Beta".into(), "Alpha".into()];
+    ui.prefs.contact_order.insert(
+        "Alpha".into(),
+        vec![
+            "sip:bert@beispiel.invalid".into(),
+            "sip:anna@beispiel.invalid".into(),
+        ],
+    );
+    let mut h = harness(ui, BIG);
+    h.run();
+    let y = |h: &egui_kittest::Harness<'_, State>, l: &str| {
+        h.query_all_by_label_contains(l)
+            .map(|n| n.rect().top())
+            .fold(f32::MAX, f32::min)
+    };
+    assert!(y(&h, "BETA") < y(&h, "ALPHA"));
+    assert!(y(&h, "Bert") < y(&h, "Anna"));
+    // Closing a group is kept in the preferences and saved.
+    h.query_all_by_label_contains("ALPHA")
+        .next()
+        .unwrap()
+        .click();
+    h.run();
+    assert!(h.state().ui.prefs.collapsed.contains("Alpha"));
+    assert!(h
+        .state()
+        .intents
+        .iter()
+        .any(|i| matches!(i, UiIntent::PrefsChanged)));
+    assert_eq!(h.query_all_by_label_contains("Anna").count(), 0);
+}

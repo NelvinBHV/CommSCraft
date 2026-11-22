@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (call window fixes, no call rating prompt)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (contact list order and collapsed groups)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-22 | Contact list (#243): groups and the contacts of a group can be dragged into the user's own order; a contact dragged onto another group moves there (on the server, as with the menu); open and closed groups and the order are kept across restarts in the local preferences, and new contacts or groups come after the ordered ones. Version 0.90.10-alpha. |
 | 2026-11-22 | Call window fixes (owner's review): the window really grows by the IM pane (the size is taken from the window's drawing area; egui gave none for these windows), closing a call's window ends the call as in the Windows client, the call rating prompt after calls is gone, and the “not signed in” in the footer below “signed in” is gone: the own message style, sent at start, was refused before the sign-in; it is now kept as a local setting, and the footer shows a notice for a minute only. Version 0.90.9-alpha. |
 | 2026-11-22 | Call windows as in the Windows client: in a call (audio, video, sharing) the IM is a resizable pane left of the stage with its heading and a close button, hidden at first unless the conversation already has messages; the stage's chat button shows or hides it (the IM was below the stage before). Composer symbols from Lucide (attach, formatting, emoticons, send) with names as tool tips, close buttons with Lucide's x. The notification area shows the owner's tray icon (fox with headset, `assets/branding/tray`), symbolic so the panel colours it; the own status as a coloured overlay dot where the host draws overlays, named in the tool tip everywhere. Version 0.90.8-alpha. |
 | 2026-11-22 | Sharing the own screen from the desktop client (`tested-in-lab` with the desktop's real dialog): Present → share my screen or a window in a 1:1 conversation; the call shows “You are presenting” with stop presenting. A still screen's last picture is sent again after a second or when a key frame is asked for (the desktop sends pictures only on change, so a viewer joining after the first key frame saw nothing). Version 0.90.7-alpha. |

@@ -625,9 +625,19 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     .cmp(&(b == &other))
                     .then_with(|| crate::format::sort_key(a).cmp(&crate::format::sort_key(b)))
             });
+            // The user's own order (dragged, issue #243) before the alphabetical one.
+            crate::order::apply(&mut named, &app.prefs.group_order, |(n, _)| n.as_str());
             out.extend(named);
             if app.prefs.away_group {
                 out.push((t.status_away_offline.to_string(), absent));
+            }
+            // The contacts in the user's own order (sorting by status leaves it to the status).
+            if !app.prefs.sort_by_availability {
+                for (name, members) in &mut out {
+                    if let Some(order) = app.prefs.contact_order.get(name.as_str()) {
+                        crate::order::apply(members, order, |c| c.uri.as_str());
+                    }
+                }
             }
             out
         }
@@ -677,9 +687,20 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             if all.is_empty() && app.state.distribution.is_empty() {
                 ui.label(RichText::new(t.no_contacts).color(pal.muted));
             }
+            // Groups and contacts can be dragged in the group view (issue #243): a group before
+            // another, a contact before another of its group, or onto another group (moved
+            // there on the server, as in the Windows client).
+            let grouped = app.contacts_view == ContactsView::Groups;
+            let fixed = [t.favorites.to_string(), t.status_away_offline.to_string()];
+            let shown_groups: Vec<String> = groups
+                .iter()
+                .map(|(n, _)| n.clone())
+                .filter(|n| !fixed.contains(n))
+                .collect();
             for (name, members) in groups {
-                let open = !app.collapsed.contains(&name);
+                let open = !app.prefs.collapsed.contains(&name);
                 let head = format!("{} ({})", name.to_uppercase(), members.len());
+                let movable = grouped && !fixed.contains(&name);
                 let header = ui
                     .horizontal(|ui| {
                         let (rect, _) = ui.allocate_exact_size(Vec2::splat(12.0), Sense::hover());
@@ -699,23 +720,124 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                                     .size(theme::text::SMALL)
                                     .color(pal.muted),
                             )
-                            .frame(false),
+                            .frame(false)
+                            .sense(if movable {
+                                Sense::click_and_drag()
+                            } else {
+                                Sense::click()
+                            }),
                         )
                     })
                     .inner;
                 if header.clicked() {
                     if open {
-                        app.collapsed.insert(name.clone());
+                        app.prefs.collapsed.insert(name.clone());
                     } else {
-                        app.collapsed.remove(&name);
+                        app.prefs.collapsed.remove(&name);
+                    }
+                    app.emit(UiIntent::PrefsChanged);
+                }
+                if movable && header.drag_started() {
+                    header.dnd_set_drag_payload(Dragged::Group(name.clone()));
+                }
+                if grouped && header.dnd_hover_payload::<Dragged>().is_some() {
+                    drop_line(ui, header.rect, pal);
+                }
+                if let Some(d) = header.dnd_release_payload::<Dragged>() {
+                    match &*d {
+                        Dragged::Group(g) if movable && *g != name => {
+                            app.prefs.group_order = crate::order::moved(
+                                &app.prefs.group_order,
+                                &shown_groups,
+                                g,
+                                Some(&name),
+                                crate::order::MAX_GROUPS,
+                            );
+                            app.emit(UiIntent::PrefsChanged);
+                        }
+                        Dragged::Contact { uri, group }
+                            if *group != name && app.state.groups.contains(&name) =>
+                        {
+                            app.emit(UiIntent::MoveContact {
+                                uri: uri.clone(),
+                                group: name.clone(),
+                            });
+                        }
+                        // Onto its own group's heading: to the top of the group.
+                        Dragged::Contact { uri, group } if *group == name => {
+                            let uris: Vec<String> = members.iter().map(|c| c.uri.clone()).collect();
+                            let old = app
+                                .prefs
+                                .contact_order
+                                .get(&name)
+                                .cloned()
+                                .unwrap_or_default();
+                            let first = uris.first().cloned();
+                            let new = crate::order::moved(
+                                &old,
+                                &uris,
+                                uri,
+                                first.as_deref(),
+                                crate::order::MAX_CONTACTS,
+                            );
+                            app.prefs.contact_order.insert(name.clone(), new);
+                            app.emit(UiIntent::PrefsChanged);
+                        }
+                        _ => {}
                     }
                 }
                 if app.state.groups.contains(&name) {
                     group_menu(app, &header, &name, members.is_empty());
                 }
                 if open {
+                    let uris: Vec<String> = members.iter().map(|c| c.uri.clone()).collect();
                     for c in members {
-                        contact_row(app, ui, pal, &c);
+                        let row = contact_row(app, ui, pal, &c);
+                        if !grouped {
+                            continue;
+                        }
+                        if row.drag_started() {
+                            row.dnd_set_drag_payload(Dragged::Contact {
+                                uri: c.uri.clone(),
+                                group: name.clone(),
+                            });
+                        }
+                        if row.dnd_hover_payload::<Dragged>().is_some() {
+                            drop_line(ui, row.rect, pal);
+                        }
+                        let Some(d) = row.dnd_release_payload::<Dragged>() else {
+                            continue;
+                        };
+                        match &*d {
+                            Dragged::Contact { uri, group } if *group == name && *uri != c.uri => {
+                                let old = app
+                                    .prefs
+                                    .contact_order
+                                    .get(&name)
+                                    .cloned()
+                                    .unwrap_or_default();
+                                let total: usize = app
+                                    .prefs
+                                    .contact_order
+                                    .iter()
+                                    .filter(|(g, _)| **g != name)
+                                    .map(|(_, v)| v.len())
+                                    .sum();
+                                let room = crate::order::MAX_CONTACTS.saturating_sub(total);
+                                let new = crate::order::moved(&old, &uris, uri, Some(&c.uri), room);
+                                app.prefs.contact_order.insert(name.clone(), new);
+                                app.emit(UiIntent::PrefsChanged);
+                            }
+                            Dragged::Contact { uri, group }
+                                if *group != name && app.state.groups.contains(&name) =>
+                            {
+                                app.emit(UiIntent::MoveContact {
+                                    uri: uri.clone(),
+                                    group: name.clone(),
+                                });
+                            }
+                            _ => {}
+                        }
                     }
                 }
                 ui.add_space(4.0);
@@ -740,11 +862,12 @@ pub fn contact_row_of(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, uri: &str) 
     }
 }
 
-fn contact_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, c: &Contact) {
+fn contact_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, c: &Contact) -> egui::Response {
     let t = app.t;
     let two_lines = !app.prefs.compact_contacts;
     let h = if two_lines { 48.0 } else { 28.0 };
-    let (rect, resp) = ui.allocate_exact_size(Vec2::new(ui.available_width(), h), Sense::click());
+    let (rect, resp) =
+        ui.allocate_exact_size(Vec2::new(ui.available_width(), h), Sense::click_and_drag());
     if resp.hovered() {
         ui.painter().rect_filled(rect, 4.0, pal.surface_subtle);
     }
@@ -781,6 +904,22 @@ fn contact_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, c: &Contact) {
         app.chat_with(&c.uri);
     }
     resp.context_menu(|ui| contact_menu(app, ui, &c.uri));
+    resp
+}
+
+/// What is dragged in the contact list (issue #243).
+#[derive(Clone, Debug)]
+enum Dragged {
+    Group(String),
+    Contact { uri: String, group: String },
+}
+
+/// A thin line where a dragged entry would go (above `rect`).
+fn drop_line(ui: &Ui, rect: egui::Rect, pal: &Palette) {
+    ui.painter().line_segment(
+        [rect.left_top(), rect.right_top()],
+        egui::Stroke::new(2.0, pal.primary),
+    );
 }
 
 /// The distribution groups of the contact list; a group's members are asked for from the
@@ -789,7 +928,7 @@ fn dist_groups(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     let t = app.t;
     for g in app.state.distribution.clone() {
         let key = format!("dg:{}", g.email);
-        let open = !app.collapsed.contains(&key);
+        let open = !app.prefs.collapsed.contains(&key);
         let count = g
             .members
             .as_ref()
@@ -824,10 +963,11 @@ fn dist_groups(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             .inner;
         if clicked {
             if open {
-                app.collapsed.insert(key.clone());
+                app.prefs.collapsed.insert(key.clone());
             } else {
-                app.collapsed.remove(&key);
+                app.prefs.collapsed.remove(&key);
             }
+            app.emit(UiIntent::PrefsChanged);
         }
         if open {
             if g.members.is_none()
