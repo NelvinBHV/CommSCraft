@@ -1901,6 +1901,10 @@ impl AppState {
                         }
                     })
                     .collect();
+                // Alphabetically like the contacts (issue #252), regardless of case and accents.
+                self.distribution.sort_by(|a, b| {
+                    crate::format::sort_key(&a.name).cmp(&crate::format::sort_key(&b.name))
+                });
             }
             AppEvent::Groups(list) => {
                 self.groups = list.iter().take(200).map(|g| label(g)).collect();

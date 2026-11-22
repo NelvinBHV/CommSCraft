@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (sharing the own screen, CLI)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (Flatpak: camera through the portal, GPU only; native components checked)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,8 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-22 | Flatpak hardening: the camera through the desktop's Camera portal and PipeWire (`screen-capture`, uncompressed YUYV, memory or memfd buffers), so the Flatpak keeps only the GPU (`--device=dri` instead of all devices, #257; `tested-in-lab`: a video call with the portal camera shown by the Windows client); outside the Flatpak V4L2 with the portal as fallback. MIT Kerberos 1.22.3 (was 1.22), a weekly check against upstream releases and `components.txt` per release with the runtime and FFmpeg builds (#256). Version 0.90.5-alpha. |
+| 2026-11-22 | Hardening from the issues: UCWA access tokens wiped from memory and not copied (#258); the meeting content state bounded (#254); the queues between worker threads and the session bounded for pictures and meeting content (#253); distribution groups sorted alphabetically like the contacts (#252). Version 0.90.4-alpha. |
 | 2026-11-22 | Sharing the own screen 1:1 (`tested-in-lab`): `commscraft-cli /share sip:URI` asks the desktop's ScreenCast portal for a screen or window (its own dialog), reads the PipeWire stream (`screen-capture`, pipewire-rs, no unsafe in the crate), encodes H.264 at the source's aspect inside what the viewer asks for (at most 1920×1080, 15 fps) and offers it as video-based screen sharing like the Windows client; the Windows client accepted and showed it. Desktop client and meetings follow. Version 0.90.3-alpha. |
 | 2026-11-22 | Files in the XDG folders under `CommSCraft/` (owner's rule): configuration in `$XDG_CONFIG_HOME/CommSCraft`, caches in `$XDG_CACHE_HOME/CommSCraft`, data in `$XDG_DATA_HOME/CommSCraft`, recordings in the videos folder's `CommSCraft/`; a folder `commscraft` of earlier versions is renamed once. Version 0.90.2-alpha. |
 | 2026-11-22 | Spell checking in the composer (`tested-offline`): misspelled words are underlined, the word being typed is left alone, a right click offers suggestions (swapped letters first); Hunspell dictionaries read with zspell (pure Rust) from the XDG data directories in the background, the Flatpak brings de_DE and en_US. Version 0.90.1-alpha. |

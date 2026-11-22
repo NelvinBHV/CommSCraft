@@ -289,13 +289,20 @@ fn run(
     .map_err(e)?;
     let _listener = stream
         .add_local_listener_with_user_data(Negotiated::default())
-        .param_changed(|_, n, id, param| {
+        .param_changed(|stream, n, id, param| {
             let Some(param) = param else { return };
             if id != spa::param::ParamType::Format.as_raw() {
                 return;
             }
             if n.info.parse(param).is_ok() {
                 n.pixels = pixels_of(n.info.format());
+                // Buffers we can map (memory or memfd): a camera node otherwise offers DMA-BUFs
+                // we do not import, and the buffer negotiation fails.
+                if let Some(b) = buffers_pod() {
+                    if let Some(pod) = spa::pod::Pod::from_bytes(&b) {
+                        let _ = stream.update_params(&mut [pod]);
+                    }
+                }
             }
         })
         .process(move |stream, n| {
@@ -456,6 +463,34 @@ fn camera_pod(width: u32, height: u32, fps: u32) -> Option<Vec<u8>> {
     .map(|(c, _)| c.into_inner())
 }
 
+/// The buffer types taken: plain memory or memfd, both mapped by PipeWire (MAP_BUFFERS).
+fn buffers_pod() -> Option<Vec<u8>> {
+    use spa::pod::{ChoiceValue, Object, Property, PropertyFlags, Value};
+    use spa::utils::{Choice, ChoiceEnum, ChoiceFlags};
+    let mask = (1i32 << spa::sys::SPA_DATA_MemPtr) | (1i32 << spa::sys::SPA_DATA_MemFd);
+    let obj = Object {
+        type_: spa::utils::SpaTypes::ObjectParamBuffers.as_raw(),
+        id: spa::param::ParamType::Buffers.as_raw(),
+        properties: vec![Property {
+            key: spa::sys::SPA_PARAM_BUFFERS_dataType,
+            flags: PropertyFlags::empty(),
+            value: Value::Choice(ChoiceValue::Int(Choice(
+                ChoiceFlags::empty(),
+                ChoiceEnum::Flags {
+                    default: mask,
+                    flags: vec![mask],
+                },
+            ))),
+        }],
+    };
+    spa::pod::serialize::PodSerializer::serialize(
+        std::io::Cursor::new(Vec::new()),
+        &Value::Object(obj),
+    )
+    .ok()
+    .map(|(c, _)| c.into_inner())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -464,6 +499,7 @@ mod tests {
     fn format_pods_serialize() {
         assert!(format_pod().is_some_and(|p| !p.is_empty()));
         assert!(camera_pod(640, 360, 15).is_some_and(|p| !p.is_empty()));
+        assert!(buffers_pod().is_some_and(|p| !p.is_empty()));
         assert_eq!(Pixels::Yuy2.bytes(), 2);
         assert_eq!(Pixels::Bgrx.bytes(), 4);
     }

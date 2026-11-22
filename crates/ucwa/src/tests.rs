@@ -35,13 +35,16 @@ fn token_answer() {
         br#"{"access_token":"cwt=2YotnFZFEjr1zCsicMWpAA","token_type":"Bearer","expires_in":3600}"#,
     )
     .unwrap();
-    assert_eq!(t.authorization(), "Bearer cwt=2YotnFZFEjr1zCsicMWpAA");
+    assert_eq!(
+        t.authorization().as_str(),
+        "Bearer cwt=2YotnFZFEjr1zCsicMWpAA"
+    );
     assert_eq!(t.expires_in, 3600);
     // The token is never printed.
     assert!(!format!("{t:?}").contains("cwt"));
     // With the extra member of the example and spaces.
     let t = token(b"{ \"access_token\" : \"cwt=A\\/B\", \"expires_in\": 28799, \"ms_rtc_identityscope\":\"local\", \"token_type\":\"Bearer\" }").unwrap();
-    assert_eq!(t.access_token, "cwt=A/B");
+    assert_eq!(t.access_token.as_str(), "cwt=A/B");
     for bad in [
         &br#"{"access_token":"x","token_type":"MAC"}"#[..],
         br#"{"token_type":"Bearer"}"#,

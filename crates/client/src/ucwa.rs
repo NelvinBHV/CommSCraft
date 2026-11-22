@@ -171,7 +171,7 @@ impl Session {
             body.as_bytes(),
             user_agent,
             TIMEOUT,
-            &mut |_, _| Ok(token.authorization()),
+            &mut |_, _| Ok(token.authorization().to_string()),
         )
         .map_err(|e| e.to_string())?;
         if created.status != 201 && created.status != 200 {
@@ -362,7 +362,7 @@ fn bearer_get(
         user_agent,
         TIMEOUT,
         limit,
-        &mut |_, _| Ok(token.authorization()),
+        &mut |_, _| Ok(token.authorization().to_string()),
     )
     .map_err(|e| e.to_string())
 }

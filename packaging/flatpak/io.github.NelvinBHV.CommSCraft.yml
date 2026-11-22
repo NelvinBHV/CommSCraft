@@ -18,8 +18,8 @@ finish-args:
   - --socket=wayland
   - --socket=fallback-x11
   - --socket=pulseaudio
-  # GPU (VA-API) and camera (V4L2).
-  - --device=all
+  # GPU only (VA-API); the camera comes through the Camera portal and PipeWire (issue #257).
+  - --device=dri
   # Keyring (Secret Service), idle time for the status automation.
   - --talk-name=org.freedesktop.secrets
   - --talk-name=org.freedesktop.Notifications

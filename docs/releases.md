@@ -37,5 +37,6 @@ the function table of [`target-app-parity.md`](target-app-parity.md) by
   (Flathub, installed with the app or by `flatpak install flathub org.freedesktop.Platform.ffmpeg-full//25.08`).
 - Install: `flatpak install --user CommSCraft.flatpak` (the runtime from Flathub), start:
   `flatpak run io.github.NelvinBHV.CommSCraft`.
-- Permissions: network, Wayland/X11, PulseAudio, all devices (GPU for VA-API, camera), the keyring
+- Permissions: network, Wayland/X11, PulseAudio, the GPU (VA-API; the camera through the desktop's Camera portal, which
+  needs PipeWire with camera support, e.g. Gentoo `media-video/pipewire[v4l]`), the keyring
   (Secret Service) and the session's idle time.
