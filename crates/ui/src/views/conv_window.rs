@@ -1345,6 +1345,36 @@ fn more_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
             }
         }
     }
+    // As the Windows client's "more" menu: recordings, IM text size, font, help.
+    ui.separator();
+    if ui.button(t.manage_recordings).clicked() {
+        app.emit(UiIntent::OpenRecordings);
+        ui.close();
+    }
+    ui.menu_button(t.im_text_size, |ui| {
+        for (label, size) in [
+            (t.size_small, 13.0),
+            (t.size_medium, 15.0),
+            (t.size_large, 18.0),
+        ] {
+            if ui
+                .radio((app.prefs.chat_text_size - size).abs() < 0.5, label)
+                .clicked()
+            {
+                app.prefs.chat_text_size = size;
+                app.emit(UiIntent::PrefsChanged);
+                ui.close();
+            }
+        }
+    });
+    if ui.button(t.change_font_dots).clicked() {
+        app.open_options(crate::views::options::IM);
+        ui.close();
+    }
+    if ui.button(t.menu_help).clicked() {
+        app.open_window(crate::app::Win::About);
+        ui.close();
+    }
     ui.separator();
     if !c.is_room()
         && matches!(c.state, ConvState::Open | ConvState::Opening)

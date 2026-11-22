@@ -526,6 +526,12 @@ texts! {
     notices_title: "Hinweise", "Notices";
     add_video: "Video hinzufügen", "Add video";
     invite_more: "Weitere Personen einladen", "Invite more people";
+    manage_recordings: "Aufzeichnungen verwalten", "Manage recordings";
+    im_text_size: "Textgröße im Chat", "IM text display size";
+    size_small: "Klein", "Small";
+    size_medium: "Mittel", "Medium";
+    size_large: "Groß", "Large";
+    change_font_dots: "Schriftart ändern …", "Change font …";
     no_notices: "Keine Hinweise", "No notices";
     call_controls: "Anrufsteuerung", "Call controls";
     transfer_to_person: "An eine Person …", "To a person …";
