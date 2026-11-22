@@ -10,45 +10,43 @@ use egui::{Align, CornerRadius, Layout, RichText, Sense, Ui, Vec2};
 
 pub fn list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     let t = app.t;
+    // As in the Windows client: "meet now" at the top, then the days with their meetings; the
+    // own additions (plan, refresh, join by link) stay small on the same row and below.
     ui.horizontal(|ui| {
-        ui.add_space(8.0);
-        ui.vertical(|ui| {
-            ui.label(
-                RichText::new(t.meetings)
-                    .size(theme::text::PANEL_TITLE + 2.0)
-                    .family(crate::theme::bold())
-                    .color(pal.ink),
-            );
-            ui.label(
-                RichText::new(t.meetings_sub)
-                    .size(theme::text::SMALL + 0.5)
-                    .color(pal.muted),
-            );
+        ui.add_space(4.0);
+        let meet = app.state.capabilities.group_chat.clone();
+        let now = ui
+            .add_enabled(
+                meet.usable(),
+                egui::Button::new(RichText::new(t.meet_now).color(pal.primary)).frame(false),
+            )
+            .on_hover_text(t.meet_now);
+        if now.clicked() {
+            app.emit(UiIntent::StartGroup { invite: Vec::new() });
+        }
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            ui.add_space(4.0);
+            let gate = app.state.capabilities.meetings.clone();
+            if let Some(r) = widgets::gated(ui, t.refresh, &gate, t, pal, |ui, l, en| {
+                ui.add_enabled(en, egui::Button::new(l).frame(false))
+            }) {
+                if r.clicked() {
+                    app.emit(UiIntent::RefreshMeetings);
+                }
+            }
+            if let Some(r) = widgets::gated(ui, t.new_meeting_dots, &gate, t, pal, |ui, l, en| {
+                ui.add_enabled(en, egui::Button::new(l).frame(false))
+            }) {
+                if r.clicked() {
+                    app.meeting_dialog = Some(MeetingDialog {
+                        change: None,
+                        subject: String::new(),
+                        minutes: 60,
+                        access: MeetingAccess::Organisation,
+                    });
+                }
+            }
         });
-    });
-    ui.horizontal(|ui| {
-        ui.add_space(8.0);
-        let gate = app.state.capabilities.meetings.clone();
-        if let Some(r) = widgets::gated(ui, t.refresh, &gate, t, pal, |ui, l, en| {
-            ui.add_enabled(en, egui::Button::new(l))
-        }) {
-            if r.clicked() {
-                app.emit(UiIntent::RefreshMeetings);
-            }
-        }
-        // Plan a meeting (meet now is in the main window's menu).
-        if let Some(r) = widgets::gated(ui, t.new_meeting_dots, &gate, t, pal, |ui, l, en| {
-            ui.add_enabled(en, egui::Button::new(l))
-        }) {
-            if r.clicked() {
-                app.meeting_dialog = Some(MeetingDialog {
-                    change: None,
-                    subject: String::new(),
-                    minutes: 60,
-                    access: MeetingAccess::Organisation,
-                });
-            }
-        }
     });
     // Join by a meeting link (https, from an invitation mail or calendar entry).
     ui.horizontal(|ui| {

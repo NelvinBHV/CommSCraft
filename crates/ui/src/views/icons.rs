@@ -25,28 +25,28 @@ pub fn install(defs: &mut FontDefinitions) {
 /// The Lucide glyph of an icon (codepoints of lucide-static 1.70.0 `font/codepoints.json`).
 fn lucide(icon: Icon) -> char {
     let cp = match icon {
-        Icon::Person => 0xe19f,       // user
-        Icon::Clock => 0xe087,        // clock
-        Icon::Calendar => 0xe063,     // calendar
-        Icon::Gear => 0xe154,         // settings
-        Icon::Chat => 0xe117,         // message-square
-        Icon::Camera => 0xe1a5,       // video
-        Icon::Phone => 0xe133,        // phone
-        Icon::Screen => 0xe11d,       // monitor
-        Icon::People => 0xe1a4,       // users
-        Icon::More => 0xe0b6,         // ellipsis
-        Icon::Search => 0xe151,       // search
-        Icon::AddPerson => 0xe1a2,    // user-plus
-        Icon::ChevronDown => 0xe06d,  // chevron-down
-        Icon::ChevronRight => 0xe06f, // chevron-right
-        Icon::Speaker => 0xe1ab,      // volume-2
-        Icon::Mic => 0xe118,          // mic
-        Icon::HangUp => 0xe138,       // phone-off
-        Icon::Paperclip => 0xe12d,    // paperclip
-        Icon::Smile => 0xe164,        // smile
-        Icon::Send => 0xe152,         // send
-        Icon::Type => 0xe198,         // type
-        Icon::Close => 0xe1b2,        // x
+        Icon::Person => 0xe19f,      // user
+        Icon::Clock => 0xe087,       // clock
+        Icon::Calendar => 0xe063,    // calendar
+        Icon::Gear => 0xe154,        // settings
+        Icon::Chat => 0xe117,        // message-square
+        Icon::Camera => 0xe1a5,      // video
+        Icon::Phone => 0xe133,       // phone
+        Icon::Screen => 0xe11d,      // monitor
+        Icon::People => 0xe1a4,      // users
+        Icon::More => 0xe0b6,        // ellipsis
+        Icon::Search => 0xe151,      // search
+        Icon::AddPerson => 0xe1a2,   // user-plus
+        Icon::ChevronDown => 0xe06d, // chevron-down
+        Icon::Speaker => 0xe1ab,     // volume-2
+        Icon::Mic => 0xe118,         // mic
+        Icon::HangUp => 0xe138,      // phone-off
+        Icon::Paperclip => 0xe12d,   // paperclip
+        Icon::Smile => 0xe164,       // smile
+        Icon::Send => 0xe152,        // send
+        Icon::Type => 0xe198,        // type
+        Icon::Close => 0xe1b2,       // x
+        Icon::Warning => 0xe193,     // triangle-alert
     };
     char::from_u32(cp).unwrap_or('?')
 }
@@ -74,7 +74,6 @@ pub enum Icon {
     Search,
     AddPerson,
     ChevronDown,
-    ChevronRight,
     Speaker,
     /// A microphone (struck through when muted is drawn by the caller).
     Mic,
@@ -90,6 +89,8 @@ pub enum Icon {
     Type,
     /// Close a pane.
     Close,
+    /// Warnings (the main window's footer).
+    Warning,
 }
 
 /// Draws an icon into `rect` (square-ish): the Lucide glyph, or the own line drawing when the
@@ -225,12 +226,6 @@ fn draw_lines(p: &Painter, rect: Rect, icon: Icon, colour: Color32) {
                 PathStroke::new(1.8, colour),
             ));
         }
-        Icon::ChevronRight => {
-            p.add(egui::Shape::line(
-                vec![at(-0.2, -0.5), at(0.3, 0.0), at(-0.2, 0.5)],
-                PathStroke::new(1.8, colour),
-            ));
-        }
         Icon::Speaker => {
             p.add(egui::Shape::closed_line(
                 vec![
@@ -280,6 +275,14 @@ fn draw_lines(p: &Painter, rect: Rect, icon: Icon, colour: Color32) {
         Icon::Close => {
             p.line_segment([at(-0.55, -0.55), at(0.55, 0.55)], s);
             p.line_segment([at(0.55, -0.55), at(-0.55, 0.55)], s);
+        }
+        Icon::Warning => {
+            p.add(egui::Shape::closed_line(
+                vec![at(0.0, -0.75), at(0.8, 0.65), at(-0.8, 0.65)],
+                s,
+            ));
+            p.line_segment([at(0.0, -0.25), at(0.0, 0.2)], s);
+            p.circle_filled(at(0.0, 0.42), r * 0.07, colour);
         }
     }
 }

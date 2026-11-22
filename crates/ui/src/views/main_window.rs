@@ -22,17 +22,30 @@ pub const CHOOSABLE: [Presence; 7] = [
 
 pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     footer(app, ui, pal);
+    // As in the Windows client: the personal note on a coloured band at the top, the own
+    // picture, name, status below it, the tabs on a white row with the chosen one as a tile.
+    egui::Panel::top("main-note")
+        .frame(
+            Frame::new()
+                .fill(pal.primary)
+                .inner_margin(Margin::symmetric(12, 10)),
+        )
+        .show(ui, |ui| note_band(app, ui, pal));
     egui::Panel::top("main-head")
         .frame(
             Frame::new()
                 .fill(pal.surface_subtle)
-                .inner_margin(Margin::same(10)),
+                .inner_margin(Margin::symmetric(10, 8)),
         )
-        .show(ui, |ui| {
-            header(app, ui, pal);
-            ui.add_space(6.0);
-            tabs(app, ui, pal);
-        });
+        .show(ui, |ui| header(app, ui, pal));
+    egui::Panel::top("main-tabs")
+        .frame(
+            Frame::new()
+                .fill(pal.surface)
+                .inner_margin(Margin::symmetric(0, 0))
+                .stroke(Stroke::new(1.0, pal.border)),
+        )
+        .show(ui, |ui| tabs(app, ui, pal));
     alert(app, ui, pal);
     egui::CentralPanel::default()
         .frame(
@@ -48,9 +61,10 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         });
 }
 
-fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+/// The personal note on the coloured band: published when the field is left; a note set
+/// elsewhere comes into the field.
+fn note_band(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     let t = app.t;
-    let online = app.state.connection.is_online() || app.demo;
     // The personal note: published when the field is left or Enter is pressed; a note set
     // elsewhere (another endpoint, the last session) comes into the field.
     if app.state.me.note != app.seen_note {
@@ -60,7 +74,8 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     }
     ui.horizontal(|ui| {
         let edit = egui::TextEdit::singleline(&mut app.note)
-            .hint_text(t.note_hint)
+            .hint_text(RichText::new(t.note_hint).color(pal.on_primary.gamma_multiply(0.8)))
+            .text_color(pal.on_primary)
             .char_limit(512)
             .frame(Frame::NONE)
             .desired_width(ui.available_width());
@@ -72,9 +87,12 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             app.published_note = app.note.clone();
             app.emit(UiIntent::SetNote(app.note.trim().to_string()));
         }
-        let _ = online;
     });
-    ui.add_space(4.0);
+}
+
+fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    let online = app.state.connection.is_online() || app.demo;
     ui.horizontal(|ui| {
         let name = if app.state.me.name.is_empty() {
             app.state.me.uri.trim_start_matches("sip:").to_string()
@@ -87,15 +105,14 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             ui,
             Some(me.as_str()),
             &name,
-            52.0,
+            44.0,
             online.then_some(presence),
             pal,
         );
         ui.vertical(|ui| {
             ui.label(
                 RichText::new(&name)
-                    .size(theme::text::NAME + 2.0)
-                    .family(theme::bold())
+                    .size(theme::text::NAME + 1.0)
                     .color(pal.ink),
             );
             let r = icons::menu_text(
@@ -105,11 +122,15 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             );
             let r = r.on_hover_text(t.change_status);
             egui::Popup::menu(&r).show(|ui| status_menu(app, ui));
-            ui.label(
-                RichText::new(t.connection_short(&app.state.connection, app.demo))
-                    .size(theme::text::SMALL)
-                    .color(pal.muted),
-            );
+            // The connection only while it is not simply signed in (the Windows client shows
+            // the location here; problems go to the footer's warnings).
+            if app.demo || !matches!(app.state.connection, Connection::Connected) {
+                ui.label(
+                    RichText::new(t.connection_short(&app.state.connection, app.demo))
+                        .size(theme::text::SMALL)
+                        .color(pal.muted),
+                );
+            }
         });
     });
 }
@@ -180,16 +201,19 @@ fn tabs(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 app.state.invitations.len(),
             ),
         ] {
-            let r = icons::button(
-                ui,
-                icon,
-                label,
-                44.0,
-                app.tab == tab,
-                true,
-                pal.muted,
-                pal.primary,
-            )
+            let chosen = app.tab == tab;
+            let r = tab_tile(ui, pal, chosen, |ui| {
+                icons::button(
+                    ui,
+                    icon,
+                    label,
+                    44.0,
+                    false,
+                    true,
+                    if chosen { pal.primary } else { pal.muted },
+                    pal.primary,
+                )
+            })
             .on_hover_text(label);
             if badge > 0 {
                 let c = r.rect.right_top() + Vec2::new(-8.0, 8.0);
@@ -209,16 +233,19 @@ fn tabs(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         // Chat rooms: a tab of their own where the server offers persistent chat.
         let rooms = app.state.capabilities.persistent_chat.clone();
         if rooms.usable() {
-            let r = icons::button(
-                ui,
-                Icon::Chat,
-                t.filter_rooms,
-                44.0,
-                app.tab == MainTab::Rooms,
-                true,
-                pal.muted,
-                pal.primary,
-            )
+            let chosen = app.tab == MainTab::Rooms;
+            let r = tab_tile(ui, pal, chosen, |ui| {
+                icons::button(
+                    ui,
+                    Icon::Chat,
+                    t.filter_rooms,
+                    44.0,
+                    false,
+                    true,
+                    if chosen { pal.primary } else { pal.muted },
+                    pal.primary,
+                )
+            })
             .on_hover_text(t.filter_rooms);
             if r.clicked() {
                 app.tab = MainTab::Rooms;
@@ -420,8 +447,35 @@ fn footer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     {
                         app.emit(UiIntent::SignOut);
                     }
-                    // A notice stays a minute (an old one would contradict the state shown
-                    // above, e.g. a refusal from while signing in).
+                    // As in the Windows client: a warnings button at the right that lists the
+                    // recent notices; the newest shows next to it for a minute.
+                    let warn = icons::button(
+                        ui,
+                        Icon::Warning,
+                        t.notices_title,
+                        22.0,
+                        false,
+                        true,
+                        if app.state.notices.is_empty() {
+                            pal.muted
+                        } else {
+                            pal.ink
+                        },
+                        pal.primary,
+                    )
+                    .on_hover_text(t.notices_title);
+                    egui::Popup::menu(&warn).show(|ui| {
+                        if app.state.notices.is_empty() {
+                            ui.label(RichText::new(t.no_notices).color(pal.muted));
+                        }
+                        for n in app.state.notices.iter().rev().take(12) {
+                            ui.label(
+                                RichText::new(&n.text)
+                                    .size(theme::text::SMALL)
+                                    .color(pal.ink),
+                            );
+                        }
+                    });
                     let recent = app
                         .state
                         .notices
@@ -464,19 +518,37 @@ fn search_field(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, hint: &str) {
         });
 }
 
+/// The Windows client's selection mark: a light tile behind the chosen tab, no underline.
+fn tab_tile(
+    ui: &mut Ui,
+    pal: &Palette,
+    chosen: bool,
+    add: impl FnOnce(&mut Ui) -> egui::Response,
+) -> egui::Response {
+    let under = ui.painter().add(egui::Shape::Noop);
+    let r = add(ui);
+    if chosen {
+        let tile = r.rect.expand2(Vec2::new(14.0, 6.0));
+        ui.painter().set(
+            under,
+            egui::Shape::rect_filled(tile, 0.0, pal.surface_subtle),
+        );
+    }
+    r
+}
+
+/// View tabs (GROUPS, STATUS, …): upper-case words, the chosen one on a tile.
 fn sub_tabs<T: Copy + PartialEq>(ui: &mut Ui, pal: &Palette, current: &mut T, items: &[(T, &str)]) {
     ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 14.0;
         for (v, label) in items {
             let selected = *current == *v;
             let text = RichText::new(label.to_uppercase())
                 .size(theme::text::SMALL)
-                .color(if selected { pal.ink } else { pal.muted });
-            let text = if selected {
-                text.family(theme::bold())
-            } else {
-                text
-            };
-            let r = ui.add(egui::Button::selectable(selected, text));
+                .color(pal.ink);
+            let r = tab_tile(ui, pal, selected, |ui| {
+                ui.add(egui::Button::new(text).frame(false))
+            });
             if r.clicked() {
                 *current = *v;
             }
@@ -486,60 +558,10 @@ fn sub_tabs<T: Copy + PartialEq>(ui: &mut Ui, pal: &Palette, current: &mut T, it
 
 fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     let t = app.t;
-    ui.horizontal(|ui| {
-        ui.allocate_ui(Vec2::new(ui.available_width() - 40.0, 30.0), |ui| {
-            search_field(app, ui, pal, t.find_someone);
-        });
-        let can_edit = app.state.capabilities.presence.usable();
-        let add = icons::button(
-            ui,
-            Icon::AddPerson,
-            t.add_contact,
-            30.0,
-            false,
-            can_edit,
-            pal.muted,
-            pal.primary,
-        )
-        .on_hover_text(t.add_contact);
-        // As the Windows client's add menu: someone in the organisation (found through the
-        // search, added from its result), someone outside it (by address), a new group, the
-        // display options of the contact list.
-        egui::Popup::menu(&add).show(|ui| {
-            if ui
-                .add_enabled(can_edit, egui::Button::new(t.add_in_organisation))
-                .clicked()
-            {
-                app.focus_search = true;
-                app.tab = crate::app::MainTab::Contacts;
-                ui.close();
-            }
-            ui.add_enabled_ui(can_edit, |ui| {
-                ui.menu_button(t.add_outside_organisation, |ui| {
-                    if ui.button(t.add_by_address).clicked() {
-                        app.new_chat = Some(crate::app::NewChat {
-                            text: String::new(),
-                            purpose: crate::app::AddressFor::AddContact,
-                        });
-                        ui.close();
-                    }
-                });
-            });
-            if ui
-                .add_enabled(can_edit, egui::Button::new(t.new_group_dots))
-                .clicked()
-            {
-                app.group_dialog = Some((None, String::new()));
-                ui.close();
-            }
-            ui.separator();
-            if ui.button(t.display_options).clicked() {
-                app.options_page = 2;
-                app.open_window(crate::app::Win::Options);
-                ui.close();
-            }
-        });
-    });
+    // As in the Windows client: the search across the whole width, the add button at the right
+    // of the view tabs.
+    search_field(app, ui, pal, t.find_someone);
+    ui.add_space(4.0);
     if !app.search.trim().is_empty() {
         egui::ScrollArea::vertical()
             .id_salt("search")
@@ -548,17 +570,22 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         return;
     }
     let mut view = app.contacts_view;
-    sub_tabs(
-        ui,
-        pal,
-        &mut view,
-        &[
-            (ContactsView::Groups, t.contacts_groups),
-            (ContactsView::Status, t.contacts_status),
-            (ContactsView::Relationships, t.contacts_relationships),
-            (ContactsView::New, t.contacts_new),
-        ],
-    );
+    ui.horizontal(|ui| {
+        sub_tabs(
+            ui,
+            pal,
+            &mut view,
+            &[
+                (ContactsView::Groups, t.contacts_groups),
+                (ContactsView::Status, t.contacts_status),
+                (ContactsView::Relationships, t.contacts_relationships),
+                (ContactsView::New, t.contacts_new),
+            ],
+        );
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            add_contact_button(app, ui, pal);
+        });
+    });
     app.contacts_view = view;
     ui.add_space(4.0);
     let mut all: Vec<Contact> = app.state.contacts.values().cloned().collect();
@@ -704,21 +731,10 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                 let header = ui
                     .horizontal(|ui| {
                         let (rect, _) = ui.allocate_exact_size(Vec2::splat(12.0), Sense::hover());
-                        icons::draw(
-                            ui.painter(),
-                            rect,
-                            if open {
-                                Icon::ChevronDown
-                            } else {
-                                Icon::ChevronRight
-                            },
-                            pal.muted,
-                        );
+                        group_triangle(ui, rect, open, pal);
                         ui.add(
                             egui::Button::new(
-                                RichText::new(head)
-                                    .size(theme::text::SMALL)
-                                    .color(pal.muted),
+                                RichText::new(head).size(theme::text::SMALL).color(pal.ink),
                             )
                             .frame(false)
                             .sense(if movable {
@@ -848,6 +864,62 @@ fn contacts(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         });
 }
 
+/// The add button of the contact list and its menu, as the Windows client's: someone in the
+/// organisation (through the search), someone outside it (by address), a new group, the display
+/// options.
+fn add_contact_button(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    let can_edit = app.state.capabilities.presence.usable();
+    let add = icons::button(
+        ui,
+        Icon::AddPerson,
+        t.add_contact,
+        30.0,
+        false,
+        can_edit,
+        pal.muted,
+        pal.primary,
+    )
+    .on_hover_text(t.add_contact);
+    // As the Windows client's add menu: someone in the organisation (found through the
+    // search, added from its result), someone outside it (by address), a new group, the
+    // display options of the contact list.
+    egui::Popup::menu(&add).show(|ui| {
+        if ui
+            .add_enabled(can_edit, egui::Button::new(t.add_in_organisation))
+            .clicked()
+        {
+            app.focus_search = true;
+            app.tab = crate::app::MainTab::Contacts;
+            ui.close();
+        }
+        ui.add_enabled_ui(can_edit, |ui| {
+            ui.menu_button(t.add_outside_organisation, |ui| {
+                if ui.button(t.add_by_address).clicked() {
+                    app.new_chat = Some(crate::app::NewChat {
+                        text: String::new(),
+                        purpose: crate::app::AddressFor::AddContact,
+                    });
+                    ui.close();
+                }
+            });
+        });
+        if ui
+            .add_enabled(can_edit, egui::Button::new(t.new_group_dots))
+            .clicked()
+        {
+            app.group_dialog = Some((None, String::new()));
+            ui.close();
+        }
+        ui.separator();
+        if ui.button(t.display_options).clicked() {
+            app.options_page = 2;
+            app.open_window(crate::app::Win::Options);
+            ui.close();
+        }
+    });
+}
+
 /// The row of a contact known by address (from the contact list or a search).
 pub fn contact_row_of(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, uri: &str) {
     let c = app.state.contacts.get(uri).cloned().or_else(|| {
@@ -865,7 +937,7 @@ pub fn contact_row_of(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, uri: &str) 
 fn contact_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, c: &Contact) -> egui::Response {
     let t = app.t;
     let two_lines = !app.prefs.compact_contacts;
-    let h = if two_lines { 48.0 } else { 28.0 };
+    let h = if two_lines { 50.0 } else { 28.0 };
     let (rect, resp) =
         ui.allocate_exact_size(Vec2::new(ui.available_width(), h), Sense::click_and_drag());
     if resp.hovered() {
@@ -880,17 +952,24 @@ fn contact_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, c: &Contact) -> eg
         &mut child,
         Some(c.uri.as_str()),
         c.display_name(),
-        if two_lines { 36.0 } else { 20.0 },
+        if two_lines { 40.0 } else { 20.0 },
         Some(c.presence),
         pal,
     );
-    child.vertical(|ui| {
-        widgets::ellipsis(ui, RichText::new(c.display_name()).color(pal.ink));
+    // As in the Windows client: one line, the name followed by " – status – note".
+    child.add_space(6.0);
+    child.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        ui.label(
+            RichText::new(c.display_name())
+                .size(theme::text::NAME)
+                .color(pal.ink),
+        );
         if two_lines {
             let sub = if c.note.is_empty() {
-                t.presence(c.presence).to_string()
+                format!(" – {}", t.presence(c.presence))
             } else {
-                format!("{} – {}", t.presence(c.presence), c.note)
+                format!(" – {} – {}", t.presence(c.presence), c.note)
             };
             widgets::ellipsis(
                 ui,
@@ -905,6 +984,34 @@ fn contact_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, c: &Contact) -> eg
     }
     resp.context_menu(|ui| contact_menu(app, ui, &c.uri));
     resp
+}
+
+/// The open/closed mark of a contact group as in the Windows client: a filled corner
+/// triangle when open, an outlined one pointing right when closed.
+fn group_triangle(ui: &Ui, rect: egui::Rect, open: bool, pal: &Palette) {
+    let c = rect.center();
+    let r = 4.5;
+    let p = ui.painter();
+    if open {
+        p.add(egui::Shape::convex_polygon(
+            vec![
+                c + Vec2::new(r, -r),
+                c + Vec2::new(r, r),
+                c + Vec2::new(-r, r),
+            ],
+            pal.ink,
+            Stroke::NONE,
+        ));
+    } else {
+        p.add(egui::Shape::closed_line(
+            vec![
+                c + Vec2::new(-r * 0.6, -r),
+                c + Vec2::new(r * 0.8, 0.0),
+                c + Vec2::new(-r * 0.6, r),
+            ],
+            Stroke::new(1.2, pal.ink),
+        ));
+    }
 }
 
 /// What is dragged in the contact list (issue #243).
@@ -936,16 +1043,7 @@ fn dist_groups(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         let clicked = ui
             .horizontal(|ui| {
                 let (rect, _) = ui.allocate_exact_size(Vec2::splat(12.0), Sense::hover());
-                icons::draw(
-                    ui.painter(),
-                    rect,
-                    if open {
-                        Icon::ChevronDown
-                    } else {
-                        Icon::ChevronRight
-                    },
-                    pal.muted,
-                );
+                group_triangle(ui, rect, open, pal);
                 let r = ui
                     .add(
                         egui::Button::new(
@@ -1320,7 +1418,7 @@ pub fn contact_menu(app: &mut CommsUi, ui: &mut Ui, uri: &str) {
 
 fn conversations(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
     let t = app.t;
-    search_field(app, ui, pal, t.find_someone);
+    // As in the Windows client: no search here, the view tabs, the list, a link to the history.
     let mut f = app.conv_filter;
     sub_tabs(
         ui,
@@ -1333,7 +1431,7 @@ fn conversations(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         ],
     );
     app.conv_filter = f;
-    let needle = app.search.trim().to_lowercase();
+    let needle = String::new();
     egui::ScrollArea::vertical()
         .id_salt("conversations")
         .auto_shrink([false, false])
@@ -1361,23 +1459,7 @@ fn conversations(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                         continue;
                     }
                     any = true;
-                    let name = app.state.name_of(&r.peer);
-                    let sub = format!(
-                        "{} · {}",
-                        t.call_direction(r.direction),
-                        crate::format::clock(r.at, app.utc_offset)
-                    );
-                    let resp = ui.add(
-                        egui::Button::new(RichText::new(format!("{name}\n{sub}")).color(
-                            if r.direction == CallDirection::Missed {
-                                pal.error
-                            } else {
-                                pal.ink
-                            },
-                        ))
-                        .frame(false),
-                    );
-                    resp.context_menu(|ui| contact_menu(app, ui, &r.peer));
+                    call_row(app, ui, pal, &r);
                 }
             }
             if !any {
@@ -1470,6 +1552,70 @@ pub fn history_reader(app: &mut CommsUi, ctx: &egui::Context) {
     if !keep {
         app.state.history_open = None;
     }
+}
+
+/// A call of the history as a row like a conversation: picture, name (red when missed), the
+/// kind of call and its length, the time at the right; a double click calls back.
+fn call_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, r: &crate::model::CallRecord) {
+    let t = app.t;
+    let name = app.state.name_of(&r.peer);
+    let (rect, resp) =
+        ui.allocate_exact_size(Vec2::new(ui.available_width(), 50.0), Sense::click());
+    if resp.hovered() {
+        ui.painter().rect_filled(rect, 0.0, pal.surface_subtle);
+    }
+    let mut child = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(rect.shrink2(Vec2::new(4.0, 2.0)))
+            .layout(Layout::left_to_right(Align::Center)),
+    );
+    let presence = app.state.contacts.get(&r.peer).map(|k| k.presence);
+    app.avatar(
+        &mut child,
+        Some(r.peer.as_str()),
+        &name,
+        40.0,
+        presence,
+        pal,
+    );
+    child.add_space(6.0);
+    let missed = r.direction == CallDirection::Missed;
+    let time = crate::format::clock(r.at, app.utc_offset);
+    child.with_layout(Layout::right_to_left(Align::Center), |ui| {
+        ui.label(
+            RichText::new(&time)
+                .size(theme::text::SMALL)
+                .color(pal.muted),
+        );
+        ui.with_layout(Layout::top_down(Align::Min), |ui| {
+            ui.add_space(6.0);
+            widgets::ellipsis(
+                ui,
+                RichText::new(&name)
+                    .size(theme::text::NAME)
+                    .color(if missed { pal.error } else { pal.ink }),
+            );
+            let sub = if r.seconds > 0 {
+                format!(
+                    "{} · {}",
+                    t.call_direction(r.direction),
+                    crate::format::duration(r.seconds)
+                )
+            } else {
+                t.call_direction(r.direction).to_string()
+            };
+            widgets::ellipsis(
+                ui,
+                RichText::new(sub).size(theme::text::SMALL).color(pal.muted),
+            );
+        });
+    });
+    let info = format!("{name}, {}, {time}", t.call_direction(r.direction));
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &info));
+    if resp.double_clicked() {
+        app.chat_with(&r.peer);
+    }
+    resp.context_menu(|ui| contact_menu(app, ui, &r.peer));
 }
 
 fn conversation_row(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {

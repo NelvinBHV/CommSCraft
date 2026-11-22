@@ -523,6 +523,8 @@ texts! {
     opt_tabbed: "Reiter-Unterhaltungen aktivieren", "Enable tabbed conversations";
     im_pane: "Chatbereich", "IM pane";
     conversation_heading: "UNTERHALTUNG", "CONVERSATION";
+    notices_title: "Hinweise", "Notices";
+    no_notices: "Keine Hinweise", "No notices";
     call_controls: "Anrufsteuerung", "Call controls";
     transfer_to_person: "An eine Person …", "To a person …";
     transfer_to_call: "Mit Rückfrage an", "Consulted, to";
