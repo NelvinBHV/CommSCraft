@@ -560,16 +560,20 @@ fn conv_bar(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &Con
                 .inner_margin(Margin::symmetric(10, 6)),
         )
         .show(ui, |ui| {
+            // As in the Windows client: outlined round buttons at the sides (participants,
+            // more), the filled blue ones for video, call and present in the middle.
             ui.horizontal(|ui| {
+                let x0 = ui.cursor().min.x;
+                let full = ui.available_width();
                 let open = app.participants_open.contains(&key);
-                if bar_button(
+                if icons::round(
                     ui,
-                    t,
-                    pal,
                     Icon::People,
                     t.participants,
-                    &Gate::Available,
+                    40.0,
+                    pal.primary,
                     open,
+                    true,
                 )
                 .clicked()
                 {
@@ -579,7 +583,6 @@ fn conv_bar(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &Con
                         app.participants_open.insert(key);
                     }
                 }
-                ui.add_space(12.0);
                 // Someone records the meeting ([MS-CONFBAS] client-recording in the roster).
                 let recorders: Vec<String> = c
                     .participants
@@ -588,9 +591,9 @@ fn conv_bar(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &Con
                     .map(|p| p.name.clone())
                     .collect();
                 if !recorders.is_empty() {
+                    ui.add_space(8.0);
                     ui.label(RichText::new(format!("● {}", t.being_recorded)).color(pal.error))
                         .on_hover_text(recorders.join(", "));
-                    ui.add_space(12.0);
                 }
                 let peer = c.peer.clone();
                 // A person: a call; a meeting (group conversation): join its audio or video.
@@ -605,12 +608,6 @@ fn conv_bar(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &Con
                 } else {
                     t.video_call
                 };
-                if bar_button(ui, t, pal, Icon::Camera, vlabel, &video_gate, false).clicked() {
-                    match &peer {
-                        Some(p) => app.call(p, true),
-                        None => app.emit(UiIntent::JoinMeetingVideo { key }),
-                    }
-                }
                 let call_gate = if (peer.is_some() || meeting) && idle {
                     caps.audio_call.clone()
                 } else {
@@ -621,7 +618,47 @@ fn conv_bar(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &Con
                 } else {
                     t.call
                 };
-                if bar_button(ui, t, pal, Icon::Phone, label, &call_gate, false).clicked() {
+                // The three in the middle of the bar.
+                let used = ui.cursor().min.x - x0;
+                let middle = 3.0 * 40.0 + 2.0 * ui.spacing().item_spacing.x;
+                ui.add_space(((full - middle) / 2.0 - used).max(8.0));
+                let reason = |g: &Gate| match g {
+                    Gate::Unavailable(r) => Some(t.reason(*r).to_string()),
+                    _ => None,
+                };
+                let v = icons::round(
+                    ui,
+                    Icon::Camera,
+                    vlabel,
+                    40.0,
+                    pal.primary,
+                    true,
+                    video_gate.usable(),
+                );
+                let v = match reason(&video_gate) {
+                    Some(why) => v.on_disabled_hover_text(why),
+                    None => v,
+                };
+                if v.clicked() {
+                    match &peer {
+                        Some(p) => app.call(p, true),
+                        None => app.emit(UiIntent::JoinMeetingVideo { key }),
+                    }
+                }
+                let a = icons::round(
+                    ui,
+                    Icon::Phone,
+                    label,
+                    40.0,
+                    pal.primary,
+                    true,
+                    call_gate.usable(),
+                );
+                let a = match reason(&call_gate) {
+                    Some(why) => a.on_disabled_hover_text(why),
+                    None => a,
+                };
+                if a.clicked() {
                     match &peer {
                         Some(p) => app.call(p, false),
                         None if app.prefs.meeting_audio_ask => app.meeting_audio = Some(key),
@@ -629,17 +666,17 @@ fn conv_bar(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &Con
                     }
                 }
                 let present =
-                    bar_button(ui, t, pal, Icon::Screen, t.present, &Gate::Available, false);
+                    icons::round(ui, Icon::Screen, t.present, 40.0, pal.primary, true, true);
                 egui::Popup::menu(&present).show(|ui| present_menu(app, ui, key));
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    let more = bar_button(
+                    let more = icons::round(
                         ui,
-                        t,
-                        pal,
                         Icon::More,
                         t.more_options,
-                        &Gate::Available,
+                        40.0,
+                        pal.primary,
                         false,
+                        true,
                     );
                     egui::Popup::menu(&more).show(|ui| more_menu(app, ui, key));
                 });
