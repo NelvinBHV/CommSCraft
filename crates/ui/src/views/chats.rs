@@ -363,7 +363,9 @@ pub(crate) fn emoticon_text(
         ui.add(egui::Label::new(RichText::new(text).size(size).color(colour)).wrap());
         return;
     }
-    ui.horizontal_wrapped(|ui| {
+    // Left to right whatever the bubble's alignment (an own message is right-aligned).
+    let wrap = Layout::left_to_right(Align::Center).with_main_wrap(true);
+    ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), wrap, |ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         for p in pieces {
             match p {
@@ -398,7 +400,7 @@ pub(crate) fn emoticon_line(
         widgets::ellipsis(ui, RichText::new(line).size(size).color(colour));
         return;
     }
-    ui.horizontal(|ui| {
+    ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
         let clip = ui.max_rect();
         ui.set_clip_rect(clip.intersect(ui.clip_rect()));
