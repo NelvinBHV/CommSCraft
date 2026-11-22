@@ -1279,10 +1279,6 @@ impl AppState {
             seconds,
             status,
         };
-        // A connected call (not a meeting's audio) may be rated afterwards.
-        if self.quality_rating && seconds > 0 && c.conference.is_none() {
-            self.rate_call = Some((id, c.peer.clone()));
-        }
         self.calls.retain(|c| c.id != id);
         self.call_history.push_front(record);
         self.call_history.truncate(MAX_CALL_HISTORY);

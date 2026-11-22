@@ -449,16 +449,15 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
         // when it closes (embedded windows keep their size).
         let shown = !app.im_hidden.contains(&key);
         if shown != app.im_widened.contains(&key) && !ui.ctx().embed_viewports() {
-            let inner = ui.ctx().input(|i| i.viewport().inner_rect);
-            if let Some(r) = inner {
-                let w = if shown {
-                    r.width() + IM_PANE_WIDTH
-                } else {
-                    (r.width() - IM_PANE_WIDTH).max(340.0)
-                };
-                ui.ctx()
-                    .send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(w, r.height())));
-            }
+            // The window's own size (egui reports no inner rectangle for these viewports).
+            let r = ui.ctx().content_rect();
+            let w = if shown {
+                r.width() + IM_PANE_WIDTH
+            } else {
+                (r.width() - IM_PANE_WIDTH).max(340.0)
+            };
+            ui.ctx()
+                .send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(w, r.height())));
             if shown {
                 app.im_widened.insert(key);
             } else {
@@ -468,11 +467,10 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     }
     // The call ended: the window goes back to its chat size.
     if active.is_none() && app.im_widened.remove(&key) && !ui.ctx().embed_viewports() {
-        if let Some(r) = ui.ctx().input(|i| i.viewport().inner_rect) {
-            let w = (r.width() - IM_PANE_WIDTH).max(340.0);
-            ui.ctx()
-                .send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(w, r.height())));
-        }
+        let r = ui.ctx().content_rect();
+        let w = (r.width() - IM_PANE_WIDTH).max(340.0);
+        ui.ctx()
+            .send_viewport_cmd(egui::ViewportCommand::InnerSize(egui::vec2(w, r.height())));
     }
     if app.im_hidden.contains(&key) {
         if let Some(call) = app
