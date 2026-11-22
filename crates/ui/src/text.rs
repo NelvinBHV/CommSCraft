@@ -524,6 +524,14 @@ texts! {
     im_pane: "Chatbereich", "IM pane";
     conversation_heading: "UNTERHALTUNG", "CONVERSATION";
     notices_title: "Hinweise", "Notices";
+    add_video: "Video hinzufügen", "Add video";
+    invite_more: "Weitere Personen einladen", "Invite more people";
+    manage_recordings: "Aufzeichnungen verwalten", "Manage recordings";
+    im_text_size: "Textgröße im Chat", "IM text display size";
+    size_small: "Klein", "Small";
+    size_medium: "Mittel", "Medium";
+    size_large: "Groß", "Large";
+    change_font_dots: "Schriftart ändern …", "Change font …";
     no_notices: "Keine Hinweise", "No notices";
     call_controls: "Anrufsteuerung", "Call controls";
     transfer_to_person: "An eine Person …", "To a person …";
@@ -824,6 +832,15 @@ impl Texts {
             (Lang::De, n) => format!("{n} Mitglieder"),
             (Lang::En, 1) => "1 member".into(),
             (Lang::En, n) => format!("{n} members"),
+        }
+    }
+
+    /// "2 Teilnehmer" in a conversation's head and on a call's stage (the Windows client's word).
+    pub fn participants_count(&self, n: usize) -> String {
+        match (self.lang, n) {
+            (Lang::De, n) => format!("{n} Teilnehmer"),
+            (Lang::En, 1) => "1 participant".into(),
+            (Lang::En, n) => format!("{n} participants"),
         }
     }
 

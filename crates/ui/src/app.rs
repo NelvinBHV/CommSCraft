@@ -18,6 +18,8 @@ pub enum UiIntent {
     SignIn(SignIn),
     SignOut,
     SetPresence(Presence),
+    /// Open the folder of the meeting recordings (the desktop's file manager).
+    OpenRecordings,
     /// Share the own screen (`windows`: or a window) with the conversation's peer (function 43).
     ShareScreen {
         key: ConvKey,

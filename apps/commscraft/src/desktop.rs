@@ -232,6 +232,23 @@ pub fn send_email(address: &str) {
         .spawn();
 }
 
+/// Opens the recordings folder (`$XDG_VIDEOS_DIR/CommSCraft`, created if missing) in the
+/// desktop's file manager.
+pub fn open_recordings() {
+    let Some(dir) = commscraft_client::recording::folder() else {
+        return;
+    };
+    if std::fs::create_dir_all(&dir).is_err() {
+        return;
+    }
+    let _ = std::process::Command::new("xdg-open")
+        .arg(&dir)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn();
+}
+
 fn valid_mail(a: &str) -> bool {
     let Some((user, host)) = a.split_once('@') else {
         return false;

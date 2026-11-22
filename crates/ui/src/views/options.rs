@@ -8,6 +8,8 @@ use crate::text::{Lang, Texts};
 use crate::theme::{self, Palette};
 use egui::{Frame, Margin, RichText, Ui};
 
+/// The IM page (font, emoticons, spelling).
+pub const IM: usize = 6;
 pub const AUDIO: usize = 8;
 pub const VIDEO: usize = 9;
 
