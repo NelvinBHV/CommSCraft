@@ -306,6 +306,8 @@ pub struct Prefs {
     /// No notifications for messages while the own status is Do Not Disturb.
     pub quiet_when_dnd: bool,
     pub chat_text_size: f32,
+    /// Check spelling as I type (where a dictionary for the language is installed).
+    pub spell_check: bool,
     /// The look of our messages (sent formatted where the other side accepts it).
     pub im_bold: bool,
     pub im_italic: bool,
@@ -360,6 +362,7 @@ impl Default for Prefs {
             message_alerts: true,
             quiet_when_dnd: true,
             chat_text_size: 14.0,
+            spell_check: true,
             im_bold: false,
             im_italic: false,
             im_underline: false,
@@ -532,6 +535,10 @@ pub struct CommsUi {
     pub(crate) toasts_seen: BTreeSet<(ConvKey, usize)>,
     /// The desktop shows the notifications (`notes`); the interface's own window stays closed.
     pub system_notifications: bool,
+    /// The dictionary for spell checking in the composer, once the application loaded it.
+    pub speller: Option<std::sync::Arc<dyn crate::spell::Speller>>,
+    /// The suggestions of the open spelling menu: the word and its spellings.
+    pub(crate) spell_menu: Option<(String, Vec<String>)>,
     /// Calls whose window was opened once (closing it does not open it again).
     pub(crate) call_windows_opened: BTreeSet<u32>,
     /// A screenshot of a window of its own, taken in that window's own frame (tests and
@@ -602,6 +609,8 @@ impl CommsUi {
             participants_open: BTreeSet::new(),
             toasts_seen: BTreeSet::new(),
             system_notifications: false,
+            speller: None,
+            spell_menu: None,
             call_windows_opened: BTreeSet::new(),
             screenshot: None,
             stored_password_for: None,

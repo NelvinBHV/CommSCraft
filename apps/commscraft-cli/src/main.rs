@@ -86,11 +86,11 @@ im        signs in, opens a 1:1 conversation with --to, sends --text, shows answ
 --trust-domain   trust SIP servers in DOMAIN although it differs from your SIP domain (like
               TrustModelData of the Windows client); only for servers named by Autodiscover.
               A yes on the interactive question is remembered for this account only, in
-              ~/.config/commscraft/trusted-domains.d/ACCOUNT.
+              ~/.config/CommSCraft/trusted-domains.d/ACCOUNT.
 --address-book-delay MINUTES  interactive: the offline address book is fetched after sign-in at a
               random time within MINUTES (default 60, 0 = at once; like GalDownloadInitialDelay of
               the Windows client), then once a day, unless the server's policy allows the web
-              search only. It is kept in ~/.cache/commscraft/abs (mode 0600) and used at once on
+              search only. It is kept in ~/.cache/CommSCraft/abs (mode 0600) and used at once on
               the next sign-in; later fetches load only the day's changes (delta file).
 --no-address-book-cache  hold the offline address book in memory only.
 --allow-unencrypted-media  take unencrypted RTP when the server provisions encryption as not
@@ -105,7 +105,7 @@ im        signs in, opens a 1:1 conversation with --to, sends --text, shows answ
               KDC comes from the system's Kerberos configuration (KRB5_CONFIG). Falls back to NTLM.
 --tls-dsk     sign in with TLS-DSK when the server offers it: a user certificate from the server's
               certificate provisioning service (asked for once with NTLM, kept in
-              ~/.local/share/commscraft/tlsdsk/ACCOUNT, key 0600), then a TLS handshake inside the
+              ~/.local/share/CommSCraft/tlsdsk/ACCOUNT, key 0600), then a TLS handshake inside the
               SIP sign-in. Falls back to Kerberos (with --kerberos) or NTLM.
 --ntlm-legacy    diagnostic: NTLMv2 without the optional MIC/channel-binding additions, with LMv2.
 --tcp-only    calls over TCP only (MS-ICE2 TCP-only mode: TCP host and relay candidates, no UDP),

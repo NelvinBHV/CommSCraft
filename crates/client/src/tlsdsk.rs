@@ -25,14 +25,11 @@ pub fn account_dir_name(v: &str) -> Option<String> {
     (!out.is_empty() && out.len() <= 200).then_some(out)
 }
 
-/// `$XDG_DATA_HOME/commscraft/tlsdsk/ACCOUNT` (directory 0700, files 0600).
+/// `$XDG_DATA_HOME/CommSCraft/tlsdsk/ACCOUNT` (directory 0700, files 0600).
 pub fn identity_dir(aor: &str) -> Option<PathBuf> {
-    let base = std::env::var_os("XDG_DATA_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/share")))?;
+    let base = crate::xdg::dir(crate::xdg::Kind::Data)?;
     Some(
-        base.join("commscraft")
-            .join("tlsdsk")
+        base.join("tlsdsk")
             .join(account_dir_name(aor.trim_start_matches("sip:"))?),
     )
 }

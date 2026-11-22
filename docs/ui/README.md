@@ -40,7 +40,7 @@ queues (commands 256, events 4096) and never waits for the network in a frame.
   domain; `tested-in-lab`); Autodiscover and DNS SRV like the
   command-line tool (shared crate `commscraft-client`), NTLM with the password typed in the form, TLS always verified against the
   system trust store plus an optional `--ca-file`. A server outside the SIP domain is used only
-  when its domain is trusted for this account (`~/.config/commscraft/trusted-domains.d/ACCOUNT`) or – for a server named by
+  when its domain is trusted for this account (`~/.config/CommSCraft/trusted-domains.d/ACCOUNT`) or – for a server named by
   Autodiscover over verified HTTPS – when the user trusts it in a dialog (an explicit yes; it is
   then remembered there; no answer within two minutes or closing the dialog means no). Kerberos can be tried first (a checkbox: the
   system's ticket, else the password; NTLM stays the fallback, and the reason is shown); TLS-DSK
@@ -343,7 +343,7 @@ word.
 
 ## Local preferences
 
-`~/.config/commscraft/desktop.conf` (mode 0600, written atomically) keeps favourites (SIP
+`~/.config/CommSCraft/desktop.conf` (mode 0600, written atomically) keeps favourites (SIP
 addresses, group titles, chat rooms) and the settings of the options window (language, display,
 contact list, alerts, sounds, the camera device file, meetings). No chat content, presence or
 password is ever written there; the file is read bounded (64 KiB, 500 favourites) and malformed

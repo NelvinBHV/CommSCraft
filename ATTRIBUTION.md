@@ -1,6 +1,6 @@
 # Attribution and provenance of assets
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (Lucide icons, Noto Emoji, craft-fonts)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-21 · **Change:** minor (Hunspell dictionaries)
 
 Every non-code asset of CommSCraft – images, icons, sounds, fonts – has a row here, added in the
 same commit as the asset (rule in `AGENTS.md` / `CLAUDE.md`). No asset is taken from Microsoft
@@ -51,3 +51,14 @@ The owner-approved CommSCraft sound pack (issues #82–#84, `assets/audio/README
 | Signal Message V4 (notification) | `assets/audio/CommsCraft-Signal-message-unchanged.wav` | `3daf8f99f0c06f89b3b1e22a155daad9c5ea7d7718bcecbb62511f62fd5d8296` | as above | as above |
 
 The Opus and MP3 versions are listed in `assets/audio/SHA256SUMS.txt`; the CI checks all of them. A user's own sound (`COMMSCRAFT_RINGTONE`, `COMMSCRAFT_NOTIFY_SOUND`, `COMMSCRAFT_HOLD_MUSIC`) is not distributed with the program.
+
+## Dictionaries (spell checking, Flatpak only)
+
+Bundled as separate data files in the Flatpak (`/app/share/hunspell`), fetched at build time from the LibreOffice dictionaries repository at commit `c0865a85eb67dc377f2cf8e8fe2c4fa9e53f0dcb`; no code is taken from them. Outside the Flatpak the system's Hunspell dictionaries are used.
+
+| File | SHA-256 | Origin | Licence / terms |
+|---|---|---|---|
+| `de_DE.aff` (from `de/de_DE_frami.aff`) | `646bf3333ac69c23e9d794533ee5241d6f755c359e8fe10a648f87613743d594` | igerman98 by Björn Jacke, extended by Franz Michael Baumann (frami) | GNU GPL version 2 or 3; licence text shipped as `hunspell-de_DE-COPYING_GPLv2` |
+| `de_DE.dic` (from `de/de_DE_frami.dic`) | `4ca3c958b0e5545910999bc246f668840bf8ede3df8e5e6790d05edd5a586c38` | as above | as above |
+| `en_US.aff` | `e746c882dd6f303c2c46e7452804b9201115a6942cfeb15f18f8edf774d2e24e` | SCOWL / Hunspell en_US (Kevin Atkinson and others) | SCOWL licence (permissive, BSD-style); text in `hunspell-en_US-README.txt` |
+| `en_US.dic` | `f0b1a234bd178bdd01875b2a392a9647f888b8fe879f79c52aae62c2759b3647` | as above | as above |

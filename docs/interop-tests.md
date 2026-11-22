@@ -85,13 +85,13 @@ Discovery order (OB-06): `https://lyncdiscoverinternal.<domain>`, then
 `_sipinternaltls._tcp` and `_sip._tls` via the name servers in `/etc/resolv.conf`, then
 `sipinternal`, `sip`, `sipexternal.<domain>:443`. Every step is printed. A target that Autodiscover names outside
 your SIP domain (hosted deployments) is used only after you trust its domain – interactively (the
-answer is remembered for this account only, in `~/.config/commscraft/trusted-domains.d/ACCOUNT`) or with `--trust-domain DOMAIN`,
+answer is remembered for this account only, in `~/.config/CommSCraft/trusted-domains.d/ACCOUNT`) or with `--trust-domain DOMAIN`,
 like `TrustModelData` of the Windows client. DNS SRV targets outside the SIP domain are never used. If Autodiscover uses a
 certificate from an enterprise CA that is not in the system trust store, add `--ca-file`.
 
 The password is asked without echo. `--verbose` prints the SIP messages with every
 authentication header and all bodies redacted; review the output before sharing it anyway (host
-names, user names and IP addresses remain). The EPID is kept in `~/.config/commscraft/epid`
+names, user names and IP addresses remain). The EPID is kept in `~/.config/CommSCraft/epid`
 (mode 0600). Without `--authorized` the tool refuses to connect.
 
 ## Not a test case
