@@ -53,8 +53,11 @@ modules:
       - /var
     sources:
       - type: archive
-        url: https://kerberos.org/dist/krb5/1.22/krb5-1.22.tar.gz
-        sha256: 652be617b4647f3c5dcac21547d47c7097101aad4e306f1778fb48e17b220ba3
+        # Detached signature checked on update: key C4493CB739F4A89F9852CBC20CBA08575F8372DF
+        # (Greg Hudson, MIT krb5 release manager). scripts/check_native_components.py reports
+        # newer releases (issue #256).
+        url: https://kerberos.org/dist/krb5/1.22/krb5-1.22.3.tar.gz
+        sha256: fe90af8441ad9fa9b064b8e53077cefb782a96f8a68276b031dc54af1789ff0b
   - name: commscraft
     buildsystem: simple
     build-options:
