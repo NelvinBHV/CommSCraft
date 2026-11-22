@@ -46,3 +46,4 @@
 | `users-round` | U+E46E |
 | `presentation` | U+E4AE |
 | `type` | U+E198 |
+| `triangle-alert` | U+E193 |
