@@ -13,16 +13,6 @@ use egui::{
 /// Seconds after the last key press until "typing" ends (the session repeats it itself).
 const TYPING_IDLE: u64 = 5;
 
-/// The name an avatar shows: a group titled after its members (addresses, a list) shows the
-/// group mark instead of one member's initials.
-fn group_avatar<'a>(app: &CommsUi, group: bool, title: &'a str) -> &'a str {
-    if group && (title.contains('@') || title.contains(',') || title.trim().is_empty()) {
-        app.t.group_chat
-    } else {
-        title
-    }
-}
-
 /// A conversation in its own window: head, composer, history.
 pub fn conversation_body(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
     window_header(app, ui, pal, key);
@@ -73,6 +63,9 @@ fn window_header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
         .and_then(|p| app.state.contacts.get(p))
         .map(|k| k.presence);
     egui::Panel::top(("conv-head", key.0))
+        // A fixed height: name, status and participants link (the panel does not grow with
+        // its content inside the tabbed window).
+        .exact_size(96.0)
         .frame(
             Frame::new()
                 .fill(pal.surface)
@@ -80,25 +73,70 @@ fn window_header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                 .stroke(Stroke::new(1.0, pal.border)),
         )
         .show(ui, |ui| {
-            ui.horizontal(|ui| {
-                let shown = group_avatar(app, peer.is_none(), &title).to_string();
-                app.avatar(ui, peer.as_deref(), &shown, 40.0, presence, pal);
-                ui.vertical(|ui| {
-                    widgets::ellipsis(
-                        ui,
-                        RichText::new(&title)
-                            .size(theme::text::PANEL_TITLE - 1.0)
-                            .family(crate::theme::bold())
-                            .color(pal.ink),
-                    );
-                    widgets::ellipsis(
-                        ui,
-                        RichText::new(subtitle)
-                            .size(theme::text::SMALL + 0.5)
-                            .color(pal.muted),
-                    );
-                });
+            // As in the Windows client: a presence dot and the name large, the status below,
+            // the participants as a link, the add-people button at the right.
+            let count = app.state.conversation(key).map_or(0, |c| {
+                c.participants.len().max(if c.is_group() { 1 } else { 2 })
             });
+            ui.horizontal(|ui| {
+                if let Some(p) = presence {
+                    let (r, _) = ui.allocate_exact_size(Vec2::splat(12.0), Sense::hover());
+                    ui.painter()
+                        .circle_filled(r.center(), 5.0, widgets::presence_colour(p, pal));
+                }
+                ui.add(
+                    egui::Label::new(
+                        RichText::new(&title)
+                            .size(theme::text::PANEL_TITLE + 2.0)
+                            .color(pal.ink),
+                    )
+                    .truncate(),
+                );
+                // The add-people button at the right edge.
+                ui.add_space((ui.available_width() - 38.0).max(0.0));
+                let gate = app.state.capabilities.group_chat.clone();
+                let add = crate::views::icons::round(
+                    ui,
+                    crate::views::icons::Icon::AddPerson,
+                    t.invite,
+                    34.0,
+                    pal.primary,
+                    false,
+                    gate.usable(),
+                );
+                if add.clicked() && gate.usable() {
+                    app.new_chat = Some(NewChat {
+                        text: String::new(),
+                        purpose: AddressFor::Invite(key),
+                    });
+                }
+            });
+            ui.add(
+                egui::Label::new(
+                    RichText::new(subtitle)
+                        .size(theme::text::SMALL + 0.5)
+                        .color(pal.ink),
+                )
+                .truncate(),
+            );
+            let open = app.participants_open.contains(&key);
+            let link = ui
+                .add(
+                    egui::Button::new(
+                        RichText::new(t.members_count(count))
+                            .size(theme::text::SMALL + 0.5)
+                            .color(pal.primary),
+                    )
+                    .frame(false),
+                )
+                .on_hover_text(t.participants);
+            if link.clicked() {
+                if open {
+                    app.participants_open.remove(&key);
+                } else {
+                    app.participants_open.insert(key);
+                }
+            }
         });
 }
 
@@ -481,7 +519,6 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
         None => matches!(c.state, ConvState::Open | ConvState::Opening),
     };
     let title = c.title.clone();
-    let peer = c.peer.clone();
     let chat_gate = if room.is_some() {
         app.state.capabilities.persistent_chat.clone()
     } else {
@@ -499,10 +536,9 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                 .stroke(Stroke::new(1.0, pal.border)),
         )
         .show(ui, |ui| {
+            // As in the Windows client: the typing area without a box, the symbols at the right.
             Frame::new()
-                .stroke(Stroke::new(1.0, pal.border))
-                .corner_radius(CornerRadius::same(10))
-                .inner_margin(Margin::symmetric(14, 8))
+                .inner_margin(Margin::symmetric(4, 2))
                 .show(ui, |ui| {
                     ui.set_width(ui.available_width());
                     let draft = app.drafts.entry(key).or_default();
@@ -588,27 +624,8 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                         }
                     }
                     ui.horizontal(|ui| {
-                        // As in the Windows client: symbols (Lucide), names as tool tips.
-                        let symbol = |ui: &mut Ui, icon, l: &str, en: bool| {
-                            crate::views::icons::button(
-                                ui,
-                                icon,
-                                l,
-                                24.0,
-                                false,
-                                en,
-                                pal.muted,
-                                pal.primary,
-                            )
-                            .on_hover_text(l)
-                        };
-                        widgets::gated(ui, t.attach, &file_gate, t, pal, |ui, l, en| {
-                            symbol(ui, crate::views::icons::Icon::Paperclip, l, en)
-                        });
-                        widgets::gated(ui, t.formatting, &rich_gate, t, pal, |ui, l, en| {
-                            symbol(ui, crate::views::icons::Icon::Type, l, en)
-                        });
-                        emoticon_picker(app, ui, key, can_send);
+                        // As in the Windows client: the counter at the left, the symbols at the
+                        // right ending with the round send button (Lucide), names as tool tips.
                         if text_len * 10 > MAX_TEXT * 9 {
                             ui.label(
                                 RichText::new(format!("{text_len}/{MAX_TEXT}"))
@@ -619,19 +636,14 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                             let has_text =
                                 app.drafts.get(&key).is_some_and(|d| !d.trim().is_empty());
-                            let send = crate::views::icons::button(
+                            let send = crate::views::icons::round(
                                 ui,
                                 crate::views::icons::Icon::Send,
                                 t.send,
-                                28.0,
-                                false,
-                                can_send && has_text,
-                                if can_send && has_text {
-                                    pal.primary
-                                } else {
-                                    pal.muted
-                                },
+                                30.0,
                                 pal.primary,
+                                true,
+                                can_send && has_text,
                             )
                             .on_hover_text(t.send_tip);
                             if (send.clicked() || enter) && can_send && has_text {
@@ -649,21 +661,27 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                                 }
                                 app.focus_composer = true;
                             }
-                            if peer.is_none() && room.is_none() && open {
-                                let gate = app.state.capabilities.group_chat.clone();
-                                if let Some(r) =
-                                    widgets::gated(ui, t.invite, &gate, t, pal, |ui, l, en| {
-                                        ui.add_enabled(en, egui::Button::new(l))
-                                    })
-                                {
-                                    if r.clicked() {
-                                        app.new_chat = Some(NewChat {
-                                            text: String::new(),
-                                            purpose: AddressFor::Invite(key),
-                                        });
-                                    }
-                                }
-                            }
+                            ui.add_space(6.0);
+                            let symbol = |ui: &mut Ui, icon, l: &str, en: bool| {
+                                crate::views::icons::button(
+                                    ui,
+                                    icon,
+                                    l,
+                                    24.0,
+                                    false,
+                                    en,
+                                    pal.muted,
+                                    pal.primary,
+                                )
+                                .on_hover_text(l)
+                            };
+                            emoticon_picker(app, ui, key, can_send);
+                            widgets::gated(ui, t.formatting, &rich_gate, t, pal, |ui, l, en| {
+                                symbol(ui, crate::views::icons::Icon::Type, l, en)
+                            });
+                            widgets::gated(ui, t.attach, &file_gate, t, pal, |ui, l, en| {
+                                symbol(ui, crate::views::icons::Icon::Paperclip, l, en)
+                            });
                         });
                     });
                 });
@@ -743,7 +761,14 @@ pub fn new_chat_dialog(app: &mut CommsUi, ctx: &egui::Context, pal: &Palette) {
                     if let Some(a) = address.clone() {
                         match purpose {
                             AddressFor::Invite(k) => {
-                                app.emit(UiIntent::InviteToGroup { key: k, peer: a })
+                                // A 1:1 conversation becomes a group with both, as adding
+                                // people does in the Windows client.
+                                match app.state.conversation(k).and_then(|c| c.peer.clone()) {
+                                    Some(peer) => app.emit(UiIntent::StartGroup {
+                                        invite: vec![peer, a],
+                                    }),
+                                    None => app.emit(UiIntent::InviteToGroup { key: k, peer: a }),
+                                }
                             }
                             AddressFor::Transfer(id) => {
                                 app.emit(UiIntent::Transfer { id, peer: a })

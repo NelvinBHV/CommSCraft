@@ -363,3 +363,44 @@ pub fn button(
     resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, enabled, selected, label));
     resp
 }
+
+/// A round button as the Windows client's conversation window has them: filled (video, call,
+/// present, send) with a white symbol, or outlined (chat, more, add people) in `colour`.
+pub fn round(
+    ui: &mut egui::Ui,
+    icon: Icon,
+    label: &str,
+    size: f32,
+    colour: Color32,
+    filled: bool,
+    enabled: bool,
+) -> egui::Response {
+    let (rect, resp) = ui.allocate_exact_size(
+        Vec2::splat(size),
+        if enabled {
+            egui::Sense::click()
+        } else {
+            egui::Sense::hover()
+        },
+    );
+    let colour = if !enabled {
+        colour.gamma_multiply(0.35)
+    } else if resp.hovered() {
+        colour.gamma_multiply(1.15)
+    } else {
+        colour
+    };
+    let p = ui.painter();
+    let r = size / 2.0 - 0.5;
+    let inner = rect.shrink(size * 0.28);
+    if filled {
+        p.circle_filled(rect.center(), r, colour);
+        draw(p, inner, icon, Color32::WHITE);
+    } else {
+        p.circle_stroke(rect.center(), r, Stroke::new(1.2, colour));
+        draw(p, inner, icon, colour);
+    }
+    let label = label.to_string();
+    resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, &label));
+    resp.on_hover_text(label)
+}
