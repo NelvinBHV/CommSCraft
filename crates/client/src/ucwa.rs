@@ -55,42 +55,26 @@ fn text(e: u::Error) -> String {
     format!("{e:?}")
 }
 
+/// Most redirects to another pool followed (design; [MS-OCDISCWS] allows a chain).
+const MAX_REDIRECTS: usize = 3;
+
 impl Session {
-    /// Opens a UCWA application for `aor`.
-    pub fn open(
+    /// UW-01, UW-02, UW-04: the token from the token service the OAuth resource names (the
+    /// request authenticated with NTLM), and the User resource read with it.
+    #[allow(clippy::too_many_arguments)]
+    fn user_resource(
         tls: &TlsClient,
         trust: &Trust,
-        aor: &str,
+        oauth: &HttpsUrl,
+        user_domain: &str,
         user_agent: &str,
         ntlm: &mut HttpNtlm<'_>,
         log: &mut dyn FnMut(&str),
-    ) -> Result<Session, String> {
-        let user_domain = aor
-            .trim_start_matches("sip:")
-            .rsplit_once('@')
-            .map(|(_, d)| d.to_ascii_lowercase())
-            .ok_or("the SIP address has no domain")?;
-        // UW-04: the OAuth link of the Autodiscover answer.
-        let outcome = crate::setup::autodiscover(tls, aor, log, false)
-            .ok_or("no Autodiscover answer (UCWA unknown)")?;
-        let oauth = outcome
-            .links
-            .iter()
-            .find(|l| l.token.eq_ignore_ascii_case("OAuth"))
-            .ok_or("Autodiscover names no OAuth resource (no UCWA)")?
-            .url
-            .clone();
-        if !allowed(&oauth.host, &user_domain, trust) {
-            return Err(format!(
-                "{} is outside your SIP domain and not trusted",
-                oauth.host
-            ));
-        }
+    ) -> Result<(u::Token, Vec<u8>), String> {
         // UW-01: without a token the OAuth resource answers 401 with the token service.
         log(&format!("  UCWA: GET {}{}", oauth.host, oauth.path));
-        let first =
-            commscraft_net::http::get(tls, &oauth, u::AUTODISCOVER_XML, user_agent, TIMEOUT)
-                .map_err(|e| e.to_string())?;
+        let first = commscraft_net::http::get(tls, oauth, u::AUTODISCOVER_XML, user_agent, TIMEOUT)
+            .map_err(|e| e.to_string())?;
         if first.status != 401 {
             return Err(format!(
                 "OAuth resource: HTTP {} instead of a challenge",
@@ -108,7 +92,7 @@ impl Session {
         if !challenge.offers_windows() {
             return Err("the token service offers no Windows authentication".into());
         }
-        if !allowed(&challenge.token_url.host, &user_domain, trust) {
+        if !allowed(&challenge.token_url.host, user_domain, trust) {
             return Err(format!(
                 "{} is outside your SIP domain and not trusted",
                 challenge.token_url.host
@@ -134,11 +118,10 @@ impl Session {
             return Err(format!("token service: HTTP {}", r.status));
         }
         let token = u::token(&r.body).map_err(text)?;
-        let renew_at = Instant::now() + Duration::from_secs(token.expires_in.saturating_sub(300));
-        // UW-04: the User resource with the token names the UCWA service.
+        // UW-04: the User resource with the token.
         let user = bearer_get(
             tls,
-            &oauth,
+            oauth,
             &token,
             u::AUTODISCOVER_XML,
             64 * 1024,
@@ -147,11 +130,91 @@ impl Session {
         if user.status != 200 {
             return Err(format!("User resource: HTTP {}", user.status));
         }
-        let service = u::ucwa_links(&user.body)
-            .map_err(text)?
-            .into_iter()
-            .find(|l| allowed(&l.host, &user_domain, trust))
-            .ok_or("the User resource names no usable UCWA service")?;
+        Ok((token, user.body))
+    }
+
+    /// Opens a UCWA application for `aor`.
+    pub fn open(
+        tls: &TlsClient,
+        trust: &Trust,
+        aor: &str,
+        user_agent: &str,
+        ntlm: &mut HttpNtlm<'_>,
+        log: &mut dyn FnMut(&str),
+    ) -> Result<Session, String> {
+        let user_domain = aor
+            .trim_start_matches("sip:")
+            .rsplit_once('@')
+            .map(|(_, d)| d.to_ascii_lowercase())
+            .ok_or("the SIP address has no domain")?;
+        // UW-04: the OAuth link of the Autodiscover answer.
+        let outcome = crate::setup::autodiscover(tls, aor, log, false)
+            .ok_or("no Autodiscover answer (UCWA unknown)")?;
+        let oauth = outcome
+            .links
+            .iter()
+            .find(|l| l.token.eq_ignore_ascii_case("OAuth"))
+            .ok_or("Autodiscover names no OAuth resource (no UCWA)")?
+            .url
+            .clone();
+        // UW-11: outside the company network the external UCWA service comes first.
+        let external = matches!(
+            outcome.access_location,
+            Some(commscraft_discovery::AccessLocation::External)
+        );
+        let mut oauth = oauth;
+        let mut hops = 0usize;
+        let (token, renew_at, services) = loop {
+            if !allowed(&oauth.host, &user_domain, trust) {
+                return Err(format!(
+                    "{} is outside your SIP domain and not trusted",
+                    oauth.host
+                ));
+            }
+            let (token, user) =
+                Self::user_resource(tls, trust, &oauth, &user_domain, user_agent, ntlm, log)?;
+            let renew_at =
+                Instant::now() + Duration::from_secs(token.expires_in.saturating_sub(300));
+            match u::user_resource(&user, external).map_err(text)? {
+                u::UserAnswer::Ucwa(links) => {
+                    let usable: Vec<HttpsUrl> = links
+                        .into_iter()
+                        .filter(|l| allowed(&l.host, &user_domain, trust))
+                        .collect();
+                    if usable.is_empty() {
+                        return Err("the User resource names no usable UCWA service".into());
+                    }
+                    break (token, renew_at, usable);
+                }
+                // UW-11: the user's home pool; its Root names the OAuth resource there, and the
+                // token is asked for again (the old one stays with the first pool).
+                u::UserAnswer::Redirect(root) => {
+                    hops += 1;
+                    if hops > MAX_REDIRECTS {
+                        return Err("too many UCWA redirects".into());
+                    }
+                    if !allowed(&root.host, &user_domain, trust) {
+                        return Err(format!(
+                            "redirect to {} outside your SIP domain, not followed",
+                            root.host
+                        ));
+                    }
+                    log(&format!("  UCWA: redirected to {}{}", root.host, root.path));
+                    let r = commscraft_net::http::get(
+                        tls,
+                        &root,
+                        u::AUTODISCOVER_XML,
+                        user_agent,
+                        TIMEOUT,
+                    )
+                    .map_err(|e| e.to_string())?;
+                    if r.status != 200 {
+                        return Err(format!("redirected Root: HTTP {}", r.status));
+                    }
+                    oauth = u::root_oauth(&r.body).map_err(text)?;
+                }
+            }
+        };
         // UW-05: the application.
         let mut id = [0u8; 16];
         {
@@ -163,20 +226,33 @@ impl Session {
         let endpoint: String = id.iter().map(|b| format!("{b:02x}")).collect();
         let body = u::application_request("en-US", &endpoint, user_agent)
             .ok_or("unusable application values")?;
-        log(&format!("  UCWA: POST {}{}", service.host, service.path));
-        let created = commscraft_net::http::post_with_auth(
-            tls,
-            &service,
-            &[("Content-Type", u::XML), ("Accept", u::XML)],
-            body.as_bytes(),
-            user_agent,
-            TIMEOUT,
-            &mut |_, _| Ok(token.authorization().to_string()),
-        )
-        .map_err(|e| e.to_string())?;
-        if created.status != 201 && created.status != 200 {
-            return Err(format!("application: HTTP {}", created.status));
+        // The services in order (the access location's first); one that cannot be reached is
+        // skipped.
+        let mut last = String::from("no UCWA service");
+        let mut created_on = None;
+        for service in services {
+            log(&format!("  UCWA: POST {}{}", service.host, service.path));
+            match commscraft_net::http::post_with_auth(
+                tls,
+                &service,
+                &[("Content-Type", u::XML), ("Accept", u::XML)],
+                body.as_bytes(),
+                user_agent,
+                TIMEOUT,
+                &mut |_, _| Ok(token.authorization().to_string()),
+            ) {
+                Ok(r) if r.status == 201 || r.status == 200 => {
+                    created_on = Some((service, r));
+                    break;
+                }
+                Ok(r) => last = format!("application: HTTP {}", r.status),
+                Err(e) => {
+                    last = e.to_string();
+                    log(&format!("  UCWA: {} not reached ({last})", service.host));
+                }
+            }
         }
+        let (service, created) = created_on.ok_or(last)?;
         let app = u::resource(&created.body).map_err(text)?;
         let me_photo = app
             .find("me")

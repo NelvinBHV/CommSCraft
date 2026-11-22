@@ -228,3 +228,38 @@ fn links_stay_on_the_service() {
     let svc_port = url("https://fe1.contoso.com:4443/ucwa");
     assert_eq!(resolve(&svc_port, "/ucwa/a").unwrap().port, 4443);
 }
+
+/// UW-11: outside the company network (`AccessLocation="External"`) the external UCWA link comes
+/// first; inside, the internal one.
+#[test]
+fn the_ucwa_link_follows_the_access_location() {
+    let doc = |loc: &str| {
+        format!("<AutodiscoverResponse AccessLocation=\"{loc}\"><User><Link token=\"Internal/Ucwa\" href=\"https://fe1.contoso.com/ucwa/oauth/v1/applications\"/><Link token=\"External/Ucwa\" href=\"https://web.contoso.com/ucwa/oauth/v1/applications\"/></User></AutodiscoverResponse>")
+    };
+    let first = |body: String, ext: bool| match user_resource(body.as_bytes(), ext).unwrap() {
+        UserAnswer::Ucwa(l) => l[0].host.clone(),
+        UserAnswer::Redirect(_) => String::new(),
+    };
+    assert_eq!(first(doc("Internal"), false), "fe1.contoso.com");
+    assert_eq!(first(doc("External"), false), "web.contoso.com");
+    assert_eq!(first(doc("Internal"), true), "web.contoso.com");
+}
+
+/// UW-11: a User resource with a Redirect link ([MS-OCDISCWS] §4.1, pp. 24–25) and the Root it
+/// points to, whose OAuth link starts the token flow again.
+#[test]
+fn a_redirect_to_the_home_pool() {
+    let user = r#"<?xml version="1.0" encoding="utf-8"?><AutodiscoverResponse AccessLocation="Internal"><User><Link href="https://pool1.contoso.com/Autodiscover/AutodiscoverService.svc/root?originalDomain=contoso.com" token="Redirect"/></User></AutodiscoverResponse>"#;
+    match user_resource(user.as_bytes(), false).unwrap() {
+        UserAnswer::Redirect(u) => assert_eq!(u.host, "pool1.contoso.com"),
+        other => panic!("{other:?}"),
+    }
+    let root = r#"<?xml version="1.0" encoding="utf-8"?><AutodiscoverResponse AccessLocation="Internal"><Root><Link token="Domain" href="https://pool1.contoso.com/Autodiscover/AutodiscoverService.svc/root/domain?originalDomain=contoso.com"/><Link token="OAuth" href="https://pool1.contoso.com/Autodiscover/AutodiscoverService.svc/root/oauth/user?originalDomain=contoso.com"/></Root></AutodiscoverResponse>"#;
+    assert_eq!(
+        root_oauth(root.as_bytes()).unwrap().host,
+        "pool1.contoso.com"
+    );
+    assert!(root_oauth(b"<AutodiscoverResponse><Root/></AutodiscoverResponse>").is_err());
+    let bad = r#"<AutodiscoverResponse><User><Link token="Redirect" href="http://pool1.contoso.com/x"/></User></AutodiscoverResponse>"#;
+    assert!(user_resource(bad.as_bytes(), false).is_err());
+}

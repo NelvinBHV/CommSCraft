@@ -319,6 +319,80 @@ pub fn ucwa_links(body: &[u8]) -> Result<Vec<HttpsUrl>, Error> {
     Ok(out)
 }
 
+/// What the User resource answers with the token (UW-04, UW-11): the UCWA services, or a
+/// redirect to the Root of the user's home pool.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum UserAnswer {
+    /// The UCWA application links, the one for the access location first.
+    Ucwa(Vec<HttpsUrl>),
+    /// `Redirect`: discovery starts again at this Root ([MS-OCDISCWS] §3.1.5.5, §4.1).
+    Redirect(HttpsUrl),
+}
+
+/// The User resource read for the access location (UW-04, UW-11): with the document's
+/// `AccessLocation="External"` (or `external_first`) the `External/Ucwa` link comes first, so a
+/// client outside the company network does not wait for an internal host it cannot reach.
+pub fn user_resource(body: &[u8], external_first: bool) -> Result<UserAnswer, Error> {
+    let root = parse(body, 64 * 1024)?;
+    if root.name != "AutodiscoverResponse" {
+        return Err(Error::BadAnswer("not an AutodiscoverResponse"));
+    }
+    let external = external_first
+        || root
+            .attr("AccessLocation")
+            .is_some_and(|a| a.eq_ignore_ascii_case("external"));
+    let mut links: Vec<(u8, HttpsUrl)> = Vec::new();
+    for kind in root.elements() {
+        for link in kind.children_named("Link") {
+            let token = link.attr("token").unwrap_or("");
+            if token.eq_ignore_ascii_case("Redirect") {
+                let url = link
+                    .attr("href")
+                    .and_then(parse_https)
+                    .ok_or(Error::BadAnswer("Redirect"))?;
+                return Ok(UserAnswer::Redirect(url));
+            }
+            let order = match token {
+                t if t.eq_ignore_ascii_case("Internal/Ucwa") => u8::from(external),
+                t if t.eq_ignore_ascii_case("External/Ucwa") => u8::from(!external),
+                t if t.eq_ignore_ascii_case("Ucwa") => 2,
+                _ => continue,
+            };
+            if let Some(url) = link.attr("href").and_then(parse_https) {
+                links.push((order, url));
+            }
+        }
+    }
+    links.sort_by_key(|(o, _)| *o);
+    let mut out: Vec<HttpsUrl> = Vec::new();
+    for (_, u) in links {
+        if !out.contains(&u) {
+            out.push(u);
+        }
+    }
+    Ok(UserAnswer::Ucwa(out))
+}
+
+/// The OAuth link of a Root resource (UW-01; the Root a redirect points to, [MS-OCDISCWS]
+/// §2.2.5.5): reached without authentication.
+pub fn root_oauth(body: &[u8]) -> Result<HttpsUrl, Error> {
+    let root = parse(body, 64 * 1024)?;
+    if root.name != "AutodiscoverResponse" {
+        return Err(Error::BadAnswer("not an AutodiscoverResponse"));
+    }
+    let found = root
+        .elements()
+        .filter(|e| e.name == "Root")
+        .flat_map(|r| r.children_named("Link"))
+        .find(|l| {
+            l.attr("token")
+                .is_some_and(|t| t.eq_ignore_ascii_case("OAuth"))
+        })
+        .and_then(|l| l.attr("href"))
+        .and_then(parse_https);
+    found.ok_or(Error::BadAnswer("Root without OAuth link"))
+}
+
 /// The request that creates the application (UW-05): culture, endpoint ID and user agent, each at
 /// most 100 characters; refused otherwise.
 pub fn application_request(culture: &str, endpoint_id: &str, user_agent: &str) -> Option<String> {
