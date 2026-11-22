@@ -1444,7 +1444,7 @@ fn stage(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, call: &Call, title: &str
             }
         }
         ui.label(
-            RichText::new(t.members_count(count))
+            RichText::new(t.participants_count(count))
                 .size(theme::text::HEADING - 2.0)
                 .color(light),
         );

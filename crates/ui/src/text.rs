@@ -828,6 +828,15 @@ impl Texts {
         }
     }
 
+    /// "2 Teilnehmer" in a conversation's head and on a call's stage (the Windows client's word).
+    pub fn participants_count(&self, n: usize) -> String {
+        match (self.lang, n) {
+            (Lang::De, n) => format!("{n} Teilnehmer"),
+            (Lang::En, 1) => "1 participant".into(),
+            (Lang::En, n) => format!("{n} participants"),
+        }
+    }
+
     pub fn more_members(&self, n: usize) -> String {
         match self.lang {
             Lang::De => format!("und {n} weitere"),
