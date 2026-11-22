@@ -8,7 +8,8 @@
 //! `call sip:ADDRESS` · `videocall sip:ADDRESS` · `transfer sip:ADDRESS` · `answer` · `answervideo` ·
 //! `viewscreen` · `share [window]` (the desktop's dialog still asks) · `hangup` · `hold` · `resume` · `mute` · `unmute` ·
 //! `content` · `vote CONTENT CHOICE` ·
-//! `status available|busy|dnd|away` · `shot FILE.png [conv|call|options]` · `quit` (signs out and closes).
+//! `status available|busy|dnd|away` · `shot FILE.png [conv|call|options]` · `close` (closes the main window as its close button
+//! does: into the notification area where there is one) · `quit` (signs out and closes).
 
 use crate::{now, DesktopApp};
 use commscraft_ui::app::UiIntent;
@@ -394,6 +395,11 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 })
             });
             app.shots.push_back((PathBuf::from(file), false, target))
+        }
+        "close" => {
+            if let Some(c) = &app.ctx {
+                c.send_viewport_cmd(eframe::egui::ViewportCommand::Close);
+            }
         }
         "quit" => {
             app.handle(UiIntent::SignOut);
