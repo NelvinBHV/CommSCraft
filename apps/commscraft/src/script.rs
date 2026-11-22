@@ -6,7 +6,7 @@
 //! `search TEXT` ·
 //! `send TEXT` (to the selected conversation) · `group sip:ADDRESS` · `accept [N]` (the first invitation, or invitation N from 0) ·
 //! `call sip:ADDRESS` · `videocall sip:ADDRESS` · `transfer sip:ADDRESS` · `answer` · `answervideo` ·
-//! `viewscreen` · `hangup` · `hold` · `resume` · `mute` · `unmute` ·
+//! `viewscreen` · `impane on|off` (the IM pane beside a call's stage) · `hangup` · `hold` · `resume` · `mute` · `unmute` ·
 //! `content` · `vote CONTENT CHOICE` ·
 //! `status available|busy|dnd|away` · `shot FILE.png [conv|call|options]` · `close` (closes the main window as its close button
 //! does: into the notification area where there is one) · `quit` (signs out and closes).
@@ -88,6 +88,12 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 .map(|c| c.key);
             if let Some(k) = hit {
                 app.ui.select_conversation(k);
+            }
+        }
+        "impane" => {
+            // The chat button on a call's stage: `impane on|off`.
+            if let Some(key) = app.ui.selected_conversation() {
+                app.ui.set_im_pane(key, arg != "off");
             }
         }
         "send" => {

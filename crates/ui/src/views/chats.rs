@@ -30,6 +30,12 @@ pub fn conversation_body(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: Con
     history(app, ui, pal, key);
 }
 
+/// The IM of a conversation without its head: the pane beside a call's stage.
+pub fn conversation_im(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
+    composer(app, ui, pal, key);
+    history(app, ui, pal, key);
+}
+
 /// The head of a conversation window: picture, title, status or members (actions are in the bar
 /// at the bottom).
 fn window_header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
@@ -419,9 +425,18 @@ fn spelling_menu(app: &mut CommsUi, ui: &mut Ui, r: &egui::Response, key: ConvKe
 /// The emoticons, as the Windows client's picker: a click writes the code into the draft.
 fn emoticon_picker(app: &mut CommsUi, ui: &mut Ui, key: ConvKey, enabled: bool) {
     let t = app.t;
-    let r = ui
-        .add_enabled(enabled, egui::Button::new(t.emoticons).frame(false))
-        .on_hover_text(t.emoticons);
+    let pal = app.palette();
+    let r = crate::views::icons::button(
+        ui,
+        crate::views::icons::Icon::Smile,
+        t.emoticons,
+        24.0,
+        false,
+        enabled,
+        pal.muted,
+        pal.primary,
+    )
+    .on_hover_text(t.emoticons);
     let font = egui::FontId::proportional(18.0);
     egui::Popup::menu(&r).show(|ui| {
         egui::Grid::new(("emoticons", key.0)).show(ui, |ui| {
@@ -573,11 +588,25 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                         }
                     }
                     ui.horizontal(|ui| {
+                        // As in the Windows client: symbols (Lucide), names as tool tips.
+                        let symbol = |ui: &mut Ui, icon, l: &str, en: bool| {
+                            crate::views::icons::button(
+                                ui,
+                                icon,
+                                l,
+                                24.0,
+                                false,
+                                en,
+                                pal.muted,
+                                pal.primary,
+                            )
+                            .on_hover_text(l)
+                        };
                         widgets::gated(ui, t.attach, &file_gate, t, pal, |ui, l, en| {
-                            ui.add_enabled(en, egui::Button::new(l).frame(false))
+                            symbol(ui, crate::views::icons::Icon::Paperclip, l, en)
                         });
                         widgets::gated(ui, t.formatting, &rich_gate, t, pal, |ui, l, en| {
-                            ui.add_enabled(en, egui::Button::new(l).frame(false))
+                            symbol(ui, crate::views::icons::Icon::Type, l, en)
                         });
                         emoticon_picker(app, ui, key, can_send);
                         if text_len * 10 > MAX_TEXT * 9 {
@@ -590,8 +619,21 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                             let has_text =
                                 app.drafts.get(&key).is_some_and(|d| !d.trim().is_empty());
-                            let send = widgets::primary(ui, t.send, can_send && has_text, pal)
-                                .on_hover_text(t.send_tip);
+                            let send = crate::views::icons::button(
+                                ui,
+                                crate::views::icons::Icon::Send,
+                                t.send,
+                                28.0,
+                                false,
+                                can_send && has_text,
+                                if can_send && has_text {
+                                    pal.primary
+                                } else {
+                                    pal.muted
+                                },
+                                pal.primary,
+                            )
+                            .on_hover_text(t.send_tip);
                             if (send.clicked() || enter) && can_send && has_text {
                                 let text = app.drafts.remove(&key).unwrap_or_default();
                                 let text = text.trim_end().to_string();

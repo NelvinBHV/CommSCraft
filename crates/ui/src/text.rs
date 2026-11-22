@@ -519,6 +519,7 @@ texts! {
     always_close_all_tabs: "Immer alle Reiter schließen", "Always close all tabs";
     opt_tabbed: "Reiter-Unterhaltungen aktivieren", "Enable tabbed conversations";
     im_pane: "Chatbereich", "IM pane";
+    conversation_heading: "UNTERHALTUNG", "CONVERSATION";
     call_controls: "Anrufsteuerung", "Call controls";
     transfer_to_person: "An eine Person …", "To a person …";
     transfer_to_call: "Mit Rückfrage an", "Consulted, to";

@@ -4,8 +4,8 @@
 
 use crate::app::{AddressFor, CommsUi, NewChat, UiIntent, Win};
 use crate::model::{
-    Call, CallKind, CallState, ConfCommand, ConvKey, ConvState, Gate, MeetingAccess, Participant,
-    Presenters, VideoState,
+    Call, CallKind, CallState, ConfCommand, ConvKey, ConvState, Conversation, Gate, MeetingAccess,
+    Participant, Presenters, VideoState,
 };
 use crate::theme::{self, Palette};
 use crate::views::icons::{self, Icon};
@@ -331,10 +331,18 @@ fn tab_list(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, convs: &[ConvKey], cu
             });
             child.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if (selected || resp.hovered())
-                    && ui
-                        .add(egui::Button::new("×").frame(false))
-                        .on_hover_text(t.close_tab)
-                        .clicked()
+                    && crate::views::icons::button(
+                        ui,
+                        Icon::Close,
+                        t.close_tab,
+                        18.0,
+                        false,
+                        true,
+                        pal.muted,
+                        pal.primary,
+                    )
+                    .on_hover_text(t.close_tab)
+                    .clicked()
                 {
                     app.close_window(Win::Conv(k));
                 } else if c.unread > 0 {
@@ -417,14 +425,27 @@ fn bar_button(
 }
 
 fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
-    let t = app.t;
     let Some(c) = app.state.conversation(key).cloned() else {
         return;
     };
     if let Some(m) = app.state.conversation_mut(key) {
         m.unread = 0;
     }
-    // A call with the IM area hidden: the stage fills the window (the compact call view).
+    // A call: as in the Windows client the IM is a pane left of the stage, hidden at first
+    // unless the conversation already has messages; hidden, the stage fills the window.
+    let active = app
+        .state
+        .calls
+        .iter()
+        .find(|cl| {
+            cl.state != CallState::Incoming && app.state.conversation_of_call(cl) == Some(key)
+        })
+        .cloned();
+    if let Some(call) = &active {
+        if app.im_call_seen.insert(call.id) && c.messages.is_empty() {
+            app.im_hidden.insert(key);
+        }
+    }
     if app.im_hidden.contains(&key) {
         if let Some(call) = app
             .state
@@ -441,6 +462,65 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
             return;
         }
     }
+    if let Some(call) = active {
+        side_panel(app, ui, pal, key, &c);
+        let width = (ui.available_width() * 0.38).clamp(280.0, 440.0);
+        egui::Panel::left(("conv-im", key.0))
+            .resizable(true)
+            .default_size(width)
+            .frame(Frame::new().fill(pal.surface))
+            .show(ui, |ui| {
+                im_pane_head(app, ui, pal, key);
+                conv_bar(app, ui, pal, key, &c);
+                sharing_banner(app, ui, pal, key, &c);
+                crate::views::chats::conversation_im(app, ui, pal, key);
+            });
+        egui::CentralPanel::default()
+            .frame(Frame::new().fill(STAGE).inner_margin(Margin::same(10)))
+            .show(ui, |ui| stage(app, ui, pal, &call, &c.title));
+        return;
+    }
+    conv_bar(app, ui, pal, key, &c);
+    sharing_banner(app, ui, pal, key, &c);
+    side_panel(app, ui, pal, key, &c);
+    crate::views::chats::conversation_body(app, ui, pal, key);
+}
+
+/// The head of the IM pane in a call: its title and a button that hides it.
+fn im_pane_head(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
+    let t = app.t;
+    egui::Panel::top(("conv-im-head", key.0))
+        .frame(Frame::new().inner_margin(Margin::symmetric(12, 8)))
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.label(
+                    RichText::new(t.conversation_heading)
+                        .family(theme::bold())
+                        .size(theme::text::SMALL)
+                        .color(pal.muted),
+                );
+                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    let resp = crate::views::icons::button(
+                        ui,
+                        Icon::Close,
+                        t.im_pane,
+                        22.0,
+                        false,
+                        true,
+                        pal.muted,
+                        pal.primary,
+                    );
+                    if resp.on_hover_text(t.im_pane).clicked() {
+                        app.im_hidden.insert(key);
+                    }
+                });
+            });
+        });
+}
+
+/// The bar of a conversation: participants, recording, video, call, present, more.
+fn conv_bar(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &Conversation) {
+    let t = app.t;
     let caps = app.state.capabilities.clone();
     let idle = app.state.active_call().is_none();
     // The bar at the bottom, below the composer.
@@ -536,24 +616,11 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                 });
             });
         });
-    // A call of this conversation: the stage above the IM, as in the Windows client.
-    if let Some(call) = app
-        .state
-        .calls
-        .iter()
-        .find(|cl| {
-            cl.state != CallState::Incoming && app.state.conversation_of_call(cl) == Some(key)
-        })
-        .cloned()
-    {
-        let height = (ui.available_height() * 0.62).max(260.0);
-        egui::Panel::top(("conv-stage", key.0))
-            .resizable(true)
-            .default_size(height)
-            .frame(Frame::new().fill(STAGE).inner_margin(Margin::same(10)))
-            .show(ui, |ui| stage(app, ui, pal, &call, &c.title));
-    }
-    // Someone shares in the meeting: say so and offer to view it.
+}
+
+/// Someone shares in the meeting: say so and offer to view it.
+fn sharing_banner(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &Conversation) {
+    let t = app.t;
     if let (Some(sharer), true) = (c.sharer.clone(), c.is_group() && c.state == ConvState::Open) {
         egui::Panel::top(("conv-sharing", key.0))
             .frame(
@@ -573,6 +640,11 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                 });
             });
     }
+}
+
+/// Participants and meeting content at the right.
+fn side_panel(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey, c: &Conversation) {
+    let t = app.t;
     if app.participants_open.contains(&key) || c.content.is_some() {
         egui::Panel::right(("conv-side", key.0))
             .default_size(230.0)
@@ -682,7 +754,6 @@ fn conversation(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                 });
             });
     }
-    crate::views::chats::conversation_body(app, ui, pal, key);
 }
 
 /// One participant: picture, name (a presenter's menu when we present) and the symbols of
@@ -1501,7 +1572,13 @@ fn stage_controls(
     ui.add_space(4.0);
     if let Some(key) = app.state.conversation_of_call(call) {
         let hidden = app.im_hidden.contains(&key);
-        if round_button(ui, Icon::Chat, t.im_pane, grey, true, hidden).clicked() {
+        // As in the Windows client: the plain chat symbol, lighter while the pane is open.
+        let colour = if hidden {
+            grey
+        } else {
+            egui::Color32::from_gray(130)
+        };
+        if round_button(ui, Icon::Chat, t.im_pane, colour, true, false).clicked() {
             if hidden {
                 app.im_hidden.remove(&key);
             } else {

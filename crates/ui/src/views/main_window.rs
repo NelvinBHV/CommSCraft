@@ -390,10 +390,18 @@ fn alert(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                             .color(pal.ink),
                     );
                 });
-                if ui
-                    .small_button("×")
-                    .on_hover_text(app.t.close_alert)
-                    .clicked()
+                if crate::views::icons::button(
+                    ui,
+                    crate::views::icons::Icon::Close,
+                    app.t.close_alert,
+                    18.0,
+                    false,
+                    true,
+                    pal.muted,
+                    pal.primary,
+                )
+                .on_hover_text(app.t.close_alert)
+                .clicked()
                 {
                     app.dismissed_alert = n.at;
                 }
