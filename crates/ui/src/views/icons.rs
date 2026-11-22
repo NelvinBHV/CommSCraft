@@ -43,6 +43,11 @@ fn lucide(icon: Icon) -> char {
         Icon::Star => 0xe176,         // star
         Icon::Mic => 0xe118,          // mic
         Icon::HangUp => 0xe138,       // phone-off
+        Icon::Paperclip => 0xe12d,    // paperclip
+        Icon::Smile => 0xe164,        // smile
+        Icon::Send => 0xe152,         // send
+        Icon::Type => 0xe198,         // type
+        Icon::Close => 0xe1b2,        // x
     };
     char::from_u32(cp).unwrap_or('?')
 }
@@ -78,6 +83,16 @@ pub enum Icon {
     Mic,
     /// A handset lying down: hang up.
     HangUp,
+    /// Attach a file (the composer).
+    Paperclip,
+    /// The emoticon picker (the composer).
+    Smile,
+    /// Send the message (the composer).
+    Send,
+    /// Text formatting (the composer).
+    Type,
+    /// Close a pane.
+    Close,
 }
 
 /// Draws an icon into `rect` (square-ish): the Lucide glyph, or the own line drawing when the
@@ -248,6 +263,37 @@ fn draw_lines(p: &Painter, rect: Rect, icon: Icon, colour: Color32) {
         Icon::Search => {
             p.circle_stroke(at(-0.15, -0.15), r * 0.5, s);
             p.line_segment([at(0.22, 0.22), at(0.75, 0.75)], Stroke::new(2.2, colour));
+        }
+        Icon::Paperclip => {
+            arc(p, at(0.0, -0.35), r * 0.3, 180.0, 360.0, s);
+            arc(p, at(0.0, 0.35), r * 0.3, 0.0, 180.0, s);
+            p.line_segment([at(-0.3, -0.35), at(-0.3, 0.35)], s);
+            p.line_segment([at(0.3, -0.35), at(0.3, 0.35)], s);
+        }
+        Icon::Smile => {
+            p.circle_stroke(c, r * 0.8, s);
+            p.circle_filled(at(-0.3, -0.2), r * 0.08, colour);
+            p.circle_filled(at(0.3, -0.2), r * 0.08, colour);
+            arc(p, at(0.0, 0.05), r * 0.4, 20.0, 160.0, s);
+        }
+        Icon::Send => {
+            p.add(egui::Shape::closed_line(
+                vec![
+                    at(-0.75, -0.6),
+                    at(0.75, 0.0),
+                    at(-0.75, 0.6),
+                    at(-0.4, 0.0),
+                ],
+                s,
+            ));
+        }
+        Icon::Type => {
+            p.line_segment([at(-0.6, -0.6), at(0.6, -0.6)], s);
+            p.line_segment([at(0.0, -0.6), at(0.0, 0.7)], s);
+        }
+        Icon::Close => {
+            p.line_segment([at(-0.55, -0.55), at(0.55, 0.55)], s);
+            p.line_segment([at(0.55, -0.55), at(-0.55, 0.55)], s);
         }
     }
 }

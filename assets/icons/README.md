@@ -45,3 +45,4 @@
 | `hand` | U+E1D7 |
 | `users-round` | U+E46E |
 | `presentation` | U+E4AE |
+| `type` | U+E198 |

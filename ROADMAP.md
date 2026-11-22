@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (sharing the own screen from the desktop client)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (IM pane in calls, Lucide symbols, the owner's tray icon)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-22 | Call windows as in the Windows client: in a call (audio, video, sharing) the IM is a resizable pane left of the stage with its heading and a close button, hidden at first unless the conversation already has messages; the stage's chat button shows or hides it (the IM was below the stage before). Composer symbols from Lucide (attach, formatting, emoticons, send) with names as tool tips, close buttons with Lucide's x. The notification area shows the owner's tray icon (fox with headset, `assets/branding/tray`), symbolic so the panel colours it; the own status as a coloured overlay dot where the host draws overlays, named in the tool tip everywhere. Version 0.90.8-alpha. |
 | 2026-11-22 | Sharing the own screen from the desktop client (`tested-in-lab` with the desktop's real dialog): Present → share my screen or a window in a 1:1 conversation; the call shows “You are presenting” with stop presenting. A still screen's last picture is sent again after a second or when a key frame is asked for (the desktop sends pictures only on change, so a viewer joining after the first key frame saw nothing). Version 0.90.7-alpha. |
 | 2026-11-22 | Notification area icon (StatusNotifierItem and DBusMenu, own implementation on zbus 6): the brand icon with a dot in the colour of the own status, a menu with open, the status, notifications off and quit; closing the main window keeps CommSCraft signed in behind the icon (option, on by default) and a click on the icon, a notification or an incoming call opens it again. Hosts: KDE Plasma, Xfce, Cinnamon, MATE, Budgie, LXQt, waybar; GNOME with the extension “AppIndicator and KStatusNotifierItem Support”. Without a host closing quits as before. Version 0.90.6-alpha. |
 | 2026-11-22 | Flatpak hardening: the camera through the desktop's Camera portal and PipeWire (`screen-capture`, uncompressed YUYV, memory or memfd buffers), so the Flatpak keeps only the GPU (`--device=dri` instead of all devices, #257; `tested-in-lab`: a video call with the portal camera shown by the Windows client); outside the Flatpak V4L2 with the portal as fallback. MIT Kerberos 1.22.3 (was 1.22), a weekly check against upstream releases and `components.txt` per release with the runtime and FFmpeg builds (#256). Version 0.90.5-alpha. |

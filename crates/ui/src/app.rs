@@ -510,6 +510,10 @@ pub struct CommsUi {
     pub(crate) meeting_link: String,
     /// Conversations whose IM area is hidden below the stage.
     pub(crate) im_hidden: BTreeSet<ConvKey>,
+    /// Calls whose IM pane got its first state (hidden unless there were messages).
+    pub(crate) im_call_seen: BTreeSet<u32>,
+    /// Conversation windows grown by the IM pane (they shrink again when it closes).
+    pub(crate) im_widened: BTreeSet<ConvKey>,
     /// The tab window's close question is open.
     pub(crate) close_tabs_question: bool,
     /// The meeting options dialog: the meeting and the options being edited.
@@ -598,6 +602,8 @@ impl CommsUi {
             group_dialog: None,
             meeting_link: String::new(),
             im_hidden: BTreeSet::new(),
+            im_call_seen: BTreeSet::new(),
+            im_widened: BTreeSet::new(),
             close_tabs_question: false,
             meeting_options: None,
             entry_info: None,
@@ -792,6 +798,15 @@ impl CommsUi {
     /// The next group conversation that appears is the one the user asked for: select it.
     pub fn expect_group(&mut self) {
         self.select_next_group = true;
+    }
+
+    /// Shows or hides the IM pane beside a call's stage (the stage's chat button).
+    pub fn set_im_pane(&mut self, key: ConvKey, shown: bool) {
+        if shown {
+            self.im_hidden.remove(&key);
+        } else {
+            self.im_hidden.insert(key);
+        }
     }
 
     /// Drops the textures of a window that is gone (they belong to its painter); they are
