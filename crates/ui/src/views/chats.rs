@@ -282,11 +282,6 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
         return;
     }
     let own = m.sender.is_none();
-    // Emoticon codes as emoji where the system font has them.
-    let font = egui::FontId::proportional(theme::text::BODY);
-    let shown = crate::emoticons::show(&m.text, &mut |e| {
-        ui.ctx().fonts_mut(|f| f.has_glyphs(&font, e))
-    });
     let max_w = (ui.available_width() * 0.68).max(240.0);
     let time = format::clock(m.at, app.utc_offset);
     if own {
@@ -297,12 +292,7 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
                 .inner_margin(Margin::symmetric(16, 12))
                 .show(ui, |ui| {
                     ui.set_max_width(max_w);
-                    ui.add(
-                        egui::Label::new(
-                            RichText::new(&shown).size(theme::text::BODY).color(pal.ink),
-                        )
-                        .wrap(),
-                    );
+                    emoticon_text(app, ui, &m.text, theme::text::BODY, pal.ink);
                 });
             let (status, bad) = delivery_text(app, &m.delivery);
             ui.label(
@@ -348,12 +338,7 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
                 .show(ui, |ui| {
                     ui.set_max_width(max_w);
                     if m.runs.is_empty() {
-                        ui.add(
-                            egui::Label::new(
-                                RichText::new(&shown).size(theme::text::BODY).color(pal.ink),
-                            )
-                            .wrap(),
-                        );
+                        emoticon_text(app, ui, &m.text, theme::text::BODY, pal.ink);
                     } else {
                         ui.add(egui::Label::new(formatted(&m.runs, max_w, pal)).wrap());
                     }
@@ -361,6 +346,84 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
         });
     });
     ui.add_space(4.0);
+}
+
+/// A message's text with the emoticons as coloured pictures (where the app gave them, else the
+/// emoji), wrapped as the Windows client shows them.
+pub(crate) fn emoticon_text(
+    app: &CommsUi,
+    ui: &mut Ui,
+    text: &str,
+    size: f32,
+    colour: egui::Color32,
+) {
+    use crate::emoticons::Piece;
+    let pieces = crate::emoticons::pieces(text);
+    if !pieces.iter().any(|p| matches!(p, Piece::Emoticon(_))) {
+        ui.add(egui::Label::new(RichText::new(text).size(size).color(colour)).wrap());
+        return;
+    }
+    ui.horizontal_wrapped(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        for p in pieces {
+            match p {
+                Piece::Text(t) => {
+                    for (i, line) in t.split('\n').enumerate() {
+                        if i > 0 {
+                            ui.end_row();
+                        }
+                        for word in line.split_inclusive(' ') {
+                            ui.label(RichText::new(word).size(size).color(colour));
+                        }
+                    }
+                }
+                Piece::Emoticon(e) => emoticon_picture(app, ui, e, size, colour),
+            }
+        }
+    });
+}
+
+/// One line (a preview in a list) with the emoticons as pictures, cut at the available width.
+pub(crate) fn emoticon_line(
+    app: &CommsUi,
+    ui: &mut Ui,
+    text: &str,
+    size: f32,
+    colour: egui::Color32,
+) {
+    use crate::emoticons::Piece;
+    let line = text.replace('\n', " ");
+    let pieces = crate::emoticons::pieces(&line);
+    if !pieces.iter().any(|p| matches!(p, Piece::Emoticon(_))) {
+        widgets::ellipsis(ui, RichText::new(line).size(size).color(colour));
+        return;
+    }
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        let clip = ui.max_rect();
+        ui.set_clip_rect(clip.intersect(ui.clip_rect()));
+        for p in pieces {
+            match p {
+                Piece::Text(t) => {
+                    ui.add(egui::Label::new(RichText::new(t).size(size).color(colour)).truncate());
+                }
+                Piece::Emoticon(e) => emoticon_picture(app, ui, e, size, colour),
+            }
+        }
+    });
+}
+
+/// An emoticon's coloured picture at the text's size, or its emoji without a picture.
+fn emoticon_picture(app: &CommsUi, ui: &mut Ui, emoji: &str, size: f32, colour: egui::Color32) {
+    match app.emoticon_texture(ui.ctx(), emoji) {
+        Some(tex) => {
+            let side = size * 1.35;
+            ui.add(egui::Image::new(&tex).fit_to_exact_size(egui::vec2(side, side)));
+        }
+        None => {
+            ui.label(RichText::new(emoji).size(size).color(colour));
+        }
+    }
 }
 
 /// A formatted message as the sender wrote it: bold, italic, underline, strike-through and its
@@ -483,11 +546,23 @@ fn emoticon_picker(app: &mut CommsUi, ui: &mut Ui, key: ConvKey, enabled: bool) 
                     crate::text::Lang::De => de,
                     crate::text::Lang::En => en,
                 };
-                let has = ui.ctx().fonts_mut(|f| f.has_glyphs(&font, emoji));
-                let face = if has { *emoji } else { *code };
-                let b = ui
-                    .add(egui::Button::new(RichText::new(face).font(font.clone())).frame(false))
-                    .on_hover_text(format!("{name}  {code}"));
+                // The coloured picture as in the Windows client; the emoji or the code without.
+                let b = match app.emoticon_texture(ui.ctx(), emoji) {
+                    Some(tex) => ui.add(
+                        egui::Button::image(
+                            egui::Image::new(&tex).fit_to_exact_size(egui::vec2(22.0, 22.0)),
+                        )
+                        .frame(false),
+                    ),
+                    None => {
+                        let has = ui.ctx().fonts_mut(|f| f.has_glyphs(&font, emoji));
+                        let face = if has { *emoji } else { *code };
+                        ui.add(
+                            egui::Button::new(RichText::new(face).font(font.clone())).frame(false),
+                        )
+                    }
+                }
+                .on_hover_text(format!("{name}  {code}"));
                 b.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, *name));
                 if b.clicked() {
                     let d = app.drafts.entry(key).or_default();
@@ -499,7 +574,8 @@ fn emoticon_picker(app: &mut CommsUi, ui: &mut Ui, key: ConvKey, enabled: bool) 
                     app.focus_composer = true;
                     ui.close();
                 }
-                if i % 8 == 7 {
+                // Ten in a row, as the Windows client's picker.
+                if i % 10 == 9 {
                     ui.end_row();
                 }
             }
