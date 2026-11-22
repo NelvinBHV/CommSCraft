@@ -62,6 +62,7 @@ pub fn parse(text: &str) -> Prefs {
             "compact_contacts" => p.compact_contacts = v == "true",
             "sort_by_availability" => p.sort_by_availability = v == "true",
             "away_group" => p.away_group = v == "true",
+            "close_to_tray" => p.close_to_tray = v != "false",
             "favorites_group" => p.favorites_group = v != "false",
             "meeting_audio_ask" => p.meeting_audio_ask = v != "false",
             "call_me_number"
@@ -165,6 +166,7 @@ pub fn format(p: &Prefs) -> String {
         ("compact_contacts", p.compact_contacts),
         ("sort_by_availability", p.sort_by_availability),
         ("away_group", p.away_group),
+        ("close_to_tray", p.close_to_tray),
         ("favorites_group", p.favorites_group),
         ("meeting_audio_ask", p.meeting_audio_ask),
         ("message_alerts", p.message_alerts),

@@ -1,8 +1,8 @@
 //! Desktop notifications over the session bus: the Desktop Notifications Specification 1.2
 //! (`org.freedesktop.Notifications`: `Notify`, `CloseNotification`, the signals `ActionInvoked`
 //! and `NotificationClosed`) – the standard notification service of Linux desktops, which a
-//! Flatpak reaches with `--talk-name=org.freedesktop.Notifications`. In place of a notification
-//! area icon (the GNOME desktops in use have no StatusNotifierItem host).
+//! Flatpak reaches with `--talk-name=org.freedesktop.Notifications`. Next to the notification
+//! area icon (`tray`).
 //!
 //! Security by design: two threads of their own; only the title, a short text and fixed action
 //! IDs leave the process (the text is the start of the newest message, as the toast of the
@@ -204,6 +204,9 @@ async fn signals(conn: &zbus::Connection, ids: &Ids, tx: &Sender<Reply>) {
 pub struct UiState {
     pub last_frame_ms: Arc<std::sync::atomic::AtomicU64>,
     pub messages_quiet: Arc<std::sync::atomic::AtomicBool>,
+    /// "Notifications off" in the notification area icon's menu: no notifications for
+    /// messages and invitations (calls still ring and show).
+    pub muted: Arc<std::sync::atomic::AtomicBool>,
 }
 
 /// A window that drew no frame for this long is taken as not seen (design).
@@ -284,6 +287,11 @@ impl WorkerNotes {
         actions: Vec<(&str, &str)>,
         urgent: bool,
     ) {
+        if !matches!(about, About::Call(_))
+            && self.ui.muted.load(std::sync::atomic::Ordering::Relaxed)
+        {
+            return;
+        }
         let tag = self.next;
         self.next += 1;
         self.notifier.show(Show {

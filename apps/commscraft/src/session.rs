@@ -246,6 +246,12 @@ impl Worker {
         self.tx.try_send(c).is_ok()
     }
 
+    /// The worker's command queue, for a thread that acts without the window (the
+    /// notification area icon).
+    pub fn sender(&self) -> SyncSender<ToWorker> {
+        self.tx.clone()
+    }
+
     /// The events that arrived (at most `max` per call).
     pub fn events(&self, max: usize) -> Vec<AppEvent> {
         self.rx.try_iter().take(max).collect()

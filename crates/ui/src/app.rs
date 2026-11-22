@@ -308,6 +308,9 @@ pub struct Prefs {
     pub chat_text_size: f32,
     /// Check spelling as I type (where a dictionary for the language is installed).
     pub spell_check: bool,
+    /// Closing the main window keeps CommSCraft running in the notification area (where the
+    /// desktop has one).
+    pub close_to_tray: bool,
     /// The look of our messages (sent formatted where the other side accepts it).
     pub im_bold: bool,
     pub im_italic: bool,
@@ -363,6 +366,7 @@ impl Default for Prefs {
             quiet_when_dnd: true,
             chat_text_size: 14.0,
             spell_check: true,
+            close_to_tray: true,
             im_bold: false,
             im_italic: false,
             im_underline: false,
@@ -783,6 +787,14 @@ impl CommsUi {
     /// The next group conversation that appears is the one the user asked for: select it.
     pub fn expect_group(&mut self) {
         self.select_next_group = true;
+    }
+
+    /// Drops the textures of a window that is gone (they belong to its painter); they are
+    /// loaded again in the next window.
+    pub fn forget_textures(&mut self) {
+        self.logo = None;
+        self.textures.borrow_mut().clear();
+        self.video_textures.borrow_mut().clear();
     }
 
     /// Applies an adapter event; a group the user just started or joined is selected.

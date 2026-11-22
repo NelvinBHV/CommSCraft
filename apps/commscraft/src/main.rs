@@ -15,6 +15,7 @@ mod prefs;
 mod script;
 mod session;
 mod spell;
+mod tray;
 mod vault;
 
 use commscraft_ui::app::{CommsUi, UiIntent};
@@ -219,6 +220,60 @@ fn save_png(path: &std::path::Path, image: &egui::ColorImage) -> Result<(), Stri
     writer.write_image_data(&bytes).map_err(|e| e.to_string())
 }
 
+/// What the thread of the notification area icon shares with the app.
+#[derive(Clone, Default)]
+struct TrayControl {
+    /// The signed-in worker's command queue (status changes go there directly).
+    worker: std::sync::Arc<std::sync::Mutex<Option<std::sync::mpsc::SyncSender<ToWorker>>>>,
+    /// "Notifications off", read by the worker's notifications.
+    muted: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    /// The window's context while there is a window (to wake it).
+    ctx: std::sync::Arc<std::sync::Mutex<Option<egui::Context>>>,
+    open: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    quit: std::sync::Arc<std::sync::atomic::AtomicBool>,
+}
+
+/// Carries out the icon's menu in a thread of its own: a covered or closed window draws no
+/// frames (Wayland), so the status, the notifications switch and quitting must not wait for
+/// one. Opening and quitting wake the window or the background loop; quitting that finds
+/// neither ticking signs out and ends the process after three seconds.
+fn spawn_tray_actions(rx: std::sync::mpsc::Receiver<tray::TrayEvent>, c: TrayControl) {
+    use std::sync::atomic::Ordering;
+    let wake = |c: &TrayControl| {
+        if let Some(ctx) = c.ctx.lock().ok().and_then(|g| g.clone()) {
+            ctx.request_repaint();
+        }
+    };
+    let _ = std::thread::Builder::new()
+        .name("tray-actions".into())
+        .spawn(move || {
+            for e in rx {
+                match e {
+                    tray::TrayEvent::Presence(p) => {
+                        if let Some(tx) = c.worker.lock().ok().and_then(|g| g.clone()) {
+                            let _ = tx.try_send(ToWorker::SetPresence(p));
+                        }
+                    }
+                    tray::TrayEvent::Mute(m) => c.muted.store(m, Ordering::Relaxed),
+                    tray::TrayEvent::Open => {
+                        c.open.store(true, Ordering::Relaxed);
+                        wake(&c);
+                    }
+                    tray::TrayEvent::Quit => {
+                        c.quit.store(true, Ordering::Relaxed);
+                        wake(&c);
+                        std::thread::sleep(Duration::from_secs(3));
+                        if let Some(tx) = c.worker.lock().ok().and_then(|g| g.clone()) {
+                            let _ = tx.try_send(ToWorker::SignOut);
+                            std::thread::sleep(Duration::from_millis(1500));
+                        }
+                        std::process::exit(0);
+                    }
+                }
+            }
+        });
+}
+
 pub(crate) struct DesktopApp {
     pub(crate) ui: CommsUi,
     lang: Lang,
@@ -240,7 +295,7 @@ pub(crate) struct DesktopApp {
     worker_done: bool,
     /// The password to keep in the keyring once the sign-in succeeded (the user asked for it).
     pending_store: Option<(String, zeroize::Zeroizing<String>)>,
-    ctx: Option<egui::Context>,
+    pub(crate) ctx: Option<egui::Context>,
     ca: Option<Vec<u8>>,
     started: std::time::Instant,
     screenshot_after: u64,
@@ -260,6 +315,19 @@ pub(crate) struct DesktopApp {
         std::sync::mpsc::Receiver<Option<std::sync::Arc<dyn commscraft_ui::spell::Speller>>>,
     >,
     spell_lang: Option<Lang>,
+    /// The notification area icon, asked for once (`None` inside: no host); not for demos and
+    /// screenshots.
+    tray: Option<Option<tray::Shared>>,
+    /// What the icon shows now.
+    tray_shown: Option<tray::Shown>,
+    /// The main window was closed into the notification area: the session goes on.
+    background: bool,
+    /// In the background: something wants the window back (the icon, a notification, a call).
+    wants_window: bool,
+    /// Quit chosen in the icon's menu.
+    quit: bool,
+    /// Shared with the thread that carries out the icon's menu.
+    tray_control: TrayControl,
 }
 
 impl DesktopApp {
@@ -267,15 +335,22 @@ impl DesktopApp {
     /// seen and whether message notifications are quiet; without a notification service the
     /// interface keeps its own notification window.
     fn notes_tick(&mut self) {
+        self.notes_tick_seen(true);
+    }
+
+    /// As [`Self::notes_tick`]; `seen` false in the background (no window, notifications shown).
+    fn notes_tick_seen(&mut self, seen: bool) {
         use std::sync::atomic::Ordering;
         let available = self
             .notifier
             .get_or_insert_with(|| notify::Notifier::start().map(std::sync::Arc::new))
             .is_some();
         self.ui.system_notifications = available;
-        self.notes_ui
-            .last_frame_ms
-            .store(notify::now_ms(), Ordering::Relaxed);
+        if seen {
+            self.notes_ui
+                .last_frame_ms
+                .store(notify::now_ms(), Ordering::Relaxed);
+        }
         self.notes_ui
             .messages_quiet
             .store(self.ui.quiet_for_messages(), Ordering::Relaxed);
@@ -685,6 +760,124 @@ impl DesktopApp {
         }
     }
 
+    /// The notification area icon: started once, kept in line with the own status, its
+    /// choices carried out.
+    fn tray_tick(&mut self, ctx: Option<&egui::Context>) {
+        let t = self.ui.t;
+        let signed_in = self.worker.is_some()
+            && matches!(
+                self.ui.state.connection,
+                Connection::Connected | Connection::Degraded(_)
+            );
+        let presence = self.ui.state.me.presence;
+        let shown = tray::Shown {
+            presence,
+            muted: self
+                .tray_control
+                .muted
+                .load(std::sync::atomic::Ordering::Relaxed),
+            signed_in,
+            open: t.tray_open.to_string(),
+            statuses: tray::STATUSES
+                .iter()
+                .map(|p| t.presence(*p).to_string())
+                .collect(),
+            mute: t.tray_mute.to_string(),
+            quit: t.tray_quit.to_string(),
+            status_text: if signed_in {
+                t.presence(presence).to_string()
+            } else {
+                t.presence(commscraft_ui::model::Presence::Offline)
+                    .to_string()
+            },
+        };
+        let tray = self
+            .tray
+            .get_or_insert_with(|| {
+                tray::Tray::start(shown.clone(), decode_png(ICON)).map(std::sync::Arc::new)
+            })
+            .clone();
+        let Some(tray) = tray else { return };
+        if self.tray_shown.as_ref() != Some(&shown) {
+            tray.show(shown.clone());
+            self.tray_shown = Some(shown);
+        }
+        if let Some(rx) = tray.take_events() {
+            spawn_tray_actions(rx, self.tray_control.clone());
+        }
+        use std::sync::atomic::Ordering;
+        if let Ok(mut w) = self.tray_control.worker.lock() {
+            *w = self.worker.as_ref().map(|w| w.sender());
+        }
+        if self.tray_control.open.swap(false, Ordering::Relaxed) {
+            match ctx {
+                Some(c) => {
+                    c.send_viewport_cmd(egui::ViewportCommand::Minimized(false));
+                    c.send_viewport_cmd(egui::ViewportCommand::Focus);
+                }
+                None => self.wants_window = true,
+            }
+        }
+        if self.tray_control.quit.load(Ordering::Relaxed) && !self.quit {
+            self.quit = true;
+            if let Some(c) = ctx {
+                c.send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+        }
+    }
+
+    /// The window is gone: no context, and the textures of its painter are dropped.
+    fn detach(&mut self) {
+        self.ctx = None;
+        if let Ok(mut c) = self.tray_control.ctx.lock() {
+            *c = None;
+        }
+        self.ui.forget_textures();
+    }
+
+    /// A new window: its context (the textures are loaded again on the first frame).
+    fn reattach(&mut self, ctx: &egui::Context) {
+        self.ctx = Some(ctx.clone());
+        if let Ok(mut c) = self.tray_control.ctx.lock() {
+            *c = Some(ctx.clone());
+        }
+        self.ui.forget_textures();
+    }
+
+    /// Quitting: signs out (at most three seconds) so the server sees us go at once.
+    fn shutdown(&mut self) {
+        let Some(w) = &self.worker else { return };
+        if !w.send(ToWorker::SignOut) {
+            return;
+        }
+        let until = Instant::now() + Duration::from_secs(3);
+        while self.worker.is_some() && Instant::now() < until {
+            self.pump_session();
+            std::thread::sleep(Duration::from_millis(50));
+        }
+    }
+
+    /// Whether closing the main window keeps CommSCraft running in the notification area.
+    fn closes_to_tray(&self) -> bool {
+        !self.quit
+            && self.ui.prefs.close_to_tray
+            && self.tray.as_ref().is_some_and(|t| t.is_some())
+            && self.shots.is_empty()
+            && self.close_at.is_none()
+    }
+
+    /// One step without a window: the session's events, notifications, the icon.
+    fn background_tick(&mut self) {
+        self.pump_session();
+        self.notes_tick_seen(false);
+        self.idle_tick();
+        self.tray_tick(None);
+        if self.worker_done {
+            self.worker_done = false;
+            self.worker = None;
+        }
+    }
+
     fn pump_session(&mut self) {
         let Some(w) = &self.worker else { return };
         let mut ended = false;
@@ -698,6 +891,14 @@ impl DesktopApp {
             }
             if matches!(e, AppEvent::Connection(Connection::Failed(_))) {
                 self.pending_store = None;
+            }
+            if self.background
+                && matches!(
+                    e,
+                    AppEvent::OpenSession { .. } | AppEvent::CallStarted { incoming: true, .. }
+                )
+            {
+                self.wants_window = true;
             }
             let signed_in = matches!(e, AppEvent::SignedIn(_));
             self.ui.apply(e);
@@ -742,6 +943,11 @@ impl eframe::App for DesktopApp {
         self.notes_tick();
         self.spell_tick();
         self.idle_tick();
+        self.tray_tick(Some(&ctx));
+        if ctx.input(|i| i.viewport().close_requested()) && self.closes_to_tray() {
+            // The window goes; main() keeps the session running behind the icon.
+            self.background = true;
+        }
         if self.worker_done {
             self.worker_done = false;
             self.worker = None;
@@ -875,74 +1081,137 @@ fn main() {
         viewport,
         ..Default::default()
     };
-    let result = eframe::run_native(
-        "CommSCraft",
-        options,
-        Box::new(move |cc| {
-            cc.egui_ctx.set_fonts(fonts);
-            if args.embed_windows {
-                cc.egui_ctx.set_embed_viewports(true);
-            }
-            let mut ui = CommsUi::new(lang, offset);
-            ui.audio_devices = desktop::sound_devices();
-            ui.set_view(args.view);
-            // Screenshots use the defaults, not the user's preferences.
-            if args.screenshot.is_none() && !args.demo {
-                ui.prefs = prefs::load();
-                // The last sign-in address, and whether the keyring holds its password.
-                let last = ui.prefs.last_address.clone();
-                if !last.is_empty() {
-                    ui.set_sign_in_address(last.trim_start_matches("sip:"));
-                    if vault::has(&last) {
-                        ui.stored_password_for = Some(last);
-                    }
+    let embed = args.embed_windows;
+    let ctx_for = |cc: &eframe::CreationContext<'_>| {
+        cc.egui_ctx.set_fonts(fonts.clone());
+        if embed {
+            cc.egui_ctx.set_embed_viewports(true);
+        }
+    };
+    // The app outlives its window: closed into the notification area, the session goes on and
+    // the window opens again from the icon, a notification or an incoming call.
+    let shared: std::rc::Rc<std::cell::RefCell<Option<DesktopApp>>> =
+        std::rc::Rc::new(std::cell::RefCell::new(None));
+    let mut first = Some(move |cc: &eframe::CreationContext<'_>| -> DesktopApp {
+        let mut ui = CommsUi::new(lang, offset);
+        ui.audio_devices = desktop::sound_devices();
+        ui.set_view(args.view);
+        // Screenshots use the defaults, not the user's preferences.
+        if args.screenshot.is_none() && !args.demo {
+            ui.prefs = prefs::load();
+            // The last sign-in address, and whether the keyring holds its password.
+            let last = ui.prefs.last_address.clone();
+            if !last.is_empty() {
+                ui.set_sign_in_address(last.trim_start_matches("sip:"));
+                if vault::has(&last) {
+                    ui.stored_password_for = Some(last);
                 }
             }
-            ui.prefs.lang = lang;
-            let quiet_desktop = args.demo || args.screenshot.is_some();
-            let mut app = DesktopApp {
-                ui,
-                lang,
-                shots: args
-                    .screenshot
-                    .map(|p| (p, true, None))
-                    .into_iter()
-                    .collect(),
-                commands: args.commands.map(script::follow),
-                close_at: None,
-                frames: 0,
-                shot_rx: None,
-                audio_test: std::sync::mpsc::channel(),
-                shot_since: None,
-                worker: None,
-                worker_done: false,
-                pending_store: None,
-                ctx: Some(cc.egui_ctx.clone()),
-                ca,
-                started: std::time::Instant::now(),
-                screenshot_after: args.screenshot_after,
-                idle: None,
-                machine: commscraft_presence::MachineActivity::Active,
-                idle_override: None,
-                notifier: quiet_desktop.then_some(None),
-                spell_rx: None,
-                spell_lang: None,
-                notes_ui: notify::UiState {
-                    last_frame_ms: std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0)),
-                    messages_quiet: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
-                },
-            };
-            if args.demo {
-                app.start_demo();
-            } else if let Some(form) = args.sign_in {
-                app.handle(UiIntent::SignIn(form));
-            }
-            Ok(Box::new(app))
-        }),
-    );
-    if let Err(e) = result {
-        eprintln!("commscraft: {e}");
-        std::process::exit(1);
+        }
+        ui.prefs.lang = lang;
+        let quiet_desktop = args.demo || args.screenshot.is_some();
+        let tray_control = TrayControl::default();
+        let mut app = DesktopApp {
+            ui,
+            lang,
+            shots: args
+                .screenshot
+                .map(|p| (p, true, None))
+                .into_iter()
+                .collect(),
+            commands: args.commands.map(script::follow),
+            close_at: None,
+            frames: 0,
+            shot_rx: None,
+            audio_test: std::sync::mpsc::channel(),
+            shot_since: None,
+            worker: None,
+            worker_done: false,
+            pending_store: None,
+            ctx: Some(cc.egui_ctx.clone()),
+            ca,
+            started: std::time::Instant::now(),
+            screenshot_after: args.screenshot_after,
+            idle: None,
+            machine: commscraft_presence::MachineActivity::Active,
+            idle_override: None,
+            notifier: quiet_desktop.then_some(None),
+            spell_rx: None,
+            spell_lang: None,
+            tray: quiet_desktop.then_some(None),
+            tray_shown: None,
+            background: false,
+            wants_window: false,
+            quit: false,
+            tray_control: tray_control.clone(),
+            notes_ui: notify::UiState {
+                last_frame_ms: std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0)),
+                messages_quiet: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                muted: tray_control.muted.clone(),
+            },
+        };
+        if let Ok(mut c) = tray_control.ctx.lock() {
+            *c = Some(cc.egui_ctx.clone());
+        }
+        if args.demo {
+            app.start_demo();
+        } else if let Some(form) = args.sign_in {
+            app.handle(UiIntent::SignIn(form));
+        }
+        app
+    });
+    loop {
+        let (sh, make) = (shared.clone(), first.take());
+        let result = eframe::run_native(
+            "CommSCraft",
+            options.clone(),
+            Box::new(move |cc| {
+                ctx_for(cc);
+                let mut slot = sh.borrow_mut();
+                match (slot.as_mut(), make) {
+                    (Some(app), _) => app.reattach(&cc.egui_ctx),
+                    (None, Some(make)) => *slot = Some(make(cc)),
+                    (None, None) => {}
+                }
+                drop(slot);
+                Ok(Box::new(Shell(sh)))
+            }),
+        );
+        if let Err(e) = result {
+            eprintln!("commscraft: {e}");
+            std::process::exit(1);
+        }
+        let mut slot = shared.borrow_mut();
+        let Some(app) = slot.as_mut() else { break };
+        if !app.background || app.quit {
+            break;
+        }
+        app.detach();
+        while !app.quit && !app.wants_window {
+            app.background_tick();
+            std::thread::sleep(Duration::from_millis(200));
+        }
+        if app.quit {
+            break;
+        }
+        app.background = false;
+        app.wants_window = false;
+    }
+    // Quitting signs out as closing the window always did.
+    let mut slot = shared.borrow_mut();
+    if let Some(app) = slot.as_mut() {
+        app.shutdown();
+    }
+}
+
+/// The window's view of the app that outlives it.
+struct Shell(std::rc::Rc<std::cell::RefCell<Option<DesktopApp>>>);
+
+impl eframe::App for Shell {
+    fn ui(&mut self, ui: &mut egui::Ui, frame: &mut eframe::Frame) {
+        if let Some(app) = self.0.borrow_mut().as_mut() {
+            eframe::App::ui(app, ui, frame);
+        }
     }
 }
 
