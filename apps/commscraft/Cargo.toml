@@ -12,6 +12,8 @@ commscraft-ui = { path = "../../crates/ui" }
 # The session adapter: sign-in, the engine, call media.
 commscraft-audio-alsa = { path = "../../crates/audio-alsa" }
 commscraft-client = { path = "../../crates/client" }
+# Sharing the own screen: the ScreenCast portal and PipeWire (function 43).
+commscraft-screen-capture = { path = "../../crates/screen-capture" }
 commscraft-conf = { path = "../../crates/conf" }
 commscraft-dlx = { path = "../../crates/dlx" }
 commscraft-gssapi = { path = "../../crates/gssapi" }

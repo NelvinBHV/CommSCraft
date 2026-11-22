@@ -734,6 +734,7 @@ dependencies = [
  "commscraft-psom",
  "commscraft-register",
  "commscraft-rtp",
+ "commscraft-screen-capture",
  "commscraft-sdp",
  "commscraft-session",
  "commscraft-sip-msg",

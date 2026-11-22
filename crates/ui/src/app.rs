@@ -18,6 +18,11 @@ pub enum UiIntent {
     SignIn(SignIn),
     SignOut,
     SetPresence(Presence),
+    /// Share the own screen (`windows`: or a window) with the conversation's peer (function 43).
+    ShareScreen {
+        key: ConvKey,
+        windows: bool,
+    },
     /// Back to the automatic state (the manual one removed).
     ResetStatus,
     /// Publish the personal note (empty: remove it).

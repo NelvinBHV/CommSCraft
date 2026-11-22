@@ -23,10 +23,24 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::mpsc::{self, Receiver, SyncSender, TryRecvError};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+/// A running screen capture handed to the worker (the portal's dialog ran in the interface).
+pub struct ScreenCapture(pub commscraft_screen_capture::Capture);
+
+impl std::fmt::Debug for ScreenCapture {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ScreenCapture")
+    }
+}
+
 /// Commands from the interface (conversation keys already resolved where known).
 #[derive(Debug)]
 pub enum ToWorker {
     SetPresence(Presence),
+    /// Share the captured screen or window with `to` (function 43).
+    ShareScreen {
+        to: String,
+        capture: ScreenCapture,
+    },
     StartConversation {
         key: ConvKey,
         peer: String,
@@ -244,6 +258,12 @@ impl Worker {
     /// Hands a command to the worker; false when the queue is full or the worker ended.
     pub fn send(&self, c: ToWorker) -> bool {
         self.tx.try_send(c).is_ok()
+    }
+
+    /// The worker's command queue, for a thread that acts without the window (the
+    /// notification area icon, the screen sharing dialog).
+    pub fn sender(&self) -> SyncSender<ToWorker> {
+        self.tx.clone()
     }
 
     /// The events that arrived (at most `max` per call).
@@ -765,6 +785,11 @@ struct Videos {
     ready_video: BTreeMap<u32, Box<commscraft_sdp::video::VideoLocal>>,
     /// Video stream → the screen sharing call it will view.
     pending_screen: BTreeMap<u32, u32>,
+    /// Our screen being shared: video stream → to whom (the call starts once it is ready).
+    pending_share: BTreeMap<u32, String>,
+    /// Calls sharing our screen: connected when the answer starts the video (no picture of
+    /// theirs to show).
+    own_shares: BTreeSet<u32>,
     /// Offered screen shares: call → only RDP offered.
     screen_offers: BTreeMap<u32, bool>,
     rdp: BTreeMap<u32, rdp_call::RdpHandle>,
@@ -808,6 +833,8 @@ impl Videos {
             ready_audio: BTreeMap::new(),
             ready_video: BTreeMap::new(),
             pending_screen: BTreeMap::new(),
+            pending_share: BTreeMap::new(),
+            own_shares: BTreeSet::new(),
             screen_offers: BTreeMap::new(),
             rdp: BTreeMap::new(),
             pending_rdp: BTreeMap::new(),
@@ -1621,6 +1648,34 @@ impl Session {
                     t,
                 )
             }
+            V::Ready(vid, local) if self.v.pending_share.contains_key(&vid) => {
+                let Some(to) = self.v.pending_share.remove(&vid) else {
+                    return Vec::new();
+                };
+                let call = self.engine.next_call_id();
+                self.v.of_call.insert(call, vid);
+                self.v.own_shares.insert(call);
+                self.outgoing.insert(call);
+                out.event(AppEvent::CallStarted {
+                    id: call,
+                    peer: to.clone(),
+                    incoming: false,
+                    at: t,
+                });
+                out.event(AppEvent::CallKind {
+                    id: call,
+                    kind: CallKind::Sharing,
+                });
+                let policy = self.policy();
+                self.engine.command(
+                    C::ShareScreen {
+                        to,
+                        video: local,
+                        policy,
+                    },
+                    t,
+                )
+            }
             V::Ready(vid, local) => match self.v.pending_screen.remove(&vid) {
                 Some(call) => {
                     self.v.of_call.insert(call, vid);
@@ -2309,6 +2364,21 @@ impl Session {
                         "the call offers no video – answered with audio",
                     );
                 }
+                Vec::new()
+            }
+            ToWorker::ShareScreen { to, capture } => {
+                let vid = self.next_id();
+                let relay = self.engine.media_relay().and_then(calls::relay_from);
+                let h = video_call::spawn_sharing(
+                    vid,
+                    self.local_ip,
+                    relay,
+                    None,
+                    capture.0,
+                    self.v.video_tx.clone(),
+                );
+                self.v.handles.insert(vid, h);
+                self.v.pending_share.insert(vid, to);
                 Vec::new()
             }
             ToWorker::ViewScreen { id: call } => {
@@ -3452,7 +3522,10 @@ impl Session {
                         controlling: self.outgoing.contains(&call),
                     },
                 );
-                if self.v.of_call.contains_key(&call) {
+                if self.v.own_shares.remove(&call) {
+                    // Our share was answered: connected; the window shows no video of theirs.
+                    out.event(AppEvent::CallConnected { id: call, at: t });
+                } else if self.v.of_call.contains_key(&call) {
                     if self.v.viewing.remove(&call) {
                         out.event(AppEvent::CallConnected { id: call, at: t });
                     }
@@ -3525,6 +3598,7 @@ impl Session {
             E::CallEarlyMediaEnded { call } => self.to_media(call, calls::ToMedia::EndEarly),
             E::CallUpdated { call, media } => self.to_media(call, calls::ToMedia::Update(media)),
             E::CallEnded { call, status } => {
+                self.v.own_shares.remove(&call);
                 self.early_ready.remove(&call);
                 let unused: Vec<u32> = self
                     .early_in
