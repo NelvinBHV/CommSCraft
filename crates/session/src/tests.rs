@@ -6090,3 +6090,16 @@ a=rtcp:51633\r\na=recvonly\r\na=rtpmap:122 X-H264UC/90000\r\na=fmtp:122 packetiz
         .iter()
         .any(|ev| matches!(ev, Event::CallVideo { call: c, .. } if *c == call)));
 }
+
+/// The own message style is a local setting: taken before the sign-in without a refusal
+/// (the desktop client sends it at start; a "not signed in" notice stayed in its footer).
+#[test]
+fn the_message_style_before_the_sign_in_is_kept_quietly() {
+    let mut e = Engine::new(config(), registrar());
+    let _ = e.start(NOW);
+    let style = commscraft_im::html::Style {
+        bold: true,
+        ..Default::default()
+    };
+    assert!(e.command(Command::SetMessageStyle(style), NOW).is_empty());
+}
