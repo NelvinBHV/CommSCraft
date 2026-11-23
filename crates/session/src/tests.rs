@@ -289,6 +289,7 @@ fn incoming_conversation() {
             sender: None,
             text: "Hallo Alice".into(),
             spans: Vec::new(),
+            urgent: false,
         }]
     );
     // A formatted message (the Windows client's text/html): its text and runs.
@@ -909,6 +910,7 @@ fn group_conversation_flow() {
             sender: Some("sip:bob@contoso.com".into()),
             text: "Hi all".into(),
             spans: Vec::new(),
+            urgent: false,
         }]
     );
 

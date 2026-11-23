@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (UCWA photos outside the company network; status menu, contact card)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (high-priority messages)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-23 | High-priority messages as in the Windows client (`tested-in-lab`): the composer's red "!" (sticky per conversation) sends with `Priority: urgent` (RFC 3261 §20.26, the header the Windows client sets – lab capture), received ones show a red "!" before the text; the Windows client lists ours as "High Priority Message". Formatted (HTML) messages now show emoticon pictures too. Version 0.90.17-alpha. |
 | 2026-11-22 | Contact photos over UCWA in real deployments (owner: no photos in production any more): the session now follows a redirect of the User resource to the user's home pool and uses the UCWA service of the access location first (external outside the company network), falling back to the next one; hosts outside the SIP domain stay refused, at most three redirects, a new token per pool (UW-11, [MS-OCDISCWS] §2.2.5, §4.1). Visual parity: coloured status symbols in the status menu; the contact card with a mail symbol, the status with its symbol and the address as a mail link. Version 0.90.16-alpha. |
 | 2026-11-22 | Emoticon fix: in own (right-aligned) messages the words came in reverse order around the pictures, and the conversation tabs showed the codes; both fixed. Version 0.90.15-alpha. |
 | 2026-11-22 | Coloured emoticons as in the Windows client: the picker has the Windows client's 106 emoticons in its order with the text codes it sends (captured in the lab), ten in a row; messages and conversation previews show them as coloured pictures (Noto Color Emoji, 72 px, OFL-1.1, fetched at a pinned commit by `scripts/fetch_noto_emoticons.py`), the emoji character where a picture is missing; common spellings such as `:-)` are understood. Version 0.90.14-alpha. |
