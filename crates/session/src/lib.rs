@@ -331,6 +331,15 @@ pub enum Command {
     StopCallVideo {
         call: CallId,
     },
+    /// The peer's added video (`Event::CallVideoOffered`) taken with our video stream.
+    AcceptCallVideo {
+        call: CallId,
+        video: Box<sdp::video::VideoLocal>,
+    },
+    /// The peer's added video refused: the call goes on with audio only.
+    DeclineCallVideo {
+        call: CallId,
+    },
     /// A newer description of our video stream (final offer after ICE).
     SetCallVideo {
         call: CallId,
@@ -678,6 +687,10 @@ pub enum Event {
     },
     /// The peer controls our video encoder through SIP INFO (function 31, PL-50): a full
     /// picture now, or – from an MCU – stop sending video until the next fast update.
+    /// The peer adds video to the call: answer with `AcceptCallVideo` or `DeclineCallVideo`.
+    CallVideoOffered {
+        call: CallId,
+    },
     CallVideoControl {
         call: CallId,
         control: media_control::VideoControl,
@@ -859,6 +872,8 @@ pub struct Engine<R: Random> {
     screen_calls: std::collections::BTreeSet<CallId>,
     /// Calls whose re-INVITE adds video: its answer's video line is taken.
     video_added: std::collections::BTreeSet<CallId>,
+    /// The peer's re-INVITEs adding video, waiting for our video stream.
+    video_offers: std::collections::BTreeMap<CallId, Message>,
     /// Incoming calls answered early in a reliable 183 (SD-51), until accepted or ended.
     early_answers: std::collections::BTreeMap<CallId, call::EarlyAnswer>,
     rdp_calls: std::collections::BTreeSet<CallId>,
@@ -997,6 +1012,7 @@ impl<R: Random> Engine<R> {
             calendar_versions: [0; pres::calendar::SLOTS],
             screen_calls: std::collections::BTreeSet::new(),
             video_added: std::collections::BTreeSet::new(),
+            video_offers: std::collections::BTreeMap::new(),
             share_calls: std::collections::BTreeSet::new(),
             early_answers: std::collections::BTreeMap::new(),
             rdp_calls: std::collections::BTreeSet::new(),
@@ -2502,6 +2518,10 @@ impl<R: Random> Engine<R> {
                 self.add_call_video(call, video.map(|v| *v), now, &mut out)
             }
             Command::StopCallVideo { call } => self.stop_call_video(call, now, &mut out),
+            Command::AcceptCallVideo { call, video } => {
+                self.accept_call_video(call, *video, now, &mut out)
+            }
+            Command::DeclineCallVideo { call } => self.decline_call_video(call, now, &mut out),
             Command::SetCallVideo { call, video } => {
                 self.set_call_video(call, *video, now, &mut out)
             }

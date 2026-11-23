@@ -806,6 +806,8 @@ struct Videos {
     pending_share: BTreeMap<u32, String>,
     /// Video streams being prepared for an active call (video added): stream → call.
     pending_add: BTreeMap<u32, u32>,
+    /// Video streams being prepared for video the other side adds: stream → call.
+    pending_accept: BTreeMap<u32, u32>,
     /// Calls sharing our screen: connected when the answer starts the video (no picture of
     /// theirs to show).
     own_shares: BTreeSet<u32>,
@@ -854,6 +856,7 @@ impl Videos {
             pending_screen: BTreeMap::new(),
             pending_share: BTreeMap::new(),
             pending_add: BTreeMap::new(),
+            pending_accept: BTreeMap::new(),
             own_shares: BTreeSet::new(),
             screen_offers: BTreeMap::new(),
             rdp: BTreeMap::new(),
@@ -1687,6 +1690,18 @@ impl Session {
                     t,
                 )
             }
+            V::Ready(vid, local) if self.v.pending_accept.contains_key(&vid) => {
+                let Some(call) = self.v.pending_accept.remove(&vid) else {
+                    return Vec::new();
+                };
+                self.v.of_call.insert(call, vid);
+                out.event(AppEvent::CallKind {
+                    id: call,
+                    kind: CallKind::Video,
+                });
+                self.engine
+                    .command(C::AcceptCallVideo { call, video: local }, t)
+            }
             V::Ready(vid, local) if self.v.pending_add.contains_key(&vid) => {
                 let Some(call) = self.v.pending_add.remove(&vid) else {
                     return Vec::new();
@@ -1819,6 +1834,21 @@ impl Session {
             V::Failed(vid, why) => {
                 self.v.handles.remove(&vid);
                 self.v.ready_video.remove(&vid);
+                // No video stream for the other side's added video: audio only.
+                if let Some(call) = self.v.pending_accept.remove(&vid) {
+                    out.event(AppEvent::CallVideo {
+                        id: call,
+                        state: VideoState::Failed(why),
+                    });
+                    return self.engine.command(C::DeclineCallVideo { call }, t);
+                }
+                if let Some(call) = self.v.pending_add.remove(&vid) {
+                    out.event(AppEvent::CallVideo {
+                        id: call,
+                        state: VideoState::Failed(why),
+                    });
+                    return Vec::new();
+                }
                 if let Some(call) = self.v.pending_screen.remove(&vid) {
                     out.event(AppEvent::CallVideo {
                         id: call,
@@ -3682,6 +3712,20 @@ impl Session {
                 }
             }
             // PL-50: a freeze comes only from an MCU – ignored in 1:1 calls.
+            // The other side adds video (as the Windows client's camera button): taken with a
+            // video stream of ours (receiving only without a camera).
+            E::CallVideoOffered { call } => {
+                if self.v.of_call.contains_key(&call) {
+                    more.extend(self.engine.command(C::DeclineCallVideo { call }, t));
+                } else {
+                    let vid = self.spawn_video(None, true);
+                    self.v.pending_accept.insert(vid, call);
+                    out.event(AppEvent::CallVideo {
+                        id: call,
+                        state: VideoState::Starting,
+                    });
+                }
+            }
             E::CallVideoControl { call, control } => {
                 // PL-50: a freeze comes only from an MCU – followed in meetings only.
                 let in_meeting = self

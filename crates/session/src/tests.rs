@@ -6237,3 +6237,75 @@ fn formatted_messages_prefer_rtf() {
         }
     }
 }
+
+/// The other side adds video to an audio call (re-INVITE with a video line): the answer waits
+/// for our video stream (100 Trying, `CallVideoOffered`), then carries the video line and starts
+/// the video; declined, the video line is refused with port 0 and the call goes on.
+#[test]
+fn video_the_peer_adds_waits_for_our_stream() {
+    let reinvite = |server: &mut Server, tag: &str, cseq: u32| {
+        let mut m = Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+        m.push_header(
+            "Via",
+            &format!("SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKre{cseq}"),
+        );
+        m.push_header("From", "<sip:bob@contoso.com>;tag=bobcall");
+        m.push_header("To", &format!("<sip:alice@contoso.com>;tag={tag}"));
+        m.push_header("Call-ID", "call1");
+        m.push_header("CSeq", &format!("{cseq} INVITE"));
+        m.push_header("Contact", "<sip:bob@contoso.com;opaque=user:epid:y;gruu>");
+        m.push_header("Content-Type", "application/sdp");
+        m.body = format!("{}{}", peer_sdp(9, "RTP/SAVP"), peer_video(10)).into_bytes();
+        server.sign(m)
+    };
+    for accept in [true, false] {
+        let (mut e, mut server, _) = signed_in();
+        e.on_message(
+            &incoming_invite(&mut server, &peer_sdp(9, "RTP/SAVP"), true),
+            NOW,
+        );
+        let out = e.command(
+            Command::AcceptCall {
+                call: 1,
+                local: Box::new(media_local(42000, 3)),
+                policy: commscraft_sdp::Encryption::Required,
+            },
+            NOW,
+        );
+        let ok = sends(&out).pop().unwrap();
+        let tag = ok.to().unwrap().unwrap().param("tag").unwrap().to_string();
+        let out = e.on_message(&reinvite(&mut server, &tag, 2), NOW);
+        assert_eq!(sends(&out)[0].status_code(), Some(100));
+        assert_eq!(events(&out), vec![Event::CallVideoOffered { call: 1 }]);
+        // A second one meanwhile: try again later (RFC 3261 §14.2).
+        let out = e.on_message(&reinvite(&mut server, &tag, 3), NOW);
+        assert_eq!(sends(&out)[0].status_code(), Some(500));
+        let out = if accept {
+            e.command(
+                Command::AcceptCallVideo {
+                    call: 1,
+                    video: Box::new(video_local(42002, 4)),
+                },
+                NOW,
+            )
+        } else {
+            e.command(Command::DeclineCallVideo { call: 1 }, NOW)
+        };
+        let ok = sends(&out).pop().unwrap();
+        assert_eq!(ok.status_code(), Some(200));
+        let body = String::from_utf8(ok.body.clone()).unwrap();
+        let ev = events(&out);
+        if accept {
+            assert!(body.contains("m=video 42002 "), "{body}");
+            assert!(ev
+                .iter()
+                .any(|e| matches!(e, Event::CallVideo { call: 1, .. })));
+        } else {
+            assert!(body.contains("m=video 0 "), "{body}");
+            assert!(!ev.iter().any(|e| matches!(e, Event::CallVideo { .. })));
+        }
+        assert!(ev
+            .iter()
+            .any(|e| matches!(e, Event::CallUpdated { call: 1, .. })));
+    }
+}
