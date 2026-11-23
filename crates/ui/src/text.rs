@@ -526,6 +526,7 @@ texts! {
     notices_title: "Hinweise", "Notices";
     add_video: "Video hinzufügen", "Add video";
     invite_more: "Weitere Personen einladen", "Invite more people";
+    high_priority: "Nachricht mit hoher Priorität", "High priority message";
     manage_recordings: "Aufzeichnungen verwalten", "Manage recordings";
     im_text_size: "Textgröße im Chat", "IM text display size";
     size_small: "Klein", "Small";

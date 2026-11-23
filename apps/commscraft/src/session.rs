@@ -50,6 +50,12 @@ pub enum ToWorker {
         session: Option<u32>,
         text: String,
     },
+    /// High priority for a conversation's messages (kept for a conversation not started yet).
+    SetUrgent {
+        key: ConvKey,
+        session: Option<u32>,
+        urgent: bool,
+    },
     Typing {
         key: ConvKey,
         session: Option<u32>,
@@ -606,6 +612,8 @@ struct Session {
     history_ids: BTreeMap<String, commscraft_ews::ucs::ItemId>,
     /// Conversations opened in the interface whose first message has not been written yet.
     unstarted: BTreeMap<ConvKey, String>,
+    /// Conversations whose messages go with high priority (the composer's "!").
+    urgent_keys: BTreeSet<ConvKey>,
     quiet_busy: bool,
     content_tx: mpsc::Sender<meeting_content::FromContent>,
     /// Meeting content connections by conversation, with the users they named.
@@ -1172,6 +1180,7 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         transcripts: BTreeMap::new(),
         history_ids: BTreeMap::new(),
         unstarted: BTreeMap::new(),
+        urgent_keys: BTreeSet::new(),
         quiet_busy: false,
         content_tx,
         content: BTreeMap::new(),
@@ -2207,13 +2216,45 @@ impl Session {
                         sender: me,
                         text: text.clone(),
                     });
-                self.engine.command(
+                let mut o = self.engine.command(
                     C::StartConversation {
                         to: peer,
                         first: Some(text),
                     },
                     t,
-                )
+                );
+                // The first message (sent once the session is up) already with high priority.
+                if self.urgent_keys.contains(&key) {
+                    o.extend(self.engine.command(
+                        C::SetUrgent {
+                            conversation: id,
+                            urgent: true,
+                        },
+                        t,
+                    ));
+                }
+                o
+            }
+            ToWorker::SetUrgent {
+                key,
+                session,
+                urgent,
+            } => {
+                if urgent {
+                    self.urgent_keys.insert(key);
+                } else {
+                    self.urgent_keys.remove(&key);
+                }
+                match self.session_of(key, session) {
+                    Some(conversation) => self.engine.command(
+                        C::SetUrgent {
+                            conversation,
+                            urgent,
+                        },
+                        t,
+                    ),
+                    None => Vec::new(),
+                }
             }
             ToWorker::SendText { key, session, text } => match self.session_of(key, session) {
                 Some(conversation) => {
@@ -3104,6 +3145,7 @@ impl Session {
                 sender,
                 text,
                 spans,
+                urgent,
             } => {
                 if self.alert_sounds() {
                     self.cues.notify(now_ms());
@@ -3135,6 +3177,7 @@ impl Session {
                         })
                         .collect(),
                     at: t,
+                    urgent,
                 })
             }
             E::Typing {

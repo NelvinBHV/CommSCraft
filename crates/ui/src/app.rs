@@ -20,6 +20,11 @@ pub enum UiIntent {
     SetPresence(Presence),
     /// Open the folder of the meeting recordings (the desktop's file manager).
     OpenRecordings,
+    /// High priority for the messages of a conversation from now on (`Priority: urgent`).
+    SetUrgent {
+        key: ConvKey,
+        urgent: bool,
+    },
     /// Share the own screen (`windows`: or a window) with the conversation's peer (function 43).
     ShareScreen {
         key: ConvKey,
@@ -826,6 +831,13 @@ impl CommsUi {
     /// The next group conversation that appears is the one the user asked for: select it.
     pub fn expect_group(&mut self) {
         self.select_next_group = true;
+    }
+
+    /// High priority on or off for a conversation's messages (the composer's "!").
+    pub fn set_urgent(&mut self, key: ConvKey, urgent: bool) {
+        if let Some(c) = self.state.conversation_mut(key) {
+            c.urgent = urgent;
+        }
     }
 
     /// Shows or hides the IM pane beside a call's stage (the stage's chat button).
