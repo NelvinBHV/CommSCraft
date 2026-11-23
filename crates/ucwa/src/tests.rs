@@ -263,3 +263,22 @@ fn a_redirect_to_the_home_pool() {
     let bad = r#"<AutodiscoverResponse><User><Link token="Redirect" href="http://pool1.contoso.com/x"/></User></AutodiscoverResponse>"#;
     assert!(user_resource(bad.as_bytes(), false).is_err());
 }
+
+/// UW-12: the password grant, form-encoded; bad values refused.
+#[test]
+fn password_grant_body() {
+    let b = password_token_request("CONTOSO\\john doe", "p&ss=wörd%").unwrap();
+    assert_eq!(
+        b.as_str(),
+        "grant_type=password&username=CONTOSO%5Cjohn%20doe&password=p%26ss%3Dw%C3%B6rd%25"
+    );
+    assert!(password_token_request("", "x").is_none());
+    assert!(password_token_request("u", "").is_none());
+    assert!(password_token_request("u", "a\nb").is_none());
+    assert!(password_token_request(&"u".repeat(MAX_CREDENTIAL + 1), "x").is_none());
+    let c = oauth_challenge([
+        r#"MsRtcOAuth href="https://contoso.com/WebTicket/oauthtoken",grant_type="urn:microsoft.rtc:windows,urn:microsoft.rtc:anonmeeting,password""#,
+    ])
+    .unwrap();
+    assert!(c.offers_windows() && c.offers_password());
+}

@@ -19,6 +19,7 @@ distributionGroup, expandDistributionGroup.
 | UW-08 | `GET search?query=…&limit=1…100` (query ≤ 256 characters) → `contact` and `distributionGroup` resources | search |
 | UW-09 | `distributionGroup` (uri, name) carries `expandDistributionGroup`; its GET returns the members as `contact` resources (each with `contactPhoto`) and nested groups; 403 `TooManyContacts` | distributionGroup, expandDistributionGroup |
 | UW-11 | The User resource may answer with a `Redirect` link to the Root of the user's home pool; discovery (and the token) start again there, its Root naming the `OAuth` resource. `AccessLocation` (`internal`/`external`) says which of `Internal/Ucwa` and `External/Ucwa` serves the client | [MS-OCDISCWS] 20250520 §2.2.5.1, §2.2.5.5, §3.1.5.5, §4.1 (pp. 24–26); "Create an application" (discovery and UCWA on different hosts, `lyncdiscover` → `lyncweb`) |
+| UW-12 | Password grant: `POST` form `grant_type=password&username=…&password=…` ("mandatory username and password parameters … commonly used in forms-based authentication"; the body URL-encoded); same answer as UW-02. The challenge lists the grants offered (`urn:microsoft.rtc:windows,urn:microsoft.rtc:anonmeeting,password`) | "Authentication in UCWA" (grant types; Password grant type; note "The body content must be URL-encoded") |
 | UW-10 | Links in answers are server-relative (`/ucwa/…`) or absolute on the service | all examples; design: followed only on the same host and port |
 
 ## Implementation (2026-11-21)
@@ -40,3 +41,13 @@ distributionGroup, expandDistributionGroup.
 - Status: `tested-offline`, `tested-in-lab` (token over NTLM, application, own photo, a contact's
   photo, a search hit's photo, members of an expanded distribution group; the server took about
   20 s to create the application).
+- 2026-11-23 (owner: outside the company network, without VPN, no contact photos any more;
+  "as in the Android app"): the token comes with the Windows grant first and, where that fails
+  and the token service offers it, with the password grant as the mobile clients sign in (UW-12;
+  a reverse proxy outside the company network often does not pass NTLM through). A token the
+  server refuses (401) opens the session again with a new token. Photos shown are kept per
+  account (`$XDG_CACHE_HOME/CommSCraft/photos/<account>/shown/`, 0600) and shown at once on the
+  next start, asked for again after a day; a photo that could not be fetched is asked for again
+  later (2 minutes, doubled, at most an hour, eight times) instead of never in that session.
+  Password grant, application and photos `tested-in-lab` (Windows grant skipped with
+  `COMMSCRAFT_UCWA_GRANT=password`); the external path needs the owner's confirmation.

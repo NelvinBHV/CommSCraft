@@ -19,12 +19,77 @@ pub const THUMB: usize = 96;
 /// Addresses waiting at most.
 const QUEUE: usize = 1024;
 
-/// The NTLM step asked of the worker: NEGOTIATE, CHALLENGE, the server's certificate.
-pub struct NtlmAsk {
-    pub negotiate: Vec<u8>,
-    pub challenge: Vec<u8>,
-    pub cert: Option<Vec<u8>>,
-    pub reply: Sender<Result<Vec<u8>, String>>,
+/// What the thread asks of the worker, which holds the sign-in's credentials.
+pub enum NtlmAsk {
+    /// The NTLM step: NEGOTIATE, CHALLENGE, the server's certificate.
+    Ntlm {
+        negotiate: Vec<u8>,
+        challenge: Vec<u8>,
+        cert: Option<Vec<u8>>,
+        reply: Sender<Result<Vec<u8>, String>>,
+    },
+    /// The body of a UCWA password grant (UW-12), in a wiped buffer.
+    PasswordGrant {
+        reply: Sender<Result<zeroize::Zeroizing<String>, String>>,
+    },
+}
+
+/// A photo shown is kept this long before it is asked for again (design; the mobile clients
+/// keep contact photos too and show them at once).
+const FRESH: std::time::Duration = std::time::Duration::from_secs(24 * 3600);
+/// A failed photo is asked for again after this time, doubled per failure (design).
+const RETRY_FIRST: std::time::Duration = std::time::Duration::from_secs(120);
+/// Longest wait before asking again, and most attempts (design).
+const RETRY_MAX: std::time::Duration = std::time::Duration::from_secs(3600);
+const MAX_ATTEMPTS: u32 = 8;
+
+/// The file of a photo shown for `uri` (the account's own folder, names one-to-one).
+fn shown_file(aor: &str, uri: &str) -> Option<std::path::PathBuf> {
+    shown_file_in(&commscraft_client::photos::photos_dir()?, aor, uri)
+}
+
+fn shown_file_in(base: &std::path::Path, aor: &str, uri: &str) -> Option<std::path::PathBuf> {
+    use commscraft_client::photos::cache_name;
+    let account = cache_name(&aor.trim_start_matches("sip:").to_ascii_lowercase())?;
+    let key = cache_name(&uri.trim_start_matches("sip:").to_ascii_lowercase())?;
+    Some(base.join(account).join("shown").join(key))
+}
+
+/// A kept photo of `uri` and whether it is still fresh.
+fn kept(aor: &str, uri: &str) -> Option<(Vec<u8>, bool)> {
+    kept_at(&shown_file(aor, uri)?)
+}
+
+fn kept_at(path: &std::path::Path) -> Option<(Vec<u8>, bool)> {
+    let path = path.to_path_buf();
+    let meta = std::fs::metadata(&path).ok()?;
+    if !meta.is_file() || meta.len() > commscraft_client::photos::PHOTO_MAX as u64 {
+        return None;
+    }
+    let bytes = std::fs::read(&path).ok()?;
+    commscraft_client::photos::photo_kind(&bytes)?;
+    let fresh = meta
+        .modified()
+        .ok()
+        .and_then(|m| m.elapsed().ok())
+        .is_some_and(|age| age < FRESH);
+    Some((bytes, fresh))
+}
+
+/// The wait before asking again after `attempts` failures: doubled each time, bounded.
+fn retry_wait(attempts: u32) -> std::time::Duration {
+    RETRY_FIRST
+        .saturating_mul(1u32 << attempts.saturating_sub(1).min(10))
+        .min(RETRY_MAX)
+}
+
+/// What became of one photo request.
+enum Outcome {
+    Photo(Vec<u8>),
+    /// The servers have none for this person.
+    None,
+    /// Not reachable now: asked for again later.
+    Failed,
 }
 
 /// A thumbnail: side × side RGBA.
@@ -177,21 +242,61 @@ fn run(
 ) {
     let ua = format!("CommSCraft/{}", env!("CARGO_PKG_VERSION"));
     let mut settings = None;
+    // Photos done with (shown fresh, or none on the servers); the failed ones are asked for
+    // again later (`retry`: when, how often already, the services they were asked with).
     let mut seen = std::collections::BTreeSet::new();
+    type Services = Option<Box<ServerConfiguration>>;
+    let mut retry: std::collections::BTreeMap<String, (std::time::Instant, u32, Services)> =
+        std::collections::BTreeMap::new();
     // The UCWA path (function 15, second path): opened when first needed, again after its token
     // ends; after a failure not tried again for a while.
     let mut ucwa: Option<commscraft_client::ucwa::Session> = None;
     let mut ucwa_retry_at: Option<std::time::Instant> = None;
-    while let Ok(job) = rx.recv() {
+    loop {
+        // New requests first; else a failed photo whose time has come; else wait.
+        let job = match rx.try_recv() {
+            Ok(j) => j,
+            Err(mpsc::TryRecvError::Disconnected) => return,
+            Err(mpsc::TryRecvError::Empty) => {
+                let now = std::time::Instant::now();
+                let due = retry
+                    .iter()
+                    .find(|(_, (at, _, _))| *at <= now)
+                    .map(|(k, (_, _, svc))| (k.clone(), svc.clone()));
+                match due {
+                    Some((uri, svc)) => Job::Photo(uri, svc),
+                    None => {
+                        let wait = retry
+                            .values()
+                            .map(|(at, _, _)| at.saturating_duration_since(now))
+                            .min()
+                            .unwrap_or(RETRY_MAX)
+                            .max(std::time::Duration::from_secs(1));
+                        match rx.recv_timeout(wait) {
+                            Ok(j) => j,
+                            Err(mpsc::RecvTimeoutError::Timeout) => continue,
+                            Err(mpsc::RecvTimeoutError::Disconnected) => return,
+                        }
+                    }
+                }
+            }
+        };
         let mut ntlm = |n: &[u8], c: &[u8], cert: Option<&[u8]>| {
             let (reply, answer) = mpsc::channel();
             ntlm_tx
-                .send(NtlmAsk {
+                .send(NtlmAsk::Ntlm {
                     negotiate: n.to_vec(),
                     challenge: c.to_vec(),
                     cert: cert.map(<[u8]>::to_vec),
                     reply,
                 })
+                .map_err(|_| "signed out".to_string())?;
+            answer.recv().map_err(|_| "signed out".to_string())?
+        };
+        let mut grant = || {
+            let (reply, answer) = mpsc::channel();
+            ntlm_tx
+                .send(NtlmAsk::PasswordGrant { reply })
                 .map_err(|_| "signed out".to_string())?;
             answer.recv().map_err(|_| "signed out".to_string())?
         };
@@ -215,6 +320,7 @@ fn run(
                         aor,
                         &ua,
                         &mut ntlm,
+                        &mut grant,
                         &mut log,
                     ) {
                         if let Err(e) = s.expand_group(tls, &email, &ua, &mut log) {
@@ -396,8 +502,21 @@ fn run(
                 continue;
             }
         };
-        if !seen.insert(uri.to_ascii_lowercase()) {
+        let key = uri.to_ascii_lowercase();
+        if seen.contains(&key) {
             continue;
+        }
+        // A kept photo at once (as the mobile clients show theirs); a fresh one needs no request.
+        let had = kept(aor, &uri);
+        if let Some((bytes, fresh)) = &had {
+            if send_thumb(done, &uri, bytes).is_err() {
+                return;
+            }
+            if *fresh {
+                seen.insert(key.clone());
+                retry.remove(&key);
+                continue;
+            }
         }
         // Diagnosis: `COMMSCRAFT_PHOTOS_UCWA_FIRST=1` skips the directory and Exchange paths.
         let ucwa_first = std::env::var("COMMSCRAFT_PHOTOS_UCWA_FIRST").is_ok_and(|v| v == "1");
@@ -416,56 +535,106 @@ fn run(
                 &mut log,
             )
         };
-        let bytes = match got {
-            Ok(path) => std::fs::read(&path).ok(),
+        let outcome = match got {
+            Ok(path) => match std::fs::read(&path) {
+                Ok(b) => Outcome::Photo(b),
+                Err(_) => Outcome::Failed,
+            },
             Err(e) => {
                 log(&format!("  {e}"));
-                // Second path: the photo through the Skype for Business server (UCWA).
-                if !photos_allowed(services.as_deref()) {
-                    continue;
-                }
-                let limit = services.as_deref().and_then(|c| c.max_photo_kb).map_or(
-                    commscraft_client::photos::PHOTO_MAX,
-                    |kb| {
-                        (kb as usize)
-                            .saturating_mul(1024)
-                            .min(commscraft_client::photos::PHOTO_MAX)
-                    },
-                );
-                let Some(s) = ucwa_session(
-                    &mut ucwa,
-                    &mut ucwa_retry_at,
-                    tls,
-                    trust,
-                    aor,
-                    &ua,
-                    &mut ntlm,
-                    &mut log,
-                ) else {
-                    continue;
-                };
-                match s.photo(tls, &uri, limit, &ua, &mut log) {
-                    Ok(b) => b,
-                    Err(e) => {
-                        log(&format!("  UCWA: {e}"));
-                        None
+                if photos_allowed(services.as_deref()) {
+                    let limit = services.as_deref().and_then(|c| c.max_photo_kb).map_or(
+                        commscraft_client::photos::PHOTO_MAX,
+                        |kb| {
+                            (kb as usize)
+                                .saturating_mul(1024)
+                                .min(commscraft_client::photos::PHOTO_MAX)
+                        },
+                    );
+                    // Second path: the photo through the Skype for Business server (UCWA); a
+                    // refused token opens the session again once, with a new token.
+                    let mut o = Outcome::Failed;
+                    for _ in 0..2 {
+                        let Some(s) = ucwa_session(
+                            &mut ucwa,
+                            &mut ucwa_retry_at,
+                            tls,
+                            trust,
+                            aor,
+                            &ua,
+                            &mut ntlm,
+                            &mut grant,
+                            &mut log,
+                        ) else {
+                            break;
+                        };
+                        match s.photo(tls, &uri, limit, &ua, &mut log) {
+                            Ok(Some(b)) => o = Outcome::Photo(b),
+                            Ok(None) => o = Outcome::None,
+                            Err(e) => {
+                                log(&format!("  UCWA: {e}"));
+                                if s.refused() {
+                                    continue;
+                                }
+                            }
+                        }
+                        break;
                     }
+                    o
+                } else {
+                    Outcome::None
                 }
             }
         };
-        let Some(rgba) = bytes.as_deref().and_then(thumbnail) else {
-            continue;
-        };
-        if done
+        match outcome {
+            Outcome::Photo(bytes) if thumbnail(&bytes).is_some() => {
+                // Kept for the next start and for times the servers cannot be reached.
+                if let Some(path) = shown_file(aor, &uri) {
+                    if let Err(e) = commscraft_client::photos::write_private(&path, &bytes) {
+                        log(&format!("  photo not kept: {e}"));
+                    }
+                }
+                let same = had.as_ref().is_some_and(|(b, _)| *b == bytes);
+                if !same && send_thumb(done, &uri, &bytes).is_err() {
+                    return;
+                }
+                seen.insert(key.clone());
+                retry.remove(&key);
+            }
+            Outcome::Photo(_) | Outcome::None => {
+                seen.insert(key.clone());
+                retry.remove(&key);
+            }
+            Outcome::Failed => {
+                let attempts = retry.get(&key).map_or(0, |(_, n, _)| *n) + 1;
+                if attempts >= MAX_ATTEMPTS {
+                    seen.insert(key.clone());
+                    retry.remove(&key);
+                } else {
+                    let wait = retry_wait(attempts);
+                    log(&format!(
+                        "  photo of {key}: asked for again in {} s",
+                        wait.as_secs()
+                    ));
+                    retry.insert(key, (std::time::Instant::now() + wait, attempts, services));
+                }
+            }
+        }
+    }
+}
+
+/// Hands a photo's thumbnail to the session (a picture that does not decode is skipped); an
+/// error when the session is gone.
+fn send_thumb(done: &Sender<Done>, uri: &str, bytes: &[u8]) -> Result<(), ()> {
+    match thumbnail(bytes) {
+        Some(rgba) => done
             .send(Done::Thumb(Thumb {
-                uri,
+                uri: uri.to_string(),
                 side: THUMB,
                 rgba,
             }))
-            .is_err()
-        {
-            return;
-        }
+            .map_err(|_| ()),
+        None => Ok(()),
     }
 }
 
@@ -485,6 +654,7 @@ fn ucwa_session<'a>(
     aor: &str,
     ua: &str,
     ntlm: &mut commscraft_client::directory::HttpNtlm<'_>,
+    grant: &mut commscraft_client::ucwa::PasswordGrant<'_>,
     log: &mut dyn FnMut(&str),
 ) -> Option<&'a mut commscraft_client::ucwa::Session> {
     if slot.as_ref().is_some_and(|s| s.expired()) {
@@ -494,7 +664,7 @@ fn ucwa_session<'a>(
         if retry_at.is_some_and(|t| std::time::Instant::now() < t) {
             return None;
         }
-        match commscraft_client::ucwa::Session::open(tls, trust, aor, ua, ntlm, log) {
+        match commscraft_client::ucwa::Session::open(tls, trust, aor, ua, ntlm, grant, log) {
             Ok(s) => {
                 log(&format!("  UCWA: {s:?} opened"));
                 *slot = Some(s);
@@ -616,5 +786,35 @@ mod tests {
         let t = thumbnail(&png_bytes).unwrap();
         assert_eq!(t.len(), THUMB * THUMB * 4);
         assert_eq!(&t[..4], &[255, 255, 255, 255]);
+    }
+}
+
+#[cfg(test)]
+mod kept_tests {
+    use super::*;
+
+    /// Photos shown are kept per account (names one-to-one), read back only as JPEG or PNG;
+    /// failures are asked for again with a growing, bounded wait.
+    #[test]
+    fn kept_photos_and_retries() {
+        let base = std::env::temp_dir().join(format!("commscraft-kept-{}", std::process::id()));
+        let a = shown_file_in(&base, "sip:me@contoso.com", "sip:Anna@contoso.com").unwrap();
+        let b = shown_file_in(&base, "sip:me@contoso.com", "sip:anna@contoso.com").unwrap();
+        assert_eq!(a, b, "addresses compare without case");
+        assert!(a.starts_with(base.join("me@contoso%2Ecom").join("shown")));
+        assert_ne!(
+            shown_file_in(&base, "sip:me@contoso.com", "sip:a.b@c").unwrap(),
+            shown_file_in(&base, "sip:me@contoso.com", "sip:a_b@c").unwrap()
+        );
+        assert!(kept_at(&a).is_none());
+        commscraft_client::photos::write_private(&a, b"not a picture").unwrap();
+        assert!(kept_at(&a).is_none(), "only JPEG and PNG");
+        let png = b"\x89PNG\r\n\x1a\nrest".to_vec();
+        commscraft_client::photos::write_private(&a, &png).unwrap();
+        assert_eq!(kept_at(&a), Some((png, true)));
+        let _ = std::fs::remove_dir_all(&base);
+        assert_eq!(retry_wait(1), RETRY_FIRST);
+        assert_eq!(retry_wait(2), RETRY_FIRST * 2);
+        assert_eq!(retry_wait(30), RETRY_MAX);
     }
 }

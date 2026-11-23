@@ -1274,10 +1274,28 @@ fn run(form: SignIn, ca: Option<&[u8]>, cmds: &Receiver<ToWorker>, out: &Out) ->
         }
         // The photo thread's NTLM steps, with the signed-in registrar.
         while let Ok(a) = ntlm_rx.try_recv() {
-            let r = s
-                .engine
-                .http_ntlm(&a.negotiate, &a.challenge, now(), a.cert.as_deref());
-            let _ = a.reply.send(r);
+            match a {
+                crate::photos::NtlmAsk::Ntlm {
+                    negotiate,
+                    challenge,
+                    cert,
+                    reply,
+                } => {
+                    let r = s
+                        .engine
+                        .http_ntlm(&negotiate, &challenge, now(), cert.as_deref());
+                    let _ = reply.send(r);
+                }
+                // UW-12: the password grant's body, built where the password is kept.
+                crate::photos::NtlmAsk::PasswordGrant { reply } => {
+                    let r = s
+                        .engine
+                        .with_credentials(commscraft_client::ucwa::password_grant_body)
+                        .flatten()
+                        .ok_or_else(|| "no password for a password sign-in".to_string());
+                    let _ = reply.send(r);
+                }
+            }
         }
         while let Ok(d) = thumb_rx.try_recv() {
             match d {
