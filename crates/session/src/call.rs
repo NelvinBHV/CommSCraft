@@ -990,6 +990,57 @@ impl<R: Random> Engine<R> {
         self.send_request(m, Purpose::CallReinvite(id), now, out);
     }
 
+    /// `AddCallVideo`: video into an active audio call – the video line in a re-INVITE with the
+    /// unchanged audio line (RFC 3264 §8.2: a new media stream is added by a new m-line).
+    pub(crate) fn add_call_video(
+        &mut self,
+        id: CallId,
+        video: Option<sdp::video::VideoLocal>,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        if self.screen_calls.contains(&id) || self.rdp_calls.contains(&id) {
+            return;
+        }
+        let Some(c) = self.calls.get_mut(&id) else {
+            return;
+        };
+        let Some(local) = c.local.clone().filter(|_| c.state == CallState::Active) else {
+            out.push(Output::Event(Event::Notice(
+                "the call is not active".into(),
+            )));
+            return;
+        };
+        match (&mut c.video, video) {
+            // Video stopped before: the same line (port, key) again, sending and receiving.
+            (Some(v), None) => v.media.direction = sdp::Direction::SendRecv,
+            (None, Some(video)) => {
+                if c.policy != sdp::Encryption::Off && video.media.key.is_none() {
+                    out.push(Output::Event(Event::Notice(
+                        "no media key for an encrypted video stream".into(),
+                    )));
+                    return;
+                }
+                c.video = Some(video);
+            }
+            _ => return,
+        }
+        self.video_added.insert(id);
+        self.update_call(id, local, now, out);
+    }
+
+    /// `StopCallVideo`: the call goes on with audio only; the video line stays, inactive.
+    pub(crate) fn stop_call_video(&mut self, id: CallId, now: u64, out: &mut Vec<Output>) {
+        let Some(c) = self.calls.get_mut(&id) else {
+            return;
+        };
+        let (Some(local), Some(v)) = (c.local.clone(), c.video.as_mut()) else {
+            return;
+        };
+        v.media.direction = sdp::Direction::Inactive;
+        self.update_call(id, local, now, out);
+    }
+
     /// `RequestPictureUpdate`: an INFO with `picture_fast_update` in the call's dialog (PL-50).
     pub(crate) fn request_picture_update(&mut self, id: CallId, now: u64, out: &mut Vec<Output>) {
         let Some(c) = self.calls.get_mut(&id) else {
@@ -1122,17 +1173,35 @@ impl<R: Random> Engine<R> {
         if self.screen_calls.contains(&id) {
             return;
         }
-        match audio_sdp(resp)
+        let answer = audio_sdp(resp);
+        // Video added by this re-INVITE: the answer's video line starts the video stream.
+        let added = self.video_added.remove(&id);
+        let video_key = self
+            .calls
+            .get(&id)
+            .and_then(|c| c.video.as_ref())
+            .map(|v| v.media.key.clone());
+        let video = match (added, video_key, answer.as_deref()) {
+            (true, Some(k), Some(s)) => {
+                Some(sdp::video::video_answer_to_offer(s, k.as_ref(), policy))
+            }
+            (true, _, None) => Some(Err(sdp::Error::NoAudio)),
+            _ => None,
+        };
+        match answer
             .ok_or(sdp::Error::NoAudio)
             .and_then(|s| sdp::answer_to_offer(&s, key.as_ref(), policy))
         {
-            Ok(n) => Self::call_event(
-                out,
-                Event::CallUpdated {
-                    call: id,
-                    media: Box::new(n),
-                },
-            ),
+            Ok(n) => {
+                Self::call_event(
+                    out,
+                    Event::CallUpdated {
+                        call: id,
+                        media: Box::new(n),
+                    },
+                );
+                self.report_video(id, video, out);
+            }
             Err(e) => out.push(Output::Event(Event::Notice(format!(
                 "call {id}: unusable re-INVITE answer ({e:?})"
             )))),

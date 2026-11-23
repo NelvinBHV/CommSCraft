@@ -519,7 +519,11 @@ impl DesktopApp {
                     save_history: p.save_history,
                     audio_device: p.audio_device.clone(),
                     mic_device: p.mic_device.clone(),
-                    location: p.location.clone(),
+                    location: if p.show_location {
+                        p.location.clone()
+                    } else {
+                        String::new()
+                    },
                     message_style: commscraft_im::html::Style {
                         bold: p.im_bold,
                         italic: p.im_italic,
@@ -554,7 +558,23 @@ impl DesktopApp {
                 if let Err(e) = prefs::save(&self.ui.prefs) {
                     eprintln!("preferences not saved: {e}");
                 }
-                Some(ToWorker::SetLocation(location))
+                // Published only while the others may see it.
+                Some(ToWorker::SetLocation(if self.ui.prefs.show_location {
+                    location
+                } else {
+                    String::new()
+                }))
+            }
+            UiIntent::ShowLocation(show) => {
+                self.ui.prefs.show_location = show;
+                if let Err(e) = prefs::save(&self.ui.prefs) {
+                    eprintln!("preferences not saved: {e}");
+                }
+                Some(ToWorker::SetLocation(if show {
+                    self.ui.prefs.location.clone()
+                } else {
+                    String::new()
+                }))
             }
             UiIntent::ShareScreen { key, windows } => {
                 self.share_screen(key, windows);
@@ -674,6 +694,7 @@ impl DesktopApp {
             UiIntent::HangUp { id } => Some(ToWorker::HangUp { id }),
             UiIntent::Hold { id, hold } => Some(ToWorker::Hold { id, hold }),
             UiIntent::Mute { id, muted } => Some(ToWorker::Mute { id, muted }),
+            UiIntent::CallVideo { id, on } => Some(ToWorker::CallVideo { id, on }),
             UiIntent::SignOut => {
                 if self.worker.is_none() {
                     self.reset();
@@ -702,7 +723,11 @@ impl DesktopApp {
                     save_history: p.save_history,
                     audio_device: p.audio_device.clone(),
                     mic_device: p.mic_device.clone(),
-                    location: p.location.clone(),
+                    location: if p.show_location {
+                        p.location.clone()
+                    } else {
+                        String::new()
+                    },
                     message_style: commscraft_im::html::Style {
                         bold: p.im_bold,
                         italic: p.im_italic,

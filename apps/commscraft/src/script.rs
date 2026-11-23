@@ -6,7 +6,7 @@
 //! `search TEXT` ·
 //! `send TEXT` (to the selected conversation) · `group sip:ADDRESS` · `accept [N]` (the first invitation, or invitation N from 0) ·
 //! `call sip:ADDRESS` · `videocall sip:ADDRESS` · `transfer sip:ADDRESS` · `answer` · `answervideo` ·
-//! `viewscreen` · `urgent on|off` · `location [TEXT]` · `options [PAGE]` · `impane on|off` (the IM pane beside a call's stage) · `share [window]` (the desktop's dialog still asks) · `hangup` · `hold` · `resume` · `mute` · `unmute` ·
+//! `viewscreen` · `urgent on|off` · `location [TEXT]` · `options [PAGE]` · `impane on|off` (the IM pane beside a call's stage) · `share [window]` (the desktop's dialog still asks) · `hangup` · `addvideo` · `audioonly` · `hold` · `resume` · `mute` · `unmute` ·
 //! `content` · `vote CONTENT CHOICE` ·
 //! `status available|busy|dnd|away` · `shot FILE.png [conv|call|options]` · `close` (closes the main window as its close button
 //! does: into the notification area where there is one) · `quit` (signs out and closes).
@@ -315,7 +315,7 @@ pub fn run(app: &mut DesktopApp, line: &str) {
             }
         }
         "answer" | "answervideo" | "viewscreen" | "hangup" | "hold" | "resume" | "mute"
-        | "unmute" => {
+        | "unmute" | "addvideo" | "audioonly" => {
             let Some(c) = app.ui.state.active_call().cloned() else {
                 eprintln!("commands: no call");
                 return;
@@ -340,6 +340,11 @@ pub fn run(app: &mut DesktopApp, line: &str) {
                 "mute" => UiIntent::Mute {
                     id: c.id,
                     muted: true,
+                },
+                "addvideo" => UiIntent::CallVideo { id: c.id, on: true },
+                "audioonly" => UiIntent::CallVideo {
+                    id: c.id,
+                    on: false,
                 },
                 _ => UiIntent::Mute {
                     id: c.id,
