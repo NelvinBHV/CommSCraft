@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (insert link, links in messages, meeting hint)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (location menu)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-23 | Location menu below the status as in the Windows client: the user's location is published in the machineState (`endpointLocation`, [MS-PRES] 20180427 §2.2.2.7.1, p. 54), the last five are offered again; contacts' locations from the aggregateState are shown on the contact card (§3.8.5.1.2.6, p. 124). `tested-in-lab` (the Windows client shows our location). Version 0.90.20-alpha. |
 | 2026-11-23 | Composer "Insert link" as in the Windows client (Lucide `link`; http/https addresses only); web addresses in messages are shown as links (`tested-in-lab`: the Windows client shows ours as a link); the composer symbols in the Windows client's order; the meeting stage says when nobody else has joined. Version 0.90.19-alpha. |
 | 2026-11-23 | Someone writing to us lands in the conversation window we already have with them (opened but not started, or ended) instead of a second one, as in the Windows client. Version 0.90.18-alpha. |
 | 2026-11-23 | High-priority messages as in the Windows client (`tested-in-lab`): the composer's red "!" (sticky per conversation) sends with `Priority: urgent` (RFC 3261 §20.26, the header the Windows client sets – lab capture), received ones show a red "!" before the text; the Windows client lists ours as "High Priority Message". Formatted (HTML) messages now show emoticon pictures too. Version 0.90.17-alpha. |
