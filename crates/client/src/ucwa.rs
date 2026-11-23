@@ -1,16 +1,20 @@
-//! Contact photos over UCWA (function 15, second path; evidence UW-01 … UW-10): the Skype for
+//! Contact photos over UCWA (function 15, second path; evidence UW-01 … UW-12): the Skype for
 //! Business server fetches the photo from Exchange itself and hands it out, so the client needs no
 //! access of its own to the mailbox. Used when the directory and Exchange paths give nothing.
 //!
 //! Flow: Autodiscover's `OAuth` link → its `MsRtcOAuth` challenge → an OAuth token with the
-//! Windows grant, the token request authenticated with NTLM over HTTP (no password in a form)
-//! → the User resource's UCWA link → an application → `contactPhoto` links from the contact list,
+//! Windows grant (the token request authenticated with NTLM over HTTP), or – where that does not
+//! get through, as behind a reverse proxy outside the company network – with the password grant
+//! as the mobile clients sign in (UW-12) → the User resource's UCWA link → an application → `contactPhoto` links from the contact list,
 //! from an expanded distribution group or from a search → the photo.
 //!
 //! Security by design: Autodiscover, token service and UCWA host must be in the user's SIP
 //! domain or a domain the user trusts (they see credentials or the token); every link from a
 //! UCWA answer must stay on the UCWA host (`commscraft_ucwa::resolve`); the token is never
-//! logged; answers and photos are bounded; only JPEG and PNG are taken.
+//! logged; answers and photos are bounded; only JPEG and PNG are taken. The password grant is
+//! used only when the token service offers it, only over the checked TLS connection to that
+//! allowed host, built by the caller in a wiped buffer (the password stays with the sign-in) and
+//! never logged.
 
 use crate::directory::HttpNtlm;
 use crate::setup::Trust;
@@ -27,6 +31,16 @@ pub const PHOTO_SIDE: u32 = 96;
 /// Most photo links remembered (design).
 const MAX_LINKS: usize = 20_000;
 
+/// Builds the body of a password grant (`commscraft_ucwa::password_token_request` with the
+/// sign-in's credentials); an error without a password (a Kerberos sign-in).
+pub type PasswordGrant<'a> = dyn FnMut() -> Result<zeroize::Zeroizing<String>, String> + 'a;
+
+/// The body of a password grant from the sign-in's credentials (UW-12); see
+/// [`commscraft_ucwa::password_token_request`].
+pub fn password_grant_body(user: &str, password: &str) -> Option<zeroize::Zeroizing<String>> {
+    u::password_token_request(user, password)
+}
+
 /// A UCWA application of the signed-in user.
 pub struct Session {
     service: HttpsUrl,
@@ -39,6 +53,8 @@ pub struct Session {
     /// Lower-case SIP URI → photo link.
     photos: HashMap<String, String>,
     aor: String,
+    /// The server refused the token (401): the session is opened again with a new one.
+    refused: bool,
 }
 
 impl std::fmt::Debug for Session {
@@ -69,6 +85,7 @@ impl Session {
         user_domain: &str,
         user_agent: &str,
         ntlm: &mut HttpNtlm<'_>,
+        grant: &mut PasswordGrant<'_>,
         log: &mut dyn FnMut(&str),
     ) -> Result<(u::Token, Vec<u8>), String> {
         // UW-01: without a token the OAuth resource answers 401 with the token service.
@@ -89,8 +106,8 @@ impl Session {
                 .map(|(_, v)| v.as_str()),
         )
         .ok_or("no MsRtcOAuth challenge")?;
-        if !challenge.offers_windows() {
-            return Err("the token service offers no Windows authentication".into());
+        if !challenge.offers_windows() && !challenge.offers_password() {
+            return Err("the token service offers neither Windows nor password sign-in".into());
         }
         if !allowed(&challenge.token_url.host, user_domain, trust) {
             return Err(format!(
@@ -98,26 +115,64 @@ impl Session {
                 challenge.token_url.host
             ));
         }
+        const FORM: &str = "application/x-www-form-urlencoded;charset=UTF-8";
+        let url = &challenge.token_url;
         // UW-02: the token, the request authenticated with NTLM.
-        log(&format!(
-            "  UCWA: POST {}{} (Windows grant)",
-            challenge.token_url.host, challenge.token_url.path
-        ));
-        let r = crate::directory::ntlm_post(
-            tls,
-            &challenge.token_url,
-            &[(
-                "Content-Type",
-                "application/x-www-form-urlencoded;charset=UTF-8",
-            )],
-            &u::windows_token_request(),
-            user_agent,
-            ntlm,
-        )?;
-        if r.status != 200 {
-            return Err(format!("token service: HTTP {}", r.status));
-        }
-        let token = u::token(&r.body).map_err(text)?;
+        // Diagnosis: `COMMSCRAFT_UCWA_GRANT=password` skips the Windows grant.
+        let skip_windows = std::env::var("COMMSCRAFT_UCWA_GRANT").is_ok_and(|v| v == "password");
+        let windows = if skip_windows {
+            Err("Windows grant skipped (COMMSCRAFT_UCWA_GRANT)".to_string())
+        } else if challenge.offers_windows() {
+            log(&format!(
+                "  UCWA: POST {}{} (Windows grant)",
+                url.host, url.path
+            ));
+            crate::directory::ntlm_post(
+                tls,
+                url,
+                &[("Content-Type", FORM)],
+                &u::windows_token_request(),
+                user_agent,
+                ntlm,
+            )
+            .and_then(|r| match r.status {
+                200 => u::token(&r.body).map_err(text),
+                s => Err(format!("token service: HTTP {s}")),
+            })
+        } else {
+            Err("Windows grant not offered".into())
+        };
+        let token = match windows {
+            Ok(t) => t,
+            // UW-12: the password grant where Windows authentication does not get through.
+            Err(e) if challenge.offers_password() => {
+                log(&format!(
+                    "  UCWA: Windows grant failed ({e}); password grant"
+                ));
+                let body = grant()?;
+                let r = commscraft_net::http::post(
+                    tls,
+                    url,
+                    &[("Content-Type", FORM), ("Accept", "application/json")],
+                    body.as_bytes(),
+                    user_agent,
+                    TIMEOUT,
+                )
+                .map_err(|e| e.to_string())?;
+                drop(body);
+                match r.status {
+                    200 => u::token(&r.body).map_err(text)?,
+                    400 | 401 => {
+                        return Err(format!(
+                            "token service refused the password sign-in (HTTP {})",
+                            r.status
+                        ))
+                    }
+                    s => return Err(format!("token service: HTTP {s}")),
+                }
+            }
+            Err(e) => return Err(e),
+        };
         // UW-04: the User resource with the token.
         let user = bearer_get(
             tls,
@@ -140,6 +195,7 @@ impl Session {
         aor: &str,
         user_agent: &str,
         ntlm: &mut HttpNtlm<'_>,
+        grant: &mut PasswordGrant<'_>,
         log: &mut dyn FnMut(&str),
     ) -> Result<Session, String> {
         let user_domain = aor
@@ -171,8 +227,16 @@ impl Session {
                     oauth.host
                 ));
             }
-            let (token, user) =
-                Self::user_resource(tls, trust, &oauth, &user_domain, user_agent, ntlm, log)?;
+            let (token, user) = Self::user_resource(
+                tls,
+                trust,
+                &oauth,
+                &user_domain,
+                user_agent,
+                ntlm,
+                grant,
+                log,
+            )?;
             let renew_at =
                 Instant::now() + Duration::from_secs(token.expires_in.saturating_sub(300));
             match u::user_resource(&user, external).map_err(text)? {
@@ -271,16 +335,17 @@ impl Session {
             contacts_loaded: false,
             photos: HashMap::new(),
             aor: aor.trim().to_ascii_lowercase(),
+            refused: false,
         })
     }
 
-    /// The token is near its end: open a new session.
+    /// The token is near its end or was refused: open a new session.
     pub fn expired(&self) -> bool {
-        Instant::now() >= self.renew_at
+        self.refused || Instant::now() >= self.renew_at
     }
 
     fn get(
-        &self,
+        &mut self,
         tls: &TlsClient,
         href: &str,
         accept: &str,
@@ -288,7 +353,23 @@ impl Session {
         user_agent: &str,
     ) -> Result<commscraft_net::http::HttpResponse, String> {
         let url = u::resolve(&self.service, href).ok_or("a link outside the UCWA service")?;
-        bearer_get(tls, &url, &self.token, accept, limit, user_agent)
+        let r = bearer_get(tls, &url, &self.token, accept, limit, user_agent);
+        // A token the server no longer takes (401, or the authentication loop giving up): the
+        // next request opens a new session with a new token.
+        let refused = match &r {
+            Ok(r) => r.status == 401,
+            Err(e) => e.contains("authentication did not complete"),
+        };
+        if refused {
+            self.refused = true;
+            return Err("the server no longer takes the UCWA token".into());
+        }
+        r
+    }
+
+    /// The token was refused (a new session is needed).
+    pub fn refused(&self) -> bool {
+        self.refused
     }
 
     fn remember(&mut self, links: Vec<u::PhotoLink>) -> usize {

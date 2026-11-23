@@ -1032,3 +1032,25 @@ fn tls_dsk_failure_falls_back() {
         "{e:?}"
     );
 }
+
+/// The password grant's credentials: `DOMAIN\user` when the name has no domain; none without
+/// a password.
+#[test]
+fn credentials_for_a_form() {
+    let mut c = config();
+    c.user = "alice".into();
+    c.domain = "CONTOSO".into();
+    let reg = Registrar::new(c.clone(), Password::new("geheim".into()), Counter(0)).unwrap();
+    assert_eq!(
+        reg.with_credentials(|u, p| format!("{u}|{p}")).as_deref(),
+        Some("CONTOSO\\alice|geheim")
+    );
+    c.user = "alice@contoso.com".into();
+    let reg = Registrar::new(c.clone(), Password::new("geheim".into()), Counter(0)).unwrap();
+    assert_eq!(
+        reg.with_credentials(|u, _| u.to_string()).as_deref(),
+        Some("alice@contoso.com")
+    );
+    let reg = Registrar::new(c, Password::new(String::new()), Counter(0)).unwrap();
+    assert!(reg.with_credentials(|u, _| u.to_string()).is_none());
+}

@@ -2,7 +2,7 @@
 //! Business web API that lead from Autodiscover to a contact's photo, as a sans-I/O crate. The
 //! caller performs the HTTPS requests.
 //!
-//! Evidence: `docs/protocol/evidence/40-ucwa-contact-photos.md` (UW-01 … UW-10). Sources:
+//! Evidence: `docs/protocol/evidence/40-ucwa-contact-photos.md` (UW-01 … UW-12). Sources:
 //! [MS-OCDISCWS] 20250520 §2.2.5.5 (pp. 16–17), §3.1.5.5 (pp. 21–22) for the `OAuth` link and the
 //! `Internal/Ucwa`/`External/Ucwa` links of the User resource; the official UCWA 2.0 reference
 //! (Microsoft, "Applies to: Skype for Business 2015", source repository OfficeDev/skype-docs,
@@ -29,6 +29,12 @@ pub const XML: &str = "application/xml";
 pub const AUTODISCOVER_XML: &str = "application/vnd.microsoft.rtc.autodiscover+xml;v=1";
 /// The grant used (UW-02): Windows authentication of the token request.
 pub const WINDOWS_GRANT: &str = "urn:microsoft.rtc:windows";
+/// The password grant (UW-12): user name and password as form fields of the token request, as
+/// a forms-based client (the mobile clients) signs in where Windows authentication does not get
+/// through (a reverse proxy outside the company network).
+pub const PASSWORD_GRANT: &str = "password";
+/// Longest user name or password put into a password grant (design).
+pub const MAX_CREDENTIAL: usize = 512;
 /// Largest UCWA document read (design: a contact list or a large expanded group).
 pub const MAX_DOCUMENT: usize = 2 * 1024 * 1024;
 /// Largest token answer read (design: the example is under 1 KiB).
@@ -58,6 +64,11 @@ pub struct Challenge {
 impl Challenge {
     pub fn offers_windows(&self) -> bool {
         self.grants.iter().any(|g| g == WINDOWS_GRANT)
+    }
+
+    /// The token service takes the password grant (UW-12).
+    pub fn offers_password(&self) -> bool {
+        self.grants.iter().any(|g| g == PASSWORD_GRANT)
     }
 }
 
@@ -111,6 +122,38 @@ fn param(s: &str, name: &str) -> Option<String> {
         rest = after;
     }
     None
+}
+
+/// The body of the token request with the password grant (UW-12):
+/// `grant_type=password&username=…&password=…`, the values form-encoded (`application/x-www-
+/// form-urlencoded`, "the body content must be URL-encoded"). A credential: wiped when dropped.
+/// `None` for an empty or overlong value or one with control characters.
+pub fn password_token_request(user: &str, password: &str) -> Option<zeroize::Zeroizing<String>> {
+    let ok =
+        |v: &str| !v.is_empty() && v.len() <= MAX_CREDENTIAL && !v.chars().any(char::is_control);
+    if !ok(user) || !ok(password) {
+        return None;
+    }
+    let mut body = zeroize::Zeroizing::new(String::with_capacity(
+        40 + 3 * (user.len() + password.len()),
+    ));
+    body.push_str("grant_type=password&username=");
+    form_encode(user, &mut body);
+    body.push_str("&password=");
+    form_encode(password, &mut body);
+    Some(body)
+}
+
+/// Form encoding of one value: unreserved characters stay, every other octet becomes `%XX`.
+fn form_encode(v: &str, out: &mut String) {
+    use std::fmt::Write;
+    for b in v.bytes() {
+        if b.is_ascii_alphanumeric() || b"-._~".contains(&b) {
+            out.push(char::from(b));
+        } else {
+            let _ = write!(out, "%{b:02X}");
+        }
+    }
 }
 
 /// The body of the token request with the Windows grant (UW-02).

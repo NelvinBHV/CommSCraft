@@ -1274,6 +1274,12 @@ impl<R: Random> Engine<R> {
             .unwrap_or_default()
     }
 
+    /// The sign-in's user name and password handed to `f` (a form for a web service, the UCWA
+    /// password grant); `None` without a password.
+    pub fn with_credentials<T>(&self, f: impl FnOnce(&str, &str) -> T) -> Option<T> {
+        self.reg.with_credentials(f)
+    }
+
     /// The AUTHENTICATE_MESSAGE for NTLM over HTTP (web services); the password stays in the
     /// registrar.
     pub fn http_ntlm(

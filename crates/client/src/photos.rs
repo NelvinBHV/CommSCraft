@@ -120,7 +120,8 @@ pub fn photos_dir() -> Option<PathBuf> {
     crate::xdg::dir(crate::xdg::Kind::Cache).map(|d| d.join("photos"))
 }
 
-fn write_private(path: &Path, data: &[u8]) -> Result<(), String> {
+/// Writes a file only the user can read (folders 0700, file 0600).
+pub fn write_private(path: &Path, data: &[u8]) -> Result<(), String> {
     use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
     if let Some(dir) = path.parent() {
         std::fs::DirBuilder::new()

@@ -474,6 +474,26 @@ impl<R: Random> Registrar<R> {
     /// `negotiate` is the NEGOTIATE_MESSAGE sent first, `challenge` the server's CHALLENGE,
     /// `server_certificate` the DER certificate of the TLS connection the exchange runs on: it
     /// binds the authentication to that connection (channel bindings, issue #42).
+    /// Hands the sign-in's user name (`DOMAIN\\user` when a domain is set and the name has
+    /// none) and password to `f`, for a web service that takes them as a form (the UCWA password
+    /// grant); `None` without a password (a Kerberos ticket). The password stays here: `f` builds
+    /// a wiped value from it.
+    pub fn with_credentials<T>(&self, f: impl FnOnce(&str, &str) -> T) -> Option<T> {
+        let password = self.password.0.as_str();
+        if password.is_empty() || self.cfg.user.is_empty() {
+            return None;
+        }
+        let user = if self.cfg.domain.is_empty()
+            || self.cfg.user.contains('@')
+            || self.cfg.user.contains('\\')
+        {
+            zeroize::Zeroizing::new(self.cfg.user.clone())
+        } else {
+            zeroize::Zeroizing::new(format!("{}\\{}", self.cfg.domain, self.cfg.user))
+        };
+        Some(f(&user, password))
+    }
+
     pub fn http_ntlm(
         &mut self,
         negotiate: &[u8],
