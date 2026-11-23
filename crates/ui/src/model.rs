@@ -705,6 +705,11 @@ pub enum AppEvent {
     },
     /// Results of a directory or address book search (shown separately, not kept as contacts).
     SearchResults(Vec<Contact>),
+    /// The location a contact set (empty: none).
+    Location {
+        uri: String,
+        location: String,
+    },
     /// We opened a conversation; the session names it later.
     ConversationOpening {
         key: ConvKey,
@@ -1006,6 +1011,8 @@ pub struct AppState {
     pub photos: BTreeMap<String, Photo>,
     /// The distribution groups of the contact list.
     pub distribution: Vec<DistGroup>,
+    /// The locations contacts set, by lower-case address.
+    pub locations: BTreeMap<String, String>,
     /// The plain groups of the contact list (names; the default group is not among them).
     pub groups: Vec<String>,
     /// People who added the user and were not acknowledged yet.
@@ -1048,6 +1055,7 @@ impl Default for AppState {
             trust_question: None,
             photos: BTreeMap::new(),
             distribution: Vec::new(),
+            locations: BTreeMap::new(),
             groups: Vec::new(),
             subscribers: Vec::new(),
             quality_rating: false,
@@ -1124,6 +1132,13 @@ impl AppState {
     }
 
     /// The open conversation with one peer, if any.
+    /// The location a contact set, if any.
+    pub fn location_of(&self, uri: &str) -> Option<&str> {
+        self.locations
+            .get(&uri.to_ascii_lowercase())
+            .map(String::as_str)
+    }
+
     pub fn conversation_with(&self, peer: &str) -> Option<ConvKey> {
         self.conversations
             .iter()
@@ -1393,6 +1408,15 @@ impl AppState {
                         self.me.presence = p;
                     }
                     self.me.note = clean(&note, 1024, false);
+                }
+            }
+            AppEvent::Location { uri, location } => {
+                let key = uri.to_ascii_lowercase();
+                let location = clean(&location, 256, false);
+                if location.is_empty() {
+                    self.locations.remove(&key);
+                } else if self.locations.len() < 10_000 || self.locations.contains_key(&key) {
+                    self.locations.insert(key, location);
                 }
             }
             AppEvent::SearchResults(r) => {

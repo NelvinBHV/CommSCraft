@@ -174,6 +174,9 @@ pub enum Command {
     /// The look of our messages (bold, italic, underline, colour): sent as `text/html` to peers
     /// whose session accepts it, plain otherwise (`im::html`).
     SetMessageStyle(im::html::Style),
+    /// The user's location ("set your location"), published in the machineState
+    /// (`endpointLocation`); empty clears it. Kept before the sign-in too.
+    SetUserLocation(String),
     Typing {
         conversation: ConversationId,
         typing: bool,
@@ -807,6 +810,8 @@ pub struct Engine<R: Random> {
     cfg: Config,
     /// The look of our messages (`SetMessageStyle`).
     message_style: im::html::Style,
+    /// The user's location (`SetUserLocation`).
+    user_location: String,
     reg: Registrar<R>,
     gruu: String,
     registered: bool,
@@ -954,6 +959,7 @@ impl<R: Random> Engine<R> {
         Self {
             cfg,
             message_style: im::html::Style::default(),
+            user_location: String::new(),
             reg,
             gruu,
             registered: false,
@@ -1289,6 +1295,7 @@ impl<R: Random> Engine<R> {
             &endpoint,
             &self.cfg.machine_name,
             self.machine.availability(),
+            &self.user_location,
             self.endpoint_versions,
         ) else {
             return;
@@ -2159,6 +2166,10 @@ impl<R: Random> Engine<R> {
             self.machine = *a;
             return out;
         }
+        if let (false, Command::SetUserLocation(l)) = (self.registered, &cmd) {
+            self.user_location = pres::location_text(l);
+            return out;
+        }
         // The own message style is a local setting: kept before the sign-in too.
         if let (false, Command::SetMessageStyle(style)) = (self.registered, &cmd) {
             self.message_style = *style;
@@ -2172,6 +2183,13 @@ impl<R: Random> Engine<R> {
             Command::SetStatus(s) => self.publish_status(s, now, &mut out),
             Command::ResetStatus => self.reset_status(now, &mut out),
             Command::SetNote(n) => self.publish_note(n.as_deref(), now, &mut out),
+            Command::SetUserLocation(l) => {
+                let l = pres::location_text(&l);
+                if l != self.user_location {
+                    self.user_location = l;
+                    self.publish_endpoint(now, &mut out);
+                }
+            }
             Command::SetMachineActivity(a) => {
                 if a != self.machine {
                     self.machine = a;

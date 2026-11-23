@@ -18,6 +18,8 @@ pub enum UiIntent {
     SignIn(SignIn),
     SignOut,
     SetPresence(Presence),
+    /// The user's location ("set your location"); empty clears it.
+    SetLocation(String),
     /// Open the folder of the meeting recordings (the desktop's file manager).
     OpenRecordings,
     /// High priority for the messages of a conversation from now on (`Priority: urgent`).
@@ -336,6 +338,9 @@ pub struct Prefs {
     pub im_underline: bool,
     /// The colour of our messages; `None`: the default text colour.
     pub im_color: Option<[u8; 3]>,
+    /// The user's location (published with the presence) and the last ones used.
+    pub location: String,
+    pub recent_locations: Vec<String>,
     pub sounds: bool,
     pub quiet_sounds_busy: bool,
     /// The camera device; empty: the default.
@@ -393,6 +398,8 @@ impl Default for Prefs {
             im_italic: false,
             im_underline: false,
             im_color: None,
+            location: String::new(),
+            recent_locations: Vec::new(),
             sounds: true,
             quiet_sounds_busy: false,
             camera: String::new(),

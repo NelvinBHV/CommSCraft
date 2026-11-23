@@ -2177,6 +2177,9 @@ fn card(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
                     );
                     if let Some(c) = &c {
                         ui.label(RichText::new(t.presence(c.presence)).color(pal.muted));
+                        if let Some(l) = app.state.location_of(&c.uri) {
+                            ui.label(RichText::new(l).size(theme::text::SMALL).color(pal.muted));
+                        }
                         if !c.note.is_empty() {
                             ui.label(RichText::new(&c.note).italics().color(pal.muted));
                         }

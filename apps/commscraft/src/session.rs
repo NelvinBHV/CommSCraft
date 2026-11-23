@@ -36,6 +36,8 @@ impl std::fmt::Debug for ScreenCapture {
 #[derive(Debug)]
 pub enum ToWorker {
     SetPresence(Presence),
+    /// The user's location ("set your location"); empty clears it.
+    SetLocation(String),
     /// Share the captured screen or window with `to` (function 43).
     ShareScreen {
         to: String,
@@ -140,6 +142,8 @@ pub enum ToWorker {
         message_style: commscraft_im::html::Style,
         /// The microphone when it is another device (empty: the same).
         mic_device: String,
+        /// The user's location (published with the presence).
+        location: String,
     },
     /// Tones in a call (DTMF, RFC 4733).
     Dtmf {
@@ -2554,6 +2558,7 @@ impl Session {
                 audio_device,
                 mic_device,
                 message_style,
+                location,
             } => {
                 self.save_history = save_history;
                 self.audio_device = audio_device;
@@ -2568,9 +2573,13 @@ impl Session {
                 if !sounds {
                     self.cues.stop_all();
                 }
-                self.engine
-                    .command(C::SetMessageStyle(message_style), now())
+                let mut o = self
+                    .engine
+                    .command(C::SetMessageStyle(message_style), now());
+                o.extend(self.engine.command(C::SetUserLocation(location), now()));
+                o
             }
+            ToWorker::SetLocation(l) => self.engine.command(C::SetUserLocation(l), now()),
             ToWorker::Dtmf { id, digits } => {
                 for d in digits
                     .chars()
@@ -3083,14 +3092,20 @@ impl Session {
                     "the contact list is kept in Exchange, which is not reachable",
                 ),
             },
-            E::Presence(p) => out.event(AppEvent::Presence {
-                presence: p
-                    .availability
-                    .map(|a| presence_of(a, p.activity.as_deref())),
-                note: p.note.clone().unwrap_or_default(),
-                name: p.display_name.clone(),
-                uri: p.uri,
-            }),
+            E::Presence(p) => {
+                out.event(AppEvent::Location {
+                    uri: p.uri.clone(),
+                    location: p.location.clone().unwrap_or_default(),
+                });
+                out.event(AppEvent::Presence {
+                    presence: p
+                        .availability
+                        .map(|a| presence_of(a, p.activity.as_deref())),
+                    note: p.note.clone().unwrap_or_default(),
+                    name: p.display_name.clone(),
+                    uri: p.uri,
+                })
+            }
             E::PresenceUnavailable { uri, .. } => out.event(AppEvent::Presence {
                 uri,
                 presence: Some(Presence::Unknown),

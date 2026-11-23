@@ -44,6 +44,14 @@ fn valid_name(v: &str) -> bool {
     !v.is_empty() && v.len() <= 300 && v.chars().all(|c| !c.is_control())
 }
 
+/// A location as kept: printable, one line, at most 256 characters.
+fn valid_location(v: &str) -> bool {
+    !v.is_empty() && v.chars().count() <= 256 && v.chars().all(|c| !c.is_control())
+}
+
+/// The last locations offered in the location menu.
+pub const MAX_RECENT_LOCATIONS: usize = 5;
+
 /// Longest idle limit in minutes (design).
 pub const MAX_IDLE_MINUTES: u32 = 360;
 
@@ -69,6 +77,15 @@ pub fn parse(text: &str) -> Prefs {
             "sort_by_availability" => p.sort_by_availability = v == "true",
             "away_group" => p.away_group = v == "true",
             "close_to_tray" => p.close_to_tray = v != "false",
+            // The location and the last ones used (printable, bounded).
+            "location" if valid_location(v) => p.location = v.to_string(),
+            "recent_location"
+                if valid_location(v)
+                    && p.recent_locations.len() < MAX_RECENT_LOCATIONS
+                    && !p.recent_locations.iter().any(|l| l == v) =>
+            {
+                p.recent_locations.push(v.to_string())
+            }
             // The contact list's own order and collapsed sections (issue #243), bounded.
             "collapsed"
                 if valid_name(v) && p.collapsed.len() < commscraft_ui::order::MAX_GROUPS =>
@@ -215,6 +232,17 @@ pub fn format(p: &Prefs) -> String {
         ("always_close_all_tabs", p.always_close_all_tabs),
     ] {
         out.push_str(&format!("{k}={v}\n"));
+    }
+    if valid_location(&p.location) {
+        out.push_str(&format!("location={}\n", p.location));
+    }
+    for l in p
+        .recent_locations
+        .iter()
+        .filter(|l| valid_location(l))
+        .take(MAX_RECENT_LOCATIONS)
+    {
+        out.push_str(&format!("recent_location={l}\n"));
     }
     for c in p.collapsed.iter().filter(|c| valid_name(c)) {
         out.push_str(&format!("collapsed={c}\n"));
@@ -422,5 +450,34 @@ mod order_tests {
         assert!(hostile.contact_order.is_empty());
         assert!(hostile.collapsed.is_empty());
         assert!(hostile.group_order.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod location_tests {
+    use super::*;
+
+    /// The location and the last ones used survive a restart; control characters, overlong
+    /// and repeated lines are skipped.
+    #[test]
+    fn locations_round_trip_bounded() {
+        let p = Prefs {
+            location: "Raum 1".into(),
+            recent_locations: vec!["Raum 1".into(), "Home".into()],
+            ..Prefs::default()
+        };
+        let back = parse(&format(&p));
+        assert_eq!(back.location, "Raum 1");
+        assert_eq!(back.recent_locations, p.recent_locations);
+        let mut hostile = String::from("location=a\u{1b}b\n");
+        hostile.push_str(&format!("recent_location={}\n", "x".repeat(300)));
+        for i in 0..9 {
+            hostile.push_str(&format!(
+                "recent_location=Ort {i}\nrecent_location=Ort {i}\n"
+            ));
+        }
+        let h = parse(&hostile);
+        assert!(h.location.is_empty());
+        assert_eq!(h.recent_locations.len(), MAX_RECENT_LOCATIONS);
     }
 }

@@ -275,8 +275,15 @@ fn rlmi_rejections() {
 #[test]
 fn endpoint_publication() {
     let id = "221EF77E-3A68-5570-86ED-6EA5BD4B7FF8";
-    let b =
-        publish_endpoint_body("sip:bob@contoso.com", id, "linux\u{1b}box<", 3500, [0, 2]).unwrap();
+    let b = publish_endpoint_body(
+        "sip:bob@contoso.com",
+        id,
+        "linux\u{1b}box<",
+        3500,
+        "",
+        [0, 2],
+    )
+    .unwrap();
     let root = commscraft_xml::parse(&b, &Limits::default()).unwrap();
     let pubs: Vec<&Element> = root
         .child("publications")
@@ -302,7 +309,46 @@ fn endpoint_publication() {
         endpoint_instances(&id.to_lowercase()),
         "stable"
     );
-    assert!(publish_endpoint_body("sip:bob@contoso.com", "x\"/>", "m", 3500, [0, 0]).is_err());
+    assert!(publish_endpoint_body("sip:bob@contoso.com", "x\"/>", "m", 3500, "", [0, 0]).is_err());
+    assert_eq!(
+        pubs[1]
+            .child("state")
+            .unwrap()
+            .child("endpointLocation")
+            .unwrap()
+            .text(),
+        ""
+    );
+    // The user's location in the machineState (§2.2.2.7.1, p. 54), escaped.
+    let b = publish_endpoint_body(
+        "sip:bob@contoso.com",
+        id,
+        "m",
+        3500,
+        " Raum  <1>\u{7} ",
+        [0, 0],
+    )
+    .unwrap();
+    let root = commscraft_xml::parse(&b, &Limits::default()).unwrap();
+    let st = root
+        .child("publications")
+        .unwrap()
+        .children_named("publication")
+        .nth(1)
+        .unwrap();
+    assert_eq!(
+        st.child("state")
+            .unwrap()
+            .child("endpointLocation")
+            .unwrap()
+            .text(),
+        "Raum <1>"
+    );
+    assert_eq!(location_text("none"), "");
+    assert_eq!(
+        location_text(&"x".repeat(1000)).chars().count(),
+        MAX_LOCATION
+    );
     assert_eq!(
         contact_document_kind("<contactDelta deltaNum=\"2\" prevDeltaNum=\"1\"/>"),
         ContactDocument::Delta
@@ -990,4 +1036,21 @@ fn be_right_back_off_work_and_the_note_bodies() {
     let c = clear_state_body("sip:bob@contoso.com", [4, 5], Some("ab-12")).unwrap();
     assert!(c.contains("container=\"3\" version=\"5\" expireType=\"endpoint\" endpointId=\"ab-12\" expires=\"0\"/>"));
     assert!(clear_state_body("sip:bob@contoso.com", [0, 0], Some("x\"")).is_err());
+}
+
+/// A contact's location: the aggregateState's `endpointLocation` ([MS-PRES] 20180427
+/// §3.8.5.1.2.6, p. 124; example §2.2.2.4.3, p. 46), printable and bounded; `none` is none.
+#[test]
+fn contact_location() {
+    let doc = |loc: &str| {
+        format!(
+            r#"<categories xmlns="http://schemas.microsoft.com/2006/09/sip/categories" uri="sip:bob@contoso.com"><category name="state" instance="1"><state xmlns="http://schemas.microsoft.com/2006/09/sip/state" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="aggregateState"><availability>3500</availability><endpointLocation>{loc}</endpointLocation></state></category></categories>"#
+        )
+    };
+    let p = parse_categories(&doc("Home_Custom_EndPoint_Location")).unwrap();
+    assert_eq!(p.location.as_deref(), Some("Home_Custom_EndPoint_Location"));
+    assert_eq!(parse_categories(&doc("none")).unwrap().location, None);
+    assert_eq!(parse_categories(&doc("")).unwrap().location, None);
+    let long = parse_categories(&doc(&"r".repeat(5000))).unwrap();
+    assert_eq!(long.location.unwrap().chars().count(), MAX_LOCATION);
 }
