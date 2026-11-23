@@ -657,3 +657,30 @@ fn distribution_groups_are_sorted() {
     let names: Vec<&str> = s.distribution.iter().map(|g| g.name.as_str()).collect();
     assert_eq!(names, vec!["ärzte", "Buchhaltung", "Vertrieb"]);
 }
+
+/// As in the Windows client: someone writing to us lands in the window we already have with
+/// them (opened but not started, or ended), not in a second one.
+#[test]
+fn an_incoming_session_uses_the_open_window_with_that_person() {
+    let mut s = online();
+    let key = s.new_key();
+    s.apply(AppEvent::ConversationOpening {
+        key,
+        peer: "sip:dave@beispiel.invalid".into(),
+    });
+    s.apply(AppEvent::ConversationStarted {
+        session: 9,
+        peer: "sip:dave@beispiel.invalid".into(),
+        incoming: true,
+    });
+    assert_eq!(s.conversations.len(), 1);
+    assert_eq!(s.key_of_session(9), Some(key));
+    assert_eq!(s.conversation(key).unwrap().state, ConvState::Open);
+    // Someone else still gets a conversation of their own.
+    s.apply(AppEvent::ConversationStarted {
+        session: 10,
+        peer: "sip:erin@beispiel.invalid".into(),
+        incoming: true,
+    });
+    assert_eq!(s.conversations.len(), 2);
+}

@@ -1418,6 +1418,19 @@ impl AppState {
                         return;
                     }
                 }
+                // As in the Windows client: someone writing to us lands in the window we already
+                // have with them (not yet started, or ended) instead of a second one.
+                if incoming {
+                    if let Some(c) = self.conversations.iter_mut().find(|c| {
+                        c.peer.as_deref() == Some(peer.as_str())
+                            && c.room.is_none()
+                            && c.state != ConvState::Open
+                    }) {
+                        c.session = Some(session);
+                        c.state = ConvState::Open;
+                        return;
+                    }
+                }
                 let title = self.name_of(&peer);
                 self.new_conversation(None, Some(peer), title, Some(session));
             }
