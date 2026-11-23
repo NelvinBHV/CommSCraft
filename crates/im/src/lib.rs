@@ -192,12 +192,37 @@ pub fn typing(dialog: &mut Dialog, typing: bool) -> Message {
 /// The peer's message session SDP names `text/html` in its accept-types: it takes formatted
 /// messages (`html`).
 pub fn accepts_html(body: &[u8]) -> bool {
+    accepts(body, "text/html")
+}
+
+/// The peer's message session SDP names `text/rtf` (the Windows client does): it takes messages
+/// in Rich Text Format, the form whose colour the Windows client shows.
+pub fn accepts_rtf(body: &[u8]) -> bool {
+    accepts(body, "text/rtf")
+}
+
+fn accepts(body: &[u8], kind: &str) -> bool {
     std::str::from_utf8(body).is_ok_and(|s| {
         s.lines()
             .filter_map(|l| l.trim().strip_prefix("a=accept-types:"))
             .flat_map(str::split_whitespace)
-            .any(|t| t.eq_ignore_ascii_case("text/html"))
+            .any(|t| t.eq_ignore_ascii_case(kind))
     })
+}
+
+/// A formatted message in Rich Text Format (`html::to_rtf`), `Content-Type: text/rtf` without
+/// parameters as with `text/html` (`tested-in-lab`).
+pub fn message_rtf(dialog: &mut Dialog, rtf: &str) -> Result<Message, Error> {
+    if rtf.trim().is_empty() {
+        return Err(Error::EmptyText);
+    }
+    if rtf.len() > html::MAX_HTML {
+        return Err(Error::TextTooLong);
+    }
+    let mut m = dialog.request("MESSAGE");
+    m.push_header("Content-Type", "text/rtf");
+    m.body = rtf.as_bytes().to_vec();
+    Ok(m)
 }
 
 /// A formatted message (`text/html`), in the form the Windows client sends (`html::to_html`):
