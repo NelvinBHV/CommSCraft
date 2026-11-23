@@ -41,6 +41,8 @@ pub enum ToWorker {
     /// Share the captured screen or window with `to` (function 43).
     ShareScreen {
         to: String,
+        /// In a meeting: its conversation (the application sharing MCU), not a peer.
+        conference: Option<u32>,
         capture: ScreenCapture,
     },
     StartConversation {
@@ -803,7 +805,10 @@ struct Videos {
     /// Video stream → the screen sharing call it will view.
     pending_screen: BTreeMap<u32, u32>,
     /// Our screen being shared: video stream → to whom (the call starts once it is ready).
-    pending_share: BTreeMap<u32, String>,
+    pending_share: BTreeMap<u32, (String, Option<u32>)>,
+    /// Our screen stream for a meeting, waiting for the call to the sharing MCU: conversation →
+    /// stream.
+    conf_share_video: BTreeMap<u32, u32>,
     /// Video streams being prepared for an active call (video added): stream → call.
     pending_add: BTreeMap<u32, u32>,
     /// Video streams being prepared for video the other side adds: stream → call.
@@ -866,6 +871,7 @@ impl Videos {
             sharing: BTreeSet::new(),
             screen_source: BTreeMap::new(),
             conf_screen_pending: BTreeMap::new(),
+            conf_share_video: BTreeMap::new(),
             conf_screen_video: BTreeMap::new(),
             conf_viewing: BTreeMap::new(),
             conf_rdp_pending: BTreeMap::new(),
@@ -1720,9 +1726,22 @@ impl Session {
                 )
             }
             V::Ready(vid, local) if self.v.pending_share.contains_key(&vid) => {
-                let Some(to) = self.v.pending_share.remove(&vid) else {
+                let Some((to, conference)) = self.v.pending_share.remove(&vid) else {
                     return Vec::new();
                 };
+                // In a meeting: to its application sharing MCU (function 43, CS-01 … CS-03).
+                if let Some(conversation) = conference {
+                    self.v.conf_share_video.insert(conversation, vid);
+                    let policy = self.policy();
+                    return self.engine.command(
+                        C::ShareConferenceScreen {
+                            conversation,
+                            video: local,
+                            policy,
+                        },
+                        t,
+                    );
+                }
                 let call = self.engine.next_call_id();
                 self.v.of_call.insert(call, vid);
                 self.v.own_shares.insert(call);
@@ -2484,7 +2503,11 @@ impl Session {
                 }
                 Vec::new()
             }
-            ToWorker::ShareScreen { to, capture } => {
+            ToWorker::ShareScreen {
+                to,
+                conference,
+                capture,
+            } => {
                 let vid = self.next_id();
                 let relay = self.engine.media_relay().and_then(calls::relay_from);
                 let h = video_call::spawn_sharing(
@@ -2496,7 +2519,7 @@ impl Session {
                     self.v.video_tx.clone(),
                 );
                 self.v.handles.insert(vid, h);
-                self.v.pending_share.insert(vid, to);
+                self.v.pending_share.insert(vid, (to, conference));
                 Vec::new()
             }
             ToWorker::ViewScreen { id: call } => {
@@ -3663,6 +3686,25 @@ impl Session {
                     ) {
                         let _ = h.tx.send(video_call::ToVideo::Source(*msi));
                     }
+                }
+            }
+            // Our screen in a meeting: a call of its own (its own small window with "stop
+            // presenting"), not on the meeting's stage.
+            E::ConferenceShare { conversation, call } => {
+                if let Some(vid) = self.v.conf_share_video.remove(&conversation) {
+                    self.v.of_call.insert(call, vid);
+                    self.v.own_shares.insert(call);
+                    self.outgoing.insert(call);
+                    out.event(AppEvent::CallStarted {
+                        id: call,
+                        peer: String::new(),
+                        incoming: false,
+                        at: t,
+                    });
+                    out.event(AppEvent::CallKind {
+                        id: call,
+                        kind: CallKind::Sharing,
+                    });
                 }
             }
             E::ConferenceAudio { conversation, call } => {

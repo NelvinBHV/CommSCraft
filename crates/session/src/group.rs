@@ -70,6 +70,8 @@ pub(crate) struct Group {
     pub av_call: Option<CallId>,
     /// The viewing call to the application sharing MCU (function 43).
     pub screen_call: Option<CallId>,
+    /// Our sharing call to the application sharing MCU (function 43).
+    pub share_call: Option<CallId>,
     /// The focus factory refused the A/V MCU (`mcuTypeNotAvailable`): created with chat only.
     pub chat_only: bool,
     /// The focus factory refused the MCUs with application sharing: created without it.
@@ -129,6 +131,7 @@ impl<R: Random> Engine<R> {
         if let Some(g) = self.convs.get_mut(&id).and_then(|c| c.group.as_deref_mut()) {
             g.av_call = g.av_call.filter(|c| calls.contains_key(c));
             g.screen_call = g.screen_call.filter(|c| calls.contains_key(c));
+            g.share_call = g.share_call.filter(|c| calls.contains_key(c));
         }
     }
 
@@ -857,6 +860,64 @@ impl<R: Random> Engine<R> {
     /// `ViewConferenceScreen` (function 43): view what is shared in the conference – a call to
     /// its application sharing MCU (CS-01: dial-in by INVITE) with our viewer offer
     /// (`sdp::screen::viewer_offer`); the call belongs to the conversation and ends with it.
+    /// `ShareConferenceScreen` (function 43): the sharer's INVITE to the conference's
+    /// application sharing MCU (CS-01, dial-in only) with the sharer offer of video-based screen
+    /// sharing – `m=applicationsharing` sharer with port 0, the screen video line send-only with
+    /// content flow `sendonly` (CS-02, CS-03). A sharer before us gets a BYE from the MCU (CS-07).
+    pub(crate) fn share_conference_screen(
+        &mut self,
+        id: ConversationId,
+        video: sdp::video::VideoLocal,
+        policy: sdp::Encryption,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        self.forget_ended_calls(id);
+        let uri = match self.group_mut(id) {
+            Some(g) if g.lobby_since.is_some() => {
+                out.push(Output::Event(Event::Notice("still in the lobby".into())));
+                return;
+            }
+            Some(g) if g.share_call.is_some() => {
+                out.push(Output::Event(Event::Notice("already presenting".into())));
+                return;
+            }
+            Some(g) => g.roster.as_uri.clone(),
+            None => None,
+        };
+        let Some(uri) = uri else {
+            out.push(Output::Event(Event::Notice(
+                "this conference has no application sharing".into(),
+            )));
+            return;
+        };
+        let local = video.media.clone();
+        let started = self.start_call_with(
+            &uri,
+            local,
+            policy,
+            crate::call::Extras {
+                video: Some(&video),
+                screen: true,
+                share: true,
+                ..Default::default()
+            },
+            now,
+            out,
+        );
+        if let Some(call) = started {
+            self.screen_calls.insert(call);
+            self.share_calls.insert(call);
+            if let Some(g) = self.group_mut(id) {
+                g.share_call = Some(call);
+            }
+            out.push(Output::Event(Event::ConferenceShare {
+                conversation: id,
+                call,
+            }));
+        }
+    }
+
     pub(crate) fn view_conference_screen(
         &mut self,
         id: ConversationId,
