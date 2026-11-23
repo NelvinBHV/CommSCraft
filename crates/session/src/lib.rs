@@ -165,6 +165,12 @@ pub enum Command {
         conversation: ConversationId,
         text: String,
     },
+    /// High priority for the messages of a conversation from now on (`Priority: urgent`), as the
+    /// Windows client's sticky "high priority" button.
+    SetUrgent {
+        conversation: ConversationId,
+        urgent: bool,
+    },
     /// The look of our messages (bold, italic, underline, colour): sent as `text/html` to peers
     /// whose session accepts it, plain otherwise (`im::html`).
     SetMessageStyle(im::html::Style),
@@ -510,6 +516,8 @@ pub enum Event {
         text: String,
         /// A formatted message: its text runs (`text` is their plain text); empty for plain.
         spans: Vec<im::html::Span>,
+        /// Sent with high priority (`Priority: urgent`).
+        urgent: bool,
     },
     /// We wait in the lobby of a conference (`true`) or were admitted (`false`) (CB-23).
     ConferenceLobby {
@@ -790,6 +798,8 @@ struct Conversation {
     timer: Option<group::SessionTimer>,
     /// The peer's session accepts `text/html` (formatted messages).
     html: bool,
+    /// Our messages go with high priority (`Priority: urgent`).
+    urgent: bool,
 }
 
 /// The engine of one account.
@@ -1886,6 +1896,7 @@ impl<R: Random> Engine<R> {
                 group: None,
                 timer: None,
                 html: false,
+                urgent: false,
             },
         );
         self.send_request(m, Purpose::Invite(id), now, out);
@@ -1907,6 +1918,7 @@ impl<R: Random> Engine<R> {
             c.queue.push(text);
             return;
         };
+        let urgent = c.urgent;
         let msg = if c.html && !self.message_style.is_plain() {
             im::message_html(
                 &mut d,
@@ -1918,6 +1930,9 @@ impl<R: Random> Engine<R> {
         c.dialog = Some(d);
         match msg {
             Ok(mut m) => {
+                if urgent {
+                    im::mark_urgent(&mut m);
+                }
                 self.complete(&mut m);
                 self.send_request(m, Purpose::Message(id), now, out);
             }
@@ -2026,6 +2041,7 @@ impl<R: Random> Engine<R> {
                 group: group.map(Box::new),
                 timer,
                 html: im::accepts_html(&req.body),
+                urgent: false,
             },
         );
         out.push(Output::Event(Event::ConversationStarted {
@@ -2092,6 +2108,7 @@ impl<R: Random> Engine<R> {
                     sender,
                     text,
                     spans: Vec::new(),
+                    urgent: im::is_urgent(req),
                 }))
             }
             im::Incoming::Formatted(spans) => {
@@ -2109,6 +2126,7 @@ impl<R: Random> Engine<R> {
                     sender,
                     text: im::printable(&im::html::plain(&spans)),
                     spans,
+                    urgent: im::is_urgent(req),
                 }))
             }
             im::Incoming::Typing(typing) => out.push(Output::Event(Event::Typing {
@@ -2169,6 +2187,14 @@ impl<R: Random> Engine<R> {
                 self.send_text(conversation, text, now, &mut out)
             }
             Command::SetMessageStyle(style) => self.message_style = style,
+            Command::SetUrgent {
+                conversation,
+                urgent,
+            } => {
+                if let Some(c) = self.convs.get_mut(&conversation) {
+                    c.urgent = urgent;
+                }
+            }
             Command::Typing {
                 conversation,
                 typing,

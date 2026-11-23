@@ -331,6 +331,8 @@ pub struct Message {
     /// Unix seconds.
     pub at: u64,
     pub delivery: Delivery,
+    /// Sent with high priority (the Windows client's red "!").
+    pub important: bool,
 }
 
 /// The sender of a line the client writes itself (a call connected or ended), as the Windows
@@ -422,6 +424,8 @@ pub enum ConfCommand {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Conversation {
     pub key: ConvKey,
+    /// Our messages go with high priority (the composer's "!", sticky as in the Windows client).
+    pub urgent: bool,
     /// The session's conversation ID once it is known.
     pub session: Option<u32>,
     pub title: String,
@@ -736,6 +740,8 @@ pub enum AppEvent {
         /// A formatted message's runs; empty for plain text.
         runs: Vec<TextRun>,
         at: u64,
+        /// Sent with high priority.
+        urgent: bool,
     },
     /// Our own message, shown at once with `Sending`.
     OwnText {
@@ -1167,6 +1173,7 @@ impl AppState {
         let key = key.unwrap_or_else(|| self.new_key());
         self.conversations.push(Conversation {
             key,
+            urgent: false,
             session,
             title,
             peer,
@@ -1236,6 +1243,7 @@ impl AppState {
                 runs: Vec::new(),
                 at,
                 delivery: Delivery::Unknown,
+                important: false,
             });
             while c.messages.len() > MAX_MESSAGES {
                 c.messages.pop_front();
@@ -1480,6 +1488,7 @@ impl AppState {
                 text,
                 runs,
                 at,
+                urgent,
             } => {
                 if let Some(c) = self.by_session(session) {
                     c.typing = false;
@@ -1501,17 +1510,20 @@ impl AppState {
                             .collect(),
                         at,
                         delivery: Delivery::Unknown,
+                        important: urgent,
                     });
                 }
             }
             AppEvent::OwnText { key, text, at } => {
                 if let Some(c) = self.conversation_mut(key) {
+                    let important = c.urgent;
                     c.push(Message {
                         sender: None,
                         text: clean(&text, MAX_TEXT, true),
                         runs: Vec::new(),
                         at,
                         delivery: Delivery::Sending,
+                        important,
                     });
                 }
             }
@@ -1886,6 +1898,7 @@ impl AppState {
                         } else {
                             Delivery::Unknown
                         },
+                        important: false,
                     });
                 }
             }

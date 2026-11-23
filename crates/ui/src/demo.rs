@@ -105,6 +105,7 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
         runs: Vec::new(),
         at,
         delivery: d,
+        important: false,
     };
     let add = |state: &mut AppState,
                title: &str,
@@ -116,6 +117,7 @@ pub fn populate(state: &mut AppState, now: u64, lang: Lang) {
         let last = msgs.iter().map(|m| m.at).max().unwrap_or(0);
         state.conversations.push(crate::model::Conversation {
             key,
+            urgent: false,
             session: None,
             title: title.into(),
             peer: peer.map(uri),

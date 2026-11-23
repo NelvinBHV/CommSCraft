@@ -106,6 +106,7 @@ impl<R: Random> Engine<R> {
                 group: group.map(Box::new),
                 timer: None,
                 html: false,
+                urgent: false,
             },
         );
         Some(id)

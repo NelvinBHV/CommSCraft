@@ -550,6 +550,11 @@ impl DesktopApp {
             UiIntent::StartConversation { key, peer } => {
                 Some(ToWorker::StartConversation { key, peer })
             }
+            UiIntent::SetUrgent { key, urgent } => Some(ToWorker::SetUrgent {
+                key,
+                session: session_of(key),
+                urgent,
+            }),
             UiIntent::SendMessage { key, text } => Some(ToWorker::SendText {
                 key,
                 session: session_of(key),

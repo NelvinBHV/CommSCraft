@@ -292,7 +292,7 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
                 .inner_margin(Margin::symmetric(16, 12))
                 .show(ui, |ui| {
                     ui.set_max_width(max_w);
-                    emoticon_text(app, ui, &m.text, theme::text::BODY, pal.ink);
+                    message_body(app, ui, m, pal, max_w);
                 });
             let (status, bad) = delivery_text(app, &m.delivery);
             ui.label(
@@ -337,49 +337,83 @@ fn bubble(app: &CommsUi, ui: &mut Ui, pal: &Palette, m: &Message, group: bool, f
                 .inner_margin(Margin::symmetric(16, 12))
                 .show(ui, |ui| {
                     ui.set_max_width(max_w);
-                    if m.runs.is_empty() {
-                        emoticon_text(app, ui, &m.text, theme::text::BODY, pal.ink);
-                    } else {
-                        ui.add(egui::Label::new(formatted(&m.runs, max_w, pal)).wrap());
-                    }
+                    message_body(app, ui, m, pal, max_w);
                 });
         });
     });
     ui.add_space(4.0);
 }
 
-/// A message's text with the emoticons as coloured pictures (where the app gave them, else the
-/// emoji), wrapped as the Windows client shows them.
-pub(crate) fn emoticon_text(
-    app: &CommsUi,
-    ui: &mut Ui,
-    text: &str,
-    size: f32,
-    colour: egui::Color32,
-) {
+/// A message's body as the Windows client shows it: a high-priority message's red "!" at the
+/// start of the line, the sender's formatting, the emoticons as coloured pictures.
+fn message_body(app: &CommsUi, ui: &mut Ui, m: &Message, pal: &Palette, max_w: f32) {
     use crate::emoticons::Piece;
-    let pieces = crate::emoticons::pieces(text);
-    if !pieces.iter().any(|p| matches!(p, Piece::Emoticon(_))) {
-        ui.add(egui::Label::new(RichText::new(text).size(size).color(colour)).wrap());
+    let plain_run;
+    let runs: &[crate::model::TextRun] = if m.runs.is_empty() {
+        plain_run = [crate::model::TextRun {
+            text: m.text.clone(),
+            ..Default::default()
+        }];
+        &plain_run
+    } else {
+        &m.runs
+    };
+    let has_emoticon = runs.iter().any(|r| {
+        crate::emoticons::pieces(&r.text)
+            .iter()
+            .any(|p| matches!(p, Piece::Emoticon(_)))
+    });
+    if !has_emoticon && !m.important {
+        ui.add(egui::Label::new(formatted(runs, max_w, pal)).wrap());
         return;
     }
-    // Left to right whatever the bubble's alignment (an own message is right-aligned).
     let wrap = Layout::left_to_right(Align::Center).with_main_wrap(true);
     ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), wrap, |ui| {
         ui.spacing_mut().item_spacing.x = 0.0;
-        for p in pieces {
-            match p {
-                Piece::Text(t) => {
-                    for (i, line) in t.split('\n').enumerate() {
-                        if i > 0 {
-                            ui.end_row();
-                        }
-                        for word in line.split_inclusive(' ') {
-                            ui.label(RichText::new(word).size(size).color(colour));
+        if m.important {
+            ui.label(
+                RichText::new("! ")
+                    .size(theme::text::BODY + 1.0)
+                    .family(theme::bold())
+                    .color(pal.error),
+            );
+        }
+        for r in runs {
+            let colour = r
+                .color
+                .map(|[cr, cg, cb]| egui::Color32::from_rgb(cr, cg, cb))
+                .filter(|c| readable(*c, pal.message_incoming))
+                .unwrap_or(pal.ink);
+            let styled = |t: &str| {
+                let mut rt = RichText::new(t).size(theme::text::BODY).color(colour);
+                if r.bold {
+                    rt = rt.family(theme::bold());
+                }
+                if r.italic {
+                    rt = rt.italics();
+                }
+                if r.underline {
+                    rt = rt.underline();
+                }
+                if r.strike {
+                    rt = rt.strikethrough();
+                }
+                rt
+            };
+            for p in crate::emoticons::pieces(&r.text) {
+                match p {
+                    Piece::Text(t) => {
+                        for (i, line) in t.split('\n').enumerate() {
+                            if i > 0 {
+                                ui.end_row();
+                            }
+                            for word in line.split_inclusive(' ') {
+                                ui.label(styled(word));
+                            }
                         }
                     }
+                    Piece::Emoticon(e) => emoticon_picture(app, ui, e, theme::text::BODY, colour),
                 }
-                Piece::Emoticon(e) => emoticon_picture(app, ui, e, size, colour),
             }
         }
     });
@@ -754,6 +788,29 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                                 .on_hover_text(l)
                             };
                             emoticon_picker(app, ui, key, can_send);
+                            // High priority, sticky as the Windows client's red "!".
+                            let urgent = app.state.conversation(key).is_some_and(|c| c.urgent);
+                            let bang = ui
+                                .add_enabled(
+                                    can_send && room.is_none(),
+                                    egui::Button::selectable(
+                                        urgent,
+                                        RichText::new("!")
+                                            .size(18.0)
+                                            .family(theme::bold())
+                                            .color(pal.error),
+                                    ),
+                                )
+                                .on_hover_text(t.high_priority);
+                            if bang.clicked() {
+                                if let Some(c) = app.state.conversation_mut(key) {
+                                    c.urgent = !urgent;
+                                }
+                                app.emit(UiIntent::SetUrgent {
+                                    key,
+                                    urgent: !urgent,
+                                });
+                            }
                             widgets::gated(ui, t.formatting, &rich_gate, t, pal, |ui, l, en| {
                                 symbol(ui, crate::views::icons::Icon::Type, l, en)
                             });

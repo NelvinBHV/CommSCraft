@@ -216,6 +216,20 @@ pub fn message_html(dialog: &mut Dialog, html: &str) -> Result<Message, Error> {
     Ok(m)
 }
 
+/// A high-priority message: the `Priority: urgent` header (RFC 3261 §20.26) the Windows client
+/// sets on the INVITE and every MESSAGE when "high priority" is chosen (`tested-in-lab`).
+pub fn is_urgent(m: &Message) -> bool {
+    m.single("Priority")
+        .ok()
+        .flatten()
+        .is_some_and(|p| p.trim().eq_ignore_ascii_case("urgent"))
+}
+
+/// Marks a request as high priority (`Priority: urgent`).
+pub fn mark_urgent(m: &mut Message) {
+    m.push_header("Priority", "urgent");
+}
+
 /// What a request of the peer in the IM dialog means.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Incoming {

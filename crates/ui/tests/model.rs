@@ -131,6 +131,7 @@ fn messages_are_bounded() {
             text: "x".repeat(MAX_TEXT + 5),
             runs: Vec::new(),
             at: i as u64,
+            urgent: false,
         });
     }
     let c = s.conversation(s.key_of_session(3).unwrap()).unwrap();
@@ -637,12 +638,14 @@ fn formatted_messages_keep_their_runs() {
             },
         ],
         at: 1,
+        urgent: true,
     });
     let c = s.conversation(s.key_of_session(5).unwrap()).unwrap();
     let m = c.messages.back().unwrap();
     assert_eq!(m.runs.len(), 2);
     assert!(m.runs[0].bold);
     assert_eq!(m.runs[1].text, " normal", "control characters removed");
+    assert!(m.important, "sent with high priority");
 }
 
 /// Issue #252: distribution groups in alphabetical order, regardless of case and accents.

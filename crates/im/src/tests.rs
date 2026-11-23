@@ -250,3 +250,28 @@ fn html_bounds() {
     let many = "<B>a</B>b".repeat(400);
     assert!(parse(&many).is_none());
 }
+
+/// L-149: the Windows client marks high-priority messages with `Priority: urgent`; we read and
+/// set the same header.
+#[test]
+fn high_priority_is_the_priority_header() {
+    let mut m = invite();
+    assert!(!is_urgent(&m));
+    mark_urgent(&mut m);
+    assert!(is_urgent(&m));
+    assert_eq!(m.single("Priority").unwrap(), Some("urgent"));
+    let other = msg(
+        &[
+            "MESSAGE sip:a@contoso.com SIP/2.0",
+            "Priority: Urgent ",
+            "Content-Type: text/plain",
+        ],
+        "x",
+    );
+    assert!(is_urgent(&other));
+    let normal = msg(
+        &["MESSAGE sip:a@contoso.com SIP/2.0", "Priority: normal"],
+        "x",
+    );
+    assert!(!is_urgent(&normal));
+}
