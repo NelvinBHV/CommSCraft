@@ -49,3 +49,15 @@ Source: [MS-CONFAS] "Centralized Conference Control Protocol: Application Sharin
 - **K-PL-2:** see file 17.
 - **Ad-hoc conferences:** they now include the application sharing MCU (file 19, PV-12), so that the conference can carry a shared screen. Open: O-CS-1 (in a conference created by CommSCraft the invited Windows client offers no desktop sharing).
 - **Status:** `tested-offline`, `tested-in-lab` (a desktop shared in a meeting by the Windows client seen in CommSCraft: 577 pictures, 2 lost).
+
+## Implementation (2026-11-23, sharing in meetings, function 43)
+- **Sharer (CS-01 … CS-03, `session::share_conference_screen`):** an INVITE to the conference's
+  application sharing MCU (`conf::Roster::as_uri`) with the sharer offer of video-based screen
+  sharing (`sdp::screen::sharer_offer`, as in 1:1): `m=applicationsharing` in the sharer role
+  with port 0, the screen video line `sendonly` labelled `applicationsharing-video`, content flow
+  `sendonly`; the MCU's answer starts the screen stream. One sharing call per conference; a
+  sharer before us gets a BYE from the MCU (CS-07).
+- **Desktop client:** Present → share desktop or a window in a meeting; the share is a call of
+  its own with its own window and "stop presenting", not on the meeting's stage.
+- **Status:** `tested-offline` (session test `meeting_screen_sharing`); the lab run needs the
+  desktop's screen dialog answered by the owner.
