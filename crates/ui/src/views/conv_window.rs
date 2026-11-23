@@ -1582,6 +1582,22 @@ fn stage(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, call: &Call, title: &str
                     .layout(egui::Layout::top_down(egui::Align::Center)),
             );
             child.add_space((rect.height() / 2.0 - 70.0).max(0.0));
+            // A meeting nobody else has joined yet: say so, as the Windows client does.
+            let me = app.state.me.uri.clone();
+            let alone = call.conference.is_some()
+                && app
+                    .state
+                    .conversation_of_call(call)
+                    .and_then(|k| app.state.conversation(k))
+                    .is_some_and(|c| !c.participants.iter().any(|p| p.uri != me && !p.waiting));
+            if alone {
+                child.label(
+                    RichText::new(t.alone_in_meeting)
+                        .size(theme::text::NAME)
+                        .color(light),
+                );
+                child.add_space(10.0);
+            }
             app.avatar(&mut child, Some(call.peer.as_str()), &name, 96.0, None, pal);
             child.label(RichText::new(&name).size(theme::text::HEADING).color(light));
             let note = match &call.video {
