@@ -527,6 +527,10 @@ texts! {
     add_video: "Video hinzufügen", "Add video";
     invite_more: "Weitere Personen einladen", "Invite more people";
     high_priority: "Nachricht mit hoher Priorität", "High priority message";
+    insert_link: "Link einfügen", "Insert link";
+    insert: "Einfügen", "Insert";
+    link_invalid: "Nur Adressen mit http:// oder https://", "Only http:// or https:// addresses";
+    alone_in_meeting: "Sieht so aus, als wären Sie allein in der Besprechung.", "Looks like you're the only one in the meeting.";
     manage_recordings: "Aufzeichnungen verwalten", "Manage recordings";
     im_text_size: "Textgröße im Chat", "IM text display size";
     size_small: "Klein", "Small";

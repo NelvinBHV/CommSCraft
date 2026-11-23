@@ -48,6 +48,7 @@ fn lucide(icon: Icon) -> char {
         Icon::Close => 0xe1b2,       // x
         Icon::Warning => 0xe193,     // triangle-alert
         Icon::Mail => 0xe10f,        // mail
+        Icon::Link => 0xe102,        // link
     };
     char::from_u32(cp).unwrap_or('?')
 }
@@ -94,6 +95,7 @@ pub enum Icon {
     Warning,
     /// Send an e-mail (the contact card).
     Mail,
+    Link,
 }
 
 /// Draws an icon into `rect` (square-ish): the Lucide glyph, or the own line drawing when the
@@ -288,6 +290,15 @@ fn draw_lines(p: &Painter, rect: Rect, icon: Icon, colour: Color32) {
             );
             p.line_segment([at(-0.8, -0.55), at(0.0, 0.1)], s);
             p.line_segment([at(0.8, -0.55), at(0.0, 0.1)], s);
+        }
+        Icon::Link => {
+            // Two links of a chain, slanted.
+            let ring = |a: Pos2, b: Pos2| {
+                p.line_segment([a, b], Stroke::new(r * 0.45, colour));
+            };
+            ring(at(-0.6, 0.6), at(-0.05, 0.05));
+            ring(at(0.05, -0.05), at(0.6, -0.6));
+            p.line_segment([at(-0.3, 0.3), at(0.3, -0.3)], s);
         }
         Icon::Warning => {
             p.add(egui::Shape::closed_line(

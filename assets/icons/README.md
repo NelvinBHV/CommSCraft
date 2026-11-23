@@ -47,3 +47,4 @@
 | `presentation` | U+E4AE |
 | `type` | U+E198 |
 | `triangle-alert` | U+E193 |
+| `link` | U+E102 |

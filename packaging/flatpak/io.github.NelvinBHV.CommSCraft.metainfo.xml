@@ -16,6 +16,7 @@
   <url type="bugtracker">https://github.com/NelvinBHV/CommSCraft/issues</url>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.90.19-alpha" date="2026-11-23"/>
     <release version="0.90.18-alpha" date="2026-11-23"/>
     <release version="0.90.17-alpha" date="2026-11-23"/>
     <release version="0.90.16-alpha" date="2026-11-22"/>
