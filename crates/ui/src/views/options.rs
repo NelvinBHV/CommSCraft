@@ -45,6 +45,10 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
         )
         .show(ui, |ui| {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                // As in the Windows client: OK · Cancel · Help.
+                if ui.button(t.menu_help).clicked() {
+                    app.open_window(crate::app::Win::About);
+                }
                 if ui.button(t.cancel).clicked() {
                     app.prefs_draft = None;
                     app.close_window(crate::app::Win::Options);
@@ -69,8 +73,27 @@ pub fn show(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             egui::ScrollArea::vertical()
                 .id_salt("opt-area-list")
                 .show(ui, |ui| {
+                    // The chosen area filled in the accent colour with white text, as in the
+                    // Windows client's list.
                     for (i, a) in areas(t).iter().enumerate() {
-                        if ui.selectable_label(app.options_page == i, *a).clicked() {
+                        let on = app.options_page == i;
+                        let text = egui::RichText::new(*a).color(if on {
+                            egui::Color32::WHITE
+                        } else {
+                            pal.ink
+                        });
+                        let b = egui::Button::new(text)
+                            .fill(if on {
+                                pal.primary
+                            } else {
+                                egui::Color32::TRANSPARENT
+                            })
+                            .stroke(egui::Stroke::NONE)
+                            .corner_radius(2)
+                            .min_size(egui::vec2(ui.available_width(), 24.0));
+                        let r = ui.add(b);
+                        r.widget_info(|| egui::WidgetInfo::selected(egui::Role::Tab, true, on, *a));
+                        if r.clicked() {
                             app.options_page = i;
                         }
                     }

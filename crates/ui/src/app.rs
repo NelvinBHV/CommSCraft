@@ -20,6 +20,8 @@ pub enum UiIntent {
     SetPresence(Presence),
     /// The user's location ("set your location"); empty clears it.
     SetLocation(String),
+    /// "Show others my location" on or off.
+    ShowLocation(bool),
     /// Open the folder of the meeting recordings (the desktop's file manager).
     OpenRecordings,
     /// High priority for the messages of a conversation from now on (`Priority: urgent`).
@@ -92,6 +94,11 @@ pub enum UiIntent {
     Mute {
         id: u32,
         muted: bool,
+    },
+    /// Video into an active audio call, or the call back to audio only.
+    CallVideo {
+        id: u32,
+        on: bool,
     },
     SearchDirectory {
         text: String,
@@ -341,6 +348,8 @@ pub struct Prefs {
     /// The user's location (published with the presence) and the last ones used.
     pub location: String,
     pub recent_locations: Vec<String>,
+    /// "Show others my location": off keeps the location here but publishes none.
+    pub show_location: bool,
     pub sounds: bool,
     pub quiet_sounds_busy: bool,
     /// The camera device; empty: the default.
@@ -400,6 +409,7 @@ impl Default for Prefs {
             im_color: None,
             location: String::new(),
             recent_locations: Vec::new(),
+            show_location: true,
             sounds: true,
             quiet_sounds_busy: false,
             camera: String::new(),

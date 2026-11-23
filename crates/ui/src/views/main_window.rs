@@ -191,6 +191,15 @@ fn location_menu(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             {
                 chosen = Some(String::new());
             }
+            ui.separator();
+            // As in the Windows client's menu: whether the others see it.
+            let mut show = app.prefs.show_location;
+            if ui
+                .add_enabled(usable, egui::Checkbox::new(&mut show, t.show_location))
+                .changed()
+            {
+                app.emit(UiIntent::ShowLocation(show));
+            }
             match chosen {
                 Some(l) => {
                     ui.data_mut(|d| d.remove::<String>(id));

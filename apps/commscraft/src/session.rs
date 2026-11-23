@@ -95,6 +95,11 @@ pub enum ToWorker {
         id: u32,
         muted: bool,
     },
+    /// Video into an active 1:1 audio call (`on`), or the call back to audio only.
+    CallVideo {
+        id: u32,
+        on: bool,
+    },
     /// The user's answer to a trust question of discovery.
     Trust(bool),
     /// Blind transfer (REFER) to an address.
@@ -799,6 +804,8 @@ struct Videos {
     pending_screen: BTreeMap<u32, u32>,
     /// Our screen being shared: video stream → to whom (the call starts once it is ready).
     pending_share: BTreeMap<u32, String>,
+    /// Video streams being prepared for an active call (video added): stream → call.
+    pending_add: BTreeMap<u32, u32>,
     /// Calls sharing our screen: connected when the answer starts the video (no picture of
     /// theirs to show).
     own_shares: BTreeSet<u32>,
@@ -846,6 +853,7 @@ impl Videos {
             ready_video: BTreeMap::new(),
             pending_screen: BTreeMap::new(),
             pending_share: BTreeMap::new(),
+            pending_add: BTreeMap::new(),
             own_shares: BTreeSet::new(),
             screen_offers: BTreeMap::new(),
             rdp: BTreeMap::new(),
@@ -1679,6 +1687,23 @@ impl Session {
                     t,
                 )
             }
+            V::Ready(vid, local) if self.v.pending_add.contains_key(&vid) => {
+                let Some(call) = self.v.pending_add.remove(&vid) else {
+                    return Vec::new();
+                };
+                self.v.of_call.insert(call, vid);
+                out.event(AppEvent::CallKind {
+                    id: call,
+                    kind: CallKind::Video,
+                });
+                self.engine.command(
+                    C::AddCallVideo {
+                        call,
+                        video: Some(local),
+                    },
+                    t,
+                )
+            }
             V::Ready(vid, local) if self.v.pending_share.contains_key(&vid) => {
                 let Some(to) = self.v.pending_share.remove(&vid) else {
                     return Vec::new();
@@ -2491,6 +2516,51 @@ impl Session {
                     },
                     t,
                 )
+            }
+            ToWorker::CallVideo { id, on: true } => {
+                if self.v.of_call.contains_key(&id) {
+                    // The stream is still there (video stopped before): send and receive again.
+                    out.event(AppEvent::CallKind {
+                        id,
+                        kind: CallKind::Video,
+                    });
+                    out.event(AppEvent::CallVideo {
+                        id,
+                        state: VideoState::Window,
+                    });
+                    self.to_video(id, video_call::ToVideo::Hold(false));
+                    self.engine.command(
+                        C::AddCallVideo {
+                            call: id,
+                            video: None,
+                        },
+                        t,
+                    )
+                } else if self.v.pending_add.values().any(|c| *c == id) {
+                    Vec::new()
+                } else {
+                    let vid = self.spawn_video(None, true);
+                    self.v.pending_add.insert(vid, id);
+                    out.event(AppEvent::CallVideo {
+                        id,
+                        state: VideoState::Starting,
+                    });
+                    Vec::new()
+                }
+            }
+            ToWorker::CallVideo { id, on: false } => {
+                // Audio only: the video line inactive, the camera off; the stream stays for a
+                // later "add video" with the same line.
+                self.to_video(id, video_call::ToVideo::Hold(true));
+                out.event(AppEvent::CallKind {
+                    id,
+                    kind: CallKind::Audio,
+                });
+                out.event(AppEvent::CallVideo {
+                    id,
+                    state: VideoState::None,
+                });
+                self.engine.command(C::StopCallVideo { call: id }, t)
             }
             ToWorker::Mute { id, muted } => {
                 self.to_media(id, calls::ToMedia::Mute(muted));

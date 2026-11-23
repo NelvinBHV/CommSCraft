@@ -319,6 +319,18 @@ pub enum Command {
     RequestPictureUpdate {
         call: CallId,
     },
+    /// Video added to an active audio call (re-INVITE with the video line, RFC 3264 §8.2;
+    /// [MS-SDPEXT] the video line as in a video call's offer).
+    AddCallVideo {
+        call: CallId,
+        /// Our video stream; `None` to send and receive again on the call's stopped video line.
+        video: Option<Box<sdp::video::VideoLocal>>,
+    },
+    /// Video of a call ended, the call going on with audio only: the video line stays with
+    /// port and key but `inactive` (an m-line is never removed, RFC 3264 §8.4, §8.2 hold-like).
+    StopCallVideo {
+        call: CallId,
+    },
     /// A newer description of our video stream (final offer after ICE).
     SetCallVideo {
         call: CallId,
@@ -843,6 +855,8 @@ pub struct Engine<R: Random> {
     share_calls: std::collections::BTreeSet<CallId>,
     /// Function 43: calls that bring a shared screen to view, and those of them over RDP.
     screen_calls: std::collections::BTreeSet<CallId>,
+    /// Calls whose re-INVITE adds video: its answer's video line is taken.
+    video_added: std::collections::BTreeSet<CallId>,
     /// Incoming calls answered early in a reliable 183 (SD-51), until accepted or ended.
     early_answers: std::collections::BTreeMap<CallId, call::EarlyAnswer>,
     rdp_calls: std::collections::BTreeSet<CallId>,
@@ -980,6 +994,7 @@ impl<R: Random> Engine<R> {
             calendar: pres::calendar::Calendar::default(),
             calendar_versions: [0; pres::calendar::SLOTS],
             screen_calls: std::collections::BTreeSet::new(),
+            video_added: std::collections::BTreeSet::new(),
             share_calls: std::collections::BTreeSet::new(),
             early_answers: std::collections::BTreeMap::new(),
             rdp_calls: std::collections::BTreeSet::new(),
@@ -2472,6 +2487,10 @@ impl<R: Random> Engine<R> {
                 video,
                 policy,
             } => self.accept_call_with_video(call, *local, Some(*video), policy, now, &mut out),
+            Command::AddCallVideo { call, video } => {
+                self.add_call_video(call, video.map(|v| *v), now, &mut out)
+            }
+            Command::StopCallVideo { call } => self.stop_call_video(call, now, &mut out),
             Command::SetCallVideo { call, video } => {
                 self.set_call_video(call, *video, now, &mut out)
             }

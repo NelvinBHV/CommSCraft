@@ -1799,19 +1799,26 @@ fn stage_controls(
     let used = ui.cursor().min.x - x0;
     ui.add_space(((full - middle) / 2.0 - used).max(8.0));
     if !screen {
-        // Video is part of the call from its start (a video call); adding it later is not
-        // built yet.
-        let video = call.kind == CallKind::Video;
-        icons::round(
+        // As in the Windows client: video into a 1:1 audio call, or back to audio only (a
+        // meeting's video is joined with the meeting).
+        let video = call.kind == CallKind::Video && !matches!(call.video, VideoState::Failed(_));
+        let one_to_one = call.conference.is_none();
+        let cam = icons::round(
             ui,
             Icon::Camera,
-            if video { t.video_call } else { t.add_video },
+            if video { t.stop_video } else { t.add_video },
             40.0,
             blue,
             true,
-            false,
+            connected && one_to_one && app.state.capabilities.video_call.usable(),
         )
         .on_disabled_hover_text(t.reason(crate::model::Reason::NotImplemented));
+        if cam.clicked() {
+            app.emit(UiIntent::CallVideo {
+                id: call.id,
+                on: !video,
+            });
+        }
         if round_button(
             ui,
             Icon::Mic,

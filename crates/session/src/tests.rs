@@ -6122,3 +6122,65 @@ fn user_location_is_published_in_the_machine_state() {
     let body = String::from_utf8_lossy(&sends(&out).pop().unwrap().body).to_string();
     assert!(body.contains("<endpointLocation/>"), "{body}");
 }
+
+/// Video added to an active audio call: a re-INVITE with the same audio line and a new video
+/// line (RFC 3264 §8.2); the answer's video line becomes `CallVideo`. Stopping it keeps the
+/// line with its key, inactive (RFC 3264 §8.4: no m-line is removed).
+#[test]
+fn video_added_to_an_audio_call_and_stopped() {
+    let (mut e, mut server, _) = signed_in();
+    active_call(&mut e, &mut server, "sip:bob@contoso.com");
+    let out = e.command(
+        Command::AddCallVideo {
+            call: 1,
+            video: Some(Box::new(video_local(40002, 8))),
+        },
+        NOW,
+    );
+    let reinvite = find(&out, "INVITE");
+    let offer = String::from_utf8(reinvite.body.clone()).unwrap();
+    assert!(offer.contains("m=audio 40000 "), "{offer}");
+    assert!(offer.contains("m=video 40002 RTP/SAVP 122"), "{offer}");
+    let answer_sdp = format!("{}{}", peer_sdp(9, "RTP/SAVP"), peer_video(10));
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &reinvite,
+            200,
+            Some("application/sdp"),
+            &answer_sdp,
+            &[],
+        ),
+        NOW,
+    );
+    let ev = events(&out);
+    assert!(
+        ev.iter()
+            .any(|e| matches!(e, Event::CallUpdated { call: 1, .. })),
+        "{ev:?}"
+    );
+    assert!(
+        ev.iter().any(
+            |e| matches!(e, Event::CallVideo { call: 1, video } if video.remote_rtp.1 == 7002)
+        ),
+        "{ev:?}"
+    );
+    // Audio only again.
+    let out = e.command(Command::StopCallVideo { call: 1 }, NOW);
+    let body = String::from_utf8(find(&out, "INVITE").body.clone()).unwrap();
+    let video_part = &body[body.find("m=video").unwrap()..];
+    assert!(video_part.starts_with("m=video 40002 "), "{body}");
+    assert!(video_part.contains("a=inactive"), "{body}");
+    assert!(video_part.contains(&commscraft_sdp::Key::new(1, [8; 30]).attribute()));
+    // And back: the same line, sending and receiving.
+    let out = e.command(
+        Command::AddCallVideo {
+            call: 1,
+            video: None,
+        },
+        NOW,
+    );
+    let body = String::from_utf8(find(&out, "INVITE").body.clone()).unwrap();
+    let video_part = &body[body.find("m=video").unwrap()..];
+    assert!(video_part.starts_with("m=video 40002 ") && !video_part.contains("a=inactive"));
+}

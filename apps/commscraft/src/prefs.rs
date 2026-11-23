@@ -77,6 +77,7 @@ pub fn parse(text: &str) -> Prefs {
             "sort_by_availability" => p.sort_by_availability = v == "true",
             "away_group" => p.away_group = v == "true",
             "close_to_tray" => p.close_to_tray = v != "false",
+            "show_location" => p.show_location = v != "false",
             // The location and the last ones used (printable, bounded).
             "location" if valid_location(v) => p.location = v.to_string(),
             "recent_location"
@@ -219,6 +220,7 @@ pub fn format(p: &Prefs) -> String {
         ("sort_by_availability", p.sort_by_availability),
         ("away_group", p.away_group),
         ("close_to_tray", p.close_to_tray),
+        ("show_location", p.show_location),
         ("favorites_group", p.favorites_group),
         ("meeting_audio_ask", p.meeting_audio_ask),
         ("message_alerts", p.message_alerts),
