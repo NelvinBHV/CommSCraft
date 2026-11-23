@@ -811,6 +811,8 @@ struct Conversation {
     group: Option<Box<group::Group>>,
     /// RFC 4028 session timer of `dialog` if we are the refresher.
     timer: Option<group::SessionTimer>,
+    /// The peer's session accepts `text/rtf` (formatted messages with their colour).
+    rtf: bool,
     /// The peer's session accepts `text/html` (formatted messages).
     html: bool,
     /// Our messages go with high priority (`Priority: urgent`).
@@ -1924,6 +1926,7 @@ impl<R: Random> Engine<R> {
                 group: None,
                 timer: None,
                 html: false,
+                rtf: false,
                 urgent: false,
             },
         );
@@ -1947,7 +1950,14 @@ impl<R: Random> Engine<R> {
             return;
         };
         let urgent = c.urgent;
-        let msg = if c.html && !self.message_style.is_plain() {
+        // A colour reaches the Windows client only in Rich Text Format; bold, italic and
+        // underline in either form.
+        let msg = if c.rtf && !self.message_style.is_plain() {
+            im::message_rtf(
+                &mut d,
+                &im::html::to_rtf(&im::printable(&text), &self.message_style),
+            )
+        } else if c.html && !self.message_style.is_plain() {
             im::message_html(
                 &mut d,
                 &im::html::to_html(&im::printable(&text), &self.message_style),
@@ -2069,6 +2079,7 @@ impl<R: Random> Engine<R> {
                 group: group.map(Box::new),
                 timer,
                 html: im::accepts_html(&req.body),
+                rtf: im::accepts_rtf(&req.body),
                 urgent: false,
             },
         );
@@ -3039,6 +3050,7 @@ impl<R: Random> Engine<R> {
                 let queue = std::mem::take(&mut c.queue);
                 c.dialog = Some(d.clone());
                 c.html = im::accepts_html(&resp.body);
+                c.rtf = im::accepts_rtf(&resp.body);
                 c.timer = group::our_session_timer(resp, true, now);
                 let is_group = c.group.is_some();
                 let invite_cseq = p.request.cseq().ok().flatten().map_or(1, |x| x.number);
