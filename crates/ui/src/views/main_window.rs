@@ -122,8 +122,10 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             );
             let r = r.on_hover_text(t.change_status);
             egui::Popup::menu(&r).show(|ui| status_menu(app, ui));
-            // The connection only while it is not simply signed in (the Windows client shows
-            // the location here; problems go to the footer's warnings).
+            // The location below the status, as in the Windows client ("Set Your Location").
+            location_menu(app, ui, pal);
+            // The connection only while it is not simply signed in (problems go to the
+            // footer's warnings).
             if app.demo || !matches!(app.state.connection, Connection::Connected) {
                 ui.label(
                     RichText::new(t.connection_short(&app.state.connection, app.demo))
@@ -133,6 +135,73 @@ fn header(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
             }
         });
     });
+}
+
+/// The location menu: the location set (or "Set your location"), a field for a new one, the
+/// last ones used and "clear".
+fn location_menu(app: &mut CommsUi, ui: &mut Ui, pal: &Palette) {
+    let t = app.t;
+    let usable = app.state.capabilities.presence.usable() || app.demo;
+    let shown = if app.prefs.location.is_empty() {
+        t.set_location.to_string()
+    } else {
+        app.prefs.location.clone()
+    };
+    let r = icons::menu_text(
+        ui,
+        RichText::new(shown)
+            .size(theme::text::SMALL)
+            .color(pal.muted),
+        pal.muted,
+    )
+    .on_hover_text(t.set_location);
+    let id = r.id.with("location-field");
+    egui::Popup::menu(&r)
+        .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+        .show(|ui| {
+            ui.set_min_width(240.0);
+            let mut text: String = ui
+                .data_mut(|d| d.get_temp(id))
+                .unwrap_or_else(|| app.prefs.location.clone());
+            let field = ui.add_enabled(
+                usable,
+                egui::TextEdit::singleline(&mut text)
+                    .hint_text(t.set_location)
+                    .char_limit(256)
+                    .desired_width(240.0),
+            );
+            let enter = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+            let mut chosen: Option<String> = None;
+            if enter {
+                chosen = Some(text.trim().to_string());
+            }
+            for l in app.prefs.recent_locations.clone() {
+                let on = l == app.prefs.location;
+                if ui
+                    .add_enabled(usable, egui::Button::selectable(on, l.as_str()))
+                    .clicked()
+                {
+                    chosen = Some(l);
+                }
+            }
+            if !app.prefs.location.is_empty()
+                && ui
+                    .add_enabled(usable, egui::Button::new(t.clear_location))
+                    .clicked()
+            {
+                chosen = Some(String::new());
+            }
+            match chosen {
+                Some(l) => {
+                    ui.data_mut(|d| d.remove::<String>(id));
+                    app.emit(UiIntent::SetLocation(l));
+                    ui.close();
+                }
+                None => {
+                    ui.data_mut(|d| d.insert_temp(id, text));
+                }
+            }
+        });
 }
 
 /// The status menu: the presences, reset, sign out and quit.

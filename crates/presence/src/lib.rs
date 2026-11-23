@@ -727,11 +727,37 @@ impl MachineActivity {
 /// Body of the SERVICE that publishes this endpoint's `device` category (capabilities: text) and
 /// its `machineState` into container 2 (PR-31, PR-33; §3.8.5.2.1, p. 126; §2.2.2.7.2, pp. 53–54),
 /// both with `expireType="endpoint"`. `availability` is 3500 for an active endpoint (§4.3).
+/// The longest location we publish or show (inference: the schema type is an unbounded
+/// `xs:token`, [MS-PRES] 20180427 §2.2.2.7.1 schema `endpointLocationEnumEx`; a bound keeps a
+/// hostile document small).
+pub const MAX_LOCATION: usize = 256;
+
+/// A location as published or shown: printable, whitespace collapsed (`xs:token`), at most
+/// [`MAX_LOCATION`] characters; the schema's `none` means no location.
+pub fn location_text(s: &str) -> String {
+    let t: String = printable(s)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .chars()
+        .take(MAX_LOCATION)
+        .collect();
+    if t.eq_ignore_ascii_case("none") {
+        String::new()
+    } else {
+        t
+    }
+}
+
+/// PR-31/PR-33: device and machineState. The machineState carries the user's location
+/// (`endpointLocation`, "SHOULD be published by the SIP protocol client as part of its machine
+/// state", [MS-PRES] 20180427 §2.2.2.7.1, p. 54).
 pub fn publish_endpoint_body(
     aor: &str,
     endpoint_id: &str,
     machine_name: &str,
     availability: u32,
+    location: &str,
     versions: [u32; 2],
 ) -> Result<String, Error> {
     let aor = checked_sip_uri(aor)?;
@@ -744,6 +770,10 @@ pub fn publish_endpoint_body(
     }
     let (device_instance, state_instance) = endpoint_instances(endpoint_id);
     let machine = escape(&printable(machine_name));
+    let location = match location_text(location) {
+        l if l.is_empty() => "<endpointLocation/>".to_string(),
+        l => format!("<endpointLocation>{}</endpointLocation>", escape(&l)),
+    };
     let a = escape(&aor);
     Ok(format!(
         "<publish xmlns=\"{NS_PUBLISH}\"><publications uri=\"{a}\">\
@@ -753,7 +783,7 @@ pub fn publish_endpoint_body(
 <machineName>{machine}</machineName></device></publication>\
 <publication categoryName=\"state\" instance=\"{state_instance}\" container=\"2\" version=\"{}\" expireType=\"endpoint\" endpointId=\"{endpoint_id}\">\
 <state xmlns=\"{NS_STATE}\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" manual=\"false\" xsi:type=\"machineState\">\
-<availability>{availability}</availability><endpointLocation/></state></publication>\
+<availability>{availability}</availability>{location}</state></publication>\
 </publications></publish>",
         versions[0], versions[1]
     ))
@@ -1005,6 +1035,9 @@ pub struct ContactPresence {
     /// Subject and location of the meeting the contact is in (aggregateState `meetingSubject`
     /// and `meetingLocation`, §3.8.5.1.2.5, p. 122).
     pub meeting: Option<String>,
+    /// The location the contact set (aggregateState `endpointLocation`, taken from the
+    /// aggregateMachineState below availability 12000, [MS-PRES] 20180427 §3.8.5.1.2.6, p. 124).
+    pub location: Option<String>,
 }
 
 impl ContactPresence {
@@ -1057,6 +1090,10 @@ pub fn parse_categories(xml: &str) -> Result<ContactPresence, Error> {
                                 .map(|e| printable(e.text().trim()))
                                 .filter(|t| !t.is_empty())
                         };
+                        p.location = st
+                            .child("endpointLocation")
+                            .map(|e| location_text(&e.text()))
+                            .filter(|l| !l.is_empty());
                         p.meeting = match (part("meetingSubject"), part("meetingLocation")) {
                             (Some(s), Some(l)) => Some(format!("{s} ({l})")),
                             (s, l) => s.or(l),

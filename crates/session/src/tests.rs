@@ -6105,3 +6105,20 @@ fn the_message_style_before_the_sign_in_is_kept_quietly() {
     };
     assert!(e.command(Command::SetMessageStyle(style), NOW).is_empty());
 }
+
+/// The user's location goes out in the machineState (`endpointLocation`, [MS-PRES] 20180427
+/// §2.2.2.7.1, p. 54), only when it changes.
+#[test]
+fn user_location_is_published_in_the_machine_state() {
+    let (mut e, _server, _) = signed_in();
+    let out = e.command(Command::SetUserLocation("Raum 1".into()), NOW);
+    let body = String::from_utf8_lossy(&sends(&out).pop().unwrap().body).to_string();
+    assert!(
+        body.contains("<endpointLocation>Raum 1</endpointLocation>"),
+        "{body}"
+    );
+    assert!(sends(&e.command(Command::SetUserLocation("Raum 1".into()), NOW)).is_empty());
+    let out = e.command(Command::SetUserLocation(String::new()), NOW);
+    let body = String::from_utf8_lossy(&sends(&out).pop().unwrap().body).to_string();
+    assert!(body.contains("<endpointLocation/>"), "{body}");
+}

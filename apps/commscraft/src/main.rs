@@ -519,6 +519,7 @@ impl DesktopApp {
                     save_history: p.save_history,
                     audio_device: p.audio_device.clone(),
                     mic_device: p.mic_device.clone(),
+                    location: p.location.clone(),
                     message_style: commscraft_im::html::Style {
                         bold: p.im_bold,
                         italic: p.im_italic,
@@ -541,6 +542,20 @@ impl DesktopApp {
         let session_of = |k| state.conversation(k).and_then(|c| c.session);
         let cmd = match intent {
             UiIntent::SetPresence(p) => Some(ToWorker::SetPresence(p)),
+            UiIntent::SetLocation(location) => {
+                // Kept with the preferences; the last ones used offered again.
+                let p = &mut self.ui.prefs;
+                p.location = location.clone();
+                if !location.is_empty() {
+                    p.recent_locations.retain(|l| l != &location);
+                    p.recent_locations.insert(0, location.clone());
+                    p.recent_locations.truncate(prefs::MAX_RECENT_LOCATIONS);
+                }
+                if let Err(e) = prefs::save(&self.ui.prefs) {
+                    eprintln!("preferences not saved: {e}");
+                }
+                Some(ToWorker::SetLocation(location))
+            }
             UiIntent::ShareScreen { key, windows } => {
                 self.share_screen(key, windows);
                 return;
@@ -687,6 +702,7 @@ impl DesktopApp {
                     save_history: p.save_history,
                     audio_device: p.audio_device.clone(),
                     mic_device: p.mic_device.clone(),
+                    location: p.location.clone(),
                     message_style: commscraft_im::html::Style {
                         bold: p.im_bold,
                         italic: p.im_italic,
