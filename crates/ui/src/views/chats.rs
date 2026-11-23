@@ -363,7 +363,10 @@ fn message_body(app: &CommsUi, ui: &mut Ui, m: &Message, pal: &Palette, max_w: f
             .iter()
             .any(|p| matches!(p, Piece::Emoticon(_)))
     });
-    if !has_emoticon && !m.important {
+    let has_link = runs
+        .iter()
+        .any(|r| r.text.split_whitespace().any(|w| web_address(w).is_some()));
+    if !has_emoticon && !m.important && !has_link {
         ui.add(egui::Label::new(formatted(runs, max_w, pal)).wrap());
         return;
     }
@@ -408,7 +411,21 @@ fn message_body(app: &CommsUi, ui: &mut Ui, m: &Message, pal: &Palette, max_w: f
                                 ui.end_row();
                             }
                             for word in line.split_inclusive(' ') {
-                                ui.label(styled(word));
+                                // A web address as a link (shown in full on hover).
+                                match web_address(word.trim_end()) {
+                                    Some(url) => {
+                                        let link = styled(url).color(pal.primary).underline();
+                                        ui.hyperlink_to(link, url).on_hover_text(url);
+                                        // Punctuation and the space after the address as text.
+                                        let rest = word.get(url.len()..).unwrap_or_default();
+                                        if !rest.is_empty() {
+                                            ui.label(styled(rest));
+                                        }
+                                    }
+                                    None => {
+                                        ui.label(styled(word));
+                                    }
+                                }
                             }
                         }
                     }
@@ -560,6 +577,70 @@ fn spelling_menu(app: &mut CommsUi, ui: &mut Ui, r: &egui::Response, key: ConvKe
 }
 
 /// The emoticons, as the Windows client's picker: a click writes the code into the draft.
+/// A web address we turn into a link or let the user insert: http or https only (never
+/// `file:`, `javascript:` or similar from a hostile message), at most 2048 characters, no spaces.
+pub(crate) fn web_address(s: &str) -> Option<&str> {
+    let s = s.trim_end_matches(['.', ',', ';', ':', '!', '?', ')', '"', '\'']);
+    let lower = s.get(..8).unwrap_or(s).to_ascii_lowercase();
+    let ok = (lower.starts_with("https://") && s.len() > 8)
+        || (lower.starts_with("http://") && s.len() > 7);
+    (ok && s.len() <= 2048 && !s.chars().any(|c| c.is_whitespace() || c.is_control())).then_some(s)
+}
+
+/// The composer's "Insert link" (as the Windows client's): an address field whose link goes
+/// into the draft.
+fn link_picker(app: &mut CommsUi, ui: &mut Ui, key: ConvKey, enabled: bool) {
+    let t = app.t;
+    let pal = app.palette();
+    let r = crate::views::icons::button(
+        ui,
+        crate::views::icons::Icon::Link,
+        t.insert_link,
+        24.0,
+        false,
+        enabled,
+        pal.muted,
+        pal.primary,
+    )
+    .on_hover_text(t.insert_link);
+    let id = r.id.with(("insert-link", key.0));
+    egui::Popup::menu(&r)
+        .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
+        .show(|ui| {
+            let mut text: String = ui.data_mut(|d| d.get_temp(id)).unwrap_or_default();
+            ui.label(RichText::new(t.insert_link).color(pal.ink));
+            let field = ui.add(
+                egui::TextEdit::singleline(&mut text)
+                    .hint_text("https://")
+                    .char_limit(2048)
+                    .desired_width(320.0),
+            );
+            field.request_focus();
+            let address = web_address(text.trim()).map(str::to_string);
+            let enter = field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+            let add = ui.add_enabled(address.is_some(), egui::Button::new(t.insert));
+            if !text.trim().is_empty() && address.is_none() {
+                ui.label(
+                    RichText::new(t.link_invalid)
+                        .size(theme::text::SMALL)
+                        .color(pal.error),
+                );
+            }
+            if let Some(a) = address.filter(|_| add.clicked() || enter) {
+                let d = app.drafts.entry(key).or_default();
+                if !d.is_empty() && !d.ends_with(' ') {
+                    d.push(' ');
+                }
+                d.push_str(&a);
+                d.push(' ');
+                app.focus_composer = true;
+                text.clear();
+                ui.close();
+            }
+            ui.data_mut(|d| d.insert_temp(id, text));
+        });
+}
+
 fn emoticon_picker(app: &mut CommsUi, ui: &mut Ui, key: ConvKey, enabled: bool) {
     let t = app.t;
     let pal = app.palette();
@@ -787,7 +868,9 @@ fn composer(app: &mut CommsUi, ui: &mut Ui, pal: &Palette, key: ConvKey) {
                                 )
                                 .on_hover_text(l)
                             };
+                            // Right to left: as the Windows client, attach · ! · link · emoticons.
                             emoticon_picker(app, ui, key, can_send);
+                            link_picker(app, ui, key, can_send);
                             // High priority, sticky as the Windows client's red "!".
                             let urgent = app.state.conversation(key).is_some_and(|c| c.urgent);
                             let bang = ui
@@ -970,7 +1053,26 @@ pub fn normalise_address(text: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::normalise_address;
+    use super::{normalise_address, web_address};
+
+    /// Only http(s) addresses become links (never `javascript:` or `file:` from a message).
+    #[test]
+    fn only_web_addresses_become_links() {
+        assert_eq!(
+            web_address("https://example.org/a?b=1"),
+            Some("https://example.org/a?b=1")
+        );
+        assert_eq!(
+            web_address("HTTP://example.org."),
+            Some("HTTP://example.org")
+        );
+        assert_eq!(web_address("(https://example.org)"), None);
+        assert_eq!(web_address("javascript:alert(1)"), None);
+        assert_eq!(web_address("file:///etc/passwd"), None);
+        assert_eq!(web_address("https://"), None);
+        assert_eq!(web_address("https://a\u{7}b"), None);
+        assert_eq!(web_address(&format!("https://{}", "a".repeat(2050))), None);
+    }
 
     #[test]
     fn addresses() {
