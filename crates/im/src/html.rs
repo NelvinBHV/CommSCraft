@@ -263,6 +263,51 @@ pub fn plain(spans: &[Span]) -> String {
     spans.iter().map(|s| s.text.as_str()).collect()
 }
 
+/// Our message as `text/rtf` (Rich Text Format, Microsoft "Rich Text Format (RTF) Specification"
+/// 1.9.1, 2008: the header `\rtf1\ansi`, a font table, a colour table – entry 0 is the default,
+/// `\cfN` picks entry N –, `\fsN` the size in half points, `\b`, `\i`, `\ul`; `\`, `{` and `}`
+/// escaped with a backslash; `\par` a new paragraph; characters outside ASCII as `\uN?` with N
+/// the signed 16-bit UTF-16 unit and `?` the ANSI stand-in (`\uc1`)). The Windows client shows
+/// the colour of a message only from its RTF form, the text/html form only bold, italic and
+/// underline (`tested-in-lab`, 2026-11-23).
+pub fn to_rtf(text: &str, style: &Style) -> String {
+    let mut body = String::with_capacity(text.len() + 16);
+    let mut units = [0u16; 2];
+    for c in text.chars() {
+        match c {
+            '\\' => body.push_str("\\\\"),
+            '{' => body.push_str("\\{"),
+            '}' => body.push_str("\\}"),
+            '\n' => body.push_str("\\par "),
+            c if c.is_control() => {}
+            c if c.is_ascii() => body.push(c),
+            c => {
+                for u in c.encode_utf16(&mut units).iter() {
+                    // RTF takes the unit as a signed 16-bit number.
+                    body.push_str(&format!("\\u{}?", *u as i16));
+                }
+            }
+        }
+    }
+    let [r, g, b] = style.color.unwrap_or([0, 0, 0]);
+    let mut s = format!(
+        "{{\\rtf1\\ansi\\uc1\\deff0{{\\fonttbl{{\\f0\\fnil Segoe UI;}}}}{{\\colortbl;\\red{r}\\green{g}\\blue{b};}}\\f0\\fs20\\cf1"
+    );
+    for (on, word) in [
+        (style.bold, "\\b"),
+        (style.italic, "\\i"),
+        (style.underline, "\\ul"),
+    ] {
+        if on {
+            s.push_str(word);
+        }
+    }
+    s.push(' ');
+    s.push_str(&body);
+    s.push('}');
+    s
+}
+
 /// Our message as `text/html` in the form the Windows client sends.
 pub fn to_html(text: &str, style: &Style) -> String {
     let mut esc = String::with_capacity(text.len() + 32);

@@ -275,3 +275,29 @@ fn high_priority_is_the_priority_header() {
     );
     assert!(!is_urgent(&normal));
 }
+
+/// Our message in Rich Text Format (RTF 1.9.1): colour table, size, bold/italic/underline,
+/// escapes and non-ASCII as signed UTF-16 units; `accepts_rtf` reads the accept-types.
+#[test]
+fn rtf_body() {
+    let style = html::Style {
+        bold: true,
+        italic: true,
+        underline: false,
+        color: Some([255, 0, 16]),
+    };
+    let r = html::to_rtf("a\\b{c}\nä😀", &style);
+    assert!(r.starts_with("{\\rtf1\\ansi\\uc1\\deff0{\\fonttbl{\\f0\\fnil Segoe UI;}}"));
+    assert!(r.contains("{\\colortbl;\\red255\\green0\\blue16;}\\f0\\fs20\\cf1\\b\\i "));
+    assert!(
+        r.contains("a\\\\b\\{c\\}\\par \\u228?\\u-10179?\\u-8704?"),
+        "{r}"
+    );
+    assert!(r.ends_with('}'));
+    assert!(accepts_rtf(
+        b"m=message 5060 sip null\r\na=accept-types:text/plain text/rtf\r\n"
+    ));
+    assert!(!accepts_rtf(
+        b"m=message 5060 sip null\r\na=accept-types:text/plain text/html\r\n"
+    ));
+}

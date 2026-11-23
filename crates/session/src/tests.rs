@@ -6185,6 +6185,59 @@ fn video_added_to_an_audio_call_and_stopped() {
     assert!(video_part.starts_with("m=video 40002 ") && !video_part.contains("a=inactive"));
 }
 
+/// A formatted message goes as `text/rtf` where the peer's session accepts it (the Windows client
+/// shows the colour only from RTF, `tested-in-lab`), as `text/html` where only that, plain text
+/// otherwise.
+#[test]
+fn formatted_messages_prefer_rtf() {
+    for (accept, kind) in [
+        (
+            "text/plain multipart/alternative text/rtf text/html",
+            Some("text/rtf"),
+        ),
+        ("text/plain text/html", Some("text/html")),
+        ("text/plain", Some("text/plain; charset=UTF-8")),
+    ] {
+        let (mut e, mut server, _) = signed_in();
+        e.command(
+            Command::SetMessageStyle(commscraft_im::html::Style {
+                bold: true,
+                color: Some([255, 0, 0]),
+                ..Default::default()
+            }),
+            NOW,
+        );
+        let mut invite =
+            Message::request("INVITE", "sip:alice@contoso.com;opaque=user:epid:x;gruu");
+        invite.push_header("Via", "SIP/2.0/TLS 192.0.2.10:5061;branch=z9hG4bKinv");
+        invite.push_header("From", "<sip:bob@contoso.com>;tag=bob1;epid=123");
+        invite.push_header("To", "<sip:alice@contoso.com>");
+        invite.push_header("Call-ID", "inc1");
+        invite.push_header("CSeq", "1 INVITE");
+        invite.push_header("Contact", "<sip:bob@contoso.com;opaque=user:epid:y;gruu>");
+        invite.push_header("Content-Type", "application/sdp");
+        invite.body =
+            format!("v=0\r\nm=message 5060 sip null\r\na=accept-types:{accept}\r\n").into_bytes();
+        let out = e.on_message(&server.sign(invite), NOW);
+        let Some(Event::ConversationStarted { conversation, .. }) = events(&out).pop() else {
+            panic!()
+        };
+        let out = e.command(
+            Command::SendText {
+                conversation,
+                text: "Rot {x}".into(),
+            },
+            NOW,
+        );
+        let m = find(&out, "MESSAGE");
+        assert_eq!(m.single("Content-Type").unwrap(), kind, "{accept}");
+        let body = String::from_utf8(m.body.clone()).unwrap();
+        if kind == Some("text/rtf") {
+            assert!(body.contains("\\red255\\green0\\blue0") && body.contains("Rot \\{x\\}"));
+        }
+    }
+}
+
 /// The other side adds video to an audio call (re-INVITE with a video line): the answer waits
 /// for our video stream (100 Trying, `CallVideoOffered`), then carries the video line and starts
 /// the video; declined, the video line is refused with port 0 and the call goes on.

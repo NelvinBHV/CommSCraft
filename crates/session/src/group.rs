@@ -108,6 +108,7 @@ impl<R: Random> Engine<R> {
                 group: group.map(Box::new),
                 timer: None,
                 html: false,
+                rtf: false,
                 urgent: false,
             },
         );
