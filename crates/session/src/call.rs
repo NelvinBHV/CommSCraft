@@ -1041,6 +1041,93 @@ impl<R: Random> Engine<R> {
         self.update_call(id, local, now, out);
     }
 
+    /// The answer to a re-INVITE of the peer: the same audio line, the video line where we have
+    /// a video stream (SD-13: keys unchanged on both sides).
+    pub(crate) fn answer_call_reinvite(
+        &mut self,
+        id: CallId,
+        req: &Message,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let Some(c) = self.calls.get(&id) else { return };
+        let (Some(local), Some(offer)) = (c.local.clone(), audio_sdp(req)) else {
+            let r = response_to(req, 488, "Not Acceptable Here");
+            self.send_plain(r, now, out);
+            return;
+        };
+        let key = local
+            .key
+            .clone()
+            .unwrap_or_else(|| sdp::Key::new(0, [0; 30]));
+        let video = c.video.as_ref().map(|v| {
+            (
+                v,
+                v.media
+                    .key
+                    .clone()
+                    .unwrap_or_else(|| sdp::Key::new(0, [0; 30])),
+            )
+        });
+        match sdp::video::answer_with_video(&offer, &local, key, video, c.policy) {
+            // SD-13: the peer must keep its key as well.
+            Ok((body, n, nv)) if c.policy == sdp::Encryption::Off || n.remote_key.is_some() => {
+                let mut ok = response_to(req, 200, "OK");
+                ok.push_header("Contact", &format!("<{}>", self.gruu));
+                ok.push_header("Content-Type", "application/sdp");
+                ok.body = body.into_bytes();
+                self.send_plain(ok, now, out);
+                Self::call_event(
+                    out,
+                    Event::CallUpdated {
+                        call: id,
+                        media: Box::new(n),
+                    },
+                );
+                if let Some(v) = nv {
+                    Self::call_event(
+                        out,
+                        Event::CallVideo {
+                            call: id,
+                            video: Box::new(v),
+                        },
+                    );
+                }
+            }
+            _ => {
+                let r = response_to(req, 488, "Not Acceptable Here");
+                self.send_plain(r, now, out);
+            }
+        }
+    }
+
+    /// `AcceptCallVideo`: the peer's added video taken with our new video stream.
+    pub(crate) fn accept_call_video(
+        &mut self,
+        id: CallId,
+        video: sdp::video::VideoLocal,
+        now: u64,
+        out: &mut Vec<Output>,
+    ) {
+        let Some(req) = self.video_offers.remove(&id) else {
+            return;
+        };
+        if let Some(c) = self.calls.get_mut(&id) {
+            if c.policy == sdp::Encryption::Off || video.media.key.is_some() {
+                c.video = Some(video);
+            }
+        }
+        self.answer_call_reinvite(id, &req, now, out);
+    }
+
+    /// `DeclineCallVideo`: the peer's re-INVITE answered with audio only (its video line
+    /// rejected with port 0).
+    pub(crate) fn decline_call_video(&mut self, id: CallId, now: u64, out: &mut Vec<Output>) {
+        if let Some(req) = self.video_offers.remove(&id) {
+            self.answer_call_reinvite(id, &req, now, out);
+        }
+    }
+
     /// `RequestPictureUpdate`: an INFO with `picture_fast_update` in the call's dialog (PL-50).
     pub(crate) fn request_picture_update(&mut self, id: CallId, now: u64, out: &mut Vec<Output>) {
         let Some(c) = self.calls.get_mut(&id) else {
@@ -1790,56 +1877,25 @@ impl<R: Random> Engine<R> {
                 self.on_screen_reinvite(id, req, now, out)
             }
             "INVITE" => {
-                let Some(c) = self.calls.get(&id) else { return };
-                let (Some(local), Some(offer)) = (c.local.clone(), audio_sdp(req)) else {
-                    let r = response_to(req, 488, "Not Acceptable Here");
+                // The peer adds video to an audio call: the answer waits for our video stream
+                // (`AcceptCallVideo`, or `DeclineCallVideo` to answer with audio only).
+                let wants_video = self
+                    .calls
+                    .get(&id)
+                    .is_some_and(|c| c.video.is_none() && c.state == CallState::Active)
+                    && audio_sdp(req).is_some_and(|o| sdp::video::offered_video(&o));
+                if self.video_offers.contains_key(&id) {
+                    // RFC 3261 §14.2: a second re-INVITE while one is pending.
+                    let mut r = response_to(req, 500, "Server Internal Error");
+                    r.push_header("Retry-After", "2");
                     self.send_plain(r, now, out);
-                    return;
-                };
-                let key = local
-                    .key
-                    .clone()
-                    .unwrap_or_else(|| sdp::Key::new(0, [0; 30]));
-                let video = c.video.as_ref().map(|v| {
-                    (
-                        v,
-                        v.media
-                            .key
-                            .clone()
-                            .unwrap_or_else(|| sdp::Key::new(0, [0; 30])),
-                    )
-                });
-                match sdp::video::answer_with_video(&offer, &local, key, video, c.policy) {
-                    // SD-13: the peer must keep its key as well.
-                    Ok((body, n, nv))
-                        if c.policy == sdp::Encryption::Off || n.remote_key.is_some() =>
-                    {
-                        let mut ok = response_to(req, 200, "OK");
-                        ok.push_header("Contact", &format!("<{}>", self.gruu));
-                        ok.push_header("Content-Type", "application/sdp");
-                        ok.body = body.into_bytes();
-                        self.send_plain(ok, now, out);
-                        Self::call_event(
-                            out,
-                            Event::CallUpdated {
-                                call: id,
-                                media: Box::new(n),
-                            },
-                        );
-                        if let Some(v) = nv {
-                            Self::call_event(
-                                out,
-                                Event::CallVideo {
-                                    call: id,
-                                    video: Box::new(v),
-                                },
-                            );
-                        }
-                    }
-                    _ => {
-                        let r = response_to(req, 488, "Not Acceptable Here");
-                        self.send_plain(r, now, out);
-                    }
+                } else if wants_video {
+                    let r = response_to(req, 100, "Trying");
+                    self.send_plain(r, now, out);
+                    self.video_offers.insert(id, req.clone());
+                    Self::call_event(out, Event::CallVideoOffered { call: id });
+                } else {
+                    self.answer_call_reinvite(id, req, now, out);
                 }
             }
             "REFER" => self.on_refer(id, req, now, out),

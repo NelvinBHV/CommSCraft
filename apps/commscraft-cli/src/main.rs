@@ -1856,6 +1856,11 @@ fn interactive(
                     // Calls: signalling is in the engine; the media path (and with it /call and
                     // /answer) follows. An incoming call rings and ends after 60 s with 480.
                     E::CallRinging { call } => println!("* call {call} ringing"),
+                    // The CLI takes no video added to a running call: audio only.
+                    E::CallVideoOffered { call } => {
+                        println!("* [{call}] the other side adds video – answered with audio only");
+                        deferred.extend(engine.command(C::DeclineCallVideo { call }, now()));
+                    }
                     E::CallVideoControl { call, control } => {
                         // PL-50: a freeze comes only from an MCU (XMLMC §1.6) – ignored in 1:1
                         // calls; a fast update always means a key frame (and resuming).

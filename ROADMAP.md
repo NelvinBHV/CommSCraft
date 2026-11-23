@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (video into a running call, audio only)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (video the other side adds)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-23 | Video the other side adds to a running audio call is taken: the re-INVITE waits (100 Trying) until our video stream is ready and is answered with its video line; without a video stream it is answered with audio only; a second re-INVITE meanwhile gets 500 with Retry-After (RFC 3261 §14.2). `tested-offline` (the lab's Windows client has no camera and adds no video). The CLI answers such a re-INVITE with audio only. Version 0.90.23-alpha. |
 | 2026-11-23 | Video into a running 1:1 audio call and back to audio only, as with the Windows client's camera button: a re-INVITE adds the video line (RFC 3264 §8.2) and its answer starts the video stream; "audio only" keeps the line with port and key but inactive (§8.4) and a later "add video" reuses it. Signalling and interface `tested-in-lab` (the camera picture itself not, no camera at the lab machine). Incoming additions of video by the other side are still refused. Also as in the Windows client: the options list marks the chosen area in the accent colour and has a Help button next to OK and Cancel; the location menu has "Show others my location" (off keeps the location but publishes none). Version 0.90.22-alpha. |
 | 2026-11-23 | Contact photos as in the mobile clients: the UCWA token falls back to the password grant where Windows authentication does not get through (outside the company network), a refused token is renewed, photos shown are kept and appear at once on the next start, failed photos are asked for again later instead of never in that session (`tested-in-lab`). Version 0.90.21-alpha. |
 | 2026-11-23 | Location menu below the status as in the Windows client: the user's location is published in the machineState (`endpointLocation`, [MS-PRES] 20180427 §2.2.2.7.1, p. 54), the last five are offered again; contacts' locations from the aggregateState are shown on the contact card (§3.8.5.1.2.6, p. 124). `tested-in-lab` (the Windows client shows our location). Version 0.90.20-alpha. |
