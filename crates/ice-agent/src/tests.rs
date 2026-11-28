@@ -167,6 +167,12 @@ fn no_peer_means_failure_after_the_check_phase() {
     let (mut a, mut b) = pair_of_agents();
     let (ea, _) = run(&mut a, &mut b, 11_000, &|_| true);
     assert_eq!(ea, vec![Event::Failed("no valid candidate pair")]);
+    // The diagnosis for the log names the candidates and the failed pairs, no credentials.
+    let d = a.diagnosis();
+    assert!(d.contains("local 0: c1 Host Udp 10.0.0.1:5000"), "{d}");
+    assert!(d.contains("remote 0: c1 Host Udp"), "{d}");
+    assert!(d.contains("Failed"), "{d}");
+    assert!(!d.to_ascii_lowercase().contains("pwd"), "{d}");
 }
 
 /// The first checks go out in STUN-02 format plus an RFC 5389 duplicate (§3.1.5.2, IC-03), with

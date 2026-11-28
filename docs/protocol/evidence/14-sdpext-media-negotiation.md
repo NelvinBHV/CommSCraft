@@ -47,6 +47,7 @@ Source: [MS-SDPEXT] "Session Description Protocol (SDP) Version 2.0 Extensions",
 |---|---|---|
 | SD-40 | ICE-06 format: `a=candidate:<id> <comp> <pwd> UDP|TCP <prio 0..1> <ip> <port>`, IPv4 only; **the ICE re-INVITE (final offer) always comes from the caller**, also for streams added by the callee; no candidate updates before completion | §3.1.5.20, pp. 33–34; example p. 52 |
 | SD-41 | ICE-19 format: `a=ice-ufrag`, `a=ice-pwd`, `a=candidate:<f> <comp> UDP|TCP-ACT|TCP-PASS <prio> <ip> <port> typ host|srflx|relay [raddr rport]`, final: `a=remote-candidates:` | §3.1.5.21, pp. 34–36; examples pp. 54–56 |
+| SD-41a | Relayed (and server-reflexive) candidates carry `raddr`/`rport` (ICE-19 §15.1); the Windows client's own relay candidates name their own address and port there, and it refuses an offer whose relay candidates lack them (488, `ms-client-diagnostics: 52063;reason="Unsupported session description"`, `tested-in-lab` 2026-11-28) | [MS-SDPEXT] 20250520 §4.1.3, p. 54 (example); IETFDRAFT-ICENAT-19 §15.1 |
 | SD-42 | IPv6 candidates towards unknown peers as `a=x-candidate-ipv6` | §3.1.5.21.1, pp. 34–35 |
 | SD-43 | No ICE lite, no `ice-options`, no `ice-mismatch` | §3.1.5.21.2–3.1.5.21.4, p. 35 |
 | SD-44 | Base64 detection of ufrag/pwd by length: in the offer do **not** use ufrag=6 and pwd=32 bytes in plain text | §3.1.5.21.5, pp. 35–36 |

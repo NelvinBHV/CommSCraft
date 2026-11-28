@@ -298,6 +298,12 @@ fn tcp_relay_allocation_and_check() {
         .iter()
         .all(|c| c.kind == sdp::CandidateType::Relay
             && SocketAddr::new(c.address, c.port) == relayed));
+    // ICE-19 §15.1, [MS-SDPEXT] §4.1.3 p. 54: relayed candidates carry raddr/rport (the Windows
+    // client refuses an offer without them) – their own address and port.
+    assert!(
+        tcp.iter().all(|c| c.related == Some((c.address, c.port))),
+        "{cands:?}"
+    );
     assert_ne!(
         SocketAddr::new(d.address, d.rtp_port),
         relayed,

@@ -56,7 +56,9 @@ pub enum Stream {
 
 /// Long-term credentials from MS-AVEDGEA (TU-20).
 pub struct Credentials {
-    pub username: String,
+    /// The user name as the TURN server takes it: the MRAS username Base64-decoded (TU-30).
+    pub username: Vec<u8>,
+    /// The long-term password: the MRAS password Base64-decoded (TU-30).
     pub password: Zeroizing<Vec<u8>>,
 }
 
@@ -218,8 +220,9 @@ impl Client {
     }
 
     fn key(&self) -> Option<Vec<u8>> {
-        let realm = self.realm.as_ref()?;
-        let user = self.creds.username.as_bytes();
+        // TU-31: the key takes the realm without the quotes it comes with ("rtcmedia").
+        let realm = unquoted(self.realm.as_ref()?);
+        let user = self.creds.username.as_slice();
         if self.sha256 {
             let nonce = self.nonce.as_ref()?;
             Some(stun::ms_turn_sha256_key(nonce, &self.creds.password, user, realm).to_vec())
@@ -239,7 +242,7 @@ impl Client {
     /// Adds Username/Realm/Nonce, the sequence number and MESSAGE-INTEGRITY (§3.1.11).
     fn authenticate(&mut self, mut m: Message) -> Option<Vec<u8>> {
         let (realm, nonce) = (self.realm.clone()?, self.nonce.clone()?);
-        m.push(stun::USERNAME, self.creds.username.as_bytes().to_vec());
+        m.push(stun::USERNAME, self.creds.username.clone());
         m.push(stun::REALM, realm);
         m.push(stun::NONCE, nonce);
         if let Some((id, n)) = self.sequence.as_mut() {
@@ -478,6 +481,14 @@ impl Client {
             }
             return (wires, events);
         }
+        // Any other error to an Allocate (436 Unknown User, 431 Integrity Check Failure after our
+        // authenticated retry, …) ends it now with its code instead of retransmitting until the
+        // timeout (an error response carries no integrity to check, §3.2.5.2).
+        if is_error && matches!(kind, Kind::Allocate | Kind::Refresh) && !challenge {
+            self.pending = None;
+            events.push(Event::Failed(code.unwrap_or(0)));
+            return (wires, events);
+        }
         // Everything else must be authenticated (§3.1.11).
         let Some(key) = self.key() else {
             return (wires, events);
@@ -666,3 +677,11 @@ pub fn check_pseudo_tls_server_hello(p: &[u8]) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+/// The realm without one pair of surrounding double quotes (TU-31).
+fn unquoted(realm: &[u8]) -> &[u8] {
+    match realm {
+        [b'"', inner @ .., b'"'] => inner,
+        r => r,
+    }
+}

@@ -361,3 +361,65 @@ fn bandwidth_admission_requests() {
     assert_eq!(events, vec![Event::BacFailed(0)]);
     assert!(c.relayed().is_some());
 }
+
+/// TU-30/TU-31 (A/V Edge, `tested-in-lab`): the user name goes out as the decoded bytes; the
+/// realm comes quoted (`"rtcmedia"`) and is echoed as received, but the key takes it without its
+/// quotes (`unq(REALM-value)`, IETFDRAFT-TURN-08 §7.1) – for HMAC-SHA256 and HMAC-SHA1. A final
+/// error after the authenticated retry (436, 431) ends the allocation at once with its code.
+#[test]
+fn binary_user_name_quoted_realm_and_final_errors() {
+    let user: Vec<u8> = vec![0x01, 0x00, 0x20, 0x00, 0x86, 0xa8, 0xff, 0x22];
+    let quoted: &[u8] = b"\"rtcmedia\"";
+    for (version, sha256) in [(3u32, true), (2u32, false)] {
+        let mut c = Client::new(
+            Credentials {
+                username: user.clone(),
+                password: Zeroizing::new(PASS.to_vec()),
+            },
+            Transport::Udp,
+            Stream::Audio,
+            counter_random(),
+        );
+        let first = parse(&c.start(0).unwrap()).unwrap();
+        let mut ch = Message::new(ALLOCATE_ERROR, first.transaction);
+        ch.push(
+            stun::MS_MAGIC_COOKIE,
+            stun::MS_MAGIC_COOKIE_VALUE.to_be_bytes().to_vec(),
+        );
+        ch.push(stun::ERROR_CODE, stun::encode_error(401, "Unauthorized"));
+        ch.push(stun::REALM, quoted.to_vec());
+        ch.push(stun::NONCE, NONCE.to_vec());
+        ch.push(stun::MS_VERSION, version.to_be_bytes().to_vec());
+        let (w, e) = c.on_packet(&ch.encode().unwrap(), 10);
+        assert!(e.is_empty(), "{e:?}");
+        let raw = w.first().unwrap().clone();
+        let second = parse(&raw).unwrap();
+        assert_eq!(
+            second.get(stun::USERNAME),
+            Some(user.as_slice()),
+            "decoded bytes"
+        );
+        assert_eq!(second.get(stun::REALM), Some(quoted), "echoed as received");
+        let unquoted: &[u8] = b"rtcmedia";
+        if sha256 {
+            let key = stun::ms_turn_sha256_key(NONCE, PASS, &user, unquoted);
+            assert!(stun::verify_integrity(&raw, Integrity::LegacySha256(&key)).is_ok());
+            let wrong = stun::ms_turn_sha256_key(NONCE, PASS, &user, quoted);
+            assert!(stun::verify_integrity(&raw, Integrity::LegacySha256(&wrong)).is_err());
+        } else {
+            let key = stun::long_term_key(&user, unquoted, PASS);
+            assert!(stun::verify_integrity(&raw, Integrity::LegacySha1(&key)).is_ok());
+        }
+        // 436 Unknown User: ends now, not after the retransmissions.
+        let mut err = Message::new(ALLOCATE_ERROR, second.transaction);
+        err.push(
+            stun::MS_MAGIC_COOKIE,
+            stun::MS_MAGIC_COOKIE_VALUE.to_be_bytes().to_vec(),
+        );
+        err.push(stun::ERROR_CODE, stun::encode_error(436, "Unknown User"));
+        let (w, e) = c.on_packet(&err.encode().unwrap(), 20);
+        assert!(w.is_empty());
+        assert_eq!(e, vec![Event::Failed(436)]);
+        assert!(c.on_tick(10_000).0.is_empty(), "nothing retransmitted");
+    }
+}

@@ -80,7 +80,8 @@ pub struct Relay {
     pub server: SocketAddr,
     /// The relay's TCP address (port 443), for networks that block UDP.
     pub tcp_server: Option<SocketAddr>,
-    pub username: String,
+    /// The TURN user name and password, Base64-decoded from MRAS (TU-30).
+    pub username: Vec<u8>,
     pub password: zeroize::Zeroizing<Vec<u8>>,
 }
 
@@ -541,6 +542,42 @@ impl CallMedia {
 
     /// Local relayed candidates are allowed by the bandwidth policy (BW-03: otherwise they are
     /// not offered).
+    /// The relay sockets' state for a log: server, allocated address or failure; and whether
+    /// the bandwidth policy allows relay candidates.
+    fn relay_diagnosis(&self) -> String {
+        let mut out = format!("relays (allowed by policy: {}):\n", self.relay_allowed());
+        let mut any = false;
+        for s in &self.sockets {
+            match s {
+                Socket::Relay {
+                    server,
+                    allocated,
+                    failed,
+                    ..
+                } => {
+                    any = true;
+                    out.push_str(&format!(
+                        "  UDP relay {server}: allocated {allocated:?}, failed {failed}\n"
+                    ));
+                }
+                Socket::Tcp(t) => {
+                    any = true;
+                    out.push_str(&format!(
+                        "  TCP relay {:?}: allocated {:?}, failed {}\n",
+                        t.stream.peer_addr().ok(),
+                        t.allocated,
+                        t.failed
+                    ));
+                }
+                Socket::Host(_) | Socket::TcpHost(_) => {}
+            }
+        }
+        if !any {
+            out.push_str("  none (no relay given to the media stream)\n");
+        }
+        out
+    }
+
     fn relay_allowed(&self) -> bool {
         self.bwm
             .as_ref()
@@ -684,8 +721,15 @@ impl CallMedia {
                 }
                 ice::Kind::Host => sdp::CandidateType::Host,
             },
-            // A server-reflexive candidate names its base (ICE-19 §15.1); ours share the address.
-            related: (c.kind == ice::Kind::ServerReflexive).then(|| (c.base.ip(), c.base.port())),
+            // ICE-19 §15.1: server-reflexive and relayed candidates carry raddr/rport. The Windows
+            // client refuses an offer whose relay candidates lack them (488, "Unsupported session
+            // description", `tested-in-lab`); as in its own offer ([MS-SDPEXT] 20250520 §4.1.3,
+            // p. 54) a relayed candidate names its own address and port.
+            related: match c.kind {
+                ice::Kind::ServerReflexive => Some((c.base.ip(), c.base.port())),
+                ice::Kind::Relayed => Some((c.address.ip(), c.address.port())),
+                _ => None,
+            },
         };
         let udp =
             |c: &ice::Local, comp: u8| c.transport == ice::Transport::Udp && c.component == comp;
@@ -1734,8 +1778,12 @@ impl CallMedia {
                     for x in w {
                         let _ = socket.send_to(&x, *server);
                     }
-                    if e.iter().any(|e| matches!(e, turn::Event::Failed(_))) {
+                    if let Some(code) = e.iter().find_map(|e| match e {
+                        turn::Event::Failed(c) => Some(*c),
+                        _ => None,
+                    }) {
                         *failed = true;
+                        relay_failed_log(*server, "UDP", code);
                     }
                 }
                 Socket::Tcp(t) => {
@@ -1743,8 +1791,18 @@ impl CallMedia {
                     for x in w {
                         t.queue_control(&x);
                     }
-                    if e.iter().any(|e| matches!(e, turn::Event::Failed(_))) {
+                    if let Some(code) = e.iter().find_map(|e| match e {
+                        turn::Event::Failed(c) => Some(*c),
+                        _ => None,
+                    }) {
                         t.failed = true;
+                        relay_failed_log(
+                            t.stream
+                                .peer_addr()
+                                .unwrap_or(SocketAddr::from(([0, 0, 0, 0], 0))),
+                            "TCP",
+                            code,
+                        );
                     }
                 }
                 Socket::Host(_) | Socket::TcpHost(_) => {}
@@ -1858,7 +1916,17 @@ impl CallMedia {
                         data,
                     } => got = Some((f, data)),
                     turn::Event::ActiveDestination(a) => t.active = Some(a),
-                    turn::Event::Failed(_) | turn::Event::Malformed => t.failed = true,
+                    turn::Event::Failed(c) => {
+                        t.failed = true;
+                        relay_failed_log(
+                            t.stream
+                                .peer_addr()
+                                .unwrap_or(SocketAddr::from(([0, 0, 0, 0], 0))),
+                            "TCP",
+                            c,
+                        );
+                    }
+                    turn::Event::Malformed => t.failed = true,
                     e @ (turn::Event::Bac { .. } | turn::Event::BacFailed(_)) => {
                         bac.push((sock, e))
                     }
@@ -1938,7 +2006,16 @@ impl CallMedia {
                     }
                     events.push(Event::Selected);
                 }
-                ice::Event::Failed(why) => events.push(Event::Failed(why.into())),
+                ice::Event::Failed(why) => {
+                    // Diagnosis for the log: which candidates and pairs there were.
+                    if std::env::var_os("COMMSCRAFT_VERBOSE").is_some() {
+                        if let Some(a) = self.ice.as_ref() {
+                            eprint!("{}", a.diagnosis());
+                        }
+                        eprint!("{}", self.relay_diagnosis());
+                    }
+                    events.push(Event::Failed(why.into()))
+                }
             }
         }
     }
@@ -1976,7 +2053,10 @@ impl CallMedia {
                             data,
                         } => got = Some((sock, f, data)),
                         turn::Event::ActiveDestination(a) => *active = Some(a),
-                        turn::Event::Failed(_) => *failed = true,
+                        turn::Event::Failed(c) => {
+                            *failed = true;
+                            relay_failed_log(*server, "UDP", c);
+                        }
                         e @ (turn::Event::Bac { .. } | turn::Event::BacFailed(_)) => {
                             self.bac_events.push((sock, e))
                         }
@@ -2110,3 +2190,10 @@ impl CallMedia {
 
 #[cfg(test)]
 mod tests;
+
+/// A TURN allocation that failed, for the log (`COMMSCRAFT_VERBOSE`): server, transport, error.
+fn relay_failed_log(server: SocketAddr, transport: &str, code: u16) {
+    if std::env::var_os("COMMSCRAFT_VERBOSE").is_some() {
+        eprintln!("relay {transport} {server}: allocation failed (error {code})");
+    }
+}
