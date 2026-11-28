@@ -835,8 +835,14 @@ impl DesktopApp {
     /// Sharing the own screen with the conversation's peer: the desktop's dialog runs in a
     /// thread of its own (it waits for the user), then the capture goes to the worker.
     fn share_screen(&mut self, key: commscraft_ui::model::ConvKey, windows: bool) {
-        let Some(peer) = self.ui.state.conversation(key).and_then(|c| c.peer.clone()) else {
+        // A peer (1:1), or a meeting's conversation (its application sharing MCU).
+        let Some(c) = self.ui.state.conversation(key) else {
             return;
+        };
+        let (peer, conference) = match (&c.peer, c.session) {
+            (Some(p), _) => (p.clone(), None),
+            (None, Some(s)) if c.is_group() => (String::new(), Some(s)),
+            _ => return,
         };
         let Some(tx) = self.worker.as_ref().map(|w| w.sender()) else {
             return;
@@ -852,6 +858,7 @@ impl DesktopApp {
                     .and_then(|capture| {
                         tx.try_send(ToWorker::ShareScreen {
                             to: peer,
+                            conference,
                             capture: session::ScreenCapture(capture),
                         })
                         .map_err(|e| e.to_string())

@@ -2,7 +2,7 @@
 
 **Stage: M1, M5, M6 and M7 done** · M0 done · M2, M3 built · M1, M4, M5, M6 and M7 closed · the graphical interface: all four phases done (screens, session adapter, UX, QA), more functions in it follow · tested offline and, in their main flows, in the owner's private lab (`tested-in-lab`)
 
-> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** patch (calls outside the company network through the A/V Edge)
+> **Last reviewed:** 2026-11-01 · **Last updated:** 2026-11-22 · **Change:** minor (sharing the screen in meetings)
 
 CommSCraft aims at parity with the Skype for Business desktop client for Windows when connected to
 an on-premises Skype for Business Server. This page is the summary; the assessment is
@@ -52,6 +52,7 @@ Hours are not estimated.
 
 | Date | Change |
 |---|---|
+| 2026-11-28 | Sharing the own screen or a window in meetings: an INVITE to the conference's application sharing MCU in the sharer role with the screen video line (MS-CONFAS CS-01 … CS-03, video-based as in 1:1); in the desktop client from the Present menu, as a call of its own with "stop presenting". `tested-offline` (the lab run needs the owner at the desktop's screen dialog). Version 0.90.26-alpha. |
 | 2026-11-28 | Calls outside the company network work through the A/V Edge (lab with an edge server and NAT on both sides): the media relay's allocations failed (436 Unknown User, then 431) – the MRAS user name and password are now Base64-decoded for TURN and the key takes the realm without its quotes; offers with relay candidates now carry raddr/rport (the Windows client refused them with 488 "Unsupported session description"); a final TURN error ends the allocation at once; `COMMSCRAFT_VERBOSE` logs ICE candidates, pair states and relay states when a call's media fails. `tested-in-lab`. Version 0.90.25-alpha. |
 | 2026-11-23 | The colour of our formatted messages now shows on the Windows client: it renders a message's colour only from its Rich Text Format form (lab: our text/html showed bold but not the colour, an RTF message red and bold), so formatted messages go as `text/rtf` to peers whose session accepts it (Microsoft RTF Specification 1.9.1: colour table, `\cfN`, `\fsN`, `\b`/`\i`/`\ul`, escapes, `\uN?`), as `text/html` otherwise (`tested-in-lab`). Version 0.90.24-alpha. |
 | 2026-11-23 | Video the other side adds to a running audio call is taken: the re-INVITE waits (100 Trying) until our video stream is ready and is answered with its video line; without a video stream it is answered with audio only; a second re-INVITE meanwhile gets 500 with Retry-After (RFC 3261 §14.2). `tested-offline` (the lab's Windows client has no camera and adds no video). The CLI answers such a re-INVITE with audio only. Version 0.90.23-alpha. |

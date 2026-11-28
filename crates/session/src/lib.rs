@@ -394,6 +394,13 @@ pub enum Command {
         video: Box<sdp::video::VideoLocal>,
         policy: sdp::Encryption,
     },
+    /// Function 43: share our screen in a conference – an INVITE to its application sharing
+    /// MCU in the sharer role with the screen video line (MS-CONFAS CS-01 … CS-03).
+    ShareConferenceScreen {
+        conversation: ConversationId,
+        video: Box<sdp::video::VideoLocal>,
+        policy: sdp::Encryption,
+    },
     /// Function 43: view a window shared in a conference over RDP (its application sharing MCU;
     /// our data stream's parameters).
     ViewConferenceRdp {
@@ -625,6 +632,11 @@ pub enum Event {
     },
     /// The viewing call of a conference's shared screen got this call ID (function 43).
     ConferenceScreen {
+        conversation: ConversationId,
+        call: CallId,
+    },
+    /// Our screen shared in a conference: the call to its application sharing MCU.
+    ConferenceShare {
         conversation: ConversationId,
         call: CallId,
     },
@@ -2399,6 +2411,11 @@ impl<R: Random> Engine<R> {
                 video,
                 policy,
             } => self.view_conference_screen(conversation, *video, policy, now, &mut out),
+            Command::ShareConferenceScreen {
+                conversation,
+                video,
+                policy,
+            } => self.share_conference_screen(conversation, *video, policy, now, &mut out),
             Command::ViewConferenceRdp {
                 conversation,
                 local,

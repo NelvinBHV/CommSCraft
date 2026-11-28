@@ -1186,8 +1186,12 @@ pub fn end_meeting_dialog(app: &mut CommsUi, ctx: &egui::Context) {
 fn present_menu(app: &mut CommsUi, ui: &mut Ui, key: ConvKey) {
     let t = app.t;
     let not_built = Gate::Unavailable(crate::model::Reason::NotImplemented);
-    let peer = app.state.conversation(key).and_then(|c| c.peer.clone());
-    let can_share = peer.is_some() && app.state.capabilities.video_call.usable();
+    // 1:1, or in a meeting through its application sharing MCU.
+    let shareable = app
+        .state
+        .conversation(key)
+        .is_some_and(|c| c.peer.is_some() || (c.is_group() && c.session.is_some()));
+    let can_share = shareable && app.state.capabilities.video_call.usable();
     for (label, windows) in [(t.share_desktop, false), (t.share_window, true)] {
         if ui
             .add_enabled(can_share, egui::Button::new(label))

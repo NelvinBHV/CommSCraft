@@ -1861,6 +1861,9 @@ fn interactive(
                         println!("* [{call}] the other side adds video – answered with audio only");
                         deferred.extend(engine.command(C::DeclineCallVideo { call }, now()));
                     }
+                    E::ConferenceShare { conversation, call } => {
+                        println!("* [{conversation}] presenting in the meeting (call {call})");
+                    }
                     E::CallVideoControl { call, control } => {
                         // PL-50: a freeze comes only from an MCU (XMLMC §1.6) – ignored in 1:1
                         // calls; a fast update always means a key frame (and resuming).

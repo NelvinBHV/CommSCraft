@@ -6309,3 +6309,122 @@ fn video_the_peer_adds_waits_for_our_stream() {
             .any(|e| matches!(e, Event::CallUpdated { call: 1, .. })));
     }
 }
+
+/// Function 43 in a meeting: our screen to the conference's application sharing MCU – the
+/// sharer offer (RDP line port 0 in the sharer role, the screen video send-only with content flow
+/// `sendonly`, CS-02, CS-03); the MCU's answer starts the stream; a second share is refused.
+#[test]
+fn meeting_screen_sharing() {
+    const ASMCU: &str = "sip:alice@contoso.com;gruu;opaque=app:conf:applicationsharing:id:FC275ECD12493E4E9C27C894FE91E104";
+    let (mut e, mut server, _) = signed_in();
+    let out = e.command(
+        Command::JoinConference {
+            focus: FOCUS.into(),
+        },
+        NOW,
+    );
+    let focus_invite = find(&out, "INVITE");
+    let granted = format!(
+        r#"<response xmlns="urn:ietf:params:xml:ns:cccp" requestId="1" C3PVersion="1" code="success"><addUser><conferenceKeys confEntity="{FOCUS}"/></addUser></response>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &focus_invite,
+            200,
+            Some("application/cccp+xml"),
+            &granted,
+            &[],
+        ),
+        NOW,
+    );
+    let roster_sub = find(&out, "SUBSCRIBE");
+    let doc = format!(
+        r#"<conference-info xmlns="urn:ietf:params:xml:ns:conference-info" xmlns:msci="http://schemas.microsoft.com/rtc/2005/08/confinfoextensions" entity="{FOCUS}" state="full" version="1"><conference-description><conf-uris><entry><uri>{ASMCU}</uri><purpose>applicationsharing</purpose></entry></conf-uris></conference-description><users><user entity="sip:alice@contoso.com" state="full"><endpoint entity="{{F}}" msci:session-type="focus"><status>connected</status></endpoint></user></users></conference-info>"#
+    );
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &roster_sub,
+            200,
+            Some("application/conference-info+xml"),
+            &doc,
+            &[("Expires", "3600")],
+        ),
+        NOW,
+    );
+    let conversation = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::Participants { conversation, .. } => Some(*conversation),
+            _ => None,
+        })
+        .or_else(|| {
+            events(&out).iter().find_map(|ev| match ev {
+                Event::ConversationStarted { conversation, .. } => Some(*conversation),
+                _ => None,
+            })
+        })
+        .unwrap_or(1);
+    let out = e.command(
+        Command::ShareConferenceScreen {
+            conversation,
+            video: Box::new(video_local(42004, 4)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    let call = events(&out)
+        .iter()
+        .find_map(|ev| match ev {
+            Event::ConferenceShare { call, .. } => Some(*call),
+            _ => None,
+        })
+        .expect("sharing call");
+    let invite = find(&out, "INVITE");
+    assert!(invite
+        .single("To")
+        .unwrap()
+        .unwrap()
+        .contains("app:conf:applicationsharing"));
+    let body = String::from_utf8_lossy(&invite.body).to_string();
+    assert!(
+        body.contains("a=x-applicationsharing-role:sharer"),
+        "{body}"
+    );
+    assert!(body.contains("m=video 42004 RTP/SAVP 122 123"), "{body}");
+    assert!(
+        body.contains("a=label:applicationsharing-video\r\n") && body.contains("a=sendonly\r\n")
+    );
+    assert!(!body.contains("m=audio"));
+    let answer_sdp = "v=0\r\no=- 2 0 IN IP4 192.0.2.20\r\ns=session\r\nc=IN IP4 192.0.2.20\r\nt=0 0\r\n\
+m=applicationsharing 0 TCP/RTP/AVP 127\r\n\
+m=video 51632 RTP/SAVP 122 123\r\na=x-ssrc-range:5000-5099\r\na=rtcp-fb:* x-message app send:src,x-pli recv:src,x-pli\r\na=rtcp-rsize\r\na=label:applicationsharing-video\r\n\
+a=ice-ufrag:cccc\r\na=ice-pwd:dddddddddddddddddddddddd\r\na=candidate:1 1 UDP 2130706431 192.0.2.20 51632 typ host\r\n\
+a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkw|2^31|1:1\r\n\
+a=rtcp:51633\r\na=recvonly\r\na=rtpmap:122 X-H264UC/90000\r\na=fmtp:122 packetization-mode=1;mst-mode=NI-TC\r\na=rtpmap:123 x-ulpfecuc/90000\r\n";
+    let out = e.on_message(
+        &answer(
+            &mut server,
+            &invite,
+            200,
+            Some("application/sdp"),
+            answer_sdp,
+            &[],
+        ),
+        NOW,
+    );
+    assert!(sends(&out).iter().any(|m| m.method() == Some("ACK")));
+    assert!(events(&out)
+        .iter()
+        .any(|ev| matches!(ev, Event::CallVideo { call: c, .. } if *c == call)));
+    let out = e.command(
+        Command::ShareConferenceScreen {
+            conversation,
+            video: Box::new(video_local(42006, 5)),
+            policy: commscraft_sdp::Encryption::Required,
+        },
+        NOW,
+    );
+    assert!(sends(&out).is_empty(), "already presenting");
+}
