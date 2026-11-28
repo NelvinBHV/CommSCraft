@@ -287,6 +287,50 @@ impl Agent {
         commscraft_ice::usable_peer_address(a, &ours)
     }
 
+    /// A diagnosis of the checks for a log (no credentials): our and the peer's candidates with
+    /// type, transport and address, and the state of every pair.
+    pub fn diagnosis(&self) -> String {
+        use std::fmt::Write;
+        let mut s = String::new();
+        let _ = writeln!(
+            s,
+            "ICE ({}):",
+            if self.controlling {
+                "controlling"
+            } else {
+                "controlled"
+            }
+        );
+        for (i, l) in self.locals.iter().enumerate() {
+            let _ = writeln!(
+                s,
+                "  local {i}: c{} {:?} {:?} {} (base {})",
+                l.component, l.kind, l.transport, l.address, l.base
+            );
+        }
+        for (i, r) in self.remotes.iter().enumerate() {
+            let _ = writeln!(
+                s,
+                "  remote {i}: c{} {:?} {:?} {}",
+                r.component, r.kind, r.transport, r.address
+            );
+        }
+        for p in &self.pairs {
+            let _ = writeln!(
+                s,
+                "  pair local {} -> remote {}: {:?}{}",
+                p.local,
+                p.remote,
+                p.state,
+                if p.nominated { " nominated" } else { "" }
+            );
+        }
+        if self.pairs.is_empty() {
+            s.push_str("  no pairs\n");
+        }
+        s
+    }
+
     pub fn locals(&self) -> &[Local] {
         &self.locals
     }

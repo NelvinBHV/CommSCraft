@@ -1,7 +1,7 @@
 //! Media relay credentials from the Media Relay Authentication Service (MS-AVEDGEA): the SIP
 //! SERVICE body and the checked answer (TURN username/password, relays).
 //!
-//! Evidence: `docs/protocol/evidence/11-avedgea-media-relay-token.md` (AV-01 … AV-09, K-AV-1).
+//! Evidence: `docs/protocol/evidence/11-avedgea-media-relay-token.md` (AV-01 … AV-10, K-AV-1).
 //! Sources: [MS-AVEDGEA] 20250520 §2.2 (pp. 11–18), §3.1.5 (pp. 22–24), schema §6 (pp. 30–32),
 //! examples §4.1 (pp. 25–26) and §4.2 (pp. 27–28). Secondary: [SIPE] `sipe-media.c`
 //! l. 2257–2371 (username and password used as received).
@@ -73,7 +73,7 @@ pub struct Relay {
     pub tcp_port: u16,
 }
 
-/// The TURN credentials (opaque strings, AV-06) and their lifetime.
+/// The TURN credentials as received (Base64, AV-04; decoded for TURN, AV-10) and their lifetime.
 pub struct Credentials {
     pub username: String,
     pub password: Zeroizing<String>,

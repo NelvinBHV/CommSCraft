@@ -90,11 +90,15 @@ pub fn relay_from(creds: &commscraft_avedgea::Credentials) -> Option<cm::Relay> 
     let (relay, server) = relays
         .iter()
         .find_map(|r| resolve(r, r.udp_port).map(|s| (*r, s)))?;
+    // TU-30: MRAS hands both out Base64-encoded (AV-04); the TURN server takes the decoded bytes
+    // (`tested-in-lab` against an A/V Edge: the encoded user name gets 436 Unknown User).
+    let username = commscraft_sipae::base64::decode(&creds.username).ok()?;
+    let password = zeroize::Zeroizing::new(commscraft_sipae::base64::decode(&creds.password).ok()?);
     Some(cm::Relay {
         server,
         tcp_server: resolve(relay, relay.tcp_port),
-        username: creds.username.clone(),
-        password: zeroize::Zeroizing::new(creds.password.as_bytes().to_vec()),
+        username,
+        password,
     })
 }
 
@@ -596,6 +600,29 @@ pub fn video_bandwidth_config(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// TU-30: the MRAS credentials (Base64 in the XML, AV-04) reach TURN decoded; a value that
+    /// is not Base64 gives no relay.
+    #[test]
+    fn relay_credentials_are_decoded() {
+        use commscraft_avedgea as av;
+        let creds = |user: &str| av::Credentials {
+            username: user.into(),
+            password: zeroize::Zeroizing::new("NkWjWOauEzbKRaQrCNVyf6NXwHU=".into()),
+            duration_minutes: 480,
+            relays: vec![av::Relay {
+                location: Some(av::Location::Internet),
+                host: av::RelayHost::Address("192.0.2.40".parse().unwrap()),
+                udp_port: 3478,
+                tcp_port: 443,
+            }],
+        };
+        let r = super::relay_from(&creds("AQAgAIao")).unwrap();
+        assert_eq!(r.username, vec![0x01, 0x00, 0x20, 0x00, 0x86, 0xa8]);
+        assert_eq!(r.password.len(), 20);
+        assert_eq!(r.server, "192.0.2.40:3478".parse().unwrap());
+        assert!(super::relay_from(&creds("not base64!")).is_none());
+    }
 
     /// A loop that looks at the clock every 4 ms still gets exactly 50 frames per second – a
     /// schedule relative to "now" would give 20–24 ms per frame, and the peer's packets would
